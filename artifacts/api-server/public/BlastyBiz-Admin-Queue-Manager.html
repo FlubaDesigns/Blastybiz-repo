@@ -168,15 +168,11 @@ pre{white-space:pre-wrap;background:#0f172a;color:#e5e7eb;padding:14px;border-ra
     </div>
   </section>
 
-  <section class="card">
-    <h2>Replit Build Notes</h2>
-    <p>This page should read from <strong>publishJobs</strong> and related business/user records. Customers never see raw errors, job IDs, API payloads, or cost data. Admin can retry, pause, close, mark manual jobs complete, and send safe customer notifications.</p>
-  </section>
 </div>
 <script type="module">
 import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { collection, query, orderBy, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { collection, query, orderBy, limit, onSnapshot, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 function timeAgo(ts) {
   if (!ts) return '—';
@@ -190,32 +186,56 @@ function timeAgo(ts) {
   return Math.floor(hrs / 24) + 'd ago';
 }
 
+async function jobAction(jobId, action) {
+  const ref = doc(db, 'publishJobs', jobId);
+  const now = new Date();
+  const updates = {
+    retry:    { status: 'retry_pending', updatedAt: now },
+    close:    { status: 'closed', updatedAt: now },
+    complete: { status: 'manual_completed', updatedAt: now },
+    run:      { status: 'pending', updatedAt: now },
+    notify:   { customerNotified: true, updatedAt: now },
+    pause:    { status: 'paused', updatedAt: now },
+  }[action];
+  if (updates) await updateDoc(ref, updates);
+}
+window.jobAction = jobAction;
+
 onAuthStateChanged(auth, (user) => {
   if (!user) return;
   const q = query(collection(db, 'publishJobs'), orderBy('updatedAt', 'desc'), limit(50));
   onSnapshot(q, (snap) => {
-    if (snap.empty) return;
+    if (snap.empty) {
+      document.querySelector('tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;opacity:.6">No jobs yet.</td></tr>';
+      return;
+    }
     let queued = 0, posting = 0, attention = 0, completed = 0;
     const rows = snap.docs.map(d => {
       const j = d.data();
-      if (j.status === 'pending') queued++;
-      else if (j.status === 'posting') posting++;
-      else if (j.status === 'failed' || j.status === 'manual') attention++;
-      else if (j.status === 'done') completed++;
-      const sc = { pending:'pending', posting:'posting', done:'success', failed:'failed', manual:'manual' }[j.status] || 'pending';
-      const acts = j.status === 'failed'
-        ? `<button class="primary">Retry</button><button class="light">Notify</button><button class="danger">Close</button>`
-        : j.status === 'manual'
-        ? `<button class="safe">Mark Complete</button><button class="light">View Instructions</button>`
+      const id = d.id;
+      if (j.status === 'pending' || j.status === 'retry_pending') queued++;
+      else if (j.status === 'running') posting++;
+      else if (['failed','manual_required','customer_reconnect_required'].includes(j.status)) attention++;
+      else if (j.status === 'success' || j.status === 'manual_completed') completed++;
+      const sc = {
+        pending:'pending', retry_pending:'pending', running:'posting',
+        success:'success', manual_completed:'success',
+        failed:'failed', manual_required:'manual',
+        customer_reconnect_required:'manual', paused:'pending', closed:'success'
+      }[j.status] || 'pending';
+      const acts = ['failed','customer_reconnect_required'].includes(j.status)
+        ? `<button class="primary" onclick="jobAction('${id}','retry')">Retry</button><button class="light" onclick="jobAction('${id}','notify')">Notify</button><button class="danger" onclick="jobAction('${id}','close')">Close</button>`
+        : j.status === 'manual_required'
+        ? `<button class="safe" onclick="jobAction('${id}','complete')">Mark Complete</button><button class="light">View Instructions</button>`
         : j.status === 'pending'
-        ? `<button class="primary">Run Now</button><button class="light">View</button>`
+        ? `<button class="primary" onclick="jobAction('${id}','run')">Run Now</button><button class="warn" onclick="jobAction('${id}','pause')">Pause</button>`
         : `<button class="light">View Receipt</button>`;
       return `<tr>
-        <td><strong>${j.listingName || j.businessId || '—'}</strong><br><span class="muted">${j.businessId || ''}</span></td>
+        <td><strong>${j.businessId || '—'}</strong><br><span class="muted">${j.platform || ''}</span></td>
         <td>${j.platform || '—'}</td>
         <td><span class="badge ${sc}">${j.status || 'pending'}</span></td>
         <td>${j.customerVisibleMessage || '—'}</td>
-        <td>${j.attempts || 1}</td>
+        <td>${j.attempts || 0}</td>
         <td>${timeAgo(j.updatedAt)}</td>
         <td class="actions">${acts}</td>
       </tr>`;

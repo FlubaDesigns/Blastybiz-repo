@@ -10,34 +10,59 @@
 <section class="two-col"><div class="card"><div class="card-title">🧠 Replit Logic</div><div class="list"><div class="row"><div class="icon">1</div><div class="row-main"><div class="row-title">Use job IDs and dedupe keys</div><div class="row-sub">Every publishing task needs a unique jobId and platformJobKey so retries do not duplicate posts.</div></div></div><div class="row"><div class="icon">2</div><div class="row-main"><div class="row-title">Store plain error summaries</div><div class="row-sub">Business owners should see simple messages. Admin can see raw details only when needed.</div></div></div></div></div><div class="card"><div class="card-title">✅ Admin Actions</div><div class="list"><div class="row"><div class="icon">↻</div><div class="row-main"><div class="row-title">Retry</div><div class="row-sub">Only for safe failures like timeout, rate limit, or temporary platform outage.</div></div></div><div class="row"><div class="icon">✎</div><div class="row-main"><div class="row-title">Fix and rerun</div><div class="row-sub">For validation, category, phone/address, or image errors.</div></div></div><div class="row"><div class="icon">👤</div><div class="row-main"><div class="row-title">Request customer action</div><div class="row-sub">For expired OAuth, missing permissions, or disconnected platform accounts.</div></div></div></div></div></section></main><nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="active" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a></nav><script type="module">
 import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { collection, query, where, orderBy, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { collection, query, where, orderBy, limit, onSnapshot, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+async function jobAction(jobId, action) {
+  const ref = doc(db, 'publishJobs', jobId);
+  const now = new Date();
+  const updates = {
+    retry:    { status: 'retry_pending', attempts: 0, updatedAt: now },
+    close:    { status: 'closed', updatedAt: now },
+    complete: { status: 'manual_completed', updatedAt: now },
+    notify:   { customerNotified: true, updatedAt: now },
+  }[action];
+  if (updates) await updateDoc(ref, updates);
+}
+window.jobAction = jobAction;
 
 onAuthStateChanged(auth, (user) => {
   if (!user) return;
-  const q = query(collection(db, 'publishJobs'), where('status', 'in', ['failed', 'manual']), orderBy('updatedAt', 'desc'), limit(50));
+  const statuses = ['failed', 'manual_required', 'customer_reconnect_required', 'retry_pending'];
+  const q = query(collection(db, 'publishJobs'), where('status', 'in', statuses), orderBy('updatedAt', 'desc'), limit(50));
   onSnapshot(q, (snap) => {
     const tbody = document.querySelector('table tbody');
     if (!tbody) return;
     if (snap.empty) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">No failed jobs. All clear.</td></tr>';
-      const nums = document.querySelectorAll('.stat-num');
-      nums.forEach(n => { n.textContent = '0'; });
+      document.querySelectorAll('.stat-num').forEach(n => { n.textContent = '0'; });
       return;
     }
-    const jobs = snap.docs.map(d => d.data());
-    tbody.innerHTML = jobs.map(j => `<tr>
-      <td>${j.listingName || j.businessId || '—'}</td>
-      <td>${j.jobType || 'Listing sync'}</td>
-      <td>${j.platform || '—'}</td>
-      <td class="muted">${j.adminError || j.customerVisibleMessage || '—'}</td>
-      <td>${j.nextAction || 'Review'}</td>
-      <td><span class="badge needs">${j.status === 'manual' ? 'Manual' : 'Failed'}</span></td>
-    </tr>`).join('');
+    const jobs = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
+    tbody.innerHTML = jobs.map(j => {
+      const isRetryable = ['failed','retry_pending'].includes(j.status);
+      const isReconnect = j.status === 'customer_reconnect_required';
+      const isManual = j.status === 'manual_required';
+      const acts = isReconnect
+        ? `<button class="light" onclick="jobAction('${j._id}','notify')">Notify Customer</button><button class="danger" onclick="jobAction('${j._id}','close')">Close</button>`
+        : isRetryable
+        ? `<button class="primary" onclick="jobAction('${j._id}','retry')">Retry</button><button class="danger" onclick="jobAction('${j._id}','close')">Close</button>`
+        : isManual
+        ? `<button class="safe" onclick="jobAction('${j._id}','complete')">Mark Complete</button>`
+        : `<button class="danger" onclick="jobAction('${j._id}','close')">Close</button>`;
+      return `<tr>
+        <td>${j.businessId || '—'}</td>
+        <td>${j.jobType || 'Listing sync'}</td>
+        <td>${j.platform || '—'}</td>
+        <td class="muted">${j.adminError || j.customerVisibleMessage || '—'}</td>
+        <td class="actions">${acts}</td>
+        <td><span class="badge needs">${j.status === 'manual_required' ? 'Manual' : j.status === 'customer_reconnect_required' ? 'Reconnect' : 'Failed'}</span></td>
+      </tr>`;
+    }).join('');
     const nums = document.querySelectorAll('.stat-num');
     if (nums.length >= 4) {
-      nums[0].textContent = jobs.filter(j => j.retryable).length;
-      nums[1].textContent = jobs.filter(j => j.status === 'needs_reconnect').length;
-      nums[2].textContent = jobs.filter(j => j.status === 'validation_error').length;
+      nums[0].textContent = jobs.filter(j => ['failed','retry_pending'].includes(j.status)).length;
+      nums[1].textContent = jobs.filter(j => j.status === 'customer_reconnect_required').length;
+      nums[2].textContent = jobs.filter(j => j.status === 'manual_required').length;
       nums[3].textContent = jobs.filter(j => j.jobType === 'ai' || j.jobType === 'image').length;
     }
   });

@@ -12,16 +12,63 @@ import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, query, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+const PLATFORM_META = [
+  { id: 'google',    label: 'Google Business Profile', mode: 'API/OAuth' },
+  { id: 'facebook',  label: 'Facebook Pages',          mode: 'API/OAuth' },
+  { id: 'instagram', label: 'Instagram Business',      mode: 'API/OAuth' },
+  { id: 'yelp',      label: 'Yelp',                    mode: 'Partial'   },
+  { id: 'nextdoor',  label: 'Nextdoor',                mode: 'Manual'    },
+  { id: 'craigslist',label: 'Craigslist',              mode: 'Manual'    },
+];
+
 onAuthStateChanged(auth, (user) => {
   if (!user) return;
   const q = query(collection(db, 'platformConnections'));
   onSnapshot(q, (snap) => {
-    if (snap.empty) return;
     const conns = snap.docs.map(d => d.data());
+    const connected = conns.filter(c => c.status === 'connected' || c.enabled).length;
+    const manual = PLATFORM_META.filter(p => p.mode === 'Manual').length;
+    const expired = conns.filter(c => c.status === 'expired' || c.status === 'error').length;
     const nums = document.querySelectorAll('.stat-num');
     if (nums.length >= 4) {
-      nums[0].textContent = conns.filter(c => c.status === 'connected' || c.enabled).length;
-      nums[2].textContent = conns.filter(c => c.status === 'expired' || c.status === 'error').length;
+      nums[0].textContent = connected;
+      nums[1].textContent = manual;
+      nums[2].textContent = expired;
+    }
+
+    const tbody = document.querySelector('table tbody');
+    if (tbody) {
+      tbody.innerHTML = PLATFORM_META.map(p => {
+        const platformConns = conns.filter(c => c.platform === p.id || c.platformId === p.id);
+        const anyExpired = platformConns.some(c => c.status === 'expired' || c.status === 'error');
+        const anyConnected = platformConns.some(c => c.status === 'connected' || c.enabled);
+        const isManual = p.mode === 'Manual';
+        let badgeClass, badgeText, commonFail, adminResp;
+        if (isManual) {
+          badgeClass = 'off'; badgeText = 'Manual';
+          commonFail = 'No reliable public posting API';
+          adminResp = 'Copy/paste workflow';
+        } else if (anyExpired) {
+          badgeClass = 'needs'; badgeText = 'Expired Tokens';
+          commonFail = 'OAuth token expired or revoked';
+          adminResp = 'Send reconnect link';
+        } else if (anyConnected) {
+          badgeClass = 'live'; badgeText = 'Good';
+          commonFail = 'Expired token or permissions';
+          adminResp = 'Reconnect link';
+        } else {
+          badgeClass = 'info'; badgeText = 'No connections';
+          commonFail = '—';
+          adminResp = '—';
+        }
+        return `<tr>
+          <td>${p.label}</td>
+          <td>${p.mode}</td>
+          <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+          <td class="muted">${commonFail}</td>
+          <td>${adminResp}</td>
+        </tr>`;
+      }).join('');
     }
   });
 });
