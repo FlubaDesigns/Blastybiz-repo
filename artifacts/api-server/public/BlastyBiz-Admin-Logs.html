@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BlastyBiz Admin - Logs</title>
+<style>
+:root{
+  --bg:#f6f8fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280;
+  --line:#d9e1ec; --blue:#2563eb;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#0f172a;color:white;padding:22px}
+header h1{margin:0;font-size:26px}
+header p{margin:6px 0 0;color:#cbd5e1}
+.wrap{max-width:1200px;margin:0 auto;padding:22px}
+.nav{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.nav a{text-decoration:none;color:#0f172a;background:white;border:1px solid var(--line);padding:10px 12px;border-radius:10px;font-weight:bold}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(15,23,42,.04);margin-bottom:18px}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+input,select{padding:10px;border:1px solid var(--line);border-radius:10px;background:white}
+button{border:0;border-radius:10px;padding:10px 12px;font-weight:bold;cursor:pointer}
+.primary{background:var(--blue);color:white}
+.light{background:#eef2ff;color:#1e3a8a}
+table{width:100%;border-collapse:collapse;background:white;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+th,td{padding:12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:14px}
+th{background:#f1f5f9;color:#334155}
+.muted{color:var(--muted);font-size:14px}
+.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:12px;font-weight:bold}
+.info{background:#dbeafe;color:#1e40af}
+.success{background:#dcfce7;color:#166534}
+.warn{background:#fef3c7;color:#92400e}
+.error{background:#fee2e2;color:#991b1b}
+@media(max-width:700px){table{display:block;overflow-x:auto}}
+</style>
+</head>
+<body>
+<header>
+  <h1>BlastyBiz Admin Logs</h1>
+  <p>Searchable activity record for important system and customer events.</p>
+</header>
+
+<div class="wrap">
+  <nav class="nav">
+    <a href="BlastyBiz-Admin.html">Admin Dashboard</a>
+    <a href="BlastyBiz-Admin-Queue-Manager.html">Queue Manager</a>
+    <a href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a>
+    <a href="BlastyBiz-Admin-Users.html">Users</a>
+    <a href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a>
+    <a href="BlastyBiz-Admin-Platform-Health.html">Platform Health</a>
+  </nav>
+
+  <section class="card">
+    <h2>Find Logs</h2>
+    <div class="filters">
+      <input type="text" placeholder="Search business, user, platform, message..." />
+      <select>
+        <option>All Types</option>
+        <option>Auth</option>
+        <option>Business</option>
+        <option>Draft</option>
+        <option>Publish Job</option>
+        <option>Billing</option>
+        <option>Platform</option>
+        <option>System</option>
+      </select>
+      <select>
+        <option>All Levels</option>
+        <option>Info</option>
+        <option>Success</option>
+        <option>Warning</option>
+        <option>Error</option>
+      </select>
+      <button class="primary">Search</button>
+      <button class="light">Reset</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Recent Activity</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Level</th>
+          <th>Type</th>
+          <th>Business/User</th>
+          <th>Message</th>
+          <th>Related Record</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Today 12:18 AM</td>
+          <td><span class="badge success">Success</span></td>
+          <td>Publish Job</td>
+          <td>Harbor Dental</td>
+          <td>Apple Maps listing update completed.</td>
+          <td class="muted">publishJobs</td>
+        </tr>
+        <tr>
+          <td>Today 12:11 AM</td>
+          <td><span class="badge error">Error</span></td>
+          <td>Platform</td>
+          <td>ABC Roofing</td>
+          <td>Facebook token expired. Reconnect required.</td>
+          <td class="muted">platformConnections</td>
+        </tr>
+        <tr>
+          <td>Today 12:04 AM</td>
+          <td><span class="badge info">Info</span></td>
+          <td>Draft</td>
+          <td>Joe's Plumbing</td>
+          <td>Listing draft generated and saved for approval.</td>
+          <td class="muted">listingDrafts</td>
+        </tr>
+        <tr>
+          <td>Yesterday 11:52 PM</td>
+          <td><span class="badge warn">Warning</span></td>
+          <td>Manual</td>
+          <td>Sunset Lawn Care</td>
+          <td>Nextdoor requires manual posting instructions.</td>
+          <td class="muted">publishJobs</td>
+        </tr>
+        <tr>
+          <td>Yesterday 11:40 PM</td>
+          <td><span class="badge success">Success</span></td>
+          <td>Auth</td>
+          <td>newowner@example.com</td>
+          <td>User account created successfully.</td>
+          <td class="muted">users</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>Implementation Notes</h2>
+    <p>Use this page to display records from <strong>activityLogs</strong>. This is an admin-only page. Customers should never see raw system logs, internal errors, payloads, tokens, or stack traces.</p>
+  </section>
+</div>
+</body>
+</html>

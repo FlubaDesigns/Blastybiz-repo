@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BlastyBiz — Let's Get You Set Up</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --green:  #00C853;
+  --dark:   #070D07;
+  --silver: #7AB87A;
+  --light:  #EEF7EE;
+  --card:   #0D160D;
+  --border: #1E2E1E;
+  --muted:  #587058;
+  --green2: #00B04A;
+  --glow:   rgba(0,200,83,0.15);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  background: var(--dark);
+  color: var(--light);
+  font-family: 'DM Sans', sans-serif;
+  height: 100%;
+  position: relative;
+}
+
+/* ── PARTICLE CANVAS ── */
+#canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── MAIN WRAPPER ── */
+.wizard {
+  position: relative;
+  z-index: 1;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── HEADER ── */
+.wiz-header {
+  padding: 20px 24px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.wiz-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 2px;
+  color: var(--green);
+}
+
+.wiz-step-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── PROGRESS BAR ── */
+.progress-track {
+  margin: 16px 24px 0;
+  height: 3px;
+  background: var(--border);
+  border-radius: 3px;
+  flex-shrink: 0;
+  overflow: visible;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), #00FF88);
+  border-radius: 3px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  top: -4px;
+  width: 11px;
+  height: 11px;
+  background: var(--green);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--green);
+}
+
+/* ── STEP DOTS ── */
+.step-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 0 0;
+  flex-shrink: 0;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.3s ease;
+}
+.dot.active {
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  transform: scale(1.3);
+}
+.dot.done {
+  background: var(--silver);
+  width: 18px;
+  border-radius: 3px;
+}
+
+/* ── SLIDES CONTAINER ── */
+.slides {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  padding: 24px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  opacity: 0;
+  transform: translateX(60px);
+  transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.slide.active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: all;
+}
+
+.slide.exit {
+  opacity: 0;
+  transform: translateX(-60px);
+}
+
+/* ── SLIDE CONTENT ── */
+.slide-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  display: block;
+  animation: iconPop 0.5s 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes iconPop {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.slide-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 38px;
+  line-height: 1;
+  letter-spacing: 1.5px;
+  color: var(--light);
+  margin-bottom: 8px;
+}
+
+.slide-title span { color: var(--green); }
+
+.slide-sub {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 28px;
+  font-weight: 300;
+}
+
+/* ── FORM ELEMENTS ── */
+.field { margin-bottom: 16px; }
+
+label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--silver);
+  margin-bottom: 7px;
+}
+
+input, textarea, select {
+  width: 100%;
+  background: rgba(13,22,13,0.8);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 13px 16px;
+  color: var(--light);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none;
+  backdrop-filter: blur(8px);
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(0,200,83,0.1);
+}
+
+textarea { resize: none; min-height: 90px; }
+select option { background: var(--dark); }
+
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* ── CATEGORY GRID ── */
+.cat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.cat-btn {
+  background: rgba(13,22,13,0.8);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--silver);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
+}
+.cat-btn .cat-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+.cat-btn:hover { border-color: var(--silver); }
+.cat-btn.selected {
+  border-color: var(--green);
+  background: rgba(0,200,83,0.08);
+  color: var(--light);
+  box-shadow: 0 0 16px rgba(0,200,83,0.1);
+}
+
+/* ── PLATFORM CONNECT CARDS ── */
+.connect-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.connect-card {
+  background: rgba(13,22,13,0.8);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.25s;
+  backdrop-filter: blur(8px);
+}
+
+.connect-card.connected {
+  border-color: var(--green);
+  background: rgba(0,200,83,0.05);
+}
+
+.connect-icon {
+  font-size: 26px;
+  flex-shrink: 0;
+}
+
+.connect-info { flex: 1; }
+.connect-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--light);
+}
+.connect-desc {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.connect-tag {
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-weight: 700;
+  margin-top: 3px;
+  display: inline-block;
+}
+.tag-auto { background: rgba(0,200,83,0.1); color: var(--green); }
+.tag-copy { background: rgba(255,167,38,0.1); color: #FFA726; }
+
+.connect-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--silver);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.connect-btn:hover { border-color: var(--green); color: var(--green); }
+.connect-btn.done {
+  background: rgba(0,200,83,0.1);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.connect-skip {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.connect-skip:hover { color: var(--silver); }
+
+/* ── TONE SELECTOR ── */
+.tone-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tone-btn {
+  background: rgba(13,22,13,0.8);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+  text-align: left;
+}
+.tone-btn .tone-icon { font-size: 22px; display: block; margin-bottom: 6px; }
+.tone-btn .tone-name { font-size: 13px; font-weight: 700; color: var(--light); display: block; }
+.tone-btn .tone-desc { font-size: 11px; color: var(--muted); margin-top: 2px; display: block; }
+.tone-btn.selected {
+  border-color: var(--green);
+  background: rgba(0,200,83,0.08);
+  box-shadow: 0 0 16px rgba(0,200,83,0.1);
+}
+
+/* ── WELCOME SCREEN (step 0) ── */
+.welcome-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex: 1;
+  padding-top: 20px;
+}
+
+.welcome-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 52px;
+  letter-spacing: 4px;
+  color: var(--green);
+  text-shadow: 0 0 40px rgba(0,200,83,0.4);
+  animation: glowPulse 3s ease infinite;
+  line-height: 1;
+}
+
+@keyframes glowPulse {
+  0%, 100% { text-shadow: 0 0 40px rgba(0,200,83,0.4); }
+  50%       { text-shadow: 0 0 60px rgba(0,200,83,0.7), 0 0 100px rgba(0,200,83,0.2); }
+}
+
+.welcome-tagline {
+  font-size: 16px;
+  color: var(--silver);
+  font-weight: 300;
+  margin: 8px 0 32px;
+  letter-spacing: 1px;
+}
+
+.welcome-features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 36px;
+}
+
+.welcome-feat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(13,22,13,0.6);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  text-align: left;
+  animation: slideIn 0.4s ease both;
+}
+.welcome-feat:nth-child(1) { animation-delay: 0.2s; }
+.welcome-feat:nth-child(2) { animation-delay: 0.35s; }
+.welcome-feat:nth-child(3) { animation-delay: 0.5s; }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.feat-icon { font-size: 20px; flex-shrink: 0; }
+.feat-text { font-size: 13px; color: var(--silver); line-height: 1.4; }
+.feat-text strong { color: var(--light); display: block; font-size: 14px; }
+
+/* ── SUCCESS SCREEN ── */
+.success-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex: 1;
+}
+
+.success-ring {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(0,200,83,0.1);
+  border: 2px solid var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44px;
+  margin-bottom: 24px;
+  box-shadow: 0 0 40px rgba(0,200,83,0.3);
+  animation: successPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes successPop {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.success-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 44px;
+  letter-spacing: 2px;
+  color: var(--light);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.success-title span { color: var(--green); }
+
+.success-sub {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 280px;
+  margin: 0 auto 32px;
+}
+
+.success-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 28px;
+  animation: fadeUp 0.5s 0.4s ease both;
+}
+
+.sstat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 8px;
+  text-align: center;
+}
+
+.sstat-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  color: var(--green);
+  line-height: 1;
+}
+
+.sstat-lbl {
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+/* ── FOOTER ACTIONS ── */
+.wiz-footer {
+  padding: 10px 24px env(safe-area-inset-bottom, 8px);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-next {
+  width: 100%;
+  padding: 16px;
+  background: var(--green);
+  color: var(--dark);
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-next::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%);
+  transform: translateX(-100%);
+  transition: transform 0.4s ease;
+}
+.btn-next:hover::after { transform: translateX(100%); }
+.btn-next:hover { background: var(--green2); transform: translateY(-1px); }
+.btn-next:active { transform: translateY(0); }
+.btn-next:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.btn-back {
+  width: 100%;
+  padding: 13px;
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.btn-back:hover { color: var(--silver); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── PLATFORM CATEGORY SELECTS ── */
+.pcat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.pcat-row:last-child { border-bottom: none; }
+
+.pcat-icon { font-size: 20px; flex-shrink: 0; }
+.pcat-name { font-size: 13px; font-weight: 600; color: var(--light); flex: 1; }
+
+.pcat-select {
+  background: var(--dark);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: var(--silver);
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  width: 160px;
+  flex-shrink: 0;
+  -webkit-appearance: none;
+  transition: border-color 0.2s;
+  margin-bottom: 0;
+}
+.pcat-select:focus { border-color: var(--green); outline: none; }
+.pcat-select.ai-picked { border-color: var(--silver); color: var(--light); }
+
+/* ── DAY BUTTONS ── */
+.day-btn {
+  background: rgba(13,22,13,0.8);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+  text-align: center;
+}
+.day-btn.selected {
+  background: rgba(0,200,83,0.1);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+/* ── GLOW BORDER ANIMATION ── */
+@keyframes borderGlow {
+  0%, 100% { box-shadow: 0 0 0 rgba(0,200,83,0); }
+  50%       { box-shadow: 0 0 20px rgba(0,200,83,0.2); }
+}
+
+.field-focus-glow:focus-within {
+  animation: borderGlow 2s ease infinite;
+}
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="wizard">
+
+  <!-- HEADER -->
+  <div class="wiz-header">
+    <div class="wiz-logo">BlastyBiz</div>
+    <div class="wiz-step-label" id="step-label">Welcome</div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+
+  <!-- DOTS -->
+  <div class="step-dots" id="step-dots"></div>
+
+  <!-- SLIDES -->
+  <div class="slides" id="slides">
+
+    <!-- ── STEP 0: WELCOME ── -->
+    <div class="slide active" id="slide-0">
+      <div class="welcome-center">
+        <div class="welcome-logo">BlastyBiz</div>
+        <div class="welcome-tagline">Lock. Load. Blast.</div>
+
+        <div class="welcome-features">
+          <div class="welcome-feat">
+            <span class="feat-icon">⚡</span>
+            <div class="feat-text">
+              <strong>Takes 2 minutes</strong>
+              We walk you through everything step by step
+            </div>
+          </div>
+          <div class="welcome-feat">
+            <span class="feat-icon">🤖</span>
+            <div class="feat-text">
+              <strong>AI does the writing</strong>
+              Your listing, adapted perfectly for every platform
+            </div>
+          </div>
+          <div class="welcome-feat">
+            <span class="feat-icon">📡</span>
+            <div class="feat-text">
+              <strong>12+ platforms at once</strong>
+              Google, Facebook, Craigslist, Nextdoor and more
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 1: BUSINESS NAME ── -->
+    <div class="slide" id="slide-1">
+      <span class="slide-icon">🏪</span>
+      <div class="slide-title">What's Your<br/><span>Business Called?</span></div>
+      <div class="slide-sub">This is how you'll appear across every platform.</div>
+
+      <div class="field">
+        <label>Business Name</label>
+        <input type="text" id="s-name" placeholder="e.g. Maria's Kitchen" oninput="checkStep(1)" />
+      </div>
+
+      <div class="field">
+        <label>Your Name (optional)</label>
+        <input type="text" id="s-owner" placeholder="e.g. Maria Rodriguez" />
+      </div>
+
+      <div class="field">
+        <label>Phone Number</label>
+        <input type="tel" id="s-phone" placeholder="(555) 000-0000" oninput="checkStep(1)" />
+      </div>
+    </div>
+
+    <!-- ── STEP 2: CATEGORY ── -->
+    <div class="slide" id="slide-2">
+      <span class="slide-icon">🏷️</span>
+      <div class="slide-title">What Do<br/><span>You Do?</span></div>
+      <div class="slide-sub">Describe your business in plain English. We'll find the right category for every platform automatically.</div>
+
+      <div class="field">
+        <label>Describe Your Business</label>
+        <textarea id="s-biztype" placeholder="e.g. I run a drone photography company specializing in real estate and weddings..." rows="3" oninput="checkStep(2)"></textarea>
+      </div>
+
+      <div id="cat-resolve-wrap" style="display:none;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <div style="flex:1;height:1px;background:var(--border);"></div>
+          <span style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);">Platform Categories</span>
+          <div style="flex:1;height:1px;background:var(--border);"></div>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">These are used for copy-paste platforms. AI auto-resolves when backend is live. Override any below.</p>
+        <div id="platform-cat-list"></div>
+      </div>
+
+      <button class="btn-next" id="cat-resolve-btn" onclick="resolveCats()" style="background:var(--card);border:1px solid var(--green);color:var(--green);margin-top:4px;" disabled>
+        🔍 Find My Categories
+      </button>
+    </div>
+
+    <!-- ── STEP 3: LOCATION ── -->
+    <div class="slide" id="slide-3">
+      <span class="slide-icon">📍</span>
+      <div class="slide-title">Where Are<br/><span>You Located?</span></div>
+      <div class="slide-sub">Your address helps customers find you and lets platforms show you to the right local audience.</div>
+
+      <div class="field">
+        <label>Street Address</label>
+        <input type="text" id="s-address" placeholder="123 Main Street" oninput="checkStep(3)" />
+      </div>
+
+      <div class="input-row">
+        <div class="field">
+          <label>City</label>
+          <input type="text" id="s-city" placeholder="Naples" oninput="checkStep(3)" />
+        </div>
+        <div class="field">
+          <label>State</label>
+          <input type="text" id="s-state" placeholder="FL" oninput="checkStep(3)" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Days Open</label>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:4px;" id="days-grid">
+          <button class="day-btn selected" onclick="toggleDay(this,'Mon')">Mon</button>
+          <button class="day-btn selected" onclick="toggleDay(this,'Tue')">Tue</button>
+          <button class="day-btn selected" onclick="toggleDay(this,'Wed')">Wed</button>
+          <button class="day-btn selected" onclick="toggleDay(this,'Thu')">Thu</button>
+          <button class="day-btn selected" onclick="toggleDay(this,'Fri')">Fri</button>
+          <button class="day-btn selected" onclick="toggleDay(this,'Sat')">Sat</button>
+          <button class="day-btn" onclick="toggleDay(this,'Sun')">Sun</button>
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="field">
+          <label>Opens At</label>
+          <input type="time" id="s-open" value="09:00" />
+        </div>
+        <div class="field">
+          <label>Closes At</label>
+          <input type="time" id="s-close" value="17:00" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="s-email" placeholder="hello@yourbusiness.com" />
+      </div>
+
+      <div class="field">
+        <label>Website (optional)</label>
+        <input type="url" id="s-website" placeholder="https://yourbusiness.com" />
+      </div>
+    </div>
+
+    <!-- ── STEP 4: TONE ── -->
+    <div class="slide" id="slide-4">
+      <span class="slide-icon">🎙️</span>
+      <div class="slide-title">How Should<br/><span>You Sound?</span></div>
+      <div class="slide-sub">AI will match this tone across every platform. You can change it anytime.</div>
+
+      <div class="tone-grid">
+        <button class="tone-btn selected" onclick="selectTone(this, 'friendly')" id="tone-friendly">
+          <span class="tone-icon">😊</span>
+          <span class="tone-name">Friendly</span>
+          <span class="tone-desc">Warm, approachable, conversational</span>
+        </button>
+        <button class="tone-btn" onclick="selectTone(this, 'professional')" id="tone-professional">
+          <span class="tone-icon">👔</span>
+          <span class="tone-name">Professional</span>
+          <span class="tone-desc">Polished, credible, formal</span>
+        </button>
+        <button class="tone-btn" onclick="selectTone(this, 'bold')" id="tone-bold">
+          <span class="tone-icon">🔥</span>
+          <span class="tone-name">Bold</span>
+          <span class="tone-desc">Energetic, punchy, attention-grabbing</span>
+        </button>
+        <button class="tone-btn" onclick="selectTone(this, 'community')" id="tone-community">
+          <span class="tone-icon">🤝</span>
+          <span class="tone-name">Community</span>
+          <span class="tone-desc">Local, neighborly, trust-building</span>
+        </button>
+      </div>
+
+      <div class="field" style="margin-top:8px;">
+        <label>Tell us what makes you special (optional)</label>
+        <textarea id="s-special" placeholder="e.g. Family owned since 1995. Best authentic tacos in Southwest Florida. Fresh ingredients daily..."></textarea>
+      </div>
+    </div>
+
+    <!-- ── STEP 5: CONNECT PLATFORMS ── -->
+    <div class="slide" id="slide-5">
+      <span class="slide-icon">📡</span>
+      <div class="slide-title">Connect Your<br/><span>Platforms</span></div>
+      <div class="slide-sub">Connect now for auto-posting, or skip and use copy & paste. You can connect more later.</div>
+
+      <div class="connect-list">
+        <div class="connect-card" id="cc-google">
+          <span class="connect-icon">🔍</span>
+          <div class="connect-info">
+            <div class="connect-name">Google Business</div>
+            <div class="connect-desc">Show up in Google Search & Maps</div>
+            <span class="connect-tag tag-auto">Auto-Post</span>
+          </div>
+          <button class="connect-btn" onclick="connectPlatform('google', this)">Connect</button>
+        </div>
+
+        <div class="connect-card" id="cc-facebook">
+          <span class="connect-icon">📘</span>
+          <div class="connect-info">
+            <div class="connect-name">Facebook Business</div>
+            <div class="connect-desc">Post to your Facebook Page</div>
+            <span class="connect-tag tag-auto">Auto-Post</span>
+          </div>
+          <button class="connect-btn" onclick="connectPlatform('facebook', this)">Connect</button>
+        </div>
+
+        <div class="connect-card" id="cc-instagram">
+          <span class="connect-icon">📸</span>
+          <div class="connect-info">
+            <div class="connect-name">Instagram Business</div>
+            <div class="connect-desc">Reach your Instagram audience</div>
+            <span class="connect-tag tag-auto">Auto-Post</span>
+          </div>
+          <button class="connect-btn" onclick="connectPlatform('instagram', this)">Connect</button>
+        </div>
+
+        <div class="connect-card" id="cc-nextdoor">
+          <span class="connect-icon">🏘️</span>
+          <div class="connect-info">
+            <div class="connect-name">Nextdoor</div>
+            <div class="connect-desc">AI formats — you copy & paste</div>
+            <span class="connect-tag tag-copy">Copy & Paste</span>
+          </div>
+          <button class="connect-btn done">Ready ✓</button>
+        </div>
+
+        <div class="connect-card" id="cc-fbmarket">
+          <span class="connect-icon">🛒</span>
+          <div class="connect-info">
+            <div class="connect-name">FB Marketplace + Craigslist</div>
+            <div class="connect-desc">AI formats — you paste & post</div>
+            <span class="connect-tag tag-copy">Copy & Paste</span>
+          </div>
+          <button class="connect-btn done">Ready ✓</button>
+        </div>
+      </div>
+
+      <div class="connect-skip" onclick="nextStep()">Skip for now — I'll connect later →</div>
+    </div>
+
+    <!-- ── STEP 6: SUCCESS ── -->
+    <div class="slide" id="slide-6">
+      <div class="success-center">
+        <div class="success-ring">🎉</div>
+        <div class="success-title">You're<br/><span>All Set!</span></div>
+        <div class="success-sub" id="success-sub">Your business profile is saved. AI is ready to post you everywhere.</div>
+
+        <div class="success-stats">
+          <div class="sstat">
+            <div class="sstat-num" id="ss-platforms">4</div>
+            <div class="sstat-lbl">Platforms</div>
+          </div>
+          <div class="sstat">
+            <div class="sstat-num">2<span style="font-size:14px">min</span></div>
+            <div class="sstat-lbl">To Post All</div>
+          </div>
+          <div class="sstat">
+            <div class="sstat-num">∞</div>
+            <div class="sstat-lbl">Listings</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /slides -->
+
+  <!-- FOOTER ACTIONS -->
+  <div class="wiz-footer">
+    <button class="btn-next" id="btn-next" onclick="nextStep()">
+      <span id="btn-next-text">Let's Go →</span>
+    </button>
+    <button class="btn-back" id="btn-back" onclick="prevStep()" style="display:none;">
+      ← Back
+    </button>
+  </div>
+
+</div><!-- /wizard -->
+
+<script>
+// ══════════════════════════════════════════
+// PARTICLE CANVAS
+// ══════════════════════════════════════════
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function resizeCanvas() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+function createParticles() {
+  particles = [];
+  const count = Math.floor((canvas.width * canvas.height) / 18000);
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.5 + 0.3,
+      dx: (Math.random() - 0.5) * 0.3,
+      dy: (Math.random() - 0.5) * 0.3,
+      alpha: Math.random() * 0.4 + 0.05,
+    });
+  }
+}
+
+function animateParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    p.x += p.dx;
+    p.y += p.dy;
+    if (p.x < 0) p.x = canvas.width;
+    if (p.x > canvas.width) p.x = 0;
+    if (p.y < 0) p.y = canvas.height;
+    if (p.y > canvas.height) p.y = 0;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0,200,83,${p.alpha})`;
+    ctx.fill();
+  });
+  requestAnimationFrame(animateParticles);
+}
+
+resizeCanvas();
+createParticles();
+animateParticles();
+window.addEventListener('resize', () => { resizeCanvas(); createParticles(); });
+
+// ══════════════════════════════════════════
+// WIZARD STATE
+// ══════════════════════════════════════════
+const TOTAL_STEPS = 6;
+let currentStep = 0;
+let selectedCategory = '';
+let selectedTone = 'friendly';
+let connectedPlatforms = [];
+let selectedDays = ['Mon','Tue','Wed','Thu','Fri','Sat'];
+
+const STEP_LABELS = [
+  'Welcome',
+  'Business Name',
+  'Category',
+  'Location',
+  'Your Voice',
+  'Connect',
+  'All Done!'
+];
+
+const NEXT_LABELS = [
+  "Let's Go →",
+  'Continue →',
+  'Continue →',
+  'Continue →',
+  'Continue →',
+  'Finish Setup →',
+  'Start Posting 🚀'
+];
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+function init() {
+  buildDots();
+  updateUI();
+}
+
+function buildDots() {
+  const el = document.getElementById('step-dots');
+  el.innerHTML = '';
+  for (let i = 0; i <= TOTAL_STEPS; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.id = 'dot-' + i;
+    el.appendChild(d);
+  }
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function nextStep() {
+  if (currentStep === TOTAL_STEPS) {
+    saveProfile();
+    window.location.href = 'BlastyBiz-Dashboard.html';
+    return;
+  }
+  goToStep(currentStep + 1);
+}
+
+function prevStep() {
+  if (currentStep > 0) goToStep(currentStep - 1);
+}
+
+function goToStep(target) {
+  const current = document.getElementById('slide-' + currentStep);
+  current.classList.add('exit');
+  setTimeout(() => current.classList.remove('active', 'exit'), 450);
+
+  currentStep = target;
+
+  const next = document.getElementById('slide-' + currentStep);
+  next.classList.add('active');
+
+  updateUI();
+}
+
+function updateUI() {
+  // Progress bar
+  const pct = (currentStep / TOTAL_STEPS) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+
+  // Step label
+  document.getElementById('step-label').textContent = STEP_LABELS[currentStep] || '';
+
+  // Next button text
+  document.getElementById('btn-next-text').textContent = NEXT_LABELS[currentStep] || 'Continue →';
+
+  // Back button
+  const back = document.getElementById('btn-back');
+  back.style.display = currentStep > 0 && currentStep < TOTAL_STEPS ? 'block' : 'none';
+
+  // Dots
+  for (let i = 0; i <= TOTAL_STEPS; i++) {
+    const d = document.getElementById('dot-' + i);
+    if (!d) continue;
+    d.className = 'dot';
+    if (i < currentStep) d.classList.add('done');
+    else if (i === currentStep) d.classList.add('active');
+  }
+
+  // Validate current step
+  checkStep(currentStep);
+
+  // Success screen update
+  if (currentStep === TOTAL_STEPS) {
+    const name = document.getElementById('s-name')?.value || 'Your business';
+    document.getElementById('success-sub').textContent =
+      `${name} is all set. AI is ready to post you everywhere.`;
+    document.getElementById('ss-platforms').textContent =
+      12 + connectedPlatforms.length;
+  }
+}
+
+// ══════════════════════════════════════════
+// VALIDATION
+// ══════════════════════════════════════════
+function checkStep(step) {
+  const btn = document.getElementById('btn-next');
+  if (!btn) return;
+
+  let valid = true;
+
+  if (step === 1) {
+    const name  = document.getElementById('s-name')?.value?.trim();
+    const phone = document.getElementById('s-phone')?.value?.trim();
+    valid = name?.length > 1 && phone?.length > 6;
+  } else if (step === 2) {
+    const desc = document.getElementById('s-biztype')?.value?.trim();
+    valid = desc?.length > 5;
+    const resolveBtn = document.getElementById('cat-resolve-btn');
+    if (resolveBtn) resolveBtn.disabled = !valid;
+    // Step is valid once description is entered (cats are bonus)
+    valid = desc?.length > 5;
+    if (valid) selectedCategory = desc;
+  } else if (step === 3) {
+    const addr = document.getElementById('s-address')?.value?.trim();
+    const city = document.getElementById('s-city')?.value?.trim();
+    valid = addr?.length > 3 && city?.length > 1;
+  }
+
+  btn.disabled = !valid;
+}
+
+// ══════════════════════════════════════════
+// STATIC CATEGORY REGISTRY
+// Manual/copy-paste platforms only
+// API platforms resolve categories themselves
+// ══════════════════════════════════════════
+const PLATFORM_CATS = {
+  fbmarket: {
+    name: 'FB Marketplace', icon: '🛒',
+    cats: ['Antiques & Collectibles','Arts & Crafts','Baby & Kids','Books, Movies & Music','Clothing & Accessories','Electronics','Food & Grocery','Free Stuff','Furniture','Garden & Outdoor','Health & Beauty','Home Goods','Instruments','Miscellaneous','Pet Supplies','Sports & Outdoors','Tools','Toys & Games','Vehicles','Services']
+  },
+  craigslist: {
+    name: 'Craigslist', icon: '📌',
+    cats: ['Automotive Services','Beauty Services','Cell Phone / Computer Repair','Creative Services','Cycle / Scooter / Moped Repair','Event & Wedding Services','Farm & Garden Services','Financial Services','Food & Catering','Health & Wellness','Household Help','Handyman','Labor / Moving','Landscaping','Legal Services','Lessons & Tutoring','Pet Services','Real Estate Services','Skilled Trades','Small Business Ads','Travel & Vacation','Writing / Editing / Translation','For Sale — General','For Sale — Antiques','For Sale — Appliances','For Sale — Arts & Crafts','For Sale — Baby','For Sale — Bikes','For Sale — Boats','For Sale — Books','For Sale — Cars & Trucks','For Sale — Clothes','For Sale — Electronics','For Sale — Farm & Garden','For Sale — Free','For Sale — Furniture','For Sale — Jewelry','For Sale — Materials','For Sale — Musical Instruments','For Sale — Photo & Video','For Sale — Sporting','For Sale — Tools','For Sale — Toys','Gigs — Creative','Gigs — Crew','Gigs — Domestic','Gigs — Event','Gigs — Labor','Gigs — Talent']
+  },
+  yelp: {
+    name: 'Yelp', icon: '⭐',
+    cats: ['American (New)','American (Traditional)','Auto Repair','Auto Detailing','Bakeries','Bars','Beauty & Spas','Breakfast & Brunch','Burgers','Cafes','Car Dealers','Carpet Cleaning','Chinese','Coffee & Tea','Contractors','Dentists','Doctors','Dry Cleaning','Education','Event Planning','Financial Services','Fitness & Instruction','Food Delivery','Hair Salons','Home Cleaning','Home Services','Hotels','Italian','Japanese','Juice Bars','Landscaping','Lawyers','Massage','Mexican','Movers','Nail Salons','Nightlife','Painters','Personal Chefs','Pet Services','Photography','Pizza','Plumbers','Real Estate','Restaurants','Roofing','Shopping','Skin Care','Tattoo','Thai','Towing','Vietnamese','Wedding Planning']
+  },
+  thumbtack: {
+    name: 'Thumbtack', icon: '📍',
+    cats: ['Accounting','Appliance Repair','Auto Detailing','Baby Sitting','Carpentry','Carpet Cleaning','Catering','Child Care','Cleaning','Computer Repair','DJ','Dog Training','Dog Walking','Electrical','Event Photography','Event Planning','Fence Installation','Flooring','General Contracting','Handyman','House Cleaning','HVAC','Interior Design','Landscaping','Lawn Care','Legal','Life Coaching','Makeup','Massage','Moving','Music Lessons','Painting','Personal Training','Pet Grooming','Pet Sitting','Photography','Piano Lessons','Plumbing','Pool Service','Pressure Washing','Real Estate Photography','Roofing','Senior Care','Snow Removal','Tree Service','Tutoring','Video Production','Wedding Photography','Window Cleaning','Yoga']
+  },
+  angi: {
+    name: 'Angi', icon: '🔧',
+    cats: ['Air Duct Cleaning','Appliance Repair','Basement Finishing','Bathroom Remodel','Carpet Cleaning','Carpet Installation','Ceiling Fan Installation','Chimney Sweep','Concrete Work','Deck Building','Door Installation','Drywall Repair','Electrical','Epoxy Flooring','Fence Installation','Foundation Repair','Garage Door Repair','General Contractor','Gutter Cleaning','Handyman','Hardwood Flooring','HVAC','Insulation','Interior Painting','Kitchen Remodel','Landscaping','Lawn Care','Mold Removal','Moving','Painting — Exterior','Pest Control','Plumbing','Pool Service','Pressure Washing','Roof Repair','Roofing','Septic Service','Siding','Snow Removal','Solar Panel Installation','Tile Installation','Tree Service','Wallpaper Removal','Water Heater','Window Installation','Window Cleaning']
+  },
+  alignable: {
+    name: 'Alignable', icon: '🤝',
+    cats: ['Accounting & Finance','Architecture','Auto & Vehicle','Beauty & Wellness','Business Consulting','Childcare & Education','Cleaning Services','Construction & Contracting','Creative & Design','Dental','Digital Marketing','Entertainment','Financial Planning','Fitness & Health','Food & Restaurant','Government & Nonprofit','Home Improvement','HR & Recruiting','Insurance','IT & Technology','Landscaping','Law & Legal','Manufacturing','Medical & Healthcare','Non-Profit','Pet Services','Photography & Video','Printing & Signs','Real Estate','Retail','Senior Services','Social Media','Transportation','Travel','Veterinary','Wedding & Events']
+  },
+  applemaps: {
+    name: 'Apple Maps', icon: '🗺️',
+    cats: ['Airport','Amusement Park','Aquarium','ATM','Bakery','Bank','Bar','Beauty Salon','Bowling Alley','Bus Station','Cafe','Campground','Car Dealer','Car Rental','Car Repair','Car Wash','Casino','Cemetery','Church','City Hall','Clothing Store','Convenience Store','Courthouse','Dentist','Department Store','Doctor','Electrician','Embassy','Fire Station','Florist','Food','Funeral Home','Furniture Store','Gas Station','Gym','Hair Care','Hardware Store','Hospital','Hotel','Insurance Agency','Jewelry Store','Laundry','Library','Locksmith','Lodging','Meal Delivery','Meal Takeaway','Movie Theater','Museum','Night Club','Painter','Park','Parking','Pet Store','Pharmacy','Physiotherapist','Plumber','Police','Post Office','Real Estate Agency','Restaurant','Roofing Contractor','RV Park','School','Shopping Mall','Spa','Stadium','Store','Subway Station','Supermarket','Synagogue','Taxi Stand','Train Station','Travel Agency','University','Veterinary Care','Zoo']
+  }
+};
+
+// ══════════════════════════════════════════
+// CATEGORY RESOLVER
+// ══════════════════════════════════════════
+let resolvedCats = {};
+
+function resolveCats() {
+  const desc = document.getElementById('s-biztype')?.value?.trim();
+  if (!desc) return;
+
+  // Show the platform category section
+  document.getElementById('cat-resolve-wrap').style.display = 'block';
+
+  // Best-match algorithm — keyword scoring against category lists
+  const descLower = desc.toLowerCase();
+  const words = descLower.split(/\s+/);
+
+  const list = document.getElementById('platform-cat-list');
+  list.innerHTML = '';
+
+  Object.entries(PLATFORM_CATS).forEach(([pid, p]) => {
+    // Score each category against description
+    let bestCat = p.cats[0];
+    let bestScore = 0;
+
+    p.cats.forEach(cat => {
+      const catWords = cat.toLowerCase().split(/[\s&\/]+/);
+      let score = 0;
+      words.forEach(w => {
+        catWords.forEach(cw => {
+          if (cw.includes(w) || w.includes(cw)) score += (cw === w ? 3 : 1);
+        });
+      });
+      if (score > bestScore) { bestScore = score; bestCat = cat; }
+    });
+
+    resolvedCats[pid] = bestCat;
+
+    // Build row
+    const row = document.createElement('div');
+    row.className = 'pcat-row';
+
+    const sel = document.createElement('select');
+    sel.className = 'pcat-select ai-picked';
+    sel.id = 'pcat-' + pid;
+    p.cats.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      if (c === bestCat) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.onchange = () => { resolvedCats[pid] = sel.value; };
+
+    row.innerHTML = `
+      <span class="pcat-icon">${p.icon}</span>
+      <span class="pcat-name">${p.name}</span>
+    `;
+    row.appendChild(sel);
+    list.appendChild(row);
+  });
+
+  // Mark step valid
+  selectedCategory = desc;
+  checkStep(2);
+
+  // Scroll down to show results
+  document.getElementById('slide-2').scrollTo({ top: 300, behavior: 'smooth' });
+}
+
+// ══════════════════════════════════════════
+// CATEGORY SELECT (legacy — kept for saveProfile)
+// ══════════════════════════════════════════
+function selectCat(btn, cat) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+  btn?.classList?.add('selected');
+  selectedCategory = cat;
+  checkStep(2);
+}
+
+// ══════════════════════════════════════════
+// TONE SELECT
+// ══════════════════════════════════════════
+function selectTone(btn, tone) {
+  document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedTone = tone;
+}
+
+// ══════════════════════════════════════════
+// PLATFORM CONNECT (OAuth placeholder)
+// ══════════════════════════════════════════
+function connectPlatform(id, btn) {
+  // Simulate OAuth flow — real implementation uses Firebase Auth + OAuth popup
+  btn.textContent = 'Connecting...';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    btn.textContent = '✓ Connected';
+    btn.classList.add('done');
+    btn.disabled = false;
+
+    const card = document.getElementById('cc-' + id);
+    if (card) card.classList.add('connected');
+
+    if (!connectedPlatforms.includes(id)) connectedPlatforms.push(id);
+  }, 1200);
+}
+
+// ══════════════════════════════════════════
+// DAY TOGGLE
+// ══════════════════════════════════════════
+function toggleDay(btn, day) {
+  btn.classList.toggle('selected');
+  if (selectedDays.includes(day)) {
+    selectedDays = selectedDays.filter(d => d !== day);
+  } else {
+    selectedDays.push(day);
+  }
+}
+
+// ══════════════════════════════════════════
+// SAVE PROFILE TO LOCALSTORAGE
+// ══════════════════════════════════════════
+function saveProfile() {
+  const openTime  = document.getElementById('s-open')?.value  || '09:00';
+  const closeTime = document.getElementById('s-close')?.value || '17:00';
+  const fmt = (t) => { const [h,m] = t.split(':'); const hr = +h; return (hr > 12 ? hr-12 : hr||12) + (m !== '00' ? ':'+m : '') + (hr >= 12 ? 'pm' : 'am'); };
+  const hoursString = selectedDays.length
+    ? `${selectedDays.join(', ')} ${fmt(openTime)}–${fmt(closeTime)}`
+    : 'Hours not set';
+
+  const profile = {
+    name:      document.getElementById('s-name')?.value || '',
+    ownerName: document.getElementById('s-owner')?.value || '',
+    phone:     document.getElementById('s-phone')?.value || '',
+    category:  selectedCategory,
+    platformCats: resolvedCats,
+    address:   document.getElementById('s-address')?.value || '',
+    city:      document.getElementById('s-city')?.value || '',
+    state:     document.getElementById('s-state')?.value || '',
+    days:      selectedDays,
+    openTime,
+    closeTime,
+    hours:     hoursString,
+    email:     document.getElementById('s-email')?.value || '',
+    website:   document.getElementById('s-website')?.value || '',
+    tone:      selectedTone,
+    special:   document.getElementById('s-special')?.value || '',
+    connected: connectedPlatforms,
+    onboarded: true,
+  };
+  localStorage.setItem('ll_profile', JSON.stringify(profile));
+}
+
+// ══════════════════════════════════════════
+// START
+// ══════════════════════════════════════════
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BlastyBiz — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --green:  #00C853;
+  --dark:   #070D07;
+  --silver: #7AB87A;
+  --light:  #EEF7EE;
+  --card:   #0D160D;
+  --border: #1E2E1E;
+  --muted:  #587058;
+  --green2: #00B04A;
+  --danger: #FF4444;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  background: var(--dark);
+  color: var(--light);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ── CANVAS ── */
+#canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── MAIN ── */
+.main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px 32px;
+  min-height: 100dvh;
+}
+
+/* ── LOGO ── */
+.logo-wrap {
+  text-align: center;
+  margin-bottom: 36px;
+  animation: fadeUp 0.5s ease both;
+}
+
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 48px;
+  letter-spacing: 4px;
+  color: var(--green);
+  line-height: 1;
+  text-shadow: 0 0 40px rgba(0,200,83,0.4);
+  animation: glowPulse 3s ease infinite;
+}
+
+.logo-tag {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 4px;
+  font-weight: 300;
+}
+
+@keyframes glowPulse {
+  0%, 100% { text-shadow: 0 0 40px rgba(0,200,83,0.3); }
+  50%       { text-shadow: 0 0 60px rgba(0,200,83,0.6), 0 0 100px rgba(0,200,83,0.2); }
+}
+
+/* ── CARD ── */
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  background: rgba(13,22,13,0.9);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px 24px;
+  backdrop-filter: blur(12px);
+  animation: fadeUp 0.5s 0.1s ease both;
+}
+
+/* ── TABS ── */
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--dark);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+}
+
+.auth-tab {
+  padding: 10px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.auth-tab.active {
+  background: var(--green);
+  color: var(--dark);
+}
+
+/* ── FORMS ── */
+.auth-form { display: none; }
+.auth-form.active { display: block; }
+
+.field { margin-bottom: 16px; }
+
+label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--silver);
+  margin-bottom: 7px;
+}
+
+input {
+  width: 100%;
+  background: var(--dark);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 13px 16px;
+  color: var(--light);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(0,200,83,0.1);
+}
+
+input.error { border-color: var(--danger); }
+
+.field-error {
+  font-size: 11px;
+  color: var(--danger);
+  margin-top: 5px;
+  display: none;
+}
+.field-error.visible { display: block; }
+
+/* ── PASSWORD WRAP ── */
+.pw-wrap { position: relative; }
+.pw-toggle {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  transition: color 0.2s;
+}
+.pw-toggle:hover { color: var(--silver); }
+
+/* ── STRENGTH BAR ── */
+.strength-wrap {
+  margin-top: 8px;
+  display: none;
+}
+.strength-wrap.visible { display: block; }
+.strength-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.strength-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s, background 0.3s;
+}
+.strength-label {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+/* ── FORGOT ── */
+.forgot {
+  text-align: right;
+  margin-top: -8px;
+  margin-bottom: 16px;
+}
+.forgot a {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.forgot a:hover { color: var(--silver); }
+
+/* ── SUBMIT BUTTON ── */
+.btn-submit {
+  width: 100%;
+  padding: 15px;
+  background: var(--green);
+  color: var(--dark);
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.btn-submit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%);
+  transform: translateX(-100%);
+  transition: transform 0.4s;
+}
+.btn-submit:hover::after { transform: translateX(100%); }
+.btn-submit:hover { background: var(--green2); }
+.btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-submit.loading { pointer-events: none; }
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(7,13,7,0.3);
+  border-top-color: var(--dark);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: none;
+}
+.btn-submit.loading .spinner { display: block; }
+.btn-submit.loading .btn-text { display: none; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── DIVIDER ── */
+.or-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.or-line { flex: 1; height: 1px; background: var(--border); }
+.or-text { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+
+/* ── SOCIAL BUTTONS ── */
+.social-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.btn-social {
+  width: 100%;
+  padding: 13px;
+  background: var(--dark);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--light);
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s;
+}
+.btn-social:hover { border-color: var(--green); }
+.btn-social-icon { font-size: 18px; }
+
+/* ── TERMS ── */
+.terms-note {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.6;
+}
+.terms-note a {
+  color: var(--silver);
+  text-decoration: none;
+}
+.terms-note a:hover { color: var(--green); }
+
+/* ── PLAN SELECTOR (signup) ── */
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.plan-btn {
+  background: var(--dark);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+  position: relative;
+}
+.plan-btn.selected {
+  border-color: var(--green);
+  background: rgba(0,200,83,0.06);
+}
+.plan-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--light);
+  display: block;
+}
+.plan-price {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  color: var(--green);
+  line-height: 1;
+  display: block;
+  margin: 4px 0 2px;
+}
+.plan-per {
+  font-size: 9px;
+  color: var(--muted);
+  display: block;
+}
+.plan-popular {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--green);
+  color: var(--dark);
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--green);
+  color: var(--dark);
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 14px;
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 999;
+  white-space: nowrap;
+}
+.toast.error-toast { background: var(--danger); color: white; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── BACK TO HOME ── */
+.back-home {
+  text-align: center;
+  margin-top: 20px;
+  animation: fadeUp 0.5s 0.2s ease both;
+}
+.back-home a {
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.back-home a:hover { color: var(--silver); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── RESET PASSWORD VIEW ── */
+.reset-view {
+  display: none;
+  animation: fadeUp 0.3s ease both;
+}
+.reset-view.visible { display: block; }
+.reset-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: color 0.2s;
+  background: none;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  padding: 0;
+}
+.reset-back:hover { color: var(--silver); }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="main">
+
+  <!-- LOGO -->
+  <div class="logo-wrap">
+    <div class="logo">BlastyBiz</div>
+    <div class="logo-tag">Lock. Load. Blast.</div>
+  </div>
+
+  <!-- AUTH CARD -->
+  <div class="auth-card">
+
+    <!-- TABS -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-signin" onclick="switchTab('signin')">Sign In</button>
+      <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Create Account</button>
+    </div>
+
+    <!-- ── SIGN IN FORM ── -->
+    <div class="auth-form active" id="form-signin">
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="si-email" placeholder="you@yourbusiness.com" oninput="clearErr('si-email')" />
+        <div class="field-error" id="si-email-err">Please enter a valid email</div>
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="si-password" placeholder="Your password" oninput="clearErr('si-password')" />
+          <button class="pw-toggle" onclick="togglePw('si-password', this)" type="button">👁️</button>
+        </div>
+        <div class="field-error" id="si-password-err">Password is required</div>
+      </div>
+
+      <div class="forgot">
+        <a href="#" onclick="showReset(); return false;">Forgot password?</a>
+      </div>
+
+      <button class="btn-submit" id="btn-signin" onclick="handleSignIn()">
+        <div class="spinner"></div>
+        <span class="btn-text">Sign In →</span>
+      </button>
+
+      <div class="or-divider">
+        <div class="or-line"></div>
+        <div class="or-text">OR</div>
+        <div class="or-line"></div>
+      </div>
+
+      <div class="social-btns">
+        <button class="btn-social" onclick="handleGoogle()">
+          <span class="btn-social-icon">🔍</span>
+          Continue with Google
+        </button>
+        <button class="btn-social" onclick="handleFacebook()">
+          <span class="btn-social-icon">📘</span>
+          Continue with Facebook
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ── SIGN UP FORM ── -->
+    <div class="auth-form" id="form-signup">
+
+      <div class="field">
+        <label>Choose Your Plan</label>
+        <div class="plan-grid">
+          <button class="plan-btn" onclick="selectPlan(this,'starter')">
+            <span class="plan-name">Starter</span>
+            <span class="plan-price">$0</span>
+            <span class="plan-per">forever</span>
+          </button>
+          <button class="plan-btn selected" onclick="selectPlan(this,'pro')">
+            <div class="plan-popular">Popular</div>
+            <span class="plan-name">Pro</span>
+            <span class="plan-price">$19</span>
+            <span class="plan-per">per month</span>
+          </button>
+          <button class="plan-btn" onclick="selectPlan(this,'agency')">
+            <span class="plan-name">Agency</span>
+            <span class="plan-price">$99</span>
+            <span class="plan-per">per month</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" id="su-name" placeholder="Your name" oninput="clearErr('su-name')" />
+        <div class="field-error" id="su-name-err">Name is required</div>
+      </div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="su-email" placeholder="you@yourbusiness.com" oninput="clearErr('su-email')" />
+        <div class="field-error" id="su-email-err">Please enter a valid email</div>
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="su-password" placeholder="Create a password" oninput="checkStrength(this.value)" />
+          <button class="pw-toggle" onclick="togglePw('su-password', this)" type="button">👁️</button>
+        </div>
+        <div class="strength-wrap" id="strength-wrap">
+          <div class="strength-track">
+            <div class="strength-fill" id="strength-fill"></div>
+          </div>
+          <div class="strength-label" id="strength-label">Too short</div>
+        </div>
+        <div class="field-error" id="su-password-err">Password must be at least 8 characters</div>
+      </div>
+
+      <button class="btn-submit" id="btn-signup" onclick="handleSignUp()">
+        <div class="spinner"></div>
+        <span class="btn-text">Create Account →</span>
+      </button>
+
+      <div class="or-divider">
+        <div class="or-line"></div>
+        <div class="or-text">OR</div>
+        <div class="or-line"></div>
+      </div>
+
+      <div class="social-btns">
+        <button class="btn-social" onclick="handleGoogle()">
+          <span class="btn-social-icon">🔍</span>
+          Continue with Google
+        </button>
+        <button class="btn-social" onclick="handleFacebook()">
+          <span class="btn-social-icon">📘</span>
+          Continue with Facebook
+        </button>
+      </div>
+
+      <div class="terms-note">
+        By creating an account you agree to our
+        <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+      </div>
+
+    </div>
+
+    <!-- ── RESET PASSWORD ── -->
+    <div class="reset-view" id="reset-view">
+      <button class="reset-back" onclick="hideReset()">← Back to Sign In</button>
+      <div style="font-family:'Bebas Neue';font-size:26px;letter-spacing:1px;color:var(--light);margin-bottom:6px;">Reset Password</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;">Enter your email and we'll send you a reset link.</div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="reset-email" placeholder="you@yourbusiness.com" />
+      </div>
+
+      <button class="btn-submit" onclick="handleReset()">
+        <div class="spinner"></div>
+        <span class="btn-text">Send Reset Link →</span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- BACK TO HOME -->
+  <div class="back-home">
+    <a href="BlastyBiz-Home.html">← Back to BlastyBiz.com</a>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// PARTICLE CANVAS
+// ══════════════════════════════════════════
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function resizeCanvas() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+function createParticles() {
+  particles = [];
+  const count = Math.floor((canvas.width * canvas.height) / 20000);
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.2 + 0.3,
+      dx: (Math.random() - 0.5) * 0.25,
+      dy: (Math.random() - 0.5) * 0.25,
+      alpha: Math.random() * 0.3 + 0.05,
+    });
+  }
+}
+
+function animateParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    p.x += p.dx; p.y += p.dy;
+    if (p.x < 0) p.x = canvas.width;
+    if (p.x > canvas.width) p.x = 0;
+    if (p.y < 0) p.y = canvas.height;
+    if (p.y > canvas.height) p.y = 0;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0,200,83,${p.alpha})`;
+    ctx.fill();
+  });
+  requestAnimationFrame(animateParticles);
+}
+
+resizeCanvas();
+createParticles();
+animateParticles();
+window.addEventListener('resize', () => { resizeCanvas(); createParticles(); });
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let selectedPlanId = 'pro';
+
+// ══════════════════════════════════════════
+// TAB SWITCH
+// ══════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('form-' + tab).classList.add('active');
+  hideReset();
+}
+
+// ══════════════════════════════════════════
+// PLAN SELECT
+// ══════════════════════════════════════════
+function selectPlan(btn, plan) {
+  document.querySelectorAll('.plan-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedPlanId = plan;
+}
+
+// ══════════════════════════════════════════
+// PASSWORD TOGGLE
+// ══════════════════════════════════════════
+function togglePw(inputId, btn) {
+  const input = document.getElementById(inputId);
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  btn.textContent = isHidden ? '🙈' : '👁️';
+}
+
+// ══════════════════════════════════════════
+// PASSWORD STRENGTH
+// ══════════════════════════════════════════
+function checkStrength(val) {
+  const wrap = document.getElementById('strength-wrap');
+  const fill = document.getElementById('strength-fill');
+  const lbl  = document.getElementById('strength-label');
+
+  if (!val) { wrap.classList.remove('visible'); return; }
+  wrap.classList.add('visible');
+
+  let score = 0;
+  if (val.length >= 8)  score++;
+  if (val.length >= 12) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+
+  const levels = [
+    { w: '20%', c: '#FF4444', t: 'Too weak' },
+    { w: '40%', c: '#FF9800', t: 'Weak' },
+    { w: '60%', c: '#FFC107', t: 'Fair' },
+    { w: '80%', c: '#8BC34A', t: 'Good' },
+    { w: '100%', c: '#00C853', t: 'Strong ✓' },
+  ];
+
+  const level = levels[Math.min(score, 4)];
+  fill.style.width = level.w;
+  fill.style.background = level.c;
+  lbl.textContent = level.t;
+  lbl.style.color = level.c;
+}
+
+// ══════════════════════════════════════════
+// VALIDATION
+// ══════════════════════════════════════════
+function clearErr(inputId) {
+  const input = document.getElementById(inputId);
+  const err = document.getElementById(inputId + '-err');
+  if (input) input.classList.remove('error');
+  if (err) err.classList.remove('visible');
+}
+
+function showErr(inputId, msg) {
+  const input = document.getElementById(inputId);
+  const err = document.getElementById(inputId + '-err');
+  if (input) input.classList.add('error');
+  if (err) { if (msg) err.textContent = msg; err.classList.add('visible'); }
+  return false;
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// ══════════════════════════════════════════
+// SIGN IN
+// ══════════════════════════════════════════
+function handleSignIn() {
+  const email = document.getElementById('si-email').value.trim();
+  const pass  = document.getElementById('si-password').value;
+  let valid = true;
+
+  if (!isValidEmail(email)) valid = showErr('si-email');
+  if (!pass) valid = showErr('si-password');
+  if (!valid) return;
+
+  setLoading('btn-signin', true);
+
+  // Placeholder — Firebase Auth: signInWithEmailAndPassword(auth, email, pass)
+  setTimeout(() => {
+    setLoading('btn-signin', false);
+    // Check if onboarded
+    const profile = JSON.parse(localStorage.getItem('ll_profile') || '{}');
+    if (profile.onboarded) {
+      window.location.href = 'BlastyBiz-Dashboard.html'; // Firebase: replace with Firestore check
+    } else {
+      window.location.href = 'BlastyBiz-Onboarding.html';
+    }
+  }, 1400);
+}
+
+// ══════════════════════════════════════════
+// SIGN UP
+// ══════════════════════════════════════════
+function handleSignUp() {
+  const name  = document.getElementById('su-name').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const pass  = document.getElementById('su-password').value;
+  let valid = true;
+
+  if (!name)              valid = showErr('su-name', 'Name is required');
+  if (!isValidEmail(email)) valid = showErr('su-email', 'Please enter a valid email');
+  if (pass.length < 8)    valid = showErr('su-password', 'Password must be at least 8 characters');
+  if (!valid) return;
+
+  setLoading('btn-signup', true);
+
+  // Placeholder — Firebase Auth: createUserWithEmailAndPassword(auth, email, pass)
+  setTimeout(() => {
+    setLoading('btn-signup', false);
+    // Save basic profile seed
+    const existing = JSON.parse(localStorage.getItem('ll_profile') || '{}');
+    localStorage.setItem('ll_profile', JSON.stringify({ ...existing, ownerName: name, email, plan: selectedPlanId }));
+    window.location.href = 'BlastyBiz-Onboarding.html';
+  }, 1400);
+}
+
+// ══════════════════════════════════════════
+// SOCIAL AUTH
+// ══════════════════════════════════════════
+function handleGoogle() {
+  showToast('Google Sign-In — coming when backend is live');
+  // Firebase: signInWithPopup(auth, new GoogleAuthProvider())
+}
+
+function handleFacebook() {
+  showToast('Facebook Sign-In — coming when backend is live');
+  // Firebase: signInWithPopup(auth, new FacebookAuthProvider())
+}
+
+// ══════════════════════════════════════════
+// RESET PASSWORD
+// ══════════════════════════════════════════
+function showReset() {
+  document.getElementById('form-signin').style.display = 'none';
+  document.getElementById('reset-view').classList.add('visible');
+}
+
+function hideReset() {
+  document.getElementById('form-signin').style.display = 'block';
+  document.getElementById('reset-view').classList.remove('visible');
+}
+
+function handleReset() {
+  const email = document.getElementById('reset-email').value.trim();
+  if (!isValidEmail(email)) { showToast('Enter a valid email', true); return; }
+  // Firebase: sendPasswordResetEmail(auth, email)
+  showToast('Reset link sent! Check your inbox ✓');
+  setTimeout(hideReset, 2000);
+}
+
+// ══════════════════════════════════════════
+// LOADING STATE
+// ══════════════════════════════════════════
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.classList.toggle('loading', loading);
+  btn.disabled = loading;
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error-toast' : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ══════════════════════════════════════════
+// CHECK IF ALREADY LOGGED IN
+// ══════════════════════════════════════════
+// Firebase: onAuthStateChanged(auth, user => { if (user) redirect })
+const profile = JSON.parse(localStorage.getItem('ll_profile') || '{}');
+if (profile.onboarded) {
+  // Already set up — go straight to tool
+  // Uncomment when Firebase is live:
+  // window.location.href = 'BlastyBiz.html';
+}
+</script>
+</body>
+</html>

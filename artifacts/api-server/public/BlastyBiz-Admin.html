@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BlastyBiz — Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --green:#00C853; --dark:#070D07; --silver:#7AB87A; --light:#EEF7EE;
+    --card:#0D160D; --panel:#081008; --border:#1E2E1E; --muted:#587058;
+    --danger:#FF4444; --warn:#FFA726; --blue:#54A8FF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;min-height:100vh;padding-bottom:70px}
+  header{background:rgba(7,13,7,.96);border-bottom:1px solid var(--border);padding:16px 20px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(10px)}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--green);line-height:1;text-decoration:none}.logo span{color:var(--silver);font-size:11px;display:block;letter-spacing:3px;font-family:'DM Sans';font-weight:300;margin-top:2px}
+  .top-actions{display:flex;gap:8px;align-items:center}.icon-btn{background:var(--card);border:1px solid var(--border);border-radius:999px;color:var(--silver);height:40px;min-width:40px;padding:0 13px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;font-weight:800}.icon-btn:hover{border-color:var(--green);color:var(--green)}
+  main{width:min(1220px,100%);margin:0 auto;padding:20px}.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}.eyebrow{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--silver);font-weight:800;margin-bottom:8px}.big-title{font-family:'Bebas Neue';font-size:44px;line-height:.95;letter-spacing:2px;color:var(--light);margin-bottom:10px}.big-title span{color:var(--green)}.sub{color:var(--muted);font-size:15px;line-height:1.6;max-width:780px}.card-title{font-family:'Bebas Neue';font-size:22px;letter-spacing:1.5px;color:var(--green);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .hero{display:grid;grid-template-columns:1.3fr .7fr;gap:16px;margin-bottom:16px}.health-box{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px}.health-main{font-family:'Bebas Neue';font-size:42px;color:var(--green);line-height:1}.health-label{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}.btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.btn{border-radius:10px;padding:13px 16px;text-decoration:none;font-weight:800;font-size:14px;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;gap:8px;color:var(--light);background:transparent;cursor:pointer}.btn-primary{background:var(--green);color:var(--dark);border-color:var(--green)}.btn:hover{border-color:var(--green);color:var(--green)}.btn-primary:hover{color:var(--dark);background:#00b84c}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}.stat{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px}.stat-num{font-family:'Bebas Neue';font-size:34px;color:var(--green);line-height:1}.stat-label{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-top:4px}.stat-note{font-size:12px;color:var(--silver);margin-top:10px}.money{color:var(--green)}.warn{color:var(--warn)}.bad{color:var(--danger)}.blue{color:var(--blue)}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}.list{display:flex;flex-direction:column;gap:10px}.row{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:13px;display:flex;align-items:center;gap:12px}.icon{width:40px;height:40px;border-radius:10px;background:var(--dark);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}.row-main{flex:1}.row-title{font-size:14px;font-weight:800;color:var(--light)}.row-sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4}.badge{font-size:10px;text-transform:uppercase;letter-spacing:.7px;font-weight:900;border-radius:999px;padding:5px 8px;white-space:nowrap}.live{background:#0A2A0A;color:var(--green);border:1px solid var(--green)}.needs{background:#2A1A00;color:var(--warn);border:1px solid var(--warn)}.error{background:#2A0A0A;color:var(--danger);border:1px solid var(--danger)}.off{background:#151f15;color:var(--muted);border:1px solid var(--border)}.info{background:#07192a;color:var(--blue);border:1px solid var(--blue)}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}th,td{text-align:left;padding:12px;border-bottom:1px solid var(--border);font-size:13px}th{color:var(--silver);font-size:10px;text-transform:uppercase;letter-spacing:1px}td{color:var(--light)}tr:last-child td{border-bottom:none}.muted{color:var(--muted)}
+  .mobile-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(7,13,7,.98);border-top:1px solid var(--border);display:none;grid-template-columns:repeat(4,1fr);z-index:200}.mobile-nav a{padding:10px 4px;text-align:center;text-decoration:none;color:var(--muted);font-size:11px}.mobile-nav a.active{color:var(--green)}
+  @media(max-width:900px){main{padding:14px}.hero,.two-col,.three-col{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}.big-title{font-size:36px}.top-actions .hide-mobile{display:none}.mobile-nav{display:grid}body{padding-bottom:82px}table{display:block;overflow-x:auto;white-space:nowrap}}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Admin Command</span></a>
+  <div class="top-actions">
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Dashboard.html">Customer View</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue Manager</a>
+    <a class="icon-btn hide-mobile" href="#failed">Failed Jobs</a>
+    <a class="icon-btn hide-mobile" href="#finance">Money</a>
+    <a class="icon-btn" href="BlastyBiz-Login.html">👤</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="card">
+      <div class="eyebrow">Owner/admin dashboard</div>
+      <h1 class="big-title">Run the business. <span>Keep it clean.</span></h1>
+      <p class="sub">This page is for Dave/admin only. Customers should never see AI cost, backend failures, API language, margin, prompts, or operating logs. This page tracks the health of BlastyBiz as a SaaS business.</p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="#failed">⚠️ Review Failed Jobs</a>
+        <a class="btn" href="#users">👥 Check Users</a>
+        <a class="btn" href="#finance">💵 Check Margin</a>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🟢 System Health</div>
+      <div class="health-box">
+        <div class="health-main">92%</div>
+        <div class="health-label">Overall operating health. Watch failed jobs, OAuth expirations, AI spend, and payment failures.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid" id="finance">
+    <div class="stat"><div class="stat-num">$1,842</div><div class="stat-label">MRR</div><div class="stat-note money">Monthly recurring revenue</div></div>
+    <div class="stat"><div class="stat-num">$126</div><div class="stat-label">AI Spend</div><div class="stat-note warn">Owner-only metric</div></div>
+    <div class="stat"><div class="stat-num">86%</div><div class="stat-label">Gross Margin</div><div class="stat-note money">After AI + platform costs</div></div>
+    <div class="stat"><div class="stat-num">7</div><div class="stat-label">Failed Jobs</div><div class="stat-note bad">Needs review</div></div>
+  </section>
+
+  <section class="grid">
+    <div class="stat"><div class="stat-num">64</div><div class="stat-label">Businesses</div><div class="stat-note">42 active / 22 trial</div></div>
+    <div class="stat"><div class="stat-num">9</div><div class="stat-label">Past Due</div><div class="stat-note warn">Stripe follow-up</div></div>
+    <div class="stat"><div class="stat-num">311</div><div class="stat-label">Posts Generated</div><div class="stat-note">This month</div></div>
+    <div class="stat"><div class="stat-num">18</div><div class="stat-label">Manual Tasks</div><div class="stat-note blue">Copy/paste platforms</div></div>
+  </section>
+
+  <section class="two-col">
+    <div class="card" id="failed">
+      <div class="card-title">⚠️ Failed Job Queue</div>
+      <div class="list">
+        <div class="row"><div class="icon">G</div><div class="row-main"><div class="row-title">Google sync failed</div><div class="row-sub">ARO Drone Services • token expired • retry after reconnect</div></div><span class="badge error">Failed</span></div>
+        <div class="row"><div class="icon">Y</div><div class="row-main"><div class="row-title">Yelp category rejected</div><div class="row-sub">Business category mismatch • requires manual confirmation</div></div><span class="badge needs">Review</span></div>
+        <div class="row"><div class="icon">f</div><div class="row-main"><div class="row-title">Facebook post delayed</div><div class="row-sub">Meta rate limit • scheduled retry queued</div></div><span class="badge info">Retry</span></div>
+        <div class="row"><div class="icon">AI</div><div class="row-main"><div class="row-title">AI prompt exceeded budget</div><div class="row-sub">Listing rewrite too long • trimmed and regenerated</div></div><span class="badge needs">Watch</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📡 Platform Health</div>
+      <div class="list">
+        <div class="row"><div class="icon">G</div><div class="row-main"><div class="row-title">Google Business Profile</div><div class="row-sub">API available • 4 token refreshes today</div></div><span class="badge live">Good</span></div>
+        <div class="row"><div class="icon">M</div><div class="row-main"><div class="row-title">Meta / Facebook / Instagram</div><div class="row-sub">API available • 1 rate-limit warning</div></div><span class="badge needs">Watch</span></div>
+        <div class="row"><div class="icon">Y</div><div class="row-main"><div class="row-title">Yelp</div><div class="row-sub">Partial automation • category review often needed</div></div><span class="badge needs">Partial</span></div>
+        <div class="row"><div class="icon">N</div><div class="row-main"><div class="row-title">Nextdoor / Craigslist</div><div class="row-sub">Manual copy-paste workflow only</div></div><span class="badge off">Manual</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="two-col" id="users">
+    <div class="card">
+      <div class="card-title">👥 Accounts To Watch</div>
+      <table>
+        <thead><tr><th>Business</th><th>Plan</th><th>Status</th><th>Issue</th></tr></thead>
+        <tbody>
+          <tr><td>ARO Drone Services</td><td>Pro</td><td><span class="badge needs">Reconnect</span></td><td class="muted">Google token</td></tr>
+          <tr><td>Suncoast Roofing</td><td>Trial</td><td><span class="badge live">Active</span></td><td class="muted">Converts in 4 days</td></tr>
+          <tr><td>Harbor Plumbing</td><td>Business</td><td><span class="badge error">Past Due</span></td><td class="muted">Stripe payment failed</td></tr>
+          <tr><td>Faith Auto Repair</td><td>Free</td><td><span class="badge off">Limited</span></td><td class="muted">Upsell opportunity</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🤖 AI Usage / Margin</div>
+      <table>
+        <thead><tr><th>Metric</th><th>This Month</th><th>Target</th></tr></thead>
+        <tbody>
+          <tr><td>AI spend</td><td class="warn">$126</td><td>&lt; 12% revenue</td></tr>
+          <tr><td>Avg AI cost / customer</td><td>$1.97</td><td>&lt; $5.00</td></tr>
+          <tr><td>Avg revenue / customer</td><td class="money">$28.78</td><td>&gt; $25.00</td></tr>
+          <tr><td>Estimated gross margin</td><td class="money">86%</td><td>&gt; 75%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="three-col">
+    <div class="card">
+      <div class="card-title">💳 Billing</div>
+      <div class="list">
+        <div class="row"><div class="icon">$</div><div class="row-main"><div class="row-title">9 past due</div><div class="row-sub">Send billing recovery email or downgrade after grace period.</div></div></div>
+        <div class="row"><div class="icon">↗</div><div class="row-main"><div class="row-title">12 trials ending</div><div class="row-sub">Prioritize users with completed profiles and live listings.</div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🧾 Logs</div>
+      <div class="list">
+        <div class="row"><div class="icon">🟢</div><div class="row-main"><div class="row-title">System log clean</div><div class="row-sub">No fatal errors in last 24 hours.</div></div></div>
+        <div class="row"><div class="icon">⚠️</div><div class="row-main"><div class="row-title">3 warnings</div><div class="row-sub">Mostly platform delay and category matching issues.</div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🧭 Admin Rules</div>
+      <div class="list">
+        <div class="row"><div class="icon">1</div><div class="row-main"><div class="row-title">Customer pages stay simple</div><div class="row-sub">No backend language. No AI cost. No confusing metrics.</div></div></div>
+        <div class="row"><div class="icon">2</div><div class="row-main"><div class="row-title">Admin sees the machine</div><div class="row-sub">Costs, failures, margins, logs, retries, and customer risk.</div></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="mobile-nav">
+  <a class="active" href="#">🏠<br>Admin</a>
+  <a href="#failed">⚠️<br>Failed</a>
+  <a href="#users">👥<br>Users</a>
+  <a href="#finance">💵<br>Money</a>
+</nav>
+</body>
+</html>

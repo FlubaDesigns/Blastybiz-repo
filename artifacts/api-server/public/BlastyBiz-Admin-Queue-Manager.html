@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BlastyBiz Admin - Queue Manager</title>
+<style>
+:root{
+  --bg:#f6f8fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280;
+  --line:#d9e1ec; --blue:#2563eb; --green:#16a34a; --yellow:#ca8a04;
+  --red:#dc2626; --purple:#7c3aed;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#0f172a;color:white;padding:22px}
+header h1{margin:0;font-size:26px}
+header p{margin:6px 0 0;color:#cbd5e1}
+.wrap{max-width:1200px;margin:0 auto;padding:22px}
+.nav{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.nav a{text-decoration:none;color:#0f172a;background:white;border:1px solid var(--line);padding:10px 12px;border-radius:10px;font-weight:bold}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+.metric{font-size:30px;font-weight:bold;margin-top:8px}
+.muted{color:var(--muted);font-size:14px}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+select,input{padding:10px;border:1px solid var(--line);border-radius:10px;background:white}
+button{border:0;border-radius:10px;padding:10px 12px;font-weight:bold;cursor:pointer}
+.primary{background:var(--blue);color:white}
+.safe{background:var(--green);color:white}
+.warn{background:var(--yellow);color:white}
+.danger{background:var(--red);color:white}
+.light{background:#eef2ff;color:#1e3a8a}
+table{width:100%;border-collapse:collapse;background:white;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+th,td{padding:12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:14px}
+th{background:#f1f5f9;color:#334155}
+.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:12px;font-weight:bold}
+.pending{background:#e0f2fe;color:#075985}
+.posting{background:#ede9fe;color:#5b21b6}
+.success{background:#dcfce7;color:#166534}
+.failed{background:#fee2e2;color:#991b1b}
+.manual{background:#fef3c7;color:#92400e}
+.actions{display:flex;flex-wrap:wrap;gap:6px}
+.detail{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+pre{white-space:pre-wrap;background:#0f172a;color:#e5e7eb;padding:14px;border-radius:12px;overflow:auto;font-size:13px}
+@media(max-width:900px){.grid{grid-template-columns:1fr 1fr}.detail{grid-template-columns:1fr}}
+@media(max-width:600px){.grid{grid-template-columns:1fr}table{display:block;overflow-x:auto}}
+</style>
+</head>
+<body>
+<header>
+  <h1>BlastyBiz Admin Queue Manager</h1>
+  <p>Control center for approved listing distribution jobs.</p>
+</header>
+
+<div class="wrap">
+  <nav class="nav">
+    <a href="BlastyBiz-Admin.html">Admin Dashboard</a>
+    <a href="BlastyBiz-Admin-Queue-Manager.html" style="background:#f0fdf4;">Queue Manager</a>
+    <a href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a>
+    <a href="BlastyBiz-Admin-Users.html">Users</a>
+    <a href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a>
+    <a href="BlastyBiz-Admin-Platform-Health.html">Platform Health</a>
+    <a href="BlastyBiz-Admin-Logs.html">Logs</a>
+  </nav>
+
+  <section class="grid">
+    <div class="card"><div class="muted">Queued</div><div class="metric">18</div><div class="muted">Waiting to run</div></div>
+    <div class="card"><div class="muted">Posting Now</div><div class="metric">6</div><div class="muted">Currently processing</div></div>
+    <div class="card"><div class="muted">Needs Attention</div><div class="metric">4</div><div class="muted">Failed or manual</div></div>
+    <div class="card"><div class="muted">Completed Today</div><div class="metric">127</div><div class="muted">Successful platform updates</div></div>
+  </section>
+
+  <section class="card">
+    <h2>Find Jobs</h2>
+    <div class="filters">
+      <input type="text" placeholder="Search business, user, platform..." />
+      <select><option>All Statuses</option><option>Pending</option><option>Posting</option><option>Success</option><option>Failed</option><option>Manual Action</option></select>
+      <select><option>All Platforms</option><option>Google Business</option><option>Facebook</option><option>Instagram</option><option>Yelp</option><option>Nextdoor</option><option>Craigslist</option></select>
+      <button class="primary">Search</button>
+      <button class="light">Reset</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Distribution Queue</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Business</th><th>Platform</th><th>Status</th><th>Last Message</th><th>Attempts</th><th>Updated</th><th>Admin Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Joe's Plumbing</strong><br><span class="muted">Pro Plan · Sarasota, FL</span></td>
+          <td>Google Business</td>
+          <td><span class="badge posting">Posting</span></td>
+          <td>Sending approved listing update.</td>
+          <td>1</td>
+          <td>2 minutes ago</td>
+          <td class="actions"><button class="light">View</button><button class="warn">Pause</button></td>
+        </tr>
+        <tr>
+          <td><strong>ABC Roofing</strong><br><span class="muted">Business Plan · Tampa, FL</span></td>
+          <td>Facebook</td>
+          <td><span class="badge failed">Failed</span></td>
+          <td>Access token expired. Customer needs reconnect.</td>
+          <td>3</td>
+          <td>11 minutes ago</td>
+          <td class="actions"><button class="primary">Retry</button><button class="light">Notify</button><button class="danger">Close</button></td>
+        </tr>
+        <tr>
+          <td><strong>Sunset Lawn Care</strong><br><span class="muted">Starter Plan · Venice, FL</span></td>
+          <td>Nextdoor</td>
+          <td><span class="badge manual">Manual</span></td>
+          <td>Manual copy/paste required. Instructions generated.</td>
+          <td>0</td>
+          <td>23 minutes ago</td>
+          <td class="actions"><button class="safe">Mark Complete</button><button class="light">View Instructions</button></td>
+        </tr>
+        <tr>
+          <td><strong>Pizza Palace</strong><br><span class="muted">Pro Plan · Englewood, FL</span></td>
+          <td>Yelp</td>
+          <td><span class="badge pending">Pending</span></td>
+          <td>Waiting behind platform rate limit window.</td>
+          <td>1</td>
+          <td>41 minutes ago</td>
+          <td class="actions"><button class="primary">Run Now</button><button class="light">View</button></td>
+        </tr>
+        <tr>
+          <td><strong>Harbor Dental</strong><br><span class="muted">Business Plan · Port Charlotte, FL</span></td>
+          <td>Apple Maps</td>
+          <td><span class="badge success">Success</span></td>
+          <td>Listing update completed successfully.</td>
+          <td>1</td>
+          <td>1 hour ago</td>
+          <td class="actions"><button class="light">View Receipt</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="detail">
+    <div class="card">
+      <h2>Selected Job Details</h2>
+      <p><strong>Business:</strong> ABC Roofing</p>
+      <p><strong>Platform:</strong> Facebook</p>
+      <p><strong>Status:</strong> Failed</p>
+      <p><strong>Safe customer message:</strong> Facebook needs to be reconnected before BlastyBiz can publish your update.</p>
+      <p><strong>Internal error:</strong> OAuth token expired.</p>
+      <div class="actions">
+        <button class="primary">Retry Job</button>
+        <button class="light">Send Reconnect Email</button>
+        <button class="danger">Mark Resolved</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Payload Preview</h2>
+      <pre>{
+  "businessId": "business_abc_roofing",
+  "platform": "facebook",
+  "jobType": "publishListing",
+  "status": "failed",
+  "attempts": 3,
+  "customerVisibleMessage": "Facebook needs to be reconnected.",
+  "adminError": "OAuth token expired"
+}</pre>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Replit Build Notes</h2>
+    <p>This page should read from <strong>publishJobs</strong> and related business/user records. Customers never see raw errors, job IDs, API payloads, or cost data. Admin can retry, pause, close, mark manual jobs complete, and send safe customer notifications.</p>
+  </section>
+</div>
+</body>
+</html>

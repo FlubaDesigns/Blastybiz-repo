@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BlastyBiz — Review & Approve Listing</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{--green:#00C853;--dark:#070D07;--silver:#7AB87A;--light:#EEF7EE;--card:#0D160D;--border:#1E2E1E;--muted:#587058;--danger:#FF4444;--warn:#FFA726;--blue:#54A8FF;--soft:#081008;}
+  *{box-sizing:border-box;margin:0;padding:0}body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;min-height:100vh;padding-bottom:70px}header{background:rgba(7,13,7,.96);border-bottom:1px solid var(--border);padding:16px 20px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(10px)}.logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--green);line-height:1;text-decoration:none}.logo span{color:var(--silver);font-size:11px;display:block;letter-spacing:3px;font-family:'DM Sans';font-weight:300;margin-top:2px}.top-actions{display:flex;gap:8px;align-items:center}.icon-btn{background:var(--card);border:1px solid var(--border);border-radius:999px;color:var(--silver);height:40px;min-width:40px;padding:0 13px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;font-weight:800}.icon-btn:hover{border-color:var(--green);color:var(--green)}main{width:min(1180px,100%);margin:0 auto;padding:20px}.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;margin-bottom:16px}.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}.eyebrow{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--silver);font-weight:800;margin-bottom:8px}.big-title{font-family:'Bebas Neue';font-size:44px;line-height:.95;letter-spacing:2px;color:var(--light);margin-bottom:10px}.big-title span{color:var(--green)}.sub{color:var(--muted);font-size:15px;line-height:1.6;max-width:700px}.card-title{font-family:'Bebas Neue';font-size:22px;letter-spacing:1.5px;color:var(--green);margin-bottom:14px;display:flex;align-items:center;gap:8px}.stepper{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.step{background:var(--soft);border:1px solid var(--border);border-radius:12px;padding:12px}.step-num{width:26px;height:26px;border-radius:999px;background:var(--border);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;margin-bottom:8px;color:var(--silver)}.step.active{border-color:var(--green)}.step.active .step-num{background:var(--green);color:var(--dark)}.step-title{font-size:12px;font-weight:900;color:var(--light)}.step-sub{font-size:11px;color:var(--muted);margin-top:3px}.grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:16px}.summary-list{display:flex;flex-direction:column;gap:10px}.summary-row{background:var(--soft);border:1px solid var(--border);border-radius:12px;padding:13px}.label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:900;margin-bottom:5px}.value{font-size:14px;font-weight:800;color:var(--light);line-height:1.45}.platform-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.tab{border:1px solid var(--border);background:var(--soft);color:var(--silver);border-radius:999px;padding:9px 12px;font-weight:900;font-size:12px;cursor:pointer}.tab.active{background:var(--green);border-color:var(--green);color:var(--dark)}.draft-card{background:var(--soft);border:1px solid var(--border);border-radius:14px;overflow:hidden}.draft-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border-bottom:1px solid var(--border)}.platform-name{display:flex;align-items:center;gap:10px;font-weight:900}.platform-icon{width:36px;height:36px;border-radius:10px;background:var(--dark);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--green);border:1px solid var(--border);flex-shrink:0}.badge{font-size:10px;text-transform:uppercase;letter-spacing:.7px;font-weight:900;border-radius:999px;padding:5px 8px;white-space:nowrap}.auto{background:#0A2A0A;color:var(--green);border:1px solid var(--green)}.manual{background:#151f15;color:var(--muted);border:1px solid var(--border)}.needs{background:#2A1A00;color:var(--warn);border:1px solid var(--warn)}.body{padding:14px}.field{margin-bottom:12px}.field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--silver);font-weight:900;margin-bottom:6px}.field input,.field textarea{width:100%;background:var(--dark);border:1px solid var(--border);border-radius:10px;color:var(--light);padding:12px;font-family:'DM Sans';font-size:14px;line-height:1.45}.field textarea{min-height:150px;resize:vertical}.hint{font-size:12px;color:var(--muted);line-height:1.5;margin-top:6px}.checks{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.check{background:var(--dark);border:1px solid var(--border);border-radius:12px;padding:12px}.check strong{font-size:13px;display:block;margin-bottom:4px}.check span{font-size:12px;color:var(--muted)}.ok{color:var(--green)}.warn{color:var(--warn)}.btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.btn{border-radius:10px;padding:13px 16px;text-decoration:none;font-weight:900;font-size:14px;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;gap:8px;color:var(--light);background:transparent;cursor:pointer}.btn-primary{background:var(--green);color:var(--dark);border-color:var(--green)}.btn-warn{background:#2A1A00;color:var(--warn);border-color:var(--warn)}.btn:hover{border-color:var(--green);color:var(--green)}.btn-primary:hover{color:var(--dark);background:#00b84c}.queue{display:flex;flex-direction:column;gap:10px}.queue-row{background:var(--soft);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;align-items:center;gap:12px}.queue-row .row-main{flex:1}.row-title{font-size:14px;font-weight:900}.row-sub{font-size:12px;color:var(--muted);margin-top:3px}.approval-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(7,13,7,.98);border-top:1px solid var(--border);z-index:200;padding:10px 14px}.approval-inner{width:min(1180px,100%);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}.approval-text{font-size:13px;color:var(--muted)}.approval-text strong{color:var(--light)}.mobile-nav{display:none}@media(max-width:900px){main{padding:14px}.hero,.grid{grid-template-columns:1fr}.big-title{font-size:36px}.stepper{grid-template-columns:repeat(2,1fr)}.checks{grid-template-columns:1fr}.top-actions .hide-mobile{display:none}.approval-inner{align-items:stretch;flex-direction:column}.approval-inner .btn-row{margin-top:0}.approval-inner .btn{flex:1}.draft-head{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="BlastyBiz-Dashboard.html">BlastyBiz<span>Review & Approve</span></a>
+  <div class="top-actions">
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Dashboard.html">Dashboard</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz.html">Create Listing</a>
+    <a class="icon-btn" href="BlastyBiz-Login.html">👤</a>
+  </div>
+</header>
+<main>
+  <section class="hero">
+    <div class="card">
+      <div class="eyebrow">Trust step before publishing</div>
+      <h1 class="big-title">Review the listing before <span>BlastyBiz posts it.</span></h1>
+      <p class="sub">This page prevents fear and mistakes. The business owner can see every platform version, make quick edits, approve auto-posts, or copy manual-platform text.</p>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="approveSelected()">✅ Approve Selected</button>
+        <button class="btn" onclick="saveDraft()">💾 Save Draft</button>
+        <button class="btn" onclick="copyManual()">📋 Copy Manual Text</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🧭 Approval Flow</div>
+      <div class="stepper">
+        <div class="step"><div class="step-num">1</div><div class="step-title">Business Info</div><div class="step-sub">Pulled from onboarding</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-title">AI Drafts</div><div class="step-sub">Platform-specific copy</div></div>
+        <div class="step active"><div class="step-num">3</div><div class="step-title">Review</div><div class="step-sub">Edit and approve</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-title">Publish</div><div class="step-sub">Auto or manual</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <aside class="card">
+      <div class="card-title">🏢 Business Summary</div>
+      <div class="summary-list">
+        <div class="summary-row"><div class="label">Business</div><div class="value">Gulf Coast Pressure Washing</div></div>
+        <div class="summary-row"><div class="label">Category</div><div class="value">Pressure Washing Service</div></div>
+        <div class="summary-row"><div class="label">Phone</div><div class="value">(941) 555-0184</div></div>
+        <div class="summary-row"><div class="label">Service Area</div><div class="value">Englewood, Venice, North Port, Port Charlotte</div></div>
+        <div class="summary-row"><div class="label">Offer</div><div class="value">Spring driveway and lanai cleaning special</div></div>
+      </div>
+
+      <div class="card-title" style="margin-top:20px;">📬 Publish Queue</div>
+      <div class="queue">
+        <div class="queue-row"><div class="platform-icon">G</div><div class="row-main"><div class="row-title">Google Business</div><div class="row-sub">Ready for auto-post</div></div><span class="badge auto">Auto</span></div>
+        <div class="queue-row"><div class="platform-icon">f</div><div class="row-main"><div class="row-title">Facebook</div><div class="row-sub">Ready for auto-post</div></div><span class="badge auto">Auto</span></div>
+        <div class="queue-row"><div class="platform-icon">◎</div><div class="row-main"><div class="row-title">Instagram</div><div class="row-sub">Ready through Meta</div></div><span class="badge auto">Auto</span></div>
+        <div class="queue-row"><div class="platform-icon">N</div><div class="row-main"><div class="row-title">Nextdoor</div><div class="row-sub">Copy and paste required</div></div><span class="badge manual">Manual</span></div>
+        <div class="queue-row"><div class="platform-icon">C</div><div class="row-main"><div class="row-title">Craigslist</div><div class="row-sub">Copy and paste required</div></div><span class="badge manual">Manual</span></div>
+      </div>
+    </aside>
+
+    <section class="card">
+      <div class="card-title">✍️ Platform Drafts</div>
+      <div class="platform-tabs">
+        <button class="tab active" onclick="showDraft('google', this)">Google</button>
+        <button class="tab" onclick="showDraft('facebook', this)">Facebook</button>
+        <button class="tab" onclick="showDraft('instagram', this)">Instagram</button>
+        <button class="tab" onclick="showDraft('nextdoor', this)">Nextdoor</button>
+        <button class="tab" onclick="showDraft('craigslist', this)">Craigslist</button>
+      </div>
+
+      <div class="draft-card">
+        <div class="draft-head">
+          <div class="platform-name"><div class="platform-icon" id="draftIcon">G</div><div><div id="draftPlatform">Google Business Profile</div><div class="row-sub" id="draftMode">Auto-post available after approval</div></div></div>
+          <span class="badge auto" id="draftBadge">Auto</span>
+        </div>
+        <div class="body">
+          <div class="field">
+            <label for="headline">Headline</label>
+            <input id="headline" value="Spring Pressure Washing Special in Englewood" />
+          </div>
+          <div class="field">
+            <label for="draftText">Listing Text</label>
+            <textarea id="draftText">Give your driveway, lanai, pool cage, or walkway a clean fresh look this spring. Gulf Coast Pressure Washing serves Englewood, Venice, North Port, and Port Charlotte with dependable exterior cleaning for homes and small businesses. Call today to schedule your spring cleaning estimate.</textarea>
+            <div class="hint" id="draftHint">Keep it clear and local. Google posts should be direct, service-based, and not overstuffed with keywords.</div>
+          </div>
+          <div class="field">
+            <label for="callToAction">Call To Action</label>
+            <input id="callToAction" value="Call today to schedule your estimate." />
+          </div>
+
+          <div class="checks">
+            <div class="check"><strong class="ok">✓ Local service area</strong><span>Mentions the towns served.</span></div>
+            <div class="check"><strong class="ok">✓ Clear offer</strong><span>Customer knows what is being promoted.</span></div>
+            <div class="check"><strong class="warn">⚠ Manual platforms</strong><span>Some platforms require copy/paste.</span></div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="approveSelected()">✅ Approve This Draft</button>
+            <button class="btn" onclick="regenerateDraft()">✨ Regenerate</button>
+            <button class="btn" onclick="saveDraft()">💾 Save Changes</button>
+            <button class="btn btn-warn" onclick="copyManual()">📋 Copy Text</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </section>
+</main>
+
+<div class="approval-bar">
+  <div class="approval-inner">
+    <div class="approval-text"><strong>3 auto-post drafts ready.</strong> 2 manual platforms need copy/paste instructions after approval.</div>
+    <div class="btn-row"><button class="btn" onclick="saveDraft()">Save Draft</button><button class="btn btn-primary" onclick="approveAll()">Approve & Continue</button></div>
+  </div>
+</div>
+
+<script>
+const drafts={
+  google:{icon:'G',name:'Google Business Profile',mode:'Auto-post available after approval',badge:'Auto',badgeClass:'badge auto',headline:'Spring Pressure Washing Special in Englewood',text:'Give your driveway, lanai, pool cage, or walkway a clean fresh look this spring. Gulf Coast Pressure Washing serves Englewood, Venice, North Port, and Port Charlotte with dependable exterior cleaning for homes and small businesses. Call today to schedule your spring cleaning estimate.',cta:'Call today to schedule your estimate.',hint:'Keep it clear and local. Google posts should be direct, service-based, and not overstuffed with keywords.'},
+  facebook:{icon:'f',name:'Facebook Page',mode:'Auto-post available after approval',badge:'Auto',badgeClass:'badge auto',headline:'Freshen Up Your Home This Spring',text:'Spring is a great time to clean up the outside of your home. Gulf Coast Pressure Washing helps with driveways, lanais, pool cages, sidewalks, and small business exteriors across Englewood, Venice, North Port, and Port Charlotte. Message or call us today for an estimate.',cta:'Message us or call today.',hint:'Facebook can be warmer and more conversational than Google.'},
+  instagram:{icon:'◎',name:'Instagram',mode:'Auto-post through connected Meta account',badge:'Auto',badgeClass:'badge auto',headline:'Before & After Ready',text:'Spring clean starts outside. Driveways, lanais, pool cages, walkways, and storefronts cleaned across Englewood, Venice, North Port, and Port Charlotte. Book your exterior cleaning estimate today. #EnglewoodFL #PressureWashing #GulfCoastHomes',cta:'Tap to contact us today.',hint:'Instagram should stay shorter and image-friendly. Hashtags are okay, but keep them local.'},
+  nextdoor:{icon:'N',name:'Nextdoor',mode:'Manual copy/paste required',badge:'Manual',badgeClass:'badge manual',headline:'Local Pressure Washing Available',text:'Hi neighbors — Gulf Coast Pressure Washing is scheduling spring exterior cleaning in Englewood, Venice, North Port, and Port Charlotte. We clean driveways, lanais, pool cages, walkways, and small business exteriors. If your place needs a fresh clean look, call today for an estimate.',cta:'Copy this text and paste it into Nextdoor.',hint:'Nextdoor does not reliably support automated posting. BlastyBiz should give clear copy/paste instructions.'},
+  craigslist:{icon:'C',name:'Craigslist',mode:'Manual copy/paste required',badge:'Manual',badgeClass:'badge manual',headline:'Pressure Washing Service - Englewood Area',text:'Gulf Coast Pressure Washing provides exterior cleaning for driveways, lanais, pool cages, walkways, patios, and small business properties. Serving Englewood, Venice, North Port, and Port Charlotte. Call today for a spring cleaning estimate.',cta:'Copy this listing into Craigslist.',hint:'Craigslist should be plain and direct. Avoid sounding like a flashy ad.'}
+};
+function showDraft(key,btn){const d=drafts[key];document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('draftIcon').textContent=d.icon;document.getElementById('draftPlatform').textContent=d.name;document.getElementById('draftMode').textContent=d.mode;const badge=document.getElementById('draftBadge');badge.textContent=d.badge;badge.className=d.badgeClass;document.getElementById('headline').value=d.headline;document.getElementById('draftText').value=d.text;document.getElementById('callToAction').value=d.cta;document.getElementById('draftHint').textContent=d.hint;}
+function saveDraft(){alert('Draft saved. Replit should persist this to Firestore listing_drafts.');}
+function approveSelected(){alert('Selected platform draft approved. Replit should mark this draft approved and queue the publish job if auto-post is available.');}
+function approveAll(){alert('Approved drafts should move to publish queue. Manual platforms should move to copy/paste instructions.');}
+function regenerateDraft(){alert('Regenerate should call /api/adaptListing with the selected platform and current business profile.');}
+function copyManual(){navigator.clipboard?.writeText(document.getElementById('draftText').value);alert('Draft text copied.');}
+</script>
+</body>
+</html>
