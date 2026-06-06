@@ -915,10 +915,15 @@ window.handleSignUp = async function() {
 };
 
 window.handleGoogle = async function() {
+  window.showToast('clicked:' + (isMobile ? 'mobile' : 'desktop'));
   const provider = new GoogleAuthProvider();
   if (isMobile) {
-    // Mobile: redirect flow (popups are blocked on mobile browsers)
-    await signInWithRedirect(auth, provider);
+    try {
+      await signInWithRedirect(auth, provider);
+    } catch(e) {
+      window.showToast('redirect-err:' + (e.code || e.message), true);
+    }
+    return;
   } else {
     // Desktop: popup flow
     try {
