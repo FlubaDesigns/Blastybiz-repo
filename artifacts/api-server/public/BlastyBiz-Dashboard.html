@@ -297,7 +297,7 @@
 // Prototype mock data — replace with Firestore query:
 // getDocs(query(collection(db,'businesses'), where('uid','==',currentUser.uid)))
 // ══════════════════════════════════════════
-const BUSINESSES = [
+let BUSINESSES = [
   { id: 'qrgear',          name: 'QR Gear',           avatar: '📱', score: 83, platforms: 7, plan: 'Agency' },
   { id: 'kingdomconnects', name: 'Kingdom Connects',  avatar: '⛪', score: 71, platforms: 5, plan: 'Agency' },
   { id: 'pollsit',         name: 'Pollsit',           avatar: '📊', score: 65, platforms: 4, plan: 'Agency' },
@@ -308,12 +308,14 @@ const BUSINESSES = [
 ];
 
 const MAX_BUSINESSES = 10; // Agency plan limit
-let activeBizId = localStorage.getItem('ll_active_business') || BUSINESSES[0].id;
+let activeBizId = BUSINESSES[0].id;
 
 // ══════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════
 function init() {
+  if (window.BUSINESSES) BUSINESSES = window.BUSINESSES;
+  if (window.activeBizId) activeBizId = window.activeBizId;
   renderSwitcherBar();
   renderSheet();
   renderAgencyBar();
@@ -376,9 +378,6 @@ function renderAgencyBar() {
 // ══════════════════════════════════════════
 function switchBusiness(bizId) {
   activeBizId = bizId;
-  localStorage.setItem('ll_active_business', bizId);
-  // Firebase: update user session context in Firestore
-  // await setDoc(doc(db,'users',uid), { activeBusiness: bizId }, { merge: true });
   closeSwitcher();
   renderSwitcherBar();
   renderSheet();

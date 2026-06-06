@@ -253,13 +253,6 @@ onAuthStateChanged(auth, async (user) => {
     if (snap.exists()) draftData = snap.data();
   }
 
-  if (!draftData) {
-    const localDraft = JSON.parse(localStorage.getItem('ll_draft') || '{}');
-    if (localDraft && localDraft.adaptations) {
-      draftData = localDraft;
-    }
-  }
-
   if (draftData) {
     window.populateFromDraftData(draftData);
   }
