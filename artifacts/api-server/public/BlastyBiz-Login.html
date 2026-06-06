@@ -860,7 +860,7 @@ getRedirectResult(auth).then(async (result) => {
   }
   await afterAuth(user);
 }).catch((e) => {
-  if (e.code !== 'auth/popup-closed-by-user') window.showToast('Google sign-in failed', true);
+  if (e.code !== 'auth/popup-closed-by-user') window.showToast(e.code || e.message, true);
 });
 
 onAuthStateChanged(auth, (user) => {
@@ -935,7 +935,7 @@ window.handleGoogle = async function() {
       }
       await afterAuth(cred.user);
     } catch (e) {
-      if (e.code !== 'auth/popup-closed-by-user') window.showToast('Google sign-in failed', true);
+      if (e.code !== 'auth/popup-closed-by-user') window.showToast(e.code || e.message, true);
     }
   }
 };
