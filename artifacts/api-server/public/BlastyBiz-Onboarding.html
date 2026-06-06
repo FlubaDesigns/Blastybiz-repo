@@ -1323,7 +1323,11 @@ let currentUser = null;
 auth.authStateReady().then(() => {
   onAuthStateChanged(auth, (user) => {
     if (!user) {
-      window.location.href = 'BlastyBiz-Login.html';
+      setTimeout(() => {
+        if (!auth.currentUser) {
+          window.location.href = 'BlastyBiz-Login.html';
+        }
+      }, 1500);
       return;
     }
     currentUser = user;
