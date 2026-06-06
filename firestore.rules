@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users can only read/write their own user doc
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Businesses — owner only
+    match /businesses/{businessId} {
+      allow read, write: if request.auth != null && request.auth.uid == businessId;
+    }
+
+    // Listing drafts — owner only
+    match /listingDrafts/{draftId} {
+      allow read, write: if request.auth != null &&
+        request.auth.uid == resource.data.uid;
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.uid;
+    }
+
+    // Publish jobs — owner only
+    match /publishJobs/{jobId} {
+      allow read, write: if request.auth != null &&
+        request.auth.uid == resource.data.uid;
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.uid;
+    }
+
+    // Subscriptions — owner read only (written by backend)
+    match /subscriptions/{subId} {
+      allow read: if request.auth != null && request.auth.uid == subId;
+      allow write: if false;
+    }
+
+    // Activity logs — owner read only
+    match /activityLogs/{logId} {
+      allow read: if request.auth != null &&
+        request.auth.uid == resource.data.uid;
+      allow write: if false;
+    }
+
+    // Block everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
