@@ -335,6 +335,7 @@ import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, query, where, orderBy, limit, getDocs, getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = 'BlastyBiz-Login.html'; return; }
 
@@ -374,6 +375,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error('Failed to load jobs:', e);
     window.showMockData();
   }
+});
 });
 </script>
 </body>
