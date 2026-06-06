@@ -39,10 +39,11 @@ Local business marketing distribution tool. Business owner fills out one form, A
 
 1. **Diagnose** — identify the root cause before touching any code.
 2. **Fix** — make the code change.
-3. **Confirm** — verify the fix is actually live (e.g. `curl` the deployed file, check the response). Do not assume it worked.
-4. **Update `download/BlastyBiz_Audit.md`** — add a row to the 🐛 Bugs Fixed table with date, location, and what was wrong and how it was fixed.
-5. **Rebuild `download/BlastyBiz_Site.zip`** — run the Python zipfile script so the zip always reflects the latest state.
-6. **Present both files** to the user before closing out the fix.
+3. **Deploy to Firebase** — run `npx firebase-tools deploy --only hosting` for HTML/JS changes; deploy individual functions for Cloud Function changes.
+4. **Confirm** — verify the fix is actually live (e.g. `curl` the deployed file and check the output). Do not assume it worked.
+5. **Update `download/BlastyBiz_Audit.md`** — add a row to the 🐛 Bugs Fixed table with date, location, and what was wrong and how it was fixed.
+6. **Rebuild `download/BlastyBiz_Site.zip`** — run the Python zipfile script so the zip always reflects the latest state.
+7. **Present both files** to the user before closing out the fix.
 
 ## Gotchas
 
