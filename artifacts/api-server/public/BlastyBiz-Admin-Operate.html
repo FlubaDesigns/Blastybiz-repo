@@ -113,6 +113,48 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
   </div>
 
   <!-- ══════════════════════════════════════════
+       ANTHROPIC AI
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🤖</span>
+      <span class="section-title">Anthropic AI</span>
+      <span class="section-badge warn" id="badge-anthropic">Setup required</span>
+    </div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-anthropic-key" onclick="toggleCheck(event,'anthropic-key')"></div>
+        <div style="flex:1">
+          <div class="card-title">Set your Anthropic API key as a Firebase secret</div>
+          <div class="card-sub">Powers all AI listing adaptation — required before any listing can be generated</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Sign in at <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com → API Keys</a> → click <strong>Create Key</strong> → name it <em>BlastyBiz</em></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Copy the key (starts with <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">sk-ant-</code>). <strong>You only see it once.</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Open the <strong>Replit Shell</strong> and run this command, replacing the placeholder with your key:</div></div>
+        </div>
+        <div class="code-row">
+          <span class="code-text">echo "sk-ant-YOUR_KEY_HERE" | npx firebase-tools functions:secrets:set ANTHROPIC_API_KEY --force</span>
+          <button class="copy-btn" onclick="copyCode(this,'echo \"sk-ant-YOUR_KEY_HERE\" | npx firebase-tools functions:secrets:set ANTHROPIC_API_KEY --force')">Copy</button>
+        </div>
+        <div class="steps" style="margin-top:10px">
+          <div class="step"><div class="step-num">4</div><div class="step-text">Verify it's set: <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">npx firebase-tools functions:secrets:access ANTHROPIC_API_KEY</code></div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Redeploy the AI functions to pick up the secret:</div></div>
+        </div>
+        <div class="code-row">
+          <span class="code-text">npx firebase-tools deploy --only functions:adaptListing,functions:resolveCategories</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:adaptListing,functions:resolveCategories')">Copy</button>
+        </div>
+        <div class="note"><strong>Model used:</strong> claude-3-5-haiku (fast + cost-efficient). Usage is billed directly to your Anthropic account — not Firebase. Check <a href="https://console.anthropic.com/settings/usage" target="_blank">console.anthropic.com → Usage</a> to monitor spend.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
        STRIPE
   ══════════════════════════════════════════ -->
   <div class="section">
@@ -381,6 +423,41 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
           <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:initiateFacebookOAuth,functions:facebookOAuthCallback')">Copy</button>
         </div>
         <div class="note-info note">Run this in the Replit Shell after saving both FACEBOOK_APP_ID and FACEBOOK_APP_SECRET.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FIREBASE STORAGE
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🗄️</span>
+      <span class="section-title">Firebase Storage</span>
+      <span class="section-badge warn" id="badge-storage">Setup required</span>
+    </div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-storage" onclick="toggleCheck(event,'storage')"></div>
+        <div style="flex:1">
+          <div class="card-title">Enable Firebase Storage and set CORS rules</div>
+          <div class="card-sub">Required for image uploads — the uploadImage function uses the default Storage bucket</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://console.firebase.google.com/project/blastybiz-9523e/storage" target="_blank">Firebase Console → Storage</a> and click <strong>Get started</strong> (requires Blaze plan)</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Choose <strong>Start in production mode</strong> → select region <strong>us-east1</strong> (matches Firestore) → click Done</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">The default bucket (<code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">blastybiz-9523e.firebasestorage.app</code>) is created automatically — no further config needed for the function</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">To allow uploads from the browser (if you add direct client uploads later), create a <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">cors.json</code> file and run:</div></div>
+        </div>
+        <div class="code-row">
+          <span class="code-text">gsutil cors set cors.json gs://blastybiz-9523e.firebasestorage.app</span>
+          <button class="copy-btn" onclick="copyCode(this,'gsutil cors set cors.json gs://blastybiz-9523e.firebasestorage.app')">Copy</button>
+        </div>
+        <div class="note"><strong>Current use:</strong> Only the <code>uploadImage</code> Cloud Function writes to Storage (server-side, no CORS needed). CORS is only required if you add direct browser → Storage uploads in the future. Storage costs are pay-per-GB and typically negligible for listing images.</div>
       </div>
     </div>
   </div>

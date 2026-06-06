@@ -647,7 +647,7 @@ exports.onUserCreated = onDocumentCreated(
 // POST /deleteAccount  { idToken }
 // Cancels Stripe sub, wipes all Firestore data, deletes Auth user
 // ══════════════════════════════════════════
-exports.deleteAccount = onRequest({ region: 'us-central1' }, async (req, res) => {
+exports.deleteAccount = onRequest({ region: 'us-central1', secrets: ['STRIPE_SECRET_KEY'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
 
