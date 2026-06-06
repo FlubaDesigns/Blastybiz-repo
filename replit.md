@@ -35,6 +35,15 @@ Local business marketing distribution tool. Business owner fills out one form, A
 - Deploy with `npx firebase-tools deploy --only hosting` after any HTML changes.
 - Admin pages (Queue Manager, Logs) use light/white theme — do NOT apply dark theme.
 
+## Fix Workflow (mandatory — every fix, every time)
+
+1. **Diagnose** — identify the root cause before touching any code.
+2. **Fix** — make the code change.
+3. **Confirm** — verify the fix is actually live (e.g. `curl` the deployed file, check the response). Do not assume it worked.
+4. **Update `download/BlastyBiz_Audit.md`** — add a row to the 🐛 Bugs Fixed table with date, location, and what was wrong and how it was fixed.
+5. **Rebuild `download/BlastyBiz_Site.zip`** — run the Python zipfile script so the zip always reflects the latest state.
+6. **Present both files** to the user before closing out the fix.
+
 ## Gotchas
 
 - `firebase deploy` works from Replit — Firebase CLI is already authenticated.
