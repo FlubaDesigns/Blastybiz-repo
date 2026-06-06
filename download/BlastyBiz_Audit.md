@@ -1,6 +1,5 @@
 # BlastyBiz — Full Site Audit
-**Date:** June 6, 2026  
-**Audited by:** Replit Agent  
+**Last updated:** June 6, 2026  
 **Firebase Project:** blastybiz-9523e  
 **Live URL:** https://blastybiz-9523e.web.app
 
@@ -37,7 +36,7 @@
 | Page | Auth Guard | Status |
 |---|---|---|
 | BlastyBiz-Home.html | No | Marketing landing page — fully live |
-| BlastyBiz-Login.html | No | Email/password + Google + Facebook sign-in/sign-up |
+| BlastyBiz-Login.html | No | Email/password + Google (popup on desktop, redirect on mobile) + Facebook sign-in/sign-up |
 | BlastyBiz.html | Yes | Main listing form — AI adapt, platform gating, approve |
 | BlastyBiz-Dashboard.html | Yes | User dashboard — plan/billing/delete account |
 | BlastyBiz-Connect.html | Yes | Google + Facebook OAuth platform connect |
@@ -81,9 +80,12 @@ All 6 collections secured. Owner-only access on all user data.
 
 ---
 
-## 🐛 Bug Fixed During This Audit
+## 🐛 Bugs Fixed
 
-**`deleteAccount` was missing `secrets: ['STRIPE_SECRET_KEY']`** in its function declaration. Without it, `STRIPE_SECRET_KEY` is not injected into the function environment, so Stripe subscription cancellation would silently fail. Fixed — function redeployed.
+| Date | Location | Fix |
+|---|---|---|
+| Jun 6, 2026 | `deleteAccount` CF | Was missing `secrets: ['STRIPE_SECRET_KEY']` — Stripe cancellation would silently fail. Fixed and redeployed. |
+| Jun 6, 2026 | `BlastyBiz-Login.html` | Google sign-in used `signInWithPopup` on all devices — blocked by mobile Chrome. Fixed: `signInWithRedirect` on mobile (Android/iPhone), `signInWithPopup` retained on desktop. |
 
 ---
 

@@ -30,7 +30,7 @@ description: Stack decisions and proxy routing for BlastyBiz — no React/Vite, 
 - ANTHROPIC_API_KEY — for /api/adaptListing and /api/resolveCategories
 - No FIREBASE_SERVICE_ACCOUNT needed — approveDraft runs client-side
 
-## Download zip rule
-After every fix or change, always rebuild `download/BlastyBiz_Site.zip` using the Python zipfile script before responding to the user. The zip includes: `artifacts/api-server/public/**`, `functions/index.js`, `functions/package.json`, `firestore.rules`, `firestore.indexes.json`, `firebase.json`, `.firebaserc`, `download/BlastyBiz_Audit.md`.
+## Download zip + audit rule
+After every fix or change: (1) update `download/BlastyBiz_Audit.md` — add a row to the 🐛 Bugs Fixed table and update the "Last updated" date and any affected page/function descriptions; (2) rebuild `download/BlastyBiz_Site.zip` using the Python zipfile script. Do both before responding to the user. The zip includes: `artifacts/api-server/public/**`, `functions/index.js`, `functions/package.json`, `firestore.rules`, `firestore.indexes.json`, `firebase.json`, `.firebaserc`, `download/BlastyBiz_Audit.md`.
 
-**Why:** Dave explicitly asked that all fixes are automatically reflected in the download file so his dev team always has the latest version.
+**Why:** Dave explicitly asked that all fixes are automatically reflected in both the download zip and the audit markdown so his dev team always has the latest version.
