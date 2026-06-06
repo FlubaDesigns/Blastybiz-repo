@@ -823,10 +823,14 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   sendPasswordResetEmail,
   onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 async function afterAuth(user) {
   const snap = await getDoc(doc(db, 'users', user.uid));
@@ -839,6 +843,25 @@ async function afterAuth(user) {
     window.location.href = 'BlastyBiz-Onboarding.html';
   }
 }
+
+// Handle redirect result after Google sign-in on mobile
+getRedirectResult(auth).then(async (result) => {
+  if (!result) return;
+  const user = result.user;
+  const snap = await getDoc(doc(db, 'users', user.uid));
+  if (!snap.exists()) {
+    await setDoc(doc(db, 'users', user.uid), {
+      ownerName: user.displayName || '',
+      email: user.email,
+      plan: 'starter',
+      onboarded: false,
+      createdAt: serverTimestamp()
+    });
+  }
+  await afterAuth(user);
+}).catch((e) => {
+  if (e.code !== 'auth/popup-closed-by-user') window.showToast('Google sign-in failed', true);
+});
 
 onAuthStateChanged(auth, (user) => {
   if (user) afterAuth(user);
@@ -892,22 +915,28 @@ window.handleSignUp = async function() {
 };
 
 window.handleGoogle = async function() {
-  try {
-    const provider = new GoogleAuthProvider();
-    const cred = await signInWithPopup(auth, provider);
-    const snap = await getDoc(doc(db, 'users', cred.user.uid));
-    if (!snap.exists()) {
-      await setDoc(doc(db, 'users', cred.user.uid), {
-        ownerName: cred.user.displayName || '',
-        email: cred.user.email,
-        plan: 'starter',
-        onboarded: false,
-        createdAt: serverTimestamp()
-      });
+  const provider = new GoogleAuthProvider();
+  if (isMobile) {
+    // Mobile: redirect flow (popups are blocked on mobile browsers)
+    await signInWithRedirect(auth, provider);
+  } else {
+    // Desktop: popup flow
+    try {
+      const cred = await signInWithPopup(auth, provider);
+      const snap = await getDoc(doc(db, 'users', cred.user.uid));
+      if (!snap.exists()) {
+        await setDoc(doc(db, 'users', cred.user.uid), {
+          ownerName: cred.user.displayName || '',
+          email: cred.user.email,
+          plan: 'starter',
+          onboarded: false,
+          createdAt: serverTimestamp()
+        });
+      }
+      await afterAuth(cred.user);
+    } catch (e) {
+      if (e.code !== 'auth/popup-closed-by-user') window.showToast('Google sign-in failed', true);
     }
-    await afterAuth(cred.user);
-  } catch (e) {
-    if (e.code !== 'auth/popup-closed-by-user') window.showToast('Google sign-in failed', true);
   }
 };
 
