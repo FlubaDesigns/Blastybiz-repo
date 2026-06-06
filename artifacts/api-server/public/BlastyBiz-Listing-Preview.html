@@ -119,20 +119,227 @@
 </div>
 
 <script>
-const drafts={
-  google:{icon:'G',name:'Google Business Profile',mode:'Auto-post available after approval',badge:'Auto',badgeClass:'badge auto',headline:'Spring Pressure Washing Special in Englewood',text:'Give your driveway, lanai, pool cage, or walkway a clean fresh look this spring. Gulf Coast Pressure Washing serves Englewood, Venice, North Port, and Port Charlotte with dependable exterior cleaning for homes and small businesses. Call today to schedule your spring cleaning estimate.',cta:'Call today to schedule your estimate.',hint:'Keep it clear and local. Google posts should be direct, service-based, and not overstuffed with keywords.'},
-  facebook:{icon:'f',name:'Facebook Page',mode:'Auto-post available after approval',badge:'Auto',badgeClass:'badge auto',headline:'Freshen Up Your Home This Spring',text:'Spring is a great time to clean up the outside of your home. Gulf Coast Pressure Washing helps with driveways, lanais, pool cages, sidewalks, and small business exteriors across Englewood, Venice, North Port, and Port Charlotte. Message or call us today for an estimate.',cta:'Message us or call today.',hint:'Facebook can be warmer and more conversational than Google.'},
-  instagram:{icon:'◎',name:'Instagram',mode:'Auto-post through connected Meta account',badge:'Auto',badgeClass:'badge auto',headline:'Before & After Ready',text:'Spring clean starts outside. Driveways, lanais, pool cages, walkways, and storefronts cleaned across Englewood, Venice, North Port, and Port Charlotte. Book your exterior cleaning estimate today. #EnglewoodFL #PressureWashing #GulfCoastHomes',cta:'Tap to contact us today.',hint:'Instagram should stay shorter and image-friendly. Hashtags are okay, but keep them local.'},
-  nextdoor:{icon:'N',name:'Nextdoor',mode:'Manual copy/paste required',badge:'Manual',badgeClass:'badge manual',headline:'Local Pressure Washing Available',text:'Hi neighbors — Gulf Coast Pressure Washing is scheduling spring exterior cleaning in Englewood, Venice, North Port, and Port Charlotte. We clean driveways, lanais, pool cages, walkways, and small business exteriors. If your place needs a fresh clean look, call today for an estimate.',cta:'Copy this text and paste it into Nextdoor.',hint:'Nextdoor does not reliably support automated posting. BlastyBiz should give clear copy/paste instructions.'},
-  craigslist:{icon:'C',name:'Craigslist',mode:'Manual copy/paste required',badge:'Manual',badgeClass:'badge manual',headline:'Pressure Washing Service - Englewood Area',text:'Gulf Coast Pressure Washing provides exterior cleaning for driveways, lanais, pool cages, walkways, patios, and small business properties. Serving Englewood, Venice, North Port, and Port Charlotte. Call today for a spring cleaning estimate.',cta:'Copy this listing into Craigslist.',hint:'Craigslist should be plain and direct. Avoid sounding like a flashy ad.'}
+const PLATFORM_META = {
+  google:     { icon:'G',  name:'Google Business Profile', capabilityLevel:'full_auto',    mode:'Auto-post available after approval', badge:'Auto',   badgeClass:'badge auto',   hint:'Keep it clear and local. Google posts should be direct, service-based, and not overstuffed with keywords.' },
+  facebook:   { icon:'f',  name:'Facebook Page',           capabilityLevel:'partial_auto', mode:'Auto-post available after approval', badge:'Auto',   badgeClass:'badge auto',   hint:'Facebook can be warmer and more conversational than Google.' },
+  instagram:  { icon:'◎', name:'Instagram',               capabilityLevel:'partial_auto', mode:'Auto-post through connected Meta account', badge:'Auto', badgeClass:'badge auto', hint:'Instagram should stay shorter and image-friendly. Hashtags are okay, but keep them local.' },
+  bing:       { icon:'B',  name:'Bing Places',             capabilityLevel:'partial_auto', mode:'Auto-post available after approval', badge:'Auto',   badgeClass:'badge auto',   hint:'Include full business details: hours, address, and category.' },
+  applemaps:  { icon:'🍎', name:'Apple Maps',              capabilityLevel:'partial_auto', mode:'Submitted after approval',           badge:'Auto',   badgeClass:'badge auto',   hint:'Apple Maps requires factual, complete info. No marketing language.' },
+  yelp:       { icon:'Y',  name:'Yelp',                   capabilityLevel:'partial_auto', mode:'Submitted after approval',           badge:'Auto',   badgeClass:'badge auto',   hint:'Descriptive, highlight what makes you special and your atmosphere.' },
+  nextdoor:   { icon:'N',  name:'Nextdoor',               capabilityLevel:'manual_assisted', mode:'Manual copy/paste required',    badge:'Manual', badgeClass:'badge manual', hint:'Nextdoor does not support automated posting. Copy and paste this text.', manualInstructions:'Go to nextdoor.com → Post → For Sale & Free → paste your listing.' },
+  craigslist: { icon:'C',  name:'Craigslist',             capabilityLevel:'manual_assisted', mode:'Manual copy/paste required',    badge:'Manual', badgeClass:'badge manual', hint:'Craigslist should be plain and direct. Avoid sounding like a flashy ad.', manualInstructions:'Go to craigslist.org → your city → Services → paste your listing.' },
+  fbmarket:   { icon:'M',  name:'FB Marketplace',         capabilityLevel:'manual_assisted', mode:'Manual copy/paste required',    badge:'Manual', badgeClass:'badge manual', hint:'Lead with price and location. Keep it straightforward.', manualInstructions:'Go to facebook.com/marketplace → Create listing → paste your text.' },
 };
-function showDraft(key,btn){const d=drafts[key];document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('draftIcon').textContent=d.icon;document.getElementById('draftPlatform').textContent=d.name;document.getElementById('draftMode').textContent=d.mode;const badge=document.getElementById('draftBadge');badge.textContent=d.badge;badge.className=d.badgeClass;document.getElementById('headline').value=d.headline;document.getElementById('draftText').value=d.text;document.getElementById('callToAction').value=d.cta;document.getElementById('draftHint').textContent=d.hint;}
-function saveDraft(){alert('Draft saved. Replit should persist this to Firestore listing_drafts.');}
-function approveSelected(){alert('Selected platform draft approved. Replit should mark this draft approved and queue the publish job if auto-post is available.');}
-function approveAll(){alert('Approved drafts should move to publish queue. Manual platforms should move to copy/paste instructions.');}
-function regenerateDraft(){alert('Regenerate should call /api/adaptListing with the selected platform and current business profile.');}
-function copyManual(){navigator.clipboard?.writeText(document.getElementById('draftText').value);alert('Draft text copied.');}
+
+let drafts = {};
+let activeDraftKey = null;
+let draftDocId = null;
+let currentUser = null;
+let businessId = null;
+
+function showDraft(key, btn) {
+  const d = drafts[key];
+  if (!d) return;
+  activeDraftKey = key;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const meta = PLATFORM_META[key] || {};
+  document.getElementById('draftIcon').textContent = meta.icon || key[0].toUpperCase();
+  document.getElementById('draftPlatform').textContent = meta.name || key;
+  document.getElementById('draftMode').textContent = meta.mode || '';
+  const badge = document.getElementById('draftBadge');
+  badge.textContent = meta.badge || 'Auto';
+  badge.className = meta.badgeClass || 'badge auto';
+  document.getElementById('headline').value = d.headline || '';
+  document.getElementById('draftText').value = d.text || '';
+  document.getElementById('callToAction').value = d.cta || '';
+  document.getElementById('draftHint').textContent = meta.hint || '';
+}
+
+function copyManual() {
+  const text = document.getElementById('draftText').value;
+  navigator.clipboard.writeText(text).then(() => showToast('📋 Copied to clipboard'));
+}
+
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#00C853;color:#070D07;padding:12px 24px;border-radius:30px;font-weight:700;font-size:14px;opacity:0;transition:all 0.3s;z-index:999;'; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(20px)'; }, 2500);
+}
+
+function saveDraft() {
+  if (activeDraftKey) {
+    drafts[activeDraftKey] = {
+      ...drafts[activeDraftKey],
+      text: document.getElementById('draftText').value,
+      headline: document.getElementById('headline').value,
+      cta: document.getElementById('callToAction').value,
+    };
+  }
+  window._firestoreSaveDraft && window._firestoreSaveDraft();
+  showToast('💾 Draft saved');
+}
+
+function approveSelected() {
+  if (!activeDraftKey) { showToast('Select a platform first'); return; }
+  window._firestoreApprove && window._firestoreApprove([activeDraftKey]);
+}
+
+function approveAll() {
+  const keys = Object.keys(drafts);
+  if (!keys.length) { showToast('No drafts to approve'); return; }
+  window._firestoreApprove && window._firestoreApprove(keys);
+}
+
+function regenerateDraft() {
+  showToast('✨ Regenerating — go back to BlastyBiz to re-run adaptation');
+}
+
+function populateFromDraftData(draftData) {
+  const adaptations = draftData.adaptations || {};
+  Object.entries(adaptations).forEach(([pid, text]) => {
+    drafts[pid] = { text, headline: '', cta: '' };
+  });
+  const tabContainer = document.querySelector('.tab-bar') || document.querySelector('.tabs');
+  if (tabContainer) {
+    tabContainer.innerHTML = '';
+    Object.keys(drafts).forEach((pid, i) => {
+      const meta = PLATFORM_META[pid] || { icon: pid[0].toUpperCase(), name: pid };
+      const btn = document.createElement('button');
+      btn.className = 'tab' + (i === 0 ? ' active' : '');
+      btn.textContent = meta.name;
+      btn.onclick = () => showDraft(pid, btn);
+      tabContainer.appendChild(btn);
+    });
+  }
+  const firstKey = Object.keys(drafts)[0];
+  if (firstKey) {
+    const firstBtn = document.querySelector('.tab');
+    showDraft(firstKey, firstBtn);
+  }
+  const autoCount = Object.keys(drafts).filter(k => PLATFORM_META[k]?.capabilityLevel?.includes('auto')).length;
+  const manualCount = Object.keys(drafts).filter(k => PLATFORM_META[k]?.capabilityLevel === 'manual_assisted').length;
+  const approvalText = document.querySelector('.approval-text');
+  if (approvalText) {
+    approvalText.innerHTML = `<strong>${autoCount} auto-post draft${autoCount !== 1 ? 's' : ''} ready.</strong> ${manualCount} manual platform${manualCount !== 1 ? 's' : ''} need copy/paste after approval.`;
+  }
+}
 </script>
-<script type="module" src="./auth-guard.js"></script>
+
+<script type="module">
+import { auth, db } from './firebase-init.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = 'BlastyBiz-Login.html'; return; }
+  window.currentUser = user;
+
+  const userSnap = await getDoc(doc(db, 'users', user.uid));
+  const userData = userSnap.exists() ? userSnap.data() : {};
+  window.businessId = userData.activeBusiness || user.uid;
+
+  const params = new URLSearchParams(window.location.search);
+  const draftIdParam = params.get('draftId');
+
+  let draftData = null;
+
+  if (draftIdParam) {
+    window.draftDocId = draftIdParam;
+    const snap = await getDoc(doc(db, 'listingDrafts', draftIdParam));
+    if (snap.exists()) draftData = snap.data();
+  }
+
+  if (!draftData) {
+    const localDraft = JSON.parse(localStorage.getItem('ll_draft') || '{}');
+    if (localDraft && localDraft.adaptations) {
+      draftData = localDraft;
+    }
+  }
+
+  if (draftData) {
+    window.populateFromDraftData(draftData);
+  }
+
+  window._firestoreSaveDraft = async function() {
+    const adaptations = {};
+    Object.entries(window.drafts).forEach(([pid, d]) => { adaptations[pid] = d.text; });
+    if (window.draftDocId) {
+      await updateDoc(doc(db, 'listingDrafts', window.draftDocId), { adaptations, updatedAt: serverTimestamp() });
+    }
+  };
+
+  window._firestoreApprove = async function(platformKeys) {
+    const btn = document.querySelector('.btn-primary[onclick="approveAll()"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Approving…'; }
+
+    try {
+      let draftId = window.draftDocId;
+
+      if (!draftId) {
+        const newRef = doc(collection(db, 'listingDrafts'));
+        const adaptations = {};
+        Object.entries(window.drafts).forEach(([pid, d]) => { adaptations[pid] = d.text; });
+        await setDoc(newRef, {
+          uid: user.uid,
+          businessId: window.businessId,
+          adaptations,
+          status: 'draft',
+          createdAt: serverTimestamp(),
+        });
+        draftId = newRef.id;
+        window.draftDocId = draftId;
+      }
+
+      await updateDoc(doc(db, 'listingDrafts', draftId), {
+        status: 'approved',
+        approvedAt: serverTimestamp(),
+      });
+
+      const batch = [];
+      for (const pid of platformKeys) {
+        const meta = window.PLATFORM_META[pid] || {};
+        const isManual = ['manual_assisted', 'unsupported'].includes(meta.capabilityLevel);
+        const jobRef = doc(collection(db, 'publishJobs'));
+        const jobData = {
+          jobId: jobRef.id,
+          businessId: window.businessId,
+          uid: user.uid,
+          draftId,
+          platform: pid,
+          capabilityLevel: meta.capabilityLevel || 'manual_assisted',
+          jobType: 'publish_listing',
+          status: isManual ? 'manual_required' : 'pending',
+          attempts: 0,
+          maxAttempts: 3,
+          customerLabel: isManual ? 'Action needed' : 'Waiting to publish',
+          customerVisibleMessage: isManual
+            ? `Your ${meta.name || pid} listing is ready — you need to post it manually.`
+            : `Your ${meta.name || pid} listing is waiting to publish.`,
+          manualInstructions: meta.manualInstructions || '',
+          adminError: '',
+          payload: { adaptedContent: window.drafts[pid]?.text || '' },
+          apiResponse: {},
+          customerNotified: false,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+        batch.push(setDoc(jobRef, jobData));
+      }
+
+      await Promise.all(batch);
+
+      window.location.href = `BlastyBiz-Publishing-Status.html?draftId=${draftId}`;
+    } catch(e) {
+      console.error('approveDraft error:', e);
+      if (btn) { btn.disabled = false; btn.textContent = 'Approve & Continue'; }
+      alert('Error approving draft: ' + e.message);
+    }
+  };
+});
+</script>
 </body>
 </html>

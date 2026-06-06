@@ -1,0 +1,3 @@
+- [BlastyBiz architecture](blastybiz-arch.md) — Express server at /api + static HTML at /, Firebase Auth/Firestore client-side, no React/Vite.
+- [BlastyBiz Firestore rules bug](blastybiz-firestore-rules.md) — businesses rule must check resource.data.uid, NOT businessId == uid (docs have auto-generated IDs).
+- [BlastyBiz API wiring](blastybiz-api-wiring.md) — adaptListing/resolveCategories/approveDraft are Express routes at /api/*; approveDraft was moved client-side (no FIREBASE_SERVICE_ACCOUNT needed).

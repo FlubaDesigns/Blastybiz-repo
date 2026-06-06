@@ -7,9 +7,12 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Businesses — owner only
+    // Businesses — owner only (uid field matches auth uid, not document ID)
     match /businesses/{businessId} {
-      allow read, write: if request.auth != null && request.auth.uid == businessId;
+      allow read, write: if request.auth != null &&
+        request.auth.uid == resource.data.uid;
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.uid;
     }
 
     // Listing drafts — owner only
@@ -20,7 +23,7 @@ service cloud.firestore {
         request.auth.uid == request.resource.data.uid;
     }
 
-    // Publish jobs — owner only
+    // Publish jobs — owner only (create + read; backend updates status)
     match /publishJobs/{jobId} {
       allow read, write: if request.auth != null &&
         request.auth.uid == resource.data.uid;
@@ -28,14 +31,29 @@ service cloud.firestore {
         request.auth.uid == request.resource.data.uid;
     }
 
-    // Subscriptions — owner read only (written by backend)
+    // Platform connections — owner only
+    match /platformConnections/{connId} {
+      allow read, write: if request.auth != null &&
+        request.auth.uid == resource.data.uid;
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.uid;
+    }
+
+    // Subscriptions — owner read only (written by Stripe webhook backend)
     match /subscriptions/{subId} {
       allow read: if request.auth != null && request.auth.uid == subId;
       allow write: if false;
     }
 
-    // Activity logs — owner read only
+    // Activity logs — owner read only (written by backend)
     match /activityLogs/{logId} {
+      allow read: if request.auth != null &&
+        request.auth.uid == resource.data.uid;
+      allow write: if false;
+    }
+
+    // Reviews — owner read only (written by backend)
+    match /reviews/{reviewId} {
       allow read: if request.auth != null &&
         request.auth.uid == resource.data.uid;
       allow write: if false;

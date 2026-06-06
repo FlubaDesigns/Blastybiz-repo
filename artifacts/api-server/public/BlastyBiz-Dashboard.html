@@ -443,10 +443,113 @@ function showToast(msg) {
 }
 
 // ══════════════════════════════════════════
-// START
+// START — defer to Firebase module below
 // ══════════════════════════════════════════
-init();
 </script>
-<script type="module" src="./auth-guard.js"></script>
+
+<script type="module">
+import { auth, db } from './firebase-init.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+  collection, query, where, getDocs, getDoc, setDoc, doc, serverTimestamp, orderBy, limit
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+let currentUser = null;
+let allBusinesses = [];
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = 'BlastyBiz-Login.html'; return; }
+  currentUser = user;
+
+  const userSnap = await getDoc(doc(db, 'users', user.uid));
+  const userData = userSnap.exists() ? userSnap.data() : {};
+
+  try {
+    const q = query(collection(db, 'businesses'), where('uid', '==', user.uid));
+    const snap = await getDocs(q);
+
+    if (!snap.empty) {
+      allBusinesses = snap.docs.map(d => ({
+        id: d.id,
+        name: d.data().businessName || d.data().name || 'My Business',
+        avatar: '📢',
+        score: 75,
+        platforms: (d.data().connectedPlatforms || []).length || 4,
+        plan: userData.plan || 'starter',
+        ...d.data(),
+      }));
+
+      window.BUSINESSES = allBusinesses;
+      window.activeBizId = userData.activeBusiness || allBusinesses[0].id;
+    } else {
+      window.BUSINESSES = BUSINESSES;
+      window.activeBizId = userData.activeBusiness || BUSINESSES[0].id;
+    }
+  } catch(e) {
+    window.BUSINESSES = BUSINESSES;
+    window.activeBizId = BUSINESSES[0].id;
+  }
+
+  window.switchBusiness = async function(bizId) {
+    window.activeBizId = bizId;
+    await setDoc(doc(db, 'users', user.uid), { activeBusiness: bizId }, { merge: true });
+    closeSwitcher();
+    renderSwitcherBar();
+    renderSheet();
+    renderAgencyBar();
+    await loadBusinessContextFirestore(bizId);
+    const biz = window.BUSINESSES.find(b => b.id === bizId);
+    showToast(`Switched to ${biz?.name || bizId}`);
+  };
+
+  window.addBusiness = async function() {
+    closeSwitcher();
+    if (window.BUSINESSES.length >= MAX_BUSINESSES) {
+      showToast('Agency limit reached (10 businesses)');
+      return;
+    }
+    const newRef = doc(collection(db, 'businesses'));
+    await setDoc(newRef, {
+      uid: user.uid, businessName: '', onboarded: false, createdAt: serverTimestamp()
+    });
+    await setDoc(doc(db, 'users', user.uid), { activeBusiness: newRef.id }, { merge: true });
+    window.location.href = 'BlastyBiz-Onboarding.html';
+  };
+
+  async function loadBusinessContextFirestore(bizId) {
+    try {
+      const bizSnap = await getDoc(doc(db, 'businesses', bizId));
+      const biz = bizSnap.exists() ? bizSnap.data() : {};
+
+      const nameEl = document.getElementById('dashboard-biz-name');
+      const snapBiz = document.getElementById('snapshot-biz');
+      if (nameEl) nameEl.textContent = biz.businessName || biz.name || bizId;
+      if (snapBiz) snapBiz.textContent = biz.businessName || biz.name || bizId;
+
+      const jobsQ = query(
+        collection(db, 'publishJobs'),
+        where('businessId', '==', bizId),
+        orderBy('createdAt', 'desc'),
+        limit(10)
+      );
+      const jobsSnap = await getDocs(jobsQ);
+      const liveCount = jobsSnap.docs.filter(d => d.data().status === 'success').length;
+      const scoreEl = document.getElementById('visibility-score');
+      const barEl = document.getElementById('score-bar');
+      if (scoreEl) scoreEl.textContent = Math.min(95, liveCount * 12 + 20);
+      if (barEl) barEl.style.width = Math.min(95, liveCount * 12 + 20) + '%';
+    } catch(e) {
+      console.error('loadBusinessContext error:', e);
+    }
+  }
+
+  window.loadBusinessContext = async function(bizId) {
+    await loadBusinessContextFirestore(bizId);
+  };
+
+  init();
+  await loadBusinessContextFirestore(window.activeBizId);
+});
+</script>
 </body>
 </html>

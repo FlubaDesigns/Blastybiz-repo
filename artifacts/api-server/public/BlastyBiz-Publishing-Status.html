@@ -1,52 +1,380 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BlastyBiz - Publishing Status</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BlastyBiz — Publishing Status</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
-body{font-family:Arial,sans-serif;max-width:1000px;margin:40px auto;padding:20px}
-.card{border:1px solid #ddd;border-radius:8px;padding:16px;margin:16px 0}
-.progress{background:#eee;height:20px;border-radius:10px;overflow:hidden}
-.bar{background:#4caf50;width:75%;height:100%}
-table{width:100%;border-collapse:collapse}
-td,th{padding:8px;border-bottom:1px solid #ddd;text-align:left}
-button{padding:8px 12px;margin:4px}
+:root {
+  --green:  #00C853;
+  --dark:   #070D07;
+  --card:   #0D160D;
+  --silver: #7AB87A;
+  --light:  #EEF7EE;
+  --border: #1E2E1E;
+  --muted:  #587058;
+  --green2: #00B04A;
+  --danger: #FF4444;
+  --warn:   #FFA726;
+  --blue:   #54A8FF;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;min-height:100dvh;}
+
+.header{
+  padding:16px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  background:rgba(13,22,13,0.95);
+  position:sticky;top:0;z-index:10;
+  backdrop-filter:blur(10px);
+}
+.header-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--green);}
+.header-back{
+  font-size:13px;color:var(--muted);text-decoration:none;
+  display:flex;align-items:center;gap:5px;transition:color 0.2s;
+}
+.header-back:hover{color:var(--silver);}
+
+.main{max-width:600px;margin:0 auto;padding:24px 20px 80px;}
+
+.page-title{
+  font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:1px;
+  color:var(--light);margin-bottom:4px;
+}
+.page-sub{font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.5;}
+
+.progress-card{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:20px;margin-bottom:16px;
+}
+.progress-header{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;
+}
+.progress-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.progress-count{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green);}
+.progress-track{height:6px;background:var(--border);border-radius:6px;overflow:hidden;margin-bottom:20px;}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--green),#00FF88);border-radius:6px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1);}
+
+.platform-list{display:flex;flex-direction:column;gap:10px;}
+
+.platform-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;
+  background:var(--dark);border:1px solid var(--border);border-radius:12px;
+  transition:border-color 0.2s;
+}
+.platform-row.status-live{border-color:rgba(0,200,83,0.25);}
+.platform-row.status-manual{border-color:rgba(255,167,38,0.25);}
+.platform-row.status-running{border-color:rgba(84,168,255,0.25);}
+.platform-row.status-failed{border-color:rgba(255,68,68,0.25);}
+
+.platform-icon{
+  width:36px;height:36px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:700;flex-shrink:0;
+  font-family:'Bebas Neue',sans-serif;
+}
+.platform-info{flex:1;min-width:0;}
+.platform-name{font-size:14px;font-weight:600;color:var(--light);}
+.platform-msg{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4;}
+
+.status-pill{
+  font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  padding:4px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;
+}
+.pill-live{background:rgba(0,200,83,0.12);color:var(--green);}
+.pill-manual{background:rgba(255,167,38,0.12);color:var(--warn);}
+.pill-running{background:rgba(84,168,255,0.12);color:var(--blue);}
+.pill-failed{background:rgba(255,68,68,0.12);color:var(--danger);}
+.pill-pending{background:rgba(122,184,122,0.1);color:var(--silver);}
+
+.action-card{
+  background:var(--card);border:1px solid rgba(255,167,38,0.3);border-radius:16px;
+  padding:20px;margin-bottom:16px;
+}
+.action-card-title{
+  font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;
+  color:var(--warn);margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;
+}
+.action-item{
+  border-top:1px solid var(--border);padding:14px 0;
+}
+.action-item:first-of-type{border-top:none;padding-top:0;}
+.action-platform{font-size:14px;font-weight:600;color:var(--light);margin-bottom:4px;}
+.action-desc{font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;}
+.action-btns{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-copy{
+  padding:8px 14px;background:var(--green);color:var(--dark);
+  border:none;border-radius:8px;font-size:12px;font-weight:700;
+  font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.2s;
+}
+.btn-copy:hover{background:var(--green2);}
+.btn-instructions{
+  padding:8px 14px;background:transparent;color:var(--silver);
+  border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;
+  font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.2s;
+}
+.btn-instructions:hover{border-color:var(--silver);}
+
+.stat-card{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:20px;margin-bottom:16px;
+  display:flex;align-items:center;gap:16px;
+}
+.stat-num{
+  font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--green);
+  line-height:1;flex-shrink:0;
+}
+.stat-label{font-size:13px;color:var(--muted);line-height:1.5;}
+.stat-label strong{display:block;font-size:16px;color:var(--light);font-weight:600;margin-bottom:2px;}
+
+.dash-btn{
+  display:block;width:100%;padding:15px;
+  background:var(--green);color:var(--dark);
+  border:none;border-radius:12px;font-size:16px;font-weight:700;
+  font-family:'DM Sans',sans-serif;cursor:pointer;text-align:center;
+  text-decoration:none;transition:background 0.2s;margin-bottom:12px;
+}
+.dash-btn:hover{background:var(--green2);}
+.dash-btn-outline{
+  display:block;width:100%;padding:14px;
+  background:transparent;color:var(--silver);
+  border:1px solid var(--border);border-radius:12px;font-size:14px;font-weight:600;
+  font-family:'DM Sans',sans-serif;cursor:pointer;text-align:center;
+  text-decoration:none;transition:all 0.2s;
+}
+.dash-btn-outline:hover{border-color:var(--silver);}
+
+.loading-state{
+  text-align:center;padding:60px 20px;
+}
+.loading-spinner{
+  width:36px;height:36px;border:3px solid var(--border);
+  border-top-color:var(--green);border-radius:50%;
+  animation:spin 0.8s linear infinite;margin:0 auto 16px;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:14px;color:var(--muted);}
+
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--green);color:var(--dark);padding:12px 24px;
+  border-radius:30px;font-weight:700;font-size:14px;
+  opacity:0;transition:all 0.3s;z-index:999;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 </style>
 </head>
 <body>
-<h1>Publishing Your Business</h1>
-<p>We're working on getting your business listed across the platforms you've selected.</p>
 
-<div class="card">
-<h2>Publishing Progress</h2>
-<p>6 of 8 Complete</p>
-<div class="progress"><div class="bar"></div></div>
-<table>
-<tr><th>Platform</th><th>Status</th></tr>
-<tr><td>Google Business</td><td>✅ Live</td></tr>
-<tr><td>Facebook</td><td>✅ Live</td></tr>
-<tr><td>Yelp</td><td>✅ Live</td></tr>
-<tr><td>Instagram</td><td>⏳ Publishing</td></tr>
-<tr><td>Nextdoor</td><td>⚠ Action Needed</td></tr>
-<tr><td>Craigslist</td><td>⚠ Action Needed</td></tr>
-<tr><td>Bing Places</td><td>✅ Live</td></tr>
-<tr><td>Apple Maps</td><td>✅ Live</td></tr>
-</table>
+<div class="header">
+  <div class="header-logo">BlastyBiz</div>
+  <a href="BlastyBiz-Dashboard.html" class="header-back">← Dashboard</a>
 </div>
 
-<div class="card">
-<h2>Action Needed</h2>
-<p><strong>Nextdoor</strong> - BlastyBiz cannot publish directly to this platform.</p>
-<button>Copy Listing</button><button>View Instructions</button>
-<p><strong>Craigslist</strong> - BlastyBiz prepared your listing.</p>
-<button>Copy Listing</button><button>View Instructions</button>
+<div class="main">
+  <div class="page-title">Publishing Status</div>
+  <div class="page-sub" id="page-sub">We're distributing your listing across every platform you selected.</div>
+
+  <div id="loading-state" class="loading-state">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading your publishing status…</div>
+  </div>
+
+  <div id="content-state" style="display:none;">
+    <div class="progress-card">
+      <div class="progress-header">
+        <div class="progress-label">Overall Progress</div>
+        <div class="progress-count" id="progress-count">0 / 0</div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+      </div>
+      <div class="platform-list" id="platform-list"></div>
+    </div>
+
+    <div class="action-card" id="action-card" style="display:none;">
+      <div class="action-card-title">⚠️ Action Needed</div>
+      <div id="action-items"></div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-num" id="hours-saved">0</div>
+      <div class="stat-label">
+        <strong>Hours Saved This Month</strong>
+        BlastyBiz handled the posting so you didn't have to.
+      </div>
+    </div>
+
+    <a href="BlastyBiz.html" class="dash-btn">＋ Create Another Listing</a>
+    <a href="BlastyBiz-Dashboard.html" class="dash-btn-outline">← Back to Dashboard</a>
+  </div>
 </div>
 
-<div class="card">
-<h2>Hours Saved This Month</h2>
-<p>6.4 Hours</p>
-</div>
-<script type="module" src="./auth-guard.js"></script>
+<div class="toast" id="toast"></div>
+
+<script>
+const PLATFORM_META = {
+  google:     { name: 'Google Business', icon: 'G', bg: '#4285F4' },
+  facebook:   { name: 'Facebook Page',   icon: 'f', bg: '#1877F2' },
+  instagram:  { name: 'Instagram',       icon: '📸', bg: '#E1306C' },
+  bing:       { name: 'Bing Places',     icon: 'B', bg: '#00809D' },
+  applemaps:  { name: 'Apple Maps',      icon: '🍎', bg: '#555' },
+  yelp:       { name: 'Yelp',            icon: 'Y', bg: '#D32323' },
+  nextdoor:   { name: 'Nextdoor',        icon: 'N', bg: '#00B246' },
+  craigslist: { name: 'Craigslist',      icon: 'C', bg: '#6B00D7' },
+  fbmarket:   { name: 'FB Marketplace',  icon: 'M', bg: '#0082FB' },
+};
+
+const STATUS_CONFIG = {
+  success:          { label: 'Live',        cls: 'pill-live',    rowCls: 'status-live' },
+  manual_required:  { label: 'Action Needed', cls: 'pill-manual', rowCls: 'status-manual' },
+  manual_completed: { label: 'Posted',      cls: 'pill-live',    rowCls: 'status-live' },
+  running:          { label: 'Publishing',  cls: 'pill-running', rowCls: 'status-running' },
+  pending:          { label: 'Waiting',     cls: 'pill-pending', rowCls: '' },
+  failed:           { label: 'Failed',      cls: 'pill-failed',  rowCls: 'status-failed' },
+  retry_pending:    { label: 'Retrying',    cls: 'pill-running', rowCls: 'status-running' },
+};
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function renderJobs(jobs) {
+  const total = jobs.length;
+  const done  = jobs.filter(j => ['success','manual_completed'].includes(j.status)).length;
+  const pct   = total ? Math.round((done / total) * 100) : 0;
+
+  document.getElementById('progress-count').textContent = `${done} of ${total} Complete`;
+  document.getElementById('progress-bar').style.width = pct + '%';
+
+  const list = document.getElementById('platform-list');
+  list.innerHTML = '';
+  jobs.forEach(job => {
+    const meta   = PLATFORM_META[job.platform] || { name: job.platform, icon: '●', bg: '#444' };
+    const status = STATUS_CONFIG[job.status] || { label: job.status, cls: 'pill-pending', rowCls: '' };
+    const row = document.createElement('div');
+    row.className = 'platform-row ' + status.rowCls;
+    row.innerHTML = `
+      <div class="platform-icon" style="background:${meta.bg}20;color:${meta.bg};">${meta.icon}</div>
+      <div class="platform-info">
+        <div class="platform-name">${meta.name}</div>
+        <div class="platform-msg">${job.customerVisibleMessage || status.label}</div>
+      </div>
+      <div class="status-pill ${status.cls}">${status.label}</div>
+    `;
+    list.appendChild(row);
+  });
+
+  const manualJobs = jobs.filter(j => j.status === 'manual_required');
+  const actionCard = document.getElementById('action-card');
+  const actionItems = document.getElementById('action-items');
+  if (manualJobs.length) {
+    actionCard.style.display = '';
+    actionItems.innerHTML = manualJobs.map(job => {
+      const meta = PLATFORM_META[job.platform] || { name: job.platform };
+      const text = typeof job.payload === 'object' ? (job.payload.adaptedContent || '') : '';
+      return `
+        <div class="action-item">
+          <div class="action-platform">${meta.name}</div>
+          <div class="action-desc">${job.customerVisibleMessage || 'Your listing is ready — post it manually.'}</div>
+          <div class="action-btns">
+            <button class="btn-copy" onclick="copyListing('${job.jobId}', \`${text.replace(/`/g,'\\`')}\`)">📋 Copy Listing</button>
+            <button class="btn-instructions" onclick="showInstructions('${job.platform}')">View Instructions</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } else {
+    actionCard.style.display = 'none';
+  }
+
+  const hoursSaved = (done * 0.8).toFixed(1);
+  document.getElementById('hours-saved').textContent = hoursSaved;
+
+  document.getElementById('loading-state').style.display = 'none';
+  document.getElementById('content-state').style.display = '';
+}
+
+function copyListing(jobId, text) {
+  navigator.clipboard.writeText(text).then(() => showToast('📋 Listing copied!'));
+}
+
+function showInstructions(platform) {
+  const instructions = {
+    nextdoor:   'Go to nextdoor.com → Post → For Sale & Free → paste your listing text.',
+    craigslist: 'Go to craigslist.org → your city → Services → paste your listing.',
+    fbmarket:   'Go to facebook.com/marketplace → Create listing → paste your text.',
+  };
+  showToast(instructions[platform] || 'Open the platform website and paste your listing.');
+}
+
+function showMockData() {
+  renderJobs([
+    { jobId:'1', platform:'google',    status:'success',         customerVisibleMessage:'Your Google Business listing is live.' },
+    { jobId:'2', platform:'facebook',  status:'success',         customerVisibleMessage:'Your Facebook Page listing is live.' },
+    { jobId:'3', platform:'yelp',      status:'success',         customerVisibleMessage:'Your Yelp listing is live.' },
+    { jobId:'4', platform:'bing',      status:'success',         customerVisibleMessage:'Your Bing Places listing is live.' },
+    { jobId:'5', platform:'applemaps', status:'success',         customerVisibleMessage:'Your Apple Maps listing is submitted.' },
+    { jobId:'6', platform:'instagram', status:'running',         customerVisibleMessage:'Your Instagram listing is publishing.' },
+    { jobId:'7', platform:'nextdoor',  status:'manual_required', customerVisibleMessage:'Your Nextdoor listing is ready — you need to post it manually.', payload:{ adaptedContent:'Hi neighbors! Check out our local business serving your community.' } },
+    { jobId:'8', platform:'craigslist',status:'manual_required', customerVisibleMessage:'Your Craigslist listing is ready — you need to post it manually.', payload:{ adaptedContent:'Local business available in your area. Contact us today.' } },
+  ]);
+}
+</script>
+
+<script type="module">
+import { auth, db } from './firebase-init.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { collection, query, where, orderBy, limit, getDocs, getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = 'BlastyBiz-Login.html'; return; }
+
+  try {
+    const userSnap = await getDoc(doc(db, 'users', user.uid));
+    const userData = userSnap.exists() ? userSnap.data() : {};
+    const bizId = userData.activeBusiness || user.uid;
+
+    const params = new URLSearchParams(window.location.search);
+    const draftId = params.get('draftId');
+
+    let q;
+    if (draftId) {
+      q = query(
+        collection(db, 'publishJobs'),
+        where('draftId', '==', draftId),
+        where('uid', '==', user.uid)
+      );
+    } else {
+      q = query(
+        collection(db, 'publishJobs'),
+        where('businessId', '==', bizId),
+        where('uid', '==', user.uid),
+        orderBy('createdAt', 'desc'),
+        limit(20)
+      );
+    }
+
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      window.showMockData();
+    } else {
+      const jobs = snap.docs.map(d => ({ jobId: d.id, ...d.data() }));
+      window.renderJobs(jobs);
+    }
+  } catch (e) {
+    console.error('Failed to load jobs:', e);
+    window.showMockData();
+  }
+});
+</script>
 </body>
 </html>
