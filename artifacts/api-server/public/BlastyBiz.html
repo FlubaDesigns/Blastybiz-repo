@@ -883,10 +883,11 @@ const PLATFORM_RULES = {
   angi:       { maxChars: 800,  notes: 'Trade-specific, licensed/insured mention if applicable' },
   applemaps:  { maxChars: 500,  notes: 'Factual, complete, hours and category accurate' },
 };
-let platforms = JSON.parse(localStorage.getItem('ll_platforms') || 'null') || PLATFORMS;
-let history   = JSON.parse(localStorage.getItem('ll_history')   || '[]');
-let profile   = JSON.parse(localStorage.getItem('ll_profile')   || '{}');
-let draft     = JSON.parse(localStorage.getItem('ll_draft')     || '{}');
+window.PLATFORMS = PLATFORMS; // expose for module script
+let platforms = PLATFORMS.map(p => ({...p})); // populated from Firestore after auth
+let history   = [];                           // populated from Firestore after auth
+let profile   = {};                           // populated from Firestore after auth
+let draft     = {};                           // form state only — draftId tracked separately
 let selectedImages = []; // File objects — never base64
 
 // ══════════════════════════════════════════
@@ -1190,9 +1191,8 @@ function deployPlatform(id) {
   const p = platforms.find(x => x.id === id);
   if (!p) return;
   if (!p.adaptedContent) { showToast('Run adaptation first'); return; }
-
-  const d = JSON.parse(localStorage.getItem('ll_draft') || '{}');
-  window.location.href = 'BlastyBiz-Listing-Preview.html' + (d.id ? '?draftId=' + d.id : '');
+  const draftId = window._currentDraftId;
+  window.location.href = 'BlastyBiz-Listing-Preview.html' + (draftId ? '?draftId=' + draftId : '');
 }
 
 function copyText(id) {
@@ -1225,7 +1225,6 @@ function addHistory(platformName) {
     listing: document.getElementById('biz-name').value || 'Listing',
     time: new Date().toISOString()
   });
-  localStorage.setItem('ll_history', JSON.stringify(history));
   renderHistory();
   document.dispatchEvent(new CustomEvent('bb:addHistory', { detail: { platformName } }));
 }
@@ -1277,8 +1276,6 @@ function saveProfile() {
     hours:   document.getElementById('profile-hours').value,
     tone:    document.getElementById('profile-tone').value,
   };
-  localStorage.setItem('ll_profile', JSON.stringify(profile));
-
   document.getElementById('profile-biz-name').textContent = profile.name || 'Your Business';
   document.getElementById('profile-biz-cat').textContent  = profile.category || 'Set up your profile below';
 
@@ -1316,7 +1313,6 @@ function saveDraft() {
     website:  document.getElementById('biz-website')?.value,
     hours:    document.getElementById('biz-hours')?.value,
   };
-  localStorage.setItem('ll_draft', JSON.stringify(draft));
   checkAdaptBtn();
 }
 
@@ -1361,20 +1357,16 @@ function updateStats() {
 // STORAGE HELPERS
 // ══════════════════════════════════════════
 function savePlatforms() {
-  localStorage.setItem('ll_platforms', JSON.stringify(platforms));
-  document.dispatchEvent(new CustomEvent('bb:savePlatforms'));
+  document.dispatchEvent(new CustomEvent('bb:savePlatforms', { detail: { platforms } }));
 }
 
 function clearAll() {
   if (!confirm('Clear all saved data?')) return;
-  localStorage.removeItem('ll_platforms');
-  localStorage.removeItem('ll_history');
-  localStorage.removeItem('ll_profile');
-  localStorage.removeItem('ll_draft');
-  platforms = PLATFORMS;
+  platforms = PLATFORMS.map(p => ({...p}));
   history = [];
   profile = {};
   draft = {};
+  window._currentDraftId = null;
   init();
   showToast('🗑️ Data cleared');
   document.dispatchEvent(new CustomEvent('bb:clearAll'));
@@ -1394,13 +1386,30 @@ function showToast(msg) {
 // START
 // ══════════════════════════════════════════
 init();
+
+// Window setters — module script calls these to push Firestore data into UI
+window._bbSetPlatforms = function(updatedPlatforms) {
+  platforms = updatedPlatforms;
+  renderPlatforms();
+  renderQuickSelect();
+  updateStats();
+};
+window._bbSetHistory = function(items) {
+  history = items;
+  renderHistory();
+};
+window._bbSetProfile = function(p) {
+  profile = p;
+  loadProfile();
+};
 </script>
 
 <script type="module">
 import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-  doc, getDoc, setDoc, addDoc, collection, serverTimestamp, writeBatch, deleteDoc, query, where, getDocs
+  doc, getDoc, setDoc, addDoc, collection, serverTimestamp, writeBatch, deleteDoc,
+  query, where, getDocs, orderBy, limit
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 let currentUser = null;
@@ -1418,7 +1427,7 @@ onAuthStateChanged(auth, async (user) => {
     const bizSnap = await getDoc(doc(db, 'businesses', activeBizId));
     if (bizSnap.exists()) {
       const biz = bizSnap.data();
-      profile = {
+      const p = {
         name:     biz.businessName || biz.name || '',
         category: biz.category || '',
         phone:    biz.phone || '',
@@ -1430,11 +1439,51 @@ onAuthStateChanged(auth, async (user) => {
         platformCats: biz.platformCats || {},
         ownerName: biz.ownerName || '',
       };
-      localStorage.setItem('ll_profile', JSON.stringify(profile));
-      loadProfile();
+      if (window._bbSetProfile) window._bbSetProfile(p);
     }
   } catch(e) {
     console.error('Profile load error:', e);
+  }
+
+  // Load platform connection state from Firestore
+  try {
+    const connsSnap = await getDocs(query(
+      collection(db, 'platformConnections'),
+      where('businessId', '==', activeBizId)
+    ));
+    if (!connsSnap.empty) {
+      const connMap = {};
+      connsSnap.forEach(d => { connMap[d.data().platformId] = d.data(); });
+      const updatedPlatforms = PLATFORMS.map(p => {
+        const conn = connMap[p.id];
+        return conn ? { ...p, enabled: !!conn.enabled, status: conn.status || 'idle' } : p;
+      });
+      if (window._bbSetPlatforms) window._bbSetPlatforms(updatedPlatforms);
+    }
+  } catch(e) {
+    console.error('Platform load error:', e);
+  }
+
+  // Load recent publish history from Firestore
+  try {
+    const histSnap = await getDocs(query(
+      collection(db, 'publishJobs'),
+      where('uid', '==', user.uid),
+      orderBy('createdAt', 'desc'),
+      limit(30)
+    ));
+    const items = [];
+    histSnap.forEach(d => {
+      const j = d.data();
+      items.push({
+        platform: j.platform || '',
+        listing:  j.listingName || j.formData?.name || 'Listing',
+        time:     j.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      });
+    });
+    if (window._bbSetHistory) window._bbSetHistory(items);
+  } catch(e) {
+    console.error('History load error:', e);
   }
 });
 
@@ -1466,7 +1515,7 @@ window._afterAdaptation = async function(adaptedPlatforms) {
     };
 
     const ref = await addDoc(collection(db, 'listingDrafts'), draftData);
-    localStorage.setItem('ll_draft', JSON.stringify({ ...draftData, id: ref.id }));
+    window._currentDraftId = ref.id;
     return ref.id;
   } catch(e) {
     console.error('Save draft error:', e);
@@ -1474,10 +1523,10 @@ window._afterAdaptation = async function(adaptedPlatforms) {
   }
 };
 
-document.addEventListener('bb:savePlatforms', async () => {
+document.addEventListener('bb:savePlatforms', async (e) => {
   if (!currentUser || !activeBizId) return;
   try {
-    const plats = JSON.parse(localStorage.getItem('ll_platforms') || '[]');
+    const plats = e.detail?.platforms || [];
     if (!plats.length) return;
     const batch = writeBatch(db);
     plats.forEach(p => {
@@ -1501,12 +1550,11 @@ document.addEventListener('bb:savePlatforms', async () => {
 document.addEventListener('bb:addHistory', async (e) => {
   if (!currentUser || !activeBizId) return;
   try {
-    const d = JSON.parse(localStorage.getItem('ll_draft') || '{}');
     const platformName = e.detail?.platformName || '';
     await addDoc(collection(db, 'publishJobs'), {
       uid: currentUser.uid,
       businessId: activeBizId,
-      draftId: d.id || null,
+      draftId: window._currentDraftId || null,
       platform: platformName,
       listingName: document.getElementById('biz-name')?.value || 'Listing',
       status: 'done',
