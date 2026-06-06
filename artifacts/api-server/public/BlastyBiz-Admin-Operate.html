@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BlastyBiz — Operator Setup</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#f4f6f4;color:#0d1a0d;min-height:100vh}
+
+/* ── NAV ── */
+header{background:#fff;border-bottom:1px solid #dde5dd;padding:0 28px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:100}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:#0d1a0d;text-decoration:none}
+.logo span{color:#00C853;margin-left:6px;font-size:14px;letter-spacing:2px}
+.nav-links{display:flex;gap:8px;margin-left:auto}
+.nav-link{font-size:13px;color:#4a604a;text-decoration:none;padding:6px 12px;border-radius:8px;transition:background .15s}
+.nav-link:hover{background:#eef5ee}
+.nav-link.active{background:#00C853;color:#fff}
+
+/* ── LAYOUT ── */
+main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
+
+/* ── PROGRESS ── */
+.progress-block{background:#fff;border:1px solid #dde5dd;border-radius:14px;padding:20px 24px;margin-bottom:28px;display:flex;align-items:center;gap:20px}
+.progress-bar-wrap{flex:1;background:#eef5ee;border-radius:99px;height:10px;overflow:hidden}
+.progress-bar{height:10px;background:#00C853;border-radius:99px;transition:width .4s ease}
+.progress-label{font-size:13px;color:#4a604a;white-space:nowrap}
+.progress-title{font-weight:700;font-size:16px;color:#0d1a0d;min-width:120px}
+
+/* ── SECTION ── */
+.section{margin-bottom:28px}
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.section-icon{font-size:20px}
+.section-title{font-size:18px;font-weight:700;color:#0d1a0d}
+.section-badge{font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:99px;background:#ffeaea;color:#c0392b}
+.section-badge.ok{background:#eef5ee;color:#1a6630}
+.section-badge.warn{background:#fff8e1;color:#b07d00}
+
+/* ── CARD ── */
+.card{background:#fff;border:1px solid #dde5dd;border-radius:14px;overflow:hidden;margin-bottom:10px}
+.card-header{display:flex;align-items:center;gap:12px;padding:16px 18px;cursor:pointer;user-select:none}
+.card-header:hover{background:#fafcfa}
+.check-wrap{width:22px;height:22px;flex-shrink:0}
+.check-box{width:22px;height:22px;border:2px solid #c0d0c0;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;background:#fff}
+.check-box.done{background:#00C853;border-color:#00C853}
+.check-box.done::after{content:'✓';color:#fff;font-size:13px;font-weight:700}
+.card-title{font-size:15px;font-weight:600;color:#0d1a0d;flex:1}
+.card-sub{font-size:12px;color:#6a806a;margin-top:1px}
+.chevron{font-size:12px;color:#8aaa8a;transition:transform .2s}
+.chevron.open{transform:rotate(180deg)}
+.card-body{padding:0 18px 18px;border-top:1px solid #eef2ee;display:none}
+.card-body.open{display:block}
+
+/* ── STEPS ── */
+.steps{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.step{display:flex;gap:12px;align-items:flex-start}
+.step-num{width:22px;height:22px;background:#eef5ee;border-radius:6px;font-size:12px;font-weight:700;color:#1a6630;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-text{font-size:14px;color:#2a3a2a;line-height:1.5}
+.step-text a{color:#00b04a;text-decoration:none;font-weight:500}
+.step-text a:hover{text-decoration:underline}
+
+/* ── CODE BLOCK ── */
+.code-block{background:#f0f4f0;border:1px solid #dde5dd;border-radius:8px;padding:10px 14px;margin-top:8px;display:flex;align-items:center;gap:10px}
+.code-text{font-family:'Courier New',monospace;font-size:12px;color:#1a3a1a;flex:1;word-break:break-all}
+.copy-btn{font-size:11px;font-weight:600;color:#00b04a;background:none;border:1px solid #c0d8c0;border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.copy-btn:hover{background:#eef5ee}
+.copy-btn.copied{color:#fff;background:#00C853;border-color:#00C853}
+
+/* ── NOTE ── */
+.note{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;font-size:13px;color:#6b4f00;margin-top:10px;line-height:1.5}
+.note strong{color:#4a3400}
+.note-info{background:#e8f4fd;border-color:#90caf9;color:#0d3a5c}
+.note-info strong{color:#083a5c}
+
+/* ── LINK BTN ── */
+.link-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#0d1a0d;background:#f0f4f0;border:1px solid #dde5dd;border-radius:8px;padding:7px 14px;text-decoration:none;margin-top:10px;transition:all .15s}
+.link-btn:hover{background:#e4ece4;border-color:#c0d0c0}
+.link-btn-primary{background:#00C853;color:#fff;border-color:#00C853}
+.link-btn-primary:hover{background:#00b04a;border-color:#00b04a}
+
+/* ── DIVIDER ── */
+.divider{height:1px;background:#eef2ee;margin:16px 0}
+
+/* ── CF URL ── */
+.cf-url{font-family:'Courier New',monospace;font-size:12px;color:#1a3a1a;background:#f0f4f0;border:1px solid #dde5dd;border-radius:6px;padding:6px 10px;display:inline-block;margin-top:4px;word-break:break-all}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>OPERATE</span></a>
+  <nav class="nav-links">
+    <a class="nav-link" href="BlastyBiz-Admin.html">Admin</a>
+    <a class="nav-link" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a>
+    <a class="nav-link active" href="#">Operate</a>
+    <a class="nav-link" href="BlastyBiz-Dashboard.html">Dashboard</a>
+  </nav>
+</header>
+
+<main>
+
+  <div style="margin-bottom:24px">
+    <h1 style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:1px;color:#0d1a0d">Operator Setup</h1>
+    <p style="font-size:14px;color:#5a705a;margin-top:4px">Everything that needs a human hand. Check items off as you complete them — progress saves in your browser.</p>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-block">
+    <div class="progress-title">Setup Progress</div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="prog-bar" style="width:0%"></div></div>
+    <div class="progress-label" id="prog-label">0 / 0 done</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       STRIPE
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">💳</span>
+      <span class="section-title">Stripe Payments</span>
+      <span class="section-badge warn" id="badge-stripe">Setup required</span>
+    </div>
+
+    <!-- 1. Create products -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-stripe-products" onclick="toggleCheck(event,'stripe-products')"></div>
+        <div style="flex:1">
+          <div class="card-title">Create Pro and Agency products in Stripe</div>
+          <div class="card-sub">Generates the price IDs you need for the next step</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://dashboard.stripe.com/products" target="_blank">Stripe Dashboard → Products</a> and click <strong>+ Add product</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Name: <strong>BlastyBiz Pro</strong> · Price: <strong>$19.00 / month recurring</strong> · Set the price <strong>nickname</strong> to exactly: <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">pro</code> (lowercase — the webhook depends on this)</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Repeat for <strong>BlastyBiz Agency</strong> · Price: <strong>$99.00 / month recurring</strong> · nickname: <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">agency</code></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Copy both <strong>price_xxx</strong> IDs (not product IDs) — you'll need them in the next step</div></div>
+        </div>
+        <div class="note"><strong>Important:</strong> The webhook uses <code>price.nickname</code> to set the user's plan in Firestore. The nickname must be exactly <code>pro</code> or <code>agency</code> (lowercase, no spaces).</div>
+      </div>
+    </div>
+
+    <!-- 2. Set price ID secrets -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-stripe-prices" onclick="toggleCheck(event,'stripe-prices')"></div>
+        <div style="flex:1">
+          <div class="card-title">Set Stripe price ID secrets</div>
+          <div class="card-sub">Run in Replit shell · replaces placeholder values</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open the Replit Shell and run these commands, replacing the price IDs with the ones from your Stripe products:</div></div>
+        </div>
+        <div class="code-block" style="margin-top:10px">
+          <span class="code-text">echo "price_xxx_pro" | npx firebase-tools functions:secrets:set STRIPE_PRO_PRICE_ID --force</span>
+          <button class="copy-btn" onclick="copyCode(this,'echo \"price_xxx_pro\" | npx firebase-tools functions:secrets:set STRIPE_PRO_PRICE_ID --force')">Copy</button>
+        </div>
+        <div class="code-block">
+          <span class="code-text">echo "price_xxx_agency" | npx firebase-tools functions:secrets:set STRIPE_AGENCY_PRICE_ID --force</span>
+          <button class="copy-btn" onclick="copyCode(this,'echo \"price_xxx_agency\" | npx firebase-tools functions:secrets:set STRIPE_AGENCY_PRICE_ID --force')">Copy</button>
+        </div>
+        <div class="note-info note">After setting secrets, redeploy the functions: <code>npx firebase-tools deploy --only functions:createCheckoutSession</code></div>
+      </div>
+    </div>
+
+    <!-- 3. Add webhook -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-stripe-webhook" onclick="toggleCheck(event,'stripe-webhook')"></div>
+        <div style="flex:1">
+          <div class="card-title">Add Stripe webhook and set secret</div>
+          <div class="card-sub">So Stripe can update plan status after payment</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://dashboard.stripe.com/webhooks" target="_blank">Stripe Dashboard → Webhooks</a> → <strong>+ Add endpoint</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Endpoint URL — paste exactly:</div></div>
+        </div>
+        <div class="cf-url">https://us-central1-blastybiz-9523e.cloudfunctions.net/stripeWebhook</div>
+        <div class="steps" style="margin-top:10px">
+          <div class="step"><div class="step-num">3</div><div class="step-text">Under <strong>Events to send</strong>, select: <code>customer.subscription.created</code>, <code>customer.subscription.updated</code>, <code>customer.subscription.deleted</code></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">After saving, click <strong>Reveal signing secret</strong> (starts with <code>whsec_</code>) and copy it</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Run in Replit Shell:</div></div>
+        </div>
+        <div class="code-block">
+          <span class="code-text">echo "whsec_your_secret" | npx firebase-tools functions:secrets:set STRIPE_WEBHOOK_SECRET --force</span>
+          <button class="copy-btn" onclick="copyCode(this,'echo \"whsec_your_secret\" | npx firebase-tools functions:secrets:set STRIPE_WEBHOOK_SECRET --force')">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Enable Customer Portal -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-stripe-portal" onclick="toggleCheck(event,'stripe-portal')"></div>
+        <div style="flex:1">
+          <div class="card-title">Enable Stripe Customer Portal</div>
+          <div class="card-sub">Lets subscribers manage / cancel their own plan — 30 seconds</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://dashboard.stripe.com/settings/billing/portal" target="_blank">Stripe → Settings → Billing → Customer Portal</a></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Toggle <strong>Activate test link</strong> (test mode) or <strong>Activate customer portal</strong> (live)</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Enable <strong>Cancel subscription</strong> and <strong>Update payment method</strong> at minimum — Save</div></div>
+        </div>
+        <a class="link-btn link-btn-primary" href="https://dashboard.stripe.com/settings/billing/portal" target="_blank">↗ Open Stripe Portal Settings</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       GOOGLE
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🔍</span>
+      <span class="section-title">Google Business Profile OAuth</span>
+      <span class="section-badge warn" id="badge-google">Setup required</span>
+    </div>
+
+    <!-- Google Cloud project -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-google-api" onclick="toggleCheck(event,'google-api')"></div>
+        <div style="flex:1">
+          <div class="card-title">Enable Google Business Profile API</div>
+          <div class="card-sub">In the blastybiz-9523e Google Cloud project</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://console.cloud.google.com/apis/library?project=blastybiz-9523e" target="_blank">Google Cloud Console → API Library</a> (make sure project <strong>blastybiz-9523e</strong> is selected in the top dropdown)</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Search for <strong>Business Profile Performance API</strong> → Enable</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Also enable <strong>My Business Business Information API</strong> and <strong>My Business Account Management API</strong></div></div>
+        </div>
+        <a class="link-btn" href="https://console.cloud.google.com/apis/library?project=blastybiz-9523e" target="_blank">↗ Open API Library</a>
+      </div>
+    </div>
+
+    <!-- OAuth credentials -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-google-creds" onclick="toggleCheck(event,'google-creds')"></div>
+        <div style="flex:1">
+          <div class="card-title">Create OAuth 2.0 credentials</div>
+          <div class="card-sub">Web application type · set the redirect URI to the Cloud Function</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://console.cloud.google.com/apis/credentials?project=blastybiz-9523e" target="_blank">Google Cloud Console → Credentials</a> → <strong>+ Create Credentials → OAuth client ID</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Application type: <strong>Web application</strong> · Name: <strong>BlastyBiz</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Under <strong>Authorized redirect URIs</strong> → Add URI:</div></div>
+        </div>
+        <div class="cf-url">https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback</div>
+        <div class="steps" style="margin-top:10px">
+          <div class="step"><div class="step-num">4</div><div class="step-text">Save — copy the <strong>Client ID</strong> and <strong>Client Secret</strong></div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Run in Replit Shell:</div></div>
+        </div>
+        <div class="code-block">
+          <span class="code-text">echo "your_client_id" | npx firebase-tools functions:secrets:set GOOGLE_CLIENT_ID --force</span>
+          <button class="copy-btn" onclick="copyCode(this,'echo \"your_client_id\" | npx firebase-tools functions:secrets:set GOOGLE_CLIENT_ID --force')">Copy</button>
+        </div>
+        <div class="code-block">
+          <span class="code-text">echo "your_client_secret" | npx firebase-tools functions:secrets:set GOOGLE_CLIENT_SECRET --force</span>
+          <button class="copy-btn" onclick="copyCode(this,'echo \"your_client_secret\" | npx firebase-tools functions:secrets:set GOOGLE_CLIENT_SECRET --force')">Copy</button>
+        </div>
+        <div class="note"><strong>Note:</strong> The OAuth consent screen must be configured first. Set User Type to <strong>External</strong> and add your own Google account as a test user while the app is in Testing mode.</div>
+      </div>
+    </div>
+
+    <!-- Redeploy Google functions -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-google-deploy" onclick="toggleCheck(event,'google-deploy')"></div>
+        <div style="flex:1">
+          <div class="card-title">Redeploy Google OAuth functions</div>
+          <div class="card-sub">Picks up the real credentials — run after setting secrets</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="code-block" style="margin-top:10px">
+          <span class="code-text">npx firebase-tools deploy --only functions:initiateGoogleOAuth,functions:googleOAuthCallback</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:initiateGoogleOAuth,functions:googleOAuthCallback')">Copy</button>
+        </div>
+        <div class="note-info note">Run this in the Replit Shell after saving both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FACEBOOK / META
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">📘</span>
+      <span class="section-title">Facebook & Instagram OAuth</span>
+      <span class="section-badge warn" id="badge-facebook">Setup required</span>
+    </div>
+
+    <!-- Create Meta App -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-fb-app" onclick="toggleCheck(event,'fb-app')"></div>
+        <div style="flex:1">
+          <div class="card-title">Create a Meta (Facebook) App</div>
+          <div class="card-sub">Business type · enables Pages and Instagram permissions</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://developers.facebook.com/apps" target="_blank">Meta for Developers → My Apps</a> → <strong>Create App</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Use case: <strong>Other</strong> → App type: <strong>Business</strong> · Name: <strong>BlastyBiz</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">In the left sidebar → <strong>Add Product</strong> → add <strong>Facebook Login</strong></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Under Facebook Login → <strong>Settings</strong> → add to <strong>Valid OAuth Redirect URIs</strong>:</div></div>
+        </div>
+        <div class="cf-url">https://us-central1-blastybiz-9523e.cloudfunctions.net/facebookOAuthCallback</div>
+        <div class="steps" style="margin-top:10px">
+          <div class="step"><div class="step-num">5</div><div class="step-text">Go to <strong>App Settings → Basic</strong> → copy <strong>App ID</strong> and <strong>App Secret</strong></div></div>
+          <div class="step"><div class="step-num">6</div><div class="step-text">Run in Replit Shell:</div></div>
+        </div>
+        <div class="code-block">
+          <span class="code-text">echo "your_app_id" | npx firebase-tools functions:secrets:set FACEBOOK_APP_ID --force</span>
+          <button class="copy-btn" onclick="copyCode(this,'echo \"your_app_id\" | npx firebase-tools functions:secrets:set FACEBOOK_APP_ID --force')">Copy</button>
+        </div>
+        <div class="code-block">
+          <span class="code-text">echo "your_app_secret" | npx firebase-tools functions:secrets:set FACEBOOK_APP_SECRET --force</span>
+          <button class="copy-btn" onclick="copyCode(this,'echo \"your_app_secret\" | npx firebase-tools functions:secrets:set FACEBOOK_APP_SECRET --force')">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Permissions -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-fb-perms" onclick="toggleCheck(event,'fb-perms')"></div>
+        <div style="flex:1">
+          <div class="card-title">Request Pages and Instagram permissions</div>
+          <div class="card-sub">Required for posting — needs Meta App Review for production</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">In your Meta App → <strong>App Review → Permissions and Features</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Request these permissions: <code>pages_manage_posts</code>, <code>pages_read_engagement</code>, <code>instagram_basic</code>, <code>instagram_content_publish</code></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">While in <strong>Development Mode</strong>, only your own test Facebook accounts can connect — that's fine for testing</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">For production, submit for <strong>App Review</strong> with a screen recording showing how BlastyBiz uses each permission</div></div>
+        </div>
+        <div class="note"><strong>Timeline:</strong> Meta App Review typically takes 5–14 business days. Start this early.</div>
+      </div>
+    </div>
+
+    <!-- Redeploy Facebook functions -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-fb-deploy" onclick="toggleCheck(event,'fb-deploy')"></div>
+        <div style="flex:1">
+          <div class="card-title">Redeploy Facebook OAuth functions</div>
+          <div class="card-sub">Picks up the real credentials — run after setting secrets</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="code-block" style="margin-top:10px">
+          <span class="code-text">npx firebase-tools deploy --only functions:initiateFacebookOAuth,functions:facebookOAuthCallback</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:initiateFacebookOAuth,functions:facebookOAuthCallback')">Copy</button>
+        </div>
+        <div class="note-info note">Run this in the Replit Shell after saving both FACEBOOK_APP_ID and FACEBOOK_APP_SECRET.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       DOMAIN
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🌐</span>
+      <span class="section-title">Custom Domain</span>
+      <span class="section-badge warn" id="badge-domain">Not connected</span>
+    </div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-domain" onclick="toggleCheck(event,'domain')"></div>
+        <div style="flex:1">
+          <div class="card-title">Connect blastybiz.com to Firebase Hosting</div>
+          <div class="card-sub">Firebase Console → Hosting → Add custom domain</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://console.firebase.google.com/project/blastybiz-9523e/hosting/sites" target="_blank">Firebase Console → Hosting</a> → click <strong>Add custom domain</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Enter <strong>blastybiz.com</strong> → Continue</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Firebase shows you two <strong>A records</strong> — add both to your domain registrar's DNS settings</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Wait for DNS propagation (up to 24 hours) — Firebase will auto-provision an SSL certificate once it verifies</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Also add <strong>www.blastybiz.com</strong> as a second custom domain pointing to the same site, or set up a redirect in your registrar</div></div>
+        </div>
+        <div class="note-info note">Current live URL: <strong>https://blastybiz-9523e.web.app</strong> — this keeps working after you add the custom domain.</div>
+        <a class="link-btn link-btn-primary" href="https://console.firebase.google.com/project/blastybiz-9523e/hosting/sites" target="_blank">↗ Open Firebase Hosting</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       ONGOING
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🔧</span>
+      <span class="section-title">Ongoing Operator Commands</span>
+      <span class="section-badge ok">Reference</span>
+    </div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" style="visibility:hidden"></div>
+        <div style="flex:1">
+          <div class="card-title">Deploy commands cheat sheet</div>
+          <div class="card-sub">Run in Replit Shell whenever you make changes</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <p style="font-size:13px;color:#4a604a;margin-top:4px;margin-bottom:10px">Run these from the Replit Shell tab:</p>
+
+        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:10px">Deploy HTML pages (hosting)</p>
+        <div class="code-block">
+          <span class="code-text">npx firebase-tools deploy --only hosting</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only hosting')">Copy</button>
+        </div>
+
+        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">Deploy Firestore security rules</p>
+        <div class="code-block">
+          <span class="code-text">npx firebase-tools deploy --only firestore:rules</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only firestore:rules')">Copy</button>
+        </div>
+
+        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">Deploy a specific function</p>
+        <div class="code-block">
+          <span class="code-text">npx firebase-tools deploy --only functions:functionName</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:functionName')">Copy</button>
+        </div>
+
+        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">List all deployed functions</p>
+        <div class="code-block">
+          <span class="code-text">npx firebase-tools functions:list</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools functions:list')">Copy</button>
+        </div>
+
+        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">Set / update a Firebase secret</p>
+        <div class="code-block">
+          <span class="code-text">echo "value" | npx firebase-tools functions:secrets:set SECRET_NAME --force</span>
+          <button class="copy-btn" onclick="copyCode(this,'echo \"value\" | npx firebase-tools functions:secrets:set SECRET_NAME --force')">Copy</button>
+        </div>
+
+        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">View function logs</p>
+        <div class="code-block">
+          <span class="code-text">npx firebase-tools functions:log --only functionName</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools functions:log --only functionName')">Copy</button>
+        </div>
+
+        <div class="divider"></div>
+        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px">All 16 deployed functions</p>
+        <p style="font-size:13px;color:#4a604a;line-height:1.8">
+          adaptListing · approveDraft · createCheckoutSession · createPortalSession ·
+          facebookOAuthCallback · googleOAuthCallback · initiateFacebookOAuth · initiateGoogleOAuth ·
+          postToBing · postToAppleMaps · postToFacebook · postToGoogle · postToInstagram ·
+          resolveCategories · stripeWebhook · uploadImage
+        </p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const STORAGE_KEY = 'blastybiz_operate_checks';
+
+function loadChecks() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { return {}; }
+}
+function saveChecks(checks) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(checks));
+}
+
+function toggleCheck(e, key) {
+  e.stopPropagation();
+  const checks = loadChecks();
+  checks[key] = !checks[key];
+  saveChecks(checks);
+  renderChecks();
+}
+
+function renderChecks() {
+  const checks = loadChecks();
+  const checkable = ['stripe-products','stripe-prices','stripe-webhook','stripe-portal',
+                     'google-api','google-creds','google-deploy',
+                     'fb-app','fb-perms','fb-deploy','domain'];
+  checkable.forEach(key => {
+    const el = document.getElementById('chk-' + key.replace(/-/g,'') + '');
+    const el2 = document.getElementById('chk-' + key);
+    const box = el2 || el;
+    if (!box) return;
+    if (checks[key]) box.classList.add('done');
+    else box.classList.remove('done');
+  });
+
+  const done = checkable.filter(k => checks[k]).length;
+  const total = checkable.length;
+  document.getElementById('prog-bar').style.width = (done/total*100) + '%';
+  document.getElementById('prog-label').textContent = `${done} / ${total} done`;
+
+  const stripeKeys = ['stripe-products','stripe-prices','stripe-webhook','stripe-portal'];
+  const googleKeys = ['google-api','google-creds','google-deploy'];
+  const fbKeys = ['fb-app','fb-perms','fb-deploy'];
+  updateBadge('badge-stripe', stripeKeys, checks);
+  updateBadge('badge-google', googleKeys, checks);
+  updateBadge('badge-facebook', fbKeys, checks);
+  const domainDone = checks['domain'];
+  const domainBadge = document.getElementById('badge-domain');
+  if (domainBadge) { domainBadge.textContent = domainDone ? 'Connected ✓' : 'Not connected'; domainBadge.className = 'section-badge ' + (domainDone ? 'ok' : 'warn'); }
+}
+
+function updateBadge(badgeId, keys, checks) {
+  const done = keys.filter(k => checks[k]).length;
+  const badge = document.getElementById(badgeId);
+  if (!badge) return;
+  if (done === keys.length) { badge.textContent = 'Complete ✓'; badge.className = 'section-badge ok'; }
+  else if (done > 0) { badge.textContent = `${done}/${keys.length} done`; badge.className = 'section-badge warn'; }
+  else { badge.textContent = 'Setup required'; badge.className = 'section-badge warn'; }
+}
+
+function toggleCard(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.chevron');
+  body.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+
+function copyCode(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+renderChecks();
+</script>
+</body>
+</html>
