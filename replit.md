@@ -1,45 +1,44 @@
-# [Project name]
+# BlastyBiz
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Local business marketing distribution tool. Business owner fills out one form, AI adapts the listing for every platform, then auto-posts or generates copy-paste content.
 
 ## Run & Operate
 
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `npx firebase-tools deploy --only hosting` — deploy static HTML to Firebase Hosting
+- `npx firebase-tools deploy --only firestore:rules` — deploy Firestore rules
+- `npx firebase-tools deploy --only functions` — deploy Cloud Functions
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Static HTML/CSS/JS — no React, no Vite, no build step for the frontend
+- Firebase Hosting — serves all static files (blastybiz-9523e.web.app)
+- Firebase Auth — Email/Password + Google
+- Firestore — primary database (us-east1, production mode)
+- Cloud Functions — 9 functions in `functions/index.js`
+- Express (API server) — `/api` routes only; runs on Replit for development
+- Anthropic Claude — AI adaptation via `ANTHROPIC_API_KEY`
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
-
-## Architecture decisions
-
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
-
-## Product
-
-_Describe the high-level user-facing capabilities of this app once they exist._
+- `artifacts/api-server/public/` — all HTML pages (source of truth for static files)
+- `artifacts/api-server/src/routes/` — Express API routes
+- `functions/index.js` — all 9 Cloud Functions
+- `firestore.rules` — Firestore security rules
+- `firebase.json` — Firebase project config
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- **This is a Firebase + Cloud Functions build. Do NOT create Vite apps, React apps, dev servers, or any Replit-hosted frontend artifacts. Ever.**
+- All frontend work goes directly to `artifacts/api-server/public/` and is deployed to Firebase Hosting.
+- The only thing running on Replit is the Express API server (`artifacts/api-server`).
+- Deploy with `npx firebase-tools deploy --only hosting` after any HTML changes.
+- Admin pages (Queue Manager, Logs) use light/white theme — do NOT apply dark theme.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- `firebase deploy` works from Replit — Firebase CLI is already authenticated.
+- Firestore rules: `businesses` collection checks `uid` field on the document, not the document ID.
+- `ANTHROPIC_API_KEY` is set as a Replit env var (shared environment).
+- Cloud Functions require Firebase Blaze plan to deploy.
+- Never create new Replit artifacts for this project.
