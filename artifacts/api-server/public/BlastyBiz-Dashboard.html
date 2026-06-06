@@ -227,22 +227,19 @@
   </section>
 
   <section class="grid">
-    <div class="stat"><div class="stat-num">7</div><div class="stat-label">Platforms Ready</div><div class="stat-note">4 auto / 3 manual</div></div>
-    <div class="stat"><div class="stat-num">18</div><div class="stat-label">Posts This Month</div><div class="stat-note">+6 from last month</div></div>
-    <div class="stat"><div class="stat-num">3</div><div class="stat-label">Needs Review</div><div class="stat-note warn">Action needed</div></div>
-    <div class="stat"><div class="stat-num">$4.82</div><div class="stat-label">AI Cost</div><div class="stat-note ok">Below budget</div></div>
+    <div class="stat"><div class="stat-num" id="stat-platforms">—</div><div class="stat-label">Platforms Ready</div><div class="stat-note" id="stat-platforms-note">loading…</div></div>
+    <div class="stat"><div class="stat-num" id="stat-posts">—</div><div class="stat-label">Posts This Month</div><div class="stat-note" id="stat-posts-note"> </div></div>
+    <div class="stat"><div class="stat-num" id="stat-review">—</div><div class="stat-label">Needs Review</div><div class="stat-note warn" id="stat-review-note"> </div></div>
+    <div class="stat"><div class="stat-num">$0</div><div class="stat-label">AI Cost</div><div class="stat-note ok">This month</div></div>
   </section>
 
   <section class="two-col" id="platforms">
     <div class="card">
       <div class="card-title">📡 Platform Status</div>
-      <div class="platform-list">
-        <div class="platform-row"><div class="platform-icon">🔍</div><div class="row-main"><div class="row-title">Google Business Profile</div><div class="row-sub">Connected • synced today</div></div><span class="badge live">Live</span></div>
-        <div class="platform-row"><div class="platform-icon">📘</div><div class="row-main"><div class="row-title">Facebook Page</div><div class="row-sub">Connected • auto-post available</div></div><span class="badge live">Live</span></div>
-        <div class="platform-row"><div class="platform-icon">📸</div><div class="row-main"><div class="row-title">Instagram</div><div class="row-sub">Connected through Meta</div></div><span class="badge live">Live</span></div>
-        <div class="platform-row"><div class="platform-icon">⭐</div><div class="row-main"><div class="row-title">Yelp</div><div class="row-sub">Category mismatch detected</div></div><span class="badge needs">Review</span></div>
-        <div class="platform-row"><div class="platform-icon">🏘️</div><div class="row-main"><div class="row-title">Nextdoor</div><div class="row-sub">Manual copy-paste workflow</div></div><span class="badge off">Manual</span></div>
+      <div class="platform-list" id="platform-list">
+        <div style="color:#587058;font-size:13px;padding:4px 0">Loading…</div>
       </div>
+      <a href="BlastyBiz-Connect.html" style="display:inline-block;margin-top:10px;font-size:12px;color:#00C853;text-decoration:none;font-weight:600">⚙ Manage connections →</a>
     </div>
 
     <div class="card" id="tasks">
@@ -259,10 +256,8 @@
   <section class="two-col" style="margin-top:16px;">
     <div class="card">
       <div class="card-title">📋 Recent Activity</div>
-      <div class="activity-list">
-        <div class="activity-row"><div class="platform-icon">⚡</div><div class="row-main"><div class="row-title">AI adapted Spring Promo</div><div class="row-sub">Google, Facebook, Instagram, Yelp • Today</div></div><span class="badge live">Done</span></div>
-        <div class="activity-row"><div class="platform-icon">📡</div><div class="row-main"><div class="row-title">Facebook post published</div><div class="row-sub">Auto-post completed • Yesterday</div></div><span class="badge live">Live</span></div>
-        <div class="activity-row"><div class="platform-icon">⚠️</div><div class="row-main"><div class="row-title">Yelp sync paused</div><div class="row-sub">Needs manual category confirmation</div></div><span class="badge needs">Paused</span></div>
+      <div class="activity-list" id="activity-list">
+        <div style="color:#587058;font-size:13px;padding:4px 0">Loading…</div>
       </div>
     </div>
 
@@ -538,29 +533,123 @@ onAuthStateChanged(auth, async (user) => {
 
   async function loadBusinessContextFirestore(bizId) {
     try {
-      const bizSnap = await getDoc(doc(db, 'businesses', bizId));
-      const biz = bizSnap.exists() ? bizSnap.data() : {};
+      const [bizSnap, googleSnap, facebookSnap, instagramSnap] = await Promise.all([
+        getDoc(doc(db, 'businesses', bizId)),
+        getDoc(doc(db, 'platformConnections', `${bizId}_google`)),
+        getDoc(doc(db, 'platformConnections', `${bizId}_facebook`)),
+        getDoc(doc(db, 'platformConnections', `${bizId}_instagram`)),
+      ]);
 
+      const biz = bizSnap.exists() ? bizSnap.data() : {};
       const nameEl = document.getElementById('dashboard-biz-name');
       const snapBiz = document.getElementById('snapshot-biz');
       if (nameEl) nameEl.textContent = biz.businessName || biz.name || bizId;
       if (snapBiz) snapBiz.textContent = biz.businessName || biz.name || bizId;
 
+      const google    = googleSnap.exists()    ? googleSnap.data()    : null;
+      const facebook  = facebookSnap.exists()  ? facebookSnap.data()  : null;
+      const instagram = instagramSnap.exists() ? instagramSnap.data() : null;
+
+      const API_PLATFORMS = [
+        { id: 'google',    icon: '🔍', label: 'Google Business Profile', conn: google,
+          connectedSub: d => d.locationName ? `Connected · ${d.locationName}` : 'Connected · synced' },
+        { id: 'facebook',  icon: '📘', label: 'Facebook Page',            conn: facebook,
+          connectedSub: d => d.pageName ? `Connected · ${d.pageName}` : 'Connected · auto-post on' },
+        { id: 'instagram', icon: '📸', label: 'Instagram',                conn: instagram,
+          connectedSub: d => d.igUserId ? `Connected via Meta · @${d.igUserId}` : 'Connected through Meta' },
+      ];
+      const MANUAL_PLATFORMS = [
+        { icon: '📌', label: 'Yelp',              sub: 'Copy-paste workflow' },
+        { icon: '🏘️', label: 'Nextdoor',          sub: 'Copy-paste workflow' },
+        { icon: '🛒', label: 'Facebook Marketplace', sub: 'Copy-paste workflow' },
+        { icon: '🏔️', label: 'Craigslist',        sub: 'Copy-paste workflow' },
+        { icon: '🔵', label: 'Bing Places',        sub: 'Manual — bingplaces.com' },
+        { icon: '🍎', label: 'Apple Maps',         sub: 'Manual — mapsconnect.apple.com' },
+      ];
+
+      let connectedCount = MANUAL_PLATFORMS.length;
+      let rows = '';
+      API_PLATFORMS.forEach(p => {
+        const isConn = p.conn && p.conn.status === 'connected';
+        if (isConn) connectedCount++;
+        const sub  = isConn ? p.connectedSub(p.conn) : 'Not connected — <a href="BlastyBiz-Connect.html" style="color:#00C853">Connect</a>';
+        const badge = isConn
+          ? '<span class="badge live">Live</span>'
+          : '<span class="badge off">Off</span>';
+        rows += `<div class="platform-row"><div class="platform-icon">${p.icon}</div><div class="row-main"><div class="row-title">${p.label}</div><div class="row-sub">${sub}</div></div>${badge}</div>`;
+      });
+      MANUAL_PLATFORMS.forEach(p => {
+        rows += `<div class="platform-row"><div class="platform-icon">${p.icon}</div><div class="row-main"><div class="row-title">${p.label}</div><div class="row-sub">${p.sub}</div></div><span class="badge off">Manual</span></div>`;
+      });
+      const listEl = document.getElementById('platform-list');
+      if (listEl) listEl.innerHTML = rows;
+
+      const apiConnected = API_PLATFORMS.filter(p => p.conn && p.conn.status === 'connected').length;
+      const statP = document.getElementById('stat-platforms');
+      const statPN = document.getElementById('stat-platforms-note');
+      if (statP) statP.textContent = connectedCount;
+      if (statPN) statPN.textContent = `${apiConnected} auto · ${MANUAL_PLATFORMS.length} manual`;
+
       const jobsQ = query(
         collection(db, 'publishJobs'),
         where('businessId', '==', bizId),
         orderBy('createdAt', 'desc'),
-        limit(10)
+        limit(20)
       );
       const jobsSnap = await getDocs(jobsQ);
-      const liveCount = jobsSnap.docs.filter(d => d.data().status === 'success').length;
+      const jobs = jobsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const thisMonth  = jobs.filter(j => j.createdAt?.toDate?.() >= monthStart);
+      const successJobs = jobs.filter(j => j.status === 'success');
+      const failedJobs  = jobs.filter(j => j.status === 'failed');
+
+      const statPosts = document.getElementById('stat-posts');
+      const statPostsN = document.getElementById('stat-posts-note');
+      const statRev = document.getElementById('stat-review');
+      const statRevN = document.getElementById('stat-review-note');
+      if (statPosts) statPosts.textContent = thisMonth.length || 0;
+      if (statPostsN) statPostsN.textContent = 'this month';
+      if (statRev) statRev.textContent = failedJobs.length;
+      if (statRevN) { statRevN.textContent = failedJobs.length > 0 ? 'Action needed' : 'All clear'; statRevN.className = failedJobs.length > 0 ? 'stat-note warn' : 'stat-note ok'; }
+
+      const liveCount = successJobs.length;
       const scoreEl = document.getElementById('visibility-score');
       const barEl = document.getElementById('score-bar');
       if (scoreEl) scoreEl.textContent = Math.min(95, liveCount * 12 + 20);
       if (barEl) barEl.style.width = Math.min(95, liveCount * 12 + 20) + '%';
+
+      const statusLabel = { success: 'Done', failed: 'Failed', pending: 'Queued', processing: 'Running', closed: 'Closed', manual_completed: 'Done', manual_required: 'Manual' };
+      const statusBadge = { success: 'live', failed: 'needs', pending: 'off', processing: 'off', closed: 'off', manual_completed: 'live', manual_required: 'off' };
+      const icons = { google: '🔍', facebook: '📘', instagram: '📸', bing: '🔵', apple_maps: '🍎', nextdoor: '🏘️', craigslist: '🏔️', facebook_marketplace: '🛒' };
+
+      let actRows = '';
+      if (jobs.length === 0) {
+        actRows = '<div style="color:#587058;font-size:13px;padding:4px 0">No activity yet — create your first listing.</div>';
+      } else {
+        jobs.slice(0, 5).forEach(j => {
+          const icon  = icons[j.platform] || '📡';
+          const title = j.platform ? `${j.platform.replace(/_/g,' ')} · ${j.offerTitle || 'Post'}` : (j.offerTitle || 'Post');
+          const ts    = j.createdAt?.toDate ? timeAgo(j.createdAt.toDate()) : '';
+          const badge = `<span class="badge ${statusBadge[j.status] || 'off'}">${statusLabel[j.status] || j.status}</span>`;
+          actRows += `<div class="activity-row"><div class="platform-icon">${icon}</div><div class="row-main"><div class="row-title" style="text-transform:capitalize">${title}</div><div class="row-sub">${ts}</div></div>${badge}</div>`;
+        });
+      }
+      const actEl = document.getElementById('activity-list');
+      if (actEl) actEl.innerHTML = actRows;
+
     } catch(e) {
       console.error('loadBusinessContext error:', e);
     }
+  }
+
+  function timeAgo(date) {
+    const s = Math.floor((Date.now() - date) / 1000);
+    if (s < 60)   return 'just now';
+    if (s < 3600) return `${Math.floor(s/60)}m ago`;
+    if (s < 86400) return `${Math.floor(s/3600)}h ago`;
+    return `${Math.floor(s/86400)}d ago`;
   }
 
   window.loadBusinessContext = async function(bizId) {
