@@ -823,25 +823,29 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
-  sendPasswordResetEmail,
-  onAuthStateChanged
+  sendPasswordResetEmail
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 async function afterAuth(user) {
-  const snap = await getDoc(doc(db, 'users', user.uid));
-  const plan = new URLSearchParams(window.location.search).get('plan');
-  if (snap.exists() && snap.data().onboarded) {
-    window.location.href = plan
-      ? `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(plan)}`
-      : 'BlastyBiz-Dashboard.html';
-  } else {
-    window.location.href = 'BlastyBiz-Onboarding.html';
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    const plan = new URLSearchParams(window.location.search).get('plan');
+    if (snap.exists() && snap.data().onboarded) {
+      window.location.href = plan
+        ? `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(plan)}`
+        : 'BlastyBiz-Dashboard.html';
+    } else {
+      window.location.href = 'BlastyBiz-Onboarding.html';
+    }
+  } catch (e) {
+    window.showToast('Error loading account: ' + (e.code || e.message), true);
   }
 }
 
-onAuthStateChanged(auth, (user) => {
-  if (user) afterAuth(user);
+// One-time check on page load: redirect if already signed in
+auth.authStateReady().then(() => {
+  if (auth.currentUser) afterAuth(auth.currentUser);
 });
 
 window.handleSignIn = async function() {
