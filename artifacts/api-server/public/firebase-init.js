@@ -4,7 +4,7 @@ import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.12.0/firebas
 import { getStorage } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCyEwA6jGHp0xjAJ03NOXHblYfpajtFXGM",
+  apiKey: "AIzaSyCyEwA6jGHp0xjAJO3NOXHblYfpajtFXGM",
   authDomain: "blastybiz-9523e.web.app",
   projectId: "blastybiz-9523e",
   storageBucket: "blastybiz-9523e.firebasestorage.app",
