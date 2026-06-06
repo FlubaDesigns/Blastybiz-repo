@@ -87,7 +87,7 @@ All 6 collections secured. Owner-only access on all user data.
 | Jun 6, 2026 | `deleteAccount` CF | Was missing `secrets: ['STRIPE_SECRET_KEY']` — Stripe cancellation would silently fail. Fixed and redeployed. |
 | Jun 6, 2026 | `BlastyBiz-Login.html` | Google sign-in used `signInWithPopup` on all devices — blocked by mobile Chrome. Fixed: `signInWithRedirect` on mobile (Android/iPhone), `signInWithPopup` retained on desktop. |
 | Jun 6, 2026 | `firebase-init.js` | `authDomain` was `blastybiz-9523e.firebaseapp.com` — mobile Chrome blocks cross-origin storage between `firebaseapp.com` and `web.app`, silently killing the redirect flow. Fixed: changed `authDomain` to `blastybiz-9523e.web.app` so auth redirect stays same-origin. Verified live. |
-| Jun 6, 2026 | `firebase.json` + `index.html` | Root URL (`/`) returned Firebase 404. First fix (firebase.json redirect rule) worked server-side but Firebase CDN edge nodes cached the old 404. Second fix: created `artifacts/api-server/public/index.html` with `meta refresh` + JS redirect to `BlastyBiz-Home.html` — Firebase now serves a real file (200) which is never cached as a 404. Confirmed live. |
+| Jun 6, 2026 | `firebase.json` + `index.html` | Root URL (`/`) returned Firebase 404. firebase.json redirect rule (301/302) was overridden by CDN edge caching on mobile networks. Root cause: Firebase redirect rules take precedence over static files AND get cached by CDN nodes. Final fix: removed redirect rule from firebase.json entirely; created `artifacts/api-server/public/index.html` with `meta refresh` + JS `location.replace` to `BlastyBiz-Home.html`. Firebase now serves a 200 directly — no redirect rule, no CDN caching issue. Confirmed: `curl -sI /` returns `HTTP/2 200` with `index.html` content. |
 
 ---
 
