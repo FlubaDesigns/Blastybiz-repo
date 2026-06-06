@@ -44,6 +44,7 @@ Local business marketing distribution tool. Business owner fills out one form, A
 5. **Update `download/BlastyBiz_Audit.md`** — add a row to the 🐛 Bugs Fixed table with date, location, and what was wrong and how it was fixed.
 6. **Rebuild `download/BlastyBiz_Site.zip`** — run the Python zipfile script so the zip always reflects the latest state.
 7. **Present both files** to the user before closing out the fix.
+8. **Post the live link** — always end with the direct URL so it can be tapped on mobile: https://blastybiz-9523e.web.app
 
 ## Gotchas
 
