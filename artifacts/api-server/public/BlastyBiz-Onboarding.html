@@ -1177,39 +1177,53 @@ const PLATFORM_CATS = {
 // ══════════════════════════════════════════
 let resolvedCats = {};
 
-function resolveCats() {
+async function resolveCats() {
   const desc = document.getElementById('s-biztype')?.value?.trim();
   if (!desc) return;
 
-  // Show the platform category section
   document.getElementById('cat-resolve-wrap').style.display = 'block';
-
-  // Best-match algorithm — keyword scoring against category lists
-  const descLower = desc.toLowerCase();
-  const words = descLower.split(/\s+/);
-
   const list = document.getElementById('platform-cat-list');
+  list.innerHTML = '<p style="padding:12px;opacity:.7">Picking best categories with AI…</p>';
+
+  const platformCatLists = {};
+  Object.entries(PLATFORM_CATS).forEach(([pid, p]) => { platformCatLists[pid] = p.cats; });
+
+  let aiCats = null;
+  try {
+    const resp = await fetch('/api/resolveCategories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description: desc, platformCatLists }),
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      aiCats = data.categories || {};
+    }
+  } catch(e) {
+    console.error('resolveCategories API error:', e);
+  }
+
   list.innerHTML = '';
 
   Object.entries(PLATFORM_CATS).forEach(([pid, p]) => {
-    // Score each category against description
     let bestCat = p.cats[0];
-    let bestScore = 0;
 
-    p.cats.forEach(cat => {
-      const catWords = cat.toLowerCase().split(/[\s&\/]+/);
-      let score = 0;
-      words.forEach(w => {
-        catWords.forEach(cw => {
-          if (cw.includes(w) || w.includes(cw)) score += (cw === w ? 3 : 1);
-        });
+    if (aiCats && aiCats[pid] && p.cats.includes(aiCats[pid])) {
+      bestCat = aiCats[pid];
+    } else {
+      const descLower = desc.toLowerCase();
+      const words = descLower.split(/\s+/);
+      let bestScore = 0;
+      p.cats.forEach(cat => {
+        const catWords = cat.toLowerCase().split(/[\s&\/]+/);
+        let score = 0;
+        words.forEach(w => { catWords.forEach(cw => { if (cw.includes(w) || w.includes(cw)) score += (cw === w ? 3 : 1); }); });
+        if (score > bestScore) { bestScore = score; bestCat = cat; }
       });
-      if (score > bestScore) { bestScore = score; bestCat = cat; }
-    });
+    }
 
     resolvedCats[pid] = bestCat;
 
-    // Build row
     const row = document.createElement('div');
     row.className = 'pcat-row';
 
@@ -1225,19 +1239,13 @@ function resolveCats() {
     });
     sel.onchange = () => { resolvedCats[pid] = sel.value; };
 
-    row.innerHTML = `
-      <span class="pcat-icon">${p.icon}</span>
-      <span class="pcat-name">${p.name}</span>
-    `;
+    row.innerHTML = `<span class="pcat-icon">${p.icon}</span><span class="pcat-name">${p.name}</span>`;
     row.appendChild(sel);
     list.appendChild(row);
   });
 
-  // Mark step valid
   selectedCategory = desc;
   checkStep(2);
-
-  // Scroll down to show results
   document.getElementById('slide-2').scrollTo({ top: 300, behavior: 'smooth' });
 }
 

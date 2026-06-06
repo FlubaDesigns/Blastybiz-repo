@@ -1191,13 +1191,8 @@ function deployPlatform(id) {
   if (!p) return;
   if (!p.adaptedContent) { showToast('Run adaptation first'); return; }
 
-  // Placeholder — real API call goes here via Cloud Function
-  setPlatformStatus(id, 'posting');
-  setTimeout(() => {
-    setPlatformStatus(id, 'done');
-    addHistory(p.name);
-    showToast('✅ Posted to ' + p.name);
-  }, 1800);
+  const d = JSON.parse(localStorage.getItem('ll_draft') || '{}');
+  window.location.href = 'BlastyBiz-Listing-Preview.html' + (d.id ? '?draftId=' + d.id : '');
 }
 
 function copyText(id) {
@@ -1232,6 +1227,7 @@ function addHistory(platformName) {
   });
   localStorage.setItem('ll_history', JSON.stringify(history));
   renderHistory();
+  document.dispatchEvent(new CustomEvent('bb:addHistory', { detail: { platformName } }));
 }
 
 function renderHistory() {
@@ -1366,6 +1362,7 @@ function updateStats() {
 // ══════════════════════════════════════════
 function savePlatforms() {
   localStorage.setItem('ll_platforms', JSON.stringify(platforms));
+  document.dispatchEvent(new CustomEvent('bb:savePlatforms'));
 }
 
 function clearAll() {
@@ -1380,6 +1377,7 @@ function clearAll() {
   draft = {};
   init();
   showToast('🗑️ Data cleared');
+  document.dispatchEvent(new CustomEvent('bb:clearAll'));
 }
 
 // ══════════════════════════════════════════
@@ -1402,7 +1400,7 @@ init();
 import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-  doc, getDoc, setDoc, addDoc, collection, serverTimestamp
+  doc, getDoc, setDoc, addDoc, collection, serverTimestamp, writeBatch, deleteDoc, query, where, getDocs
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 let currentUser = null;
@@ -1475,6 +1473,63 @@ window._afterAdaptation = async function(adaptedPlatforms) {
     return null;
   }
 };
+
+document.addEventListener('bb:savePlatforms', async () => {
+  if (!currentUser || !activeBizId) return;
+  try {
+    const plats = JSON.parse(localStorage.getItem('ll_platforms') || '[]');
+    if (!plats.length) return;
+    const batch = writeBatch(db);
+    plats.forEach(p => {
+      const ref = doc(db, 'platformConnections', activeBizId + '_' + p.id);
+      batch.set(ref, {
+        uid: currentUser.uid,
+        businessId: activeBizId,
+        platformId: p.id,
+        platformName: p.name,
+        enabled: !!p.enabled,
+        status: p.status || 'idle',
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+    });
+    await batch.commit();
+  } catch(e) {
+    console.error('savePlatforms Firestore error:', e);
+  }
+});
+
+document.addEventListener('bb:addHistory', async (e) => {
+  if (!currentUser || !activeBizId) return;
+  try {
+    const d = JSON.parse(localStorage.getItem('ll_draft') || '{}');
+    const platformName = e.detail?.platformName || '';
+    await addDoc(collection(db, 'publishJobs'), {
+      uid: currentUser.uid,
+      businessId: activeBizId,
+      draftId: d.id || null,
+      platform: platformName,
+      listingName: document.getElementById('biz-name')?.value || 'Listing',
+      status: 'done',
+      customerVisibleMessage: 'Listing posted to ' + platformName + '.',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch(e) {
+    console.error('addHistory publishJobs error:', e);
+  }
+});
+
+document.addEventListener('bb:clearAll', async () => {
+  if (!currentUser || !activeBizId) return;
+  try {
+    const connsSnap = await getDocs(query(collection(db, 'platformConnections'), where('businessId', '==', activeBizId)));
+    const batch = writeBatch(db);
+    connsSnap.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+  } catch(e) {
+    console.error('clearAll Firestore error:', e);
+  }
+});
 
 const origSaveProfile = window.saveProfile;
 window.saveProfile = async function() {

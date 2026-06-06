@@ -7,5 +7,51 @@
 <section class="hero"><div class="card"><div class="eyebrow">Admin operating screen</div><h1 class="big-title">Users & Businesses <span>Control</span></h1><p class="sub">Manage business accounts without confusing technical clutter. This page answers: who owns the business, what plan they are on, whether they are active, and what needs attention.</p><div class="btn-row"><button class="btn btn-primary">Add Business</button><button class="btn">Export Users</button><button class="btn">View Trial Risks</button></div></div><div class="card"><div class="card-title">👥 Account Summary</div><div class="list"><div class="row"><div class="icon">64</div><div class="row-main"><div class="row-title">Total businesses</div><div class="row-sub">42 active paid or free, 22 trial.</div></div><span class="badge live">Live</span></div><div class="row"><div class="icon">8</div><div class="row-main"><div class="row-title">Need admin attention</div><div class="row-sub">Disconnected platforms, past-due accounts, or incomplete onboarding.</div></div><span class="badge needs">Watch</span></div></div></div></section>
 <section class="grid"><div class="stat"><div class="stat-num">42</div><div class="stat-label">Active</div><div class="stat-note money">Using BlastyBiz</div></div><div class="stat"><div class="stat-num">22</div><div class="stat-label">Trial</div><div class="stat-note blue">Conversion pool</div></div><div class="stat"><div class="stat-num">9</div><div class="stat-label">Past Due</div><div class="stat-note warn">Billing risk</div></div><div class="stat"><div class="stat-num">6</div><div class="stat-label">Incomplete</div><div class="stat-note bad">Onboarding stuck</div></div></section>
 <section class="card"><div class="card-title">👥 Business Accounts</div><table><thead><tr><th>Business</th><th>Owner</th><th>Plan</th><th>Status</th><th>Last Login</th><th>Admin Note</th></tr></thead><tbody><tr><td>ARO Drone Services</td><td>Dave</td><td>Business</td><td><span class="badge needs">Reconnect</span></td><td>Today</td><td class="muted">Google token expired</td></tr><tr><td>Suncoast Roofing</td><td>Test Owner</td><td>Trial</td><td><span class="badge live">Active</span></td><td>Yesterday</td><td class="muted">Good upsell candidate</td></tr><tr><td>Harbor Plumbing</td><td>Test Owner</td><td>Pro</td><td><span class="badge error">Past Due</span></td><td>5 days ago</td><td class="muted">Payment failed</td></tr><tr><td>Faith Auto Repair</td><td>Test Owner</td><td>Free</td><td><span class="badge off">Limited</span></td><td>12 days ago</td><td class="muted">Send upgrade nudge</td></tr></tbody></table></section>
-<section class="two-col"><div class="card"><div class="card-title">🧭 Simple Admin Filters</div><div class="list"><div class="row"><div class="icon">✓</div><div class="row-main"><div class="row-title">Needs attention</div><div class="row-sub">Show accounts with failures, expired tokens, incomplete profiles, or payment problems.</div></div></div><div class="row"><div class="icon">$</div><div class="row-main"><div class="row-title">Revenue status</div><div class="row-sub">Free, trial, active paid, past due, canceled.</div></div></div></div></div><div class="card"><div class="card-title">🔒 Permissions</div><div class="list"><div class="row"><div class="icon">O</div><div class="row-main"><div class="row-title">Owner</div><div class="row-sub">Can manage billing, business profile, platforms, and posting.</div></div></div><div class="row"><div class="icon">M</div><div class="row-main"><div class="row-title">Manager</div><div class="row-sub">Can edit listings and posts, but cannot manage billing.</div></div></div></div></div></section></main><nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="active" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a></nav><script type="module" src="./auth-guard.js"></script>
+<section class="two-col"><div class="card"><div class="card-title">🧭 Simple Admin Filters</div><div class="list"><div class="row"><div class="icon">✓</div><div class="row-main"><div class="row-title">Needs attention</div><div class="row-sub">Show accounts with failures, expired tokens, incomplete profiles, or payment problems.</div></div></div><div class="row"><div class="icon">$</div><div class="row-main"><div class="row-title">Revenue status</div><div class="row-sub">Free, trial, active paid, past due, canceled.</div></div></div></div></div><div class="card"><div class="card-title">🔒 Permissions</div><div class="list"><div class="row"><div class="icon">O</div><div class="row-main"><div class="row-title">Owner</div><div class="row-sub">Can manage billing, business profile, platforms, and posting.</div></div></div><div class="row"><div class="icon">M</div><div class="row-main"><div class="row-title">Manager</div><div class="row-sub">Can edit listings and posts, but cannot manage billing.</div></div></div></div></div></section></main><nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="active" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a></nav><script type="module">
+import { auth, db } from './firebase-init.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { collection, query, orderBy, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+function timeAgo(ts) {
+  if (!ts) return '—';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const diff = Date.now() - d.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  return Math.floor(hrs / 24) + 'd ago';
+}
+
+onAuthStateChanged(auth, (user) => {
+  if (!user) return;
+  const q = query(collection(db, 'businesses'), orderBy('businessName'), limit(100));
+  onSnapshot(q, (snap) => {
+    const tbody = document.querySelector('table tbody');
+    if (!tbody || snap.empty) return;
+    const all = snap.docs.map(d => d.data());
+    tbody.innerHTML = all.map(b => {
+      const status = b.subscriptionStatus || 'active';
+      const bc = { active:'live', trial:'info', past_due:'needs', canceled:'off' }[status] || 'live';
+      return `<tr>
+        <td>${b.businessName || '—'}</td>
+        <td>${b.ownerName || b.email || '—'}</td>
+        <td>${b.currentPlan || 'Free'}</td>
+        <td><span class="badge ${bc}">${status}</span></td>
+        <td>${timeAgo(b.lastLoginAt || b.updatedAt)}</td>
+        <td class="muted">${b.adminNote || ''}</td>
+      </tr>`;
+    }).join('');
+    const nums = document.querySelectorAll('.stat-num');
+    if (nums.length >= 4) {
+      nums[0].textContent = all.filter(b => b.subscriptionStatus === 'active').length || all.length;
+      nums[1].textContent = all.filter(b => b.subscriptionStatus === 'trial').length;
+      nums[2].textContent = all.filter(b => b.subscriptionStatus === 'past_due').length;
+      nums[3].textContent = all.filter(b => !b.onboardingComplete).length;
+    }
+  });
+});
+</script>
+<script type="module" src="./auth-guard.js"></script>
 </body></html>

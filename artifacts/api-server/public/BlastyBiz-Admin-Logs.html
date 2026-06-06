@@ -140,6 +140,38 @@ th{background:#f1f5f9;color:#334155}
     <p>Use this page to display records from <strong>activityLogs</strong>. This is an admin-only page. Customers should never see raw system logs, internal errors, payloads, tokens, or stack traces.</p>
   </section>
 </div>
+<script type="module">
+import { auth, db } from './firebase-init.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { collection, query, orderBy, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+function fmtTime(ts) {
+  if (!ts) return '—';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString();
+}
+
+onAuthStateChanged(auth, (user) => {
+  if (!user) return;
+  const q = query(collection(db, 'activityLogs'), orderBy('createdAt', 'desc'), limit(50));
+  onSnapshot(q, (snap) => {
+    if (snap.empty) return;
+    const rows = snap.docs.map(d => {
+      const l = d.data();
+      const lc = { info:'info', success:'success', warning:'warn', error:'error' }[l.level] || 'info';
+      return `<tr>
+        <td>${fmtTime(l.createdAt)}</td>
+        <td><span class="badge ${lc}">${l.level || 'Info'}</span></td>
+        <td>${l.type || '—'}</td>
+        <td>${l.businessName || l.uid || '—'}</td>
+        <td>${l.message || '—'}</td>
+        <td class="muted">${l.relatedCollection || '—'}</td>
+      </tr>`;
+    }).join('');
+    document.querySelector('tbody').innerHTML = rows;
+  });
+});
+</script>
 <script type="module" src="./auth-guard.js"></script>
 </body>
 </html>
