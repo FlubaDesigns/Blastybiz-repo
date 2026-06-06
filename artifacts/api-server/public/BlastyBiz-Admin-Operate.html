@@ -419,6 +419,49 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
   </div>
 
   <!-- ══════════════════════════════════════════
+       RESEND EMAIL
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">📧</span>
+      <span class="section-title">Resend Email</span>
+      <span class="section-badge warn" id="badge-resend">Setup required</span>
+    </div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-resend-key" onclick="toggleCheck(event,'resend-key')"></div>
+        <div style="flex:1">
+          <div class="card-title">Set your Resend API key as a Firebase secret</div>
+          <div class="card-sub">Enables welcome emails and job-failure alerts</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Sign in at <a href="https://resend.com/api-keys" target="_blank">resend.com/api-keys</a> → click <strong>Create API Key</strong> → name it <em>BlastyBiz</em>, permission: <em>Full access</em></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Copy the key (starts with <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">re_</code>). <strong>You only see it once.</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Open the <strong>Replit Shell</strong> and run this command, replacing the placeholder with your key:</div></div>
+        </div>
+        <div class="code-row">
+          <span class="code-text">echo "re_YOUR_KEY_HERE" | npx firebase-tools functions:secrets:set RESEND_API_KEY --force</span>
+          <button class="copy-btn" onclick="copyCode(this,'echo \"re_YOUR_KEY_HERE\" | npx firebase-tools functions:secrets:set RESEND_API_KEY --force')">Copy</button>
+        </div>
+        <div class="steps" style="margin-top:10px">
+          <div class="step"><div class="step-num">4</div><div class="step-text">Verify the secret is set: <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">npx firebase-tools functions:secrets:access RESEND_API_KEY</code></div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">In Resend, add and verify your sending domain so emails don't land in spam. Go to <a href="https://resend.com/domains" target="_blank">resend.com/domains</a> → Add Domain → follow DNS instructions for <strong>blastybiz.com</strong>. Until then, you can only send to addresses in your Resend account.</div></div>
+          <div class="step"><div class="step-num">6</div><div class="step-text">Redeploy the email functions to pick up the new secret:</div></div>
+        </div>
+        <div class="code-row">
+          <span class="code-text">npx firebase-tools deploy --only functions:onJobFailed,functions:onUserCreated</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:onJobFailed,functions:onUserCreated')">Copy</button>
+        </div>
+        <div class="note"><strong>What gets sent:</strong> Welcome email when a user signs up · Failure alert email when a publish job status changes to <code>failed</code></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
        ONGOING
   ══════════════════════════════════════════ -->
   <div class="section">

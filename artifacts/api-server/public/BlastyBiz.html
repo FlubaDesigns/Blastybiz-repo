@@ -945,9 +945,12 @@ function buildPlatformCard(p) {
        </div>`
     : `<div class="copy-box" id="copy-${p.id}"></div>`;
 
-  const actionBtn = p.type === 'api'
-    ? `<button class="btn btn-primary btn-sm" onclick="deployPlatform('${p.id}')" ${!p.enabled ? 'disabled' : ''}>🚀 Post</button>`
-    : `<button class="btn btn-outline btn-sm" onclick="copyText('${p.id}')" ${!p.enabled || !p.adaptedContent ? 'disabled' : ''}>📋 Copy</button>`;
+  const starterLocked = p.type === 'api' && (window._bbUserPlan || userPlan) === 'starter';
+  const actionBtn = starterLocked
+    ? `<a href="BlastyBiz-Dashboard.html?checkout=pro" class="btn btn-outline btn-sm" style="border-color:#00C853;color:#00C853;font-size:11px;">⚡ Upgrade to Auto-Post</a>`
+    : p.type === 'api'
+      ? `<button class="btn btn-primary btn-sm" onclick="deployPlatform('${p.id}')" ${!p.enabled ? 'disabled' : ''}>🚀 Post</button>`
+      : `<button class="btn btn-outline btn-sm" onclick="copyText('${p.id}')" ${!p.enabled || !p.adaptedContent ? 'disabled' : ''}>📋 Copy</button>`;
 
   div.innerHTML = `
     <div class="platform-header">
@@ -955,7 +958,7 @@ function buildPlatformCard(p) {
         <div class="platform-icon" style="background:${p.color}22;">${p.icon}</div>
         <div>
           <div class="platform-name">${p.name}</div>
-          <div class="platform-type ${p.type}">${p.type === 'api' ? '⚡ Auto-Post' : '✋ Copy & Paste'}</div>
+          <div class="platform-type ${p.type}">${p.type === 'api' ? (starterLocked ? '🔒 Pro only' : '⚡ Auto-Post') : '✋ Copy & Paste'}</div>
         </div>
       </div>
       <label class="toggle">
@@ -1414,6 +1417,7 @@ import {
 
 let currentUser = null;
 let activeBizId = null;
+let userPlan = 'starter';
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = 'BlastyBiz-Login.html'; return; }
@@ -1422,6 +1426,9 @@ onAuthStateChanged(auth, async (user) => {
   const userSnap = await getDoc(doc(db, 'users', user.uid));
   const userData = userSnap.exists() ? userSnap.data() : {};
   activeBizId = userData.activeBusiness || user.uid;
+  userPlan = userData.plan || 'starter';
+  window._bbUserPlan = userPlan;
+  renderPlatforms();
 
   try {
     const bizSnap = await getDoc(doc(db, 'businesses', activeBizId));

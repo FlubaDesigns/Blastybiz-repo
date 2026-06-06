@@ -273,8 +273,34 @@
         <a class="btn" id="billing-btn" href="#" onclick="handleBilling(event)">View Billing</a>
         <a class="btn" href="BlastyBiz-Admin.html">Admin</a>
       </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <button onclick="openDeleteModal()" style="background:none;border:none;color:#c0392b;font-size:12px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline">Delete account</button>
+      </div>
     </div>
   </section>
+
+<!-- DELETE ACCOUNT MODAL -->
+<div id="delete-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#0d160d;border:1px solid #1e2e1e;border-radius:16px;padding:32px;max-width:440px;width:90%;margin:auto;">
+    <h3 style="color:#fff;margin-bottom:8px;font-size:18px;">Delete Account</h3>
+    <p style="color:#7ab87a;font-size:13px;line-height:1.6;margin-bottom:16px;">
+      This permanently deletes your account, all businesses, listings, and publish history. Your Stripe subscription will be cancelled. <strong style="color:#ff6b6b">This cannot be undone.</strong>
+    </p>
+    <p style="color:#7ab87a;font-size:13px;margin-bottom:8px;">Type <strong style="color:#fff">DELETE</strong> to confirm:</p>
+    <input id="delete-confirm-input" type="text" placeholder="DELETE"
+      style="width:100%;background:#081008;border:1px solid #1e2e1e;border-radius:8px;padding:10px 14px;color:#fff;font-size:14px;margin-bottom:16px;box-sizing:border-box;"
+      oninput="document.getElementById('delete-confirm-btn').disabled = this.value !== 'DELETE'"/>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeDeleteModal()" style="flex:1;background:#1e2e1e;border:none;border-radius:8px;padding:11px;color:#7ab87a;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
+      <button id="delete-confirm-btn" onclick="confirmDeleteAccount()" disabled
+        style="flex:1;background:#c0392b;border:none;border-radius:8px;padding:11px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;opacity:0.5;transition:opacity .2s"
+        onmouseenter="if(!this.disabled)this.style.opacity='.85'" onmouseleave="if(!this.disabled)this.style.opacity='1'">
+        Delete Everything
+      </button>
+    </div>
+    <p id="delete-error" style="color:#ff6b6b;font-size:12px;margin-top:10px;display:none"></p>
+  </div>
+</div>
 </main>
 
 <nav class="mobile-nav">
@@ -699,6 +725,53 @@ window.handleBilling = async function(e) {
   } catch(e) {
     showToast('Billing unavailable', true);
     if (btn) { btn.textContent = userPlan === 'starter' ? 'Upgrade to Pro' : 'View Billing'; btn.style.pointerEvents = ''; }
+  }
+};
+
+// ── Delete Account ──────────────────────────────────────────────────────────
+window.openDeleteModal = function() {
+  const overlay = document.getElementById('delete-overlay');
+  overlay.style.display = 'flex';
+  document.getElementById('delete-confirm-input').value = '';
+  document.getElementById('delete-confirm-btn').disabled = true;
+  document.getElementById('delete-confirm-btn').style.opacity = '0.5';
+  document.getElementById('delete-error').style.display = 'none';
+};
+
+window.closeDeleteModal = function() {
+  document.getElementById('delete-overlay').style.display = 'none';
+};
+
+window.confirmDeleteAccount = async function() {
+  const btn = document.getElementById('delete-confirm-btn');
+  const errEl = document.getElementById('delete-error');
+  btn.textContent = 'Deleting…';
+  btn.disabled = true;
+  errEl.style.display = 'none';
+  try {
+    const idToken = await currentUser.getIdToken();
+    const r = await fetch(`${CF}/deleteAccount`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken })
+    });
+    const data = await r.json();
+    if (data.success) {
+      await auth.signOut();
+      window.location.href = 'BlastyBiz-Home.html';
+    } else {
+      errEl.textContent = data.error || 'Delete failed. Please try again.';
+      errEl.style.display = 'block';
+      btn.textContent = 'Delete Everything';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
+  } catch(e) {
+    errEl.textContent = 'Something went wrong. Please try again.';
+    errEl.style.display = 'block';
+    btn.textContent = 'Delete Everything';
+    btn.disabled = false;
+    btn.style.opacity = '1';
   }
 };
 </script>

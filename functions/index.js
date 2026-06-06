@@ -12,9 +12,29 @@
  */
 
 const { onRequest } = require('firebase-functions/v2/https');
+const { onDocumentUpdated, onDocumentCreated } = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
 const Anthropic = require('@anthropic-ai/sdk');
 const axios = require('axios');
+
+// ── Resend email helper (uses native fetch — Node 22) ──────────────────────
+async function sendResendEmail({ to, subject, html }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey || apiKey === 'placeholder') {
+    console.log('[email] RESEND_API_KEY not configured — skipping email to', to);
+    return;
+  }
+  try {
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: 'BlastyBiz <hello@blastybiz.com>', to: [to], subject, html }),
+    });
+    if (!resp.ok) console.error('[email] Resend error:', await resp.text());
+  } catch (e) {
+    console.error('[email] sendResendEmail failed:', e.message);
+  }
+}
 
 // Lazy-init Stripe — secret not available at module load time
 let _stripe;
@@ -131,11 +151,17 @@ ${Object.entries(platformCatLists).map(([id, cats]) => `${id}: ${cats.join(', ')
 // Function 3: approveDraft
 // POST /approveDraft
 // ══════════════════════════════════════════
-exports.approveDraft = onRequest(async (req, res) => {
+exports.approveDraft = onRequest({ secrets: ['RESEND_API_KEY'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
   const { draftId, businessId, uid, platforms } = req.body;
+
+  // Check user plan — starter users can't auto-post via API platforms
+  const userSnap = await db.collection('users').doc(uid).get();
+  const userPlan = userSnap.exists ? (userSnap.data().plan || 'starter') : 'starter';
+  const isStarter = userPlan === 'starter';
+
   const batch = db.batch();
 
   batch.update(db.collection('listingDrafts').doc(draftId), {
@@ -144,7 +170,9 @@ exports.approveDraft = onRequest(async (req, res) => {
 
   platforms.forEach(platform => {
     const jobRef = db.collection('publishJobs').doc();
-    const isManual = ['manual_assisted', 'unsupported'].includes(platform.capabilityLevel);
+    const isNativelyManual = ['manual_assisted', 'unsupported'].includes(platform.capabilityLevel);
+    const isManual = isNativelyManual || isStarter;
+    const starterBlocked = isStarter && !isNativelyManual;
     batch.set(jobRef, {
       jobId: jobRef.id, businessId, uid, draftId,
       platform: platform.id,
@@ -153,9 +181,12 @@ exports.approveDraft = onRequest(async (req, res) => {
       status: isManual ? 'manual_required' : 'pending',
       attempts: 0, maxAttempts: 3,
       customerLabel: isManual ? 'Action needed' : 'Waiting to publish',
-      customerVisibleMessage: isManual
-        ? `Your ${platform.name} listing is ready — you need to post it manually.`
-        : `Your ${platform.name} listing is waiting to publish.`,
+      customerVisibleMessage: starterBlocked
+        ? `Upgrade to Pro to auto-post to ${platform.name}. Your content is ready — copy it below.`
+        : isManual
+          ? `Your ${platform.name} listing is ready — you need to post it manually.`
+          : `Your ${platform.name} listing is waiting to publish.`,
+      planGated: starterBlocked,
       manualInstructions: platform.manualInstructions || '',
       adminError: '', payload: { adaptedContent: platform.adaptedContent || '' },
       apiResponse: {}, customerNotified: false,
@@ -165,7 +196,7 @@ exports.approveDraft = onRequest(async (req, res) => {
   });
 
   await batch.commit();
-  res.json({ success: true });
+  res.json({ success: true, plan: userPlan });
 });
 
 // ══════════════════════════════════════════
@@ -527,4 +558,141 @@ exports.postToAppleMaps = onRequest(async (req, res) => {
     });
   }
   res.json({ status: 'manual_required', manualUrl: 'https://mapsconnect.apple.com' });
+});
+
+// ══════════════════════════════════════════
+// Function 17: onJobFailed
+// Firestore trigger — publishJobs/{jobId} updated
+// Sends failure email via Resend when status → 'failed'
+// ══════════════════════════════════════════
+exports.onJobFailed = onDocumentUpdated(
+  { document: 'publishJobs/{jobId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
+  async (event) => {
+    const before = event.data.before.data();
+    const after  = event.data.after.data();
+    if (before.status === after.status || after.status !== 'failed') return;
+
+    const uid = after.uid;
+    if (!uid) return;
+    const userSnap = await db.collection('users').doc(uid).get();
+    if (!userSnap.exists) return;
+    const { email, ownerName } = userSnap.data();
+    if (!email) return;
+
+    const platformName = (after.platform || 'platform').replace(/_/g, ' ');
+    await sendResendEmail({
+      to: email,
+      subject: `Action needed: Your ${platformName} post failed`,
+      html: `
+        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 20px;color:#1a1a1a">
+          <h2 style="color:#0d1a0d;margin-bottom:8px">Your post needs attention</h2>
+          <p style="color:#4a4a4a;line-height:1.6">Hi ${ownerName || 'there'},</p>
+          <p style="color:#4a4a4a;line-height:1.6">
+            Your listing for <strong style="text-transform:capitalize">${platformName}</strong>
+            encountered an issue and couldn't be published automatically.
+          </p>
+          <div style="background:#fff8e1;border-left:4px solid #ffc107;padding:12px 16px;margin:20px 0;border-radius:4px">
+            <strong>Error:</strong> ${after.adminError || after.customerVisibleMessage || 'Unknown error'}
+          </div>
+          <a href="https://blastybiz-9523e.web.app/BlastyBiz-Publishing-Status.html"
+             style="display:inline-block;background:#00C853;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin:16px 0">
+            View Publishing Status →
+          </a>
+          <p style="color:#888;font-size:12px;margin-top:24px">BlastyBiz · <a href="https://blastybiz-9523e.web.app" style="color:#888">blastybiz.com</a></p>
+        </div>`,
+    });
+  }
+);
+
+// ══════════════════════════════════════════
+// Function 18: onUserCreated
+// Firestore trigger — users/{uid} created
+// Sends welcome email via Resend
+// ══════════════════════════════════════════
+exports.onUserCreated = onDocumentCreated(
+  { document: 'users/{uid}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
+  async (event) => {
+    const data = event.data.data();
+    const { email, ownerName } = data || {};
+    if (!email) return;
+    await sendResendEmail({
+      to: email,
+      subject: 'Welcome to BlastyBiz 🚀',
+      html: `
+        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 20px;color:#1a1a1a">
+          <h1 style="font-family:'Arial Black',sans-serif;color:#0d1a0d;font-size:28px;margin-bottom:4px">Welcome to BlastyBiz</h1>
+          <p style="color:#00C853;font-weight:700;margin-bottom:24px;font-size:13px;letter-spacing:2px">LOCK. LOAD. BLAST.</p>
+          <p style="color:#4a4a4a;line-height:1.6">Hi ${ownerName || 'there'}, you're in.</p>
+          <p style="color:#4a4a4a;line-height:1.6">
+            You're set up to blast your business across every platform. Here's how to get going:
+          </p>
+          <ol style="color:#4a4a4a;line-height:2.2;padding-left:20px">
+            <li>Connect your platforms (Google, Facebook, Instagram)</li>
+            <li>Fill out your business profile</li>
+            <li>Create your first listing — AI adapts it for every platform</li>
+            <li>Approve and blast</li>
+          </ol>
+          <a href="https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html"
+             style="display:inline-block;background:#00C853;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin:20px 0">
+            Go to Dashboard →
+          </a>
+          <p style="color:#888;font-size:12px;margin-top:24px">BlastyBiz · <a href="https://blastybiz-9523e.web.app" style="color:#888">blastybiz.com</a></p>
+        </div>`,
+    });
+  }
+);
+
+// ══════════════════════════════════════════
+// Function 19: deleteAccount
+// POST /deleteAccount  { idToken }
+// Cancels Stripe sub, wipes all Firestore data, deletes Auth user
+// ══════════════════════════════════════════
+exports.deleteAccount = onRequest({ region: 'us-central1' }, async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+
+  const { idToken } = req.body;
+  if (!idToken) return res.status(400).json({ error: 'idToken required' });
+
+  let uid;
+  try {
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    uid = decoded.uid;
+  } catch (e) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+
+  try {
+    // Cancel Stripe subscription if exists
+    const subSnap = await db.collection('subscriptions').doc(uid).get();
+    if (subSnap.exists) {
+      const { stripeSubscriptionId } = subSnap.data();
+      if (stripeSubscriptionId) {
+        try { await getStripe().subscriptions.cancel(stripeSubscriptionId); } catch (_) {}
+      }
+    }
+
+    // Collect all docs to delete
+    const [bizSnap, draftsSnap, jobsSnap, connsSnap] = await Promise.all([
+      db.collection('businesses').where('uid', '==', uid).get(),
+      db.collection('listingDrafts').where('uid', '==', uid).get(),
+      db.collection('publishJobs').where('uid', '==', uid).get(),
+      db.collection('platformConnections').where('uid', '==', uid).get(),
+    ]);
+
+    const batch = db.batch();
+    batch.delete(db.collection('users').doc(uid));
+    batch.delete(db.collection('subscriptions').doc(uid));
+    [...bizSnap.docs, ...draftsSnap.docs, ...jobsSnap.docs, ...connsSnap.docs]
+      .forEach(d => batch.delete(d.ref));
+    await batch.commit();
+
+    // Delete Firebase Auth user last
+    await admin.auth().deleteUser(uid);
+
+    res.json({ success: true });
+  } catch (e) {
+    console.error('deleteAccount error:', e);
+    res.status(500).json({ error: 'Delete failed: ' + e.message });
+  }
 });
