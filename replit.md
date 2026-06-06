@@ -29,6 +29,8 @@ Local business marketing distribution tool. Business owner fills out one form, A
 
 ## User preferences
 
+- **Call me Rep** — the user works with both Replit Agent and Anthropic Claude directly; "Rep" distinguishes this agent from the other.
+
 - **This is a Firebase + Cloud Functions build. Do NOT create Vite apps, React apps, dev servers, or any Replit-hosted frontend artifacts. Ever.**
 - All frontend work goes directly to `artifacts/api-server/public/` and is deployed to Firebase Hosting.
 - The only thing running on Replit is the Express API server (`artifacts/api-server`).
