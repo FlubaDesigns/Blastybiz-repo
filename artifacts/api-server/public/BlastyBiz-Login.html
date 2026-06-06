@@ -762,70 +762,20 @@ function isValidEmail(email) {
 }
 
 // ══════════════════════════════════════════
-// SIGN IN
+// SIGN IN  (overridden by Firebase module below)
 // ══════════════════════════════════════════
-function handleSignIn() {
-  const email = document.getElementById('si-email').value.trim();
-  const pass  = document.getElementById('si-password').value;
-  let valid = true;
-
-  if (!isValidEmail(email)) valid = showErr('si-email');
-  if (!pass) valid = showErr('si-password');
-  if (!valid) return;
-
-  setLoading('btn-signin', true);
-
-  // Placeholder — Firebase Auth: signInWithEmailAndPassword(auth, email, pass)
-  setTimeout(() => {
-    setLoading('btn-signin', false);
-    // Check if onboarded
-    const profile = JSON.parse(localStorage.getItem('ll_profile') || '{}');
-    if (profile.onboarded) {
-      window.location.href = 'BlastyBiz-Dashboard.html'; // Firebase: replace with Firestore check
-    } else {
-      window.location.href = 'BlastyBiz-Onboarding.html';
-    }
-  }, 1400);
-}
+function handleSignIn() {}
 
 // ══════════════════════════════════════════
-// SIGN UP
+// SIGN UP  (overridden by Firebase module below)
 // ══════════════════════════════════════════
-function handleSignUp() {
-  const name  = document.getElementById('su-name').value.trim();
-  const email = document.getElementById('su-email').value.trim();
-  const pass  = document.getElementById('su-password').value;
-  let valid = true;
-
-  if (!name)              valid = showErr('su-name', 'Name is required');
-  if (!isValidEmail(email)) valid = showErr('su-email', 'Please enter a valid email');
-  if (pass.length < 8)    valid = showErr('su-password', 'Password must be at least 8 characters');
-  if (!valid) return;
-
-  setLoading('btn-signup', true);
-
-  // Placeholder — Firebase Auth: createUserWithEmailAndPassword(auth, email, pass)
-  setTimeout(() => {
-    setLoading('btn-signup', false);
-    // Save basic profile seed
-    const existing = JSON.parse(localStorage.getItem('ll_profile') || '{}');
-    localStorage.setItem('ll_profile', JSON.stringify({ ...existing, ownerName: name, email, plan: selectedPlanId }));
-    window.location.href = 'BlastyBiz-Onboarding.html';
-  }, 1400);
-}
+function handleSignUp() {}
 
 // ══════════════════════════════════════════
-// SOCIAL AUTH
+// SOCIAL AUTH  (overridden by Firebase module below)
 // ══════════════════════════════════════════
-function handleGoogle() {
-  showToast('Google Sign-In — coming when backend is live');
-  // Firebase: signInWithPopup(auth, new GoogleAuthProvider())
-}
-
-function handleFacebook() {
-  showToast('Facebook Sign-In — coming when backend is live');
-  // Firebase: signInWithPopup(auth, new FacebookAuthProvider())
-}
+function handleGoogle() {}
+function handleFacebook() {}
 
 // ══════════════════════════════════════════
 // RESET PASSWORD
@@ -840,13 +790,7 @@ function hideReset() {
   document.getElementById('reset-view').classList.remove('visible');
 }
 
-function handleReset() {
-  const email = document.getElementById('reset-email').value.trim();
-  if (!isValidEmail(email)) { showToast('Enter a valid email', true); return; }
-  // Firebase: sendPasswordResetEmail(auth, email)
-  showToast('Reset link sent! Check your inbox ✓');
-  setTimeout(hideReset, 2000);
-}
+function handleReset() {}
 
 // ══════════════════════════════════════════
 // LOADING STATE
@@ -869,16 +813,123 @@ function showToast(msg, isError = false) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ══════════════════════════════════════════
-// CHECK IF ALREADY LOGGED IN
-// ══════════════════════════════════════════
-// Firebase: onAuthStateChanged(auth, user => { if (user) redirect })
-const profile = JSON.parse(localStorage.getItem('ll_profile') || '{}');
-if (profile.onboarded) {
-  // Already set up — go straight to tool
-  // Uncomment when Firebase is live:
-  // window.location.href = 'BlastyBiz.html';
+
+</script>
+
+<script type="module">
+import { auth, db } from './firebase-init.js';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  sendPasswordResetEmail,
+  onAuthStateChanged
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+async function afterAuth(user) {
+  const snap = await getDoc(doc(db, 'users', user.uid));
+  if (snap.exists() && snap.data().onboarded) {
+    window.location.href = 'BlastyBiz-Dashboard.html';
+  } else {
+    window.location.href = 'BlastyBiz-Onboarding.html';
+  }
 }
+
+onAuthStateChanged(auth, (user) => {
+  if (user) afterAuth(user);
+});
+
+window.handleSignIn = async function() {
+  const email = document.getElementById('si-email').value.trim();
+  const pass  = document.getElementById('si-password').value;
+  let valid = true;
+  if (!window.isValidEmail(email)) valid = window.showErr('si-email');
+  if (!pass) valid = window.showErr('si-password');
+  if (!valid) return;
+  window.setLoading('btn-signin', true);
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+    await afterAuth(cred.user);
+  } catch (e) {
+    window.setLoading('btn-signin', false);
+    const msg = e.code === 'auth/invalid-credential' ? 'Wrong email or password' :
+                e.code === 'auth/too-many-requests'  ? 'Too many attempts — try again later' :
+                e.message;
+    window.showToast(msg, true);
+  }
+};
+
+window.handleSignUp = async function() {
+  const name  = document.getElementById('su-name').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const pass  = document.getElementById('su-password').value;
+  let valid = true;
+  if (!name)                        valid = window.showErr('su-name', 'Name is required');
+  if (!window.isValidEmail(email))  valid = window.showErr('su-email', 'Please enter a valid email');
+  if (pass.length < 8)              valid = window.showErr('su-password', 'Password must be at least 8 characters');
+  if (!valid) return;
+  window.setLoading('btn-signup', true);
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      ownerName: name,
+      email,
+      plan: window._selectedPlanId || 'pro',
+      onboarded: false,
+      createdAt: serverTimestamp()
+    });
+    window.location.href = 'BlastyBiz-Onboarding.html';
+  } catch (e) {
+    window.setLoading('btn-signup', false);
+    const msg = e.code === 'auth/email-already-in-use' ? 'Account already exists — sign in instead' : e.message;
+    window.showToast(msg, true);
+  }
+};
+
+window.handleGoogle = async function() {
+  try {
+    const provider = new GoogleAuthProvider();
+    const cred = await signInWithPopup(auth, provider);
+    const snap = await getDoc(doc(db, 'users', cred.user.uid));
+    if (!snap.exists()) {
+      await setDoc(doc(db, 'users', cred.user.uid), {
+        ownerName: cred.user.displayName || '',
+        email: cred.user.email,
+        plan: 'starter',
+        onboarded: false,
+        createdAt: serverTimestamp()
+      });
+    }
+    await afterAuth(cred.user);
+  } catch (e) {
+    if (e.code !== 'auth/popup-closed-by-user') window.showToast('Google sign-in failed', true);
+  }
+};
+
+window.handleFacebook = function() {
+  window.showToast('Facebook sign-in coming soon');
+};
+
+window.handleReset = async function() {
+  const email = document.getElementById('reset-email').value.trim();
+  if (!window.isValidEmail(email)) { window.showToast('Enter a valid email', true); return; }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    window.showToast('Reset link sent! Check your inbox ✓');
+    setTimeout(window.hideReset, 2000);
+  } catch (e) {
+    window.showToast('Could not send reset email', true);
+  }
+};
+
+const origSelectPlan = window.selectPlan;
+window.selectPlan = function(btn, plan) {
+  window._selectedPlanId = plan;
+  if (origSelectPlan) origSelectPlan(btn, plan);
+};
+window._selectedPlanId = 'pro';
 </script>
 </body>
 </html>

@@ -1293,43 +1293,84 @@ function toggleDay(btn, day) {
 }
 
 // ══════════════════════════════════════════
-// SAVE PROFILE TO LOCALSTORAGE
+// SAVE PROFILE — handled by Firebase module below
 // ══════════════════════════════════════════
 function saveProfile() {
-  const openTime  = document.getElementById('s-open')?.value  || '09:00';
-  const closeTime = document.getElementById('s-close')?.value || '17:00';
-  const fmt = (t) => { const [h,m] = t.split(':'); const hr = +h; return (hr > 12 ? hr-12 : hr||12) + (m !== '00' ? ':'+m : '') + (hr >= 12 ? 'pm' : 'am'); };
-  const hoursString = selectedDays.length
-    ? `${selectedDays.join(', ')} ${fmt(openTime)}–${fmt(closeTime)}`
-    : 'Hours not set';
-
-  const profile = {
-    name:      document.getElementById('s-name')?.value || '',
-    ownerName: document.getElementById('s-owner')?.value || '',
-    phone:     document.getElementById('s-phone')?.value || '',
-    category:  selectedCategory,
-    platformCats: resolvedCats,
-    address:   document.getElementById('s-address')?.value || '',
-    city:      document.getElementById('s-city')?.value || '',
-    state:     document.getElementById('s-state')?.value || '',
-    days:      selectedDays,
-    openTime,
-    closeTime,
-    hours:     hoursString,
-    email:     document.getElementById('s-email')?.value || '',
-    website:   document.getElementById('s-website')?.value || '',
-    tone:      selectedTone,
-    special:   document.getElementById('s-special')?.value || '',
-    connected: connectedPlatforms,
-    onboarded: true,
-  };
-  localStorage.setItem('ll_profile', JSON.stringify(profile));
+  return window._buildProfileData ? window._buildProfileData() : {};
 }
 
 // ══════════════════════════════════════════
 // START
 // ══════════════════════════════════════════
 init();
+</script>
+
+<script type="module">
+import { auth, db } from './firebase-init.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { doc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+let currentUser = null;
+
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    window.location.href = 'BlastyBiz-Login.html';
+    return;
+  }
+  currentUser = user;
+});
+
+window._buildProfileData = function() {
+  const openTime  = document.getElementById('s-open')?.value  || '09:00';
+  const closeTime = document.getElementById('s-close')?.value || '17:00';
+  const fmt = (t) => { const [h,m] = t.split(':'); const hr = +h; return (hr > 12 ? hr-12 : hr||12) + (m !== '00' ? ':'+m : '') + (hr >= 12 ? 'pm' : 'am'); };
+  const hoursString = (window.selectedDays || []).length
+    ? `${(window.selectedDays||[]).join(', ')} ${fmt(openTime)}–${fmt(closeTime)}`
+    : 'Hours not set';
+  return {
+    businessName: document.getElementById('s-name')?.value || '',
+    ownerName:    document.getElementById('s-owner')?.value || '',
+    phone:        document.getElementById('s-phone')?.value || '',
+    category:     window.selectedCategory || '',
+    platformCats: window.resolvedCats || {},
+    address:      document.getElementById('s-address')?.value || '',
+    city:         document.getElementById('s-city')?.value || '',
+    state:        document.getElementById('s-state')?.value || '',
+    days:         window.selectedDays || [],
+    openTime,
+    closeTime,
+    hours:        hoursString,
+    email:        document.getElementById('s-email')?.value || '',
+    website:      document.getElementById('s-website')?.value || '',
+    tone:         window.selectedTone || 'friendly',
+    special:      document.getElementById('s-special')?.value || '',
+    connectedPlatforms: window.connectedPlatforms || [],
+    onboarded:    true,
+    updatedAt:    serverTimestamp(),
+  };
+};
+
+const origNextStep = window.nextStep;
+window.nextStep = async function() {
+  const TOTAL_STEPS = 6;
+  if (window.currentStep === TOTAL_STEPS) {
+    const btn = document.getElementById('btn-next');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+    const data = window._buildProfileData();
+    try {
+      if (currentUser) {
+        await updateDoc(doc(db, 'users', currentUser.uid), data);
+        const bizRef = doc(db, 'businesses', currentUser.uid);
+        await setDoc(bizRef, { ...data, uid: currentUser.uid, createdAt: serverTimestamp() }, { merge: true });
+      }
+    } catch(e) {
+      console.error('Save failed:', e);
+    }
+    window.location.href = 'BlastyBiz-Dashboard.html';
+    return;
+  }
+  if (origNextStep) origNextStep();
+};
 </script>
 </body>
 </html>
