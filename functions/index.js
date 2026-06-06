@@ -258,7 +258,27 @@ exports.createCheckoutSession = onRequest(async (req, res) => {
 });
 
 // ══════════════════════════════════════════
-// Function 9: stripeWebhook
+// Function 9: createPortalSession
+// POST /createPortalSession
+// ══════════════════════════════════════════
+exports.createPortalSession = onRequest(async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  const { uid } = req.body;
+  if (!uid) return res.status(400).json({ error: 'uid required' });
+  const subSnap = await db.collection('subscriptions').doc(uid).get();
+  if (!subSnap.exists) return res.status(404).json({ error: 'No subscription found' });
+  const { stripeCustomerId } = subSnap.data();
+  if (!stripeCustomerId) return res.status(404).json({ error: 'No Stripe customer' });
+  const session = await getStripe().billingPortal.sessions.create({
+    customer: stripeCustomerId,
+    return_url: 'https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html',
+  });
+  res.json({ url: session.url });
+});
+
+// ══════════════════════════════════════════
+// Function 10: stripeWebhook
 // POST /stripeWebhook
 // ══════════════════════════════════════════
 exports.stripeWebhook = onRequest(async (req, res) => {

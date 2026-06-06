@@ -268,14 +268,14 @@
 
     <div class="card">
       <div class="card-title">💵 Operating Snapshot</div>
-      <div class="cost-line"><span>Plan</span><strong>Agency</strong></div>
+      <div class="cost-line"><span>Plan</span><strong id="snapshot-plan-label">—</strong></div>
       <div class="cost-line"><span>Active business</span><strong id="snapshot-biz">QR Gear</strong></div>
       <div class="cost-line"><span>AI requests used</span><strong>42 / 250</strong></div>
       <div class="cost-line"><span>Estimated AI cost</span><strong class="ok">$4.82</strong></div>
       <div class="cost-line"><span>Failed jobs</span><strong class="warn">1</strong></div>
       <div class="cost-line"><span>Renewal</span><strong>July 4, 2026</strong></div>
       <div class="btn-row">
-        <a class="btn" href="#">View Billing</a>
+        <a class="btn" id="billing-btn" href="#" onclick="handleBilling(event)">View Billing</a>
         <a class="btn" href="BlastyBiz-Admin.html">Admin</a>
       </div>
     </div>
@@ -455,6 +455,7 @@ import {
 
 let currentUser = null;
 let allBusinesses = [];
+let userPlan = 'starter';
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = 'BlastyBiz-Login.html'; return; }
@@ -462,6 +463,26 @@ onAuthStateChanged(auth, async (user) => {
 
   const userSnap = await getDoc(doc(db, 'users', user.uid));
   const userData = userSnap.exists() ? userSnap.data() : {};
+
+  userPlan = userData.plan || 'starter';
+  const planLabel = userPlan.charAt(0).toUpperCase() + userPlan.slice(1);
+  const planEl = document.getElementById('active-plan');
+  if (planEl) planEl.textContent = `${planLabel} plan`;
+  const snapPlanEl = document.getElementById('snapshot-plan-label');
+  if (snapPlanEl) snapPlanEl.textContent = planLabel;
+  const billingBtn = document.getElementById('billing-btn');
+  if (billingBtn) billingBtn.textContent = userPlan === 'starter' ? 'Upgrade to Pro' : 'View Billing';
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('success') === '1') {
+    showToast('🎉 Subscription activated — welcome to BlastyBiz Pro!');
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+  const checkoutPlan = urlParams.get('checkout');
+  if (checkoutPlan && ['pro', 'agency'].includes(checkoutPlan)) {
+    window.history.replaceState({}, '', window.location.pathname);
+    await startCheckout(checkoutPlan);
+  }
 
   try {
     const q = query(collection(db, 'businesses'), where('uid', '==', user.uid));
@@ -549,6 +570,48 @@ onAuthStateChanged(auth, async (user) => {
   init();
   await loadBusinessContextFirestore(window.activeBizId);
 });
+
+const CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
+
+async function startCheckout(plan) {
+  showToast('Setting up checkout…');
+  try {
+    const r = await fetch(`${CF}/createCheckoutSession`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan, uid: currentUser.uid, email: currentUser.email })
+    });
+    const data = await r.json();
+    if (data.url) { window.location.href = data.url; }
+    else showToast('Checkout setup failed — check Stripe config', true);
+  } catch(e) {
+    showToast('Checkout unavailable', true);
+  }
+}
+
+window.handleBilling = async function(e) {
+  e && e.preventDefault();
+  if (!currentUser) return;
+  const btn = document.getElementById('billing-btn');
+  if (btn) { btn.textContent = 'Loading…'; btn.style.pointerEvents = 'none'; }
+  try {
+    if (userPlan === 'starter') {
+      await startCheckout('pro');
+    } else {
+      const r = await fetch(`${CF}/createPortalSession`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: currentUser.uid })
+      });
+      const data = await r.json();
+      if (data.url) { window.location.href = data.url; }
+      else showToast('Billing portal unavailable', true);
+    }
+  } catch(e) {
+    showToast('Billing unavailable', true);
+    if (btn) { btn.textContent = userPlan === 'starter' ? 'Upgrade to Pro' : 'View Billing'; btn.style.pointerEvents = ''; }
+  }
+};
 </script>
 </body>
 </html>

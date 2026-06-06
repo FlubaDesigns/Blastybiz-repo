@@ -830,8 +830,11 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/fi
 
 async function afterAuth(user) {
   const snap = await getDoc(doc(db, 'users', user.uid));
+  const plan = new URLSearchParams(window.location.search).get('plan');
   if (snap.exists() && snap.data().onboarded) {
-    window.location.href = 'BlastyBiz-Dashboard.html';
+    window.location.href = plan
+      ? `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(plan)}`
+      : 'BlastyBiz-Dashboard.html';
   } else {
     window.location.href = 'BlastyBiz-Onboarding.html';
   }
