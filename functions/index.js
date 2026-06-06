@@ -295,3 +295,216 @@ exports.stripeWebhook = onRequest(async (req, res) => {
 
   res.json({ received: true });
 });
+
+// ══════════════════════════════════════════
+// Function 10: initiateGoogleOAuth
+// GET /initiateGoogleOAuth?businessId=...&uid=...
+// Redirect prerequisites: set GOOGLE_CLIENT_ID secret
+// Google Cloud Console: enable Business Profile API,
+// OAuth 2.0 redirect URI = https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback
+// ══════════════════════════════════════════
+exports.initiateGoogleOAuth = onRequest({ secrets: ['GOOGLE_CLIENT_ID'] }, (req, res) => {
+  const { businessId, uid } = req.query;
+  if (!businessId) { res.status(400).send('Missing businessId'); return; }
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  if (!clientId) { res.status(503).send('Google OAuth not configured. Set GOOGLE_CLIENT_ID secret.'); return; }
+  const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback';
+  const scope = 'https://www.googleapis.com/auth/business.manage';
+  const state = encodeURIComponent(JSON.stringify({ businessId, uid: uid || '' }));
+  res.redirect(
+    `https://accounts.google.com/o/oauth2/v2/auth` +
+    `?client_id=${encodeURIComponent(clientId)}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&response_type=code` +
+    `&scope=${encodeURIComponent(scope)}` +
+    `&access_type=offline&prompt=consent` +
+    `&state=${state}`
+  );
+});
+
+// ══════════════════════════════════════════
+// Function 11: googleOAuthCallback
+// GET /googleOAuthCallback?code=...&state=...
+// Exchanges auth code for tokens, stores in platformConnections
+// ══════════════════════════════════════════
+exports.googleOAuthCallback = onRequest({ secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, async (req, res) => {
+  const { code, state } = req.query;
+  if (!code) { res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?error=google'); return; }
+
+  let businessId = '', uid = '';
+  try { const s = JSON.parse(decodeURIComponent(state)); businessId = s.businessId; uid = s.uid; } catch(e) { businessId = state || ''; }
+
+  try {
+    const tokenResp = await axios.post('https://oauth2.googleapis.com/token', null, {
+      params: {
+        code, client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: 'https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback',
+        grant_type: 'authorization_code'
+      }
+    });
+    const { access_token, refresh_token, expires_in } = tokenResp.data;
+
+    let accountId = '', locationId = '';
+    try {
+      const acctResp = await axios.get(
+        'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
+        { headers: { Authorization: `Bearer ${access_token}` } }
+      );
+      const account = acctResp.data.accounts?.[0];
+      accountId = account?.name?.replace('accounts/', '') || '';
+      if (accountId) {
+        const locResp = await axios.get(
+          `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations`,
+          { headers: { Authorization: `Bearer ${access_token}` } }
+        );
+        locationId = locResp.data.locations?.[0]?.name?.split('/').pop() || '';
+      }
+    } catch(e) { /* accounts/locations can be resolved on first use */ }
+
+    await db.collection('platformConnections').doc(`${businessId}_google`).set({
+      businessId, uid, platform: 'google', status: 'connected',
+      accessToken: access_token, refreshToken: refresh_token || '',
+      accountId, locationId,
+      connectedAt: admin.firestore.FieldValue.serverTimestamp(),
+      expiresAt: new Date(Date.now() + (expires_in || 3600) * 1000)
+    }, { merge: true });
+
+    res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?connected=google');
+  } catch(e) {
+    console.error('googleOAuthCallback error:', e.response?.data || e.message);
+    res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?error=google');
+  }
+});
+
+// ══════════════════════════════════════════
+// Function 12: initiateFacebookOAuth
+// GET /initiateFacebookOAuth?businessId=...&uid=...
+// Redirect prerequisites: set FACEBOOK_APP_ID secret
+// Facebook Developer Console: redirect URI =
+//   https://us-central1-blastybiz-9523e.cloudfunctions.net/facebookOAuthCallback
+// Required permissions: pages_manage_posts, pages_read_engagement,
+//   instagram_basic, instagram_content_publish
+// ══════════════════════════════════════════
+exports.initiateFacebookOAuth = onRequest({ secrets: ['FACEBOOK_APP_ID'] }, (req, res) => {
+  const { businessId, uid } = req.query;
+  if (!businessId) { res.status(400).send('Missing businessId'); return; }
+  const appId = process.env.FACEBOOK_APP_ID;
+  if (!appId) { res.status(503).send('Facebook OAuth not configured. Set FACEBOOK_APP_ID secret.'); return; }
+  const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/facebookOAuthCallback';
+  const scope = 'pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish';
+  const state = encodeURIComponent(JSON.stringify({ businessId, uid: uid || '' }));
+  res.redirect(
+    `https://www.facebook.com/v18.0/dialog/oauth` +
+    `?client_id=${encodeURIComponent(appId)}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&scope=${encodeURIComponent(scope)}` +
+    `&state=${state}`
+  );
+});
+
+// ══════════════════════════════════════════
+// Function 13: facebookOAuthCallback
+// GET /facebookOAuthCallback?code=...&state=...
+// Exchanges code for page token, fetches linked IG account,
+// stores both in platformConnections
+// ══════════════════════════════════════════
+exports.facebookOAuthCallback = onRequest({ secrets: ['FACEBOOK_APP_ID', 'FACEBOOK_APP_SECRET'] }, async (req, res) => {
+  const { code, state } = req.query;
+  if (!code) { res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?error=facebook'); return; }
+
+  let businessId = '', uid = '';
+  try { const s = JSON.parse(decodeURIComponent(state)); businessId = s.businessId; uid = s.uid; } catch(e) { businessId = state || ''; }
+
+  try {
+    const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/facebookOAuthCallback';
+    const tokenResp = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
+      params: {
+        client_id: process.env.FACEBOOK_APP_ID,
+        client_secret: process.env.FACEBOOK_APP_SECRET,
+        redirect_uri: redirectUri, code
+      }
+    });
+    const { access_token } = tokenResp.data;
+
+    const pagesResp = await axios.get('https://graph.facebook.com/v18.0/me/accounts', {
+      params: { access_token }
+    });
+    const pages = pagesResp.data.data || [];
+    const page = pages[0];
+    const pageToken = page?.access_token || access_token;
+
+    let igUserId = '';
+    if (page?.id) {
+      try {
+        const igResp = await axios.get(`https://graph.facebook.com/v18.0/${page.id}`, {
+          params: { fields: 'instagram_business_account', access_token: pageToken }
+        });
+        igUserId = igResp.data.instagram_business_account?.id || '';
+      } catch(e) { /* no IG account linked */ }
+    }
+
+    const batch = db.batch();
+    batch.set(db.collection('platformConnections').doc(`${businessId}_facebook`), {
+      businessId, uid, platform: 'facebook', status: 'connected',
+      accessToken: pageToken, pageId: page?.id || '',
+      pageName: page?.name || '',
+      allPages: pages.map(p => ({ id: p.id, name: p.name })),
+      connectedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    if (igUserId) {
+      batch.set(db.collection('platformConnections').doc(`${businessId}_instagram`), {
+        businessId, uid, platform: 'instagram', status: 'connected',
+        accessToken: pageToken, igUserId, pageId: page?.id || '',
+        connectedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
+
+    await batch.commit();
+    res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?connected=facebook');
+  } catch(e) {
+    console.error('facebookOAuthCallback error:', e.response?.data || e.message);
+    res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?error=facebook');
+  }
+});
+
+// ══════════════════════════════════════════
+// Function 14: postToBing
+// Bing Places has no public write API.
+// Marks the job as manual_required with copy-paste instructions.
+// ══════════════════════════════════════════
+exports.postToBing = onRequest(async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  const { jobId } = req.body;
+  if (jobId) {
+    await db.collection('publishJobs').doc(jobId).update({
+      status: 'manual_required',
+      customerVisibleMessage: 'Your Bing Places listing is ready — paste it at bingplaces.com.',
+      manualUrl: 'https://www.bingplaces.com',
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+  }
+  res.json({ status: 'manual_required', manualUrl: 'https://www.bingplaces.com' });
+});
+
+// ══════════════════════════════════════════
+// Function 15: postToAppleMaps
+// Apple Maps Connect has no public write API.
+// Marks the job as manual_required with submission instructions.
+// ══════════════════════════════════════════
+exports.postToAppleMaps = onRequest(async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  const { jobId } = req.body;
+  if (jobId) {
+    await db.collection('publishJobs').doc(jobId).update({
+      status: 'manual_required',
+      customerVisibleMessage: 'Your Apple Maps listing is ready — submit it at mapsconnect.apple.com.',
+      manualUrl: 'https://mapsconnect.apple.com',
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+  }
+  res.json({ status: 'manual_required', manualUrl: 'https://mapsconnect.apple.com' });
+});
