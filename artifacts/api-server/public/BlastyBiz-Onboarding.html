@@ -1190,7 +1190,7 @@ async function resolveCats() {
 
   let aiCats = null;
   try {
-    const resp = await fetch('/api/resolveCategories', {
+    const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/resolveCategories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ description: desc, platformCatLists }),
