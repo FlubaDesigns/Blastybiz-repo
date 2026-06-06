@@ -87,7 +87,7 @@ All 6 collections secured. Owner-only access on all user data.
 | Jun 6, 2026 | `deleteAccount` CF | Was missing `secrets: ['STRIPE_SECRET_KEY']` — Stripe cancellation would silently fail. Fixed and redeployed. |
 | Jun 6, 2026 | `BlastyBiz-Login.html` | Google sign-in used `signInWithPopup` on all devices — blocked by mobile Chrome. Fixed: `signInWithRedirect` on mobile (Android/iPhone), `signInWithPopup` retained on desktop. |
 | Jun 6, 2026 | `firebase-init.js` | `authDomain` was `blastybiz-9523e.firebaseapp.com` — mobile Chrome blocks cross-origin storage between `firebaseapp.com` and `web.app`, silently killing the redirect flow. Fixed: changed `authDomain` to `blastybiz-9523e.web.app` so auth redirect stays same-origin. Verified live. |
-| Jun 6, 2026 | `firebase.json` | Root URL (`/`) returned Firebase 404 — no `index.html` exists. Fixed: added a 301 redirect in `firebase.json` from `/` → `/BlastyBiz-Home.html`. Confirmed live: `curl` returns `301 → https://blastybiz-9523e.web.app/BlastyBiz-Home.html`. |
+| Jun 6, 2026 | `firebase.json` + `index.html` | Root URL (`/`) returned Firebase 404. First fix (firebase.json redirect rule) worked server-side but Firebase CDN edge nodes cached the old 404. Second fix: created `artifacts/api-server/public/index.html` with `meta refresh` + JS redirect to `BlastyBiz-Home.html` — Firebase now serves a real file (200) which is never cached as a 404. Confirmed live. |
 
 ---
 
