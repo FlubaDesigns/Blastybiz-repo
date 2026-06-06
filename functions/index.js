@@ -3,15 +3,25 @@
  * Deploy with: firebase deploy --only functions
  * Requires Blaze (pay-as-you-go) plan
  *
- * Set environment variables with:
- * firebase functions:config:set anthropic.key="sk-ant-..." stripe.secret_key="sk_live_..." etc.
+ * Secrets managed via Firebase Secret Manager:
+ *   firebase functions:secrets:set ANTHROPIC_API_KEY
+ *   firebase functions:secrets:set STRIPE_SECRET_KEY
+ *   firebase functions:secrets:set STRIPE_PRO_PRICE_ID
+ *   firebase functions:secrets:set STRIPE_AGENCY_PRICE_ID
+ *   firebase functions:secrets:set STRIPE_WEBHOOK_SECRET
  */
 
 const { onRequest } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const Anthropic = require('@anthropic-ai/sdk');
 const axios = require('axios');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+// Lazy-init Stripe — secret not available at module load time
+let _stripe;
+function getStripe() {
+  if (!_stripe) _stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  return _stripe;
+}
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -45,7 +55,7 @@ const PLATFORM_RULES = {
 // Function 1: adaptListing
 // POST /adaptListing
 // ══════════════════════════════════════════
-exports.adaptListing = onRequest(async (req, res) => {
+exports.adaptListing = onRequest({ secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
@@ -95,7 +105,7 @@ Return this exact JSON structure:
 // Function 2: resolveCategories
 // POST /resolveCategories
 // ══════════════════════════════════════════
-exports.resolveCategories = onRequest(async (req, res) => {
+exports.resolveCategories = onRequest({ secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
@@ -233,10 +243,10 @@ exports.createCheckoutSession = onRequest(async (req, res) => {
   setCors(res);
   const { plan, uid, email } = req.body;
   const prices = {
-    pro:    process.env.STRIPE_PRO_PRICE_ID,    // $19/month
-    agency: process.env.STRIPE_AGENCY_PRICE_ID  // $99/month
+    pro:    process.env.STRIPE_PRO_PRICE_ID,
+    agency: process.env.STRIPE_AGENCY_PRICE_ID
   };
-  const session = await stripe.checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     customer_email: email,
     line_items: [{ price: prices[plan], quantity: 1 }],
     mode: 'subscription',
@@ -252,7 +262,7 @@ exports.createCheckoutSession = onRequest(async (req, res) => {
 // POST /stripeWebhook
 // ══════════════════════════════════════════
 exports.stripeWebhook = onRequest(async (req, res) => {
-  const event = stripe.webhooks.constructEvent(
+  const event = getStripe().webhooks.constructEvent(
     req.rawBody,
     req.headers['stripe-signature'],
     process.env.STRIPE_WEBHOOK_SECRET
