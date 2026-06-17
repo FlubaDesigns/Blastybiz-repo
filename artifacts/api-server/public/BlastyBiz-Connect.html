@@ -11,6 +11,50 @@
   --light:#EEF7EE;--border:#1E2E1E;--muted:#587058;--danger:#FF4444;
   --warn:#FFA726;--blue:#54A8FF;
 }
+
+/* ── EXPLAINER DRAWER ── */
+.explainer{display:none;background:rgba(0,200,83,0.04);border:1px solid rgba(0,200,83,0.18);border-radius:14px;padding:18px 20px;margin-top:-4px;margin-bottom:12px}
+.explainer.open{display:block}
+.explainer-title{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:12px}
+.explainer-steps{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.explainer-step{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--muted);line-height:1.5}
+.explainer-step-num{width:22px;height:22px;border-radius:50%;background:rgba(0,200,83,0.12);color:var(--green);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.explainer-note{font-size:12px;color:var(--muted);background:rgba(84,168,255,0.06);border:1px solid rgba(84,168,255,0.15);border-radius:8px;padding:10px 12px;line-height:1.5}
+.explainer-note strong{color:var(--blue)}
+.btn-proceed{width:100%;padding:11px 18px;background:var(--green);color:var(--dark);border:none;border-radius:10px;font-size:14px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:12px;transition:background 0.2s}
+.btn-proceed:hover{background:#00b84c}
+
+/* ── FACEBOOK GATE MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal-sheet{background:#0D160D;border:1px solid var(--border);border-radius:22px 22px 0 0;width:100%;max-width:560px;padding:28px 24px 36px;transform:translateY(40px);transition:transform 0.3s cubic-bezier(0.34,1.2,0.64,1)}
+.modal-overlay.open .modal-sheet{transform:translateY(0)}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 22px}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--light);margin-bottom:6px}
+.modal-sub{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:22px}
+.modal-choice-group{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.modal-choice{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;cursor:pointer;display:flex;align-items:flex-start;gap:14px;transition:border-color 0.2s}
+.modal-choice:hover{border-color:var(--silver)}
+.modal-choice-icon{font-size:22px;flex-shrink:0;margin-top:1px}
+.modal-choice-body{}
+.modal-choice-title{font-size:14px;font-weight:700;color:var(--light);margin-bottom:2px}
+.modal-choice-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.modal-choice.yes{border-color:rgba(0,200,83,0.3)}
+.modal-choice.yes:hover{border-color:var(--green)}
+
+/* ── NO-PAGE GUIDE (shown inside modal) ── */
+.no-page-guide{display:none}
+.no-page-guide.open{display:block}
+.guide-steps{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+.guide-step{display:flex;gap:12px;background:rgba(255,167,38,0.04);border:1px solid rgba(255,167,38,0.15);border-radius:12px;padding:12px 14px}
+.guide-step-num{width:26px;height:26px;border-radius:50%;background:rgba(255,167,38,0.15);color:var(--warn);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.guide-step-body{font-size:13px;color:var(--light);line-height:1.5}
+.guide-step-body a{color:var(--warn);font-weight:600;text-decoration:none}
+.guide-step-body a:hover{text-decoration:underline}
+.guide-step-body strong{color:var(--warn)}
+.guide-note{font-size:12px;color:var(--muted);text-align:center;margin-bottom:4px}
+.btn-cancel-modal{width:100%;padding:11px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.2s}
+.btn-cancel-modal:hover{color:var(--light);border-color:var(--silver)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;min-height:100dvh;padding-bottom:40px}
@@ -101,6 +145,17 @@ body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;
     </div>
   </div>
 
+  <div class="explainer" id="explainer-google">
+    <div class="explainer-title">What happens when you connect Google</div>
+    <div class="explainer-steps">
+      <div class="explainer-step"><div class="explainer-step-num">1</div>Google asks you to sign in and give BlastyBiz permission to manage your Business Profile.</div>
+      <div class="explainer-step"><div class="explainer-step-num">2</div>You click "Allow" — BlastyBiz stores a secure token (never your password).</div>
+      <div class="explainer-step"><div class="explainer-step-num">3</div>Nothing posts yet. BlastyBiz only posts when you review and approve a listing.</div>
+    </div>
+    <div class="explainer-note"><strong>Need a Google Business Profile first?</strong> Go to <a href="https://business.google.com" target="_blank" rel="noopener" style="color:var(--blue);font-weight:600">business.google.com</a> → Add your business → come back here to connect.</div>
+    <button class="btn-proceed" id="btn-proceed-google">I have a Business Profile — Connect Google →</button>
+  </div>
+
   <div class="platform-card" id="card-facebook">
     <div class="platform-icon" style="background:rgba(24,119,242,0.1);color:#1877F2">f</div>
     <div class="platform-info">
@@ -185,10 +240,69 @@ body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;
   </div>
 </div>
 
+<!-- Facebook Gate Modal -->
+<div class="modal-overlay" id="fb-gate-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+
+    <!-- Step 1: Do you have a Page? -->
+    <div id="fb-gate-step1">
+      <div class="modal-title">Before we connect Facebook…</div>
+      <p class="modal-sub">BlastyBiz posts to your <strong style="color:var(--light)">Facebook Business Page</strong> — not your personal profile. Do you have a Business Page set up?</p>
+      <div class="modal-choice-group">
+        <div class="modal-choice yes" onclick="fbGateYes()">
+          <div class="modal-choice-icon">✅</div>
+          <div class="modal-choice-body">
+            <div class="modal-choice-title">Yes, I have a Facebook Business Page</div>
+            <div class="modal-choice-desc">I'm ready — take me to connect it.</div>
+          </div>
+        </div>
+        <div class="modal-choice" onclick="fbGateNo()">
+          <div class="modal-choice-icon">❓</div>
+          <div class="modal-choice-body">
+            <div class="modal-choice-title">No, I don't have one yet</div>
+            <div class="modal-choice-desc">Show me how to create one first — it only takes a few minutes.</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn-cancel-modal" onclick="closeFbGate()">Cancel</button>
+    </div>
+
+    <!-- Step 2: No-page guide -->
+    <div class="no-page-guide" id="fb-gate-step2">
+      <div class="modal-title">Create your Page first</div>
+      <p class="modal-sub">It takes about 5 minutes. Once it's live, come back here to connect.</p>
+      <div class="guide-steps">
+        <div class="guide-step">
+          <div class="guide-step-num">1</div>
+          <div class="guide-step-body">Go to <a href="https://www.facebook.com/pages/create" target="_blank" rel="noopener">facebook.com/pages/create</a> and sign in with your Facebook account.</div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-step-num">2</div>
+          <div class="guide-step-body">Choose <strong>Business or Brand</strong> → enter your business name and category.</div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-step-num">3</div>
+          <div class="guide-step-body">Add a profile photo and cover image (your logo works great). Click <strong>Save</strong>.</div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-step-num">4</div>
+          <div class="guide-step-body">Come back here and click <strong>Connect</strong> on Facebook — BlastyBiz will find your new Page automatically.</div>
+        </div>
+      </div>
+      <p class="guide-note">Want Instagram too? Link your Instagram Business account to the Page inside Meta Business Suite after creating it.</p>
+      <a href="https://www.facebook.com/pages/create" target="_blank" rel="noopener" class="btn-proceed" style="display:block;text-decoration:none;text-align:center;margin-bottom:10px">Open Facebook → Create Page</a>
+      <button class="btn-cancel-modal" onclick="closeFbGate()">I'll come back later</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 const CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
+let _fbConnectUrl = '';
+let _googleConnectUrl = '';
 
 function showToast(msg, isError) {
   const t = document.getElementById('toast');
@@ -197,6 +311,39 @@ function showToast(msg, isError) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+// ── Google explainer toggle ──
+window.openGoogleExplainer = function() {
+  document.getElementById('explainer-google').classList.add('open');
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('btn-proceed-google')?.addEventListener('click', () => {
+    if (_googleConnectUrl) window.location.href = _googleConnectUrl;
+  });
+});
+
+// ── Facebook gate ──
+window.openFbGate = function() {
+  document.getElementById('fb-gate-step1').style.display = '';
+  document.getElementById('fb-gate-step2').classList.remove('open');
+  document.getElementById('fb-gate-modal').classList.add('open');
+};
+window.closeFbGate = function() {
+  document.getElementById('fb-gate-modal').classList.remove('open');
+};
+window.fbGateYes = function() {
+  if (_fbConnectUrl) window.location.href = _fbConnectUrl;
+};
+window.fbGateNo = function() {
+  document.getElementById('fb-gate-step1').style.display = 'none';
+  document.getElementById('fb-gate-step2').classList.add('open');
+};
+
+// Close modal on backdrop click
+document.getElementById('fb-gate-modal')?.addEventListener('click', function(e) {
+  if (e.target === this) closeFbGate();
+});
 
 function renderPlatform(platformId, conn, bizId, uid) {
   const actionsEl = document.getElementById('actions-' + platformId);
@@ -207,10 +354,10 @@ function renderPlatform(platformId, conn, bizId, uid) {
   if (platformId === 'instagram') {
     if (conn && conn.status === 'connected') {
       cardEl.classList.add('connected');
-      statusEl.textContent = 'Connected through Facebook · IG user: ' + (conn.igUserId || conn.pageName || 'linked');
+      statusEl.textContent = 'Connected through Facebook · IG: ' + (conn.igUserId || 'linked');
       actionsEl.innerHTML = '<span class="status-badge badge-live">Connected</span>';
     } else {
-      statusEl.textContent = 'Connect Facebook first — Instagram links automatically.';
+      statusEl.textContent = 'Connects automatically when you link Facebook.';
       actionsEl.innerHTML = '<span class="status-badge badge-none">Via Facebook</span>';
     }
     return;
@@ -219,18 +366,27 @@ function renderPlatform(platformId, conn, bizId, uid) {
   const initiateFn = platformId === 'google' ? 'initiateGoogleOAuth' : 'initiateFacebookOAuth';
   const connectUrl = `${CF}/${initiateFn}?businessId=${encodeURIComponent(bizId)}&uid=${encodeURIComponent(uid)}`;
 
+  if (platformId === 'google') _googleConnectUrl = connectUrl;
+  if (platformId === 'facebook') _fbConnectUrl = connectUrl;
+
   if (!conn || !conn.status || conn.status === 'disconnected') {
     cardEl.classList.remove('connected','error');
     statusEl.textContent = platformId === 'google'
-      ? 'Connect to auto-post to your Google Business Profile listing.'
-      : 'Connect to auto-post to your Facebook Page and Instagram.';
-    actionsEl.innerHTML = `<button class="btn-connect" onclick="window.location.href='${connectUrl}'">Connect</button>`;
+      ? 'Auto-posts to your Google Business Profile when you approve a listing.'
+      : 'Auto-posts to your Facebook Page (and Instagram) when you approve a listing.';
+    if (platformId === 'google') {
+      actionsEl.innerHTML = `<button class="btn-connect" onclick="openGoogleExplainer()">Connect</button>`;
+    } else {
+      actionsEl.innerHTML = `<button class="btn-connect" onclick="openFbGate()">Connect</button>`;
+    }
   } else if (conn.status === 'connected') {
     cardEl.classList.add('connected');
+    // Hide explainer if already connected
+    if (platformId === 'google') document.getElementById('explainer-google')?.classList.remove('open');
     const detail = platformId === 'google'
       ? (conn.accountId ? 'Account: ' + conn.accountId : 'Connected')
       : (conn.pageName ? 'Page: ' + conn.pageName : 'Connected');
-    statusEl.textContent = detail + ' · Connected';
+    statusEl.textContent = detail + ' · Posts go here when you approve';
     actionsEl.innerHTML = `
       <span class="status-badge badge-live">Connected</span>
       <button class="btn-disconnect" onclick="disconnectPlatform('${platformId}')">Disconnect</button>

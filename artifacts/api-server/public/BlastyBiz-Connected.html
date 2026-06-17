@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BlastyBiz — Connected!</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --green:#00C853;--dark:#070D07;--card:#0D160D;--silver:#7AB87A;
+  --light:#EEF7EE;--border:#1E2E1E;--muted:#587058;--danger:#FF4444;
+  --warn:#FFA726;--blue:#54A8FF;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;min-height:100dvh}
+body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;padding-bottom:48px}
+
+.header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(13,22,13,0.95);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
+.header-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--green)}
+.header-link{font-size:13px;color:var(--muted);text-decoration:none;font-weight:600;transition:color 0.2s}
+.header-link:hover{color:var(--silver)}
+
+.main{max-width:560px;margin:0 auto;padding:40px 20px 20px}
+
+/* ── HERO CELEBRATION ── */
+.hero{text-align:center;padding:0 0 36px}
+.hero-icon{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px;animation:pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both}
+@keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.hero-badge{display:inline-block;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:14px;background:rgba(0,200,83,0.12);color:var(--green)}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:1px;line-height:1;color:var(--light);margin-bottom:10px}
+.hero-title span{color:var(--green)}
+.hero-sub{font-size:15px;color:var(--muted);line-height:1.6;max-width:400px;margin:0 auto}
+
+/* ── CONNECTED ACCOUNT CARD ── */
+.account-card{background:var(--card);border:1px solid rgba(0,200,83,0.3);border-radius:16px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;gap:16px}
+.account-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;font-family:'Bebas Neue',sans-serif;flex-shrink:0}
+.account-info{flex:1;min-width:0}
+.account-platform{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;color:var(--silver);margin-bottom:3px}
+.account-name{font-size:16px;font-weight:700;color:var(--light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.account-detail{font-size:12px;color:var(--muted);margin-top:3px}
+.account-check{color:var(--green);font-size:22px;flex-shrink:0}
+
+/* Instagram auto-link pill */
+.ig-pill{display:flex;align-items:center;gap:10px;background:rgba(225,48,108,0.07);border:1px solid rgba(225,48,108,0.2);border-radius:12px;padding:12px 16px;margin-bottom:24px}
+.ig-pill-icon{font-size:20px;flex-shrink:0}
+.ig-pill-text{font-size:13px;color:var(--light);line-height:1.4}
+.ig-pill-text strong{color:#E1306C}
+.ig-pill-badge{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:20px;background:rgba(225,48,108,0.15);color:#E1306C;white-space:nowrap;flex-shrink:0}
+
+/* ── WHAT HAPPENS NEXT ── */
+.next-section{margin-bottom:28px}
+.section-label{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--silver);font-weight:700;margin-bottom:14px}
+.step-list{display:flex;flex-direction:column;gap:10px}
+.step-row{display:flex;align-items:flex-start;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+.step-num{width:28px;height:28px;border-radius:50%;background:rgba(0,200,83,0.12);border:1px solid rgba(0,200,83,0.25);color:var(--green);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-body{}
+.step-title{font-size:14px;font-weight:700;color:var(--light);margin-bottom:2px}
+.step-desc{font-size:13px;color:var(--muted);line-height:1.5}
+
+/* ── CTA BUTTONS ── */
+.cta-group{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.btn-primary{display:block;width:100%;padding:15px 24px;background:var(--green);color:var(--dark);border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:center;text-decoration:none;transition:background 0.2s}
+.btn-primary:hover{background:#00b84c}
+.btn-secondary{display:block;width:100%;padding:13px 24px;background:transparent;color:var(--silver);border:1px solid var(--border);border-radius:12px;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:center;text-decoration:none;transition:all 0.2s}
+.btn-secondary:hover{border-color:var(--silver);color:var(--light)}
+
+/* ── ERROR STATE ── */
+.error-card{background:rgba(255,68,68,0.06);border:1px solid rgba(255,68,68,0.25);border-radius:16px;padding:20px 24px;margin-bottom:24px}
+.error-title{font-size:15px;font-weight:700;color:var(--danger);margin-bottom:6px}
+.error-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px}
+.btn-retry{display:inline-block;padding:10px 20px;background:transparent;color:var(--danger);border:1px solid var(--danger);border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;transition:all 0.2s}
+.btn-retry:hover{background:rgba(255,68,68,0.1)}
+
+/* ── LOADING ── */
+.loading{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">BlastyBiz</div>
+  <a href="BlastyBiz-Dashboard.html" class="header-link">Dashboard →</a>
+</div>
+
+<div class="main">
+  <div id="page-content">
+    <div class="loading">
+      <div class="spinner"></div>
+      Loading your connection…
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db } from './firebase-init-v2.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const params = new URLSearchParams(window.location.search);
+const platform = params.get('connected');  // 'google' or 'facebook'
+const errorPlatform = params.get('error'); // 'google' or 'facebook'
+
+const PLATFORM_META = {
+  google: {
+    label: 'Google Business Profile',
+    icon: 'G',
+    iconBg: 'rgba(66,133,244,0.12)',
+    iconColor: '#4285F4',
+    docId: suffix => suffix + '_google',
+    nameField: 'accountId',
+    steps: [
+      { title: 'You create a listing', desc: 'Fill in your business info — BlastyBiz uses it across every platform.' },
+      { title: 'AI writes your post', desc: 'BlastyBiz adapts your listing into a Google-optimised update automatically.' },
+      { title: 'You review and approve', desc: 'See exactly what will post before anything goes live. One click to approve.' },
+      { title: 'BlastyBiz posts it', desc: 'Your Google Business Profile is updated — no copy-paste, no login required.' }
+    ]
+  },
+  facebook: {
+    label: 'Facebook Pages',
+    icon: 'f',
+    iconBg: 'rgba(24,119,242,0.12)',
+    iconColor: '#1877F2',
+    docId: suffix => suffix + '_facebook',
+    nameField: 'pageName',
+    steps: [
+      { title: 'You create a listing', desc: 'Fill in your business info once — BlastyBiz handles the rest.' },
+      { title: 'AI writes your Facebook post', desc: 'A casual, engaging post written for your Facebook audience — not a dry directory listing.' },
+      { title: 'You review and approve', desc: 'See the exact post text before anything is published. Edit if you want.' },
+      { title: 'BlastyBiz posts to your Page', desc: 'Goes live on your Facebook Business Page. Instagram too, if it was linked.' }
+    ]
+  }
+};
+
+auth.authStateReady().then(() => {
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = 'BlastyBiz-Login.html'; return; }
+
+    const content = document.getElementById('page-content');
+
+    // ── ERROR STATE ──
+    if (errorPlatform) {
+      const meta = PLATFORM_META[errorPlatform] || { label: errorPlatform };
+      content.innerHTML = `
+        <div class="hero">
+          <div class="hero-icon" style="background:rgba(255,68,68,0.1)">⚠️</div>
+          <div class="hero-badge" style="background:rgba(255,68,68,0.12);color:var(--danger)">Connection Failed</div>
+          <h1 class="hero-title">Couldn't connect <span style="color:var(--danger)">${meta.label}</span></h1>
+          <p class="hero-sub">Something went wrong during the connection. This is usually a temporary issue — try again and it should work.</p>
+        </div>
+        <div class="error-card">
+          <div class="error-title">What might have happened</div>
+          <div class="error-desc">
+            ${errorPlatform === 'facebook'
+              ? 'The most common reason is cancelling the Facebook permission screen, or not selecting a Business Page during the sign-in. Make sure you select the right Page when Facebook asks.'
+              : 'The most common reason is cancelling the Google permission screen. Make sure to click "Allow" when Google asks for permission to manage your Business Profile.'}
+          </div>
+          <a href="BlastyBiz-Connect.html" class="btn-retry">← Try Again</a>
+        </div>
+        <a href="BlastyBiz-Dashboard.html" class="btn-secondary">Go to Dashboard</a>
+      `;
+      return;
+    }
+
+    if (!platform || !PLATFORM_META[platform]) {
+      window.location.href = 'BlastyBiz-Connect.html';
+      return;
+    }
+
+    const meta = PLATFORM_META[platform];
+
+    // Load user's bizId and platform connection doc
+    let bizId = user.uid;
+    let connData = null;
+    let igData = null;
+    try {
+      const userSnap = await getDoc(doc(db, 'users', user.uid));
+      if (userSnap.exists()) bizId = userSnap.data().activeBusiness || user.uid;
+
+      const connSnap = await getDoc(doc(db, 'platformConnections', `${bizId}_${platform}`));
+      if (connSnap.exists()) connData = connSnap.data();
+
+      if (platform === 'facebook') {
+        const igSnap = await getDoc(doc(db, 'platformConnections', `${bizId}_instagram`));
+        if (igSnap.exists() && igSnap.data().status === 'connected') igData = igSnap.data();
+      }
+    } catch(e) { /* connection data optional — still show success */ }
+
+    const accountName = connData?.[meta.nameField] || connData?.pageName || connData?.accountId || 'Your account';
+    const hasListing = false; // future: check Firestore for existing listings
+
+    // ── SUCCESS STATE ──
+    const stepsHTML = meta.steps.map((s,i) => `
+      <div class="step-row">
+        <div class="step-num">${i+1}</div>
+        <div class="step-body">
+          <div class="step-title">${s.title}</div>
+          <div class="step-desc">${s.desc}</div>
+        </div>
+      </div>
+    `).join('');
+
+    const igPillHTML = (platform === 'facebook' && igData) ? `
+      <div class="ig-pill">
+        <div class="ig-pill-icon">📸</div>
+        <div class="ig-pill-text"><strong>Instagram</strong> was automatically linked through your Facebook Page.</div>
+        <div class="ig-pill-badge">Also connected</div>
+      </div>
+    ` : (platform === 'facebook' && !igData) ? `
+      <div class="ig-pill" style="background:rgba(255,167,38,0.06);border-color:rgba(255,167,38,0.2)">
+        <div class="ig-pill-icon">📸</div>
+        <div class="ig-pill-text" style="color:var(--muted)">No Instagram Business account was found linked to this Page. To connect Instagram, link it to your Facebook Page in Meta Business Suite first.</div>
+        <div class="ig-pill-badge" style="background:rgba(255,167,38,0.15);color:var(--warn)">Not linked</div>
+      </div>
+    ` : '';
+
+    content.innerHTML = `
+      <div class="hero">
+        <div class="hero-icon" style="background:${meta.iconBg}">${meta.icon}</div>
+        <div class="hero-badge">Successfully connected</div>
+        <h1 class="hero-title">${meta.label} <span>is live.</span></h1>
+        <p class="hero-sub">BlastyBiz can now post directly to your ${platform === 'google' ? 'Google Business Profile' : 'Facebook Page'} whenever you approve a listing.</p>
+      </div>
+
+      <div class="account-card">
+        <div class="account-icon" style="background:${meta.iconBg};color:${meta.iconColor}">${meta.icon}</div>
+        <div class="account-info">
+          <div class="account-platform">${meta.label}</div>
+          <div class="account-name">${accountName}</div>
+          <div class="account-detail">Connected · Posts will go here when you approve</div>
+        </div>
+        <div class="account-check">✓</div>
+      </div>
+
+      ${igPillHTML}
+
+      <div class="next-section">
+        <div class="section-label">What happens when you post</div>
+        <div class="step-list">${stepsHTML}</div>
+      </div>
+
+      <div class="cta-group">
+        <a href="BlastyBiz.html" class="btn-primary">⚡ Create Your First Listing</a>
+        <a href="BlastyBiz-Connect.html" class="btn-secondary">Connect another platform</a>
+        <a href="BlastyBiz-Dashboard.html" class="btn-secondary">Go to Dashboard</a>
+      </div>
+    `;
+  });
+});
+</script>
+<script type="module" src="./auth-guard.js"></script>
+</body>
+</html>

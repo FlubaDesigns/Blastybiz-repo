@@ -421,10 +421,10 @@ exports.googleOAuthCallback = onRequest({ secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_
       expiresAt: new Date(Date.now() + (expires_in || 3600) * 1000)
     }, { merge: true });
 
-    res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?connected=google');
+    res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?connected=google');
   } catch(e) {
     console.error('googleOAuthCallback error:', e.response?.data || e.message);
-    res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?error=google');
+    res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?error=google');
   }
 });
 
@@ -513,10 +513,10 @@ exports.facebookOAuthCallback = onRequest({ secrets: ['FACEBOOK_APP_ID', 'FACEBO
     }
 
     await batch.commit();
-    res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?connected=facebook');
+    res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?connected=facebook');
   } catch(e) {
     console.error('facebookOAuthCallback error:', e.response?.data || e.message);
-    res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?error=facebook');
+    res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?error=facebook');
   }
 });
 
