@@ -96,7 +96,7 @@
           <div class="checks">
             <div class="check"><strong class="ok">✓ Local service area</strong><span>Mentions the towns served.</span></div>
             <div class="check"><strong class="ok">✓ Clear offer</strong><span>Customer knows what is being promoted.</span></div>
-            <div class="check"><strong class="warn">⚠ Manual platforms</strong><span>Some platforms require copy/paste.</span></div>
+            <div class="check"><strong class="warn">⚠ Copy-ready platforms</strong><span>Some platforms block all apps. Your text is written — just paste it.</span></div>
           </div>
 
           <div class="btn-row">
@@ -126,9 +126,9 @@ const PLATFORM_META = {
   bing:       { icon:'B',  name:'Bing Places',             capabilityLevel:'partial_auto', mode:'Auto-post available after approval', badge:'Auto',   badgeClass:'badge auto',   hint:'Include full business details: hours, address, and category.' },
   applemaps:  { icon:'🍎', name:'Apple Maps',              capabilityLevel:'partial_auto', mode:'Submitted after approval',           badge:'Auto',   badgeClass:'badge auto',   hint:'Apple Maps requires factual, complete info. No marketing language.' },
   yelp:       { icon:'Y',  name:'Yelp',                   capabilityLevel:'partial_auto', mode:'Submitted after approval',           badge:'Auto',   badgeClass:'badge auto',   hint:'Descriptive, highlight what makes you special and your atmosphere.' },
-  nextdoor:   { icon:'N',  name:'Nextdoor',               capabilityLevel:'manual_assisted', mode:'Manual copy/paste required',    badge:'Manual', badgeClass:'badge manual', hint:'Nextdoor does not support automated posting. Copy and paste this text.', manualInstructions:'Go to nextdoor.com → Post → For Sale & Free → paste your listing.' },
-  craigslist: { icon:'C',  name:'Craigslist',             capabilityLevel:'manual_assisted', mode:'Manual copy/paste required',    badge:'Manual', badgeClass:'badge manual', hint:'Craigslist should be plain and direct. Avoid sounding like a flashy ad.', manualInstructions:'Go to craigslist.org → your city → Services → paste your listing.' },
-  fbmarket:   { icon:'M',  name:'FB Marketplace',         capabilityLevel:'manual_assisted', mode:'Manual copy/paste required',    badge:'Manual', badgeClass:'badge manual', hint:'Lead with price and location. Keep it straightforward.', manualInstructions:'Go to facebook.com/marketplace → Create listing → paste your text.' },
+  nextdoor:   { icon:'N',  name:'Nextdoor',               capabilityLevel:'manual_assisted', mode:'Copy-Ready · Nextdoor blocks all third-party apps',    badge:'Copy-Ready', badgeClass:'badge manual', hint:'Nextdoor chose not to allow any app to post on your behalf — that\'s their rule, not ours. BlastyBiz wrote this post for you. Paste it in under a minute.', manualInstructions:'Go to nextdoor.com → Post → For Sale & Free → paste your listing.' },
+  craigslist: { icon:'C',  name:'Craigslist',             capabilityLevel:'manual_assisted', mode:'Copy-Ready · Craigslist has banned all posting APIs',    badge:'Copy-Ready', badgeClass:'badge manual', hint:'Craigslist has banned third-party posting since day one — no app can post here automatically. BlastyBiz wrote this ad for you in plain, direct language. Paste it in.', manualInstructions:'Go to craigslist.org → your city → Services → paste your listing.' },
+  fbmarket:   { icon:'M',  name:'FB Marketplace',         capabilityLevel:'manual_assisted', mode:'Copy-Ready · Meta closed Marketplace to all apps in 2018',    badge:'Copy-Ready', badgeClass:'badge manual', hint:'Meta closed Facebook Marketplace to all third-party apps in 2018 — not a BlastyBiz limitation, a Meta decision. Your listing is written and ready. Paste it in.', manualInstructions:'Go to facebook.com/marketplace → Create listing → paste your text.' },
 };
 
 let drafts = {};
@@ -224,7 +224,7 @@ function populateFromDraftData(draftData) {
   const manualCount = Object.keys(drafts).filter(k => PLATFORM_META[k]?.capabilityLevel === 'manual_assisted').length;
   const approvalText = document.querySelector('.approval-text');
   if (approvalText) {
-    approvalText.innerHTML = `<strong>${autoCount} auto-post draft${autoCount !== 1 ? 's' : ''} ready.</strong> ${manualCount} manual platform${manualCount !== 1 ? 's' : ''} need copy/paste after approval.`;
+    approvalText.innerHTML = `<strong>${autoCount} platform${autoCount !== 1 ? 's' : ''} will auto-post.</strong> ${manualCount} platform${manualCount !== 1 ? 's' : ''} block third-party posting — your copy-ready text is waiting.`;
   }
 }
 </script>
