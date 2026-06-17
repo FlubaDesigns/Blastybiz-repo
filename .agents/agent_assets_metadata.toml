@@ -12,3 +12,9 @@ id = "67fGmTkLMAbTADvgVIF6b"
 uri = "file://download/BlastyBiz_Audit.md"
 type = "text"
 title = "BlastyBiz_Audit.md — updated Jun 17"
+
+[[outputs]]
+id = "OrxuqDZbFKPyGWS2Um6-L"
+uri = "file://download/BlastyBiz_Full.zip"
+type = "unspecified"
+title = "BlastyBiz_Full.zip — 165 KB, 89 files"
