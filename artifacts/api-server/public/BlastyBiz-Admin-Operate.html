@@ -67,11 +67,25 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
 .copy-btn:hover{background:#eef5ee}
 .copy-btn.copied{color:#fff;background:#00C853;border-color:#00C853}
 
+/* ── SECRET INPUT ── */
+.secret-row{display:flex;gap:8px;margin-top:12px;align-items:stretch}
+.secret-input{flex:1;padding:10px 13px;border:1.5px solid #dde5dd;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:#0d1a0d;background:#fff;outline:none;transition:border-color .15s;min-width:0}
+.secret-input:focus{border-color:#00C853}
+.show-btn{padding:10px 13px;background:#f0f4f0;border:1.5px solid #dde5dd;border-radius:8px;font-size:12px;font-weight:600;color:#4a604a;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.show-btn:hover{background:#e4ece4}
+.save-btn{padding:10px 18px;background:#00C853;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s;flex-shrink:0}
+.save-btn:hover{background:#00b04a}
+.save-btn:disabled{background:#b0c8b0;cursor:not-allowed}
+.save-status{font-size:12px;margin-top:6px;min-height:18px;font-weight:500}
+.save-status.ok{color:#1a6630}
+.save-status.err{color:#c0392b}
+
 /* ── NOTE ── */
 .note{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;font-size:13px;color:#6b4f00;margin-top:10px;line-height:1.5}
 .note strong{color:#4a3400}
 .note-info{background:#e8f4fd;border-color:#90caf9;color:#0d3a5c}
 .note-info strong{color:#083a5c}
+.note-success{background:#eef5ee;border-color:#a5d6a7;color:#1a4020}
 
 /* ── LINK BTN ── */
 .link-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#0d1a0d;background:#f0f4f0;border:1px solid #dde5dd;border-radius:8px;padding:7px 14px;text-decoration:none;margin-top:10px;transition:all .15s}
@@ -84,6 +98,12 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
 
 /* ── CF URL ── */
 .cf-url{font-family:'Courier New',monospace;font-size:12px;color:#1a3a1a;background:#f0f4f0;border:1px solid #dde5dd;border-radius:6px;padding:6px 10px;display:inline-block;margin-top:4px;word-break:break-all}
+
+/* ── REDEPLOY BANNER ── */
+#redeploy-banner{display:none;background:#fff8e1;border:2px solid #ffe082;border-radius:14px;padding:20px 24px;margin-bottom:28px}
+#redeploy-banner.visible{display:block}
+.redeploy-title{font-size:15px;font-weight:700;color:#6b4f00;margin-bottom:8px}
+.redeploy-sub{font-size:13px;color:#6b4f00;margin-bottom:12px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -102,7 +122,7 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
 
   <div style="margin-bottom:24px">
     <h1 style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:1px;color:#0d1a0d">Operator Setup</h1>
-    <p style="font-size:14px;color:#5a705a;margin-top:4px">Everything that needs a human hand. Check items off as you complete them — progress saves in your browser.</p>
+    <p style="font-size:14px;color:#5a705a;margin-top:4px">Paste each key into the field and hit Save — no terminal needed. Check items off as you complete them.</p>
   </div>
 
   <!-- PROGRESS -->
@@ -110,6 +130,16 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
     <div class="progress-title">Setup Progress</div>
     <div class="progress-bar-wrap"><div class="progress-bar" id="prog-bar" style="width:0%"></div></div>
     <div class="progress-label" id="prog-label">0 / 0 done</div>
+  </div>
+
+  <!-- REDEPLOY BANNER — shown after first secret is saved -->
+  <div id="redeploy-banner">
+    <div class="redeploy-title">⚠️ One more step after saving secrets</div>
+    <div class="redeploy-sub">Secrets are saved to Firebase Secret Manager, but Cloud Functions pin their secrets at deploy time. After you've saved all your keys, run this <strong>one command</strong> in the Replit Shell to activate them:</div>
+    <div class="code-block">
+      <span class="code-text">npx firebase-tools deploy --only functions</span>
+      <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions')">Copy</button>
+    </div>
   </div>
 
   <!-- ══════════════════════════════════════════
@@ -126,7 +156,7 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
       <div class="card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-anthropic-key" onclick="toggleCheck(event,'anthropic-key')"></div>
         <div style="flex:1">
-          <div class="card-title">Set your Anthropic API key as a Firebase secret</div>
+          <div class="card-title">Set your Anthropic API key</div>
           <div class="card-sub">Powers all AI listing adaptation — required before any listing can be generated</div>
         </div>
         <span class="chevron">▼</span>
@@ -135,21 +165,15 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
         <div class="steps">
           <div class="step"><div class="step-num">1</div><div class="step-text">Sign in at <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com → API Keys</a> → click <strong>Create Key</strong> → name it <em>BlastyBiz</em></div></div>
           <div class="step"><div class="step-num">2</div><div class="step-text">Copy the key (starts with <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">sk-ant-</code>). <strong>You only see it once.</strong></div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">Open the <strong>Replit Shell</strong> and run this command, replacing the placeholder with your key:</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Paste it below and hit Save:</div></div>
         </div>
-        <div class="code-row">
-          <span class="code-text">echo "sk-ant-YOUR_KEY_HERE" | npx firebase-tools functions:secrets:set ANTHROPIC_API_KEY --force</span>
-          <button class="copy-btn" onclick="copyCode(this,'echo \"sk-ant-YOUR_KEY_HERE\" | npx firebase-tools functions:secrets:set ANTHROPIC_API_KEY --force')">Copy</button>
+        <div class="secret-row">
+          <input type="password" id="inp-anthropic" class="secret-input" placeholder="sk-ant-…" autocomplete="off">
+          <button class="show-btn" onclick="toggleShow('inp-anthropic',this)">Show</button>
+          <button class="save-btn" onclick="saveSecret('ANTHROPIC_API_KEY','inp-anthropic','st-anthropic',this)">Save</button>
         </div>
-        <div class="steps" style="margin-top:10px">
-          <div class="step"><div class="step-num">4</div><div class="step-text">Verify it's set: <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">npx firebase-tools functions:secrets:access ANTHROPIC_API_KEY</code></div></div>
-          <div class="step"><div class="step-num">5</div><div class="step-text">Redeploy the AI functions to pick up the secret:</div></div>
-        </div>
-        <div class="code-row">
-          <span class="code-text">npx firebase-tools deploy --only functions:adaptListing,functions:resolveCategories</span>
-          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:adaptListing,functions:resolveCategories')">Copy</button>
-        </div>
-        <div class="note"><strong>Model used:</strong> claude-3-5-haiku (fast + cost-efficient). Usage is billed directly to your Anthropic account — not Firebase. Check <a href="https://console.anthropic.com/settings/usage" target="_blank">console.anthropic.com → Usage</a> to monitor spend.</div>
+        <div class="save-status" id="st-anthropic"></div>
+        <div class="note" style="margin-top:12px"><strong>Model used:</strong> claude-3-5-haiku (fast + cost-efficient). Usage billed to your Anthropic account — not Firebase. Check <a href="https://console.anthropic.com/settings/usage" target="_blank">console.anthropic.com → Usage</a> to monitor spend.</div>
       </div>
     </div>
   </div>
@@ -185,33 +209,59 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
       </div>
     </div>
 
-    <!-- 2. Set price ID secrets -->
+    <!-- 2. Stripe secret key -->
     <div class="card">
       <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-stripe-prices" onclick="toggleCheck(event,'stripe-prices')"></div>
+        <div class="check-box" id="chk-stripe-key" onclick="toggleCheck(event,'stripe-key')"></div>
         <div style="flex:1">
-          <div class="card-title">Set Stripe price ID secrets</div>
-          <div class="card-sub">Run in Replit shell · replaces placeholder values</div>
+          <div class="card-title">Set your Stripe Secret Key</div>
+          <div class="card-sub">Found in Stripe Dashboard → Developers → API Keys</div>
         </div>
         <span class="chevron">▼</span>
       </div>
       <div class="card-body">
         <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Open the Replit Shell and run these commands, replacing the price IDs with the ones from your Stripe products:</div></div>
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://dashboard.stripe.com/apikeys" target="_blank">Stripe Dashboard → Developers → API Keys</a></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Copy your <strong>Secret key</strong> (starts with <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">sk_live_</code> for live, <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">sk_test_</code> for test)</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Paste it below and hit Save:</div></div>
         </div>
-        <div class="code-block" style="margin-top:10px">
-          <span class="code-text">echo "price_xxx_pro" | npx firebase-tools functions:secrets:set STRIPE_PRO_PRICE_ID --force</span>
-          <button class="copy-btn" onclick="copyCode(this,'echo \"price_xxx_pro\" | npx firebase-tools functions:secrets:set STRIPE_PRO_PRICE_ID --force')">Copy</button>
+        <div class="secret-row">
+          <input type="password" id="inp-stripe-key" class="secret-input" placeholder="sk_live_…" autocomplete="off">
+          <button class="show-btn" onclick="toggleShow('inp-stripe-key',this)">Show</button>
+          <button class="save-btn" onclick="saveSecret('STRIPE_SECRET_KEY','inp-stripe-key','st-stripe-key',this)">Save</button>
         </div>
-        <div class="code-block">
-          <span class="code-text">echo "price_xxx_agency" | npx firebase-tools functions:secrets:set STRIPE_AGENCY_PRICE_ID --force</span>
-          <button class="copy-btn" onclick="copyCode(this,'echo \"price_xxx_agency\" | npx firebase-tools functions:secrets:set STRIPE_AGENCY_PRICE_ID --force')">Copy</button>
-        </div>
-        <div class="note-info note">After setting secrets, redeploy the functions: <code>npx firebase-tools deploy --only functions:createCheckoutSession</code></div>
+        <div class="save-status" id="st-stripe-key"></div>
       </div>
     </div>
 
-    <!-- 3. Add webhook -->
+    <!-- 3. Set price ID secrets -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-stripe-prices" onclick="toggleCheck(event,'stripe-prices')"></div>
+        <div style="flex:1">
+          <div class="card-title">Set Stripe price ID secrets</div>
+          <div class="card-sub">The price_xxx IDs from the products you just created</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <p style="font-size:13px;color:#4a604a;margin-top:12px;margin-bottom:2px;font-weight:600">Pro Price ID (price_xxx_pro)</p>
+        <div class="secret-row">
+          <input type="text" id="inp-stripe-pro" class="secret-input" placeholder="price_xxx…" autocomplete="off">
+          <button class="save-btn" onclick="saveSecret('STRIPE_PRO_PRICE_ID','inp-stripe-pro','st-stripe-pro',this)">Save</button>
+        </div>
+        <div class="save-status" id="st-stripe-pro"></div>
+
+        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">Agency Price ID (price_xxx_agency)</p>
+        <div class="secret-row">
+          <input type="text" id="inp-stripe-agency" class="secret-input" placeholder="price_xxx…" autocomplete="off">
+          <button class="save-btn" onclick="saveSecret('STRIPE_AGENCY_PRICE_ID','inp-stripe-agency','st-stripe-agency',this)">Save</button>
+        </div>
+        <div class="save-status" id="st-stripe-agency"></div>
+      </div>
+    </div>
+
+    <!-- 4. Add webhook -->
     <div class="card">
       <div class="card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-stripe-webhook" onclick="toggleCheck(event,'stripe-webhook')"></div>
@@ -230,16 +280,18 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
         <div class="steps" style="margin-top:10px">
           <div class="step"><div class="step-num">3</div><div class="step-text">Under <strong>Events to send</strong>, select: <code>customer.subscription.created</code>, <code>customer.subscription.updated</code>, <code>customer.subscription.deleted</code></div></div>
           <div class="step"><div class="step-num">4</div><div class="step-text">After saving, click <strong>Reveal signing secret</strong> (starts with <code>whsec_</code>) and copy it</div></div>
-          <div class="step"><div class="step-num">5</div><div class="step-text">Run in Replit Shell:</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Paste it below and hit Save:</div></div>
         </div>
-        <div class="code-block">
-          <span class="code-text">echo "whsec_your_secret" | npx firebase-tools functions:secrets:set STRIPE_WEBHOOK_SECRET --force</span>
-          <button class="copy-btn" onclick="copyCode(this,'echo \"whsec_your_secret\" | npx firebase-tools functions:secrets:set STRIPE_WEBHOOK_SECRET --force')">Copy</button>
+        <div class="secret-row">
+          <input type="password" id="inp-stripe-wh" class="secret-input" placeholder="whsec_…" autocomplete="off">
+          <button class="show-btn" onclick="toggleShow('inp-stripe-wh',this)">Show</button>
+          <button class="save-btn" onclick="saveSecret('STRIPE_WEBHOOK_SECRET','inp-stripe-wh','st-stripe-wh',this)">Save</button>
         </div>
+        <div class="save-status" id="st-stripe-wh"></div>
       </div>
     </div>
 
-    <!-- 4. Enable Customer Portal -->
+    <!-- 5. Enable Customer Portal -->
     <div class="card">
       <div class="card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-stripe-portal" onclick="toggleCheck(event,'stripe-portal')"></div>
@@ -270,7 +322,7 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
       <span class="section-badge warn" id="badge-google">Setup required</span>
     </div>
 
-    <!-- Google Cloud project -->
+    <!-- Enable API -->
     <div class="card">
       <div class="card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-google-api" onclick="toggleCheck(event,'google-api')"></div>
@@ -295,7 +347,7 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
       <div class="card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-google-creds" onclick="toggleCheck(event,'google-creds')"></div>
         <div style="flex:1">
-          <div class="card-title">Create OAuth 2.0 credentials</div>
+          <div class="card-title">Create OAuth 2.0 credentials and set secrets</div>
           <div class="card-sub">Web application type · set the redirect URI to the Cloud Function</div>
         </div>
         <span class="chevron">▼</span>
@@ -308,18 +360,25 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
         </div>
         <div class="cf-url">https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback</div>
         <div class="steps" style="margin-top:10px">
-          <div class="step"><div class="step-num">4</div><div class="step-text">Save — copy the <strong>Client ID</strong> and <strong>Client Secret</strong></div></div>
-          <div class="step"><div class="step-num">5</div><div class="step-text">Run in Replit Shell:</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Save — copy the <strong>Client ID</strong> and <strong>Client Secret</strong> and paste them below</div></div>
         </div>
-        <div class="code-block">
-          <span class="code-text">echo "your_client_id" | npx firebase-tools functions:secrets:set GOOGLE_CLIENT_ID --force</span>
-          <button class="copy-btn" onclick="copyCode(this,'echo \"your_client_id\" | npx firebase-tools functions:secrets:set GOOGLE_CLIENT_ID --force')">Copy</button>
+
+        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">Client ID</p>
+        <div class="secret-row">
+          <input type="text" id="inp-google-id" class="secret-input" placeholder="xxxxxxxxxx.apps.googleusercontent.com" autocomplete="off">
+          <button class="save-btn" onclick="saveSecret('GOOGLE_CLIENT_ID','inp-google-id','st-google-id',this)">Save</button>
         </div>
-        <div class="code-block">
-          <span class="code-text">echo "your_client_secret" | npx firebase-tools functions:secrets:set GOOGLE_CLIENT_SECRET --force</span>
-          <button class="copy-btn" onclick="copyCode(this,'echo \"your_client_secret\" | npx firebase-tools functions:secrets:set GOOGLE_CLIENT_SECRET --force')">Copy</button>
+        <div class="save-status" id="st-google-id"></div>
+
+        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">Client Secret</p>
+        <div class="secret-row">
+          <input type="password" id="inp-google-secret" class="secret-input" placeholder="GOCSPX-…" autocomplete="off">
+          <button class="show-btn" onclick="toggleShow('inp-google-secret',this)">Show</button>
+          <button class="save-btn" onclick="saveSecret('GOOGLE_CLIENT_SECRET','inp-google-secret','st-google-secret',this)">Save</button>
         </div>
-        <div class="note"><strong>Note:</strong> The OAuth consent screen must be configured first. Set User Type to <strong>External</strong> and add your own Google account as a test user while the app is in Testing mode.</div>
+        <div class="save-status" id="st-google-secret"></div>
+
+        <div class="note" style="margin-top:12px"><strong>Note:</strong> The OAuth consent screen must be configured first. Set User Type to <strong>External</strong> and add your own Google account as a test user while the app is in Testing mode.</div>
       </div>
     </div>
 
@@ -358,7 +417,7 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
       <div class="card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-fb-app" onclick="toggleCheck(event,'fb-app')"></div>
         <div style="flex:1">
-          <div class="card-title">Create a Meta (Facebook) App</div>
+          <div class="card-title">Create a Meta (Facebook) App and set secrets</div>
           <div class="card-sub">Business type · enables Pages and Instagram permissions</div>
         </div>
         <span class="chevron">▼</span>
@@ -372,17 +431,23 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
         </div>
         <div class="cf-url">https://us-central1-blastybiz-9523e.cloudfunctions.net/facebookOAuthCallback</div>
         <div class="steps" style="margin-top:10px">
-          <div class="step"><div class="step-num">5</div><div class="step-text">Go to <strong>App Settings → Basic</strong> → copy <strong>App ID</strong> and <strong>App Secret</strong></div></div>
-          <div class="step"><div class="step-num">6</div><div class="step-text">Run in Replit Shell:</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Go to <strong>App Settings → Basic</strong> → copy <strong>App ID</strong> and <strong>App Secret</strong> and paste them below</div></div>
         </div>
-        <div class="code-block">
-          <span class="code-text">echo "your_app_id" | npx firebase-tools functions:secrets:set FACEBOOK_APP_ID --force</span>
-          <button class="copy-btn" onclick="copyCode(this,'echo \"your_app_id\" | npx firebase-tools functions:secrets:set FACEBOOK_APP_ID --force')">Copy</button>
+
+        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">App ID</p>
+        <div class="secret-row">
+          <input type="text" id="inp-fb-id" class="secret-input" placeholder="123456789…" autocomplete="off">
+          <button class="save-btn" onclick="saveSecret('FACEBOOK_APP_ID','inp-fb-id','st-fb-id',this)">Save</button>
         </div>
-        <div class="code-block">
-          <span class="code-text">echo "your_app_secret" | npx firebase-tools functions:secrets:set FACEBOOK_APP_SECRET --force</span>
-          <button class="copy-btn" onclick="copyCode(this,'echo \"your_app_secret\" | npx firebase-tools functions:secrets:set FACEBOOK_APP_SECRET --force')">Copy</button>
+        <div class="save-status" id="st-fb-id"></div>
+
+        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">App Secret</p>
+        <div class="secret-row">
+          <input type="password" id="inp-fb-secret" class="secret-input" placeholder="…" autocomplete="off">
+          <button class="show-btn" onclick="toggleShow('inp-fb-secret',this)">Show</button>
+          <button class="save-btn" onclick="saveSecret('FACEBOOK_APP_SECRET','inp-fb-secret','st-fb-secret',this)">Save</button>
         </div>
+        <div class="save-status" id="st-fb-secret"></div>
       </div>
     </div>
 
@@ -428,6 +493,45 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
   </div>
 
   <!-- ══════════════════════════════════════════
+       RESEND EMAIL
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">📧</span>
+      <span class="section-title">Resend Email</span>
+      <span class="section-badge warn" id="badge-resend">Setup required</span>
+    </div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-resend-key" onclick="toggleCheck(event,'resend-key')"></div>
+        <div style="flex:1">
+          <div class="card-title">Set your Resend API key</div>
+          <div class="card-sub">Enables welcome emails and job-failure alerts</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Sign in at <a href="https://resend.com/api-keys" target="_blank">resend.com/api-keys</a> → click <strong>Create API Key</strong> → name it <em>BlastyBiz</em>, permission: <em>Full access</em></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Copy the key (starts with <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">re_</code>). <strong>You only see it once.</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Paste it below and hit Save:</div></div>
+        </div>
+        <div class="secret-row">
+          <input type="password" id="inp-resend" class="secret-input" placeholder="re_…" autocomplete="off">
+          <button class="show-btn" onclick="toggleShow('inp-resend',this)">Show</button>
+          <button class="save-btn" onclick="saveSecret('RESEND_API_KEY','inp-resend','st-resend',this)">Save</button>
+        </div>
+        <div class="save-status" id="st-resend"></div>
+        <div class="steps" style="margin-top:12px">
+          <div class="step"><div class="step-num">4</div><div class="step-text">In Resend, add and verify your sending domain so emails don't land in spam. Go to <a href="https://resend.com/domains" target="_blank">resend.com/domains</a> → Add Domain → follow DNS instructions for <strong>blastybiz.com</strong>. Until then, you can only send to addresses in your Resend account.</div></div>
+        </div>
+        <div class="note" style="margin-top:10px"><strong>What gets sent:</strong> Welcome email when a user signs up · Failure alert email when a publish job status changes to <code>failed</code></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
        FIREBASE STORAGE
   ══════════════════════════════════════════ -->
   <div class="section">
@@ -451,13 +555,8 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
           <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://console.firebase.google.com/project/blastybiz-9523e/storage" target="_blank">Firebase Console → Storage</a> and click <strong>Get started</strong> (requires Blaze plan)</div></div>
           <div class="step"><div class="step-num">2</div><div class="step-text">Choose <strong>Start in production mode</strong> → select region <strong>us-east1</strong> (matches Firestore) → click Done</div></div>
           <div class="step"><div class="step-num">3</div><div class="step-text">The default bucket (<code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">blastybiz-9523e.firebasestorage.app</code>) is created automatically — no further config needed for the function</div></div>
-          <div class="step"><div class="step-num">4</div><div class="step-text">To allow uploads from the browser (if you add direct client uploads later), create a <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">cors.json</code> file and run:</div></div>
         </div>
-        <div class="code-row">
-          <span class="code-text">gsutil cors set cors.json gs://blastybiz-9523e.firebasestorage.app</span>
-          <button class="copy-btn" onclick="copyCode(this,'gsutil cors set cors.json gs://blastybiz-9523e.firebasestorage.app')">Copy</button>
-        </div>
-        <div class="note"><strong>Current use:</strong> Only the <code>uploadImage</code> Cloud Function writes to Storage (server-side, no CORS needed). CORS is only required if you add direct browser → Storage uploads in the future. Storage costs are pay-per-GB and typically negligible for listing images.</div>
+        <div class="note" style="margin-top:12px"><strong>Current use:</strong> Only the <code>uploadImage</code> Cloud Function writes to Storage (server-side, no CORS needed). Storage costs are pay-per-GB and typically negligible for listing images.</div>
       </div>
     </div>
   </div>
@@ -496,49 +595,6 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
   </div>
 
   <!-- ══════════════════════════════════════════
-       RESEND EMAIL
-  ══════════════════════════════════════════ -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">📧</span>
-      <span class="section-title">Resend Email</span>
-      <span class="section-badge warn" id="badge-resend">Setup required</span>
-    </div>
-
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-resend-key" onclick="toggleCheck(event,'resend-key')"></div>
-        <div style="flex:1">
-          <div class="card-title">Set your Resend API key as a Firebase secret</div>
-          <div class="card-sub">Enables welcome emails and job-failure alerts</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Sign in at <a href="https://resend.com/api-keys" target="_blank">resend.com/api-keys</a> → click <strong>Create API Key</strong> → name it <em>BlastyBiz</em>, permission: <em>Full access</em></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Copy the key (starts with <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">re_</code>). <strong>You only see it once.</strong></div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">Open the <strong>Replit Shell</strong> and run this command, replacing the placeholder with your key:</div></div>
-        </div>
-        <div class="code-row">
-          <span class="code-text">echo "re_YOUR_KEY_HERE" | npx firebase-tools functions:secrets:set RESEND_API_KEY --force</span>
-          <button class="copy-btn" onclick="copyCode(this,'echo \"re_YOUR_KEY_HERE\" | npx firebase-tools functions:secrets:set RESEND_API_KEY --force')">Copy</button>
-        </div>
-        <div class="steps" style="margin-top:10px">
-          <div class="step"><div class="step-num">4</div><div class="step-text">Verify the secret is set: <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">npx firebase-tools functions:secrets:access RESEND_API_KEY</code></div></div>
-          <div class="step"><div class="step-num">5</div><div class="step-text">In Resend, add and verify your sending domain so emails don't land in spam. Go to <a href="https://resend.com/domains" target="_blank">resend.com/domains</a> → Add Domain → follow DNS instructions for <strong>blastybiz.com</strong>. Until then, you can only send to addresses in your Resend account.</div></div>
-          <div class="step"><div class="step-num">6</div><div class="step-text">Redeploy the email functions to pick up the new secret:</div></div>
-        </div>
-        <div class="code-row">
-          <span class="code-text">npx firebase-tools deploy --only functions:onJobFailed,functions:onUserCreated</span>
-          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:onJobFailed,functions:onUserCreated')">Copy</button>
-        </div>
-        <div class="note"><strong>What gets sent:</strong> Welcome email when a user signs up · Failure alert email when a publish job status changes to <code>failed</code></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
        ONGOING
   ══════════════════════════════════════════ -->
   <div class="section">
@@ -566,6 +622,12 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
           <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only hosting')">Copy</button>
         </div>
 
+        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">Deploy all functions (after saving secrets)</p>
+        <div class="code-block">
+          <span class="code-text">npx firebase-tools deploy --only functions</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions')">Copy</button>
+        </div>
+
         <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">Deploy Firestore security rules</p>
         <div class="code-block">
           <span class="code-text">npx firebase-tools deploy --only firestore:rules</span>
@@ -578,18 +640,6 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
           <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:functionName')">Copy</button>
         </div>
 
-        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">List all deployed functions</p>
-        <div class="code-block">
-          <span class="code-text">npx firebase-tools functions:list</span>
-          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools functions:list')">Copy</button>
-        </div>
-
-        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">Set / update a Firebase secret</p>
-        <div class="code-block">
-          <span class="code-text">echo "value" | npx firebase-tools functions:secrets:set SECRET_NAME --force</span>
-          <button class="copy-btn" onclick="copyCode(this,'echo \"value\" | npx firebase-tools functions:secrets:set SECRET_NAME --force')">Copy</button>
-        </div>
-
         <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">View function logs</p>
         <div class="code-block">
           <span class="code-text">npx firebase-tools functions:log --only functionName</span>
@@ -597,12 +647,12 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
         </div>
 
         <div class="divider"></div>
-        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px">All 16 deployed functions</p>
+        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px">All deployed functions</p>
         <p style="font-size:13px;color:#4a604a;line-height:1.8">
           adaptListing · approveDraft · createCheckoutSession · createPortalSession ·
           facebookOAuthCallback · googleOAuthCallback · initiateFacebookOAuth · initiateGoogleOAuth ·
           postToBing · postToAppleMaps · postToFacebook · postToGoogle · postToInstagram ·
-          resolveCategories · stripeWebhook · uploadImage
+          resolveCategories · setOperatorSecret · stripeWebhook · uploadImage
         </p>
       </div>
     </div>
@@ -630,13 +680,12 @@ function toggleCheck(e, key) {
 
 function renderChecks() {
   const checks = loadChecks();
-  const checkable = ['stripe-products','stripe-prices','stripe-webhook','stripe-portal',
+  const checkable = ['stripe-products','stripe-key','stripe-prices','stripe-webhook','stripe-portal',
                      'google-api','google-creds','google-deploy',
-                     'fb-app','fb-perms','fb-deploy','domain'];
+                     'fb-app','fb-perms','fb-deploy',
+                     'resend-key','storage','domain'];
   checkable.forEach(key => {
-    const el = document.getElementById('chk-' + key.replace(/-/g,'') + '');
-    const el2 = document.getElementById('chk-' + key);
-    const box = el2 || el;
+    const box = document.getElementById('chk-' + key);
     if (!box) return;
     if (checks[key]) box.classList.add('done');
     else box.classList.remove('done');
@@ -647,12 +696,21 @@ function renderChecks() {
   document.getElementById('prog-bar').style.width = (done/total*100) + '%';
   document.getElementById('prog-label').textContent = `${done} / ${total} done`;
 
-  const stripeKeys = ['stripe-products','stripe-prices','stripe-webhook','stripe-portal'];
+  const stripeKeys = ['stripe-products','stripe-key','stripe-prices','stripe-webhook','stripe-portal'];
   const googleKeys = ['google-api','google-creds','google-deploy'];
   const fbKeys = ['fb-app','fb-perms','fb-deploy'];
   updateBadge('badge-stripe', stripeKeys, checks);
   updateBadge('badge-google', googleKeys, checks);
   updateBadge('badge-facebook', fbKeys, checks);
+
+  const resendDone = checks['resend-key'];
+  const resendBadge = document.getElementById('badge-resend');
+  if (resendBadge) { resendBadge.textContent = resendDone ? 'Complete ✓' : 'Setup required'; resendBadge.className = 'section-badge ' + (resendDone ? 'ok' : 'warn'); }
+
+  const storageDone = checks['storage'];
+  const storageBadge = document.getElementById('badge-storage');
+  if (storageBadge) { storageBadge.textContent = storageDone ? 'Complete ✓' : 'Setup required'; storageBadge.className = 'section-badge ' + (storageDone ? 'ok' : 'warn'); }
+
   const domainDone = checks['domain'];
   const domainBadge = document.getElementById('badge-domain');
   if (domainBadge) { domainBadge.textContent = domainDone ? 'Connected ✓' : 'Not connected'; domainBadge.className = 'section-badge ' + (domainDone ? 'ok' : 'warn'); }
@@ -682,7 +740,130 @@ function copyCode(btn, text) {
   });
 }
 
+function toggleShow(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? 'Show' : 'Hide';
+}
+
 renderChecks();
+</script>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js';
+
+const app = initializeApp({
+  apiKey: 'AIzaSyCyEwA6jGHp0xjAJO3NOXHblYfpajtFXGM',
+  authDomain: 'blastybiz-9523e.firebaseapp.com',
+  projectId: 'blastybiz-9523e'
+});
+const auth = getAuth(app);
+const PROJECT = 'blastybiz-9523e';
+const SM_BASE = `https://secretmanager.googleapis.com/v1/projects/${PROJECT}`;
+const ADMIN_EMAILS = ['perceys@gmail.com'];
+
+// Stored Google OAuth access token (cloud-platform scope)
+let _accessToken = sessionStorage.getItem('sm_access_token');
+let _tokenExpiry = parseInt(sessionStorage.getItem('sm_token_expiry') || '0');
+
+function tokenValid() {
+  return _accessToken && Date.now() < _tokenExpiry - 60000; // 60s buffer
+}
+
+async function ensureToken() {
+  if (tokenValid()) return _accessToken;
+
+  // Sign in with Google requesting cloud-platform scope
+  const provider = new GoogleAuthProvider();
+  provider.addScope('https://www.googleapis.com/auth/cloud-platform');
+  provider.setCustomParameters({ login_hint: 'perceys@gmail.com', prompt: 'select_account' });
+
+  const result = await signInWithPopup(auth, provider);
+  const email = result.user.email;
+  if (!ADMIN_EMAILS.includes(email)) {
+    await auth.signOut();
+    throw new Error('Forbidden — must sign in as the admin account');
+  }
+
+  const credential = GoogleAuthProvider.credentialFromResult(result);
+  _accessToken = credential.accessToken;
+  _tokenExpiry = Date.now() + 3600 * 1000; // 1 hour
+  sessionStorage.setItem('sm_access_token', _accessToken);
+  sessionStorage.setItem('sm_token_expiry', _tokenExpiry);
+  return _accessToken;
+}
+
+async function smRequest(url, method, body) {
+  const token = await ensureToken();
+  const resp = await fetch(url, {
+    method,
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  return resp;
+}
+
+window.saveSecret = async function(name, inputId, statusId, btn) {
+  const value = document.getElementById(inputId).value.trim();
+  const statusEl = document.getElementById(statusId);
+
+  if (!value) {
+    statusEl.textContent = 'Please enter a value first.';
+    statusEl.className = 'save-status err';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  statusEl.textContent = 'Signing in to Google Cloud…';
+  statusEl.className = 'save-status';
+
+  try {
+    // Create secret if it doesn't exist (409 = already exists — fine)
+    const createResp = await smRequest(
+      `${SM_BASE}/secrets?secretId=${name}`, 'POST',
+      { replication: { automatic: {} } }
+    );
+    if (!createResp.ok && createResp.status !== 409) {
+      const err = await createResp.json().catch(() => ({}));
+      // Only fail if it's not a "already exists" style error
+      if (!createResp.status === 409) {
+        console.warn('createSecret warning:', err);
+      }
+    }
+
+    // Add new version
+    const payload = btoa(unescape(encodeURIComponent(value)));
+    const addResp = await smRequest(
+      `${SM_BASE}/secrets/${name}:addVersion`, 'POST',
+      { payload: { data: payload } }
+    );
+    if (!addResp.ok) {
+      const err = await addResp.json().catch(() => ({ message: 'Unknown error' }));
+      throw new Error(err.error?.message || 'Save failed');
+    }
+
+    statusEl.textContent = '✓ Saved to Secret Manager';
+    statusEl.className = 'save-status ok';
+    document.getElementById(inputId).value = '';
+    document.getElementById('redeploy-banner').classList.add('visible');
+  } catch (e) {
+    // Clear cached token on auth errors
+    if (e.code === 'auth/popup-closed-by-user') {
+      statusEl.textContent = 'Sign-in cancelled — try again';
+    } else if (e.code?.startsWith('auth/')) {
+      statusEl.textContent = '✗ Sign-in error: ' + e.message;
+      _accessToken = null; sessionStorage.removeItem('sm_access_token');
+    } else {
+      statusEl.textContent = '✗ ' + e.message;
+    }
+    statusEl.className = 'save-status err';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save';
+  }
+};
 </script>
 </body>
 </html>
