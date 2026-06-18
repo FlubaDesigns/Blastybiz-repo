@@ -284,7 +284,7 @@
   <div style="background:#0d160d;border:1px solid #1e2e1e;border-radius:16px;padding:32px;max-width:440px;width:90%;margin:auto;">
     <h3 style="color:#fff;margin-bottom:8px;font-size:18px;">Delete Account</h3>
     <p style="color:#7ab87a;font-size:13px;line-height:1.6;margin-bottom:16px;">
-      This permanently deletes your account, all businesses, listings, and publish history. Your Stripe subscription will be cancelled. <strong style="color:#ff6b6b">This cannot be undone.</strong>
+      This permanently deletes your account, all businesses, listings, and publish history. Your Square subscription will be cancelled. <strong style="color:#ff6b6b">This cannot be undone.</strong>
     </p>
     <p style="color:#7ab87a;font-size:13px;margin-bottom:8px;">Type <strong style="color:#fff">DELETE</strong> to confirm:</p>
     <input id="delete-confirm-input" type="text" placeholder="DELETE"
@@ -700,7 +700,7 @@ async function startCheckout(plan) {
     });
     const data = await r.json();
     if (data.url) { window.location.href = data.url; }
-    else showToast('Checkout setup failed — check Stripe config', true);
+    else showToast('Checkout setup failed — check Square config', true);
   } catch(e) {
     showToast('Checkout unavailable', true);
   }

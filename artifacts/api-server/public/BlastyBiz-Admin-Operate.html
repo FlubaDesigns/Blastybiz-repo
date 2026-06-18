@@ -179,135 +179,120 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
   </div>
 
   <!-- ══════════════════════════════════════════
-       STRIPE
+       SQUARE
   ══════════════════════════════════════════ -->
   <div class="section">
     <div class="section-header">
       <span class="section-icon">💳</span>
-      <span class="section-title">Stripe Payments</span>
-      <span class="section-badge warn" id="badge-stripe">Setup required</span>
+      <span class="section-title">Square Payments</span>
+      <span class="section-badge warn" id="badge-square">Setup required</span>
     </div>
 
-    <!-- 1. Create products -->
+    <!-- 1. Create subscription plans -->
     <div class="card">
       <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-stripe-products" onclick="toggleCheck(event,'stripe-products')"></div>
+        <div class="check-box" id="chk-square-plans" onclick="toggleCheck(event,'square-plans')"></div>
         <div style="flex:1">
-          <div class="card-title">Create Pro and Agency products in Stripe</div>
-          <div class="card-sub">Generates the price IDs you need for the next step</div>
+          <div class="card-title">Create Pro and Agency subscription plans in Square</div>
+          <div class="card-sub">Generates the plan variation IDs you need below</div>
         </div>
         <span class="chevron">▼</span>
       </div>
       <div class="card-body">
         <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://dashboard.stripe.com/products" target="_blank">Stripe Dashboard → Products</a> and click <strong>+ Add product</strong></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Name: <strong>BlastyBiz Pro</strong> · Price: <strong>$19.00 / month recurring</strong> · Set the price <strong>nickname</strong> to exactly: <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">pro</code> (lowercase — the webhook depends on this)</div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">Repeat for <strong>BlastyBiz Agency</strong> · Price: <strong>$99.00 / month recurring</strong> · nickname: <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">agency</code></div></div>
-          <div class="step"><div class="step-num">4</div><div class="step-text">Copy both <strong>price_xxx</strong> IDs (not product IDs) — you'll need them in the next step</div></div>
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://squareup.com/dashboard/items/services" target="_blank">Square Dashboard → Items → Services</a> and click <strong>+ Create subscription plan</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Name: <strong>BlastyBiz Pro</strong> · Price: your Pro monthly rate · After saving, open the plan and copy the <strong>Plan variation ID</strong> (a UUID)</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Repeat for <strong>BlastyBiz Agency</strong> and copy that plan variation ID too</div></div>
         </div>
-        <div class="note"><strong>Important:</strong> The webhook uses <code>price.nickname</code> to set the user's plan in Firestore. The nickname must be exactly <code>pro</code> or <code>agency</code> (lowercase, no spaces).</div>
+        <div class="note"><strong>Important:</strong> Copy the <strong>plan variation IDs</strong>, not the top-level plan IDs — you will paste them in step 3 below.</div>
       </div>
     </div>
 
-    <!-- 2. Stripe secret key -->
+    <!-- 2. Square Access Token -->
     <div class="card">
       <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-stripe-key" onclick="toggleCheck(event,'stripe-key')"></div>
+        <div class="check-box" id="chk-square-token" onclick="toggleCheck(event,'square-token')"></div>
         <div style="flex:1">
-          <div class="card-title">Set your Stripe Secret Key</div>
-          <div class="card-sub">Found in Stripe Dashboard → Developers → API Keys</div>
+          <div class="card-title">Set your Square Access Token</div>
+          <div class="card-sub">Found in Square Developer Dashboard → your app → Credentials</div>
         </div>
         <span class="chevron">▼</span>
       </div>
       <div class="card-body">
         <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://dashboard.stripe.com/apikeys" target="_blank">Stripe Dashboard → Developers → API Keys</a></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Copy your <strong>Secret key</strong> (starts with <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">sk_live_</code> for live, <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">sk_test_</code> for test)</div></div>
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://developer.squareup.com/apps" target="_blank">Square Developer Dashboard → Applications</a></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Select your app → <strong>Credentials</strong> tab → copy your <strong>Production Access Token</strong></div></div>
           <div class="step"><div class="step-num">3</div><div class="step-text">Paste it below and hit Save:</div></div>
         </div>
         <div class="secret-row">
-          <input type="password" id="inp-stripe-key" class="secret-input" placeholder="sk_live_…" autocomplete="off">
-          <button class="show-btn" onclick="toggleShow('inp-stripe-key',this)">Show</button>
-          <button class="save-btn" onclick="saveSecret('STRIPE_SECRET_KEY','inp-stripe-key','st-stripe-key',this)">Save</button>
+          <input type="password" id="inp-square-token" class="secret-input" placeholder="EAAAl…" autocomplete="off">
+          <button class="show-btn" onclick="toggleShow('inp-square-token',this)">Show</button>
+          <button class="save-btn" onclick="saveSecret('SQUARE_ACCESS_TOKEN','inp-square-token','st-square-token',this)">Save</button>
         </div>
-        <div class="save-status" id="st-stripe-key"></div>
+        <div class="save-status" id="st-square-token"></div>
       </div>
     </div>
 
-    <!-- 3. Set price ID secrets -->
+    <!-- 3. Set plan ID secrets -->
     <div class="card">
       <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-stripe-prices" onclick="toggleCheck(event,'stripe-prices')"></div>
+        <div class="check-box" id="chk-square-plans-ids" onclick="toggleCheck(event,'square-plans-ids')"></div>
         <div style="flex:1">
-          <div class="card-title">Set Stripe price ID secrets</div>
-          <div class="card-sub">The price_xxx IDs from the products you just created</div>
+          <div class="card-title">Set Square location and plan variation ID secrets</div>
+          <div class="card-sub">The IDs from the plans you just created, plus your Square location</div>
         </div>
         <span class="chevron">▼</span>
       </div>
       <div class="card-body">
-        <p style="font-size:13px;color:#4a604a;margin-top:12px;margin-bottom:2px;font-weight:600">Pro Price ID (price_xxx_pro)</p>
+        <p style="font-size:13px;color:#4a604a;margin-top:12px;margin-bottom:2px;font-weight:600">Square Location ID</p>
         <div class="secret-row">
-          <input type="text" id="inp-stripe-pro" class="secret-input" placeholder="price_xxx…" autocomplete="off">
-          <button class="save-btn" onclick="saveSecret('STRIPE_PRO_PRICE_ID','inp-stripe-pro','st-stripe-pro',this)">Save</button>
+          <input type="text" id="inp-square-location" class="secret-input" placeholder="L…" autocomplete="off">
+          <button class="save-btn" onclick="saveSecret('SQUARE_LOCATION_ID','inp-square-location','st-square-location',this)">Save</button>
         </div>
-        <div class="save-status" id="st-stripe-pro"></div>
+        <div class="save-status" id="st-square-location"></div>
 
-        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">Agency Price ID (price_xxx_agency)</p>
+        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">Pro Plan Variation ID</p>
         <div class="secret-row">
-          <input type="text" id="inp-stripe-agency" class="secret-input" placeholder="price_xxx…" autocomplete="off">
-          <button class="save-btn" onclick="saveSecret('STRIPE_AGENCY_PRICE_ID','inp-stripe-agency','st-stripe-agency',this)">Save</button>
+          <input type="text" id="inp-square-pro" class="secret-input" placeholder="UUID…" autocomplete="off">
+          <button class="save-btn" onclick="saveSecret('SQUARE_PRO_PLAN_ID','inp-square-pro','st-square-pro',this)">Save</button>
         </div>
-        <div class="save-status" id="st-stripe-agency"></div>
+        <div class="save-status" id="st-square-pro"></div>
+
+        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">Agency Plan Variation ID</p>
+        <div class="secret-row">
+          <input type="text" id="inp-square-agency" class="secret-input" placeholder="UUID…" autocomplete="off">
+          <button class="save-btn" onclick="saveSecret('SQUARE_AGENCY_PLAN_ID','inp-square-agency','st-square-agency',this)">Save</button>
+        </div>
+        <div class="save-status" id="st-square-agency"></div>
       </div>
     </div>
 
     <!-- 4. Add webhook -->
     <div class="card">
       <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-stripe-webhook" onclick="toggleCheck(event,'stripe-webhook')"></div>
+        <div class="check-box" id="chk-square-webhook" onclick="toggleCheck(event,'square-webhook')"></div>
         <div style="flex:1">
-          <div class="card-title">Add Stripe webhook and set secret</div>
-          <div class="card-sub">So Stripe can update plan status after payment</div>
+          <div class="card-title">Add Square webhook and set signature key</div>
+          <div class="card-sub">So Square can update plan status after payment</div>
         </div>
         <span class="chevron">▼</span>
       </div>
       <div class="card-body">
         <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://dashboard.stripe.com/webhooks" target="_blank">Stripe Dashboard → Webhooks</a> → <strong>+ Add endpoint</strong></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Endpoint URL — paste exactly:</div></div>
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://developer.squareup.com/apps" target="_blank">Square Developer Dashboard → Applications</a> → your app → <strong>Webhooks</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Click <strong>+ Add endpoint</strong> and paste this URL exactly:</div></div>
         </div>
-        <div class="cf-url">https://us-central1-blastybiz-9523e.cloudfunctions.net/stripeWebhook</div>
+        <div class="cf-url">https://us-central1-blastybiz-9523e.cloudfunctions.net/squareWebhook</div>
         <div class="steps" style="margin-top:10px">
-          <div class="step"><div class="step-num">3</div><div class="step-text">Under <strong>Events to send</strong>, select: <code>customer.subscription.created</code>, <code>customer.subscription.updated</code>, <code>customer.subscription.deleted</code></div></div>
-          <div class="step"><div class="step-num">4</div><div class="step-text">After saving, click <strong>Reveal signing secret</strong> (starts with <code>whsec_</code>) and copy it</div></div>
-          <div class="step"><div class="step-num">5</div><div class="step-text">Paste it below and hit Save:</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Under <strong>Events</strong>, select: <code>payment.completed</code> and <code>subscription.canceled</code></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Copy the <strong>Signature Key</strong> shown for the endpoint and paste it below:</div></div>
         </div>
         <div class="secret-row">
-          <input type="password" id="inp-stripe-wh" class="secret-input" placeholder="whsec_…" autocomplete="off">
-          <button class="show-btn" onclick="toggleShow('inp-stripe-wh',this)">Show</button>
-          <button class="save-btn" onclick="saveSecret('STRIPE_WEBHOOK_SECRET','inp-stripe-wh','st-stripe-wh',this)">Save</button>
+          <input type="password" id="inp-square-wh" class="secret-input" placeholder="Signature key…" autocomplete="off">
+          <button class="show-btn" onclick="toggleShow('inp-square-wh',this)">Show</button>
+          <button class="save-btn" onclick="saveSecret('SQUARE_WEBHOOK_SIGNATURE_KEY','inp-square-wh','st-square-wh',this)">Save</button>
         </div>
-        <div class="save-status" id="st-stripe-wh"></div>
-      </div>
-    </div>
-
-    <!-- 5. Enable Customer Portal -->
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-stripe-portal" onclick="toggleCheck(event,'stripe-portal')"></div>
-        <div style="flex:1">
-          <div class="card-title">Enable Stripe Customer Portal</div>
-          <div class="card-sub">Lets subscribers manage / cancel their own plan — 30 seconds</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://dashboard.stripe.com/settings/billing/portal" target="_blank">Stripe → Settings → Billing → Customer Portal</a></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Toggle <strong>Activate test link</strong> (test mode) or <strong>Activate customer portal</strong> (live)</div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">Enable <strong>Cancel subscription</strong> and <strong>Update payment method</strong> at minimum — Save</div></div>
-        </div>
-        <a class="link-btn link-btn-primary" href="https://dashboard.stripe.com/settings/billing/portal" target="_blank">↗ Open Stripe Portal Settings</a>
+        <div class="save-status" id="st-square-wh"></div>
       </div>
     </div>
   </div>
@@ -652,7 +637,7 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
           adaptListing · approveDraft · createCheckoutSession · createPortalSession ·
           facebookOAuthCallback · googleOAuthCallback · initiateFacebookOAuth · initiateGoogleOAuth ·
           postToBing · postToAppleMaps · postToFacebook · postToGoogle · postToInstagram ·
-          resolveCategories · setOperatorSecret · stripeWebhook · uploadImage
+          resolveCategories · setOperatorSecret · squareWebhook · uploadImage
         </p>
       </div>
     </div>
@@ -680,7 +665,7 @@ function toggleCheck(e, key) {
 
 function renderChecks() {
   const checks = loadChecks();
-  const checkable = ['stripe-products','stripe-key','stripe-prices','stripe-webhook','stripe-portal',
+  const checkable = ['square-plans','square-token','square-plans-ids','square-webhook',
                      'google-api','google-creds','google-deploy',
                      'fb-app','fb-perms','fb-deploy',
                      'resend-key','storage','domain'];
@@ -696,10 +681,10 @@ function renderChecks() {
   document.getElementById('prog-bar').style.width = (done/total*100) + '%';
   document.getElementById('prog-label').textContent = `${done} / ${total} done`;
 
-  const stripeKeys = ['stripe-products','stripe-key','stripe-prices','stripe-webhook','stripe-portal'];
+  const squareKeys = ['square-plans','square-token','square-plans-ids','square-webhook'];
   const googleKeys = ['google-api','google-creds','google-deploy'];
   const fbKeys = ['fb-app','fb-perms','fb-deploy'];
-  updateBadge('badge-stripe', stripeKeys, checks);
+  updateBadge('badge-square', squareKeys, checks);
   updateBadge('badge-google', googleKeys, checks);
   updateBadge('badge-facebook', fbKeys, checks);
 

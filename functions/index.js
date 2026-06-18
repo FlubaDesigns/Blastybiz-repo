@@ -5,10 +5,11 @@
  *
  * Secrets managed via Firebase Secret Manager:
  *   firebase functions:secrets:set ANTHROPIC_API_KEY
- *   firebase functions:secrets:set STRIPE_SECRET_KEY
- *   firebase functions:secrets:set STRIPE_PRO_PRICE_ID
- *   firebase functions:secrets:set STRIPE_AGENCY_PRICE_ID
- *   firebase functions:secrets:set STRIPE_WEBHOOK_SECRET
+ *   firebase functions:secrets:set SQUARE_ACCESS_TOKEN
+ *   firebase functions:secrets:set SQUARE_LOCATION_ID
+ *   firebase functions:secrets:set SQUARE_PRO_PLAN_ID
+ *   firebase functions:secrets:set SQUARE_AGENCY_PLAN_ID
+ *   firebase functions:secrets:set SQUARE_WEBHOOK_SIGNATURE_KEY
  */
 
 const { onRequest } = require('firebase-functions/v2/https');
@@ -36,11 +37,19 @@ async function sendResendEmail({ to, subject, html }) {
   }
 }
 
-// Lazy-init Stripe — secret not available at module load time
-let _stripe;
-function getStripe() {
-  if (!_stripe) _stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-  return _stripe;
+const crypto = require('crypto');
+
+// Lazy-init Square client — secret not available at module load time
+let _square;
+function getSquare() {
+  if (!_square) {
+    const { Client, Environment } = require('squareup');
+    _square = new Client({
+      accessToken: process.env.SQUARE_ACCESS_TOKEN,
+      environment: Environment.Production,
+    });
+  }
+  return _square;
 }
 
 admin.initializeApp();
@@ -270,27 +279,37 @@ exports.postToInstagram = onRequest(async (req, res) => {
 // Function 8: createCheckoutSession
 // POST /createCheckoutSession
 // ══════════════════════════════════════════
-exports.createCheckoutSession = onRequest(async (req, res) => {
+exports.createCheckoutSession = onRequest({ secrets: ['SQUARE_ACCESS_TOKEN', 'SQUARE_LOCATION_ID', 'SQUARE_PRO_PLAN_ID', 'SQUARE_AGENCY_PLAN_ID'] }, async (req, res) => {
   setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   const { plan, uid, email } = req.body;
-  const prices = {
-    pro:    process.env.STRIPE_PRO_PRICE_ID,
-    agency: process.env.STRIPE_AGENCY_PRICE_ID
+  const planIds = {
+    pro:    process.env.SQUARE_PRO_PLAN_ID,
+    agency: process.env.SQUARE_AGENCY_PLAN_ID,
   };
-  const session = await getStripe().checkout.sessions.create({
-    customer_email: email,
-    line_items: [{ price: prices[plan], quantity: 1 }],
-    mode: 'subscription',
-    success_url: `https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html?success=1`,
-    cancel_url:  `https://blastybiz-9523e.web.app/BlastyBiz-Login.html`,
-    metadata: { uid }
+  if (!planIds[plan]) return res.status(400).json({ error: 'Invalid plan' });
+  const { checkoutApi } = getSquare();
+  const response = await checkoutApi.createPaymentLink({
+    idempotencyKey: `checkout-${uid}-${plan}-${Date.now()}`,
+    order: {
+      locationId: process.env.SQUARE_LOCATION_ID,
+      referenceId: uid,
+      lineItems: [{ quantity: '1', catalogObjectId: planIds[plan] }],
+    },
+    checkoutOptions: {
+      redirectUrl: `https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html?success=1`,
+      merchantSupportEmail: 'hello@blastybiz.com',
+    },
+    prePopulatedData: { buyerEmail: email },
   });
-  res.json({ url: session.url });
+  res.json({ url: response.result.paymentLink.url });
 });
 
 // ══════════════════════════════════════════
 // Function 9: createPortalSession
 // POST /createPortalSession
+// Square has no hosted billing portal.
+// Returns a mailto link so the user can request changes.
 // ══════════════════════════════════════════
 exports.createPortalSession = onRequest(async (req, res) => {
   setCors(res);
@@ -299,49 +318,70 @@ exports.createPortalSession = onRequest(async (req, res) => {
   if (!uid) return res.status(400).json({ error: 'uid required' });
   const subSnap = await db.collection('subscriptions').doc(uid).get();
   if (!subSnap.exists) return res.status(404).json({ error: 'No subscription found' });
-  const { stripeCustomerId } = subSnap.data();
-  if (!stripeCustomerId) return res.status(404).json({ error: 'No Stripe customer' });
-  const session = await getStripe().billingPortal.sessions.create({
-    customer: stripeCustomerId,
-    return_url: 'https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html',
-  });
-  res.json({ url: session.url });
+  res.json({ url: 'mailto:hello@blastybiz.com?subject=Manage%20BlastyBiz%20Subscription' });
 });
 
 // ══════════════════════════════════════════
-// Function 10: stripeWebhook
-// POST /stripeWebhook
+// Function 10: squareWebhook
+// POST /squareWebhook
+// Verifies Square HMAC signature, handles payment.completed
+// and subscription.canceled events.
 // ══════════════════════════════════════════
-exports.stripeWebhook = onRequest(async (req, res) => {
-  const event = getStripe().webhooks.constructEvent(
-    req.rawBody,
-    req.headers['stripe-signature'],
-    process.env.STRIPE_WEBHOOK_SECRET
-  );
-
-  if (['customer.subscription.created', 'customer.subscription.updated'].includes(event.type)) {
-    const sub = event.data.object;
-    const uid = sub.metadata.uid;
-    const plan = sub.items.data[0].price.nickname?.toLowerCase() || 'pro';
-
-    await db.collection('users').doc(uid).set(
-      { plan, planActive: true }, { merge: true }
-    );
-    await db.collection('subscriptions').doc(uid).set({
-      uid,
-      stripeCustomerId: sub.customer,
-      stripeSubscriptionId: sub.id,
-      plan,
-      status: sub.status,
-      currentPeriodEnd: new Date(sub.current_period_end * 1000),
-    }, { merge: true });
+exports.squareWebhook = onRequest({ secrets: ['SQUARE_ACCESS_TOKEN', 'SQUARE_WEBHOOK_SIGNATURE_KEY', 'SQUARE_PRO_PLAN_ID', 'SQUARE_AGENCY_PLAN_ID'] }, async (req, res) => {
+  const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+  const notificationUrl = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/squareWebhook';
+  const body = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body);
+  const hmac = crypto.createHmac('sha256', signatureKey);
+  hmac.update(notificationUrl + body);
+  const expected = hmac.digest('base64');
+  if (expected !== req.headers['x-square-hmacsha256-signature']) {
+    return res.status(403).json({ error: 'Invalid signature' });
   }
 
-  if (event.type === 'customer.subscription.deleted') {
-    const uid = event.data.object.metadata.uid;
-    await db.collection('users').doc(uid).set(
-      { plan: 'starter', planActive: false }, { merge: true }
-    );
+  const event = req.body;
+
+  if (event.type === 'payment.completed') {
+    const payment = event.data?.object?.payment;
+    if (!payment) return res.json({ received: true });
+    const orderId = payment.order_id || payment.orderId;
+    if (!orderId) return res.json({ received: true });
+    try {
+      const { ordersApi } = getSquare();
+      const orderResp = await ordersApi.retrieveOrder(orderId);
+      const uid = orderResp.result?.order?.referenceId;
+      if (!uid) return res.json({ received: true });
+      const lineItems = orderResp.result?.order?.lineItems || [];
+      const planVarId = lineItems[0]?.catalogObjectId || '';
+      const plan = planVarId === process.env.SQUARE_AGENCY_PLAN_ID ? 'agency' : 'pro';
+      await db.collection('users').doc(uid).set(
+        { plan, planActive: true }, { merge: true }
+      );
+      await db.collection('subscriptions').doc(uid).set({
+        uid,
+        squareCustomerId: payment.customer_id || '',
+        squarePaymentId: payment.id,
+        plan,
+        status: 'active',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+    } catch (e) {
+      console.error('squareWebhook order lookup error:', e.message);
+    }
+  }
+
+  if (event.type === 'subscription.canceled') {
+    const sub = event.data?.object?.subscription;
+    if (!sub) return res.json({ received: true });
+    const customerId = sub.customer_id || sub.customerId;
+    if (!customerId) return res.json({ received: true });
+    const snap = await db.collection('subscriptions')
+      .where('squareCustomerId', '==', customerId).limit(1).get();
+    if (!snap.empty) {
+      const uid = snap.docs[0].data().uid;
+      await db.collection('users').doc(uid).set(
+        { plan: 'starter', planActive: false }, { merge: true }
+      );
+    }
   }
 
   res.json({ received: true });
@@ -645,9 +685,9 @@ exports.onUserCreated = onDocumentCreated(
 // ══════════════════════════════════════════
 // Function 19: deleteAccount
 // POST /deleteAccount  { idToken }
-// Cancels Stripe sub, wipes all Firestore data, deletes Auth user
+// Cancels Square sub, wipes all Firestore data, deletes Auth user
 // ══════════════════════════════════════════
-exports.deleteAccount = onRequest({ region: 'us-central1', secrets: ['STRIPE_SECRET_KEY'] }, async (req, res) => {
+exports.deleteAccount = onRequest({ region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
 
@@ -663,12 +703,12 @@ exports.deleteAccount = onRequest({ region: 'us-central1', secrets: ['STRIPE_SEC
   }
 
   try {
-    // Cancel Stripe subscription if exists
+    // Cancel Square subscription if exists
     const subSnap = await db.collection('subscriptions').doc(uid).get();
     if (subSnap.exists) {
-      const { stripeSubscriptionId } = subSnap.data();
-      if (stripeSubscriptionId) {
-        try { await getStripe().subscriptions.cancel(stripeSubscriptionId); } catch (_) {}
+      const { squareSubscriptionId } = subSnap.data();
+      if (squareSubscriptionId) {
+        try { await getSquare().subscriptionsApi.cancelSubscription(squareSubscriptionId); } catch (_) {}
       }
     }
 
@@ -715,8 +755,9 @@ exports.setOperatorSecret = onRequest({ cors: true }, async (req, res) => {
   if (!name || !value) return res.status(400).json({ error: 'Missing name or value' });
 
   const ALLOWED = [
-    'ANTHROPIC_API_KEY','STRIPE_SECRET_KEY','STRIPE_PRO_PRICE_ID',
-    'STRIPE_AGENCY_PRICE_ID','STRIPE_WEBHOOK_SECRET',
+    'ANTHROPIC_API_KEY',
+    'SQUARE_ACCESS_TOKEN','SQUARE_LOCATION_ID',
+    'SQUARE_PRO_PLAN_ID','SQUARE_AGENCY_PLAN_ID','SQUARE_WEBHOOK_SIGNATURE_KEY',
     'GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET',
     'FACEBOOK_APP_ID','FACEBOOK_APP_SECRET','RESEND_API_KEY'
   ];
