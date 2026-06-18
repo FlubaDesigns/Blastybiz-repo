@@ -113,9 +113,13 @@ exports.adaptListing = onRequest({ secrets: ['ANTHROPIC_API_KEY'] }, async (req,
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
 
   const userSnap = await db.collection('users').doc(decoded.uid).get();
-  const plan  = userSnap.exists ? (userSnap.data().plan || 'starter') : 'starter';
-  const used  = userSnap.exists ? (userSnap.data().aiActionsUsed || 0) : 0;
-  const cap   = AI_LIMITS[plan] || AI_LIMITS.starter;
+  const userData  = userSnap.exists ? userSnap.data() : {};
+  const plan      = userData.plan || 'starter';
+  const cap       = AI_LIMITS[plan] || AI_LIMITS.starter;
+  const resetAt   = userData.aiActionsResetAt?.toDate?.() || null;
+  const now       = new Date();
+  const needsReset = !resetAt || now > resetAt;
+  const used      = needsReset ? 0 : (userData.aiActionsUsed || 0);
   if (used >= cap) return res.status(429).json({ error: `AI limit reached (${used}/${cap} this month). Upgrade your plan for more.` });
 
   const { listing, platforms, tone, platformCats } = req.body;
@@ -157,9 +161,16 @@ Return this exact JSON structure:
   });
 
   const parsed = JSON.parse(response.content[0].text.replace(/```json|```/g, '').trim());
-  await db.collection('users').doc(decoded.uid).update({
-    aiActionsUsed: admin.firestore.FieldValue.increment(1)
-  });
+  if (needsReset) {
+    await db.collection('users').doc(decoded.uid).update({
+      aiActionsUsed: 1,
+      aiActionsResetAt: admin.firestore.Timestamp.fromDate(new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000))
+    });
+  } else {
+    await db.collection('users').doc(decoded.uid).update({
+      aiActionsUsed: admin.firestore.FieldValue.increment(1)
+    });
+  }
   res.json(parsed);
 });
 
@@ -175,9 +186,13 @@ exports.resolveCategories = onRequest({ secrets: ['ANTHROPIC_API_KEY'] }, async 
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
 
   const userSnap = await db.collection('users').doc(decoded.uid).get();
-  const plan  = userSnap.exists ? (userSnap.data().plan || 'starter') : 'starter';
-  const used  = userSnap.exists ? (userSnap.data().aiActionsUsed || 0) : 0;
-  const cap   = AI_LIMITS[plan] || AI_LIMITS.starter;
+  const userData  = userSnap.exists ? userSnap.data() : {};
+  const plan      = userData.plan || 'starter';
+  const cap       = AI_LIMITS[plan] || AI_LIMITS.starter;
+  const resetAt   = userData.aiActionsResetAt?.toDate?.() || null;
+  const now       = new Date();
+  const needsReset = !resetAt || now > resetAt;
+  const used      = needsReset ? 0 : (userData.aiActionsUsed || 0);
   if (used >= cap) return res.status(429).json({ error: `AI limit reached (${used}/${cap} this month). Upgrade your plan for more.` });
 
   const { description, platformCatLists } = req.body;
@@ -195,9 +210,16 @@ ${Object.entries(platformCatLists).map(([id, cats]) => `${id}: ${cats.join(', ')
   });
 
   const parsed = JSON.parse(response.content[0].text.replace(/```json|```/g, '').trim());
-  await db.collection('users').doc(decoded.uid).update({
-    aiActionsUsed: admin.firestore.FieldValue.increment(1)
-  });
+  if (needsReset) {
+    await db.collection('users').doc(decoded.uid).update({
+      aiActionsUsed: 1,
+      aiActionsResetAt: admin.firestore.Timestamp.fromDate(new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000))
+    });
+  } else {
+    await db.collection('users').doc(decoded.uid).update({
+      aiActionsUsed: admin.firestore.FieldValue.increment(1)
+    });
+  }
   res.json(parsed);
 });
 
@@ -510,6 +532,28 @@ exports.squareWebhook = onRequest({ region: 'us-central1' }, async (req, res) =>
       }, { merge: true });
     } catch (e) {
       console.error('squareWebhook order lookup error:', e.message);
+    }
+  }
+
+  if (event.type === 'subscription.created') {
+    const sub = event.data?.object?.subscription;
+    if (sub) {
+      const subscriptionId = sub.id;
+      const customerId = sub.customer_id || sub.customerId;
+      if (subscriptionId && customerId) {
+        try {
+          const snap = await db.collection('subscriptions')
+            .where('squareCustomerId', '==', customerId).limit(1).get();
+          if (!snap.empty) {
+            await snap.docs[0].ref.update({
+              squareSubscriptionId: subscriptionId,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+          }
+        } catch (e) {
+          console.error('squareWebhook subscription.created error:', e.message);
+        }
+      }
     }
   }
 
