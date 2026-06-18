@@ -1044,17 +1044,70 @@ exports.adminListFailedJobs = onRequest(async (req, res) => {
   res.json({ jobs: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
 });
 
-exports.adminRetryJob = onRequest(async (req, res) => {
+exports.adminRetryJob = onRequest({ secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
   const { jobId } = req.body;
   if (!jobId) return res.status(400).json({ error: 'jobId required' });
-  await db.collection('publishJobs').doc(jobId).update({
-    status: 'pending', attempts: 0, adminError: '',
+
+  const jobRef = db.collection('publishJobs').doc(jobId);
+  const jobSnap = await jobRef.get();
+  if (!jobSnap.exists) return res.status(404).json({ error: 'Job not found' });
+  const job = { ...jobSnap.data(), id: jobId };
+
+  // Claim the job so concurrent retries don't double-fire
+  await jobRef.update({
+    status: 'processing',
+    attempts: admin.firestore.FieldValue.increment(1),
+    adminError: '',
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   });
-  res.json({ success: true });
+
+  try {
+    const connSnap = await db.collection('platformConnections')
+      .doc(`${job.businessId}_${job.platform}`).get();
+    if (!connSnap.exists || connSnap.data().status !== 'connected') {
+      await jobRef.update({
+        status: 'failed',
+        adminError: `No connected ${job.platform} account for business ${job.businessId}`,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      return res.status(400).json({ error: 'Platform not connected' });
+    }
+    const conn = connSnap.data();
+    let result;
+    switch (job.platform) {
+      case 'google':    result = await _publishGoogleJob(job, conn);    break;
+      case 'facebook':  result = await _publishFacebookJob(job, conn);  break;
+      case 'instagram': result = await _publishInstagramJob(job, conn); break;
+      default:
+        await jobRef.update({
+          status: 'failed',
+          adminError: `Unknown auto-post platform: ${job.platform}`,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        return res.status(400).json({ error: 'Unknown platform' });
+    }
+    await jobRef.update({
+      status: 'success',
+      apiResponse: result,
+      customerLabel: 'Published',
+      customerVisibleMessage: `Your listing is live on ${job.platform}.`,
+      publishedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    res.json({ success: true });
+  } catch(e) {
+    console.error(`adminRetryJob [${jobId}] failed:`, e.message);
+    await jobRef.update({
+      status: 'failed',
+      adminError: e.message,
+      customerVisibleMessage: `Retry failed for ${job.platform}. Check connection tokens.`,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    res.status(500).json({ error: e.message });
+  }
 });
 
 exports.adminMarkManualFollowup = onRequest(async (req, res) => {
