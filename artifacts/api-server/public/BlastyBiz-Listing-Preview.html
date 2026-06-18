@@ -271,8 +271,8 @@ onAuthStateChanged(auth, async (user) => {
     if (btn) { btn.disabled = true; btn.textContent = 'Approving…'; }
 
     try {
+      // Ensure draft doc exists before calling backend
       let draftId = window.draftDocId;
-
       if (!draftId) {
         const newRef = doc(collection(db, 'listingDrafts'));
         const adaptations = {};
@@ -288,44 +288,35 @@ onAuthStateChanged(auth, async (user) => {
         window.draftDocId = draftId;
       }
 
-      await updateDoc(doc(db, 'listingDrafts', draftId), {
-        status: 'approved',
-        approvedAt: serverTimestamp(),
+      // Build platforms array for approveDraft Cloud Function
+      const platforms = platformKeys.map(pid => {
+        const meta = window.PLATFORM_META[pid] || {};
+        const draft = window.drafts[pid] || {};
+        return {
+          id: pid,
+          name: meta.name || pid,
+          capabilityLevel: meta.capabilityLevel || 'manual_assisted',
+          adaptedContent: draft.text || '',
+          manualInstructions: meta.manualInstructions || '',
+        };
       });
 
-      const batch = [];
-      for (const pid of platformKeys) {
-        const meta = window.PLATFORM_META[pid] || {};
-        const isManual = ['manual_assisted', 'unsupported'].includes(meta.capabilityLevel);
-        const jobRef = doc(collection(db, 'publishJobs'));
-        const jobData = {
-          jobId: jobRef.id,
-          businessId: window.businessId,
-          uid: user.uid,
-          draftId,
-          platform: pid,
-          capabilityLevel: meta.capabilityLevel || 'manual_assisted',
-          jobType: 'publish_listing',
-          status: isManual ? 'manual_required' : 'pending',
-          attempts: 0,
-          maxAttempts: 3,
-          customerLabel: isManual ? 'Action needed' : 'Waiting to publish',
-          customerVisibleMessage: isManual
-            ? `Your ${meta.name || pid} listing is ready — you need to post it manually.`
-            : `Your ${meta.name || pid} listing is waiting to publish.`,
-          manualInstructions: meta.manualInstructions || '',
-          adminError: '',
-          payload: { adaptedContent: window.drafts[pid]?.text || '' },
-          apiResponse: {},
-          customerNotified: false,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        };
-        batch.push(setDoc(jobRef, jobData));
+      // Call approveDraft Cloud Function — backend creates all publishJobs
+      const idToken = await user.getIdToken();
+      const resp = await fetch(
+        'https://us-central1-blastybiz-9523e.cloudfunctions.net/approveDraft',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+          body: JSON.stringify({ draftId, businessId: window.businessId, platforms }),
+        }
+      );
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || 'Approval failed (' + resp.status + ')');
       }
 
-      await Promise.all(batch);
-
+      if (btn) { btn.textContent = 'Approved!'; }
       window.location.href = `BlastyBiz-Publishing-Status.html?draftId=${draftId}`;
     } catch(e) {
       console.error('approveDraft error:', e);

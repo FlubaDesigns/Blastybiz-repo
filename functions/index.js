@@ -43,7 +43,7 @@ const crypto = require('crypto');
 let _square;
 function getSquare() {
   if (!_square) {
-    const { Client, Environment } = require('squareup');
+    const { Client, Environment } = require('square');
     _square = new Client({
       accessToken: process.env.SQUARE_ACCESS_TOKEN,
       environment: Environment.Production,
@@ -64,6 +64,27 @@ const CORS_HEADERS = {
 function setCors(res) {
   Object.entries(CORS_HEADERS).forEach(([k, v]) => res.set(k, v));
 }
+
+// ── Auth helpers ─────────────────────────────────────────────────────────────
+async function verifyBearer(req) {
+  const authHeader = req.headers.authorization || '';
+  if (!authHeader.startsWith('Bearer ')) {
+    throw Object.assign(new Error('Missing Authorization header'), { status: 401 });
+  }
+  const token = authHeader.slice(7);
+  return await admin.auth().verifyIdToken(token);
+}
+
+async function requireAdmin(req) {
+  const decoded = await verifyBearer(req);
+  if (decoded.email !== 'perceys@gmail.com') {
+    throw Object.assign(new Error('Forbidden'), { status: 403 });
+  }
+  return decoded;
+}
+
+// ── AI usage limits (actions per month by plan) ──────────────────────────────
+const AI_LIMITS = { starter: 10, pro: 100, agency: 500 };
 
 const PLATFORM_RULES = {
   google:     { maxChars: 1500, notes: 'Professional, keyword-rich, include all contact info' },
@@ -87,6 +108,15 @@ const PLATFORM_RULES = {
 exports.adaptListing = onRequest({ secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+
+  let decoded;
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+
+  const userSnap = await db.collection('users').doc(decoded.uid).get();
+  const plan  = userSnap.exists ? (userSnap.data().plan || 'starter') : 'starter';
+  const used  = userSnap.exists ? (userSnap.data().aiActionsUsed || 0) : 0;
+  const cap   = AI_LIMITS[plan] || AI_LIMITS.starter;
+  if (used >= cap) return res.status(429).json({ error: `AI limit reached (${used}/${cap} this month). Upgrade your plan for more.` });
 
   const { listing, platforms, tone, platformCats } = req.body;
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -127,6 +157,9 @@ Return this exact JSON structure:
   });
 
   const parsed = JSON.parse(response.content[0].text.replace(/```json|```/g, '').trim());
+  await db.collection('users').doc(decoded.uid).update({
+    aiActionsUsed: admin.firestore.FieldValue.increment(1)
+  });
   res.json(parsed);
 });
 
@@ -137,6 +170,15 @@ Return this exact JSON structure:
 exports.resolveCategories = onRequest({ secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+
+  let decoded;
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+
+  const userSnap = await db.collection('users').doc(decoded.uid).get();
+  const plan  = userSnap.exists ? (userSnap.data().plan || 'starter') : 'starter';
+  const used  = userSnap.exists ? (userSnap.data().aiActionsUsed || 0) : 0;
+  const cap   = AI_LIMITS[plan] || AI_LIMITS.starter;
+  if (used >= cap) return res.status(429).json({ error: `AI limit reached (${used}/${cap} this month). Upgrade your plan for more.` });
 
   const { description, platformCatLists } = req.body;
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -153,6 +195,9 @@ ${Object.entries(platformCatLists).map(([id, cats]) => `${id}: ${cats.join(', ')
   });
 
   const parsed = JSON.parse(response.content[0].text.replace(/```json|```/g, '').trim());
+  await db.collection('users').doc(decoded.uid).update({
+    aiActionsUsed: admin.firestore.FieldValue.increment(1)
+  });
   res.json(parsed);
 });
 
@@ -164,7 +209,11 @@ exports.approveDraft = onRequest({ secrets: ['RESEND_API_KEY'] }, async (req, re
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
-  const { draftId, businessId, uid, platforms } = req.body;
+  let decoded;
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+
+  const { draftId, businessId, platforms } = req.body;
+  const uid = decoded.uid;
 
   // Check user plan — starter users can't auto-post via API platforms
   const userSnap = await db.collection('users').doc(uid).get();
@@ -216,7 +265,11 @@ exports.uploadImage = onRequest(async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
-  const { uid, imageData, fileName, mimeType } = req.body;
+  let decoded;
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+
+  const { imageData, fileName, mimeType } = req.body;
+  const uid = decoded.uid;
   const bucket = admin.storage().bucket();
   const file = bucket.file(`users/${uid}/images/${Date.now()}_${fileName}`);
   await file.save(Buffer.from(imageData, 'base64'), { contentType: mimeType });
@@ -224,22 +277,99 @@ exports.uploadImage = onRequest(async (req, res) => {
   res.json({ url });
 });
 
+// ── Internal publishing helpers (used by onJobCreated trigger) ───────────────
+
+async function _googleRefreshToken(refreshToken) {
+  const resp = await axios.post('https://oauth2.googleapis.com/token', null, {
+    params: {
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      refresh_token: refreshToken,
+      grant_type: 'refresh_token',
+    }
+  });
+  return resp.data.access_token;
+}
+
+async function _publishGoogleJob(job, conn) {
+  const content    = job.payload?.adaptedContent || '';
+  const imageUrls  = job.payload?.imageUrls || [];
+  async function tryPost(token) {
+    return axios.post(
+      `https://mybusiness.googleapis.com/v4/accounts/${conn.accountId}/locations/${conn.locationId}/localPosts`,
+      { languageCode: 'en-US', summary: content, media: imageUrls.map(u => ({ mediaFormat: 'PHOTO', sourceUrl: u })) },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
+  try {
+    const r = await tryPost(conn.accessToken);
+    return { postId: r.data.name };
+  } catch(e) {
+    if (e.response?.status === 401 && conn.refreshToken) {
+      const newToken = await _googleRefreshToken(conn.refreshToken);
+      await db.collection('platformConnections').doc(`${job.businessId}_google`).update({
+        accessToken: newToken, updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      const r = await tryPost(newToken);
+      return { postId: r.data.name };
+    }
+    throw new Error('Google API: ' + (e.response?.data?.error?.message || e.message));
+  }
+}
+
+async function _publishFacebookJob(job, conn) {
+  const content = job.payload?.adaptedContent || '';
+  try {
+    const r = await axios.post(
+      `https://graph.facebook.com/v18.0/${conn.pageId}/feed`,
+      { message: content, access_token: conn.accessToken }
+    );
+    return { postId: r.data.id };
+  } catch(e) {
+    throw new Error('Facebook API: ' + (e.response?.data?.error?.message || e.message));
+  }
+}
+
+async function _publishInstagramJob(job, conn) {
+  const content  = job.payload?.adaptedContent || '';
+  const imageUrl = job.payload?.imageUrls?.[0] || '';
+  if (!imageUrl) throw new Error('Instagram requires an image URL in payload.imageUrls[0]');
+  try {
+    const media = await axios.post(
+      `https://graph.facebook.com/v18.0/${conn.igUserId}/media`,
+      { image_url: imageUrl, caption: content, access_token: conn.accessToken }
+    );
+    const pub = await axios.post(
+      `https://graph.facebook.com/v18.0/${conn.igUserId}/media_publish`,
+      { creation_id: media.data.id, access_token: conn.accessToken }
+    );
+    return { postId: pub.data.id };
+  } catch(e) {
+    throw new Error('Instagram API: ' + (e.response?.data?.error?.message || e.message));
+  }
+}
+
 // ══════════════════════════════════════════
 // Function 5: postToGoogle
-// POST /postToGoogle
+// POST /postToGoogle  (direct HTTP endpoint — also backed by _publishGoogleJob)
 // ══════════════════════════════════════════
 exports.postToGoogle = onRequest(async (req, res) => {
   setCors(res);
   const { content, imageUrls, accessToken, locationId, accountId } = req.body;
-  const response = await axios.post(
-    `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/localPosts`,
-    {
-      languageCode: 'en-US', summary: content,
-      media: (imageUrls || []).map(url => ({ mediaFormat: 'PHOTO', sourceUrl: url }))
-    },
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  );
-  res.json({ success: true, postId: response.data.name });
+  try {
+    const response = await axios.post(
+      `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/localPosts`,
+      {
+        languageCode: 'en-US', summary: content,
+        media: (imageUrls || []).map(url => ({ mediaFormat: 'PHOTO', sourceUrl: url }))
+      },
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    res.json({ success: true, postId: response.data.name });
+  } catch(e) {
+    const msg = e.response?.data?.error?.message || e.message;
+    res.status(500).json({ error: msg });
+  }
 });
 
 // ══════════════════════════════════════════
@@ -249,40 +379,53 @@ exports.postToGoogle = onRequest(async (req, res) => {
 exports.postToFacebook = onRequest(async (req, res) => {
   setCors(res);
   const { content, accessToken, pageId } = req.body;
-  const response = await axios.post(
-    `https://graph.facebook.com/v18.0/${pageId}/feed`,
-    { message: content, access_token: accessToken }
-  );
-  res.json({ success: true, postId: response.data.id });
+  try {
+    const response = await axios.post(
+      `https://graph.facebook.com/v18.0/${pageId}/feed`,
+      { message: content, access_token: accessToken }
+    );
+    res.json({ success: true, postId: response.data.id });
+  } catch(e) {
+    const msg = e.response?.data?.error?.message || e.message;
+    res.status(500).json({ error: msg });
+  }
 });
 
 // ══════════════════════════════════════════
 // Function 7: postToInstagram
-// POST /postToInstagram
-// Two-step: create container then publish
+// POST /postToInstagram — two-step: create container then publish
 // ══════════════════════════════════════════
 exports.postToInstagram = onRequest(async (req, res) => {
   setCors(res);
   const { caption, imageUrl, accessToken, igUserId } = req.body;
-  const media = await axios.post(
-    `https://graph.facebook.com/v18.0/${igUserId}/media`,
-    { image_url: imageUrl, caption, access_token: accessToken }
-  );
-  const publish = await axios.post(
-    `https://graph.facebook.com/v18.0/${igUserId}/media_publish`,
-    { creation_id: media.data.id, access_token: accessToken }
-  );
-  res.json({ success: true, postId: publish.data.id });
+  try {
+    const media = await axios.post(
+      `https://graph.facebook.com/v18.0/${igUserId}/media`,
+      { image_url: imageUrl, caption, access_token: accessToken }
+    );
+    const publish = await axios.post(
+      `https://graph.facebook.com/v18.0/${igUserId}/media_publish`,
+      { creation_id: media.data.id, access_token: accessToken }
+    );
+    res.json({ success: true, postId: publish.data.id });
+  } catch(e) {
+    const msg = e.response?.data?.error?.message || e.message;
+    res.status(500).json({ error: msg });
+  }
 });
 
 // ══════════════════════════════════════════
 // Function 8: createCheckoutSession
 // POST /createCheckoutSession
 // ══════════════════════════════════════════
-exports.createCheckoutSession = onRequest({ secrets: ['SQUARE_ACCESS_TOKEN', 'SQUARE_LOCATION_ID', 'SQUARE_PRO_PLAN_ID', 'SQUARE_AGENCY_PLAN_ID'] }, async (req, res) => {
+exports.createCheckoutSession = onRequest({ region: 'us-central1' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-  const { plan, uid, email } = req.body;
+  let decoded;
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+  const uid   = decoded.uid;
+  const email = decoded.email || req.body.email || '';
+  const { plan } = req.body;
   const planIds = {
     pro:    process.env.SQUARE_PRO_PLAN_ID,
     agency: process.env.SQUARE_AGENCY_PLAN_ID,
@@ -314,8 +457,9 @@ exports.createCheckoutSession = onRequest({ secrets: ['SQUARE_ACCESS_TOKEN', 'SQ
 exports.createPortalSession = onRequest(async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
-  const { uid } = req.body;
-  if (!uid) return res.status(400).json({ error: 'uid required' });
+  let decoded;
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+  const uid = decoded.uid;
   const subSnap = await db.collection('subscriptions').doc(uid).get();
   if (!subSnap.exists) return res.status(404).json({ error: 'No subscription found' });
   res.json({ url: 'mailto:hello@blastybiz.com?subject=Manage%20BlastyBiz%20Subscription' });
@@ -327,7 +471,7 @@ exports.createPortalSession = onRequest(async (req, res) => {
 // Verifies Square HMAC signature, handles payment.completed
 // and subscription.canceled events.
 // ══════════════════════════════════════════
-exports.squareWebhook = onRequest({ secrets: ['SQUARE_ACCESS_TOKEN', 'SQUARE_WEBHOOK_SIGNATURE_KEY', 'SQUARE_PRO_PLAN_ID', 'SQUARE_AGENCY_PLAN_ID'] }, async (req, res) => {
+exports.squareWebhook = onRequest({ region: 'us-central1' }, async (req, res) => {
   const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
   const notificationUrl = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/squareWebhook';
   const body = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body);
@@ -454,7 +598,7 @@ exports.googleOAuthCallback = onRequest({ secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_
     } catch(e) { /* accounts/locations can be resolved on first use */ }
 
     await db.collection('platformConnections').doc(`${businessId}_google`).set({
-      businessId, uid, platform: 'google', status: 'connected',
+      businessId, uid, platform: 'google', platformId: 'google', status: 'connected',
       accessToken: access_token, refreshToken: refresh_token || '',
       accountId, locationId,
       connectedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -537,7 +681,7 @@ exports.facebookOAuthCallback = onRequest({ secrets: ['FACEBOOK_APP_ID', 'FACEBO
 
     const batch = db.batch();
     batch.set(db.collection('platformConnections').doc(`${businessId}_facebook`), {
-      businessId, uid, platform: 'facebook', status: 'connected',
+      businessId, uid, platform: 'facebook', platformId: 'facebook', status: 'connected',
       accessToken: pageToken, pageId: page?.id || '',
       pageName: page?.name || '',
       allPages: pages.map(p => ({ id: p.id, name: p.name })),
@@ -546,7 +690,7 @@ exports.facebookOAuthCallback = onRequest({ secrets: ['FACEBOOK_APP_ID', 'FACEBO
 
     if (igUserId) {
       batch.set(db.collection('platformConnections').doc(`${businessId}_instagram`), {
-        businessId, uid, platform: 'instagram', status: 'connected',
+        businessId, uid, platform: 'instagram', platformId: 'instagram', status: 'connected',
         accessToken: pageToken, igUserId, pageId: page?.id || '',
         connectedAt: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
@@ -601,7 +745,80 @@ exports.postToAppleMaps = onRequest(async (req, res) => {
 });
 
 // ══════════════════════════════════════════
-// Function 17: onJobFailed
+// Function 17: onJobCreated
+// Firestore trigger — publishJobs/{jobId} created
+// Dispatches pending auto-post jobs to the right platform helper
+// ══════════════════════════════════════════
+exports.onJobCreated = onDocumentCreated(
+  { document: 'publishJobs/{jobId}', region: 'us-central1', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
+  async (event) => {
+    const job   = event.data.data();
+    const jobId = event.params.jobId;
+
+    // Only process jobs that need auto-posting
+    if (job.status !== 'pending') return;
+    if (job.planGated) return; // starter plan — user sees copy-paste content instead
+
+    // Idempotency guard: claim the job by moving to 'processing'
+    await db.collection('publishJobs').doc(jobId).update({
+      status: 'processing',
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    try {
+      const connSnap = await db.collection('platformConnections')
+        .doc(`${job.businessId}_${job.platform}`).get();
+
+      if (!connSnap.exists || connSnap.data().status !== 'connected') {
+        await db.collection('publishJobs').doc(jobId).update({
+          status: 'failed',
+          adminError: `No connected ${job.platform} account for business ${job.businessId}`,
+          customerVisibleMessage: `Your ${job.platform} account isn't connected. Go to Connect Platforms to link it.`,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        return;
+      }
+
+      const conn = connSnap.data();
+      let result;
+
+      switch (job.platform) {
+        case 'google':    result = await _publishGoogleJob(job, conn);    break;
+        case 'facebook':  result = await _publishFacebookJob(job, conn);  break;
+        case 'instagram': result = await _publishInstagramJob(job, conn); break;
+        default:
+          await db.collection('publishJobs').doc(jobId).update({
+            status: 'failed',
+            adminError: `Unknown auto-post platform: ${job.platform}`,
+            customerVisibleMessage: 'Automatic posting is not available for this platform.',
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+          return;
+      }
+
+      await db.collection('publishJobs').doc(jobId).update({
+        status: 'success',
+        apiResponse: result,
+        customerLabel: 'Published',
+        customerVisibleMessage: `Your listing is live on ${job.platform}.`,
+        publishedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+    } catch(e) {
+      console.error(`onJobCreated [${jobId}] failed:`, e.message);
+      await db.collection('publishJobs').doc(jobId).update({
+        status: 'failed',
+        adminError: e.message,
+        customerVisibleMessage: `There was a problem posting to ${job.platform}. Our team will follow up.`,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  }
+);
+
+// ══════════════════════════════════════════
+// Function 18: onJobFailed
 // Firestore trigger — publishJobs/{jobId} updated
 // Sends failure email via Resend when status → 'failed'
 // ══════════════════════════════════════════
@@ -687,7 +904,7 @@ exports.onUserCreated = onDocumentCreated(
 // POST /deleteAccount  { idToken }
 // Cancels Square sub, wipes all Firestore data, deletes Auth user
 // ══════════════════════════════════════════
-exports.deleteAccount = onRequest({ region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN'] }, async (req, res) => {
+exports.deleteAccount = onRequest({ region: 'us-central1' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
 
@@ -798,4 +1015,110 @@ exports.setOperatorSecret = onRequest({ cors: true }, async (req, res) => {
     console.error('setOperatorSecret error:', e);
     res.status(500).json({ error: e.message });
   }
+});
+
+// ══════════════════════════════════════════
+// Admin endpoints — all require requireAdmin()
+// ══════════════════════════════════════════
+
+exports.adminListPublishJobs = onRequest(async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+  const { status, limit: lim = '100' } = req.query;
+  const col = db.collection('publishJobs');
+  const q = status
+    ? col.where('status', '==', status).orderBy('createdAt', 'desc').limit(Number(lim))
+    : col.orderBy('createdAt', 'desc').limit(Number(lim));
+  const snap = await q.get();
+  res.json({ jobs: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
+});
+
+exports.adminListFailedJobs = onRequest(async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+  const snap = await db.collection('publishJobs')
+    .where('status', 'in', ['failed', 'manual_required', 'manual_followup'])
+    .orderBy('createdAt', 'desc').limit(100).get();
+  res.json({ jobs: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
+});
+
+exports.adminRetryJob = onRequest(async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+  const { jobId } = req.body;
+  if (!jobId) return res.status(400).json({ error: 'jobId required' });
+  await db.collection('publishJobs').doc(jobId).update({
+    status: 'pending', attempts: 0, adminError: '',
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+  res.json({ success: true });
+});
+
+exports.adminMarkManualFollowup = onRequest(async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+  const { jobId } = req.body;
+  if (!jobId) return res.status(400).json({ error: 'jobId required' });
+  await db.collection('publishJobs').doc(jobId).update({
+    status: 'manual_followup',
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+  res.json({ success: true });
+});
+
+exports.adminListBusinesses = onRequest(async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+  const snap = await db.collection('businesses').orderBy('createdAt', 'desc').limit(200).get();
+  res.json({ businesses: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
+});
+
+exports.adminListPlatformConnections = onRequest(async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+  const snap = await db.collection('platformConnections').orderBy('connectedAt', 'desc').limit(200).get();
+  res.json({ connections: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
+});
+
+exports.adminListActivityLogs = onRequest(async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+  const { uid } = req.query;
+  const col = db.collection('activityLogs');
+  const q = uid
+    ? col.where('uid', '==', uid).orderBy('createdAt', 'desc').limit(100)
+    : col.orderBy('createdAt', 'desc').limit(100);
+  const snap = await q.get();
+  res.json({ logs: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
+});
+
+exports.adminSubscriptionSummary = onRequest(async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+  const [usersSnap, subsSnap] = await Promise.all([
+    db.collection('users').get(),
+    db.collection('subscriptions').get(),
+  ]);
+  const planCounts = { starter: 0, pro: 0, agency: 0 };
+  usersSnap.docs.forEach(d => {
+    const p = d.data().plan || 'starter';
+    planCounts[p] = (planCounts[p] || 0) + 1;
+  });
+  const MRR_PRICES = { starter: 0, pro: 49, agency: 149 };
+  const mrr = Object.entries(planCounts)
+    .reduce((sum, [plan, count]) => sum + (MRR_PRICES[plan] || 0) * count, 0);
+  res.json({
+    planCounts, mrr,
+    totalUsers: usersSnap.size,
+    totalSubscriptions: subsSnap.size,
+    asOf: new Date().toISOString(),
+  });
 });

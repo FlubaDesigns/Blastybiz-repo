@@ -316,17 +316,17 @@ function showInstructions(platform) {
   showToast(instructions[platform] || 'Open the platform website and paste your listing.');
 }
 
-function showMockData() {
-  renderJobs([
-    { jobId:'1', platform:'google',    status:'success',         customerVisibleMessage:'Your Google Business listing is live.' },
-    { jobId:'2', platform:'facebook',  status:'success',         customerVisibleMessage:'Your Facebook Page listing is live.' },
-    { jobId:'3', platform:'yelp',      status:'success',         customerVisibleMessage:'Your Yelp listing is live.' },
-    { jobId:'4', platform:'bing',      status:'success',         customerVisibleMessage:'Your Bing Places listing is live.' },
-    { jobId:'5', platform:'applemaps', status:'success',         customerVisibleMessage:'Your Apple Maps listing is submitted.' },
-    { jobId:'6', platform:'instagram', status:'running',         customerVisibleMessage:'Your Instagram listing is publishing.' },
-    { jobId:'7', platform:'nextdoor',  status:'manual_required', customerVisibleMessage:'Your Nextdoor listing is ready — you need to post it manually.', payload:{ adaptedContent:'Hi neighbors! Check out our local business serving your community.' } },
-    { jobId:'8', platform:'craigslist',status:'manual_required', customerVisibleMessage:'Your Craigslist listing is ready — you need to post it manually.', payload:{ adaptedContent:'Local business available in your area. Contact us today.' } },
-  ]);
+function showEmptyState(msg) {
+  document.getElementById('loading-state').style.display = 'none';
+  document.getElementById('content-state').style.display = '';
+  document.getElementById('progress-count').textContent = '0 of 0 Complete';
+  document.getElementById('progress-bar').style.width = '0%';
+  document.getElementById('platform-list').innerHTML =
+    `<div style="text-align:center;padding:48px 20px;color:var(--muted)">${msg}</div>`;
+  const actionCard = document.getElementById('action-card');
+  if (actionCard) actionCard.style.display = 'none';
+  const hoursSaved = document.getElementById('hours-saved');
+  if (hoursSaved) hoursSaved.textContent = '0';
 }
 </script>
 
@@ -366,14 +366,14 @@ onAuthStateChanged(auth, async (user) => {
 
     const snap = await getDocs(q);
     if (snap.empty) {
-      window.showMockData();
+      window.showEmptyState('No publishing jobs yet. Approve a listing to start blasting.');
     } else {
       const jobs = snap.docs.map(d => ({ jobId: d.id, ...d.data() }));
       window.renderJobs(jobs);
     }
   } catch (e) {
     console.error('Failed to load jobs:', e);
-    window.showMockData();
+    window.showEmptyState('Could not load jobs. Refresh to try again.');
   }
 });
 });

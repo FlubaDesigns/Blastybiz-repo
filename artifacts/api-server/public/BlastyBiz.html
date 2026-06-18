@@ -1560,19 +1560,18 @@ document.addEventListener('bb:addHistory', async (e) => {
   if (!currentUser || !activeBizId) return;
   try {
     const platformName = e.detail?.platformName || '';
-    await addDoc(collection(db, 'publishJobs'), {
+    await addDoc(collection(db, 'activityLogs'), {
       uid: currentUser.uid,
       businessId: activeBizId,
       draftId: window._currentDraftId || null,
       platform: platformName,
       listingName: document.getElementById('biz-name')?.value || 'Listing',
-      status: 'done',
-      customerVisibleMessage: 'Listing posted to ' + platformName + '.',
+      action: 'manual_copy_paste',
+      note: 'User copied listing for ' + platformName + ' (copy-paste flow).',
       createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
     });
   } catch(e) {
-    console.error('addHistory publishJobs error:', e);
+    console.error('addHistory activityLogs error:', e);
   }
 });
 

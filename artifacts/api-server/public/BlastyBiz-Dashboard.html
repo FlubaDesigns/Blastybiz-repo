@@ -315,28 +315,20 @@
 <script>
 // ══════════════════════════════════════════
 // BUSINESS REGISTRY
-// Prototype mock data — replace with Firestore query:
-// getDocs(query(collection(db,'businesses'), where('uid','==',currentUser.uid)))
+// Businesses loaded from Firestore — no mock data
 // ══════════════════════════════════════════
-let BUSINESSES = [
-  { id: 'qrgear',          name: 'QR Gear',           avatar: '📱', score: 83, platforms: 7, plan: 'Agency' },
-  { id: 'kingdomconnects', name: 'Kingdom Connects',  avatar: '⛪', score: 71, platforms: 5, plan: 'Agency' },
-  { id: 'pollsit',         name: 'Pollsit',           avatar: '📊', score: 65, platforms: 4, plan: 'Agency' },
-  { id: 'aftersignal',     name: 'AfterSignal',       avatar: '📡', score: 58, platforms: 3, plan: 'Agency' },
-  { id: 'flubaweb',        name: 'Fluba Web',         avatar: '🌐', score: 90, platforms: 8, plan: 'Agency' },
-  { id: 'airails',         name: 'AI-Rails',          avatar: '🤖', score: 44, platforms: 2, plan: 'Agency' },
-  { id: 'blastybiz',       name: 'BlastyBiz',         avatar: '📢', score: 95, platforms: 9, plan: 'Agency' },
-];
+let BUSINESSES = [];
 
 const MAX_BUSINESSES = 10; // Agency plan limit
-let activeBizId = BUSINESSES[0].id;
+let activeBizId = null;
 
 // ══════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════
 function init() {
   if (window.BUSINESSES) BUSINESSES = window.BUSINESSES;
-  if (window.activeBizId) activeBizId = window.activeBizId;
+  if (window.activeBizId !== undefined) activeBizId = window.activeBizId;
+  if (!BUSINESSES.length) { renderNoBusinessState(); return; }
   renderSwitcherBar();
   renderSheet();
   renderAgencyBar();
@@ -344,9 +336,29 @@ function init() {
 }
 
 // ══════════════════════════════════════════
+// EMPTY STATE — no businesses on this account yet
+// ══════════════════════════════════════════
+function renderNoBusinessState() {
+  const switcher = document.getElementById('biz-active-btn');
+  if (switcher) switcher.style.display = 'none';
+  const main = document.querySelector('main') || document.body;
+  if (!document.getElementById('no-biz-state')) {
+    const div = document.createElement('div');
+    div.id = 'no-biz-state';
+    div.style.cssText = 'text-align:center;padding:80px 20px;';
+    div.innerHTML = '<div style="font-size:52px;margin-bottom:16px">📢</div>'
+      + '<h2 style="font-family:\'Bebas Neue\',sans-serif;font-size:36px;color:var(--green);margin-bottom:12px">No Business Yet</h2>'
+      + '<p style="color:var(--muted);font-size:15px;max-width:380px;margin:0 auto 28px">Add your first business to start blasting across every platform.</p>'
+      + '<button onclick="window.addBusiness && window.addBusiness()" style="background:var(--green);color:#070D07;border:none;border-radius:10px;padding:14px 30px;font-size:15px;font-weight:700;cursor:pointer">+ Add Your Business</button>';
+    main.prepend(div);
+  }
+}
+
+// ══════════════════════════════════════════
 // RENDER SWITCHER BAR
 // ══════════════════════════════════════════
 function renderSwitcherBar() {
+  if (!BUSINESSES.length) return;
   const biz = BUSINESSES.find(b => b.id === activeBizId) || BUSINESSES[0];
   document.getElementById('active-avatar').textContent = biz.avatar;
   document.getElementById('active-name').textContent = biz.name;
@@ -524,12 +536,12 @@ onAuthStateChanged(auth, async (user) => {
       window.BUSINESSES = allBusinesses;
       window.activeBizId = userData.activeBusiness || allBusinesses[0].id;
     } else {
-      window.BUSINESSES = BUSINESSES;
-      window.activeBizId = userData.activeBusiness || BUSINESSES[0].id;
+      window.BUSINESSES = [];
+      window.activeBizId = null;
     }
   } catch(e) {
-    window.BUSINESSES = BUSINESSES;
-    window.activeBizId = BUSINESSES[0].id;
+    window.BUSINESSES = [];
+    window.activeBizId = null;
   }
 
   window.switchBusiness = async function(bizId) {
@@ -680,11 +692,12 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   window.loadBusinessContext = async function(bizId) {
+    if (!bizId) return;
     await loadBusinessContextFirestore(bizId);
   };
 
   init();
-  await loadBusinessContextFirestore(window.activeBizId);
+  if (window.activeBizId) await loadBusinessContextFirestore(window.activeBizId);
 });
 });
 
