@@ -10,10 +10,10 @@
     "deploy": "firebase deploy --only functions"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.36.0",
-    "axios": "^1.7.0",
-    "firebase-admin": "^12.0.0",
-    "firebase-functions": "^7.2.5",
-    "square": "^44.0.0"
+    "@anthropic-ai/sdk": "0.36.3",
+    "axios": "1.17.0",
+    "firebase-admin": "12.7.0",
+    "firebase-functions": "7.2.5",
+    "square": "44.2.0"
   }
 }

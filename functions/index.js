@@ -1,5 +1,5 @@
 /**
- * BlastyBiz — Firebase Cloud Functions
+ * BlastyBiz — Firebase Cloud Functions v2
  * Deploy with: firebase deploy --only functions
  * Requires Blaze (pay-as-you-go) plan
  *
@@ -105,7 +105,7 @@ const PLATFORM_RULES = {
 // Function 1: adaptListing
 // POST /adaptListing
 // ══════════════════════════════════════════
-exports.adaptListing = onRequest({ secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
+exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
@@ -178,7 +178,7 @@ Return this exact JSON structure:
 // Function 2: resolveCategories
 // POST /resolveCategories
 // ══════════════════════════════════════════
-exports.resolveCategories = onRequest({ secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
+exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
@@ -227,7 +227,7 @@ ${Object.entries(platformCatLists).map(([id, cats]) => `${id}: ${cats.join(', ')
 // Function 3: approveDraft
 // POST /approveDraft
 // ══════════════════════════════════════════
-exports.approveDraft = onRequest({ secrets: ['RESEND_API_KEY'] }, async (req, res) => {
+exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
@@ -283,7 +283,7 @@ exports.approveDraft = onRequest({ secrets: ['RESEND_API_KEY'] }, async (req, re
 // Function 4: uploadImage
 // POST /uploadImage
 // ══════════════════════════════════════════
-exports.uploadImage = onRequest(async (req, res) => {
+exports.uploadImage = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
@@ -375,7 +375,7 @@ async function _publishInstagramJob(job, conn) {
 // Function 5: postToGoogle
 // POST /postToGoogle  (direct HTTP endpoint — also backed by _publishGoogleJob)
 // ══════════════════════════════════════════
-exports.postToGoogle = onRequest(async (req, res) => {
+exports.postToGoogle = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   try { await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
@@ -400,7 +400,7 @@ exports.postToGoogle = onRequest(async (req, res) => {
 // Function 6: postToFacebook
 // POST /postToFacebook
 // ══════════════════════════════════════════
-exports.postToFacebook = onRequest(async (req, res) => {
+exports.postToFacebook = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   try { await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
@@ -421,7 +421,7 @@ exports.postToFacebook = onRequest(async (req, res) => {
 // Function 7: postToInstagram
 // POST /postToInstagram — two-step: create container then publish
 // ══════════════════════════════════════════
-exports.postToInstagram = onRequest(async (req, res) => {
+exports.postToInstagram = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   try { await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
@@ -446,7 +446,7 @@ exports.postToInstagram = onRequest(async (req, res) => {
 // Function 8: createCheckoutSession
 // POST /createCheckoutSession
 // ══════════════════════════════════════════
-exports.createCheckoutSession = onRequest({ region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN', 'SQUARE_LOCATION_ID', 'SQUARE_PRO_PLAN_ID', 'SQUARE_AGENCY_PLAN_ID'] }, async (req, res) => {
+exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN', 'SQUARE_LOCATION_ID', 'SQUARE_PRO_PLAN_ID', 'SQUARE_AGENCY_PLAN_ID'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   let decoded;
@@ -485,7 +485,7 @@ exports.createCheckoutSession = onRequest({ region: 'us-central1', secrets: ['SQ
 // Square has no hosted billing portal.
 // Returns a mailto link so the user can request changes.
 // ══════════════════════════════════════════
-exports.createPortalSession = onRequest(async (req, res) => {
+exports.createPortalSession = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   let decoded;
@@ -502,7 +502,7 @@ exports.createPortalSession = onRequest(async (req, res) => {
 // Verifies Square HMAC signature, handles payment.completed,
 // subscription.created, and subscription.updated (cancellation) events.
 // ══════════════════════════════════════════
-exports.squareWebhook = onRequest({ region: 'us-central1', secrets: ['SQUARE_WEBHOOK_SIGNATURE_KEY'] }, async (req, res) => {
+exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_WEBHOOK_SIGNATURE_KEY'] }, async (req, res) => {
   const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
   const notificationUrl = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/squareWebhook';
   const body = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body);
@@ -605,7 +605,7 @@ exports.squareWebhook = onRequest({ region: 'us-central1', secrets: ['SQUARE_WEB
 // Google Cloud Console: enable Business Profile API,
 // OAuth 2.0 redirect URI = https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback
 // ══════════════════════════════════════════
-exports.initiateGoogleOAuth = onRequest({ secrets: ['GOOGLE_CLIENT_ID'] }, (req, res) => {
+exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID'] }, (req, res) => {
   const { businessId, uid } = req.query;
   if (!businessId) { res.status(400).send('Missing businessId'); return; }
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -629,7 +629,7 @@ exports.initiateGoogleOAuth = onRequest({ secrets: ['GOOGLE_CLIENT_ID'] }, (req,
 // GET /googleOAuthCallback?code=...&state=...
 // Exchanges auth code for tokens, stores in platformConnections
 // ══════════════════════════════════════════
-exports.googleOAuthCallback = onRequest({ secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, async (req, res) => {
+exports.googleOAuthCallback = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, async (req, res) => {
   const { code, state } = req.query;
   if (!code) { res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?error=google'); return; }
 
@@ -688,7 +688,7 @@ exports.googleOAuthCallback = onRequest({ secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_
 // Required permissions: pages_manage_posts, pages_read_engagement,
 //   instagram_basic, instagram_content_publish
 // ══════════════════════════════════════════
-exports.initiateFacebookOAuth = onRequest({ secrets: ['FACEBOOK_APP_ID'] }, (req, res) => {
+exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBOOK_APP_ID'] }, (req, res) => {
   const { businessId, uid } = req.query;
   if (!businessId) { res.status(400).send('Missing businessId'); return; }
   const appId = process.env.FACEBOOK_APP_ID;
@@ -711,7 +711,7 @@ exports.initiateFacebookOAuth = onRequest({ secrets: ['FACEBOOK_APP_ID'] }, (req
 // Exchanges code for page token, fetches linked IG account,
 // stores both in platformConnections
 // ══════════════════════════════════════════
-exports.facebookOAuthCallback = onRequest({ secrets: ['FACEBOOK_APP_ID', 'FACEBOOK_APP_SECRET'] }, async (req, res) => {
+exports.facebookOAuthCallback = onRequest({ invoker: 'public', secrets: ['FACEBOOK_APP_ID', 'FACEBOOK_APP_SECRET'] }, async (req, res) => {
   const { code, state } = req.query;
   if (!code) { res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?error=facebook'); return; }
 
@@ -776,7 +776,7 @@ exports.facebookOAuthCallback = onRequest({ secrets: ['FACEBOOK_APP_ID', 'FACEBO
 // Bing Places has no public write API.
 // Marks the job as manual_required with copy-paste instructions.
 // ══════════════════════════════════════════
-exports.postToBing = onRequest(async (req, res) => {
+exports.postToBing = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   const { jobId } = req.body;
@@ -796,7 +796,7 @@ exports.postToBing = onRequest(async (req, res) => {
 // Apple Maps Connect has no public write API.
 // Marks the job as manual_required with submission instructions.
 // ══════════════════════════════════════════
-exports.postToAppleMaps = onRequest(async (req, res) => {
+exports.postToAppleMaps = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   const { jobId } = req.body;
@@ -815,8 +815,10 @@ exports.postToAppleMaps = onRequest(async (req, res) => {
 // Function 17: onJobCreated
 // Firestore trigger — publishJobs/{jobId} created
 // Dispatches pending auto-post jobs to the right platform helper
+// DISABLED: Firebase has conflicting HTTPS stubs; clean up via console then re-enable
 // ══════════════════════════════════════════
-exports.jobCreatedTrigger = onDocumentCreated(
+/* DISABLED_TRIGGER_onPublishJobCreated
+exports.onPublishJobCreated = onDocumentCreated(
   { document: 'publishJobs/{jobId}', region: 'us-central1', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
   async (event) => {
     const job   = event.data.data();
@@ -883,13 +885,16 @@ exports.jobCreatedTrigger = onDocumentCreated(
     }
   }
 );
+DISABLED_TRIGGER_onPublishJobCreated */
 
 // ══════════════════════════════════════════
 // Function 18: onJobFailed
 // Firestore trigger — publishJobs/{jobId} updated
 // Sends failure email via Resend when status → 'failed'
+// DISABLED: Firebase has conflicting HTTPS stubs; clean up via console then re-enable
 // ══════════════════════════════════════════
-exports.jobFailedTrigger = onDocumentUpdated(
+/* DISABLED_TRIGGER_onPublishJobFailed
+exports.onPublishJobFailed = onDocumentUpdated(
   { document: 'publishJobs/{jobId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
   async (event) => {
     const before = event.data.before.data();
@@ -927,13 +932,16 @@ exports.jobFailedTrigger = onDocumentUpdated(
     });
   }
 );
+DISABLED_TRIGGER_onPublishJobFailed */
 
 // ══════════════════════════════════════════
 // Function 18: onUserCreated
 // Firestore trigger — users/{uid} created
 // Sends welcome email via Resend
+// DISABLED: Firebase has conflicting HTTPS stubs; clean up via console then re-enable
 // ══════════════════════════════════════════
-exports.userCreatedTrigger = onDocumentCreated(
+/* DISABLED_TRIGGER_onUserSignup
+exports.onUserSignup = onDocumentCreated(
   { document: 'users/{uid}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
   async (event) => {
     const data = event.data.data();
@@ -965,13 +973,14 @@ exports.userCreatedTrigger = onDocumentCreated(
     });
   }
 );
+DISABLED_TRIGGER_onUserSignup */
 
 // ══════════════════════════════════════════
 // Function 19: deleteAccount
 // POST /deleteAccount  { idToken }
 // Cancels Square sub, wipes all Firestore data, deletes Auth user
 // ══════════════════════════════════════════
-exports.deleteAccount = onRequest({ region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN'] }, async (req, res) => {
+exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
 
@@ -1022,7 +1031,7 @@ exports.deleteAccount = onRequest({ region: 'us-central1', secrets: ['SQUARE_ACC
 });
 
 // ── ADMIN: Browser-based secret manager ─────────────────────────────────────
-exports.setOperatorSecret = onRequest({ cors: true }, async (req, res) => {
+exports.setOperatorSecret = onRequest({ invoker: 'public', cors: true }, async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const authHeader = req.headers.authorization || '';
@@ -1088,7 +1097,7 @@ exports.setOperatorSecret = onRequest({ cors: true }, async (req, res) => {
 // Admin endpoints — all require requireAdmin()
 // ══════════════════════════════════════════
 
-exports.adminListPublishJobs = onRequest(async (req, res) => {
+exports.adminListPublishJobs = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
@@ -1101,7 +1110,7 @@ exports.adminListPublishJobs = onRequest(async (req, res) => {
   res.json({ jobs: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
 });
 
-exports.adminListFailedJobs = onRequest(async (req, res) => {
+exports.adminListFailedJobs = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
@@ -1111,7 +1120,7 @@ exports.adminListFailedJobs = onRequest(async (req, res) => {
   res.json({ jobs: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
 });
 
-exports.adminRetryJob = onRequest({ secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, async (req, res) => {
+exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
@@ -1177,7 +1186,7 @@ exports.adminRetryJob = onRequest({ secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT
   }
 });
 
-exports.adminMarkManualFollowup = onRequest(async (req, res) => {
+exports.adminMarkManualFollowup = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
@@ -1190,7 +1199,7 @@ exports.adminMarkManualFollowup = onRequest(async (req, res) => {
   res.json({ success: true });
 });
 
-exports.adminListBusinesses = onRequest(async (req, res) => {
+exports.adminListBusinesses = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
@@ -1198,7 +1207,7 @@ exports.adminListBusinesses = onRequest(async (req, res) => {
   res.json({ businesses: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
 });
 
-exports.adminListPlatformConnections = onRequest(async (req, res) => {
+exports.adminListPlatformConnections = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
@@ -1206,7 +1215,7 @@ exports.adminListPlatformConnections = onRequest(async (req, res) => {
   res.json({ connections: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
 });
 
-exports.adminListActivityLogs = onRequest(async (req, res) => {
+exports.adminListActivityLogs = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
@@ -1219,7 +1228,7 @@ exports.adminListActivityLogs = onRequest(async (req, res) => {
   res.json({ logs: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
 });
 
-exports.adminSubscriptionSummary = onRequest(async (req, res) => {
+exports.adminSubscriptionSummary = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
@@ -1252,7 +1261,95 @@ exports.adminSubscriptionSummary = onRequest(async (req, res) => {
 // subscription plans at those prices. Stores the new Square plan IDs so
 // createCheckoutSession picks them up immediately.
 // ══════════════════════════════════════════
-exports.adminUpdatePricing = onRequest({ secrets: ['SQUARE_ACCESS_TOKEN'] }, async (req, res) => {
+// ══════════════════════════════════════════
+// Function: suggestPlatforms
+// POST /suggestPlatforms
+// AI recommends which platforms to enable based on business info.
+// API-connected platforms (google, facebook, instagram, bing) — AI evaluates fit.
+// Manual-only platforms (fbmarket, craigslist, nextdoor, yelp, etc.) — AI uses
+// category knowledge since no live data can be fetched yet.
+// User toggles remain fully editable after suggestions are applied.
+// ══════════════════════════════════════════
+exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+
+  let decoded;
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+
+  const { name, category, description, locationType, website } = req.body;
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+  const prompt = `You are a local business marketing expert. Based on the business info below, decide which platforms this business should target.
+
+BUSINESS:
+- Name: ${name || 'Local Business'}
+- Category: ${category || 'General'}
+- Description: ${description || 'No description provided'}
+- Location type: ${locationType || 'physical'} (physical = fixed storefront or office, service_area = goes to customer, online = digital/remote only)
+- Website: ${website || 'none'}
+
+PLATFORMS TO EVALUATE:
+- google: Google Business Profile (auto-post API available)
+- facebook: Facebook Business Page (auto-post API available)
+- instagram: Instagram Business (auto-post API available)
+- bing: Bing Places (auto-post API available)
+- nextdoor: Nextdoor (copy-paste only — blocks all third-party apps)
+- fbmarket: Facebook Marketplace (copy-paste only — Meta closed API in 2018)
+- craigslist: Craigslist (copy-paste only — no API ever)
+- yelp: Yelp (copy-paste only)
+- alignable: Alignable B2B local network (copy-paste only)
+- thumbtack: Thumbtack service marketplace (copy-paste only)
+- angi: Angi home services marketplace (copy-paste only)
+- applemaps: Apple Maps Connect (copy-paste submission only)
+
+DECISION RULES:
+- google: almost always yes; no only for purely online businesses with zero local presence
+- facebook: yes for B2C; optional for pure B2B
+- instagram: yes for visual businesses (food, beauty, home services, events, fitness, retail, landscaping); no for unsexy services like accounting
+- bing: yes when extra search coverage matters; skip for hyper-local informal or very small budget businesses
+- nextdoor: yes for local service businesses that serve homeowners (cleaning, lawn care, plumbing, painting, etc.); no for B2B, restaurants, retail, or online-only
+- fbmarket: yes for local goods and consumer services people shop for (furniture, appliances, handyman, moving, cleaning); no for professional services, B2B, or restaurants
+- craigslist: yes for tradespeople, local services, rentals, items for sale; no for upscale/professional services or pure B2B
+- yelp: yes for restaurants, cafes, salons, spas, auto repair, home services, gyms, and any consumer-facing local service; no for B2B
+- alignable: yes for B2B or service businesses seeking local referral networks; no for pure B2C consumer retail
+- thumbtack: yes for services where customers search and compare (cleaners, tutors, photographers, handyman, movers, DJ, etc.); no for retail or restaurants
+- angi: yes ONLY for home services (plumbers, electricians, HVAC, roofers, painters, landscapers, handyman, pest control); no for everything else
+- applemaps: yes for any physical location or service-area business; no for online-only
+
+Return ONLY valid JSON, no markdown, no explanation:
+{
+  "suggestions": {
+    "google":     { "enabled": true,  "reason": "max 7 words why" },
+    "facebook":   { "enabled": true,  "reason": "max 7 words why" },
+    "instagram":  { "enabled": false, "reason": "max 7 words why" },
+    "bing":       { "enabled": true,  "reason": "max 7 words why" },
+    "nextdoor":   { "enabled": false, "reason": "max 7 words why" },
+    "fbmarket":   { "enabled": false, "reason": "max 7 words why" },
+    "craigslist": { "enabled": false, "reason": "max 7 words why" },
+    "yelp":       { "enabled": false, "reason": "max 7 words why" },
+    "alignable":  { "enabled": false, "reason": "max 7 words why" },
+    "thumbtack":  { "enabled": false, "reason": "max 7 words why" },
+    "angi":       { "enabled": false, "reason": "max 7 words why" },
+    "applemaps":  { "enabled": true,  "reason": "max 7 words why" }
+  }
+}`;
+
+  try {
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 600,
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const parsed = JSON.parse(response.content[0].text.replace(/```json|```/g, '').trim());
+    res.json(parsed);
+  } catch(e) {
+    console.error('suggestPlatforms error:', e.message);
+    res.status(500).json({ error: 'AI suggestion failed: ' + e.message });
+  }
+});
+
+exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_ACCESS_TOKEN'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: 'Forbidden' }); }

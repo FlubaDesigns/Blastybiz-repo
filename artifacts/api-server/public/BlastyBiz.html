@@ -719,6 +719,13 @@
     <div id="quick-platform-list">
       <!-- populated by JS -->
     </div>
+
+    <button id="ai-suggest-btn" onclick="suggestPlatformsAI()"
+      style="margin-top:14px;width:100%;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.25);border-radius:10px;padding:11px 16px;color:var(--green);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;transition:background .15s;"
+      onmouseover="this.style.background='rgba(0,200,83,0.15)'" onmouseout="this.style.background='rgba(0,200,83,0.08)'">
+      ✨ Get AI Platform Suggestions
+    </button>
+    <p id="ai-suggest-note" style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px;display:none;">Based on your business info above — you can still adjust any toggle.</p>
   </div>
 
   <div class="ai-loading" id="ai-loading">
@@ -937,6 +944,7 @@ let history   = [];                           // populated from Firestore after 
 let profile   = {};                           // populated from Firestore after auth
 let draft     = {};                           // form state only — draftId tracked separately
 let locationType        = 'physical';         // 'physical' | 'online' — create form
+let platformReasons     = {};                 // AI-suggested reasons per platform id
 let profileLocationType = 'physical';         // 'physical' | 'online' — profile form
 let selectedImages = []; // File objects — never base64
 
@@ -1030,15 +1038,21 @@ function renderQuickSelect() {
   const el = document.getElementById('quick-platform-list');
   el.innerHTML = '';
   platforms.forEach(p => {
+    const reason = platformReasons[p.id] || '';
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);';
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px;';
     row.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:18px;">${p.icon}</span>
-        <span style="font-size:14px;font-weight:500;">${p.name}</span>
-        <span class="badge ${p.type === 'api' ? 'badge-ready' : 'badge-idle'}" style="font-size:9px;">${p.type === 'api' ? 'AUTO' : 'COPY'}</span>
+      <div style="flex:1;display:flex;align-items:flex-start;gap:10px;min-width:0;">
+        <span style="font-size:18px;flex-shrink:0;">${p.icon}</span>
+        <div style="min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:14px;font-weight:500;">${p.name}</span>
+            <span class="badge ${p.type === 'api' ? 'badge-ready' : 'badge-idle'}" style="font-size:9px;">${p.type === 'api' ? 'AUTO' : 'COPY'}</span>
+          </div>
+          ${reason ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4;">🤖 ${reason}</div>` : ''}
+        </div>
       </div>
-      <label class="toggle">
+      <label class="toggle" style="flex-shrink:0;">
         <input type="checkbox" ${p.enabled ? 'checked' : ''} onchange="togglePlatform('${p.id}', this.checked)" />
         <span class="toggle-slider"></span>
       </label>
@@ -1046,6 +1060,71 @@ function renderQuickSelect() {
     el.appendChild(row);
   });
   checkAdaptBtn();
+}
+
+// ══════════════════════════════════════════
+// AI PLATFORM SUGGESTIONS
+// Calls suggestPlatforms CF — Claude picks which platforms suit this business.
+// User can override any toggle after suggestions are applied.
+// ══════════════════════════════════════════
+async function suggestPlatformsAI() {
+  const btn  = document.getElementById('ai-suggest-btn');
+  const note = document.getElementById('ai-suggest-note');
+  const name        = document.getElementById('biz-name')?.value?.trim()     || '';
+  const category    = document.getElementById('biz-category')?.value?.trim() || '';
+  const description = document.getElementById('biz-offer')?.value?.trim()    || '';
+
+  if (!name && !category && !description) {
+    showToast('⚠️ Fill in business name, category, or description first');
+    return;
+  }
+
+  if (btn) { btn.textContent = '⏳ Asking AI…'; btn.disabled = true; }
+
+  try {
+    const token = window._bbGetToken ? await window._bbGetToken() : null;
+    if (!token) throw new Error('Not signed in');
+
+    const website = document.getElementById('biz-website')?.value?.trim() || '';
+
+    const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/suggestPlatforms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ name, category, description, locationType, website }),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || 'Suggestion failed (' + resp.status + ')');
+    }
+
+    const data = await resp.json();
+    const suggestions = data.suggestions || {};
+
+    platformReasons = {};
+    platforms = platforms.map(p => {
+      const s = suggestions[p.id];
+      if (s) {
+        platformReasons[p.id] = s.reason || '';
+        return { ...p, enabled: !!s.enabled };
+      }
+      return p;
+    });
+
+    savePlatforms();
+    renderPlatforms();
+    renderQuickSelect();
+    updateStats();
+    checkAdaptBtn();
+    if (note) note.style.display = 'block';
+    showToast('✨ AI suggestions applied — adjust any toggle if needed');
+
+  } catch(e) {
+    console.error('suggestPlatformsAI error:', e);
+    showToast('⚠️ ' + (e.message || 'AI suggestion failed'));
+  } finally {
+    if (btn) { btn.innerHTML = '✨ Get AI Platform Suggestions'; btn.disabled = false; }
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1189,9 +1268,14 @@ Return this exact JSON structure:
   try {
     document.getElementById('ai-loading-sub').textContent = `Adapting for ${enabledPlatforms.length} platform${enabledPlatforms.length > 1 ? 's' : ''}...`;
 
+    const idToken = window._bbGetToken ? await window._bbGetToken() : null;
+    const authHeaders = idToken
+      ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken }
+      : { 'Content-Type': 'application/json' };
+
     const response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/adaptListing', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders,
       body: JSON.stringify({
         listing: { name, category, offer, price, phone, address, region, locationType, website, hours, imageCount: selectedImages.length },
         platforms: enabledPlatforms,
@@ -1519,6 +1603,7 @@ auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = 'BlastyBiz-Login.html'; return; }
   currentUser = user;
+  window._bbGetToken = () => currentUser.getIdToken();
 
   const userSnap = await getDoc(doc(db, 'users', user.uid));
   const userData = userSnap.exists() ? userSnap.data() : {};
