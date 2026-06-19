@@ -128,17 +128,18 @@ All 6 collections secured. Owner-only access on all user data.
 
 These must be resolved before real users touch the site.
 
-### 1 — Square secrets not in Firebase Secret Manager
-**Status: UNRESOLVED**
-The deploy error confirmed all 5 Square secrets return 404 from Secret Manager:
-- `SQUARE_ACCESS_TOKEN` — not found
-- `SQUARE_LOCATION_ID` — not found
-- `SQUARE_PRO_PLAN_ID` — not found
-- `SQUARE_AGENCY_PLAN_ID` — not found
-- `SQUARE_WEBHOOK_SIGNATURE_KEY` — not found
+### 1 — Square secrets ✅ Fixed Jun 19, 2026
+All 5 Square secrets now set in Firebase Secret Manager and `secrets: [...]` arrays re-added to `createCheckoutSession`, `squareWebhook`, and `deleteAccount`. Functions redeployed.
 
-**Impact:** `createCheckoutSession` (upgrades fail silently), `squareWebhook` (HMAC signature check fails → all payment events rejected), `deleteAccount` (subscription cancel always fails).  
-**Fix:** Set all 5 secrets via the Operate page OR `firebase functions:secrets:set SECRET_NAME`. After setting, the `secrets: [...]` arrays must be added back to `createCheckoutSession`, `squareWebhook`, and `deleteAccount` in `functions/index.js` and redeployed.
+| Secret | Status |
+|---|---|
+| `SQUARE_ACCESS_TOKEN` | ✅ Set |
+| `SQUARE_LOCATION_ID` | ✅ Set (LSJAMMYDYS4TE — FLUBA DESIGNS LLC main) |
+| `SQUARE_WEBHOOK_SIGNATURE_KEY` | ✅ Set |
+| `SQUARE_PRO_PLAN_ID` | ⚠️ Placeholder — update after creating Pro subscription plan in Square Dashboard |
+| `SQUARE_AGENCY_PLAN_ID` | ⚠️ Placeholder — update after creating Agency subscription plan in Square Dashboard |
+
+**Still required:** Create Pro and Agency subscription plans in Square Dashboard → Items & Orders → Subscriptions. Then update the two plan ID secrets and redeploy `createCheckoutSession`.
 
 ### 2 — Firestore triggers renamed and redeployed ✅ Fixed Jun 19, 2026
 `onJobCreated`, `onJobFailed`, and `onUserCreated` were all deployed as stale HTTPS functions from a previous session. Firebase blocks changing a function's trigger type in-place — it must be deleted and recreated.

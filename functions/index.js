@@ -446,7 +446,7 @@ exports.postToInstagram = onRequest(async (req, res) => {
 // Function 8: createCheckoutSession
 // POST /createCheckoutSession
 // ══════════════════════════════════════════
-exports.createCheckoutSession = onRequest({ region: 'us-central1' }, async (req, res) => {
+exports.createCheckoutSession = onRequest({ region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN', 'SQUARE_LOCATION_ID', 'SQUARE_PRO_PLAN_ID', 'SQUARE_AGENCY_PLAN_ID'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   let decoded;
@@ -499,7 +499,7 @@ exports.createPortalSession = onRequest(async (req, res) => {
 // Verifies Square HMAC signature, handles payment.completed,
 // subscription.created, and subscription.updated (cancellation) events.
 // ══════════════════════════════════════════
-exports.squareWebhook = onRequest({ region: 'us-central1' }, async (req, res) => {
+exports.squareWebhook = onRequest({ region: 'us-central1', secrets: ['SQUARE_WEBHOOK_SIGNATURE_KEY'] }, async (req, res) => {
   const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
   const notificationUrl = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/squareWebhook';
   const body = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body);
@@ -968,7 +968,7 @@ exports.userCreatedTrigger = onDocumentCreated(
 // POST /deleteAccount  { idToken }
 // Cancels Square sub, wipes all Firestore data, deletes Auth user
 // ══════════════════════════════════════════
-exports.deleteAccount = onRequest({ region: 'us-central1' }, async (req, res) => {
+exports.deleteAccount = onRequest({ region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
 
