@@ -24,11 +24,21 @@
     <div class="card">
       <div class="eyebrow">Trust step before publishing</div>
       <h1 class="big-title">Review the listing before <span>BlastyBiz posts it.</span></h1>
-      <p class="sub">This page prevents fear and mistakes. The business owner can see every platform version, make quick edits, approve auto-posts, or copy manual-platform text.</p>
+      <p class="sub">Review each platform draft, make edits if needed, then approve. Or flip Auto-Send and BlastyBiz posts without asking.</p>
+      <div style="display:flex;align-items:center;gap:12px;margin:14px 0 16px;">
+        <div id="autosend-toggle" onclick="toggleAutoSend()"
+          style="width:52px;height:28px;border-radius:999px;background:var(--border);cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;">
+          <div id="autosend-knob" style="position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left 0.2s;"></div>
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:14px;" id="autosend-label">Auto-Send: Off</div>
+          <div style="font-size:12px;color:var(--muted);" id="autosend-sub">You review every draft before posting</div>
+        </div>
+      </div>
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="approveSelected()">✅ Approve Selected</button>
+        <button class="btn btn-primary" id="main-approve-btn" onclick="approveSelected()">✅ Approve Selected</button>
         <button class="btn" onclick="saveDraft()">💾 Save Draft</button>
-        <button class="btn" onclick="copyManual()">📋 Copy Manual Text</button>
+        <button class="btn" onclick="copyManual()">📋 Copy Text</button>
       </div>
     </div>
     <div class="card">
@@ -38,6 +48,9 @@
         <div class="step"><div class="step-num">2</div><div class="step-title">AI Drafts</div><div class="step-sub">Platform-specific copy</div></div>
         <div class="step active"><div class="step-num">3</div><div class="step-title">Review</div><div class="step-sub">Edit and approve</div></div>
         <div class="step"><div class="step-num">4</div><div class="step-title">Publish</div><div class="step-sub">Auto or manual</div></div>
+      </div>
+      <div style="margin-top:14px;padding:10px 14px;border-radius:10px;background:rgba(0,200,83,0.06);border:1px solid var(--border);font-size:13px;color:var(--muted);" id="autosend-note">
+        <strong style="color:var(--silver)">Auto-Send off</strong> — you approve each draft before it goes out.
       </div>
     </div>
   </section>
@@ -111,9 +124,62 @@
   </section>
 </main>
 
+<!-- ── SCHEDULE PANEL ───────────────────────────────────────── -->
+<section style="margin-top:16px" id="schedule-section">
+  <div class="card">
+    <div class="card-title">🗓 Schedule & Refire</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Set a date to post this listing automatically, or set a recurring refire so BlastyBiz re-posts on a schedule without you lifting a finger.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+      <div>
+        <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--silver);display:block;margin-bottom:6px">Send Date</label>
+        <input type="datetime-local" id="sched-date" style="width:100%;background:#081008;border:1px solid var(--border);border-radius:8px;color:var(--light);padding:10px 12px;font-size:14px;font-family:inherit"/>
+      </div>
+      <div>
+        <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--silver);display:block;margin-bottom:6px">Refire Every</label>
+        <select id="sched-recur" style="width:100%;background:#081008;border:1px solid var(--border);border-radius:8px;color:var(--light);padding:10px 12px;font-size:14px;font-family:inherit">
+          <option value="">None (one-time)</option>
+          <option value="weekly">Weekly</option>
+          <option value="biweekly">Every 2 weeks</option>
+          <option value="monthly">Monthly</option>
+          <option value="quarterly">Quarterly</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--silver);display:block;margin-bottom:6px">Stop After</label>
+        <select id="sched-stop" style="width:100%;background:#081008;border:1px solid var(--border);border-radius:8px;color:var(--light);padding:10px 12px;font-size:14px;font-family:inherit">
+          <option value="">Never</option>
+          <option value="4">4 posts</option>
+          <option value="8">8 posts</option>
+          <option value="12">12 posts</option>
+          <option value="26">26 posts</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="btn btn-primary" onclick="saveSchedule()" style="min-width:160px" id="sched-btn">💾 Save Schedule</button>
+      <span id="sched-status" style="font-size:13px;color:var(--muted)"></span>
+    </div>
+    <div id="sched-saved" style="display:none;margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(0,200,83,0.06);border:1px solid var(--green);font-size:13px;">
+      <strong style="color:var(--green)">⏱ Schedule active</strong> — <span id="sched-summary"></span>
+      <button onclick="clearSchedule()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;margin-left:8px;text-decoration:underline">Clear</button>
+    </div>
+  </div>
+</section>
+
+<!-- ── COPY-PASTE OUTPUT PANEL ──────────────────────────────── -->
+<section style="margin-top:16px" id="manual-panel">
+  <div class="card">
+    <div class="card-title">📋 Copy-Paste Platforms</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">These platforms don't allow any app to post on your behalf. BlastyBiz wrote the copy — tap Copy and paste it in under a minute.</p>
+    <div id="manual-platform-list" style="display:flex;flex-direction:column;gap:10px">
+      <!-- populated by JS -->
+    </div>
+  </div>
+</section>
+
 <div class="approval-bar">
   <div class="approval-inner">
-    <div class="approval-text"><strong>3 auto-post drafts ready.</strong> 2 manual platforms need copy/paste instructions after approval.</div>
+    <div class="approval-text" id="approval-bar-text"><strong>Drafts ready.</strong> Review above then approve.</div>
     <div class="btn-row"><button class="btn" onclick="saveDraft()">Save Draft</button><button class="btn btn-primary" onclick="approveAll()">Approve & Continue</button></div>
   </div>
 </div>
@@ -136,6 +202,110 @@ let activeDraftKey = null;
 let draftDocId = null;
 let currentUser = null;
 let businessId = null;
+let autoSendEnabled = false;
+
+function toggleAutoSend() {
+  autoSendEnabled = !autoSendEnabled;
+  const toggle = document.getElementById('autosend-toggle');
+  const knob   = document.getElementById('autosend-knob');
+  const label  = document.getElementById('autosend-label');
+  const sub    = document.getElementById('autosend-sub');
+  const note   = document.getElementById('autosend-note');
+  const btn    = document.getElementById('main-approve-btn');
+  if (autoSendEnabled) {
+    toggle.style.background = 'var(--green)';
+    knob.style.left = '28px';
+    label.textContent = 'Auto-Send: On';
+    sub.textContent = 'BlastyBiz will post immediately — no review step';
+    note.innerHTML = '<strong style="color:var(--green)">Auto-Send on</strong> — BlastyBiz posts all API-connected platforms the moment you click Send All.';
+    btn.textContent = '🚀 Send All Now';
+    btn.onclick = sendAllNow;
+  } else {
+    toggle.style.background = 'var(--border)';
+    knob.style.left = '4px';
+    label.textContent = 'Auto-Send: Off';
+    sub.textContent = 'You review every draft before posting';
+    note.innerHTML = '<strong style="color:var(--silver)">Auto-Send off</strong> — you approve each draft before it goes out.';
+    btn.textContent = '✅ Approve Selected';
+    btn.onclick = approveSelected;
+  }
+  // Persist preference
+  window._saveAutoSendPref && window._saveAutoSendPref(autoSendEnabled);
+}
+
+function sendAllNow() {
+  const keys = Object.keys(drafts);
+  if (!keys.length) { showToast('No drafts to send'); return; }
+  window._firestoreApprove && window._firestoreApprove(keys);
+}
+
+// ── Feature 3: Schedule & Refire ─────────────────────────────────────────────
+function saveSchedule() {
+  const dateVal  = document.getElementById('sched-date').value;
+  const recur    = document.getElementById('sched-recur').value;
+  const stop     = document.getElementById('sched-stop').value;
+  if (!dateVal)  { showToast('Pick a send date first'); return; }
+  const sched = { sendAt: dateVal, recur: recur || null, stopAfter: stop ? parseInt(stop) : null };
+  window._saveSchedule && window._saveSchedule(sched);
+  const saved = document.getElementById('sched-saved');
+  const summary = document.getElementById('sched-summary');
+  const dt = new Date(dateVal).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+  let txt = `First post: ${dt}`;
+  if (recur) txt += ` · repeats ${recur}`;
+  if (stop)  txt += ` · stops after ${stop} posts`;
+  summary.textContent = txt;
+  saved.style.display = '';
+  showToast('⏱ Schedule saved');
+}
+
+function clearSchedule() {
+  document.getElementById('sched-date').value  = '';
+  document.getElementById('sched-recur').value = '';
+  document.getElementById('sched-stop').value  = '';
+  document.getElementById('sched-saved').style.display = 'none';
+  window._saveSchedule && window._saveSchedule(null);
+  showToast('Schedule cleared');
+}
+
+// ── Feature 4: Copy-paste output panel ───────────────────────────────────────
+function renderManualPanel() {
+  const manualKeys = Object.keys(drafts).filter(k =>
+    PLATFORM_META[k]?.capabilityLevel === 'manual_assisted'
+  );
+  const panel = document.getElementById('manual-platform-list');
+  if (!panel) return;
+  if (!manualKeys.length) {
+    document.getElementById('manual-panel').style.display = 'none';
+    return;
+  }
+  document.getElementById('manual-panel').style.display = '';
+  panel.innerHTML = manualKeys.map(k => {
+    const meta = PLATFORM_META[k];
+    const d    = drafts[k] || {};
+    const text = [d.headline, d.text, d.cta].filter(Boolean).join('\n\n');
+    return `
+      <div style="background:#081008;border:1px solid var(--border);border-radius:12px;padding:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:9px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900">${meta.icon}</div>
+            <div>
+              <div style="font-weight:700;font-size:14px">${meta.name}</div>
+              <div style="font-size:11px;color:var(--muted)">${meta.mode}</div>
+            </div>
+          </div>
+          <button onclick="copyPlatformText('${k}')" style="background:var(--green);color:#070D07;border:none;border-radius:8px;padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer">📋 Copy</button>
+        </div>
+        <textarea id="manual-text-${k}" readonly style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;color:var(--light);padding:10px 12px;font-size:13px;font-family:inherit;resize:vertical;min-height:100px;line-height:1.6">${text}</textarea>
+        ${meta.manualInstructions ? `<div style="margin-top:8px;font-size:12px;color:var(--muted)">👉 ${meta.manualInstructions}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function copyPlatformText(key) {
+  const el = document.getElementById('manual-text-' + key);
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(() => showToast('📋 Copied — paste it into ' + (PLATFORM_META[key]?.name || key)));
+}
 
 function showDraft(key, btn) {
   const d = drafts[key];
@@ -256,6 +426,42 @@ onAuthStateChanged(auth, async (user) => {
 
   if (draftData) {
     window.populateFromDraftData(draftData);
+    renderManualPanel();
+  }
+
+  // Load saved auto-send preference
+  const savedAutoSend = userData.autoSend || false;
+  if (savedAutoSend) { window.autoSendEnabled = false; toggleAutoSend(); }
+
+  window._saveAutoSendPref = async function(val) {
+    await setDoc(doc(db, 'users', user.uid), { autoSend: val }, { merge: true });
+  };
+
+  // Schedule save — writes to listingDrafts doc
+  window._saveSchedule = async function(sched) {
+    const draftId = window.draftDocId;
+    if (!draftId) return;
+    await updateDoc(doc(db, 'listingDrafts', draftId), {
+      schedule: sched,
+      updatedAt: serverTimestamp(),
+    });
+  };
+
+  // Load existing schedule if draft has one
+  if (draftData?.schedule) {
+    const s = draftData.schedule;
+    if (s.sendAt) document.getElementById('sched-date').value = s.sendAt;
+    if (s.recur)  document.getElementById('sched-recur').value = s.recur;
+    if (s.stopAfter) document.getElementById('sched-stop').value = String(s.stopAfter);
+    // Show saved indicator
+    const saved   = document.getElementById('sched-saved');
+    const summary = document.getElementById('sched-summary');
+    const dt = new Date(s.sendAt).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+    let txt = `First post: ${dt}`;
+    if (s.recur)     txt += ` · repeats ${s.recur}`;
+    if (s.stopAfter) txt += ` · stops after ${s.stopAfter} posts`;
+    summary.textContent = txt;
+    saved.style.display = '';
   }
 
   window._firestoreSaveDraft = async function() {

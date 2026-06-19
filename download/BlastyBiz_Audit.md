@@ -189,6 +189,28 @@ The Operator Setup page (`BlastyBiz-Admin-Operate.html`) has step-by-step instru
 
 ---
 
+## 🐛 Bugs Fixed
+
+| Date | Location | What was wrong | How it was fixed |
+|------|----------|---------------|-----------------|
+| Jun 19, 2026 | `functions/index.js` · `adminSubscriptionSummary` | MRR hardcoded at $49/$99 (old Stripe prices) | Reads from Firestore `settings/pricing` with $19/$99 fallback |
+| Jun 19, 2026 | `BlastyBiz-Admin-Subscriptions.html` | Pricing editor fields showed placeholder text, not pre-filled values | Changed `placeholder` to `value` so $19/$99 appear immediately |
+
+---
+
+## ✅ Features Added (Jun 19, 2026)
+
+| Feature | Files changed | Description |
+|---------|--------------|-------------|
+| Dynamic pricing control | `functions/index.js`, `BlastyBiz-Admin-Subscriptions.html`, `BlastyBiz-Home.html` | Admin sets Pro/Agency prices → creates new Square subscription plans via Catalog API → stores plan IDs in Firestore → home page and checkout pick up new prices immediately |
+| Auto-Send toggle | `BlastyBiz-Listing-Preview.html` | Toggle on Review page: Off = approve each draft; On = "Send All Now" fires all platforms without review. Preference saved to Firestore `users/{uid}.autoSend` |
+| Edit existing business | `BlastyBiz-Dashboard.html` | "Edit Business Info" button on Dashboard hero routes to BlastyBiz.html which already loads saved Firestore data into the form |
+| Schedule & Refire | `BlastyBiz-Listing-Preview.html` | Panel with send date + recur cadence (weekly/biweekly/monthly/quarterly) + stop-after count. Saved to `listingDrafts/{id}.schedule`; reloads on return |
+| Copy-paste output panel | `BlastyBiz-Listing-Preview.html` | Dedicated panel renders all manual-only platforms (Nextdoor, Craigslist, FB Marketplace) with pre-filled text and one-tap Copy button + step-by-step instructions |
+| Live Publishing Status | `BlastyBiz-Publishing-Status.html` | Switched from `getDocs` to `onSnapshot` — job status cards update in real-time as Cloud Functions complete. "Schedule Refire" link appears when draftId is in URL |
+
+---
+
 ## 📋 Outstanding Items (Priority Order)
 
 ### P0 — Required before real users

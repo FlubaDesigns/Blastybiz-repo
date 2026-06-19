@@ -208,8 +208,8 @@
       <p class="sub" id="dashboard-sub">Showing data for <strong id="dashboard-biz-name"></strong>. Switch businesses above.</p>
       <div class="btn-row">
         <a class="btn btn-primary" href="BlastyBiz.html">⚡ Create New Listing</a>
+        <button class="btn" onclick="editActiveBusiness()">✏️ Edit Business Info</button>
         <a class="btn" href="BlastyBiz-Connect.html">🔗 Connect Platforms</a>
-        <a class="btn" href="#tasks">✅ Fix Next Items</a>
       </div>
     </div>
     <div class="card">
@@ -432,6 +432,14 @@ function loadBusinessContext(bizId) {
   document.getElementById('score-bar').style.width = biz.score + '%';
   // Firebase: load businesses/{bizId}, platformConnections, publishJobs, listingDrafts
   // and re-render all dashboard sections with real data
+}
+
+// ══════════════════════════════════════════
+// EDIT ACTIVE BUSINESS
+// Routes to BlastyBiz.html — Firestore already loads saved data on that page
+// ══════════════════════════════════════════
+function editActiveBusiness() {
+  window.location.href = 'BlastyBiz.html?edit=1';
 }
 
 // ══════════════════════════════════════════

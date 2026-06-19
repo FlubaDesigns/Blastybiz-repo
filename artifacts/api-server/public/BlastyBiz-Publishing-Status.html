@@ -211,6 +211,7 @@ body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;
     </div>
 
     <a href="BlastyBiz.html" class="dash-btn">＋ Create Another Listing</a>
+    <a id="sched-refire-link" href="#" class="dash-btn" style="display:none;background:var(--card);color:var(--green);border:1px solid var(--green)">🗓 Schedule Refire</a>
     <a href="BlastyBiz-Dashboard.html" class="dash-btn-outline">← Back to Dashboard</a>
   </div>
 </div>
@@ -333,7 +334,7 @@ function showEmptyState(msg) {
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { collection, query, where, orderBy, limit, getDocs, getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { collection, query, where, orderBy, limit, onSnapshot, getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
@@ -342,10 +343,16 @@ onAuthStateChanged(auth, async (user) => {
   try {
     const userSnap = await getDoc(doc(db, 'users', user.uid));
     const userData = userSnap.exists() ? userSnap.data() : {};
-    const bizId = userData.activeBusiness || user.uid;
+    const bizId    = userData.activeBusiness || user.uid;
 
-    const params = new URLSearchParams(window.location.search);
+    const params  = new URLSearchParams(window.location.search);
     const draftId = params.get('draftId');
+
+    // Wire "Schedule Refire" link back to the draft's review page
+    if (draftId) {
+      const schedLink = document.getElementById('sched-refire-link');
+      if (schedLink) { schedLink.href = `BlastyBiz-Listing-Preview.html?draftId=${draftId}`; schedLink.style.display = ''; }
+    }
 
     let q;
     if (draftId) {
@@ -364,15 +371,21 @@ onAuthStateChanged(auth, async (user) => {
       );
     }
 
-    const snap = await getDocs(q);
-    if (snap.empty) {
-      window.showEmptyState('No publishing jobs yet. Approve a listing to start blasting.');
-    } else {
-      const jobs = snap.docs.map(d => ({ jobId: d.id, ...d.data() }));
-      window.renderJobs(jobs);
-    }
+    // Live listener — updates status cards in real-time as jobs complete
+    onSnapshot(q, (snap) => {
+      if (snap.empty) {
+        window.showEmptyState('No publishing jobs yet. Approve a listing to start blasting.');
+      } else {
+        const jobs = snap.docs.map(d => ({ jobId: d.id, ...d.data() }));
+        window.renderJobs(jobs);
+      }
+    }, (e) => {
+      console.error('Failed to load jobs:', e);
+      window.showEmptyState('Could not load jobs. Refresh to try again.');
+    });
+
   } catch (e) {
-    console.error('Failed to load jobs:', e);
+    console.error('Failed to init:', e);
     window.showEmptyState('Could not load jobs. Refresh to try again.');
   }
 });
