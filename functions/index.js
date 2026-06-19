@@ -496,8 +496,8 @@ exports.createPortalSession = onRequest(async (req, res) => {
 // ══════════════════════════════════════════
 // Function 10: squareWebhook
 // POST /squareWebhook
-// Verifies Square HMAC signature, handles payment.completed
-// and subscription.canceled events.
+// Verifies Square HMAC signature, handles payment.completed,
+// subscription.created, and subscription.updated (cancellation) events.
 // ══════════════════════════════════════════
 exports.squareWebhook = onRequest({ region: 'us-central1' }, async (req, res) => {
   const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
@@ -563,18 +563,32 @@ exports.squareWebhook = onRequest({ region: 'us-central1' }, async (req, res) =>
     }
   }
 
-  if (event.type === 'subscription.canceled') {
+  if (event.type === 'subscription.updated') {
     const sub = event.data?.object?.subscription;
-    if (!sub) return res.json({ received: true });
-    const customerId = sub.customer_id || sub.customerId;
-    if (!customerId) return res.json({ received: true });
-    const snap = await db.collection('subscriptions')
-      .where('squareCustomerId', '==', customerId).limit(1).get();
-    if (!snap.empty) {
-      const uid = snap.docs[0].data().uid;
-      await db.collection('users').doc(uid).set(
-        { plan: 'starter', planActive: false }, { merge: true }
-      );
+    if (sub) {
+      const status = (sub.status || '').toUpperCase();
+      const isCanceled = status === 'CANCELED' || status === 'DEACTIVATED' || status === 'PAUSED';
+      if (isCanceled) {
+        const customerId = sub.customer_id || sub.customerId;
+        if (customerId) {
+          try {
+            const snap = await db.collection('subscriptions')
+              .where('squareCustomerId', '==', customerId).limit(1).get();
+            if (!snap.empty) {
+              const uid = snap.docs[0].data().uid;
+              await db.collection('users').doc(uid).set(
+                { plan: 'starter', planActive: false }, { merge: true }
+              );
+              await snap.docs[0].ref.update({
+                status: 'canceled',
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              });
+            }
+          } catch (e) {
+            console.error('squareWebhook subscription.updated error:', e.message);
+          }
+        }
+      }
     }
   }
 
