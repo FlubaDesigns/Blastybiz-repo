@@ -195,6 +195,7 @@ The Operator Setup page (`BlastyBiz-Admin-Operate.html`) has step-by-step instru
 |------|----------|---------------|-----------------|
 | Jun 19, 2026 | `functions/index.js` · `adminSubscriptionSummary` | MRR hardcoded at $49/$99 (old Stripe prices) | Reads from Firestore `settings/pricing` with $19/$99 fallback |
 | Jun 19, 2026 | `BlastyBiz-Admin-Subscriptions.html` | Pricing editor fields showed placeholder text, not pre-filled values | Changed `placeholder` to `value` so $19/$99 appear immediately |
+| Jun 19, 2026 | `BlastyBiz.html` — `#biz-phone`, `#profile-phone` | Phone number typed as raw digits with no formatting | Added `formatPhone()` — auto-inserts hyphens on input (e.g. `555-123-4567`); capped at 10 digits; `inputmode="tel"` for mobile keyboard |
 
 ---
 

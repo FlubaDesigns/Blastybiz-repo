@@ -675,7 +675,7 @@
       </div>
       <div>
         <label>Phone</label>
-        <input type="tel" id="biz-phone" placeholder="(555) 000-0000" oninput="saveDraft()" />
+        <input type="tel" id="biz-phone" placeholder="555-000-0000" oninput="formatPhone(this);saveDraft()" inputmode="tel" />
       </div>
     </div>
 
@@ -839,7 +839,7 @@
     </select>
 
     <label>Phone</label>
-    <input type="tel" id="profile-phone" placeholder="(555) 000-0000" oninput="saveProfile()" />
+    <input type="tel" id="profile-phone" placeholder="555-000-0000" oninput="formatPhone(this);saveProfile()" inputmode="tel" />
 
     <label>Email</label>
     <input type="email" id="profile-email" placeholder="hello@yourbusiness.com" oninput="saveProfile()" />
@@ -1383,6 +1383,17 @@ function loadProfile() {
 // ══════════════════════════════════════════
 // DRAFT
 // ══════════════════════════════════════════
+function formatPhone(el) {
+  const digits = el.value.replace(/\D/g, '').slice(0, 10);
+  if (digits.length > 6) {
+    el.value = digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6);
+  } else if (digits.length > 3) {
+    el.value = digits.slice(0, 3) + '-' + digits.slice(3);
+  } else {
+    el.value = digits;
+  }
+}
+
 function saveDraft() {
   draft = {
     name:         document.getElementById('biz-name')?.value,
