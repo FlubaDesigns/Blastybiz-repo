@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dev Login — BlastyBiz</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 14px;
+    }
+    .logo { font-size: 36px; }
+    .title {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 26px;
+      letter-spacing: 2px;
+      color: #4ade80;
+    }
+    .badge {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: #888;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .status {
+      font-size: 14px;
+      color: #aaa;
+      margin-top: 8px;
+    }
+    .error { color: #f87171; }
+    .success { color: #4ade80; }
+  </style>
+</head>
+<body>
+  <div class="logo">⚡</div>
+  <div class="title">BlastyBiz</div>
+  <div class="badge">Developer Test Login</div>
+  <div class="status" id="status">Signing in as devtest@blastybiz.dev…</div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+    const app = initializeApp({
+      apiKey: "AIzaSyCyEwA6jGHp0xjAJO3NOXHblYfpajtFXGM",
+      authDomain: "blastybiz-9523e.firebaseapp.com",
+      projectId: "blastybiz-9523e",
+      storageBucket: "blastybiz-9523e.firebasestorage.app",
+      messagingSenderId: "745597683278",
+      appId: "1:745597683278:web:90847f6981e982dc54251f"
+    });
+
+    const auth = getAuth(app);
+    const params = new URLSearchParams(location.search);
+    const next = params.get('next') || 'BlastyBiz.html';
+    const status = document.getElementById('status');
+
+    try {
+      await signInWithEmailAndPassword(auth, 'devtest@blastybiz.dev', 'BlastyDevTest2026!');
+      status.className = 'status success';
+      status.textContent = 'Signed in — redirecting…';
+      window.location.href = next;
+    } catch (e) {
+      status.className = 'status error';
+      status.textContent = 'Error: ' + e.message;
+    }
+  </script>
+</body>
+</html>
