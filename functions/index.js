@@ -454,9 +454,12 @@ exports.createCheckoutSession = onRequest({ region: 'us-central1', secrets: ['SQ
   const uid   = decoded.uid;
   const email = decoded.email || req.body.email || '';
   const { plan } = req.body;
+  // Read active plan IDs from Firestore (updated by adminUpdatePricing) — fall back to Secret Manager
+  const pricingSnap = await db.collection('settings').doc('pricing').get();
+  const pricingData = pricingSnap.exists ? pricingSnap.data() : {};
   const planIds = {
-    pro:    process.env.SQUARE_PRO_PLAN_ID,
-    agency: process.env.SQUARE_AGENCY_PLAN_ID,
+    pro:    pricingData.squareProPlanId    || process.env.SQUARE_PRO_PLAN_ID,
+    agency: pricingData.squareAgencyPlanId || process.env.SQUARE_AGENCY_PLAN_ID,
   };
   if (!planIds[plan]) return res.status(400).json({ error: 'Invalid plan' });
   const { checkoutApi } = getSquare();
@@ -1245,21 +1248,81 @@ exports.adminSubscriptionSummary = onRequest(async (req, res) => {
 // ══════════════════════════════════════════
 // Function 30: adminUpdatePricing
 // POST /adminUpdatePricing  { proMonthly, agencyMonthly }
-// Admin-only: writes display prices to settings/pricing in Firestore
+// Admin-only: updates display prices in Firestore AND creates new Square
+// subscription plans at those prices. Stores the new Square plan IDs so
+// createCheckoutSession picks them up immediately.
 // ══════════════════════════════════════════
-exports.adminUpdatePricing = onRequest(async (req, res) => {
+exports.adminUpdatePricing = onRequest({ secrets: ['SQUARE_ACCESS_TOKEN'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: 'Forbidden' }); }
   const { proMonthly, agencyMonthly } = req.body;
   if (!proMonthly || !agencyMonthly) return res.status(400).json({ error: 'proMonthly and agencyMonthly required' });
-  const pro = parseFloat(proMonthly);
+  const pro    = parseFloat(proMonthly);
   const agency = parseFloat(agencyMonthly);
   if (isNaN(pro) || isNaN(agency) || pro < 0 || agency < 0) return res.status(400).json({ error: 'Invalid prices' });
-  await db.collection('settings').doc('pricing').set({
+
+  // Create new Square subscription plans at the given prices
+  const { catalogApi } = getSquare();
+  const ts = Date.now();
+
+  let squareProPlanId, squareAgencyPlanId, squareError;
+  try {
+    const [proResult, agencyResult] = await Promise.all([
+      catalogApi.upsertCatalogObject({
+        idempotencyKey: `blastybiz-pro-${ts}`,
+        object: {
+          type: 'SUBSCRIPTION_PLAN',
+          id: '#pro_plan',
+          subscriptionPlanData: {
+            name: `BlastyBiz Pro — $${pro}/mo`,
+            phases: [{
+              cadence: 'MONTHLY',
+              recurringPriceMoney: { amount: BigInt(Math.round(pro * 100)), currency: 'USD' },
+              ordinal: BigInt(0),
+            }],
+          },
+        },
+      }),
+      catalogApi.upsertCatalogObject({
+        idempotencyKey: `blastybiz-agency-${ts}`,
+        object: {
+          type: 'SUBSCRIPTION_PLAN',
+          id: '#agency_plan',
+          subscriptionPlanData: {
+            name: `BlastyBiz Agency — $${agency}/mo`,
+            phases: [{
+              cadence: 'MONTHLY',
+              recurringPriceMoney: { amount: BigInt(Math.round(agency * 100)), currency: 'USD' },
+              ordinal: BigInt(0),
+            }],
+          },
+        },
+      }),
+    ]);
+    squareProPlanId    = proResult.result.catalogObject.id;
+    squareAgencyPlanId = agencyResult.result.catalogObject.id;
+  } catch (e) {
+    squareError = e.message || String(e);
+    console.error('[adminUpdatePricing] Square plan creation failed:', squareError);
+  }
+
+  // Always write to Firestore — even if Square failed, update display prices
+  const update = {
     proMonthly: pro,
     agencyMonthly: agency,
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  }, { merge: true });
-  res.json({ ok: true, proMonthly: pro, agencyMonthly: agency });
+  };
+  if (squareProPlanId)    update.squareProPlanId    = squareProPlanId;
+  if (squareAgencyPlanId) update.squareAgencyPlanId = squareAgencyPlanId;
+  await db.collection('settings').doc('pricing').set(update, { merge: true });
+
+  res.json({
+    ok: true,
+    proMonthly: pro,
+    agencyMonthly: agency,
+    squareProPlanId:    squareProPlanId    || null,
+    squareAgencyPlanId: squareAgencyPlanId || null,
+    squareError:        squareError        || null,
+  });
 });

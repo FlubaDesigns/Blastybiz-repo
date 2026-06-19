@@ -12,11 +12,11 @@
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
   <div>
     <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--silver);display:block;margin-bottom:6px">Pro / month ($)</label>
-    <input id="inp-pro" type="number" min="0" step="1" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--light);padding:10px 14px;font-size:16px;font-family:inherit" placeholder="19"/>
+    <input id="inp-pro" type="number" min="0" step="1" value="19" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--light);padding:10px 14px;font-size:16px;font-family:inherit"/>
   </div>
   <div>
     <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--silver);display:block;margin-bottom:6px">Agency / month ($)</label>
-    <input id="inp-agency" type="number" min="0" step="1" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--light);padding:10px 14px;font-size:16px;font-family:inherit" placeholder="99"/>
+    <input id="inp-agency" type="number" min="0" step="1" value="99" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--light);padding:10px 14px;font-size:16px;font-family:inherit"/>
   </div>
 </div>
 <button id="btn-save-pricing" class="btn btn-primary" onclick="savePricing()" style="min-width:140px">Save Prices</button>
@@ -86,8 +86,17 @@ window.savePricing = async function() {
       body: JSON.stringify({ proMonthly: pro, agencyMonthly: agency }),
     });
     const j = await r.json();
-    if (j.ok) { status.style.color = '#00C853'; status.textContent = '✔ Saved — home page prices updated'; }
-    else { status.style.color = '#FF4444'; status.textContent = '⚠️ ' + (j.error || 'Failed'); }
+    if (j.ok) {
+      status.style.color = '#00C853';
+      if (j.squareError) {
+        status.textContent = `✔ Prices saved — Square plan creation failed: ${j.squareError}`;
+        status.style.color = '#FFA726';
+      } else if (j.squareProPlanId) {
+        status.innerHTML = `✔ Saved &amp; pushed to Square<br><small style="font-family:monospace;opacity:.7">Pro: ${j.squareProPlanId}<br>Agency: ${j.squareAgencyPlanId}</small>`;
+      } else {
+        status.textContent = '✔ Display prices saved';
+      }
+    } else { status.style.color = '#FF4444'; status.textContent = '⚠️ ' + (j.error || 'Failed'); }
   } catch(e) {
     status.style.color = '#FF4444'; status.textContent = '⚠️ ' + e.message;
   }
