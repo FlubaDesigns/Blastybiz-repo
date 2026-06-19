@@ -1,5 +1,5 @@
 # BlastyBiz — Full Site Audit
-**Last updated: June 18, 2026**
+**Last updated: June 19, 2026**
 **Firebase Project:** blastybiz-9523e
 **Live URL:** https://blastybiz-9523e.web.app
 
@@ -118,22 +118,53 @@ All 6 collections secured. Owner-only access on all user data.
 | Jun 19, 2026 | `functions/index.js` — `adaptListing` + `resolveCategories` | **Bug fix: AI action counter never reset (lifetime instead of 30-day rolling).** `aiActionsUsed` was a lifetime counter with no reset mechanism. Fix: both functions now read `aiActionsResetAt` (Firestore Timestamp) from the user doc. If missing or expired (> 30 days old), counter is treated as 0. On consume: if reset needed → sets `aiActionsUsed: 1` + `aiActionsResetAt: now + 30 days`; otherwise → `FieldValue.increment(1)`. Rolling 30-day window now enforced server-side. **Deployed Jun 19, 2026. Playwright confirmed site live and auth-guard working.** |
 | Jun 19, 2026 | `functions/index.js` — `squareWebhook` | **Bug fix: `deleteAccount` Square subscription cancel was always a no-op.** `deleteAccount` looked for `squareSubscriptionId` in the subscriptions doc, but the field was never stored — Square sends a separate `subscription.created` event (not `payment.completed`) to provide the subscription ID. Fix: added `subscription.created` handler to `squareWebhook`: reads `sub.id` + `sub.customer_id`, queries subscriptions collection by `squareCustomerId`, writes `squareSubscriptionId` to the matching doc. `deleteAccount` can now actually cancel the Square subscription on account deletion. **Deployed Jun 19, 2026.** |
 | Jun 18, 2026 | `functions/index.js` — `adminRetryJob` | **Bug fix: retry button never re-published jobs.** Original `adminRetryJob` set `status: 'pending'` via Firestore `update()`, but `onJobCreated` is an `onDocumentCreated` trigger — it only fires on document CREATE, not UPDATE. A retried job would sit at 'pending' forever. Fixed: `adminRetryJob` now reads the job doc, sets status to 'processing' (idempotency guard), looks up the platformConnection, calls the appropriate `_publishGoogleJob` / `_publishFacebookJob` / `_publishInstagramJob` helper directly, and writes the final success/failed result. Retry fires synchronously within the HTTP response. |
+| Jun 19, 2026 | `functions/index.js` — `postToGoogle`, `postToFacebook`, `postToInstagram` | **Security fix: posting endpoints had no auth.** All three were publicly callable by anyone with the function URL — no token required. Added `verifyBearer()` check at the top of each function (returns 401 if missing/invalid). Also added OPTIONS preflight handler so CORS still works from the browser. Deployed Jun 19, 2026. |
 | Jun 17, 2026 | `BlastyBiz-Connect.html` + new `BlastyBiz-Connected.html` + `functions/index.js` | Added pre-connect friction reduction and post-connection clarity. (1) Google Connect button now opens an inline explainer drawer. (2) Facebook Connect button now opens a bottom-sheet gate modal asking "Do you have a Facebook Business Page?" — Yes proceeds to OAuth; No shows a 4-step guide. (3) New `BlastyBiz-Connected.html` post-connection landing page: OAuth callbacks now redirect here instead of back to Connect. The page reads the `platformConnections` Firestore doc, shows the connected account/page name, shows whether Instagram was auto-linked, explains the "what happens when you post" flow, and CTAs to create first listing, connect another platform, or go to dashboard. |
 
 ---
 
-## ⚠️ Known Issues / Hardcoded Items (Future Sprints)
+## ⛔ Critical Pre-Production Blockers
+
+These must be resolved before real users touch the site.
+
+### 1 — Square secrets not in Firebase Secret Manager
+**Status: UNRESOLVED**
+The deploy error confirmed all 5 Square secrets return 404 from Secret Manager:
+- `SQUARE_ACCESS_TOKEN` — not found
+- `SQUARE_LOCATION_ID` — not found
+- `SQUARE_PRO_PLAN_ID` — not found
+- `SQUARE_AGENCY_PLAN_ID` — not found
+- `SQUARE_WEBHOOK_SIGNATURE_KEY` — not found
+
+**Impact:** `createCheckoutSession` (upgrades fail silently), `squareWebhook` (HMAC signature check fails → all payment events rejected), `deleteAccount` (subscription cancel always fails).  
+**Fix:** Set all 5 secrets via the Operate page OR `firebase functions:secrets:set SECRET_NAME`. After setting, the `secrets: [...]` arrays must be added back to `createCheckoutSession`, `squareWebhook`, and `deleteAccount` in `functions/index.js` and redeployed.
+
+### 2 — `onJobCreated` deployed as HTTPS function (not a Firestore trigger)
+**Status: UNRESOLVED**
+The full deploy attempt returned: *"Changing from an HTTPS function to a background triggered function is not allowed."*  
+This means the live Cloud Function named `onJobCreated` is an HTTP endpoint, not the Firestore trigger the code defines. When `approveDraft` creates a `publishJobs` document with `status: 'pending'`, the trigger **will not fire** — pro/agency users' jobs will sit at 'pending' forever.  
+**Fix:**
+1. Go to [Firebase Console → Functions](https://console.firebase.google.com/project/blastybiz-9523e/functions)
+2. Find `onJobCreated` → Delete it
+3. From Replit Shell: `npx firebase-tools deploy --only functions`
+4. Verify the new `onJobCreated` appears as a Firestore trigger (EventArc event), not an HTTPS endpoint
+
+---
+
+## ⚠️ Known Issues / Hardcoded Items
 
 | Location | Item | Notes |
 |---|---|---|
-| `AI_LIMITS` | ~~No monthly reset~~ ✅ Fixed & deployed Jun 19 | `adaptListing` + `resolveCategories` enforce 30-day rolling window via `aiActionsResetAt` Firestore Timestamp. |
-| `deleteAccount` | ~~Square subscription cancel is a no-op~~ ✅ Fixed & deployed Jun 19 | `squareWebhook` handles `subscription.created` and stores `squareSubscriptionId`; `deleteAccount` can now cancel correctly. |
-| Dashboard | Business switcher list | Hardcoded mock array (QR Gear, etc.) — labeled "Prototype mock data — replace with Firestore query" |
-| Dashboard | Blast Score (83%) | Static placeholder |
-| Dashboard | Task list (Confirm Yelp, Add photos) | Static placeholder |
+| `AI_LIMITS` | ~~No monthly reset~~ ✅ Fixed Jun 19 | 30-day rolling window via `aiActionsResetAt`. |
+| `deleteAccount` | ~~Square cancel no-op~~ ✅ Fixed Jun 19 | `squareWebhook` stores `squareSubscriptionId`. |
+| Dashboard | ~~Hardcoded "QR Gear" data~~ ✅ Fixed Jun 19 | All values now live from Firestore. Empty state hides main content. |
+| Dashboard | ~~Blast Score (83%) static~~ ✅ Fixed Jun 19 | Score now computed from `successJobs.length`. Ring CSS updated dynamically. |
+| Dashboard | ~~Task list hardcoded~~ ✅ Fixed Jun 19 | Task list now built from real platform connection status. |
+| Dashboard | AI usage display | Now reads `aiActionsUsed` + `aiActionsResetAt` from users doc. |
 | Admin → Platform Health | All content | Static — no live Firestore queries |
-| Admin → Subscriptions | Money Snapshot ($1,842 MRR) | Static placeholder — "Demo data" banner added; real data needs Square webhook populating Firestore |
+| Admin → Subscriptions | Money Snapshot ($1,842 MRR) | Static placeholder — "Demo data" banner present; real data needs Square webhook populating Firestore |
 | Onboarding | Platform connect step | Redirects to Connect page rather than triggering OAuth inline |
+| `adaptListing` prompt | `locationType`/`region` not sent to Claude | Form collects it; CF ignores it. Minor gap — AI copy will still be good, just won't say "online only" explicitly. |
 
 ---
 

@@ -377,6 +377,8 @@ async function _publishInstagramJob(job, conn) {
 // ══════════════════════════════════════════
 exports.postToGoogle = onRequest(async (req, res) => {
   setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  try { await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
   const { content, imageUrls, accessToken, locationId, accountId } = req.body;
   try {
     const response = await axios.post(
@@ -400,6 +402,8 @@ exports.postToGoogle = onRequest(async (req, res) => {
 // ══════════════════════════════════════════
 exports.postToFacebook = onRequest(async (req, res) => {
   setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  try { await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
   const { content, accessToken, pageId } = req.body;
   try {
     const response = await axios.post(
@@ -419,6 +423,8 @@ exports.postToFacebook = onRequest(async (req, res) => {
 // ══════════════════════════════════════════
 exports.postToInstagram = onRequest(async (req, res) => {
   setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  try { await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
   const { caption, imageUrl, accessToken, igUserId } = req.body;
   try {
     const media = await axios.post(

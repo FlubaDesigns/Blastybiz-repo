@@ -84,7 +84,7 @@
   .big-title span{color:var(--green)}
   .sub{color:var(--muted);font-size:15px;line-height:1.6;max-width:650px}
   .score-wrap{display:flex;align-items:center;gap:18px}
-  .score-ring{width:122px;height:122px;border-radius:50%;background:conic-gradient(var(--green) 0 83%, var(--border) 83% 100%);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0}
+  .score-ring{width:122px;height:122px;border-radius:50%;background:conic-gradient(var(--green) 0 0%, var(--border) 0% 100%);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0}
   .score-ring:after{content:'';position:absolute;inset:10px;background:var(--card);border-radius:50%}
   .score-number{position:relative;z-index:2;font-family:'Bebas Neue';font-size:42px;color:var(--green)}
   .score-meta h3{font-size:18px;margin-bottom:6px}
@@ -158,12 +158,12 @@
   <div class="biz-active" id="biz-active-btn" onclick="openSwitcher()">
     <div class="biz-avatar" id="active-avatar">🏪</div>
     <div>
-      <div class="biz-name" id="active-name">QR Gear</div>
-      <div class="biz-plan" id="active-plan">Agency · 7 businesses</div>
+      <div class="biz-name" id="active-name"></div>
+      <div class="biz-plan" id="active-plan"></div>
     </div>
     <div class="biz-chevron">▾</div>
   </div>
-  <div class="biz-count" id="biz-count">1 of 7</div>
+  <div class="biz-count" id="biz-count"></div>
   <button class="add-biz-btn" onclick="addBusiness()" title="Add business">＋</button>
 </div>
 
@@ -191,7 +191,7 @@
   <div class="agency-bar">
     <div class="agency-label">
       <strong>Agency Plan</strong>
-      <span id="agency-usage-text">7 of 10 businesses used</span>
+      <span id="agency-usage-text"></span>
     </div>
     <div class="agency-pips" id="agency-pips">
       <!-- populated by JS -->
@@ -205,7 +205,7 @@
     <div class="card">
       <div class="eyebrow" id="dashboard-eyebrow">Business visibility cockpit</div>
       <h1 class="big-title">Know where you're live. <span>Fix what's missing.</span></h1>
-      <p class="sub" id="dashboard-sub">Showing data for <strong id="dashboard-biz-name">QR Gear</strong>. Switch businesses using the selector above.</p>
+      <p class="sub" id="dashboard-sub">Showing data for <strong id="dashboard-biz-name"></strong>. Switch businesses above.</p>
       <div class="btn-row">
         <a class="btn btn-primary" href="BlastyBiz.html">⚡ Create New Listing</a>
         <a class="btn" href="BlastyBiz-Connect.html">🔗 Connect Platforms</a>
@@ -215,12 +215,12 @@
     <div class="card">
       <div class="card-title">📍 Visibility Score</div>
       <div class="score-wrap">
-        <div class="score-ring"><div class="score-number" id="visibility-score">83</div></div>
+        <div class="score-ring" id="score-ring"><div class="score-number" id="visibility-score">—</div></div>
         <div class="score-meta">
-          <h3>Strong, but not complete</h3>
-          <p>Google and Facebook are active. Yelp needs category confirmation. Nextdoor and Craigslist are manual copy-paste opportunities.</p>
+          <h3 id="score-label" style="font-size:18px;margin-bottom:6px">—</h3>
+          <p id="score-desc" style="font-size:13px;color:var(--muted);line-height:1.5"></p>
           <div class="mini-label">Completion</div>
-          <div class="progress-wrap"><div class="progress-bar" id="score-bar" style="width:83%"></div></div>
+          <div class="progress-wrap"><div class="progress-bar" id="score-bar" style="width:0%"></div></div>
         </div>
       </div>
     </div>
@@ -244,11 +244,8 @@
 
     <div class="card" id="tasks">
       <div class="card-title">✅ Next Best Actions</div>
-      <div class="task-list">
-        <div class="task-row"><div class="platform-icon">1</div><div class="row-main"><div class="row-title">Confirm Yelp category</div><div class="row-sub">Improves local search consistency.</div></div><span class="badge needs">Fix</span></div>
-        <div class="task-row"><div class="platform-icon">2</div><div class="row-main"><div class="row-title">Add 3 more photos</div><div class="row-sub">Photos improve profile trust and click-through.</div></div><span class="badge needs">Add</span></div>
-        <div class="task-row"><div class="platform-icon">3</div><div class="row-main"><div class="row-title">Reply to 2 reviews</div><div class="row-sub">Use AI response generator before posting.</div></div><span class="badge live">Ready</span></div>
-        <div class="task-row"><div class="platform-icon">4</div><div class="row-main"><div class="row-title">Copy listing to Nextdoor</div><div class="row-sub">Manual platform, high local intent.</div></div><span class="badge off">Copy</span></div>
+      <div class="task-list" id="task-list">
+        <div style="color:#587058;font-size:13px;padding:4px 0">Loading…</div>
       </div>
     </div>
   </section>
@@ -264,11 +261,11 @@
     <div class="card">
       <div class="card-title">💵 Operating Snapshot</div>
       <div class="cost-line"><span>Plan</span><strong id="snapshot-plan-label">—</strong></div>
-      <div class="cost-line"><span>Active business</span><strong id="snapshot-biz">QR Gear</strong></div>
-      <div class="cost-line"><span>AI requests used</span><strong>42 / 250</strong></div>
-      <div class="cost-line"><span>Estimated AI cost</span><strong class="ok">$4.82</strong></div>
-      <div class="cost-line"><span>Failed jobs</span><strong class="warn">1</strong></div>
-      <div class="cost-line"><span>Renewal</span><strong>July 4, 2026</strong></div>
+      <div class="cost-line"><span>Active business</span><strong id="snapshot-biz"></strong></div>
+      <div class="cost-line"><span>AI requests used</span><strong id="ai-usage-display">—</strong></div>
+      <div class="cost-line"><span>Estimated AI cost</span><strong id="ai-cost-display" class="ok">—</strong></div>
+      <div class="cost-line"><span>Failed jobs</span><strong id="snapshot-failed" class="warn">—</strong></div>
+      <div class="cost-line"><span>Renewal</span><strong id="snapshot-renewal">—</strong></div>
       <div class="btn-row">
         <a class="btn" id="billing-btn" href="#" onclick="handleBilling(event)">View Billing</a>
         <a class="btn" href="BlastyBiz-Admin.html">Admin</a>
@@ -341,7 +338,9 @@ function init() {
 function renderNoBusinessState() {
   const switcher = document.getElementById('biz-active-btn');
   if (switcher) switcher.style.display = 'none';
-  const main = document.querySelector('main') || document.body;
+  const main = document.querySelector('main');
+  if (main) main.style.display = 'none';
+  const body = document.body;
   if (!document.getElementById('no-biz-state')) {
     const div = document.createElement('div');
     div.id = 'no-biz-state';
@@ -350,7 +349,7 @@ function renderNoBusinessState() {
       + '<h2 style="font-family:\'Bebas Neue\',sans-serif;font-size:36px;color:var(--green);margin-bottom:12px">No Business Yet</h2>'
       + '<p style="color:var(--muted);font-size:15px;max-width:380px;margin:0 auto 28px">Add your first business to start blasting across every platform.</p>'
       + '<button onclick="window.addBusiness && window.addBusiness()" style="background:var(--green);color:#070D07;border:none;border-radius:10px;padding:14px 30px;font-size:15px;font-weight:700;cursor:pointer">+ Add Your Business</button>';
-    main.prepend(div);
+    body.appendChild(div);
   }
 }
 
@@ -580,10 +579,11 @@ onAuthStateChanged(auth, async (user) => {
       ]);
 
       const biz = bizSnap.exists() ? bizSnap.data() : {};
+      const bizName = biz.businessName || biz.name || '';
       const nameEl = document.getElementById('dashboard-biz-name');
       const snapBiz = document.getElementById('snapshot-biz');
-      if (nameEl) nameEl.textContent = biz.businessName || biz.name || bizId;
-      if (snapBiz) snapBiz.textContent = biz.businessName || biz.name || bizId;
+      if (nameEl) nameEl.textContent = bizName;
+      if (snapBiz) snapBiz.textContent = bizName;
 
       const google    = googleSnap.exists()    ? googleSnap.data()    : null;
       const facebook  = facebookSnap.exists()  ? facebookSnap.data()  : null;
@@ -654,10 +654,22 @@ onAuthStateChanged(auth, async (user) => {
       if (statRevN) { statRevN.textContent = failedJobs.length > 0 ? 'Action needed' : 'All clear'; statRevN.className = failedJobs.length > 0 ? 'stat-note warn' : 'stat-note ok'; }
 
       const liveCount = successJobs.length;
+      const score = Math.min(95, liveCount * 12 + 20);
       const scoreEl = document.getElementById('visibility-score');
-      const barEl = document.getElementById('score-bar');
-      if (scoreEl) scoreEl.textContent = Math.min(95, liveCount * 12 + 20);
-      if (barEl) barEl.style.width = Math.min(95, liveCount * 12 + 20) + '%';
+      const barEl   = document.getElementById('score-bar');
+      const ringEl  = document.getElementById('score-ring');
+      const labelEl = document.getElementById('score-label');
+      const descEl  = document.getElementById('score-desc');
+      if (scoreEl) scoreEl.textContent = score;
+      if (barEl)   barEl.style.width   = score + '%';
+      if (ringEl)  ringEl.style.background = `conic-gradient(var(--green) 0 ${score}%, var(--border) ${score}% 100%)`;
+      if (labelEl) labelEl.textContent = score >= 80 ? 'Strong, nearly complete' : score >= 50 ? 'Building momentum' : 'Just getting started';
+      if (descEl) {
+        const missing = API_PLATFORMS.filter(p => !p.conn || p.conn.status !== 'connected').map(p => p.label);
+        descEl.textContent = missing.length
+          ? `Connect ${missing.join(', ')} to boost your score.`
+          : 'All API platforms connected — keep posting to grow.';
+      }
 
       const statusLabel = { success: 'Done', failed: 'Failed', pending: 'Queued', processing: 'Running', closed: 'Closed', manual_completed: 'Done', manual_required: 'Manual' };
       const statusBadge = { success: 'live', failed: 'needs', pending: 'off', processing: 'off', closed: 'off', manual_completed: 'live', manual_required: 'off' };
@@ -677,6 +689,42 @@ onAuthStateChanged(auth, async (user) => {
       }
       const actEl = document.getElementById('activity-list');
       if (actEl) actEl.innerHTML = actRows;
+
+      // ── Task list — driven by real connection status ──────────────────────
+      const taskEl = document.getElementById('task-list');
+      if (taskEl) {
+        const apiMissing = API_PLATFORMS.filter(p => !p.conn || p.conn.status !== 'connected');
+        let taskRows = '';
+        let taskNum = 1;
+        apiMissing.forEach(p => {
+          taskRows += `<div class="task-row"><div class="platform-icon">${taskNum++}</div><div class="row-main"><div class="row-title">Connect ${p.label}</div><div class="row-sub">Enable auto-posting to this platform.</div></div><a href="BlastyBiz-Connect.html" class="badge needs" style="text-decoration:none">Connect</a></div>`;
+        });
+        if (jobs.length === 0) {
+          taskRows += `<div class="task-row"><div class="platform-icon">${taskNum++}</div><div class="row-main"><div class="row-title">Create your first listing</div><div class="row-sub">AI adapts it for every platform in seconds.</div></div><a href="BlastyBiz.html" class="badge off" style="text-decoration:none">Create</a></div>`;
+        }
+        if (!taskRows) {
+          taskRows = '<div style="color:#587058;font-size:13px;padding:4px 0">All caught up — create a new listing to keep going.</div>';
+        }
+        taskEl.innerHTML = taskRows;
+      }
+
+      // ── Operating snapshot — real numbers ────────────────────────────────
+      const aiUsed    = userData.aiActionsUsed || 0;
+      const aiCap     = { starter: 10, pro: 100, agency: 500 }[userPlan] || 10;
+      const aiCostEst = (aiUsed * 0.012).toFixed(2);
+      const aiUsageEl = document.getElementById('ai-usage-display');
+      const aiCostEl  = document.getElementById('ai-cost-display');
+      const failedEl  = document.getElementById('snapshot-failed');
+      const renewEl   = document.getElementById('snapshot-renewal');
+      if (aiUsageEl) aiUsageEl.textContent = `${aiUsed} / ${aiCap}`;
+      if (aiCostEl)  { aiCostEl.textContent = `$${aiCostEst}`; aiCostEl.className = parseFloat(aiCostEst) > 5 ? 'warn' : 'ok'; }
+      if (failedEl)  { failedEl.textContent = failedJobs.length; failedEl.className = failedJobs.length > 0 ? 'warn' : 'ok'; }
+      if (renewEl) {
+        const resetAt = userData.aiActionsResetAt?.toDate?.();
+        renewEl.textContent = resetAt
+          ? resetAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : '—';
+      }
 
     } catch(e) {
       console.error('loadBusinessContext error:', e);
