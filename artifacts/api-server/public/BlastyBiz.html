@@ -728,6 +728,20 @@
     <p id="ai-suggest-note" style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px;display:none;">Based on your business info above — you can still adjust any toggle.</p>
   </div>
 
+  <!-- AI DIRECTION -->
+  <div class="card" style="margin-top:4px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div class="card-title" style="margin-bottom:0;font-size:14px;">💬 Direction for AI</div>
+      <span style="font-size:11px;color:var(--muted);font-weight:500;">optional</span>
+    </div>
+    <textarea id="ai-direction" rows="2"
+      placeholder="e.g. Make it more casual · Focus on same-day service · Use the phrase 'family-owned' · Shorter and punchier"
+      style="width:100%;box-sizing:border-box;background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--light);font-size:13px;padding:10px 12px;resize:none;font-family:inherit;line-height:1.5;outline:none;transition:border-color .15s;"
+      onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'"
+      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+    <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.4;">Tell the AI what to adjust — it'll bake your direction into every platform's copy.</p>
+  </div>
+
   <div class="ai-loading" id="ai-loading">
     <div class="ai-spinner"></div>
     <div class="ai-loading-text">⚡ AI is adapting your listing...</div>
@@ -737,6 +751,18 @@
   <button class="btn btn-primary" id="adapt-btn" onclick="runAdaptation()" disabled>
     ⚡ Adapt & Prepare All Platforms
   </button>
+
+  <!-- REWRITE + CLEAR — visible after first adaptation -->
+  <div id="rewrite-row" style="display:none;gap:10px;margin-top:4px;">
+    <button class="btn" onclick="runAdaptation()"
+      style="flex:1;background:rgba(0,200,83,0.1);border-color:var(--green);color:var(--green);font-weight:700;">
+      🔄 Rewrite
+    </button>
+    <button class="btn" onclick="clearAndStartOver()"
+      style="flex:0 0 auto;color:var(--muted);border-color:var(--border);">
+      🗑️ Clear
+    </button>
+  </div>
 
   <div class="bottom-safe"></div>
 </div>
@@ -1199,16 +1225,17 @@ function removeImage(index) {
 // RUN ADAPTATION — Real AI Call
 // ══════════════════════════════════════════
 async function runAdaptation() {
-  const name     = document.getElementById('biz-name').value.trim();
-  const category = document.getElementById('biz-category').value;
-  const offer    = document.getElementById('biz-offer').value.trim();
-  const price    = document.getElementById('biz-price').value.trim();
-  const phone    = document.getElementById('biz-phone').value.trim();
-  const address  = locationType === 'physical' ? document.getElementById('biz-address').value.trim() : '';
-  const region   = locationType === 'online'   ? (document.getElementById('biz-region')?.value.trim() || '') : '';
-  const website  = document.getElementById('biz-website').value.trim();
-  const hours    = document.getElementById('biz-hours').value.trim();
-  const tone     = profile.tone || 'friendly';
+  const name      = document.getElementById('biz-name').value.trim();
+  const category  = document.getElementById('biz-category').value;
+  const offer     = document.getElementById('biz-offer').value.trim();
+  const price     = document.getElementById('biz-price').value.trim();
+  const phone     = document.getElementById('biz-phone').value.trim();
+  const address   = locationType === 'physical' ? document.getElementById('biz-address').value.trim() : '';
+  const region    = locationType === 'online'   ? (document.getElementById('biz-region')?.value.trim() || '') : '';
+  const website   = document.getElementById('biz-website').value.trim();
+  const hours     = document.getElementById('biz-hours').value.trim();
+  const tone      = profile.tone || 'friendly';
+  const direction = document.getElementById('ai-direction')?.value?.trim() || '';
 
   if (!offer) { showToast('Add your offer description first'); return; }
 
@@ -1229,7 +1256,7 @@ async function runAdaptation() {
   }));
 
   const prompt = `You are a local business marketing expert. Adapt the following business listing for each platform listed. Return ONLY a valid JSON object — no markdown, no explanation, no backticks.
-
+${direction ? `\n⚡ PRIORITY DIRECTION FROM USER (apply to ALL platforms): "${direction}"\nThis overrides default style rules where they conflict.\n` : ''}
 BUSINESS INFO:
 - Name: ${name || 'Local Business'}
 - Category: ${category || 'General'}
@@ -1302,6 +1329,10 @@ Return this exact JSON structure:
     showTab('platforms');
     showToast('✅ ' + enabledPlatforms.length + ' platforms ready!');
 
+    // Show Rewrite + Clear controls
+    const rewriteRow = document.getElementById('rewrite-row');
+    if (rewriteRow) rewriteRow.style.display = 'flex';
+
     // Save draft to Firestore + show "Review Listings" button
     const reviewBtn = document.getElementById('review-listings-btn');
     if (reviewBtn) {
@@ -1320,6 +1351,44 @@ Return this exact JSON structure:
     btn.style.display = 'flex';
     loader.classList.remove('visible');
   }
+}
+
+// ══════════════════════════════════════════
+// CLEAR & START OVER
+// ══════════════════════════════════════════
+function clearAndStartOver() {
+  // Clear all form fields
+  ['biz-name','biz-offer','biz-price','biz-phone','biz-address','biz-region','biz-website','biz-hours']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const cat = document.getElementById('biz-category');
+  if (cat) cat.value = '';
+  const dir = document.getElementById('ai-direction');
+  if (dir) { dir.value = ''; dir.style.height = 'auto'; }
+  const offerCount = document.getElementById('offer-count');
+  if (offerCount) offerCount.textContent = '0 / 500';
+
+  // Reset to physical location type
+  setLocationType('physical');
+
+  // Reset platforms to defaults
+  platforms = PLATFORMS.map(p => ({...p, adaptedContent: null, status: 'idle'}));
+  savePlatforms();
+  renderPlatforms();
+
+  // Hide rewrite row + review button
+  const rewriteRow = document.getElementById('rewrite-row');
+  if (rewriteRow) rewriteRow.style.display = 'none';
+  const reviewBtn = document.getElementById('review-listings-btn');
+  if (reviewBtn) reviewBtn.style.display = 'none';
+
+  // Reset draft state
+  draft = {};
+  window._currentDraftId = null;
+
+  // Switch to listing tab
+  showTab('listing');
+  checkAdaptBtn();
+  showToast('🗑️ Cleared — ready for a new listing');
 }
 
 // ══════════════════════════════════════════
