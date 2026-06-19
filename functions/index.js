@@ -799,7 +799,7 @@ exports.postToAppleMaps = onRequest(async (req, res) => {
 // Firestore trigger — publishJobs/{jobId} created
 // Dispatches pending auto-post jobs to the right platform helper
 // ══════════════════════════════════════════
-exports.onJobCreated = onDocumentCreated(
+exports.jobCreatedTrigger = onDocumentCreated(
   { document: 'publishJobs/{jobId}', region: 'us-central1', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
   async (event) => {
     const job   = event.data.data();
@@ -856,7 +856,7 @@ exports.onJobCreated = onDocumentCreated(
       });
 
     } catch(e) {
-      console.error(`onJobCreated [${jobId}] failed:`, e.message);
+      console.error(`jobCreatedTrigger [${jobId}] failed:`, e.message);
       await db.collection('publishJobs').doc(jobId).update({
         status: 'failed',
         adminError: e.message,
@@ -872,7 +872,7 @@ exports.onJobCreated = onDocumentCreated(
 // Firestore trigger — publishJobs/{jobId} updated
 // Sends failure email via Resend when status → 'failed'
 // ══════════════════════════════════════════
-exports.onJobFailed = onDocumentUpdated(
+exports.jobFailedTrigger = onDocumentUpdated(
   { document: 'publishJobs/{jobId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
   async (event) => {
     const before = event.data.before.data();
@@ -916,7 +916,7 @@ exports.onJobFailed = onDocumentUpdated(
 // Firestore trigger — users/{uid} created
 // Sends welcome email via Resend
 // ══════════════════════════════════════════
-exports.onUserCreated = onDocumentCreated(
+exports.userCreatedTrigger = onDocumentCreated(
   { document: 'users/{uid}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
   async (event) => {
     const data = event.data.data();
