@@ -7,6 +7,21 @@
 <section class="hero"><div class="card"><div class="eyebrow">Admin operating screen</div><h1 class="big-title">Subscriptions <span>& Revenue</span></h1><p class="sub">This page tracks Square status, plan mix, MRR, payment failures, trial conversions, and downgrade risk. Customers should never see margins or AI cost; this page is owner-only.</p><div class="btn-row"><button class="btn btn-primary" onclick="window.open('https://squareup.com/dashboard/sales/transactions','_blank')">Open Square Dashboard</button><button class="btn">Send Recovery Emails</button><button class="btn">Export Billing CSV</button></div></div><div class="card"><div class="card-title">💳 Money Snapshot</div><div class="list"><div class="row"><div class="icon">$</div><div class="row-main"><div class="row-title">$1,842 MRR</div><div class="row-sub">Early-stage recurring revenue placeholder.</div></div><span class="badge live">MRR</span></div><div class="row"><div class="icon">!</div><div class="row-main"><div class="row-title">9 past due</div><div class="row-sub">Recover before downgrade or cancel.</div></div><span class="badge needs">Action</span></div></div></div></section>
 <section style="margin-bottom:10px"><div style="background:#1a120a;border:1px solid #FFA726;border-radius:10px;padding:12px 16px;font-size:13px;color:#FFA726;display:flex;align-items:center;gap:10px"><span>⚠️</span><span><strong>Demo data</strong> — MRR, Gross Margin, and Trials update from Firestore when businesses are on file. AI Spend is a placeholder until billing telemetry is wired.</span></div></section><section class="grid"><div class="stat"><div class="stat-num">$1,842</div><div class="stat-label">MRR</div><div class="stat-note money">Monthly recurring</div></div><div class="stat"><div class="stat-num">$126</div><div class="stat-label">AI Spend</div><div class="stat-note warn">Demo — not live</div></div><div class="stat"><div class="stat-num">86%</div><div class="stat-label">Gross Margin</div><div class="stat-note money">Target > 75%</div></div><div class="stat"><div class="stat-num">12</div><div class="stat-label">Trials Ending</div><div class="stat-note blue">Next 7 days</div></div></section>
 <section class="two-col"><div class="card"><div class="card-title">📦 Plan Mix</div><table><thead><tr><th>Plan</th><th>Price</th><th>Accounts</th><th>Monthly Revenue</th></tr></thead><tbody><tr><td>Starter (Free)</td><td>$0</td><td>18</td><td>$0</td></tr><tr><td>Pro</td><td>$19</td><td>32</td><td>$608</td></tr><tr><td>Agency</td><td>$99</td><td>6</td><td>$594</td></tr></tbody></table></div><div class="card"><div class="card-title">⚠️ Billing Follow-up</div><table><thead><tr><th>Business</th><th>Plan</th><th>Problem</th><th>Action</th></tr></thead><tbody><tr><td>Harbor Plumbing</td><td>Pro</td><td>Card failed</td><td>Send recovery</td></tr><tr><td>Elite Lawn Care</td><td>Starter</td><td>Trial ending</td><td>Prompt upgrade</td></tr><tr><td>Faith Auto Repair</td><td>Free</td><td>High usage</td><td>Upsell Pro</td></tr></tbody></table></div></section>
+<section class="card" style="margin-bottom:16px"><div class="card-title">💰 Pricing Control</div>
+<p style="font-size:13px;color:var(--muted);margin-bottom:16px">Display prices shown on the home page and used in MRR calculations. <strong style="color:var(--warn)">Changing prices here does NOT update Square</strong> — you must also create a new Square subscription plan and update <code>SQUARE_PRO_PLAN_ID</code> / <code>SQUARE_AGENCY_PLAN_ID</code> secrets.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+  <div>
+    <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--silver);display:block;margin-bottom:6px">Pro / month ($)</label>
+    <input id="inp-pro" type="number" min="0" step="1" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--light);padding:10px 14px;font-size:16px;font-family:inherit" placeholder="19"/>
+  </div>
+  <div>
+    <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--silver);display:block;margin-bottom:6px">Agency / month ($)</label>
+    <input id="inp-agency" type="number" min="0" step="1" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--light);padding:10px 14px;font-size:16px;font-family:inherit" placeholder="99"/>
+  </div>
+</div>
+<button id="btn-save-pricing" class="btn btn-primary" onclick="savePricing()" style="min-width:140px">Save Prices</button>
+<span id="pricing-status" style="font-size:13px;margin-left:12px;color:var(--muted)"></span>
+</section>
 <section class="card"><div class="card-title">🧠 Replit Billing Rules</div><div class="list"><div class="row"><div class="icon">1</div><div class="row-main"><div class="row-title">Square is source of truth for billing</div><div class="row-sub">Firestore can cache currentPlan, squareCustomerId, subscriptionStatus, trialEndsAt, and currentPeriodEnd.</div></div></div><div class="row"><div class="icon">2</div><div class="row-main"><div class="row-title">Do not delete customer data when subscription lapses</div><div class="row-sub">Downgrade features, keep profile/listing data, and allow reactivation.</div></div></div><div class="row"><div class="icon">3</div><div class="row-main"><div class="row-title">AI usage must be capped by plan</div><div class="row-sub">Track monthly aiActionsUsed and generatedPostsUsed so margins stay safe.</div></div></div></div></section></main><nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="active" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a></nav><script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -43,6 +58,41 @@ onAuthStateChanged(auth, (user) => {
     }
   });
 });
+</script>
+<script type="module">
+import { auth } from './firebase-init-v2.js';
+import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+const db2 = getFirestore();
+// Load current prices into editor fields
+getDoc(doc(db2, 'settings', 'pricing')).then(snap => {
+  if (!snap.exists()) return;
+  const { proMonthly, agencyMonthly } = snap.data();
+  if (proMonthly)    document.getElementById('inp-pro').value    = proMonthly;
+  if (agencyMonthly) document.getElementById('inp-agency').value = agencyMonthly;
+}).catch(() => {});
+
+window.savePricing = async function() {
+  const btn = document.getElementById('btn-save-pricing');
+  const status = document.getElementById('pricing-status');
+  const pro    = parseFloat(document.getElementById('inp-pro').value);
+  const agency = parseFloat(document.getElementById('inp-agency').value);
+  if (isNaN(pro) || isNaN(agency)) { status.textContent = '⚠️ Enter valid numbers'; return; }
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const r = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/adminUpdatePricing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ proMonthly: pro, agencyMonthly: agency }),
+    });
+    const j = await r.json();
+    if (j.ok) { status.style.color = '#00C853'; status.textContent = '✔ Saved — home page prices updated'; }
+    else { status.style.color = '#FF4444'; status.textContent = '⚠️ ' + (j.error || 'Failed'); }
+  } catch(e) {
+    status.style.color = '#FF4444'; status.textContent = '⚠️ ' + e.message;
+  }
+  btn.disabled = false; btn.textContent = 'Save Prices';
+};
 </script>
 <script type="module" src="./auth-guard.js"></script>
 </body></html>

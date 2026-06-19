@@ -59,6 +59,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Settings (pricing etc) — public read, backend-only write
+    match /settings/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Block everything else
     match /{document=**} {
       allow read, write: if false;

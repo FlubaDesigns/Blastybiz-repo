@@ -1229,7 +1229,9 @@ exports.adminSubscriptionSummary = onRequest(async (req, res) => {
     const p = d.data().plan || 'starter';
     planCounts[p] = (planCounts[p] || 0) + 1;
   });
-  const MRR_PRICES = { starter: 0, pro: 49, agency: 149 };
+  const pricingSnap = await db.collection('settings').doc('pricing').get();
+  const pricingData = pricingSnap.exists ? pricingSnap.data() : {};
+  const MRR_PRICES = { starter: 0, pro: pricingData.proMonthly || 19, agency: pricingData.agencyMonthly || 99 };
   const mrr = Object.entries(planCounts)
     .reduce((sum, [plan, count]) => sum + (MRR_PRICES[plan] || 0) * count, 0);
   res.json({
@@ -1238,4 +1240,26 @@ exports.adminSubscriptionSummary = onRequest(async (req, res) => {
     totalSubscriptions: subsSnap.size,
     asOf: new Date().toISOString(),
   });
+});
+
+// ══════════════════════════════════════════
+// Function 30: adminUpdatePricing
+// POST /adminUpdatePricing  { proMonthly, agencyMonthly }
+// Admin-only: writes display prices to settings/pricing in Firestore
+// ══════════════════════════════════════════
+exports.adminUpdatePricing = onRequest(async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: 'Forbidden' }); }
+  const { proMonthly, agencyMonthly } = req.body;
+  if (!proMonthly || !agencyMonthly) return res.status(400).json({ error: 'proMonthly and agencyMonthly required' });
+  const pro = parseFloat(proMonthly);
+  const agency = parseFloat(agencyMonthly);
+  if (isNaN(pro) || isNaN(agency) || pro < 0 || agency < 0) return res.status(400).json({ error: 'Invalid prices' });
+  await db.collection('settings').doc('pricing').set({
+    proMonthly: pro,
+    agencyMonthly: agency,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }, { merge: true });
+  res.json({ ok: true, proMonthly: pro, agencyMonthly: agency });
 });

@@ -905,7 +905,7 @@ footer {
       <div class="price-badge">Most Popular</div>
       <div class="price-tier">Pro</div>
       <div class="price-amount">
-        <div class="price-num">$19</div>
+        <div class="price-num" id="price-pro">$19</div>
         <div class="price-per">/ month</div>
       </div>
       <ul class="price-features">
@@ -923,7 +923,7 @@ footer {
     <div class="price-card">
       <div class="price-tier">Agency</div>
       <div class="price-amount">
-        <div class="price-num">$99</div>
+        <div class="price-num" id="price-agency">$99</div>
         <div class="price-per">/ month</div>
       </div>
       <ul class="price-features">
@@ -1036,6 +1036,18 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+const app = initializeApp({ apiKey:"AIzaSyDJbLFQLVbMFE8LG22mN4JVmSBHOlimFUs",authDomain:"blastybiz-9523e.firebaseapp.com",projectId:"blastybiz-9523e" });
+const db = getFirestore(app);
+getDoc(doc(db, 'settings', 'pricing')).then(snap => {
+  if (!snap.exists()) return;
+  const { proMonthly, agencyMonthly } = snap.data();
+  if (proMonthly)    document.getElementById('price-pro').textContent    = '$' + proMonthly;
+  if (agencyMonthly) document.getElementById('price-agency').textContent = '$' + agencyMonthly;
+}).catch(() => {});
 </script>
 </body>
 </html>
