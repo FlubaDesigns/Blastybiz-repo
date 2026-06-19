@@ -694,8 +694,8 @@ select option { background: var(--dark); }
           <div class="welcome-feat">
             <span class="feat-icon">📡</span>
             <div class="feat-text">
-              <strong>12+ platforms at once</strong>
-              Google, Facebook, Craigslist, Nextdoor and more
+              <strong>12 platforms, one form</strong>
+              3 auto-post (Google, Facebook, Instagram) + 9 copy-ready
             </div>
           </div>
         </div>
@@ -1102,8 +1102,7 @@ function updateUI() {
     const name = document.getElementById('s-name')?.value || 'Your business';
     document.getElementById('success-sub').textContent =
       `${name} is all set. AI is ready to post you everywhere.`;
-    document.getElementById('ss-platforms').textContent =
-      12 + connectedPlatforms.length;
+    document.getElementById('ss-platforms').textContent = 12;
   }
 }
 
