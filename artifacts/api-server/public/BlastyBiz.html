@@ -1705,7 +1705,7 @@ onAuthStateChanged(auth, async (user) => {
     ));
     if (!connsSnap.empty) {
       const connMap = {};
-      connsSnap.forEach(d => { connMap[d.data().platformId] = d.data(); });
+      connsSnap.forEach(d => { connMap[d.data().platform || d.data().platformId] = d.data(); });
       const updatedPlatforms = PLATFORMS.map(p => {
         const conn = connMap[p.id];
         return conn ? { ...p, enabled: !!conn.enabled, status: conn.status || 'idle' } : p;
@@ -1787,7 +1787,7 @@ document.addEventListener('bb:savePlatforms', async (e) => {
       batch.set(ref, {
         uid: currentUser.uid,
         businessId: activeBizId,
-        platformId: p.id,
+        platform: p.id,
         platformName: p.name,
         enabled: !!p.enabled,
         status: p.status || 'idle',

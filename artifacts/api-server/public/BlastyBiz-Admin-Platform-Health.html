@@ -39,7 +39,7 @@ onAuthStateChanged(auth, (user) => {
     const tbody = document.querySelector('table tbody');
     if (tbody) {
       tbody.innerHTML = PLATFORM_META.map(p => {
-        const platformConns = conns.filter(c => c.platform === p.id || c.platformId === p.id);
+        const platformConns = conns.filter(c => c.platform === p.id);
         const anyExpired = platformConns.some(c => c.status === 'expired' || c.status === 'error');
         const anyConnected = platformConns.some(c => c.status === 'connected' || c.enabled);
         const isManual = p.mode === 'Manual';

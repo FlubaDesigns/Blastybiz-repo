@@ -414,78 +414,7 @@ async function _publishInstagramJob(job, conn) {
 }
 
 // ══════════════════════════════════════════
-// Function 5: postToGoogle
-// POST /postToGoogle  (direct HTTP endpoint — also backed by _publishGoogleJob)
-// ══════════════════════════════════════════
-exports.postToGoogle = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-  try { await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
-  const { content, imageUrls, accessToken, locationId, accountId } = req.body;
-  try {
-    const response = await axios.post(
-      `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/localPosts`,
-      {
-        languageCode: 'en-US', summary: content,
-        media: (imageUrls || []).map(url => ({ mediaFormat: 'PHOTO', sourceUrl: url }))
-      },
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    res.json({ success: true, postId: response.data.name });
-  } catch(e) {
-    const msg = e.response?.data?.error?.message || e.message;
-    res.status(500).json({ error: msg });
-  }
-});
-
-// ══════════════════════════════════════════
-// Function 6: postToFacebook
-// POST /postToFacebook
-// ══════════════════════════════════════════
-exports.postToFacebook = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-  try { await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
-  const { content, accessToken, pageId } = req.body;
-  try {
-    const response = await axios.post(
-      `https://graph.facebook.com/v18.0/${pageId}/feed`,
-      { message: content, access_token: accessToken }
-    );
-    res.json({ success: true, postId: response.data.id });
-  } catch(e) {
-    const msg = e.response?.data?.error?.message || e.message;
-    res.status(500).json({ error: msg });
-  }
-});
-
-// ══════════════════════════════════════════
-// Function 7: postToInstagram
-// POST /postToInstagram — two-step: create container then publish
-// ══════════════════════════════════════════
-exports.postToInstagram = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-  try { await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
-  const { caption, imageUrl, accessToken, igUserId } = req.body;
-  try {
-    const media = await axios.post(
-      `https://graph.facebook.com/v18.0/${igUserId}/media`,
-      { image_url: imageUrl, caption, access_token: accessToken }
-    );
-    const publish = await axios.post(
-      `https://graph.facebook.com/v18.0/${igUserId}/media_publish`,
-      { creation_id: media.data.id, access_token: accessToken }
-    );
-    res.json({ success: true, postId: publish.data.id });
-  } catch(e) {
-    const msg = e.response?.data?.error?.message || e.message;
-    res.status(500).json({ error: msg });
-  }
-});
-
-// ══════════════════════════════════════════
-// Function 8: createCheckoutSession
+// Function 5: createCheckoutSession
 // POST /createCheckoutSession
 // ══════════════════════════════════════════
 exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN', 'SQUARE_LOCATION_ID', 'SQUARE_PRO_PLAN_ID', 'SQUARE_AGENCY_PLAN_ID'] }, async (req, res) => {
@@ -709,7 +638,7 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
     } catch(e) { /* accounts/locations can be resolved on first use */ }
 
     await db.collection('platformConnections').doc(`${businessId}_google`).set({
-      businessId, uid, platform: 'google', platformId: 'google', status: 'connected',
+      businessId, uid, platform: 'google', status: 'connected',
       accessToken: access_token, refreshToken: refresh_token || '',
       accountId, locationId,
       connectedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -794,7 +723,7 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', secrets: ['FACEBO
 
     const batch = db.batch();
     batch.set(db.collection('platformConnections').doc(`${businessId}_facebook`), {
-      businessId, uid, platform: 'facebook', platformId: 'facebook', status: 'connected',
+      businessId, uid, platform: 'facebook', status: 'connected',
       accessToken: pageToken, pageId: page?.id || '',
       pageName: page?.name || '',
       allPages: pages.map(p => ({ id: p.id, name: p.name })),
@@ -803,7 +732,7 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', secrets: ['FACEBO
 
     if (igUserId) {
       batch.set(db.collection('platformConnections').doc(`${businessId}_instagram`), {
-        businessId, uid, platform: 'instagram', platformId: 'instagram', status: 'connected',
+        businessId, uid, platform: 'instagram', status: 'connected',
         accessToken: pageToken, igUserId, pageId: page?.id || '',
         connectedAt: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
@@ -858,13 +787,11 @@ exports.postToAppleMaps = onRequest({ invoker: 'public' }, async (req, res) => {
 });
 
 // ══════════════════════════════════════════
-// Function 17: onJobCreated
+// Function 17: dispatchPublishJob
 // Firestore trigger — publishJobs/{jobId} created
 // Dispatches pending auto-post jobs to the right platform helper
-// DISABLED: Firebase has conflicting HTTPS stubs; clean up via console then re-enable
 // ══════════════════════════════════════════
-/* DISABLED_TRIGGER_onPublishJobCreated
-exports.onPublishJobCreated = onDocumentCreated(
+exports.dispatchPublishJob = onDocumentCreated(
   { document: 'publishJobs/{jobId}', region: 'us-central1', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
   async (event) => {
     const job   = event.data.data();
@@ -931,7 +858,6 @@ exports.onPublishJobCreated = onDocumentCreated(
     }
   }
 );
-DISABLED_TRIGGER_onPublishJobCreated */
 
 // ══════════════════════════════════════════
 // Function 18: onJobFailed
