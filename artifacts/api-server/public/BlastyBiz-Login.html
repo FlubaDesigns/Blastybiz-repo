@@ -819,6 +819,7 @@ function showToast(msg, isError = false) {
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import {
+  onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -852,7 +853,19 @@ async function afterAuth(user) {
   }
 }
 
-// Handle Google redirect result on mobile (fires after returning from Google)
+// Primary auth state listener — fires for:
+//   • page load when already signed in
+//   • returning from signInWithRedirect (mobile Google)
+//   • any other sign-in that changes auth state
+let afterAuthCalled = false;
+onAuthStateChanged(auth, async (user) => {
+  if (!user || afterAuthCalled) return;
+  afterAuthCalled = true;
+  await afterAuth(user);
+});
+
+// On mobile redirect return: ensure Firestore user doc exists for new Google users.
+// afterAuth is handled by onAuthStateChanged above.
 getRedirectResult(auth).then(async (result) => {
   if (!result?.user) return;
   const snap = await getDoc(doc(db, 'users', result.user.uid));
@@ -865,14 +878,10 @@ getRedirectResult(auth).then(async (result) => {
       createdAt: serverTimestamp()
     });
   }
-  await afterAuth(result.user);
 }).catch(e => {
-  if (e.code !== 'auth/popup-closed-by-user') window.showToast('Google sign-in failed', true);
-});
-
-// One-time check on page load: redirect if already signed in
-auth.authStateReady().then(() => {
-  if (auth.currentUser) afterAuth(auth.currentUser);
+  if (e.code && e.code !== 'auth/popup-closed-by-user') {
+    window.showToast('Google sign-in failed', true);
+  }
 });
 
 window.handleSignIn = async function() {

@@ -5,9 +5,7 @@ import { getStorage } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-
 
 const firebaseConfig = {
   apiKey: "AIzaSyCyEwA6jGHp0xjAJO3NOXHblYfpajtFXGM",
-  authDomain: window.location.hostname === 'localhost'
-    ? 'blastybiz-9523e.firebaseapp.com'
-    : window.location.hostname,
+  authDomain: "blastybiz-9523e.firebaseapp.com",
   projectId: "blastybiz-9523e",
   storageBucket: "blastybiz-9523e.firebasestorage.app",
   messagingSenderId: "745597683278",
