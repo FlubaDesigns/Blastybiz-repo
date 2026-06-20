@@ -914,11 +914,6 @@
     🗑️ Clear All Data
   </button>
 
-  <div style="text-align:center;margin-top:24px;">
-    <div style="font-size:11px;color:var(--muted);letter-spacing:1px;">LOCALLOUD v1.0</div>
-    <div style="font-size:10px;color:var(--muted);margin-top:4px;">A Fluba Designs Product</div>
-  </div>
-
   <div class="bottom-safe"></div>
 </div>
 
@@ -1028,7 +1023,7 @@ function buildPlatformCard(p) {
        </div>`
     : `<div class="copy-box" id="copy-${p.id}"></div>`;
 
-  const starterLocked = p.type === 'api' && (window._bbUserPlan || userPlan) === 'starter';
+  const starterLocked = p.type === 'api' && (window._bbUserPlan || 'starter') === 'starter';
   const actionBtn = starterLocked
     ? `<a href="BlastyBiz-Dashboard.html?checkout=pro" class="btn btn-outline btn-sm" style="border-color:#00C853;color:#00C853;font-size:11px;">⚡ Upgrade to Auto-Post</a>`
     : p.type === 'api'

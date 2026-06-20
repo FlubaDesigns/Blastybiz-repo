@@ -996,10 +996,10 @@ window.addEventListener('resize', () => { resizeCanvas(); createParticles(); });
 // ══════════════════════════════════════════
 const TOTAL_STEPS = 6;
 let currentStep = 0;
-let selectedCategory = '';
-let selectedTone = 'friendly';
-let connectedPlatforms = [];
-let selectedDays = ['Mon','Tue','Wed','Thu','Fri','Sat'];
+var selectedCategory = '';
+var selectedTone = 'friendly';
+var connectedPlatforms = [];
+var selectedDays = ['Mon','Tue','Wed','Thu','Fri','Sat'];
 
 const STEP_LABELS = [
   'Welcome',
@@ -1175,7 +1175,7 @@ const PLATFORM_CATS = {
 // ══════════════════════════════════════════
 // CATEGORY RESOLVER
 // ══════════════════════════════════════════
-let resolvedCats = {};
+var resolvedCats = {};
 
 async function resolveCats() {
   const desc = document.getElementById('s-biztype')?.value?.trim();
