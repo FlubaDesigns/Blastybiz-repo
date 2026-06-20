@@ -317,6 +317,14 @@ select option { background: var(--dark); }
 }
 .tag-auto { background: rgba(0,200,83,0.1); color: var(--green); }
 .tag-copy { background: rgba(255,167,38,0.1); color: #FFA726; }
+.connect-setup {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: #4FC3F7;
+  text-decoration: none;
+  font-weight: 600;
+}
 
 .connect-btn {
   background: transparent;
@@ -871,6 +879,7 @@ select option { background: var(--dark); }
           <div class="connect-info">
             <div class="connect-name">Google Business</div>
             <div class="connect-desc">Show up in Google Search & Maps</div>
+            <a class="connect-setup" href="https://business.google.com/create" target="_blank" rel="noopener">No profile yet? Create one →</a>
             <span class="connect-tag tag-auto">Auto-Post</span>
           </div>
           <button class="connect-btn" onclick="connectPlatform('google', this)">Connect</button>
@@ -881,6 +890,7 @@ select option { background: var(--dark); }
           <div class="connect-info">
             <div class="connect-name">Facebook Business</div>
             <div class="connect-desc">Post to your Facebook Page</div>
+            <a class="connect-setup" href="https://www.facebook.com/pages/create" target="_blank" rel="noopener">No Page yet? Create one →</a>
             <span class="connect-tag tag-auto">Auto-Post</span>
           </div>
           <button class="connect-btn" onclick="connectPlatform('facebook', this)">Connect</button>
@@ -891,6 +901,7 @@ select option { background: var(--dark); }
           <div class="connect-info">
             <div class="connect-name">Instagram Business</div>
             <div class="connect-desc">Reach your Instagram audience</div>
+            <a class="connect-setup" href="https://business.instagram.com" target="_blank" rel="noopener">Convert to Business account →</a>
             <span class="connect-tag tag-auto">Auto-Post</span>
           </div>
           <button class="connect-btn" onclick="connectPlatform('instagram', this)">Connect</button>
@@ -901,6 +912,7 @@ select option { background: var(--dark); }
           <div class="connect-info">
             <div class="connect-name">Nextdoor</div>
             <div class="connect-desc">AI formats — you copy & paste</div>
+            <a class="connect-setup" href="https://business.nextdoor.com" target="_blank" rel="noopener">Claim your business →</a>
             <span class="connect-tag tag-copy">Copy & Paste</span>
           </div>
           <button class="connect-btn done">Ready ✓</button>
@@ -911,6 +923,7 @@ select option { background: var(--dark); }
           <div class="connect-info">
             <div class="connect-name">Yelp</div>
             <div class="connect-desc">AI formats — you copy & paste</div>
+            <a class="connect-setup" href="https://biz.yelp.com/claim" target="_blank" rel="noopener">Claim your listing →</a>
             <span class="connect-tag tag-copy">Copy & Paste</span>
           </div>
           <button class="connect-btn done">Ready ✓</button>
@@ -921,6 +934,7 @@ select option { background: var(--dark); }
           <div class="connect-info">
             <div class="connect-name">Thumbtack</div>
             <div class="connect-desc">AI formats — you copy & paste</div>
+            <a class="connect-setup" href="https://www.thumbtack.com/pro" target="_blank" rel="noopener">Join as a pro →</a>
             <span class="connect-tag tag-copy">Copy & Paste</span>
           </div>
           <button class="connect-btn done">Ready ✓</button>
@@ -931,6 +945,7 @@ select option { background: var(--dark); }
           <div class="connect-info">
             <div class="connect-name">Angi</div>
             <div class="connect-desc">AI formats — you copy & paste</div>
+            <a class="connect-setup" href="https://pro.angi.com" target="_blank" rel="noopener">Join as a pro →</a>
             <span class="connect-tag tag-copy">Copy & Paste</span>
           </div>
           <button class="connect-btn done">Ready ✓</button>
@@ -941,6 +956,7 @@ select option { background: var(--dark); }
           <div class="connect-info">
             <div class="connect-name">Alignable</div>
             <div class="connect-desc">AI formats — you copy & paste</div>
+            <a class="connect-setup" href="https://www.alignable.com" target="_blank" rel="noopener">Create free account →</a>
             <span class="connect-tag tag-copy">Copy & Paste</span>
           </div>
           <button class="connect-btn done">Ready ✓</button>
@@ -951,6 +967,7 @@ select option { background: var(--dark); }
           <div class="connect-info">
             <div class="connect-name">FB Marketplace</div>
             <div class="connect-desc">AI formats — you paste & post</div>
+            <a class="connect-setup" href="https://www.facebook.com/marketplace/create/item" target="_blank" rel="noopener">Post directly on Marketplace →</a>
             <span class="connect-tag tag-copy">Copy & Paste</span>
           </div>
           <button class="connect-btn done">Ready ✓</button>
@@ -961,6 +978,7 @@ select option { background: var(--dark); }
           <div class="connect-info">
             <div class="connect-name">Craigslist</div>
             <div class="connect-desc">AI formats — you paste & post</div>
+            <a class="connect-setup" href="https://accounts.craigslist.org/login/signup" target="_blank" rel="noopener">Create free account →</a>
             <span class="connect-tag tag-copy">Copy & Paste</span>
           </div>
           <button class="connect-btn done">Ready ✓</button>
@@ -970,7 +988,8 @@ select option { background: var(--dark); }
           <span class="connect-icon">🔵</span>
           <div class="connect-info">
             <div class="connect-name">Bing Places</div>
-            <div class="connect-desc">Manual — bingplaces.com</div>
+            <div class="connect-desc">Claim & manage at bingplaces.com</div>
+            <a class="connect-setup" href="https://www.bingplaces.com" target="_blank" rel="noopener">Go to Bing Places →</a>
             <span class="connect-tag tag-copy">Manual</span>
           </div>
           <button class="connect-btn done">Ready ✓</button>
@@ -980,7 +999,8 @@ select option { background: var(--dark); }
           <span class="connect-icon">🍎</span>
           <div class="connect-info">
             <div class="connect-name">Apple Maps</div>
-            <div class="connect-desc">Manual — mapsconnect.apple.com</div>
+            <div class="connect-desc">Claim & manage at mapsconnect.apple.com</div>
+            <a class="connect-setup" href="https://mapsconnect.apple.com" target="_blank" rel="noopener">Go to Apple Maps Connect →</a>
             <span class="connect-tag tag-copy">Manual</span>
           </div>
           <button class="connect-btn done">Ready ✓</button>
