@@ -144,7 +144,8 @@ BUSINESS INFO:
 - Description: ${listing.offer}
 - Price/Range: ${listing.price || 'not specified'}
 - Phone: ${listing.phone || 'not provided'}
-- Address: ${listing.address || 'not provided'}
+- Location type: ${listing.locationType === 'online' ? 'Online only' : 'Physical location'}
+- Address/Area: ${listing.locationType === 'online' ? (listing.region ? 'Serves: ' + listing.region : 'Online — no physical address') : (listing.address || 'not provided')}
 - Website: ${listing.website || 'none'}
 - Hours: ${listing.hours || 'not provided'}
 - Images attached: ${listing.imageCount > 0 ? listing.imageCount + ' photo(s)' : 'none'}
@@ -860,13 +861,11 @@ exports.dispatchPublishJob = onDocumentCreated(
 );
 
 // ══════════════════════════════════════════
-// Function 18: onJobFailed
+// Function 18: jobFailedTrigger
 // Firestore trigger — publishJobs/{jobId} updated
 // Sends failure email via Resend when status → 'failed'
-// DISABLED: Firebase has conflicting HTTPS stubs; clean up via console then re-enable
 // ══════════════════════════════════════════
-/* DISABLED_TRIGGER_onPublishJobFailed
-exports.onPublishJobFailed = onDocumentUpdated(
+exports.jobFailedTrigger = onDocumentUpdated(
   { document: 'publishJobs/{jobId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
   async (event) => {
     const before = event.data.before.data();
@@ -904,16 +903,13 @@ exports.onPublishJobFailed = onDocumentUpdated(
     });
   }
 );
-DISABLED_TRIGGER_onPublishJobFailed */
 
 // ══════════════════════════════════════════
-// Function 18: onUserCreated
+// Function 19: userCreatedTrigger
 // Firestore trigger — users/{uid} created
 // Sends welcome email via Resend
-// DISABLED: Firebase has conflicting HTTPS stubs; clean up via console then re-enable
 // ══════════════════════════════════════════
-/* DISABLED_TRIGGER_onUserSignup
-exports.onUserSignup = onDocumentCreated(
+exports.userCreatedTrigger = onDocumentCreated(
   { document: 'users/{uid}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
   async (event) => {
     const data = event.data.data();
@@ -945,10 +941,9 @@ exports.onUserSignup = onDocumentCreated(
     });
   }
 );
-DISABLED_TRIGGER_onUserSignup */
 
 // ══════════════════════════════════════════
-// Function 19: deleteAccount
+// Function 20: deleteAccount
 // POST /deleteAccount  { idToken }
 // Cancels Square sub, wipes all Firestore data, deletes Auth user
 // ══════════════════════════════════════════
