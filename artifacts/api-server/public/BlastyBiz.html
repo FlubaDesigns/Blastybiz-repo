@@ -641,6 +641,35 @@
     background:rgba(0,200,83,0.08);
   }
 
+  /* ── Enrichment card ─────────────────────────────── */
+  .insight-row { padding:12px 0; border-bottom:1px solid var(--border); }
+  .insight-row:last-child { border-bottom:none; }
+  .insight-q {
+    font-size:12px; color:var(--silver); font-weight:700;
+    margin-bottom:7px; line-height:1.4;
+  }
+  .insight-input {
+    width:100%; background:var(--dark); border:1px solid var(--border);
+    border-radius:8px; color:var(--light); padding:10px 12px;
+    font-family:inherit; font-size:13px; resize:none; min-height:38px;
+    transition:border-color .15s;
+  }
+  .insight-input:focus { outline:none; border-color:var(--green); }
+  .insight-input.saved { border-color:rgba(0,200,83,0.4); }
+  .insight-answered {
+    font-size:12px; color:var(--muted); padding:8px 0;
+    border-bottom:1px solid var(--border); line-height:1.4;
+  }
+  .insight-answered:last-child { border-bottom:none; }
+  .insight-answered strong { color:var(--silver); }
+  .announce-chip {
+    display:inline-flex; align-items:center; gap:6px; padding:6px 10px;
+    border-radius:20px; border:1px solid var(--border); background:var(--dark);
+    font-size:11px; color:var(--silver); margin:4px 4px 0 0; cursor:pointer;
+  }
+  .announce-chip.upcoming { border-color:rgba(255,180,0,.5); color:#ffb400; }
+  .announce-chip .remove-x { opacity:.5; font-size:13px; line-height:1; }
+
 </style>
 </head>
 <body>
@@ -725,6 +754,58 @@
     <label>Hours (optional)</label>
     <input type="text" id="biz-hours" placeholder="e.g. Mon–Sat 9am–8pm" oninput="saveDraft()" />
 
+  </div>
+
+  <!-- ── AI ENRICHMENT ── -->
+  <div class="card" id="enrichment-card">
+    <div class="card-title">💡 Help AI know you better</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5;">AI asks questions to personalize every post. Add announcements (sales, events) and AI will weave them in automatically — and forget them after the date.</p>
+
+    <!-- ANNOUNCEMENTS ROW -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <span style="font-size:11px;font-weight:700;color:var(--silver);letter-spacing:.5px;text-transform:uppercase;">📣 What's coming up?</span>
+      <button onclick="openAnnounceDialog()"
+        style="padding:5px 10px;border-radius:7px;border:1px solid var(--green);background:transparent;color:var(--green);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">
+        + Add
+      </button>
+    </div>
+    <div id="announce-list" style="margin-bottom:16px;min-height:24px;">
+      <span style="font-size:12px;color:var(--muted);">No announcements yet.</span>
+    </div>
+
+    <!-- ANNOUNCEMENT DIALOG (inline, hidden) -->
+    <div id="announce-dialog" style="display:none;background:var(--dark);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px;">
+      <p style="font-size:12px;color:var(--silver);font-weight:700;margin-bottom:8px;">What's the announcement?</p>
+      <textarea id="announce-text" rows="2" placeholder="e.g. Half-off all services June 28th · Grand reopening July 1 · New menu items available now"
+        style="width:100%;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--light);padding:10px;font-family:inherit;font-size:13px;resize:none;"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+        <input type="date" id="announce-date" style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--light);padding:9px 10px;font-family:inherit;font-size:12px;" />
+        <span style="font-size:11px;color:var(--muted);flex-shrink:0;">optional end date</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button onclick="saveAnnouncement()"
+          style="flex:1;padding:10px;border-radius:9px;border:none;background:var(--green);color:var(--dark);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">
+          Save
+        </button>
+        <button onclick="document.getElementById('announce-dialog').style.display='none'"
+          style="padding:10px 14px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;">
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <!-- AI QUESTIONS -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <span style="font-size:11px;font-weight:700;color:var(--silver);letter-spacing:.5px;text-transform:uppercase;">🤖 AI wants to know</span>
+      <span id="enrichment-badge" style="font-size:11px;color:var(--muted);"></span>
+    </div>
+    <div id="enrichment-questions">
+      <p style="font-size:12px;color:var(--muted);padding:4px 0;">Loading…</p>
+    </div>
+    <button id="enrichment-more-btn" onclick="fetchEnrichmentQuestions(true)"
+      style="display:none;width:100%;margin-top:10px;padding:11px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--silver);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+      ✨ Ask me something new
+    </button>
   </div>
 
   <!-- IMAGE UPLOAD -->
@@ -1355,7 +1436,7 @@ BUSINESS INFO:
 - Hours: ${hours || 'not provided'}
 - Images attached: ${selectedImages.length > 0 ? selectedImages.length + ' photo(s)' : 'none'}
 - Preferred tone: ${tone}
-
+${bizInsights.filter(i=>i.answer).length ? '\nBUSINESS PERSONALITY & LOCAL DETAILS (use to make copy personal and specific):\n' + bizInsights.filter(i=>i.answer).map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${bizAnnouncements.length ? '\nUPCOMING EVENTS / PROMOTIONS (weave naturally into posts — include in every platform):\n' + bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}
 PLATFORMS TO ADAPT FOR:
 ${platformList.map(p => `- ${p.id}: ${p.name} (${p.type === 'api' ? 'auto-post' : 'copy-paste'})${p.rules.maxChars ? ', max ' + p.rules.maxChars + ' chars' : ''}${p.rules.notes ? ', note: ' + p.rules.notes : ''}`).join('\n')}
 
@@ -1391,7 +1472,10 @@ Return this exact JSON structure:
       method: 'POST',
       headers: authHeaders,
       body: JSON.stringify({
-        listing: { name, category, offer, price, phone, address, region, locationType, website, hours, imageCount: selectedImages.length },
+        listing: { name, category, offer, price, phone, address, region, locationType, website, hours, imageCount: selectedImages.length,
+          bizInsights: bizInsights.filter(i=>i.answer),
+          bizAnnouncements: bizAnnouncements,
+        },
         platforms: enabledPlatforms,
         tone,
         platformCats: profile.platformCats || {}
@@ -1762,6 +1846,161 @@ function saveSchedule() {
 }
 
 // ══════════════════════════════════════════
+// AI ENRICHMENT — bizInsights + bizAnnouncements
+// ══════════════════════════════════════════
+var bizInsights      = [];   // [{question, answer, askedAt, answeredAt}]
+var bizAnnouncements = [];   // [{text, endDate, createdAt, id}]
+
+function loadInsights(insights) {
+  bizInsights = insights || [];
+  renderEnrichmentQuestions();
+}
+
+function loadAnnouncements(ann) {
+  const today = new Date().toISOString().split('T')[0];
+  bizAnnouncements = (ann || []).filter(a => !a.endDate || a.endDate >= today);
+  renderAnnouncements();
+}
+
+function renderAnnouncements() {
+  const el = document.getElementById('announce-list');
+  if (!el) return;
+  if (!bizAnnouncements.length) {
+    el.innerHTML = '<span style="font-size:12px;color:var(--muted);">No announcements yet.</span>';
+    return;
+  }
+  const today = new Date().toISOString().split('T')[0];
+  el.innerHTML = bizAnnouncements.map((a, i) => {
+    const isUpcoming = a.endDate && a.endDate >= today;
+    const snippet = a.text.length > 42 ? a.text.slice(0,42)+'…' : a.text;
+    const dateLabel = a.endDate ? ' · ends ' + a.endDate : '';
+    return `<span class="announce-chip${isUpcoming?' upcoming':''}" title="${escHtml(a.text)}">
+      ${isUpcoming?'📅 ':'📣 '}${escHtml(snippet)}${dateLabel}
+      <span class="remove-x" onclick="removeAnnouncement(${i})">✕</span>
+    </span>`;
+  }).join('');
+}
+
+function openAnnounceDialog() {
+  document.getElementById('announce-text').value = '';
+  document.getElementById('announce-date').value = '';
+  document.getElementById('announce-dialog').style.display = 'block';
+  document.getElementById('announce-text').focus();
+}
+
+function saveAnnouncement() {
+  const text = (document.getElementById('announce-text').value || '').trim();
+  if (!text) { showToast('Add the announcement text first'); return; }
+  const endDate = document.getElementById('announce-date').value || null;
+  bizAnnouncements.push({ text, endDate, createdAt: new Date().toISOString(), id: Date.now() });
+  document.getElementById('announce-dialog').style.display = 'none';
+  renderAnnouncements();
+  if (window._saveAnnouncementsToFirestore) window._saveAnnouncementsToFirestore(bizAnnouncements);
+  showToast('📣 Announcement saved — AI will use it in every post until ' + (endDate || 'removed'));
+}
+
+function removeAnnouncement(idx) {
+  bizAnnouncements.splice(idx, 1);
+  renderAnnouncements();
+  if (window._saveAnnouncementsToFirestore) window._saveAnnouncementsToFirestore(bizAnnouncements);
+}
+
+function renderEnrichmentQuestions() {
+  const el     = document.getElementById('enrichment-questions');
+  const badge  = document.getElementById('enrichment-badge');
+  const moreBtn = document.getElementById('enrichment-more-btn');
+  if (!el) return;
+
+  const unanswered = bizInsights.filter(i => !i.answer);
+  const answered   = bizInsights.filter(i => !!i.answer);
+
+  if (badge) badge.textContent = answered.length ? answered.length + ' answered' : '';
+
+  if (!bizInsights.length) {
+    el.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:4px 0;">Generating personalized questions…</p>';
+    fetchEnrichmentQuestions(false);
+    return;
+  }
+
+  let html = '';
+  unanswered.forEach(item => {
+    const idx = bizInsights.indexOf(item);
+    html += `<div class="insight-row">
+      <div class="insight-q">${escHtml(item.question)}</div>
+      <textarea class="insight-input" id="insight-inp-${idx}" rows="1"
+        placeholder="Your answer…"
+        oninput="this.style.height='auto';this.style.height=Math.max(38,this.scrollHeight)+'px'"
+        onblur="saveInsightAnswer(${idx},this.value)"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();saveInsightAnswer(${idx},this.value);}"
+      >${escHtml(item.answer||'')}</textarea>
+    </div>`;
+  });
+
+  if (answered.length) {
+    html += '<div style="margin-top:6px;">';
+    answered.forEach(item => {
+      html += `<div class="insight-answered">✓ <strong>${escHtml(item.question)}</strong><br/>${escHtml(item.answer)}</div>`;
+    });
+    html += '</div>';
+  }
+
+  el.innerHTML = html || '<p style="font-size:12px;color:var(--muted);">All answered — AI knows you well!</p>';
+  if (moreBtn) moreBtn.style.display = unanswered.length === 0 ? 'block' : 'none';
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function saveInsightAnswer(idx, answer) {
+  answer = (answer||'').trim();
+  if (!answer || bizInsights[idx]?.answer === answer) return;
+  bizInsights[idx].answer = answer;
+  bizInsights[idx].answeredAt = new Date().toISOString();
+  const inp = document.getElementById('insight-inp-' + idx);
+  if (inp) inp.classList.add('saved');
+  renderEnrichmentQuestions();
+  if (window._saveInsightToFirestore) window._saveInsightToFirestore(bizInsights);
+}
+
+async function fetchEnrichmentQuestions(forceNew) {
+  const btn = document.getElementById('enrichment-more-btn');
+  const el  = document.getElementById('enrichment-questions');
+  if (!forceNew && bizInsights.some(i => !i.answer)) { renderEnrichmentQuestions(); return; }
+  if (btn) btn.disabled = true;
+  if (el && forceNew) el.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:4px 0;">Generating questions…</p>';
+  try {
+    const token = window._bbGetToken ? await window._bbGetToken() : null;
+    const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/generateEnrichmentQuestions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': 'Bearer ' + token } : {}) },
+      body: JSON.stringify({
+        businessName: profile.name || document.getElementById('biz-name')?.value || '',
+        category:     profile.category || '',
+        address:      profile.address || '',
+        locationType: profile.locationType || 'physical',
+        region:       profile.region || '',
+        existingInsights: bizInsights,
+      }),
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (data.questions?.length) {
+      const now = new Date().toISOString();
+      data.questions.forEach(q => {
+        if (!bizInsights.some(i => i.question === q)) bizInsights.push({ question: q, answer: '', askedAt: now });
+      });
+      if (window._saveInsightToFirestore) window._saveInsightToFirestore(bizInsights);
+    }
+  } catch(e) {
+    console.error('fetchEnrichmentQuestions:', e);
+    if (el && !bizInsights.length) el.innerHTML = '<p style="font-size:12px;color:var(--muted);">Couldn\'t load questions right now.</p>';
+  }
+  renderEnrichmentQuestions();
+  if (btn) btn.disabled = false;
+}
+
+// ══════════════════════════════════════════
 // PLATFORM CATEGORIES — profile editor
 // ══════════════════════════════════════════
 function renderPlatformCats(cats) {
@@ -1999,6 +2238,18 @@ window._bbSetProfile = function(p) {
   profile = p;
   loadProfile();
 };
+
+window._saveInsightToFirestore = async function(insights) {
+  if (!activeBizId) return;
+  try { await setDoc(doc(db, 'businesses', activeBizId), { bizInsights: insights }, { merge: true }); }
+  catch(e) { console.error('saveInsights:', e); }
+};
+
+window._saveAnnouncementsToFirestore = async function(ann) {
+  if (!activeBizId) return;
+  try { await setDoc(doc(db, 'businesses', activeBizId), { bizAnnouncements: ann }, { merge: true }); }
+  catch(e) { console.error('saveAnnouncements:', e); }
+};
 </script>
 
 <script type="module">
@@ -2044,6 +2295,8 @@ onAuthStateChanged(auth, async (user) => {
         postingSchedule: biz.postingSchedule || null,
       };
       if (window._bbSetProfile) window._bbSetProfile(p);
+      if (window.loadInsights)      window.loadInsights(biz.bizInsights || []);
+      if (window.loadAnnouncements) window.loadAnnouncements(biz.bizAnnouncements || []);
     }
   } catch(e) {
     console.error('Profile load error:', e);

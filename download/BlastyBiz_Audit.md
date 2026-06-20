@@ -1,11 +1,11 @@
 # BlastyBiz — Full Site Audit
-**Last updated: June 20, 2026 (Session 4)**
+**Last updated: June 20, 2026 (Session 5)**
 **Firebase Project:** blastybiz-9523e
 **Live URL:** https://blastybiz-9523e.web.app
 
 ---
 
-## Deployed Cloud Functions (29 total — all v2, us-central1)
+## Deployed Cloud Functions (30 total — all v2, us-central1)
 
 | # | Function | Type | Purpose |
 |---|---|---|---|
@@ -38,6 +38,7 @@
 | 27 | `adminListPlatformConnections` | HTTP | Admin: all platformConnections ordered by connectedAt desc; requireAdmin() |
 | 28 | `adminListActivityLogs` | HTTP | Admin: activityLogs with optional uid filter; requireAdmin() |
 | 29 | `adminSubscriptionSummary` | HTTP | Admin: live plan counts + MRR calculation from Firestore; requireAdmin() |
+| 30 | `generateEnrichmentQuestions` | HTTP | AI generates 2-3 personalized follow-up questions for a business; verifyBearer(); claude-haiku-4-5 |
 
 ---
 
@@ -252,6 +253,7 @@ The Operator Setup page (`BlastyBiz-Admin-Operate.html`) has step-by-step instru
 | Feature | Files changed | Description |
 |---------|--------------|-------------|
 | Edit Platform Categories after onboarding | `artifacts/api-server/public/BlastyBiz.html` | Added "🏷️ Platform Categories" card to the Profile tab. Shows a dropdown per platform (FB Marketplace, Craigslist, Yelp, Thumbtack, Angi, Alignable, Apple Maps) populated from `window.PLATFORM_CATS`. Dropdowns auto-load saved categories from Firestore `businesses/{id}.platformCats` on profile load. Any change saves immediately back to Firestore via `window._savePlatformCatsToFirestore`. "🤖 Re-run AI Category Picker" button calls the `resolveCategories` Cloud Function with current business name + category, updates all dropdowns, and saves to Firestore. Added `platform-categories.js` script tag (was missing from this page). |
+| AI Enrichment — "Help AI know you better" | `BlastyBiz.html`, `functions/index.js` | New card on Create tab with two layers: (1) **Announcements** — user adds time-sensitive notes ("half-off sale June 28", "grand reopening July 1") with optional end date; expired entries auto-filter out; chips shown with 📅 if upcoming or 📣 if no date; saved to `businesses/{id}.bizAnnouncements`. (2) **AI Questions** — Cloud Function `generateEnrichmentQuestions` (claude-haiku-4-5) generates 2-3 personalized questions based on business profile; user answers inline; answers save to `businesses/{id}.bizInsights`; answered questions show with ✓ summary; "Ask me something new" button fetches fresh questions once all answered. Both `bizInsights` (answered) and `bizAnnouncements` (active) are injected into every AI prompt — `adaptListing` (on-demand), `_runScheduledPost` (scheduled), and the new Cloud Function. AI is instructed to weave announcements naturally into all platforms. |
 
 ---
 

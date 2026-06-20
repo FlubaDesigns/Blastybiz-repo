@@ -107,6 +107,68 @@ const PLATFORM_RULES = {
 // Function 1: adaptListing
 // POST /adaptListing
 // ══════════════════════════════════════════
+exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  let decoded;
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+
+  const { businessName, category, address, locationType, region, existingInsights } = req.body;
+  const answered = (existingInsights || []).filter(i => i.answer);
+
+  const prompt = `You are a local business marketing AI. Help me write more personal, specific posts for this business.
+
+WHAT I KNOW:
+- Business: ${businessName || 'Local business'}
+- Category: ${category || 'General'}
+- Location: ${locationType === 'online' ? `Online — serves ${region || 'nationwide'}` : (address || 'physical location')}
+${answered.length ? '\nWHAT I ALREADY KNOW:\n' + answered.map(i => `Q: ${i.question}\nA: ${i.answer}`).join('\n') : ''}
+
+Generate 2-3 SHORT, specific questions that would make my posts sound local and personal, not generic.
+
+Good question types for physical businesses:
+- Nearest intersection or landmark ("corner of Oak and 5th?")
+- Most popular product/service or what regulars always order
+- A tagline, phrase, or inside joke loyal customers use
+- What makes them different from others nearby
+- Upcoming events, specials, or seasonal things
+- The owner's story or why they started
+
+Good question types for online businesses:
+- Biggest result or transformation they deliver for clients
+- Specific niche they specialize in
+- A client win story in one sentence
+- What they hear most from happy customers
+- Upcoming launches, offers, or announcements
+
+Rules:
+- Skip any topic already covered in answered questions
+- Keep each question under 12 words
+- Max 3 questions total
+- Sound conversational, not corporate
+
+Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
+
+  try {
+    const aiResp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 300, messages: [{ role: 'user', content: prompt }] }),
+    });
+    if (!aiResp.ok) throw new Error(`Anthropic ${aiResp.status}: ${await aiResp.text()}`);
+    const aiJson = await aiResp.json();
+    const parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
+    res.json({ questions: parsed.questions || [] });
+  } catch(e) {
+    console.error('generateEnrichmentQuestions error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
@@ -152,7 +214,7 @@ BUSINESS INFO:
 - Hours: ${listing.hours || 'not provided'}
 - Images attached: ${listing.imageCount > 0 ? listing.imageCount + ' photo(s)' : 'none'}
 - Preferred tone: ${tone}
-
+${(listing.bizInsights||[]).length ? '\nBUSINESS PERSONALITY & LOCAL DETAILS (use these to make copy personal and specific — reference them naturally):\n' + listing.bizInsights.map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(listing.bizAnnouncements||[]).length ? '\nUPCOMING EVENTS / PROMOTIONS (weave into every platform\'s copy naturally — do NOT ignore these):\n' + listing.bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}
 PLATFORMS TO ADAPT FOR:
 ${platformList.map(p => `- ${p.id}: ${p.name} (${p.type === 'api' ? 'auto-post' : 'copy-paste'})${p.rules.maxChars ? ', max ' + p.rules.maxChars + ' chars' : ''}${p.rules.notes ? ', note: ' + p.rules.notes : ''}`).join('\n')}
 
@@ -1615,7 +1677,7 @@ BUSINESS INFO:
 - Website: ${biz.website || 'none'}
 - Hours: ${biz.hours || 'not provided'}
 - Preferred tone: ${tone}
-
+${(biz.bizInsights||[]).filter(i=>i.answer).length ? '\nBUSINESS PERSONALITY & LOCAL DETAILS (use to make copy personal and specific):\n' + biz.bizInsights.filter(i=>i.answer).map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(biz.bizAnnouncements||[]).length ? '\nUPCOMING EVENTS / PROMOTIONS (weave into every platform\'s copy — do NOT ignore these):\n' + biz.bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}
 PLATFORMS:
 ${platformList.map(p => `- ${p.id}: ${p.name}${p.cat}${p.rules.maxChars ? ', max ' + p.rules.maxChars + ' chars' : ''}${p.rules.notes ? ', note: ' + p.rules.notes : ''}`).join('\n')}
 
