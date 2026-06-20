@@ -225,7 +225,7 @@ exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_
 
   const now = new Date();
 
-  const { businessName, description, platformCatLists } = req.body;
+  const { businessName, ownerName, city, state, description, specialNotes, followUpAnswers, platformCatLists, locationType } = req.body;
 
   const platformContext = {
     fbmarket:   'Facebook Marketplace — consumer marketplace for buying/selling goods and booking local services',
@@ -242,10 +242,41 @@ exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_
     return `PLATFORM: ${id}\nPURPOSE: ${ctx}\nCATEGORIES (pick EXACTLY one, copy the string character-for-character):\n${cats.join(' | ')}`;
   }).join('\n\n');
 
+  const locationLabel = locationType === 'online' ? 'Online only (no physical storefront)' :
+                        locationType === 'both'   ? 'Physical location + online presence' :
+                        'Physical location / storefront';
+
+  const contextLines = [
+    businessName  ? `Business Name: ${businessName}`   : null,
+    ownerName     ? `Owner: ${ownerName}`               : null,
+    (city || state) ? `Location: ${[city, state].filter(Boolean).join(', ')}` : null,
+    locationType  ? `Business Type: ${locationLabel}`   : null,
+    description   ? `Description: ${description}`       : null,
+    specialNotes  ? `Special Notes: ${specialNotes}`    : null,
+  ].filter(Boolean).join('\n');
+
+  const isSecondPass = Array.isArray(followUpAnswers) && followUpAnswers.length > 0;
+
+  const followUpBlock = isSecondPass
+    ? '\n\nADDITIONAL CONTEXT (user answered your clarifying questions):\n' +
+      followUpAnswers.map((qa, i) => `Q${i + 1}: ${qa.question}\nA${i + 1}: ${qa.answer}`).join('\n')
+    : '';
+
+  const returnInstructions = isSecondPass
+    ? `You now have full context including the user's answers. You MUST return final category picks — do NOT ask more questions.
+Return ONLY valid JSON, no markdown fences, no explanation:
+{ "categories": { "platformId": "exact category string" } }`
+    : `If you have enough context to confidently pick categories for ALL platforms, return ONLY:
+{ "categories": { "platformId": "exact category string" } }
+
+If the description is too vague to confidently classify the business, return ONLY:
+{ "followUpQuestions": ["short question 1", "short question 2"] }
+(1–3 short questions, plain English, no markdown)`;
+
   const prompt = `You are a local business categorization expert. Your task is to pick the single best-matching category for a local business on each marketing platform listed below.
 
-BUSINESS NAME: ${businessName || '(not provided)'}
-BUSINESS DESCRIPTION: ${description}
+BUSINESS CONTEXT:
+${contextLines}${followUpBlock}
 
 INSTRUCTIONS:
 1. Read the PURPOSE of each platform carefully — it tells you what kind of businesses and customers use it.
@@ -254,8 +285,7 @@ INSTRUCTIONS:
 4. CRITICAL: Copy the category string EXACTLY as it appears — same capitalization, same punctuation, same spacing. Do not paraphrase, abbreviate, or modify it in any way.
 5. If no category is a perfect match, pick the closest one. Never invent a new category.
 
-Return ONLY valid JSON, no markdown fences, no explanation:
-{ "categories": { "platformId": "exact category string" } }
+${returnInstructions}
 
 ${platformBlocks}`;
 

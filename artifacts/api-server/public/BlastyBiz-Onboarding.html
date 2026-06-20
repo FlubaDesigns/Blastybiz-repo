@@ -1292,52 +1292,40 @@ const PLATFORM_CATS = window.PLATFORM_CATS;
 // ══════════════════════════════════════════
 var resolvedCats = {};
 
-async function resolveCats() {
-  const desc = document.getElementById('s-biztype')?.value?.trim();
-  if (!desc) return;
+function _buildCatContext() {
+  return {
+    businessName: document.getElementById('s-name')?.value?.trim() || '',
+    ownerName:    document.getElementById('s-owner')?.value?.trim() || '',
+    city:         document.getElementById('s-city')?.value?.trim() || '',
+    state:        document.getElementById('s-state')?.value?.trim() || '',
+    description:  document.getElementById('s-biztype')?.value?.trim() || '',
+    specialNotes: document.getElementById('s-special')?.value?.trim() || '',
+    locationType: window._onboardingLocType || 'physical',
+  };
+}
 
-  document.getElementById('cat-resolve-wrap').style.display = 'block';
-  const list = document.getElementById('platform-cat-list');
-  list.innerHTML = '<p style="padding:12px;opacity:.7">Picking best categories with AI…</p>';
-
-  const locType = window._onboardingLocType || 'physical';
+function _buildPlatformCatLists(locType) {
   const skipForOnline = ['applemaps'];
-  const platformCatLists = {};
+  const lists = {};
   Object.entries(PLATFORM_CATS).forEach(([pid, p]) => {
     if (locType === 'online' && skipForOnline.includes(pid)) return;
-    platformCatLists[pid] = p.cats;
+    lists[pid] = p.cats;
   });
+  return lists;
+}
 
-  const businessName = document.getElementById('s-name')?.value?.trim() || '';
-
-  let aiCats = null;
-  try {
-    const token = window._blastyUser ? await window._blastyUser.getIdToken() : null;
-    const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/resolveCategories', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
-      body: JSON.stringify({ businessName, description: desc, platformCatLists, locationType: locType }),
-    });
-    if (resp.ok) {
-      const data = await resp.json();
-      aiCats = data.categories || {};
-    }
-  } catch(e) {
-    console.error('resolveCategories API error:', e);
-  }
-
+function _renderCategorySelects(aiCats, contextDesc, contextName) {
+  const list = document.getElementById('platform-cat-list');
   list.innerHTML = '';
-
   Object.entries(PLATFORM_CATS).forEach(([pid, p]) => {
     let bestCat = p.cats[0];
-
     if (aiCats && aiCats[pid]) {
       const aiVal = aiCats[pid];
       const exactMatch = p.cats.find(c => c === aiVal);
       const caseMatch  = p.cats.find(c => c.toLowerCase() === aiVal.toLowerCase());
       bestCat = exactMatch || caseMatch || bestCat;
     } else {
-      const descLower = (businessName + ' ' + desc).toLowerCase();
+      const descLower = ((contextName || '') + ' ' + (contextDesc || '')).toLowerCase();
       const words = descLower.split(/\s+/);
       let bestScore = 0;
       p.cats.forEach(cat => {
@@ -1347,30 +1335,85 @@ async function resolveCats() {
         if (score > bestScore) { bestScore = score; bestCat = cat; }
       });
     }
-
     resolvedCats[pid] = bestCat;
-
     const row = document.createElement('div');
     row.className = 'pcat-row';
-
     const sel = document.createElement('select');
     sel.className = 'pcat-select ai-picked';
     sel.id = 'pcat-' + pid;
     p.cats.forEach(c => {
       const opt = document.createElement('option');
-      opt.value = c;
-      opt.textContent = c;
+      opt.value = c; opt.textContent = c;
       if (c === bestCat) opt.selected = true;
       sel.appendChild(opt);
     });
     sel.onchange = () => { resolvedCats[pid] = sel.value; };
-
     row.innerHTML = `<span class="pcat-icon">${p.icon}</span><span class="pcat-name">${p.name}</span>`;
     row.appendChild(sel);
     list.appendChild(row);
   });
+}
 
-  selectedCategory = desc;
+async function submitFollowUpAnswers() {
+  const ctx = window._fuContext;
+  if (!ctx) return;
+  const followUpAnswers = ctx.questions.map((q, i) => ({
+    question: q,
+    answer: document.getElementById('fuq-' + i)?.value?.trim() || ''
+  }));
+  await resolveCats(followUpAnswers);
+}
+
+async function resolveCats(followUpAnswers) {
+  const ctx = _buildCatContext();
+  if (!ctx.description) return;
+
+  document.getElementById('cat-resolve-wrap').style.display = 'block';
+  const list = document.getElementById('platform-cat-list');
+  list.innerHTML = '<p style="padding:12px;opacity:.7">Picking best categories with AI…</p>';
+
+  const platformCatLists = _buildPlatformCatLists(ctx.locationType);
+  const body = { ...ctx, platformCatLists };
+  if (followUpAnswers?.length) body.followUpAnswers = followUpAnswers;
+
+  let data = null;
+  try {
+    const token = window._blastyUser ? await window._blastyUser.getIdToken() : null;
+    const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/resolveCategories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+      body: JSON.stringify(body),
+    });
+    if (resp.ok) data = await resp.json();
+  } catch(e) {
+    console.error('resolveCategories API error:', e);
+  }
+
+  // Follow-up questions path
+  if (data?.followUpQuestions?.length && !followUpAnswers?.length) {
+    const questions = data.followUpQuestions.slice(0, 3);
+    window._fuContext = { questions };
+    list.innerHTML = `
+      <div style="background:rgba(0,200,83,0.05);border:1px solid var(--border);border-radius:12px;padding:16px;">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">A couple quick questions to get you better matches:</p>
+        ${questions.map((q, i) => `
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:11px;color:var(--silver);font-weight:700;margin-bottom:5px;">${q}</label>
+            <input type="text" id="fuq-${i}" placeholder="Your answer…"
+              style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;color:var(--light);padding:10px;font-family:inherit;font-size:13px;" />
+          </div>
+        `).join('')}
+        <button onclick="submitFollowUpAnswers()"
+          style="width:100%;margin-top:4px;padding:12px;border-radius:10px;border:1px solid var(--green);background:transparent;color:var(--green);font-weight:700;font-size:13px;cursor:pointer;">
+          Submit Answers →
+        </button>
+      </div>`;
+    return;
+  }
+
+  // Categories path
+  _renderCategorySelects(data?.categories || null, ctx.description, ctx.businessName);
+  selectedCategory = ctx.description;
   checkStep(2);
   document.getElementById('slide-2').scrollTo({ top: 300, behavior: 'smooth' });
 }
