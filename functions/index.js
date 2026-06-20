@@ -1507,6 +1507,204 @@ exports.refreshYelpCategories = onRequest(
   }
 );
 
+// ══════════════════════════════════════════
+// scheduledPostingCheck
+// Runs hourly — finds businesses with active schedules due to post,
+// generates adapted content via Claude, creates publishJobs.
+// ══════════════════════════════════════════
+
+const SCHED_PLATFORMS = [
+  { id: 'google',    name: 'Google Business',    type: 'api'    },
+  { id: 'facebook',  name: 'Facebook Business',  type: 'api'    },
+  { id: 'instagram', name: 'Instagram Business', type: 'api'    },
+  { id: 'nextdoor',  name: 'Nextdoor',           type: 'manual' },
+  { id: 'fbmarket',  name: 'Facebook Marketplace', type: 'manual' },
+  { id: 'craigslist',name: 'Craigslist',         type: 'manual' },
+  { id: 'yelp',      name: 'Yelp',               type: 'manual' },
+  { id: 'alignable', name: 'Alignable',          type: 'manual' },
+  { id: 'thumbtack', name: 'Thumbtack',          type: 'manual' },
+  { id: 'angi',      name: 'Angi',               type: 'manual' },
+  { id: 'applemaps', name: 'Apple Maps Connect', type: 'manual' },
+];
+
+function _computeNextRunAt(sched, fromDate) {
+  const tz = sched.timezone || 'America/New_York';
+  const slotHour = { morning: 9, midday: 12, afternoon: 15, evening: 18 }[sched.timeSlot || 'morning'];
+  const from = fromDate || new Date();
+
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz, year: 'numeric', month: 'numeric', day: 'numeric',
+    hour: 'numeric', minute: 'numeric', hour12: false,
+  }).formatToParts(from);
+  const gp = (t) => parseInt(parts.find(p => p.type === t)?.value || '0');
+  const lYear = gp('year'), lMonth = gp('month') - 1, lDay = gp('day'), lHour = gp('hour');
+  const lDow = new Date(lYear, lMonth, lDay).getDay();
+
+  let candYear = lYear, candMonth = lMonth, candDay = lDay;
+
+  if (sched.frequency === 'monthly') {
+    const dom = sched.dayOfMonth || 1;
+    if (lDay < dom || (lDay === dom && lHour < slotHour)) {
+      candDay = dom;
+    } else {
+      const d = new Date(lYear, lMonth + 1, dom);
+      candYear = d.getFullYear(); candMonth = d.getMonth(); candDay = d.getDate();
+    }
+  } else {
+    const targetDow = sched.dayOfWeek ?? 1;
+    let ahead = (targetDow - lDow + 7) % 7;
+    if (ahead === 0 && lHour >= slotHour) ahead = sched.frequency === 'biweekly' ? 14 : 7;
+    else if (sched.frequency === 'biweekly' && ahead > 0 && ahead < 7) ahead += 7;
+    const d = new Date(lYear, lMonth, lDay + ahead);
+    candYear = d.getFullYear(); candMonth = d.getMonth(); candDay = d.getDate();
+  }
+
+  // Convert local calendar time → UTC
+  const approx = new Date(candYear, candMonth, candDay, slotHour, 0, 0);
+  const tzParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz, year: 'numeric', month: 'numeric', day: 'numeric',
+    hour: 'numeric', minute: 'numeric', hour12: false,
+  }).formatToParts(approx);
+  const tgp = (t) => parseInt(tzParts.find(p => p.type === t)?.value || '0');
+  const tzLocalMs = Date.UTC(tgp('year'), tgp('month') - 1, tgp('day'), tgp('hour'), tgp('minute'), 0);
+  return new Date(approx.getTime() + (approx.getTime() - tzLocalMs));
+}
+
+async function _runScheduledPost(bizId, biz) {
+  const sched    = biz.postingSchedule;
+  const bizName  = biz.businessName || biz.name || 'Local Business';
+  const tone     = biz.tone || 'friendly';
+  const address  = biz.address || (biz.city ? `${biz.city}, ${biz.state}` : '');
+  const locType  = biz.locationType || 'physical';
+  const region   = biz.region || '';
+
+  // Build a "what we offer" summary from profile
+  const offerLines = [
+    biz.category ? `Category: ${biz.category}` : '',
+    biz.offer || biz.description || '',
+    biz.specialNotes ? `Notes: ${biz.specialNotes}` : '',
+    biz.hours ? `Hours: ${biz.hours}` : '',
+  ].filter(Boolean).join('\n');
+
+  // Look up which platforms are connected for this business
+  const connSnap = await db.collection('platformConnections')
+    .where('businessId', '==', bizId).where('status', '==', 'connected').get();
+  const connectedIds = new Set(connSnap.docs.map(d => d.data().platform));
+
+  const activePlatforms = SCHED_PLATFORMS.filter(p =>
+    connectedIds.has(p.id) || p.type === 'manual'
+  );
+  if (!activePlatforms.length) return;
+
+  const platformCats = biz.platformCats || {};
+
+  const platformList = activePlatforms.map(p => ({
+    ...p, rules: PLATFORM_RULES[p.id] || {},
+    cat: platformCats[p.id] ? ` (category: ${platformCats[p.id]})` : '',
+  }));
+
+  const prompt = `You are a local business marketing expert. Generate a fresh recurring post for each platform. This is an automated scheduled post — make it feel current and engaging, not stale.
+
+BUSINESS INFO:
+- Name: ${bizName}
+- Category: ${biz.category || 'General'}
+- Description: ${offerLines || 'A great local business'}
+- Phone: ${biz.phone || 'not provided'}
+- Location type: ${locType === 'online' ? 'Online only' : 'Physical location'}
+- Address/Area: ${locType === 'online' ? (region ? 'Serves: ' + region : 'Online') : (address || 'not provided')}
+- Website: ${biz.website || 'none'}
+- Hours: ${biz.hours || 'not provided'}
+- Preferred tone: ${tone}
+
+PLATFORMS:
+${platformList.map(p => `- ${p.id}: ${p.name}${p.cat}${p.rules.maxChars ? ', max ' + p.rules.maxChars + ' chars' : ''}${p.rules.notes ? ', note: ' + p.rules.notes : ''}`).join('\n')}
+
+Return ONLY valid JSON: { "adaptations": { "PLATFORM_ID": "text" } }`;
+
+  const aiResp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({ model: 'claude-sonnet-4-5-20250929', max_tokens: 2000, messages: [{ role: 'user', content: prompt }] }),
+  });
+  if (!aiResp.ok) throw new Error(`Anthropic ${aiResp.status}: ${await aiResp.text()}`);
+  const aiJson  = await aiResp.json();
+  const parsed  = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
+  const adapted = parsed.adaptations || {};
+
+  // Get user plan to determine manual vs auto-post
+  const uid = biz.uid || '';
+  let plan = 'starter';
+  if (uid) {
+    const userSnap = await db.collection('users').doc(uid).get();
+    if (userSnap.exists) plan = userSnap.data().plan || 'starter';
+  }
+  const isStarter = plan === 'starter';
+
+  const batch = db.batch();
+  for (const p of activePlatforms) {
+    const content = adapted[p.id];
+    if (!content) continue;
+    const isManual = p.type === 'manual' || isStarter;
+    const jobRef = db.collection('publishJobs').doc();
+    batch.set(jobRef, {
+      jobId: jobRef.id, businessId: bizId, uid,
+      platform: p.id,
+      capabilityLevel: p.type === 'api' ? 'full_api' : 'manual_assisted',
+      jobType: 'scheduled_post',
+      status: isManual ? 'manual_required' : 'pending',
+      attempts: 0, maxAttempts: 3,
+      customerLabel: isManual ? 'Action needed' : 'Waiting to publish',
+      customerVisibleMessage: isManual
+        ? `Your scheduled ${p.name} post is ready — copy it below.`
+        : `Your scheduled ${p.name} post is waiting to publish.`,
+      planGated: isStarter && p.type === 'api',
+      payload: { adaptedContent: content },
+      apiResponse: {}, customerNotified: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+  await batch.commit();
+}
+
+exports.scheduledPostingCheck = onSchedule(
+  { schedule: 'every 1 hours', region: 'us-central1', secrets: ['ANTHROPIC_API_KEY'] },
+  async () => {
+    const now = new Date();
+    const snap = await db.collection('businesses')
+      .where('postingSchedule.enabled', '==', true)
+      .get();
+
+    for (const bizDoc of snap.docs) {
+      const biz   = bizDoc.data();
+      const bizId = bizDoc.id;
+      const sched = biz.postingSchedule;
+      if (!sched?.nextRunAt) continue;
+
+      const nextRun = sched.nextRunAt.toDate ? sched.nextRunAt.toDate() : new Date(sched.nextRunAt);
+      if (nextRun > now) continue; // not yet time
+
+      try {
+        await _runScheduledPost(bizId, biz);
+
+        const next = _computeNextRunAt(sched, now);
+        await bizDoc.ref.update({
+          'postingSchedule.lastRunAt':  admin.firestore.FieldValue.serverTimestamp(),
+          'postingSchedule.nextRunAt':  admin.firestore.Timestamp.fromDate(next),
+          'postingSchedule.updatedAt':  admin.firestore.FieldValue.serverTimestamp(),
+        });
+        console.log(`[scheduledPostingCheck] Posted for biz ${bizId}, next run: ${next.toISOString()}`);
+      } catch (e) {
+        console.error(`[scheduledPostingCheck] biz ${bizId} failed:`, e.message);
+      }
+    }
+  }
+);
+
 exports.scheduledYelpCategoryRefresh = onSchedule(
   { schedule: 'every monday 03:00', timeZone: 'America/New_York', region: 'us-central1', secrets: ['YELP_API_KEY'] },
   async () => {

@@ -13,14 +13,19 @@ service cloud.firestore {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Businesses — owner only (uid field matches auth uid, not document ID); admin can read any
+    // Businesses — owner only; admin can read any.
+    // Owner check: uid field on the doc OR the doc ID (activeBizId defaults to user.uid).
     match /businesses/{businessId} {
       allow read: if request.auth != null &&
-        (request.auth.uid == resource.data.uid || isAdmin());
+        (request.auth.uid == resource.data.uid ||
+         request.auth.uid == businessId ||
+         isAdmin());
       allow write: if request.auth != null &&
-        request.auth.uid == resource.data.uid;
+        (request.auth.uid == resource.data.uid ||
+         request.auth.uid == businessId);
       allow create: if request.auth != null &&
-        request.auth.uid == request.resource.data.uid;
+        (request.auth.uid == request.resource.data.uid ||
+         request.auth.uid == businessId);
     }
 
     // Listing drafts — owner only; admin can read any

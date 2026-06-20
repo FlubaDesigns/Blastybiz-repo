@@ -613,6 +613,34 @@
   /* ── BOTTOM NAV SAFE AREA ── */
   .bottom-safe { height: 20px; }
 
+  /* ── Schedule card ───────────────────────────────── */
+  .sched-toggle-wrap { position:relative; display:inline-flex; cursor:pointer; }
+  .sched-toggle-wrap input { opacity:0; width:0; height:0; position:absolute; }
+  .sched-toggle-track {
+    display:block; width:44px; height:26px; border-radius:13px;
+    background:var(--border); transition:background .2s;
+    flex-shrink:0;
+  }
+  .sched-toggle-track::after {
+    content:''; position:absolute; top:3px; left:3px;
+    width:20px; height:20px; border-radius:50%;
+    background:#fff; transition:transform .2s;
+  }
+  .sched-toggle-wrap input:checked + .sched-toggle-track { background:var(--green); }
+  .sched-toggle-wrap input:checked + .sched-toggle-track::after { transform:translateX(18px); }
+
+  .sched-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .sched-chip {
+    flex:1; min-width:60px; padding:9px 8px; border-radius:10px; border:1px solid var(--border);
+    background:transparent; color:var(--silver); font-size:12px; font-weight:700;
+    cursor:pointer; font-family:inherit; text-align:center; line-height:1.3;
+    transition:all .15s;
+  }
+  .sched-chip.active {
+    border-color:var(--green); color:var(--green);
+    background:rgba(0,200,83,0.08);
+  }
+
 </style>
 </head>
 <body>
@@ -908,6 +936,60 @@
 
     <label>Default Platforms</label>
     <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Toggle platforms on/off in the Platforms tab.</p>
+  </div>
+
+  <!-- ── AUTO-POST SCHEDULE ── -->
+  <div class="card" id="schedule-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <div class="card-title" style="margin-bottom:0;">📅 Auto-Post Schedule</div>
+      <label class="sched-toggle-wrap">
+        <input type="checkbox" id="sched-enabled" onchange="toggleSchedEnabled()" />
+        <span class="sched-toggle-track"></span>
+      </label>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Turn on to have BlastyBiz automatically re-post your listing on a recurring schedule.</p>
+
+    <div id="sched-fields" style="display:none;">
+      <label>How often?</label>
+      <div class="sched-chips">
+        <button class="sched-chip active" id="sched-freq-weekly"    onclick="setSchedFreq('weekly')">Weekly</button>
+        <button class="sched-chip"        id="sched-freq-biweekly"  onclick="setSchedFreq('biweekly')">Every 2 wks</button>
+        <button class="sched-chip"        id="sched-freq-monthly"   onclick="setSchedFreq('monthly')">Monthly</button>
+      </div>
+
+      <div id="sched-dow-wrap">
+        <label>Which day?</label>
+        <div class="sched-chips">
+          <button class="sched-chip"        id="sched-dow-0" onclick="setSchedDay(0)">Sun</button>
+          <button class="sched-chip active" id="sched-dow-1" onclick="setSchedDay(1)">Mon</button>
+          <button class="sched-chip"        id="sched-dow-2" onclick="setSchedDay(2)">Tue</button>
+          <button class="sched-chip"        id="sched-dow-3" onclick="setSchedDay(3)">Wed</button>
+          <button class="sched-chip"        id="sched-dow-4" onclick="setSchedDay(4)">Thu</button>
+          <button class="sched-chip"        id="sched-dow-5" onclick="setSchedDay(5)">Fri</button>
+          <button class="sched-chip"        id="sched-dow-6" onclick="setSchedDay(6)">Sat</button>
+        </div>
+      </div>
+
+      <div id="sched-dom-wrap" style="display:none;">
+        <label>Which day of the month?</label>
+        <div class="sched-chips">
+          <button class="sched-chip active" id="sched-dom-1"  onclick="setSchedDom(1)">1st</button>
+          <button class="sched-chip"        id="sched-dom-8"  onclick="setSchedDom(8)">8th</button>
+          <button class="sched-chip"        id="sched-dom-15" onclick="setSchedDom(15)">15th</button>
+          <button class="sched-chip"        id="sched-dom-22" onclick="setSchedDom(22)">22nd</button>
+        </div>
+      </div>
+
+      <label>What time?</label>
+      <div class="sched-chips">
+        <button class="sched-chip active" id="sched-time-morning"   onclick="setSchedTime('morning')">☀️ 9am</button>
+        <button class="sched-chip"        id="sched-time-midday"    onclick="setSchedTime('midday')">🌤 12pm</button>
+        <button class="sched-chip"        id="sched-time-afternoon" onclick="setSchedTime('afternoon')">⛅ 3pm</button>
+        <button class="sched-chip"        id="sched-time-evening"   onclick="setSchedTime('evening')">🌙 6pm</button>
+      </div>
+
+      <div id="sched-next-preview" style="font-size:12px;color:var(--green);text-align:center;padding:6px 0 2px;min-height:24px;font-weight:600;"></div>
+    </div>
   </div>
 
   <div class="card" id="profile-platcats-card">
@@ -1537,6 +1619,146 @@ function loadProfile() {
   renderPlatformCats(profile.platformCats || {});
   document.getElementById('profile-biz-cat').textContent  = profile.category || 'Set up your profile below';
   if (profile.locationType) setProfileLocationType(profile.locationType);
+  loadSchedule(profile.postingSchedule || null);
+}
+
+// ══════════════════════════════════════════
+// AUTO-POST SCHEDULE
+// ══════════════════════════════════════════
+var schedState = { enabled: false, frequency: 'weekly', dayOfWeek: 1, dayOfMonth: 1, timeSlot: 'morning', timezone: Intl.DateTimeFormat().resolvedOptions().timeZone };
+
+function loadSchedule(sched) {
+  if (sched) {
+    schedState.enabled    = !!sched.enabled;
+    schedState.frequency  = sched.frequency  || 'weekly';
+    schedState.dayOfWeek  = sched.dayOfWeek  ?? 1;
+    schedState.dayOfMonth = sched.dayOfMonth || 1;
+    schedState.timeSlot   = sched.timeSlot   || 'morning';
+    schedState.timezone   = sched.timezone   || schedState.timezone;
+  }
+  document.getElementById('sched-enabled').checked = schedState.enabled;
+  document.getElementById('sched-fields').style.display = schedState.enabled ? 'block' : 'none';
+  _renderSchedChips();
+  _updateSchedPreview();
+}
+
+function toggleSchedEnabled() {
+  schedState.enabled = document.getElementById('sched-enabled').checked;
+  document.getElementById('sched-fields').style.display = schedState.enabled ? 'block' : 'none';
+  _updateSchedPreview();
+  saveSchedule();
+}
+
+function setSchedFreq(f) {
+  schedState.frequency = f;
+  _renderSchedChips();
+  _updateSchedPreview();
+  saveSchedule();
+}
+
+function setSchedDay(d) {
+  schedState.dayOfWeek = d;
+  _renderSchedChips();
+  _updateSchedPreview();
+  saveSchedule();
+}
+
+function setSchedDom(d) {
+  schedState.dayOfMonth = d;
+  _renderSchedChips();
+  _updateSchedPreview();
+  saveSchedule();
+}
+
+function setSchedTime(t) {
+  schedState.timeSlot = t;
+  _renderSchedChips();
+  _updateSchedPreview();
+  saveSchedule();
+}
+
+function _renderSchedChips() {
+  ['weekly','biweekly','monthly'].forEach(f => {
+    const el = document.getElementById('sched-freq-' + f);
+    if (el) el.classList.toggle('active', schedState.frequency === f);
+  });
+  const isMonthly = schedState.frequency === 'monthly';
+  const dowWrap = document.getElementById('sched-dow-wrap');
+  const domWrap = document.getElementById('sched-dom-wrap');
+  if (dowWrap) dowWrap.style.display = isMonthly ? 'none' : 'block';
+  if (domWrap) domWrap.style.display = isMonthly ? 'block' : 'none';
+  [0,1,2,3,4,5,6].forEach(d => {
+    const el = document.getElementById('sched-dow-' + d);
+    if (el) el.classList.toggle('active', schedState.dayOfWeek === d);
+  });
+  [1,8,15,22].forEach(d => {
+    const el = document.getElementById('sched-dom-' + d);
+    if (el) el.classList.toggle('active', schedState.dayOfMonth === d);
+  });
+  ['morning','midday','afternoon','evening'].forEach(t => {
+    const el = document.getElementById('sched-time-' + t);
+    if (el) el.classList.toggle('active', schedState.timeSlot === t);
+  });
+}
+
+function _computeNextRunDate(sched) {
+  const slotHour = { morning: 9, midday: 12, afternoon: 15, evening: 18 }[sched.timeSlot || 'morning'];
+  const tz = sched.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const now = new Date();
+
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz, year:'numeric', month:'numeric', day:'numeric',
+    hour:'numeric', minute:'numeric', hour12: false
+  }).formatToParts(now);
+  const gp = (t) => parseInt(parts.find(p => p.type === t)?.value || '0');
+  const lYear = gp('year'), lMonth = gp('month') - 1, lDay = gp('day'), lHour = gp('hour');
+  const lDow = new Date(lYear, lMonth, lDay).getDay();
+
+  let candYear = lYear, candMonth = lMonth, candDay = lDay;
+
+  if (sched.frequency === 'monthly') {
+    const dom = sched.dayOfMonth || 1;
+    if (lDay < dom || (lDay === dom && lHour < slotHour)) {
+      candDay = dom;
+    } else {
+      const d = new Date(lYear, lMonth + 1, dom);
+      candYear = d.getFullYear(); candMonth = d.getMonth(); candDay = d.getDate();
+    }
+  } else {
+    const targetDow = sched.dayOfWeek ?? 1;
+    let ahead = (targetDow - lDow + 7) % 7;
+    if (ahead === 0 && lHour >= slotHour) ahead = sched.frequency === 'biweekly' ? 14 : 7;
+    else if (ahead === 0) ahead = 0;
+    else if (sched.frequency === 'biweekly' && ahead < 7) ahead += 7;
+    const d = new Date(lYear, lMonth, lDay + ahead);
+    candYear = d.getFullYear(); candMonth = d.getMonth(); candDay = d.getDate();
+  }
+
+  // Build UTC equivalent of "candDate at slotHour in tz"
+  const approx = new Date(candYear, candMonth, candDay, slotHour, 0, 0);
+  const tzParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz, year:'numeric', month:'numeric', day:'numeric',
+    hour:'numeric', minute:'numeric', hour12: false
+  }).formatToParts(approx);
+  const tgp = (t) => parseInt(tzParts.find(p => p.type === t)?.value || '0');
+  const tzLocalMs = Date.UTC(tgp('year'), tgp('month') - 1, tgp('day'), tgp('hour'), tgp('minute'), 0);
+  return new Date(approx.getTime() + (approx.getTime() - tzLocalMs));
+}
+
+function _updateSchedPreview() {
+  const el = document.getElementById('sched-next-preview');
+  if (!el) return;
+  if (!schedState.enabled) { el.textContent = ''; return; }
+  const next = _computeNextRunDate(schedState);
+  const label = next.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+  const slotLabel = { morning:'9am', midday:'12pm', afternoon:'3pm', evening:'6pm' }[schedState.timeSlot];
+  el.textContent = '📅 Next post: ' + label + ' at ' + slotLabel;
+}
+
+function saveSchedule() {
+  const nextRun = schedState.enabled ? _computeNextRunDate(schedState) : null;
+  const payload = { ...schedState, nextRunAt: nextRun ? nextRun.toISOString() : null };
+  if (window._saveScheduleToFirestore) window._saveScheduleToFirestore(payload);
 }
 
 // ══════════════════════════════════════════
@@ -1819,6 +2041,7 @@ onAuthStateChanged(auth, async (user) => {
         tone:     biz.tone || 'friendly',
         platformCats: biz.platformCats || {},
         ownerName: biz.ownerName || '',
+        postingSchedule: biz.postingSchedule || null,
       };
       if (window._bbSetProfile) window._bbSetProfile(p);
     }
@@ -1990,6 +2213,31 @@ window._savePlatformCatsToFirestore = async function(cats) {
     }, { merge: true });
   } catch(e) {
     console.error('savePlatformCats Firestore error:', e);
+  }
+};
+
+window._saveScheduleToFirestore = async function(sched) {
+  if (!currentUser || !activeBizId) return;
+  try {
+    const payload = {
+      enabled:    sched.enabled,
+      frequency:  sched.frequency,
+      dayOfWeek:  sched.dayOfWeek,
+      dayOfMonth: sched.dayOfMonth,
+      timeSlot:   sched.timeSlot,
+      timezone:   sched.timezone,
+      updatedAt:  serverTimestamp(),
+    };
+    if (sched.nextRunAt) {
+      payload.nextRunAt = new Date(sched.nextRunAt);
+    } else {
+      payload.nextRunAt = null;
+    }
+    await setDoc(doc(db, 'businesses', activeBizId), {
+      postingSchedule: payload,
+    }, { merge: true });
+  } catch(e) {
+    console.error('saveSchedule Firestore error:', e);
   }
 };
 </script>
