@@ -823,6 +823,8 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   sendPasswordResetEmail
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -849,6 +851,24 @@ async function afterAuth(user) {
     window.showToast('Error loading account: ' + (e.code || e.message), true);
   }
 }
+
+// Handle Google redirect result on mobile (fires after returning from Google)
+getRedirectResult(auth).then(async (result) => {
+  if (!result?.user) return;
+  const snap = await getDoc(doc(db, 'users', result.user.uid));
+  if (!snap.exists()) {
+    await setDoc(doc(db, 'users', result.user.uid), {
+      ownerName: result.user.displayName || '',
+      email: result.user.email,
+      plan: 'starter',
+      onboarded: false,
+      createdAt: serverTimestamp()
+    });
+  }
+  await afterAuth(result.user);
+}).catch(e => {
+  if (e.code !== 'auth/popup-closed-by-user') window.showToast('Google sign-in failed', true);
+});
 
 // One-time check on page load: redirect if already signed in
 auth.authStateReady().then(() => {
@@ -903,8 +923,13 @@ window.handleSignUp = async function() {
 };
 
 window.handleGoogle = async function() {
+  const provider = new GoogleAuthProvider();
+  const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  if (isMobile) {
+    await signInWithRedirect(auth, provider);
+    return;
+  }
   try {
-    const provider = new GoogleAuthProvider();
     const cred = await signInWithPopup(auth, provider);
     const snap = await getDoc(doc(db, 'users', cred.user.uid));
     if (!snap.exists()) {
