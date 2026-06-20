@@ -1210,7 +1210,7 @@ exports.adminSubscriptionSummary = onRequest({ invoker: 'public' }, async (req, 
   });
   const pricingSnap = await db.collection('settings').doc('pricing').get();
   const pricingData = pricingSnap.exists ? pricingSnap.data() : {};
-  const MRR_PRICES = { starter: 0, pro: pricingData.proMonthly || 19, agency: pricingData.agencyMonthly || 99 };
+  const MRR_PRICES = { starter: 0, pro: pricingData.proMonthly || 49, agency: pricingData.agencyMonthly || 149 };
   const mrr = Object.entries(planCounts)
     .reduce((sum, [plan, count]) => sum + (MRR_PRICES[plan] || 0) * count, 0);
   res.json({
