@@ -1269,23 +1269,15 @@ function selectTone(btn, tone) {
 }
 
 // ══════════════════════════════════════════
-// PLATFORM CONNECT (OAuth placeholder)
+// PLATFORM CONNECT — redirects to real OAuth flow
 // ══════════════════════════════════════════
 function connectPlatform(id, btn) {
-  // Simulate OAuth flow — real implementation uses Firebase Auth + OAuth popup
-  btn.textContent = 'Connecting...';
+  // Instagram connects through the Facebook OAuth flow
+  const oauthPlatform = (id === 'instagram') ? 'facebook' : id;
+  btn.textContent = 'Opening…';
   btn.disabled = true;
-
-  setTimeout(() => {
-    btn.textContent = '✓ Connected';
-    btn.classList.add('done');
-    btn.disabled = false;
-
-    const card = document.getElementById('cc-' + id);
-    if (card) card.classList.add('connected');
-
-    if (!connectedPlatforms.includes(id)) connectedPlatforms.push(id);
-  }, 1200);
+  // Pass returnTo=onboarding so Connected.html sends the user back here
+  window.location.href = 'BlastyBiz-Connect.html?platform=' + oauthPlatform + '&returnTo=onboarding';
 }
 
 // ══════════════════════════════════════════

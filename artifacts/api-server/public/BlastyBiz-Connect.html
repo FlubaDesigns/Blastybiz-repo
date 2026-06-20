@@ -368,7 +368,8 @@ function renderPlatform(platformId, conn, bizId, uid) {
   }
 
   const initiateFn = platformId === 'google' ? 'initiateGoogleOAuth' : 'initiateFacebookOAuth';
-  const connectUrl = `${CF}/${initiateFn}?businessId=${encodeURIComponent(bizId)}&uid=${encodeURIComponent(uid)}`;
+  const returnToParam = new URLSearchParams(window.location.search).get('returnTo') || '';
+  const connectUrl = `${CF}/${initiateFn}?businessId=${encodeURIComponent(bizId)}&uid=${encodeURIComponent(uid)}${returnToParam ? '&returnTo=' + encodeURIComponent(returnToParam) : ''}`;
 
   if (platformId === 'google') _googleConnectUrl = connectUrl;
   if (platformId === 'facebook') _fbConnectUrl = connectUrl;

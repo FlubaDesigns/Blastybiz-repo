@@ -648,13 +648,13 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
 // OAuth 2.0 redirect URI = https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback
 // ══════════════════════════════════════════
 exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID'] }, (req, res) => {
-  const { businessId, uid } = req.query;
+  const { businessId, uid, returnTo } = req.query;
   if (!businessId) { res.status(400).send('Missing businessId'); return; }
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId) { res.status(503).send('Google OAuth not configured. Set GOOGLE_CLIENT_ID secret.'); return; }
   const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback';
   const scope = 'https://www.googleapis.com/auth/business.manage';
-  const state = encodeURIComponent(JSON.stringify({ businessId, uid: uid || '' }));
+  const state = encodeURIComponent(JSON.stringify({ businessId, uid: uid || '', returnTo: returnTo || '' }));
   res.redirect(
     `https://accounts.google.com/o/oauth2/v2/auth` +
     `?client_id=${encodeURIComponent(clientId)}` +
@@ -675,8 +675,10 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
   const { code, state } = req.query;
   if (!code) { res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?error=google'); return; }
 
-  let businessId = '', uid = '';
-  try { const s = JSON.parse(decodeURIComponent(state)); businessId = s.businessId; uid = s.uid; } catch(e) { businessId = state || ''; }
+  let businessId = '', uid = '', returnTo = '';
+  try { const s = JSON.parse(decodeURIComponent(state)); businessId = s.businessId; uid = s.uid; returnTo = s.returnTo || ''; } catch(e) { businessId = state || ''; }
+  const connectedRedirect = `https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?connected=google${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
+  const errorRedirect     = `https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?error=google${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
 
   try {
     const tokenResp = await axios.post('https://oauth2.googleapis.com/token', null, {
@@ -714,10 +716,10 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
       expiresAt: new Date(Date.now() + (expires_in || 3600) * 1000)
     }, { merge: true });
 
-    res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?connected=google');
+    res.redirect(connectedRedirect);
   } catch(e) {
     console.error('googleOAuthCallback error:', e.response?.data || e.message);
-    res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?error=google');
+    res.redirect(errorRedirect);
   }
 });
 
@@ -731,13 +733,13 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
 //   instagram_basic, instagram_content_publish
 // ══════════════════════════════════════════
 exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBOOK_APP_ID'] }, (req, res) => {
-  const { businessId, uid } = req.query;
+  const { businessId, uid, returnTo } = req.query;
   if (!businessId) { res.status(400).send('Missing businessId'); return; }
   const appId = process.env.FACEBOOK_APP_ID;
   if (!appId) { res.status(503).send('Facebook OAuth not configured. Set FACEBOOK_APP_ID secret.'); return; }
   const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/facebookOAuthCallback';
   const scope = 'pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish';
-  const state = encodeURIComponent(JSON.stringify({ businessId, uid: uid || '' }));
+  const state = encodeURIComponent(JSON.stringify({ businessId, uid: uid || '', returnTo: returnTo || '' }));
   res.redirect(
     `https://www.facebook.com/v18.0/dialog/oauth` +
     `?client_id=${encodeURIComponent(appId)}` +
@@ -757,8 +759,10 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', secrets: ['FACEBO
   const { code, state } = req.query;
   if (!code) { res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?error=facebook'); return; }
 
-  let businessId = '', uid = '';
-  try { const s = JSON.parse(decodeURIComponent(state)); businessId = s.businessId; uid = s.uid; } catch(e) { businessId = state || ''; }
+  let businessId = '', uid = '', returnTo = '';
+  try { const s = JSON.parse(decodeURIComponent(state)); businessId = s.businessId; uid = s.uid; returnTo = s.returnTo || ''; } catch(e) { businessId = state || ''; }
+  const fbConnectedRedirect = `https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?connected=facebook${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
+  const fbErrorRedirect     = `https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?error=facebook${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
 
   try {
     const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/facebookOAuthCallback';
@@ -806,10 +810,10 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', secrets: ['FACEBO
     }
 
     await batch.commit();
-    res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?connected=facebook');
+    res.redirect(fbConnectedRedirect);
   } catch(e) {
     console.error('facebookOAuthCallback error:', e.response?.data || e.message);
-    res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?error=facebook');
+    res.redirect(fbErrorRedirect);
   }
 });
 

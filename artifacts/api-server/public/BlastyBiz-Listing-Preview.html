@@ -59,20 +59,16 @@
     <aside class="card">
       <div class="card-title">🏢 Business Summary</div>
       <div class="summary-list">
-        <div class="summary-row"><div class="label">Business</div><div class="value">Gulf Coast Pressure Washing</div></div>
-        <div class="summary-row"><div class="label">Category</div><div class="value">Pressure Washing Service</div></div>
-        <div class="summary-row"><div class="label">Phone</div><div class="value">(941) 555-0184</div></div>
-        <div class="summary-row"><div class="label">Service Area</div><div class="value">Englewood, Venice, North Port, Port Charlotte</div></div>
-        <div class="summary-row"><div class="label">Offer</div><div class="value">Spring driveway and lanai cleaning special</div></div>
+        <div class="summary-row"><div class="label">Business</div><div class="value" id="sb-name">—</div></div>
+        <div class="summary-row"><div class="label">Category</div><div class="value" id="sb-category">—</div></div>
+        <div class="summary-row"><div class="label">Phone</div><div class="value" id="sb-phone">—</div></div>
+        <div class="summary-row"><div class="label">Service Area</div><div class="value" id="sb-area">—</div></div>
+        <div class="summary-row"><div class="label">Offer</div><div class="value" id="sb-offer">—</div></div>
       </div>
 
       <div class="card-title" style="margin-top:20px;">📬 Publish Queue</div>
-      <div class="queue">
-        <div class="queue-row"><div class="platform-icon">G</div><div class="row-main"><div class="row-title">Google Business</div><div class="row-sub">Ready for auto-post</div></div><span class="badge auto">Auto</span></div>
-        <div class="queue-row"><div class="platform-icon">f</div><div class="row-main"><div class="row-title">Facebook</div><div class="row-sub">Ready for auto-post</div></div><span class="badge auto">Auto</span></div>
-        <div class="queue-row"><div class="platform-icon">◎</div><div class="row-main"><div class="row-title">Instagram</div><div class="row-sub">Ready through Meta</div></div><span class="badge auto">Auto</span></div>
-        <div class="queue-row"><div class="platform-icon">N</div><div class="row-main"><div class="row-title">Nextdoor</div><div class="row-sub">Copy and paste required</div></div><span class="badge manual">Manual</span></div>
-        <div class="queue-row"><div class="platform-icon">C</div><div class="row-main"><div class="row-title">Craigslist</div><div class="row-sub">Copy and paste required</div></div><span class="badge manual">Manual</span></div>
+      <div class="queue" id="publish-queue">
+        <div class="queue-row"><div class="row-main" style="color:var(--muted);font-size:13px">Loading platforms…</div></div>
       </div>
     </aside>
 
@@ -373,6 +369,39 @@ function populateFromDraftData(draftData) {
   Object.entries(adaptations).forEach(([pid, text]) => {
     drafts[pid] = { text, headline: '', cta: '' };
   });
+
+  // ── Fill Business Summary sidebar from real draft data ──
+  const sbName     = document.getElementById('sb-name');
+  const sbCategory = document.getElementById('sb-category');
+  const sbPhone    = document.getElementById('sb-phone');
+  const sbArea     = document.getElementById('sb-area');
+  const sbOffer    = document.getElementById('sb-offer');
+  if (sbName)     sbName.textContent     = draftData.name     || '—';
+  if (sbCategory) sbCategory.textContent = draftData.category || '—';
+  if (sbPhone)    sbPhone.textContent    = draftData.phone    || '—';
+  if (sbArea)     sbArea.textContent     = draftData.region   || draftData.address || '—';
+  if (sbOffer)    sbOffer.textContent    = draftData.offer    || '—';
+
+  // ── Rebuild Publish Queue from actual platforms in this draft ──
+  const queue = document.getElementById('publish-queue');
+  if (queue) {
+    const platformIds = Object.keys(adaptations);
+    if (platformIds.length) {
+      queue.innerHTML = platformIds.map(pid => {
+        const meta    = PLATFORM_META[pid] || { icon: pid[0].toUpperCase(), name: pid, capabilityLevel: 'manual_assisted', badge: 'Copy-Ready', badgeClass: 'badge manual' };
+        const isAuto  = meta.capabilityLevel && meta.capabilityLevel !== 'manual_assisted';
+        const subText = isAuto ? 'Ready for auto-post' : 'Copy-paste required';
+        return `<div class="queue-row">
+          <div class="platform-icon">${meta.icon}</div>
+          <div class="row-main"><div class="row-title">${meta.name}</div><div class="row-sub">${subText}</div></div>
+          <span class="${meta.badgeClass || (isAuto ? 'badge auto' : 'badge manual')}">${meta.badge || (isAuto ? 'Auto' : 'Copy-Ready')}</span>
+        </div>`;
+      }).join('');
+    } else {
+      queue.innerHTML = '<div class="queue-row"><div class="row-main" style="color:var(--muted);font-size:13px">No platforms selected.</div></div>';
+    }
+  }
+
   const tabContainer = document.querySelector('.tab-bar') || document.querySelector('.tabs');
   if (tabContainer) {
     tabContainer.innerHTML = '';
@@ -390,7 +419,7 @@ function populateFromDraftData(draftData) {
     const firstBtn = document.querySelector('.tab');
     showDraft(firstKey, firstBtn);
   }
-  const autoCount = Object.keys(drafts).filter(k => PLATFORM_META[k]?.capabilityLevel?.includes('auto')).length;
+  const autoCount   = Object.keys(drafts).filter(k => PLATFORM_META[k]?.capabilityLevel?.includes('auto')).length;
   const manualCount = Object.keys(drafts).filter(k => PLATFORM_META[k]?.capabilityLevel === 'manual_assisted').length;
   const approvalText = document.querySelector('.approval-text');
   if (approvalText) {

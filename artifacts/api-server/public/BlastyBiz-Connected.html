@@ -101,6 +101,7 @@ import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase
 const params = new URLSearchParams(window.location.search);
 const platform = params.get('connected');  // 'google' or 'facebook'
 const errorPlatform = params.get('error'); // 'google' or 'facebook'
+const returnTo = params.get('returnTo');   // 'onboarding' when coming from the onboarding wizard
 
 const PLATFORM_META = {
   google: {
@@ -241,9 +242,13 @@ auth.authStateReady().then(() => {
       </div>
 
       <div class="cta-group">
-        <a href="BlastyBiz.html" class="btn-primary">⚡ Create Your First Listing</a>
-        <a href="BlastyBiz-Connect.html" class="btn-secondary">Connect another platform</a>
-        <a href="BlastyBiz-Dashboard.html" class="btn-secondary">Go to Dashboard</a>
+        ${returnTo === 'onboarding'
+          ? `<a href="BlastyBiz-Onboarding.html" class="btn-primary">← Back to Setup</a>
+             <a href="BlastyBiz-Connect.html" class="btn-secondary">Connect another platform</a>`
+          : `<a href="BlastyBiz.html" class="btn-primary">⚡ Create Your First Listing</a>
+             <a href="BlastyBiz-Connect.html" class="btn-secondary">Connect another platform</a>
+             <a href="BlastyBiz-Dashboard.html" class="btn-secondary">Go to Dashboard</a>`
+        }
       </div>
     `;
   });
