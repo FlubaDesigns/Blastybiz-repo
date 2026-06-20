@@ -753,22 +753,39 @@ select option { background: var(--dark); }
     <!-- ── STEP 3: LOCATION ── -->
     <div class="slide" id="slide-3">
       <span class="slide-icon">📍</span>
-      <div class="slide-title">Where Are<br/><span>You Located?</span></div>
-      <div class="slide-sub">Your address helps customers find you and lets platforms show you to the right local audience.</div>
+      <div class="slide-title">Where Do You<br/><span>Do Business?</span></div>
+      <div class="slide-sub">This shapes which platforms show you to the right audience.</div>
 
       <div class="field">
-        <label>Street Address</label>
-        <input type="text" id="s-address" placeholder="123 Main Street" oninput="checkStep(3)" onchange="checkStep(3)" />
+        <label>Business Type</label>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button class="loc-type-btn active" id="lbt-physical" onclick="setOnboardingLoc('physical')" style="flex:1;padding:10px 6px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--light);cursor:pointer;font-size:13px;font-weight:600;transition:.2s;">📍 Has a Location</button>
+          <button class="loc-type-btn" id="lbt-online" onclick="setOnboardingLoc('online')" style="flex:1;padding:10px 6px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--light);cursor:pointer;font-size:13px;font-weight:600;transition:.2s;">🌐 Online Only</button>
+          <button class="loc-type-btn" id="lbt-both" onclick="setOnboardingLoc('both')" style="flex:1;padding:10px 6px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--light);cursor:pointer;font-size:13px;font-weight:600;transition:.2s;">🌍 Both</button>
+        </div>
       </div>
 
-      <div class="input-row">
+      <div id="s-addr-fields">
         <div class="field">
-          <label>City</label>
-          <input type="text" id="s-city" placeholder="Naples" oninput="checkStep(3)" onchange="checkStep(3)" />
+          <label>Street Address</label>
+          <input type="text" id="s-address" placeholder="123 Main Street" oninput="checkStep(3)" onchange="checkStep(3)" />
         </div>
+        <div class="input-row">
+          <div class="field">
+            <label>City</label>
+            <input type="text" id="s-city" placeholder="Naples" oninput="checkStep(3)" onchange="checkStep(3)" />
+          </div>
+          <div class="field">
+            <label>State</label>
+            <input type="text" id="s-state" placeholder="FL" oninput="checkStep(3)" onchange="checkStep(3)" />
+          </div>
+        </div>
+      </div>
+
+      <div id="s-region-field" style="display:none;">
         <div class="field">
-          <label>State</label>
-          <input type="text" id="s-state" placeholder="FL" oninput="checkStep(3)" onchange="checkStep(3)" />
+          <label>Service Area</label>
+          <input type="text" id="s-region" placeholder="e.g. Nationwide, Southeast US, Tampa Bay area" oninput="checkStep(3)" onchange="checkStep(3)" />
         </div>
       </div>
 
@@ -941,6 +958,7 @@ select option { background: var(--dark); }
 
 </div><!-- /wizard -->
 
+<script src="platform-categories.js"></script>
 <script>
 // ══════════════════════════════════════════
 // PARTICLE CANVAS
@@ -1128,49 +1146,56 @@ function checkStep(step) {
     valid = desc?.length > 5;
     if (valid) selectedCategory = desc;
   } else if (step === 3) {
-    const addr = document.getElementById('s-address')?.value?.trim();
-    const city = document.getElementById('s-city')?.value?.trim();
-    valid = addr?.length > 3 && city?.length > 1;
+    const lt = window._onboardingLocType || 'physical';
+    if (lt === 'online') {
+      const region = document.getElementById('s-region')?.value?.trim();
+      valid = region?.length > 2;
+    } else {
+      const addr = document.getElementById('s-address')?.value?.trim();
+      const city = document.getElementById('s-city')?.value?.trim();
+      valid = addr?.length > 3 && city?.length > 1;
+    }
   }
 
   btn.disabled = !valid;
 }
 
 // ══════════════════════════════════════════
+// LOCATION TYPE TOGGLE
+// ══════════════════════════════════════════
+window._onboardingLocType = 'physical';
+window.setOnboardingLoc = function(type) {
+  window._onboardingLocType = type;
+  ['physical','online','both'].forEach(t => {
+    const btn = document.getElementById('lbt-' + t);
+    if (btn) {
+      btn.classList.toggle('active', t === type);
+      btn.style.background = (t === type) ? 'var(--green)' : 'var(--card)';
+      btn.style.color = (t === type) ? '#000' : 'var(--light)';
+      btn.style.borderColor = (t === type) ? 'var(--green)' : 'var(--border)';
+    }
+  });
+  const addrFields   = document.getElementById('s-addr-fields');
+  const regionField  = document.getElementById('s-region-field');
+  if (type === 'online') {
+    if (addrFields)  addrFields.style.display  = 'none';
+    if (regionField) regionField.style.display = 'block';
+  } else if (type === 'both') {
+    if (addrFields)  addrFields.style.display  = 'block';
+    if (regionField) regionField.style.display = 'block';
+  } else {
+    if (addrFields)  addrFields.style.display  = 'block';
+    if (regionField) regionField.style.display = 'none';
+  }
+  checkStep(3);
+};
+
+// ══════════════════════════════════════════
 // STATIC CATEGORY REGISTRY
 // Manual/copy-paste platforms only
 // API platforms resolve categories themselves
 // ══════════════════════════════════════════
-const PLATFORM_CATS = {
-  fbmarket: {
-    name: 'FB Marketplace', icon: '🛒',
-    cats: ['Antiques & Collectibles','Arts & Crafts','Baby & Kids','Books, Movies & Music','Clothing & Accessories','Electronics','Food & Grocery','Free Stuff','Furniture','Garden & Outdoor','Health & Beauty','Home Goods','Instruments','Miscellaneous','Pet Supplies','Sports & Outdoors','Tools','Toys & Games','Vehicles','Services']
-  },
-  craigslist: {
-    name: 'Craigslist', icon: '📌',
-    cats: ['Automotive Services','Beauty Services','Cell Phone / Computer Repair','Creative Services','Cycle / Scooter / Moped Repair','Event & Wedding Services','Farm & Garden Services','Financial Services','Food & Catering','Health & Wellness','Household Help','Handyman','Labor / Moving','Landscaping','Legal Services','Lessons & Tutoring','Pet Services','Real Estate Services','Skilled Trades','Small Business Ads','Travel & Vacation','Writing / Editing / Translation','For Sale — General','For Sale — Antiques','For Sale — Appliances','For Sale — Arts & Crafts','For Sale — Baby','For Sale — Bikes','For Sale — Boats','For Sale — Books','For Sale — Cars & Trucks','For Sale — Clothes','For Sale — Electronics','For Sale — Farm & Garden','For Sale — Free','For Sale — Furniture','For Sale — Jewelry','For Sale — Materials','For Sale — Musical Instruments','For Sale — Photo & Video','For Sale — Sporting','For Sale — Tools','For Sale — Toys','Gigs — Creative','Gigs — Crew','Gigs — Domestic','Gigs — Event','Gigs — Labor','Gigs — Talent']
-  },
-  yelp: {
-    name: 'Yelp', icon: '⭐',
-    cats: ['American (New)','American (Traditional)','Auto Repair','Auto Detailing','Bakeries','Bars','Beauty & Spas','Breakfast & Brunch','Burgers','Cafes','Car Dealers','Carpet Cleaning','Chinese','Coffee & Tea','Contractors','Dentists','Doctors','Dry Cleaning','Education','Event Planning','Financial Services','Fitness & Instruction','Food Delivery','Hair Salons','Home Cleaning','Home Services','Hotels','Italian','Japanese','Juice Bars','Landscaping','Lawyers','Massage','Mexican','Movers','Nail Salons','Nightlife','Painters','Personal Chefs','Pet Services','Photography','Pizza','Plumbers','Real Estate','Restaurants','Roofing','Shopping','Skin Care','Tattoo','Thai','Towing','Vietnamese','Wedding Planning']
-  },
-  thumbtack: {
-    name: 'Thumbtack', icon: '📍',
-    cats: ['Accounting','Appliance Repair','Auto Detailing','Baby Sitting','Carpentry','Carpet Cleaning','Catering','Child Care','Cleaning','Computer Repair','DJ','Dog Training','Dog Walking','Electrical','Event Photography','Event Planning','Fence Installation','Flooring','General Contracting','Handyman','House Cleaning','HVAC','Interior Design','Landscaping','Lawn Care','Legal','Life Coaching','Makeup','Massage','Moving','Music Lessons','Painting','Personal Training','Pet Grooming','Pet Sitting','Photography','Piano Lessons','Plumbing','Pool Service','Pressure Washing','Real Estate Photography','Roofing','Senior Care','Snow Removal','Tree Service','Tutoring','Video Production','Wedding Photography','Window Cleaning','Yoga']
-  },
-  angi: {
-    name: 'Angi', icon: '🔧',
-    cats: ['Air Duct Cleaning','Appliance Repair','Basement Finishing','Bathroom Remodel','Carpet Cleaning','Carpet Installation','Ceiling Fan Installation','Chimney Sweep','Concrete Work','Deck Building','Door Installation','Drywall Repair','Electrical','Epoxy Flooring','Fence Installation','Foundation Repair','Garage Door Repair','General Contractor','Gutter Cleaning','Handyman','Hardwood Flooring','HVAC','Insulation','Interior Painting','Kitchen Remodel','Landscaping','Lawn Care','Mold Removal','Moving','Painting — Exterior','Pest Control','Plumbing','Pool Service','Pressure Washing','Roof Repair','Roofing','Septic Service','Siding','Snow Removal','Solar Panel Installation','Tile Installation','Tree Service','Wallpaper Removal','Water Heater','Window Installation','Window Cleaning']
-  },
-  alignable: {
-    name: 'Alignable', icon: '🤝',
-    cats: ['Accounting & Finance','Architecture','Auto & Vehicle','Beauty & Wellness','Business Consulting','Childcare & Education','Cleaning Services','Construction & Contracting','Creative & Design','Dental','Digital Marketing','Entertainment','Financial Planning','Fitness & Health','Food & Restaurant','Government & Nonprofit','Home Improvement','HR & Recruiting','Insurance','IT & Technology','Landscaping','Law & Legal','Manufacturing','Medical & Healthcare','Non-Profit','Pet Services','Photography & Video','Printing & Signs','Real Estate','Retail','Senior Services','Social Media','Transportation','Travel','Veterinary','Wedding & Events']
-  },
-  applemaps: {
-    name: 'Apple Maps', icon: '🗺️',
-    cats: ['Airport','Amusement Park','Aquarium','ATM','Bakery','Bank','Bar','Beauty Salon','Bowling Alley','Bus Station','Cafe','Campground','Car Dealer','Car Rental','Car Repair','Car Wash','Casino','Cemetery','Church','City Hall','Clothing Store','Convenience Store','Courthouse','Dentist','Department Store','Doctor','Electrician','Embassy','Fire Station','Florist','Food','Funeral Home','Furniture Store','Gas Station','Gym','Hair Care','Hardware Store','Hospital','Hotel','Insurance Agency','Jewelry Store','Laundry','Library','Locksmith','Lodging','Meal Delivery','Meal Takeaway','Movie Theater','Museum','Night Club','Painter','Park','Parking','Pet Store','Pharmacy','Physiotherapist','Plumber','Police','Post Office','Real Estate Agency','Restaurant','Roofing Contractor','RV Park','School','Shopping Mall','Spa','Stadium','Store','Subway Station','Supermarket','Synagogue','Taxi Stand','Train Station','Travel Agency','University','Veterinary Care','Zoo']
-  }
-};
+const PLATFORM_CATS = window.PLATFORM_CATS;
 
 // ══════════════════════════════════════════
 // CATEGORY RESOLVER
@@ -1185,8 +1210,13 @@ async function resolveCats() {
   const list = document.getElementById('platform-cat-list');
   list.innerHTML = '<p style="padding:12px;opacity:.7">Picking best categories with AI…</p>';
 
+  const locType = window._onboardingLocType || 'physical';
+  const skipForOnline = ['applemaps'];
   const platformCatLists = {};
-  Object.entries(PLATFORM_CATS).forEach(([pid, p]) => { platformCatLists[pid] = p.cats; });
+  Object.entries(PLATFORM_CATS).forEach(([pid, p]) => {
+    if (locType === 'online' && skipForOnline.includes(pid)) return;
+    platformCatLists[pid] = p.cats;
+  });
 
   const businessName = document.getElementById('s-name')?.value?.trim() || '';
 
@@ -1196,7 +1226,7 @@ async function resolveCats() {
     const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/resolveCategories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
-      body: JSON.stringify({ businessName, description: desc, platformCatLists }),
+      body: JSON.stringify({ businessName, description: desc, platformCatLists, locationType: locType }),
     });
     if (resp.ok) {
       const data = await resp.json();
@@ -1346,6 +1376,8 @@ window._buildProfileData = function() {
     phone:        document.getElementById('s-phone')?.value || '',
     category:     window.selectedCategory || '',
     platformCats: window.resolvedCats || {},
+    locationType: window._onboardingLocType || 'physical',
+    region:       document.getElementById('s-region')?.value || '',
     address:      document.getElementById('s-address')?.value || '',
     city:         document.getElementById('s-city')?.value || '',
     state:        document.getElementById('s-state')?.value || '',
