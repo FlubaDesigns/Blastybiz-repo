@@ -112,16 +112,22 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
 
-  const userSnap = await db.collection('users').doc(decoded.uid).get();
-  const userData  = userSnap.exists ? userSnap.data() : {};
-  const plan      = userData.plan || 'starter';
-  const cap       = AI_LIMITS[plan] || AI_LIMITS.starter;
-  const resetAt   = userData.aiActionsResetAt?.toDate?.() || null;
-  const now       = new Date();
-  const needsReset = !resetAt || now > resetAt;
-  const used      = needsReset ? 0 : (userData.aiActionsUsed || 0);
-  if (used >= cap) return res.status(429).json({ error: `AI limit reached (${used}/${cap} this month). Upgrade your plan for more.` });
+  let plan = 'starter', needsReset = true, used = 0;
+  try {
+    const userSnap = await db.collection('users').doc(decoded.uid).get();
+    const userData  = userSnap.exists ? userSnap.data() : {};
+    plan      = userData.plan || 'starter';
+    const cap       = AI_LIMITS[plan] || AI_LIMITS.starter;
+    const resetAt   = userData.aiActionsResetAt?.toDate?.() || null;
+    const now2      = new Date();
+    needsReset = !resetAt || now2 > resetAt;
+    used      = needsReset ? 0 : (userData.aiActionsUsed || 0);
+    if (used >= cap) return res.status(429).json({ error: `AI limit reached (${used}/${cap} this month). Upgrade your plan for more.` });
+  } catch(fsErr) {
+    console.warn('adaptListing: Firestore read failed (IAM?), proceeding with starter defaults:', fsErr.message);
+  }
 
+  const now = new Date();
   const { listing, platforms, tone, platformCats } = req.body;
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -154,22 +160,38 @@ Return this exact JSON structure:
   }
 }`;
 
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 1500,
-    messages: [{ role: 'user', content: prompt }]
-  });
+  let parsed;
+  try {
+    const aiResp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({ model: 'claude-sonnet-4-5-20250929', max_tokens: 1500, messages: [{ role: 'user', content: prompt }] })
+    });
+    if (!aiResp.ok) { const t = await aiResp.text(); throw new Error(`Anthropic ${aiResp.status}: ${t.slice(0,200)}`); }
+    const aiJson = await aiResp.json();
+    parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
+  } catch(e) {
+    console.error('adaptListing AI error:', e.message);
+    return res.status(500).json({ error: 'AI adaptation failed: ' + e.message });
+  }
 
-  const parsed = JSON.parse(response.content[0].text.replace(/```json|```/g, '').trim());
-  if (needsReset) {
-    await db.collection('users').doc(decoded.uid).update({
-      aiActionsUsed: 1,
-      aiActionsResetAt: admin.firestore.Timestamp.fromDate(new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000))
-    });
-  } else {
-    await db.collection('users').doc(decoded.uid).update({
-      aiActionsUsed: admin.firestore.FieldValue.increment(1)
-    });
+  try {
+    if (needsReset) {
+      await db.collection('users').doc(decoded.uid).update({
+        aiActionsUsed: 1,
+        aiActionsResetAt: admin.firestore.Timestamp.fromDate(new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000))
+      });
+    } else {
+      await db.collection('users').doc(decoded.uid).update({
+        aiActionsUsed: admin.firestore.FieldValue.increment(1)
+      });
+    }
+  } catch(fsErr) {
+    console.warn('adaptListing: Firestore update failed (IAM?), usage not tracked:', fsErr.message);
   }
   res.json(parsed);
 });
@@ -185,15 +207,22 @@ exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
 
-  const userSnap = await db.collection('users').doc(decoded.uid).get();
-  const userData  = userSnap.exists ? userSnap.data() : {};
-  const plan      = userData.plan || 'starter';
-  const cap       = AI_LIMITS[plan] || AI_LIMITS.starter;
-  const resetAt   = userData.aiActionsResetAt?.toDate?.() || null;
-  const now       = new Date();
-  const needsReset = !resetAt || now > resetAt;
-  const used      = needsReset ? 0 : (userData.aiActionsUsed || 0);
-  if (used >= cap) return res.status(429).json({ error: `AI limit reached (${used}/${cap} this month). Upgrade your plan for more.` });
+  let needsReset = true;
+  try {
+    const userSnap = await db.collection('users').doc(decoded.uid).get();
+    const userData  = userSnap.exists ? userSnap.data() : {};
+    const plan      = userData.plan || 'starter';
+    const cap       = AI_LIMITS[plan] || AI_LIMITS.starter;
+    const resetAt   = userData.aiActionsResetAt?.toDate?.() || null;
+    const now2      = new Date();
+    needsReset = !resetAt || now2 > resetAt;
+    const used      = needsReset ? 0 : (userData.aiActionsUsed || 0);
+    if (used >= cap) return res.status(429).json({ error: `AI limit reached (${used}/${cap} this month). Upgrade your plan for more.` });
+  } catch(fsErr) {
+    console.warn('resolveCategories: Firestore read failed (IAM?), proceeding with starter defaults:', fsErr.message);
+  }
+
+  const now = new Date();
 
   const { description, platformCatLists } = req.body;
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -204,21 +233,34 @@ Return ONLY valid JSON, no markdown: { "categories": { "platformId": "category n
 
 ${Object.entries(platformCatLists).map(([id, cats]) => `${id}: ${cats.join(', ')}`).join('\n')}`;
 
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514', max_tokens: 500,
-    messages: [{ role: 'user', content: prompt }]
-  });
+  let parsed;
+  try {
+    const aiResp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-5-20250929', max_tokens: 500, messages: [{ role: 'user', content: prompt }] })
+    });
+    if (!aiResp.ok) { const t = await aiResp.text(); throw new Error(`Anthropic ${aiResp.status}: ${t.slice(0,200)}`); }
+    const aiJson = await aiResp.json();
+    parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
+  } catch(e) {
+    console.error('resolveCategories AI error:', e.message);
+    return res.status(500).json({ error: 'AI category resolution failed: ' + e.message });
+  }
 
-  const parsed = JSON.parse(response.content[0].text.replace(/```json|```/g, '').trim());
-  if (needsReset) {
-    await db.collection('users').doc(decoded.uid).update({
-      aiActionsUsed: 1,
-      aiActionsResetAt: admin.firestore.Timestamp.fromDate(new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000))
-    });
-  } else {
-    await db.collection('users').doc(decoded.uid).update({
-      aiActionsUsed: admin.firestore.FieldValue.increment(1)
-    });
+  try {
+    if (needsReset) {
+      await db.collection('users').doc(decoded.uid).update({
+        aiActionsUsed: 1,
+        aiActionsResetAt: admin.firestore.Timestamp.fromDate(new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000))
+      });
+    } else {
+      await db.collection('users').doc(decoded.uid).update({
+        aiActionsUsed: admin.firestore.FieldValue.increment(1)
+      });
+    }
+  } catch(fsErr) {
+    console.warn('resolveCategories: Firestore update failed (IAM?), usage not tracked:', fsErr.message);
   }
   res.json(parsed);
 });
@@ -1336,12 +1378,14 @@ Return ONLY valid JSON, no markdown, no explanation:
 }`;
 
   try {
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 600,
-      messages: [{ role: 'user', content: prompt }]
+    const aiResp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-5-20250929', max_tokens: 600, messages: [{ role: 'user', content: prompt }] })
     });
-    const parsed = JSON.parse(response.content[0].text.replace(/```json|```/g, '').trim());
+    if (!aiResp.ok) { const t = await aiResp.text(); throw new Error(`Anthropic ${aiResp.status}: ${t.slice(0,200)}`); }
+    const aiJson = await aiResp.json();
+    const parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
     res.json(parsed);
   } catch(e) {
     console.error('suggestPlatforms error:', e.message);
