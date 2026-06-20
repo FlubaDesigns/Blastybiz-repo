@@ -1188,12 +1188,15 @@ async function resolveCats() {
   const platformCatLists = {};
   Object.entries(PLATFORM_CATS).forEach(([pid, p]) => { platformCatLists[pid] = p.cats; });
 
+  const businessName = document.getElementById('s-name')?.value?.trim() || '';
+
   let aiCats = null;
   try {
+    const token = window._blastyUser ? await window._blastyUser.getIdToken() : null;
     const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/resolveCategories', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ description: desc, platformCatLists }),
+      headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ businessName, description: desc, platformCatLists }),
     });
     if (resp.ok) {
       const data = await resp.json();
@@ -1208,10 +1211,13 @@ async function resolveCats() {
   Object.entries(PLATFORM_CATS).forEach(([pid, p]) => {
     let bestCat = p.cats[0];
 
-    if (aiCats && aiCats[pid] && p.cats.includes(aiCats[pid])) {
-      bestCat = aiCats[pid];
+    if (aiCats && aiCats[pid]) {
+      const aiVal = aiCats[pid];
+      const exactMatch = p.cats.find(c => c === aiVal);
+      const caseMatch  = p.cats.find(c => c.toLowerCase() === aiVal.toLowerCase());
+      bestCat = exactMatch || caseMatch || bestCat;
     } else {
-      const descLower = desc.toLowerCase();
+      const descLower = (businessName + ' ' + desc).toLowerCase();
       const words = descLower.split(/\s+/);
       let bestScore = 0;
       p.cats.forEach(cat => {
@@ -1323,6 +1329,7 @@ auth.authStateReady().then(() => {
       return;
     }
     currentUser = user;
+    window._blastyUser = user;
   });
 });
 

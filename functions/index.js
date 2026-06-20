@@ -225,14 +225,39 @@ exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_
 
   const now = new Date();
 
-  const { description, platformCatLists } = req.body;
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const { businessName, description, platformCatLists } = req.body;
 
-  const prompt = `Given this business: "${description}"
-Pick the best matching category for each platform from the lists provided.
-Return ONLY valid JSON, no markdown: { "categories": { "platformId": "category name" } }
+  const platformContext = {
+    fbmarket:   'Facebook Marketplace — consumer marketplace for buying/selling goods and booking local services',
+    craigslist: 'Craigslist — classified ads for goods and services; pick the Services sub-category for service businesses, For Sale for product sellers',
+    yelp:       'Yelp — local business discovery and reviews; used by consumers searching for restaurants, salons, contractors, and other local businesses',
+    thumbtack:  'Thumbtack — platform for hiring local professionals and skilled tradespeople for specific jobs',
+    angi:       'Angi (formerly Angie\'s List) — home services and contractor marketplace; focused on residential repair, remodeling, and maintenance',
+    alignable:  'Alignable — B2B local business networking; categories describe the business\'s industry to other local business owners',
+    applemaps:  'Apple Maps — physical location discovery; pick the place type that best describes where customers go'
+  };
 
-${Object.entries(platformCatLists).map(([id, cats]) => `${id}: ${cats.join(', ')}`).join('\n')}`;
+  const platformBlocks = Object.entries(platformCatLists).map(([id, cats]) => {
+    const ctx = platformContext[id] || id;
+    return `PLATFORM: ${id}\nPURPOSE: ${ctx}\nCATEGORIES (pick EXACTLY one, copy the string character-for-character):\n${cats.join(' | ')}`;
+  }).join('\n\n');
+
+  const prompt = `You are a local business categorization expert. Your task is to pick the single best-matching category for a local business on each marketing platform listed below.
+
+BUSINESS NAME: ${businessName || '(not provided)'}
+BUSINESS DESCRIPTION: ${description}
+
+INSTRUCTIONS:
+1. Read the PURPOSE of each platform carefully — it tells you what kind of businesses and customers use it.
+2. Think about which category a customer or the platform itself would use to classify this business.
+3. Pick ONE category per platform from the provided list.
+4. CRITICAL: Copy the category string EXACTLY as it appears — same capitalization, same punctuation, same spacing. Do not paraphrase, abbreviate, or modify it in any way.
+5. If no category is a perfect match, pick the closest one. Never invent a new category.
+
+Return ONLY valid JSON, no markdown fences, no explanation:
+{ "categories": { "platformId": "exact category string" } }
+
+${platformBlocks}`;
 
   let parsed;
   try {
