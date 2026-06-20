@@ -910,6 +910,16 @@
     <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Toggle platforms on/off in the Platforms tab.</p>
   </div>
 
+  <div class="card" id="profile-platcats-card">
+    <div class="card-title">🏷️ Platform Categories</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">The category BlastyBiz uses when adapting your listing for each platform. AI picks these automatically — update any time.</p>
+    <div id="profile-cat-list"></div>
+    <button class="btn btn-outline" id="rerun-ai-cats-btn" onclick="rerunAICats()" style="margin-top:12px;font-size:13px;">
+      🤖 Re-run AI Category Picker
+    </button>
+    <p id="platcats-note" style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;min-height:16px;"></p>
+  </div>
+
   <button class="btn btn-outline" onclick="clearAll()" style="margin-top:8px;">
     🗑️ Clear All Data
   </button>
@@ -920,6 +930,7 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<script src="platform-categories.js"></script>
 <script>
 // ══════════════════════════════════════════
 // PLATFORM REGISTRY — add new platforms here
@@ -1523,8 +1534,126 @@ function loadProfile() {
   document.getElementById('profile-hours').value   = profile.hours    || '';
   document.getElementById('profile-tone').value    = profile.tone     || 'friendly';
   document.getElementById('profile-biz-name').textContent = profile.name || 'Your Business';
+  renderPlatformCats(profile.platformCats || {});
   document.getElementById('profile-biz-cat').textContent  = profile.category || 'Set up your profile below';
   if (profile.locationType) setProfileLocationType(profile.locationType);
+}
+
+// ══════════════════════════════════════════
+// PLATFORM CATEGORIES — profile editor
+// ══════════════════════════════════════════
+function renderPlatformCats(cats) {
+  const el = document.getElementById('profile-cat-list');
+  if (!el) return;
+  if (!window.PLATFORM_CATS || !Object.keys(window.PLATFORM_CATS).length) {
+    el.innerHTML = '<p style="font-size:12px;color:var(--muted);">Category lists loading…</p>';
+    return;
+  }
+  cats = cats || {};
+  el.innerHTML = '';
+  Object.entries(window.PLATFORM_CATS).forEach(([pid, p]) => {
+    const current = cats[pid] || p.cats[0];
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);';
+    const icon = document.createElement('span');
+    icon.style.cssText = 'font-size:18px;flex-shrink:0;';
+    icon.textContent = p.icon;
+    const name = document.createElement('span');
+    name.style.cssText = 'font-size:13px;font-weight:600;color:var(--light);width:96px;flex-shrink:0;line-height:1.3;';
+    name.textContent = p.name;
+    const sel = document.createElement('select');
+    sel.id = 'prof-pcat-' + pid;
+    sel.style.cssText = 'flex:1;background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--light);font-size:12px;font-family:inherit;-webkit-appearance:none;margin-bottom:0;min-width:0;';
+    p.cats.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      if (c === current) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.onchange = () => {
+      profile.platformCats = collectPlatformCats();
+      savePlatformCatsToFirestore(profile.platformCats);
+    };
+    row.appendChild(icon);
+    row.appendChild(name);
+    row.appendChild(sel);
+    el.appendChild(row);
+  });
+}
+
+function collectPlatformCats() {
+  const cats = {};
+  if (!window.PLATFORM_CATS) return cats;
+  Object.keys(window.PLATFORM_CATS).forEach(pid => {
+    const sel = document.getElementById('prof-pcat-' + pid);
+    if (sel) cats[pid] = sel.value;
+  });
+  return cats;
+}
+
+function savePlatformCatsToFirestore(cats) {
+  if (window._savePlatformCatsToFirestore) window._savePlatformCatsToFirestore(cats);
+}
+
+async function rerunAICats() {
+  if (!window.PLATFORM_CATS) { showToast('⚠️ Category data not loaded yet'); return; }
+  const btn  = document.getElementById('rerun-ai-cats-btn');
+  const note = document.getElementById('platcats-note');
+  const bizName    = document.getElementById('profile-name')?.value?.trim() || profile.name || '';
+  const description = profile.category || bizName;
+  if (!bizName) { showToast('⚠️ Add your business name first'); return; }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ AI is thinking…';
+  if (note) note.textContent = '';
+
+  const token = window._bbGetToken ? await window._bbGetToken() : null;
+  if (!token) {
+    showToast('⚠️ Not signed in');
+    btn.disabled = false;
+    btn.textContent = '🤖 Re-run AI Category Picker';
+    return;
+  }
+
+  const locType = profileLocationType || 'physical';
+  const platformCatLists = {};
+  Object.entries(window.PLATFORM_CATS).forEach(([pid, p]) => { platformCatLists[pid] = p.cats; });
+
+  try {
+    const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/resolveCategories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        businessName:  bizName,
+        ownerName:     profile.ownerName || '',
+        description:   description,
+        locationType:  locType,
+        platformCatLists,
+      }),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || 'AI failed (' + resp.status + ')');
+    }
+    const data = await resp.json();
+    if (data.categories) {
+      profile.platformCats = { ...(profile.platformCats || {}), ...data.categories };
+      renderPlatformCats(profile.platformCats);
+      savePlatformCatsToFirestore(profile.platformCats);
+      if (note) note.textContent = '✅ AI updated ' + Object.keys(data.categories).length + ' categories';
+      showToast('✅ AI picked new categories');
+    } else if (data.followUpQuestions) {
+      if (note) note.textContent = '⚠️ AI needs more info — fill in your Category field and try again';
+      showToast('⚠️ AI needs a more detailed description');
+    }
+  } catch(e) {
+    showToast('⚠️ ' + (e.message || 'AI failed'));
+    if (note) note.textContent = 'Error: ' + (e.message || 'AI failed');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🤖 Re-run AI Category Picker';
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1849,6 +1978,18 @@ window.saveProfile = async function() {
     }, { merge: true });
   } catch(e) {
     console.error('saveProfile Firestore error:', e);
+  }
+};
+
+window._savePlatformCatsToFirestore = async function(cats) {
+  if (!currentUser || !activeBizId) return;
+  try {
+    await setDoc(doc(db, 'businesses', activeBizId), {
+      platformCats: cats,
+      updatedAt:    serverTimestamp(),
+    }, { merge: true });
+  } catch(e) {
+    console.error('savePlatformCats Firestore error:', e);
   }
 };
 </script>

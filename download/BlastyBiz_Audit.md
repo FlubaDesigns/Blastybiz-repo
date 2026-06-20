@@ -246,6 +246,14 @@ The Operator Setup page (`BlastyBiz-Admin-Operate.html`) has step-by-step instru
 
 ---
 
+## ✅ Features Added (Jun 20, 2026 — Session 5)
+
+| Feature | Files changed | Description |
+|---------|--------------|-------------|
+| Edit Platform Categories after onboarding | `artifacts/api-server/public/BlastyBiz.html` | Added "🏷️ Platform Categories" card to the Profile tab. Shows a dropdown per platform (FB Marketplace, Craigslist, Yelp, Thumbtack, Angi, Alignable, Apple Maps) populated from `window.PLATFORM_CATS`. Dropdowns auto-load saved categories from Firestore `businesses/{id}.platformCats` on profile load. Any change saves immediately back to Firestore via `window._savePlatformCatsToFirestore`. "🤖 Re-run AI Category Picker" button calls the `resolveCategories` Cloud Function with current business name + category, updates all dropdowns, and saves to Firestore. Added `platform-categories.js` script tag (was missing from this page). |
+
+---
+
 ## 📋 Outstanding Items (Priority Order)
 
 ### P0 — Required before real users
