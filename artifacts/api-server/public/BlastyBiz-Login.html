@@ -488,7 +488,7 @@ input.error { border-color: var(--danger); }
         <a href="#" onclick="showReset(); return false;">Forgot password?</a>
       </div>
 
-      <button class="btn-submit" id="btn-signin" onclick="handleSignIn()">
+      <button class="btn-submit" id="btn-signin" onclick="handleSignIn()" disabled>
         <div class="spinner"></div>
         <span class="btn-text">Sign In →</span>
       </button>
@@ -564,7 +564,7 @@ input.error { border-color: var(--danger); }
         <div class="field-error" id="su-password-err">Password must be at least 8 characters</div>
       </div>
 
-      <button class="btn-submit" id="btn-signup" onclick="handleSignUp()">
+      <button class="btn-submit" id="btn-signup" onclick="handleSignUp()" disabled>
         <div class="spinner"></div>
         <span class="btn-text">Create Account →</span>
       </button>
@@ -826,6 +826,13 @@ import {
   sendPasswordResetEmail
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// Module is loaded — unlock auth buttons (they start disabled to prevent
+// clicks before window.handleSignIn/handleSignUp are overridden below)
+['btn-signin','btn-signup'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.disabled = false;
+});
 
 async function afterAuth(user) {
   try {

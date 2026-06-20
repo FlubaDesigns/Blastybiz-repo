@@ -2,60 +2,74 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users can only read/write their own user doc
+    // Admin helper — perceys@gmail.com gets full read across all collections
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'perceys@gmail.com';
+    }
+
+    // Users can only read/write their own user doc; admin can read any
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Businesses — owner only (uid field matches auth uid, not document ID)
+    // Businesses — owner only (uid field matches auth uid, not document ID); admin can read any
     match /businesses/{businessId} {
-      allow read, write: if request.auth != null &&
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.uid || isAdmin());
+      allow write: if request.auth != null &&
         request.auth.uid == resource.data.uid;
       allow create: if request.auth != null &&
         request.auth.uid == request.resource.data.uid;
     }
 
-    // Listing drafts — owner only
+    // Listing drafts — owner only; admin can read any
     match /listingDrafts/{draftId} {
-      allow read, write: if request.auth != null &&
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.uid || isAdmin());
+      allow write: if request.auth != null &&
         request.auth.uid == resource.data.uid;
       allow create: if request.auth != null &&
         request.auth.uid == request.resource.data.uid;
     }
 
-    // Publish jobs — owner only (create + read; backend updates status)
+    // Publish jobs — owner only (create + read; backend updates status); admin can read any
     match /publishJobs/{jobId} {
-      allow read, write: if request.auth != null &&
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.uid || isAdmin());
+      allow write: if request.auth != null &&
         request.auth.uid == resource.data.uid;
       allow create: if request.auth != null &&
         request.auth.uid == request.resource.data.uid;
     }
 
-    // Platform connections — owner only
+    // Platform connections — owner only; admin can read any
     match /platformConnections/{connId} {
-      allow read, write: if request.auth != null &&
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.uid || isAdmin());
+      allow write: if request.auth != null &&
         request.auth.uid == resource.data.uid;
       allow create: if request.auth != null &&
         request.auth.uid == request.resource.data.uid;
     }
 
-    // Subscriptions — owner read only (written by Stripe webhook backend)
+    // Subscriptions — owner read only (written by Stripe webhook backend); admin can read any
     match /subscriptions/{subId} {
-      allow read: if request.auth != null && request.auth.uid == subId;
+      allow read: if request.auth != null && (request.auth.uid == subId || isAdmin());
       allow write: if false;
     }
 
-    // Activity logs — owner read only (written by backend)
+    // Activity logs — owner read only (written by backend); admin can read any
     match /activityLogs/{logId} {
       allow read: if request.auth != null &&
-        request.auth.uid == resource.data.uid;
+        (request.auth.uid == resource.data.uid || isAdmin());
       allow write: if false;
     }
 
-    // Reviews — owner read only (written by backend)
+    // Reviews — owner read only (written by backend); admin can read any
     match /reviews/{reviewId} {
       allow read: if request.auth != null &&
-        request.auth.uid == resource.data.uid;
+        (request.auth.uid == resource.data.uid || isAdmin());
       allow write: if false;
     }
 
