@@ -696,6 +696,17 @@
 ══════════════════════════════════════════ -->
 <div class="section active" id="section-create">
 
+  <!-- PENDING POSTS — shown only when scheduled drafts need approval -->
+  <div id="pending-posts-card" style="display:none;" class="card">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <span style="font-size:18px;">📬</span>
+      <div class="card-title" style="margin-bottom:0;">Ready for your review</div>
+      <span id="pending-posts-count" style="background:rgba(255,180,0,.15);color:#ffb400;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;border:1px solid rgba(255,180,0,.3);"></span>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;">BlastyBiz drafted these on schedule. Approve to publish, or dismiss to skip.</p>
+    <div id="pending-posts-list"></div>
+  </div>
+
   <div class="ai-tag">⚡ AI-Powered</div>
 
   <div class="card">
@@ -1070,6 +1081,18 @@
       </div>
 
       <div id="sched-next-preview" style="font-size:12px;color:var(--green);text-align:center;padding:6px 0 2px;min-height:24px;font-weight:600;"></div>
+
+      <!-- REVIEW TOGGLE -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0 2px;border-top:1px solid var(--border);margin-top:12px;">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--light);">Review before posting</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4;">AI drafts land in a queue — you approve before anything goes live</div>
+        </div>
+        <label class="sched-toggle-wrap" style="margin-left:14px;flex-shrink:0;">
+          <input type="checkbox" id="sched-review" onchange="toggleSchedReview()" />
+          <span class="sched-toggle-track"></span>
+        </label>
+      </div>
     </div>
   </div>
 
@@ -1709,7 +1732,7 @@ function loadProfile() {
 // ══════════════════════════════════════════
 // AUTO-POST SCHEDULE
 // ══════════════════════════════════════════
-var schedState = { enabled: false, frequency: 'weekly', dayOfWeek: 1, dayOfMonth: 1, timeSlot: 'morning', timezone: Intl.DateTimeFormat().resolvedOptions().timeZone };
+var schedState = { enabled: false, frequency: 'weekly', dayOfWeek: 1, dayOfMonth: 1, timeSlot: 'morning', timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, requireApproval: false };
 
 function loadSchedule(sched) {
   if (sched) {
@@ -1720,8 +1743,11 @@ function loadSchedule(sched) {
     schedState.timeSlot   = sched.timeSlot   || 'morning';
     schedState.timezone   = sched.timezone   || schedState.timezone;
   }
+  schedState.requireApproval = !!sched?.requireApproval;
   document.getElementById('sched-enabled').checked = schedState.enabled;
   document.getElementById('sched-fields').style.display = schedState.enabled ? 'block' : 'none';
+  const reviewEl = document.getElementById('sched-review');
+  if (reviewEl) reviewEl.checked = schedState.requireApproval;
   _renderSchedChips();
   _updateSchedPreview();
 }
@@ -1731,6 +1757,14 @@ function toggleSchedEnabled() {
   document.getElementById('sched-fields').style.display = schedState.enabled ? 'block' : 'none';
   _updateSchedPreview();
   saveSchedule();
+}
+
+function toggleSchedReview() {
+  schedState.requireApproval = document.getElementById('sched-review').checked;
+  saveSchedule();
+  showToast(schedState.requireApproval
+    ? '📬 Review mode on — you\'ll approve posts before they go live'
+    : '⚡ Auto-posting on — posts will go straight out on schedule');
 }
 
 function setSchedFreq(f) {
@@ -1843,6 +1877,76 @@ function saveSchedule() {
   const nextRun = schedState.enabled ? _computeNextRunDate(schedState) : null;
   const payload = { ...schedState, nextRunAt: nextRun ? nextRun.toISOString() : null };
   if (window._saveScheduleToFirestore) window._saveScheduleToFirestore(payload);
+}
+
+// ══════════════════════════════════════════
+// PENDING POSTS (review queue)
+// ══════════════════════════════════════════
+var _pendingPosts = [];
+
+window._bbSetPendingPosts = function(posts) {
+  _pendingPosts = posts || [];
+  _renderPendingPosts();
+};
+
+function _renderPendingPosts() {
+  const card  = document.getElementById('pending-posts-card');
+  const list  = document.getElementById('pending-posts-list');
+  const badge = document.getElementById('pending-posts-count');
+  if (!card || !list) return;
+
+  const pending = _pendingPosts.filter(p => p.status === 'pending');
+  card.style.display = pending.length ? 'block' : 'none';
+  if (badge) badge.textContent = pending.length + ' draft' + (pending.length !== 1 ? 's' : '');
+
+  list.innerHTML = pending.map(p => {
+    const d = p.createdAt?.toDate ? p.createdAt.toDate() : (p.createdAt ? new Date(p.createdAt) : new Date());
+    const dateLabel = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+    const platformRows = (p.platforms || []).map(pl => {
+      const text = (p.adaptations || {})[pl.id] || '';
+      if (!text) return '';
+      return `<div style="margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:700;color:var(--silver);letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px;">${escHtml(pl.name)}</div>
+        <div style="font-size:12px;color:var(--light);background:var(--dark);border-radius:8px;padding:10px 12px;line-height:1.6;white-space:pre-wrap;">${escHtml(text)}</div>
+      </div>`;
+    }).join('');
+    return `<div style="border:1px solid rgba(255,180,0,.25);border-radius:12px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Drafted ${dateLabel}</div>
+      ${platformRows}
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button onclick="_approvePendingPost('${p.id}')"
+          style="flex:1;padding:11px;border-radius:9px;border:none;background:var(--green);color:var(--dark);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">
+          ✅ Approve &amp; Post
+        </button>
+        <button onclick="_dismissPendingPost('${p.id}')"
+          style="padding:11px 14px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;">
+          🗑️ Skip
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function _approvePendingPost(id) {
+  const btn = event?.target;
+  if (btn) { btn.disabled = true; btn.textContent = 'Approving…'; }
+  try {
+    const token = window._bbGetToken ? await window._bbGetToken() : null;
+    const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/approvePendingPost', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': 'Bearer ' + token } : {}) },
+      body: JSON.stringify({ pendingPostId: id }),
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    showToast('✅ Approved — posts are going out now!');
+  } catch(e) {
+    showToast('Error approving: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Approve & Post'; }
+  }
+}
+
+async function _dismissPendingPost(id) {
+  if (window._bbFirestoreDismissPending) window._bbFirestoreDismissPending(id);
 }
 
 // ══════════════════════════════════════════
@@ -2239,6 +2343,14 @@ window._bbSetProfile = function(p) {
   loadProfile();
 };
 
+window._bbFirestoreDismissPending = async function(id) {
+  if (!activeBizId) return;
+  try {
+    await setDoc(doc(db, 'pendingPosts', id), { status: 'dismissed' }, { merge: true });
+    showToast('Draft dismissed');
+  } catch(e) { console.error('dismissPending:', e); }
+};
+
 window._saveInsightToFirestore = async function(insights) {
   if (!activeBizId) return;
   try { await setDoc(doc(db, 'businesses', activeBizId), { bizInsights: insights }, { merge: true }); }
@@ -2301,6 +2413,22 @@ onAuthStateChanged(auth, async (user) => {
   } catch(e) {
     console.error('Profile load error:', e);
   }
+
+  // Live-listen for pending posts needing approval
+  try {
+    const { onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const pendingQ = query(
+      collection(db, 'pendingPosts'),
+      where('bizId', '==', activeBizId),
+      where('status', '==', 'pending'),
+      orderBy('createdAt', 'desc'),
+      limit(10)
+    );
+    onSnapshot(pendingQ, snap => {
+      const posts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (window._bbSetPendingPosts) window._bbSetPendingPosts(posts);
+    }, () => {}); // silently ignore permission errors (user may not have any)
+  } catch(e) { console.warn('pendingPosts listener:', e.message); }
 
   // Load platform connection state from Firestore
   try {

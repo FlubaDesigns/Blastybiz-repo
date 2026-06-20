@@ -1,11 +1,11 @@
 # BlastyBiz — Full Site Audit
-**Last updated: June 20, 2026 (Session 5)**
+**Last updated: June 20, 2026 (Session 6)**
 **Firebase Project:** blastybiz-9523e
 **Live URL:** https://blastybiz-9523e.web.app
 
 ---
 
-## Deployed Cloud Functions (30 total — all v2, us-central1)
+## Deployed Cloud Functions (31 total — all v2, us-central1)
 
 | # | Function | Type | Purpose |
 |---|---|---|---|
@@ -39,6 +39,7 @@
 | 28 | `adminListActivityLogs` | HTTP | Admin: activityLogs with optional uid filter; requireAdmin() |
 | 29 | `adminSubscriptionSummary` | HTTP | Admin: live plan counts + MRR calculation from Firestore; requireAdmin() |
 | 30 | `generateEnrichmentQuestions` | HTTP | AI generates 2-3 personalized follow-up questions for a business; verifyBearer(); claude-haiku-4-5 |
+| 31 | `approvePendingPost` | HTTP | Owner approves a scheduled draft from the review queue; creates publishJobs; verifyBearer() + ownership check. **Note:** needs `allUsers run.invoker` IAM set in Cloud Run console — Firebase CLI keeps timing out before setting it in Replit's 120s shell limit. |
 
 ---
 
@@ -254,6 +255,7 @@ The Operator Setup page (`BlastyBiz-Admin-Operate.html`) has step-by-step instru
 |---------|--------------|-------------|
 | Edit Platform Categories after onboarding | `artifacts/api-server/public/BlastyBiz.html` | Added "🏷️ Platform Categories" card to the Profile tab. Shows a dropdown per platform (FB Marketplace, Craigslist, Yelp, Thumbtack, Angi, Alignable, Apple Maps) populated from `window.PLATFORM_CATS`. Dropdowns auto-load saved categories from Firestore `businesses/{id}.platformCats` on profile load. Any change saves immediately back to Firestore via `window._savePlatformCatsToFirestore`. "🤖 Re-run AI Category Picker" button calls the `resolveCategories` Cloud Function with current business name + category, updates all dropdowns, and saves to Firestore. Added `platform-categories.js` script tag (was missing from this page). |
 | AI Enrichment — "Help AI know you better" | `BlastyBiz.html`, `functions/index.js` | New card on Create tab with two layers: (1) **Announcements** — user adds time-sensitive notes ("half-off sale June 28", "grand reopening July 1") with optional end date; expired entries auto-filter out; chips shown with 📅 if upcoming or 📣 if no date; saved to `businesses/{id}.bizAnnouncements`. (2) **AI Questions** — Cloud Function `generateEnrichmentQuestions` (claude-haiku-4-5) generates 2-3 personalized questions based on business profile; user answers inline; answers save to `businesses/{id}.bizInsights`; answered questions show with ✓ summary; "Ask me something new" button fetches fresh questions once all answered. Both `bizInsights` (answered) and `bizAnnouncements` (active) are injected into every AI prompt — `adaptListing` (on-demand), `_runScheduledPost` (scheduled), and the new Cloud Function. AI is instructed to weave announcements naturally into all platforms. |
+| Review Before Posting toggle | `BlastyBiz.html`, `functions/index.js`, `firestore.rules` | New toggle "Review before posting" inside the Auto-Post Schedule card (Profile tab, visible when scheduling is enabled). Toggle saves `requireApproval: true/false` to `businesses/{id}.postingSchedule`. When enabled, `_runScheduledPost` saves AI-generated drafts to `pendingPosts/{id}` instead of publishing immediately. Client listens via Firestore `onSnapshot` for pending posts with `status == 'pending'` for the active business. A "📬 Ready for your review" card appears at the top of the Create tab showing the draft copy per platform with "Approve & Post" and "Skip" buttons. Approve calls `approvePendingPost` CF which creates publishJobs. Firestore rules updated with `pendingPosts` collection. Toast confirms toggle state change. |
 
 ---
 

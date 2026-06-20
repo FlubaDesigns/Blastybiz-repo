@@ -389,6 +389,63 @@ ${platformBlocks}`;
 // Function 3: approveDraft
 // POST /approveDraft
 // ══════════════════════════════════════════
+exports.approvePendingPost = onRequest({ invoker: 'public' }, async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  let decoded;
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+
+  const { pendingPostId } = req.body;
+  if (!pendingPostId) return res.status(400).json({ error: 'pendingPostId required' });
+
+  const postRef = db.collection('pendingPosts').doc(pendingPostId);
+  const postSnap = await postRef.get();
+  if (!postSnap.exists) return res.status(404).json({ error: 'Not found' });
+
+  const post = postSnap.data();
+  if (post.uid !== decoded.uid) return res.status(403).json({ error: 'Forbidden' });
+  if (post.status !== 'pending') return res.status(409).json({ error: 'Already processed' });
+
+  const { adaptations, platforms, tone, bizId } = post;
+
+  // Look up plan
+  let plan = 'starter';
+  try {
+    const userSnap = await db.collection('users').doc(decoded.uid).get();
+    if (userSnap.exists) plan = userSnap.data().plan || 'starter';
+  } catch(e) {}
+  const isStarter = plan === 'starter';
+
+  const batch = db.batch();
+  for (const p of (platforms || [])) {
+    const content = (adaptations || {})[p.id];
+    if (!content) continue;
+    const isManual = p.type === 'manual' || isStarter;
+    const jobRef = db.collection('publishJobs').doc();
+    batch.set(jobRef, {
+      jobId: jobRef.id, businessId: bizId, uid: decoded.uid,
+      platform: p.id, platformName: p.name || p.id,
+      capabilityLevel: p.type === 'api' ? 'full_api' : 'manual_assisted',
+      jobType: 'scheduled_approved',
+      status: isManual ? 'manual_required' : 'pending',
+      attempts: 0, maxAttempts: 3,
+      customerLabel: isManual ? 'Action needed' : 'Waiting to publish',
+      customerVisibleMessage: isManual
+        ? `Your approved ${p.name || p.id} post is ready — copy it below.`
+        : `Your approved ${p.name || p.id} post is waiting to publish.`,
+      planGated: isStarter && p.type === 'api',
+      payload: { adaptedContent: content },
+      apiResponse: {}, customerNotified: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+  batch.update(postRef, { status: 'approved', approvedAt: admin.firestore.FieldValue.serverTimestamp() });
+  await batch.commit();
+
+  res.json({ ok: true });
+});
+
 exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
@@ -1696,6 +1753,21 @@ Return ONLY valid JSON: { "adaptations": { "PLATFORM_ID": "text" } }`;
   const aiJson  = await aiResp.json();
   const parsed  = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
   const adapted = parsed.adaptations || {};
+
+  // If owner wants to review before posting — save draft to pendingPosts and stop
+  if (sched.requireApproval) {
+    await db.collection('pendingPosts').add({
+      bizId,
+      uid: biz.uid || '',
+      status: 'pending',
+      adaptations: adapted,
+      platforms: activePlatforms,
+      tone,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    console.log(`[scheduledPost] biz ${bizId} — requireApproval=true, saved to pendingPosts`);
+    return;
+  }
 
   // Get user plan to determine manual vs auto-post
   const uid = biz.uid || '';
