@@ -162,7 +162,16 @@ window.PLATFORM_CATS = {
       // Wellness & Beauty
       'Hair Salon','Makeup Artist','Nail Technician','Esthetician',
       'Eyebrow Threading','Waxing','Spray Tanning','Tattoo Artist',
-      'Massage','Skincare','Laser Hair Removal','Microblading'
+      'Massage','Skincare','Laser Hair Removal','Microblading',
+      'Float Tank','Sofa Cleaning','Upholstery Cleaning',
+      // Specialty & Misc
+      'Baby Shower Planning','Balloon Twisting','Graffiti Removal',
+      'Holiday Lighting Installation','Hot Tub Repair','Hot Tub Installation',
+      'Kitchen Cabinet Painting','Knife Sharpening','Mattress Disposal',
+      'Online Tutoring','Powder Coating','Propane Delivery',
+      'Puzzle Assembly','Radon Testing','Shutter Installation',
+      'Skydiving','Storage Unit Delivery','Swimming Lessons',
+      'Vehicle Wrap','Weed Control','Wine Cellar Storage'
     ]
   },
 
@@ -217,7 +226,17 @@ window.PLATFORM_CATS = {
       'Painting','Pest Control','Roof Repair','Roofing','Satellite Dish Installation',
       'Sauna Installation','Slate Roofing','Storm Door Installation',
       'Termite Treatment','Tile Repair','Water Damage Restoration',
-      'Window Repair','Wood Rot Repair'
+      'Window Repair','Wood Rot Repair',
+      // Additional specialty services
+      'Balcony Repair','Barn Door Installation','Bathroom Tile Repair',
+      'Central Vacuum Installation','Chimney Repair','Concrete Resurfacing',
+      'Disabled Access Ramp','Dryer Repair','Gutter Guard Installation',
+      'Handicap Ramp','Home Theater Installation','Hot Tub Repair',
+      'Landscaping Lighting','Leak Detection','Marble Polishing',
+      'Outdoor Fireplace','Patio Cover Installation','Pool Fence Installation',
+      'Roof Cleaning','Screen Door Repair','Security Camera Installation',
+      'Sprinkler System Repair','Stone Veneer Installation','Stucco Repair',
+      'Tree Stump Removal','Under-Cabinet Lighting','Vinyl Siding Repair'
     ]
   },
 
