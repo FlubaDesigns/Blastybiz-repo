@@ -10,9 +10,11 @@
  *   firebase functions:secrets:set SQUARE_PRO_PLAN_ID
  *   firebase functions:secrets:set SQUARE_AGENCY_PLAN_ID
  *   firebase functions:secrets:set SQUARE_WEBHOOK_SIGNATURE_KEY
+ *   firebase functions:secrets:set YELP_API_KEY
  */
 
 const { onRequest } = require('firebase-functions/v2/https');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onDocumentUpdated, onDocumentCreated } = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
 const Anthropic = require('@anthropic-ai/sdk');
@@ -1447,3 +1449,71 @@ exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_AC
     squareError:        squareError        || null,
   });
 });
+
+// ── Yelp Category Cache ────────────────────────────────────────────────────────
+async function fetchAndCacheYelpCategories() {
+  const apiKey = process.env.YELP_API_KEY;
+  if (!apiKey) {
+    throw new Error('YELP_API_KEY secret is not configured');
+  }
+
+  const resp = await fetch('https://api.yelp.com/v3/categories?locale=en_US', {
+    headers: { 'Authorization': `Bearer ${apiKey}` },
+  });
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`Yelp API error ${resp.status}: ${text}`);
+  }
+  const data = await resp.json();
+
+  const cats = (data.categories || [])
+    .filter(c => {
+      if (c.country_whitelist && c.country_whitelist.length > 0 && !c.country_whitelist.includes('US')) return false;
+      if (c.country_blacklist && c.country_blacklist.includes('US')) return false;
+      return true;
+    })
+    .map(c => c.title)
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b));
+
+  await db.collection('platformCategoryCache').doc('yelp').set({
+    cats,
+    fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+    source: 'yelp_api',
+    count: cats.length,
+  });
+
+  console.log(`[yelpCategories] Cached ${cats.length} categories`);
+  return cats;
+}
+
+exports.refreshYelpCategories = onRequest(
+  { invoker: 'public', region: 'us-central1', secrets: ['YELP_API_KEY'] },
+  async (req, res) => {
+    setCors(res);
+    if (req.method === 'OPTIONS') return res.status(204).end();
+    try {
+      await requireAdmin(req);
+    } catch (e) {
+      return res.status(e.status || 403).json({ error: e.message });
+    }
+    try {
+      const cats = await fetchAndCacheYelpCategories();
+      res.json({ ok: true, count: cats.length });
+    } catch (e) {
+      console.error('[refreshYelpCategories]', e.message);
+      res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+);
+
+exports.scheduledYelpCategoryRefresh = onSchedule(
+  { schedule: 'every monday 03:00', timeZone: 'America/New_York', region: 'us-central1', secrets: ['YELP_API_KEY'] },
+  async () => {
+    try {
+      await fetchAndCacheYelpCategories();
+    } catch (e) {
+      console.error('[scheduledYelpCategoryRefresh]', e.message);
+    }
+  }
+);

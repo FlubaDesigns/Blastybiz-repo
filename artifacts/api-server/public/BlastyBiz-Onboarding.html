@@ -1477,7 +1477,24 @@ init();
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { doc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ── Load live Yelp categories from Firestore cache ──────────────────────────
+// Runs immediately; resolveCats() only fires on button click so timing is fine.
+(async () => {
+  try {
+    const snap = await getDoc(doc(db, 'platformCategoryCache', 'yelp'));
+    if (snap.exists()) {
+      const { cats } = snap.data();
+      if (Array.isArray(cats) && cats.length > 0 && window.PLATFORM_CATS && window.PLATFORM_CATS.yelp) {
+        window.PLATFORM_CATS.yelp.cats = cats;
+        console.log('[BlastyBiz] Loaded', cats.length, 'Yelp categories from live cache');
+      }
+    }
+  } catch (e) {
+    console.warn('[BlastyBiz] Could not load Yelp category cache — using static fallback:', e.message);
+  }
+})();
 
 let currentUser = null;
 

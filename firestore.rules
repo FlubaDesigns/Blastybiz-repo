@@ -79,6 +79,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Platform category cache — public read (any authenticated user), backend-only write
+    match /platformCategoryCache/{platform} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
     // Block everything else
     match /{document=**} {
       allow read, write: if false;
