@@ -45,10 +45,10 @@ const crypto = require('crypto');
 let _square;
 function getSquare() {
   if (!_square) {
-    const { Client, Environment } = require('square');
-    _square = new Client({
-      accessToken: process.env.SQUARE_ACCESS_TOKEN,
-      environment: Environment.Production,
+    const { SquareClient, SquareEnvironment } = require('square');
+    _square = new SquareClient({
+      token: process.env.SQUARE_ACCESS_TOKEN,
+      environment: SquareEnvironment.Production,
     });
   }
   return _square;
@@ -195,7 +195,7 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
   const { listing, platforms, tone, platformCats } = req.body;
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-  const platformList = platforms.map(p => ({
+  const platformList = (platforms || []).map(p => ({
     id: p.id, name: p.name, type: p.type,
     rules: PLATFORM_RULES[p.id] || {}
   }));
@@ -457,8 +457,11 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
   const uid = decoded.uid;
 
   // Check user plan — starter users can't auto-post via API platforms
-  const userSnap = await db.collection('users').doc(uid).get();
-  const userPlan = userSnap.exists ? (userSnap.data().plan || 'starter') : 'starter';
+  let userPlan = 'starter';
+  try {
+    const userSnap = await db.collection('users').doc(uid).get();
+    if (userSnap.exists) userPlan = userSnap.data().plan || 'starter';
+  } catch(e) { console.warn('approveDraft: users read failed, defaulting to starter:', e.message); }
   const isStarter = userPlan === 'starter';
 
   const batch = db.batch();
@@ -603,15 +606,19 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
   const email = decoded.email || req.body.email || '';
   const { plan } = req.body;
   // Read active plan IDs from Firestore (updated by adminUpdatePricing) — fall back to Secret Manager
-  const pricingSnap = await db.collection('settings').doc('pricing').get();
-  const pricingData = pricingSnap.exists ? pricingSnap.data() : {};
+  let pricingData = {};
+  try {
+    const pricingSnap = await db.collection('settings').doc('pricing').get();
+    pricingData = pricingSnap.exists ? pricingSnap.data() : {};
+  } catch(e) {
+    console.warn('createCheckoutSession: Firestore pricing read failed, using env vars:', e.message);
+  }
   const planIds = {
     pro:    pricingData.squareProPlanId    || process.env.SQUARE_PRO_PLAN_ID,
     agency: pricingData.squareAgencyPlanId || process.env.SQUARE_AGENCY_PLAN_ID,
   };
   if (!planIds[plan]) return res.status(400).json({ error: 'Invalid plan' });
-  const { checkoutApi } = getSquare();
-  const response = await checkoutApi.createPaymentLink({
+  const response = await getSquare().checkout.paymentLinks.create({
     idempotencyKey: `checkout-${uid}-${plan}-${Date.now()}`,
     order: {
       locationId: process.env.SQUARE_LOCATION_ID,
@@ -624,7 +631,7 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
     },
     prePopulatedData: { buyerEmail: email },
   });
-  res.json({ url: response.result.paymentLink.url });
+  res.json({ url: response.paymentLink.url });
 });
 
 // ══════════════════════════════════════════
@@ -669,11 +676,10 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
     const orderId = payment.order_id || payment.orderId;
     if (!orderId) return res.json({ received: true });
     try {
-      const { ordersApi } = getSquare();
-      const orderResp = await ordersApi.retrieveOrder(orderId);
-      const uid = orderResp.result?.order?.referenceId;
+      const orderResp = await getSquare().orders.get({ orderId });
+      const uid = orderResp.order?.referenceId;
       if (!uid) return res.json({ received: true });
-      const lineItems = orderResp.result?.order?.lineItems || [];
+      const lineItems = orderResp.order?.lineItems || [];
       const planVarId = lineItems[0]?.catalogObjectId || '';
       const plan = planVarId === process.env.SQUARE_AGENCY_PLAN_ID ? 'agency' : 'pro';
       await db.collection('users').doc(uid).set(
@@ -1050,9 +1056,12 @@ exports.jobFailedTrigger = onDocumentUpdated(
 
     const uid = after.uid;
     if (!uid) return;
-    const userSnap = await db.collection('users').doc(uid).get();
-    if (!userSnap.exists) return;
-    const { email, ownerName } = userSnap.data();
+    let email, ownerName;
+    try {
+      const userSnap = await db.collection('users').doc(uid).get();
+      if (!userSnap.exists) return;
+      ({ email, ownerName } = userSnap.data());
+    } catch(e) { console.warn('jobFailedTrigger: users read failed:', e.message); return; }
     if (!email) return;
 
     const platformName = (after.platform || 'platform').replace(/_/g, ' ');
@@ -1144,7 +1153,7 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
     if (subSnap.exists) {
       const { squareSubscriptionId } = subSnap.data();
       if (squareSubscriptionId) {
-        try { await getSquare().subscriptionsApi.cancelSubscription(squareSubscriptionId); } catch (_) {}
+        try { await getSquare().subscriptions.cancel({ subscriptionId: squareSubscriptionId }); } catch (_) {}
       }
     }
 
@@ -1505,13 +1514,13 @@ exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_AC
   if (isNaN(pro) || isNaN(agency) || pro < 0 || agency < 0) return res.status(400).json({ error: 'Invalid prices' });
 
   // Create new Square subscription plans at the given prices
-  const { catalogApi } = getSquare();
+  const catalog = getSquare().catalog;
   const ts = Date.now();
 
   let squareProPlanId, squareAgencyPlanId, squareError;
   try {
     const [proResult, agencyResult] = await Promise.all([
-      catalogApi.upsertCatalogObject({
+      catalog.object.upsert({
         idempotencyKey: `blastybiz-pro-${ts}`,
         object: {
           type: 'SUBSCRIPTION_PLAN',
@@ -1526,7 +1535,7 @@ exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_AC
           },
         },
       }),
-      catalogApi.upsertCatalogObject({
+      catalog.object.upsert({
         idempotencyKey: `blastybiz-agency-${ts}`,
         object: {
           type: 'SUBSCRIPTION_PLAN',
@@ -1542,8 +1551,8 @@ exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_AC
         },
       }),
     ]);
-    squareProPlanId    = proResult.result.catalogObject.id;
-    squareAgencyPlanId = agencyResult.result.catalogObject.id;
+    squareProPlanId    = proResult.catalogObject?.id;
+    squareAgencyPlanId = agencyResult.catalogObject?.id;
   } catch (e) {
     squareError = e.message || String(e);
     console.error('[adminUpdatePricing] Square plan creation failed:', squareError);
@@ -1773,8 +1782,10 @@ Return ONLY valid JSON: { "adaptations": { "PLATFORM_ID": "text" } }`;
   const uid = biz.uid || '';
   let plan = 'starter';
   if (uid) {
-    const userSnap = await db.collection('users').doc(uid).get();
-    if (userSnap.exists) plan = userSnap.data().plan || 'starter';
+    try {
+      const userSnap = await db.collection('users').doc(uid).get();
+      if (userSnap.exists) plan = userSnap.data().plan || 'starter';
+    } catch(e) { console.warn('_runScheduledPost: users read failed, defaulting to starter:', e.message); }
   }
   const isStarter = plan === 'starter';
 
