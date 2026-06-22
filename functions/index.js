@@ -611,25 +611,27 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
   const uid   = decoded.uid;
   const email = decoded.email || req.body.email || '';
   const { plan } = req.body;
-  // Read active plan IDs from Firestore (updated by adminUpdatePricing) — fall back to Secret Manager
-  let pricingData = {};
+  // Read prices from Firestore (written by adminUpdatePricing) — fall back to defaults
+  let proMonthly = 49, agencyMonthly = 149;
   try {
     const pricingSnap = await db.collection('settings').doc('pricing').get();
-    pricingData = pricingSnap.exists ? pricingSnap.data() : {};
+    if (pricingSnap.exists) {
+      const d = pricingSnap.data();
+      if (d.proMonthly)    proMonthly    = d.proMonthly;
+      if (d.agencyMonthly) agencyMonthly = d.agencyMonthly;
+    }
   } catch(e) {
-    console.warn('createCheckoutSession: Firestore pricing read failed, using env vars:', e.message);
+    console.warn('createCheckoutSession: Firestore pricing read failed, using defaults:', e.message);
   }
-  const planIds = {
-    pro:    pricingData.squareProPlanId    || process.env.SQUARE_PRO_PLAN_ID,
-    agency: pricingData.squareAgencyPlanId || process.env.SQUARE_AGENCY_PLAN_ID,
-  };
-  if (!planIds[plan]) return res.status(400).json({ error: 'Invalid plan' });
+  const planNames  = { pro: 'BlastyBiz Pro',    agency: 'BlastyBiz Agency' };
+  const planPrices = { pro: proMonthly, agency: agencyMonthly };
+  if (!planPrices[plan]) return res.status(400).json({ error: 'Invalid plan' });
   const response = await getSquare().checkout.paymentLinks.create({
     idempotencyKey: `checkout-${uid}-${plan}-${Date.now()}`,
-    order: {
+    quickPay: {
+      name: planNames[plan],
+      priceMoney: { amount: BigInt(Math.round(planPrices[plan] * 100)), currency: 'USD' },
       locationId: process.env.SQUARE_LOCATION_ID,
-      referenceId: uid,
-      lineItems: [{ quantity: '1', catalogObjectId: planIds[plan] }],
     },
     checkoutOptions: {
       redirectUrl: `https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html?success=1`,
