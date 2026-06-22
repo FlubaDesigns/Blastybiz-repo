@@ -536,12 +536,14 @@ async function _googleRefreshToken(refreshToken) {
 }
 
 async function _publishGoogleJob(job, conn) {
-  const content    = job.payload?.adaptedContent || '';
-  const imageUrls  = job.payload?.imageUrls || [];
+  const content   = job.payload?.adaptedContent || '';
+  const imageUrls = job.payload?.imageUrls || [];
+  // v1 Business Profile Postings API (mybusiness v4 was deprecated 2022)
   async function tryPost(token) {
     return axios.post(
-      `https://mybusiness.googleapis.com/v4/accounts/${conn.accountId}/locations/${conn.locationId}/localPosts`,
-      { languageCode: 'en-US', summary: content, media: imageUrls.map(u => ({ mediaFormat: 'PHOTO', sourceUrl: u })) },
+      `https://mybusinesspostings.googleapis.com/v1/locations/${conn.locationId}/localPosts`,
+      { languageCode: 'en-US', summary: content,
+        media: imageUrls.map(u => ({ mediaFormat: 'PHOTO', sourceUrl: u })) },
       { headers: { Authorization: `Bearer ${token}` } }
     );
   }
@@ -577,7 +579,11 @@ async function _publishFacebookJob(job, conn) {
 async function _publishInstagramJob(job, conn) {
   const content  = job.payload?.adaptedContent || '';
   const imageUrl = job.payload?.imageUrls?.[0] || '';
-  if (!imageUrl) throw new Error('Instagram requires an image URL in payload.imageUrls[0]');
+  // Instagram requires an image — fall back to manual_required if none supplied
+  if (!imageUrl) {
+    return { manualFallback: true, reason: 'no_image',
+             message: 'Instagram posts require an image. Copy your caption and post it manually.' };
+  }
   try {
     const media = await axios.post(
       `https://graph.facebook.com/v18.0/${conn.igUserId}/media`,
@@ -1019,6 +1025,16 @@ exports.dispatchPublishJob = onDocumentCreated(
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
           });
           return;
+      }
+
+      // Instagram may return a manual fallback when no image is present
+      if (result?.manualFallback) {
+        await db.collection('publishJobs').doc(jobId).update({
+          status: 'manual_required',
+          customerVisibleMessage: result.message || 'Please post this manually.',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        return;
       }
 
       await db.collection('publishJobs').doc(jobId).update({

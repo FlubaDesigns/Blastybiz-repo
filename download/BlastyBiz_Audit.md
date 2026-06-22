@@ -1,5 +1,5 @@
 # BlastyBiz — Full Site Audit
-**Last updated: June 21, 2026 (Session 7)**
+**Last updated: June 22, 2026 (Session 8)**
 **Firebase Project:** blastybiz-9523e
 **Live URL:** https://blastybiz-9523e.web.app
 
@@ -237,6 +237,8 @@ The Operator Setup page (`BlastyBiz-Admin-Operate.html`) has step-by-step instru
 | Jun 21, 2026 | `functions/index.js` — `createCheckoutSession` crashed if `settings/pricing` Firestore read failed | Admin SDK read of `db.collection('settings').doc('pricing')` could throw PERMISSION_DENIED (Cloud Run SA lacks `roles/datastore.user` for non-`businesses` collections). Function crashed before reaching Square API. Fix: wrapped in try-catch; falls back to `process.env.SQUARE_PRO_PLAN_ID` / `SQUARE_AGENCY_PLAN_ID` env vars if Firestore read fails. |
 | Jun 21, 2026 | `functions/index.js` — `adaptListing` crashed when `platforms` field was missing from request body | `platforms.map(...)` called without a null guard. If the request omitted `platforms`, the function threw immediately. Fix: changed to `(platforms \|\| []).map(...)`. |
 | Jun 21, 2026 | `functions/index.js` — `approveDraft`, `jobFailedTrigger`, `_runScheduledPost` crashed on `users` Firestore read | Three functions called `db.collection('users').doc(uid).get()` without a try-catch. The Cloud Run compute SA (`745597683278-compute@developer.gserviceaccount.com`) returns PERMISSION_DENIED for the `users` collection, causing an unhandled rejection that crashed the entire function invocation. Fix: wrapped all three reads in try-catch; each falls back to `starter` plan defaults (approveDraft, _runScheduledPost) or skips the failure email silently (jobFailedTrigger). |
+| Jun 22, 2026 | `functions/index.js` — `_publishGoogleJob` called deprecated Google My Business API v4 | `mybusiness.googleapis.com/v4/accounts/{id}/locations/{id}/localPosts` was deprecated in 2022. Fix: updated to current v1 Business Profile Postings API — `mybusinesspostings.googleapis.com/v1/locations/{locationId}/localPosts`. accountId no longer needed in the URL. |
+| Jun 22, 2026 | `functions/index.js` — `_publishInstagramJob` always threw if no image was in the job payload | Instagram requires a photo to publish via API. If `payload.imageUrls[0]` was absent (text-only AI output), the function threw an error and the job was marked `failed`. Fix: instead of throwing, returns `{ manualFallback: true }` so `dispatchPublishJob` marks the job `manual_required` with a clear customer message to post manually. No silent failures. |
 
 ---
 
