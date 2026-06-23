@@ -243,6 +243,15 @@ The Operator Setup page (`BlastyBiz-Admin-Operate.html`) has step-by-step instru
 
 ---
 
+## ✅ Features Added (Jun 22, 2026 — Session 9)
+
+| Date | What | Details |
+|------|------|---------|
+| Jun 22, 2026 | Added `BlastyBiz-About.html` | About Us page with origin story, values, team bio (Dave Percey / Fluba Designs LLC), service area (Englewood FL), and "Powered by Fluba Designs LLC" band. |
+| Jun 22, 2026 | Added `BlastyBiz-Contact.html` | Contact page with support@, info@, sales@, billing@ blastybiz.com; Englewood FL location; response time note; "Powered by Fluba Designs LLC" band. |
+| Jun 22, 2026 | Updated `BlastyBiz-Home.html` nav | Added About and Contact links to the top nav. |
+| Jun 22, 2026 | Updated `BlastyBiz-Home.html` footer | Added About, Contact, support@blastybiz.com links; updated copyright; added "Powered by Fluba Designs LLC" line. |
+
 ## ✅ Features Added (Jun 19, 2026)
 
 | Feature | Files changed | Description |

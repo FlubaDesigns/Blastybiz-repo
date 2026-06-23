@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Contact — BlastyBiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --green:  #00C853;
+  --dark:   #070D07;
+  --silver: #7AB87A;
+  --light:  #EEF7EE;
+  --card:   #0D160D;
+  --border: #1E2E1E;
+  --muted:  #587058;
+  --green2: #00B04A;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--dark); color: var(--light); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px;
+  background: rgba(7,13,7,0.92); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; color: var(--green); text-decoration: none; }
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.nav-link { font-size: 13px; font-weight: 500; color: var(--silver); text-decoration: none; transition: color 0.2s; }
+.nav-link:hover { color: var(--light); }
+.nav-cta { background: var(--green); color: var(--dark); font-size: 13px; font-weight: 700; padding: 9px 18px; border-radius: 8px; text-decoration: none; transition: background 0.2s; white-space: nowrap; }
+.nav-cta:hover { background: var(--green2); }
+
+.page-hero { padding: 120px 24px 60px; text-align: center; max-width: 600px; margin: 0 auto; }
+.page-label { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--green); font-weight: 600; margin-bottom: 12px; }
+.page-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px, 12vw, 80px); line-height: 0.95; letter-spacing: 2px; color: var(--light); margin-bottom: 20px; }
+.page-title span { color: var(--green); }
+.page-sub { font-size: 17px; color: var(--silver); font-weight: 300; line-height: 1.7; }
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+section { padding: 60px 24px; max-width: 600px; margin: 0 auto; }
+.section-label { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--green); font-weight: 600; margin-bottom: 12px; }
+.section-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(32px, 7vw, 48px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-bottom: 24px; }
+.section-title span { color: var(--green); }
+
+.contact-grid { display: flex; flex-direction: column; gap: 16px; }
+
+.contact-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  padding: 24px; display: flex; gap: 18px; align-items: flex-start;
+  text-decoration: none; transition: border-color 0.2s;
+}
+.contact-card:hover { border-color: var(--green); }
+.contact-icon { font-size: 28px; flex-shrink: 0; margin-top: 2px; }
+.contact-type { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--green); font-weight: 600; margin-bottom: 4px; }
+.contact-value { font-size: 17px; font-weight: 600; color: var(--light); margin-bottom: 6px; }
+.contact-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+.location-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  padding: 24px; display: flex; gap: 18px; align-items: flex-start;
+}
+.location-detail { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--green); font-weight: 600; margin-bottom: 4px; }
+.location-name { font-size: 17px; font-weight: 600; color: var(--light); margin-bottom: 6px; }
+.location-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+.response-band {
+  background: rgba(0,200,83,0.05); border: 1px solid rgba(0,200,83,0.15);
+  border-radius: 12px; padding: 20px 24px; margin-top: 32px;
+  display: flex; gap: 14px; align-items: center;
+}
+.response-band-icon { font-size: 22px; flex-shrink: 0; }
+.response-band-text { font-size: 14px; color: var(--silver); line-height: 1.5; }
+.response-band-text strong { color: var(--light); }
+
+.powered-band {
+  background: var(--card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  padding: 48px 24px; text-align: center;
+}
+.powered-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.powered-name { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 3px; color: var(--light); margin-bottom: 8px; }
+.powered-name span { color: var(--green); }
+.powered-desc { font-size: 14px; color: var(--muted); line-height: 1.7; max-width: 400px; margin: 0 auto; }
+.powered-desc a { color: var(--silver); text-decoration: none; transition: color 0.2s; }
+.powered-desc a:hover { color: var(--green); }
+
+footer { padding: 40px 24px; text-align: center; border-top: 1px solid var(--border); }
+.footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 2px; color: var(--green); margin-bottom: 8px; }
+.footer-tagline { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+.footer-links { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
+.footer-link { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-link:hover { color: var(--silver); }
+.footer-copy { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.footer-powered { font-size: 11px; color: var(--muted); }
+.footer-powered a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-powered a:hover { color: var(--silver); }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="BlastyBiz-Home.html">BlastyBiz</a>
+  <div class="nav-right">
+    <a class="nav-link" href="BlastyBiz-About.html">About</a>
+    <a class="nav-link" href="BlastyBiz-Contact.html">Contact</a>
+    <a class="nav-cta" href="BlastyBiz-Login.html">Try It Free</a>
+  </div>
+</nav>
+
+<div class="page-hero" style="animation: fadeUp 0.6s ease both;">
+  <div class="page-label">Get In Touch</div>
+  <h1 class="page-title">We're<br/><span>Here For You</span></h1>
+  <p class="page-sub">Real people, real responses. Whether you need help with the platform or just have a question, we've got you.</p>
+</div>
+
+<hr class="divider"/>
+
+<section class="reveal">
+  <div class="section-label">Contact</div>
+  <h2 class="section-title">Reach <span>Us Anytime</span></h2>
+
+  <div class="contact-grid">
+
+    <a class="contact-card" href="mailto:support@blastybiz.com">
+      <div class="contact-icon">🛠️</div>
+      <div>
+        <div class="contact-type">Support</div>
+        <div class="contact-value">support@blastybiz.com</div>
+        <div class="contact-desc">Technical help, account issues, platform questions. This is your fastest route to a fix.</div>
+      </div>
+    </a>
+
+    <a class="contact-card" href="mailto:info@blastybiz.com">
+      <div class="contact-icon">💬</div>
+      <div>
+        <div class="contact-type">General Inquiries</div>
+        <div class="contact-value">info@blastybiz.com</div>
+        <div class="contact-desc">Questions about how BlastyBiz works, partnership inquiries, or anything else.</div>
+      </div>
+    </a>
+
+    <a class="contact-card" href="mailto:sales@blastybiz.com">
+      <div class="contact-icon">📈</div>
+      <div>
+        <div class="contact-type">Sales</div>
+        <div class="contact-value">sales@blastybiz.com</div>
+        <div class="contact-desc">Interested in the Agency plan or want to discuss a custom setup for your team?</div>
+      </div>
+    </a>
+
+    <a class="contact-card" href="mailto:billing@blastybiz.com">
+      <div class="contact-icon">💳</div>
+      <div>
+        <div class="contact-type">Billing</div>
+        <div class="contact-value">billing@blastybiz.com</div>
+        <div class="contact-desc">Invoice questions, subscription changes, or payment concerns.</div>
+      </div>
+    </a>
+
+  </div>
+
+  <div class="response-band">
+    <div class="response-band-icon">⏱️</div>
+    <div class="response-band-text"><strong>Typical response time: same business day.</strong> We're a small team and we read every email personally.</div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<section class="reveal">
+  <div class="section-label">Location</div>
+  <h2 class="section-title">Where We're <span>Based</span></h2>
+
+  <div class="location-card">
+    <div class="contact-icon">📍</div>
+    <div>
+      <div class="location-detail">Headquarters</div>
+      <div class="location-name">Englewood, Florida</div>
+      <div class="location-desc">We're a Southwest Florida company building tools for local businesses everywhere. Whether you're around the corner or across the country, BlastyBiz works for you.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<div class="powered-band reveal">
+  <div class="powered-label">A product by</div>
+  <div class="powered-name"><span>Fluba</span> Designs LLC</div>
+  <p class="powered-desc">BlastyBiz is built and maintained by Fluba Designs LLC. For corporate or partnership inquiries, reach us at <a href="mailto:info@flubadesigns.com">info@flubadesigns.com</a>.</p>
+</div>
+
+<footer>
+  <div class="footer-logo">BlastyBiz</div>
+  <div class="footer-tagline">Lock. Load. Blast.</div>
+  <div class="footer-links">
+    <a class="footer-link" href="BlastyBiz-Home.html">Home</a>
+    <a class="footer-link" href="BlastyBiz-About.html">About</a>
+    <a class="footer-link" href="BlastyBiz-Contact.html">Contact</a>
+    <a class="footer-link" href="BlastyBiz-Privacy.html">Privacy</a>
+    <a class="footer-link" href="BlastyBiz-Terms.html">Terms</a>
+  </div>
+  <div class="footer-copy">© 2026 BlastyBiz · All rights reserved.</div>
+  <div class="footer-powered">Powered by <a href="mailto:info@flubadesigns.com">Fluba Designs LLC</a></div>
+</footer>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
