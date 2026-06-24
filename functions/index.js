@@ -1521,6 +1521,38 @@ Return ONLY valid JSON, no markdown, no explanation:
   }
 });
 
+exports.sendTestEmail = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: 'Forbidden' }); }
+  const { to } = req.body;
+  if (!to) return res.status(400).json({ error: 'to address required' });
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey || apiKey === 'placeholder') return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
+  try {
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'BlastyBiz <hello@blastybiz.com>',
+        to: [to],
+        subject: '✅ BlastyBiz Email Test',
+        html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#070D07;color:#EEF7EE;border-radius:12px">
+          <h1 style="font-size:28px;color:#00C853;margin:0 0 8px">BlastyBiz</h1>
+          <p style="font-size:16px;color:#7AB87A;margin:0 0 24px">Lock. Load. Blast.</p>
+          <p style="font-size:15px;line-height:1.6;color:#EEF7EE">This is a test email confirming that your Resend integration is working correctly. Emails from BlastyBiz will send from <strong>hello@blastybiz.com</strong>.</p>
+          <p style="font-size:13px;color:#587058;margin-top:24px">Sent from BlastyBiz Admin · Powered by Fluba Designs LLC</p>
+        </div>`
+      }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) return res.status(500).json({ error: data.message || 'Resend error', detail: data });
+    return res.json({ ok: true, id: data.id, to });
+  } catch(e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
 exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_ACCESS_TOKEN'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);

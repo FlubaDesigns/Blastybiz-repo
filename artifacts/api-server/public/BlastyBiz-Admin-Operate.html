@@ -512,6 +512,14 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
           <div class="step"><div class="step-num">4</div><div class="step-text">In Resend, add and verify your sending domain so emails don't land in spam. Go to <a href="https://resend.com/domains" target="_blank">resend.com/domains</a> → Add Domain → follow DNS instructions for <strong>blastybiz.com</strong>. Until then, you can only send to addresses in your Resend account.</div></div>
         </div>
         <div class="note" style="margin-top:10px"><strong>What gets sent:</strong> Welcome email when a user signs up · Failure alert email when a publish job status changes to <code>failed</code></div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #eef0ee">
+          <div style="font-size:13px;font-weight:600;color:#0d1a0d;margin-bottom:8px">🧪 Send a test email</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="email" id="inp-test-email" placeholder="recipient@example.com" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid #c0d0c0;border-radius:8px;font-size:13px;font-family:inherit">
+            <button onclick="sendTestEmail(this)" style="background:#00C853;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">Send Test</button>
+          </div>
+          <div id="st-test-email" style="font-size:12px;margin-top:6px;color:#4a604a"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -798,6 +806,33 @@ window.saveSecret = async function(name, inputId, statusId, btn) {
     statusEl.className = 'save-status err';
     return;
   }
+
+  // ── Send test email ──────────────────────────────────────────────────────
+  window.sendTestEmail = async function(btn) {
+    const to = document.getElementById('inp-test-email').value.trim();
+    const st = document.getElementById('st-test-email');
+    if (!to) { st.textContent = 'Enter a recipient address first.'; st.style.color='#c0392b'; return; }
+    btn.disabled = true; btn.textContent = 'Sending…'; st.textContent = ''; st.style.color='#4a604a';
+    try {
+      const user = firebase.auth().currentUser;
+      if (!user) throw new Error('Not signed in');
+      const token = await user.getIdToken();
+      const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/sendTestEmail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ to })
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Send failed');
+      st.textContent = '✅ Sent! Check ' + to;
+      st.style.color = '#1a6630';
+    } catch(e) {
+      st.textContent = '✗ ' + e.message;
+      st.style.color = '#c0392b';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Send Test';
+    }
+  };
 
   btn.disabled = true;
   btn.textContent = 'Saving…';
