@@ -814,7 +814,7 @@ window.saveSecret = async function(name, inputId, statusId, btn) {
     if (!to) { st.textContent = 'Enter a recipient address first.'; st.style.color='#c0392b'; return; }
     btn.disabled = true; btn.textContent = 'Sending…'; st.textContent = ''; st.style.color='#4a604a';
     try {
-      const user = firebase.auth().currentUser;
+      const user = auth.currentUser;
       if (!user) throw new Error('Not signed in');
       const token = await user.getIdToken();
       const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/sendTestEmail', {
