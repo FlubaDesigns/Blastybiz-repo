@@ -2,3 +2,4 @@
 - [BlastyBiz Firestore rules](blastybiz-firestore-rules.md) — businesses rule checks `uid` field on doc, not doc ID.
 - [BlastyBiz API wiring](blastybiz-api-wiring.md) — Express routes, Firestore collections, and client-side event pattern.
 - [BlastyBiz CF deploy gotchas](blastybiz-cf-deploy.md) — timeout vs Cloud Build, HTTPS→trigger type conflict, square npm name, lock file sync, secrets: declarations.
+- [BlastyBiz emails](blastybiz-emails.md) — confirmed mailboxes: info/sales/support/billing/noreply @blastybiz.com. hello@ does NOT exist.

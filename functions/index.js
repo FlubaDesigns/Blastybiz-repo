@@ -31,7 +31,7 @@ async function sendResendEmail({ to, subject, html }) {
     const resp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: 'BlastyBiz <hello@blastybiz.com>', to: [to], subject, html }),
+      body: JSON.stringify({ from: 'BlastyBiz <info@blastybiz.com>', to: [to], subject, html }),
     });
     if (!resp.ok) console.error('[email] Resend error:', await resp.text());
   } catch (e) {
@@ -635,7 +635,7 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
     },
     checkoutOptions: {
       redirectUrl: `https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html?success=1`,
-      merchantSupportEmail: 'hello@blastybiz.com',
+      merchantSupportEmail: 'info@blastybiz.com',
     },
     prePopulatedData: { buyerEmail: email },
   });
@@ -656,7 +656,7 @@ exports.createPortalSession = onRequest({ invoker: 'public' }, async (req, res) 
   const uid = decoded.uid;
   const subSnap = await db.collection('subscriptions').doc(uid).get();
   if (!subSnap.exists) return res.status(404).json({ error: 'No subscription found' });
-  res.json({ url: 'mailto:hello@blastybiz.com?subject=Manage%20BlastyBiz%20Subscription' });
+  res.json({ url: 'mailto:info@blastybiz.com?subject=Manage%20BlastyBiz%20Subscription' });
 });
 
 // ══════════════════════════════════════════
@@ -1534,13 +1534,13 @@ exports.sendTestEmail = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'BlastyBiz <hello@blastybiz.com>',
+        from: 'BlastyBiz <info@blastybiz.com>',
         to: [to],
         subject: '✅ BlastyBiz Email Test',
         html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#070D07;color:#EEF7EE;border-radius:12px">
           <h1 style="font-size:28px;color:#00C853;margin:0 0 8px">BlastyBiz</h1>
           <p style="font-size:16px;color:#7AB87A;margin:0 0 24px">Lock. Load. Blast.</p>
-          <p style="font-size:15px;line-height:1.6;color:#EEF7EE">This is a test email confirming that your Resend integration is working correctly. Emails from BlastyBiz will send from <strong>hello@blastybiz.com</strong>.</p>
+          <p style="font-size:15px;line-height:1.6;color:#EEF7EE">This is a test email confirming that your Resend integration is working correctly. Emails from BlastyBiz will send from <strong>info@blastybiz.com</strong>.</p>
           <p style="font-size:13px;color:#587058;margin-top:24px">Sent from BlastyBiz Admin · Powered by Fluba Designs LLC</p>
         </div>`
       }),
