@@ -233,6 +233,63 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
   </div>
 
   <!-- ══════════════════════════════════════════
+       BLASTYBIZ AS FIRST CLIENT
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🏢</span>
+      <span class="section-title">BlastyBiz as First Client</span>
+      <span class="section-badge warn" id="badge-client">Setup required</span>
+    </div>
+
+    <!-- Google Business Profile -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-google" onclick="toggleCheck(event,'client-google')"></div>
+        <div style="flex:1">
+          <div class="card-title">🔍 Google Business Profile</div>
+          <div class="card-sub">Auto-post — required for the postToGoogle function</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://business.google.com" target="_blank">business.google.com</a> and sign in with your Google account</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Click <strong>Add your business to Google</strong> → enter <strong>BlastyBiz</strong> as the business name</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Choose category: <strong>Software Company</strong> or <strong>Marketing Agency</strong></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Select <strong>No physical location</strong> (service-area business) → add your service area (city/state)</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Add phone number, website (<strong>blastybiz.com</strong>), and business hours</div></div>
+          <div class="step"><div class="step-num">6</div><div class="step-text">Verify the listing — Google will call or text to confirm. Once verified, the profile goes live</div></div>
+          <div class="step"><div class="step-num">7</div><div class="step-text">Connect it to BlastyBiz: when Google OAuth is set up (above), sign in with this Google account in the BlastyBiz app to link it</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Facebook Page -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-facebook" onclick="toggleCheck(event,'client-facebook')"></div>
+        <div style="flex:1">
+          <div class="card-title">📘 Facebook Page</div>
+          <div class="card-sub">⚠️ Do this before Facebook OAuth setup below — the Developer app requires a Page to exist first</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://www.facebook.com/pages/create" target="_blank">facebook.com/pages/create</a></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Choose <strong>Business or Brand</strong> → Page name: <strong>BlastyBiz</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Category: <strong>Software</strong> or <strong>Marketing Agency</strong></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Add profile photo (logo), cover photo, website (<strong>blastybiz.com</strong>), and bio</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Once Facebook OAuth is set up in BlastyBiz (next section), connect this Page through the app — it will request <strong>pages_manage_posts</strong> permission to auto-post</div></div>
+        </div>
+        <div class="note" style="margin-top:12px">Facebook Marketplace posts come from this same Page — no separate account needed.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════
        FACEBOOK / META
   ══════════════════════════════════════════ -->
   <div class="section">
@@ -241,6 +298,7 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
       <span class="section-title">Facebook & Instagram OAuth</span>
       <span class="section-badge warn" id="badge-facebook">Setup required</span>
     </div>
+    <div class="note" style="margin-bottom:14px;background:#fff8e1;border-color:#ffe082">⚠️ <strong>Requires Facebook Page first</strong> — complete the Facebook Page step in the section above before starting this. The Developer app must be linked to a Business Portfolio that has a Page.</div>
 
     <!-- Create Meta App -->
     <div class="card">
@@ -322,125 +380,14 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
     </div>
   </div>
 
-
-
   <!-- ══════════════════════════════════════════
-       ONGOING
+       REMAINING CLIENT PLATFORMS
   ══════════════════════════════════════════ -->
   <div class="section">
     <div class="section-header">
-      <span class="section-icon">🔧</span>
-      <span class="section-title">Ongoing Operator Commands</span>
-      <span class="section-badge ok">Reference</span>
-    </div>
-
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" style="visibility:hidden"></div>
-        <div style="flex:1">
-          <div class="card-title">Deploy commands cheat sheet</div>
-          <div class="card-sub">Run in Replit Shell whenever you make changes</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <p style="font-size:13px;color:#4a604a;margin-top:4px;margin-bottom:10px">Run these from the Replit Shell tab:</p>
-
-        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:10px">Deploy HTML pages (hosting)</p>
-        <div class="code-block">
-          <span class="code-text">npx firebase-tools deploy --only hosting</span>
-          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only hosting')">Copy</button>
-        </div>
-
-        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">Deploy all functions (after saving secrets)</p>
-        <div class="code-block">
-          <span class="code-text">npx firebase-tools deploy --only functions</span>
-          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions')">Copy</button>
-        </div>
-
-        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">Deploy Firestore security rules</p>
-        <div class="code-block">
-          <span class="code-text">npx firebase-tools deploy --only firestore:rules</span>
-          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only firestore:rules')">Copy</button>
-        </div>
-
-        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">Deploy a specific function</p>
-        <div class="code-block">
-          <span class="code-text">npx firebase-tools deploy --only functions:functionName</span>
-          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:functionName')">Copy</button>
-        </div>
-
-        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">View function logs</p>
-        <div class="code-block">
-          <span class="code-text">npx firebase-tools functions:log --only functionName</span>
-          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools functions:log --only functionName')">Copy</button>
-        </div>
-
-        <div class="divider"></div>
-        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px">All deployed functions</p>
-        <p style="font-size:13px;color:#4a604a;line-height:1.8">
-          adaptListing · approveDraft · createCheckoutSession · createPortalSession ·
-          facebookOAuthCallback · googleOAuthCallback · initiateFacebookOAuth · initiateGoogleOAuth ·
-          postToBing · postToAppleMaps · postToFacebook · postToGoogle · postToInstagram ·
-          resolveCategories · setOperatorSecret · squareWebhook · uploadImage
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
-       BLASTYBIZ AS FIRST CLIENT
-  ══════════════════════════════════════════ -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">🏢</span>
-      <span class="section-title">BlastyBiz as First Client</span>
-      <span class="section-badge warn" id="badge-client">Setup required</span>
-    </div>
-
-    <!-- Google Business Profile -->
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-client-google" onclick="toggleCheck(event,'client-google')"></div>
-        <div style="flex:1">
-          <div class="card-title">🔍 Google Business Profile</div>
-          <div class="card-sub">Auto-post — required for the postToGoogle function</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://business.google.com" target="_blank">business.google.com</a> and sign in with your Google account</div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Click <strong>Add your business to Google</strong> → enter <strong>BlastyBiz</strong> as the business name</div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">Choose category: <strong>Software Company</strong> or <strong>Marketing Agency</strong></div></div>
-          <div class="step"><div class="step-num">4</div><div class="step-text">Select <strong>No physical location</strong> (service-area business) → add your service area (city/state)</div></div>
-          <div class="step"><div class="step-num">5</div><div class="step-text">Add phone number, website (<strong>blastybiz.com</strong>), and business hours</div></div>
-          <div class="step"><div class="step-num">6</div><div class="step-text">Verify the listing — Google will call or text to confirm. Once verified, the profile goes live</div></div>
-          <div class="step"><div class="step-num">7</div><div class="step-text">Connect it to BlastyBiz: when Google OAuth is set up, sign in with this Google account in the BlastyBiz app to link it</div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Facebook Page -->
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-client-facebook" onclick="toggleCheck(event,'client-facebook')"></div>
-        <div style="flex:1">
-          <div class="card-title">📘 Facebook Page</div>
-          <div class="card-sub">Auto-post — required for postToFacebook + Facebook Marketplace</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://www.facebook.com/pages/create" target="_blank">facebook.com/pages/create</a></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Choose <strong>Business or Brand</strong> → Page name: <strong>BlastyBiz</strong></div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">Category: <strong>Software</strong> or <strong>Marketing Agency</strong></div></div>
-          <div class="step"><div class="step-num">4</div><div class="step-text">Add profile photo (logo), cover photo, website (<strong>blastybiz.com</strong>), and bio</div></div>
-          <div class="step"><div class="step-num">5</div><div class="step-text">Once Facebook OAuth is set up in BlastyBiz, connect this Page through the app — it will request <strong>pages_manage_posts</strong> permission to auto-post</div></div>
-        </div>
-        <div class="note" style="margin-top:12px">Facebook Marketplace posts come from this same Page — no separate account needed.</div>
-      </div>
+      <span class="section-icon">📋</span>
+      <span class="section-title">Remaining Platform Listings</span>
+      <span class="section-badge warn" id="badge-platforms">Setup required</span>
     </div>
 
     <!-- Instagram -->
@@ -449,7 +396,7 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
         <div class="check-box" id="chk-client-instagram" onclick="toggleCheck(event,'client-instagram')"></div>
         <div style="flex:1">
           <div class="card-title">📸 Instagram Business</div>
-          <div class="card-sub">Auto-post — requires the Facebook Page above to be linked</div>
+          <div class="card-sub">Auto-post — requires Facebook Page (above) to be linked first</div>
         </div>
         <span class="chevron">▼</span>
       </div>
@@ -457,9 +404,9 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
         <div class="steps">
           <div class="step"><div class="step-num">1</div><div class="step-text">Create an Instagram account at <a href="https://www.instagram.com" target="_blank">instagram.com</a> — username: <strong>blastybiz</strong></div></div>
           <div class="step"><div class="step-num">2</div><div class="step-text">Go to <strong>Settings → Account → Switch to Professional Account</strong> → choose <strong>Business</strong></div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">When prompted, link it to the <strong>BlastyBiz Facebook Page</strong> you created above — this is required for API posting</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">When prompted, link it to the <strong>BlastyBiz Facebook Page</strong> — this is required for API posting</div></div>
           <div class="step"><div class="step-num">4</div><div class="step-text">Add website (<strong>blastybiz.com</strong>), bio, and contact email (<strong>info@blastybiz.com</strong>)</div></div>
-          <div class="step"><div class="step-num">5</div><div class="step-text">Connect via Facebook OAuth in BlastyBiz — the Instagram Business account will be picked up automatically through the linked Page</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Connect via Facebook OAuth in BlastyBiz — the Instagram Business account is picked up automatically through the linked Page</div></div>
         </div>
       </div>
     </div>
@@ -571,6 +518,70 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
 
   </div>
 
+  <!-- ══════════════════════════════════════════
+       ONGOING
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🔧</span>
+      <span class="section-title">Ongoing Operator Commands</span>
+      <span class="section-badge ok">Reference</span>
+    </div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" style="visibility:hidden"></div>
+        <div style="flex:1">
+          <div class="card-title">Deploy commands cheat sheet</div>
+          <div class="card-sub">Run in Replit Shell whenever you make changes</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <p style="font-size:13px;color:#4a604a;margin-top:4px;margin-bottom:10px">Run these from the Replit Shell tab:</p>
+
+        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:10px">Deploy HTML pages (hosting)</p>
+        <div class="code-block">
+          <span class="code-text">npx firebase-tools deploy --only hosting</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only hosting')">Copy</button>
+        </div>
+
+        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">Deploy all functions (after saving secrets)</p>
+        <div class="code-block">
+          <span class="code-text">npx firebase-tools deploy --only functions</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions')">Copy</button>
+        </div>
+
+        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">Deploy Firestore security rules</p>
+        <div class="code-block">
+          <span class="code-text">npx firebase-tools deploy --only firestore:rules</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only firestore:rules')">Copy</button>
+        </div>
+
+        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">Deploy a specific function</p>
+        <div class="code-block">
+          <span class="code-text">npx firebase-tools deploy --only functions:functionName</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:functionName')">Copy</button>
+        </div>
+
+        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px">View function logs</p>
+        <div class="code-block">
+          <span class="code-text">npx firebase-tools functions:log --only functionName</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools functions:log --only functionName')">Copy</button>
+        </div>
+
+        <div class="divider"></div>
+        <p style="font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px">All deployed functions</p>
+        <p style="font-size:13px;color:#4a604a;line-height:1.8">
+          adaptListing · approveDraft · createCheckoutSession · createPortalSession ·
+          facebookOAuthCallback · googleOAuthCallback · initiateFacebookOAuth · initiateGoogleOAuth ·
+          postToBing · postToAppleMaps · postToFacebook · postToGoogle · postToInstagram ·
+          resolveCategories · setOperatorSecret · squareWebhook · uploadImage
+        </p>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <script>
@@ -594,10 +605,10 @@ function toggleCheck(e, key) {
 function renderChecks() {
   const checks = loadChecks();
   const checkable = ['google-api','google-creds','google-deploy',
+                     'client-google','client-facebook',
                      'fb-app','fb-perms','fb-deploy',
-                     'client-google','client-facebook','client-instagram',
-                     'client-yelp','client-nextdoor','client-apple',
-                     'client-bing','client-thumbtack'];
+                     'client-instagram','client-yelp','client-nextdoor',
+                     'client-apple','client-bing','client-thumbtack'];
   checkable.forEach(key => {
     const box = document.getElementById('chk-' + key);
     if (!box) return;
@@ -612,12 +623,13 @@ function renderChecks() {
 
   const googleKeys = ['google-api','google-creds','google-deploy'];
   const fbKeys = ['fb-app','fb-perms','fb-deploy'];
-  const clientKeys = ['client-google','client-facebook','client-instagram',
-                      'client-yelp','client-nextdoor','client-apple',
-                      'client-bing','client-thumbtack'];
+  const clientKeys = ['client-google','client-facebook'];
+  const platformKeys = ['client-instagram','client-yelp','client-nextdoor',
+                        'client-apple','client-bing','client-thumbtack'];
   updateBadge('badge-google', googleKeys, checks);
   updateBadge('badge-facebook', fbKeys, checks);
   updateBadge('badge-client', clientKeys, checks);
+  updateBadge('badge-platforms', platformKeys, checks);
 
 }
 
