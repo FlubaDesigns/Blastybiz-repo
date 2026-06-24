@@ -206,34 +206,6 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
       </div>
     </div>
 
-    <!-- 4. Add webhook -->
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-square-webhook" onclick="toggleCheck(event,'square-webhook')"></div>
-        <div style="flex:1">
-          <div class="card-title">Add Square webhook and set signature key</div>
-          <div class="card-sub">So Square can update plan status after payment</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://developer.squareup.com/apps" target="_blank">Square Developer Dashboard → Applications</a> → your app → <strong>Webhooks</strong></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Click <strong>+ Add endpoint</strong> and paste this URL exactly:</div></div>
-        </div>
-        <div class="cf-url">https://us-central1-blastybiz-9523e.cloudfunctions.net/squareWebhook</div>
-        <div class="steps" style="margin-top:10px">
-          <div class="step"><div class="step-num">3</div><div class="step-text">Under <strong>Events</strong>, select: <code>payment.completed</code> and <code>subscription.canceled</code></div></div>
-          <div class="step"><div class="step-num">4</div><div class="step-text">Copy the <strong>Signature Key</strong> shown for the endpoint and paste it below:</div></div>
-        </div>
-        <div class="secret-row">
-          <input type="password" id="inp-square-wh" class="secret-input" placeholder="Signature key…" autocomplete="off">
-          <button class="show-btn" onclick="toggleShow('inp-square-wh',this)">Show</button>
-          <button class="save-btn" onclick="saveSecret('SQUARE_WEBHOOK_SIGNATURE_KEY','inp-square-wh','st-square-wh',this)">Save</button>
-        </div>
-        <div class="save-status" id="st-square-wh"></div>
-      </div>
-    </div>
   </div>
 
   <!-- ══════════════════════════════════════════
@@ -533,7 +505,7 @@ function toggleCheck(e, key) {
 
 function renderChecks() {
   const checks = loadChecks();
-  const checkable = ['square-plans','square-plans-ids','square-webhook',
+  const checkable = ['square-plans','square-plans-ids',
                      'google-api','google-creds','google-deploy',
                      'fb-app','fb-perms','fb-deploy',
                      'storage'];
@@ -549,7 +521,7 @@ function renderChecks() {
   document.getElementById('prog-bar').style.width = (done/total*100) + '%';
   document.getElementById('prog-label').textContent = `${done} / ${total} done`;
 
-  const squareKeys = ['square-plans','square-plans-ids','square-webhook'];
+  const squareKeys = ['square-plans','square-plans-ids'];
   const googleKeys = ['google-api','google-creds','google-deploy'];
   const fbKeys = ['fb-app','fb-perms','fb-deploy'];
   updateBadge('badge-square', squareKeys, checks);
