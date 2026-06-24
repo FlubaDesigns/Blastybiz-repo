@@ -377,36 +377,6 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
 
 
   <!-- ══════════════════════════════════════════
-       FIREBASE STORAGE
-  ══════════════════════════════════════════ -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">🗄️</span>
-      <span class="section-title">Firebase Storage</span>
-      <span class="section-badge warn" id="badge-storage">Setup required</span>
-    </div>
-
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-storage" onclick="toggleCheck(event,'storage')"></div>
-        <div style="flex:1">
-          <div class="card-title">Enable Firebase Storage and set CORS rules</div>
-          <div class="card-sub">Required for image uploads — the uploadImage function uses the default Storage bucket</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://console.firebase.google.com/project/blastybiz-9523e/storage" target="_blank">Firebase Console → Storage</a> and click <strong>Get started</strong> (requires Blaze plan)</div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Choose <strong>Start in production mode</strong> → select region <strong>us-east1</strong> (matches Firestore) → click Done</div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">The default bucket (<code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">blastybiz-9523e.firebasestorage.app</code>) is created automatically — no further config needed for the function</div></div>
-        </div>
-        <div class="note" style="margin-top:12px"><strong>Current use:</strong> Only the <code>uploadImage</code> Cloud Function writes to Storage (server-side, no CORS needed). Storage costs are pay-per-GB and typically negligible for listing images.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
        ONGOING
   ══════════════════════════════════════════ -->
   <div class="section">
@@ -494,8 +464,7 @@ function renderChecks() {
   const checks = loadChecks();
   const checkable = ['square-plans',
                      'google-api','google-creds','google-deploy',
-                     'fb-app','fb-perms','fb-deploy',
-                     'storage'];
+                     'fb-app','fb-perms','fb-deploy'];
   checkable.forEach(key => {
     const box = document.getElementById('chk-' + key);
     if (!box) return;
@@ -514,10 +483,6 @@ function renderChecks() {
   updateBadge('badge-square', squareKeys, checks);
   updateBadge('badge-google', googleKeys, checks);
   updateBadge('badge-facebook', fbKeys, checks);
-
-  const storageDone = checks['storage'];
-  const storageBadge = document.getElementById('badge-storage');
-  if (storageBadge) { storageBadge.textContent = storageDone ? 'Complete ✓' : 'Setup required'; storageBadge.className = 'section-badge ' + (storageDone ? 'ok' : 'warn'); }
 
 }
 
