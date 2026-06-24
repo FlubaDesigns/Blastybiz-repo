@@ -446,38 +446,6 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       DOMAIN
-  ══════════════════════════════════════════ -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">🌐</span>
-      <span class="section-title">Custom Domain</span>
-      <span class="section-badge warn" id="badge-domain">Not connected</span>
-    </div>
-
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-domain" onclick="toggleCheck(event,'domain')"></div>
-        <div style="flex:1">
-          <div class="card-title">Connect blastybiz.com to Firebase Hosting</div>
-          <div class="card-sub">Firebase Console → Hosting → Add custom domain</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://console.firebase.google.com/project/blastybiz-9523e/hosting/sites" target="_blank">Firebase Console → Hosting</a> → click <strong>Add custom domain</strong></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Enter <strong>blastybiz.com</strong> → Continue</div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">Firebase shows you two <strong>A records</strong> — add both to your domain registrar's DNS settings</div></div>
-          <div class="step"><div class="step-num">4</div><div class="step-text">Wait for DNS propagation (up to 24 hours) — Firebase will auto-provision an SSL certificate once it verifies</div></div>
-          <div class="step"><div class="step-num">5</div><div class="step-text">Also add <strong>www.blastybiz.com</strong> as a second custom domain pointing to the same site, or set up a redirect in your registrar</div></div>
-        </div>
-        <div class="note-info note">Current live URL: <strong>https://blastybiz-9523e.web.app</strong> — this keeps working after you add the custom domain.</div>
-        <a class="link-btn link-btn-primary" href="https://console.firebase.google.com/project/blastybiz-9523e/hosting/sites" target="_blank">↗ Open Firebase Hosting</a>
-      </div>
-    </div>
-  </div>
 
   <!-- ══════════════════════════════════════════
        ONGOING
@@ -568,7 +536,7 @@ function renderChecks() {
   const checkable = ['square-plans','square-plans-ids','square-webhook',
                      'google-api','google-creds','google-deploy',
                      'fb-app','fb-perms','fb-deploy',
-                     'storage','domain'];
+                     'storage'];
   checkable.forEach(key => {
     const box = document.getElementById('chk-' + key);
     if (!box) return;
@@ -592,9 +560,6 @@ function renderChecks() {
   const storageBadge = document.getElementById('badge-storage');
   if (storageBadge) { storageBadge.textContent = storageDone ? 'Complete ✓' : 'Setup required'; storageBadge.className = 'section-badge ' + (storageDone ? 'ok' : 'warn'); }
 
-  const domainDone = checks['domain'];
-  const domainBadge = document.getElementById('badge-domain');
-  if (domainBadge) { domainBadge.textContent = domainDone ? 'Connected ✓' : 'Not connected'; domainBadge.className = 'section-badge ' + (domainDone ? 'ok' : 'warn'); }
 }
 
 function updateBadge(badgeId, keys, checks) {
