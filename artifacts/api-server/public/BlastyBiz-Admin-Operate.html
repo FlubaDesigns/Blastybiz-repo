@@ -152,57 +152,43 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
       <span class="section-badge warn" id="badge-square">Setup required</span>
     </div>
 
-    <!-- 1. Create subscription plans -->
+    <!-- Square finish-up -->
     <div class="card">
       <div class="card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-square-plans" onclick="toggleCheck(event,'square-plans')"></div>
         <div style="flex:1">
-          <div class="card-title">Create Pro and Agency subscription plans in Square</div>
-          <div class="card-sub">Generates the plan variation IDs you need below</div>
+          <div class="card-title">Set Location ID and create subscription plans</div>
+          <div class="card-sub">BlastyBiz creates the Pro and Agency plans in Square for you</div>
         </div>
         <span class="chevron">▼</span>
       </div>
       <div class="card-body">
         <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://squareup.com/dashboard/items/services" target="_blank">Square Dashboard → Items → Services</a> and click <strong>+ Create subscription plan</strong></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Name: <strong>BlastyBiz Pro</strong> · Price: your Pro monthly rate · After saving, open the plan and copy the <strong>Plan variation ID</strong> (a UUID)</div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">Repeat for <strong>BlastyBiz Agency</strong> and copy that plan variation ID too</div></div>
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://squareup.com/dashboard/settings/locations" target="_blank">Square Dashboard → Account &amp; Settings → Locations</a> → click your location → copy the <strong>Location ID</strong> from the URL or the info panel</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Paste it below and hit Save:</div></div>
         </div>
-        <div class="note"><strong>Important:</strong> Copy the <strong>plan variation IDs</strong>, not the top-level plan IDs — you will paste them in step 3 below.</div>
-      </div>
-    </div>
-
-    <!-- 2. Set plan ID secrets -->
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-square-plans-ids" onclick="toggleCheck(event,'square-plans-ids')"></div>
-        <div style="flex:1">
-          <div class="card-title">Set Square location and plan variation ID secrets</div>
-          <div class="card-sub">The IDs from the plans you just created, plus your Square location</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <p style="font-size:13px;color:#4a604a;margin-top:12px;margin-bottom:2px;font-weight:600">Square Location ID</p>
         <div class="secret-row">
           <input type="text" id="inp-square-location" class="secret-input" placeholder="L…" autocomplete="off">
           <button class="save-btn" onclick="saveSecret('SQUARE_LOCATION_ID','inp-square-location','st-square-location',this)">Save</button>
         </div>
         <div class="save-status" id="st-square-location"></div>
 
-        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">Pro Plan Variation ID</p>
-        <div class="secret-row">
-          <input type="text" id="inp-square-pro" class="secret-input" placeholder="UUID…" autocomplete="off">
-          <button class="save-btn" onclick="saveSecret('SQUARE_PRO_PLAN_ID','inp-square-pro','st-square-pro',this)">Save</button>
+        <div class="steps" style="margin-top:16px">
+          <div class="step"><div class="step-num">3</div><div class="step-text">Enter your monthly prices below and hit <strong>Create Plans</strong> — BlastyBiz will create the subscription plans in Square and save all the IDs automatically:</div></div>
         </div>
-        <div class="save-status" id="st-square-pro"></div>
-
-        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">Agency Plan Variation ID</p>
-        <div class="secret-row">
-          <input type="text" id="inp-square-agency" class="secret-input" placeholder="UUID…" autocomplete="off">
-          <button class="save-btn" onclick="saveSecret('SQUARE_AGENCY_PLAN_ID','inp-square-agency','st-square-agency',this)">Save</button>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px">
+          <div style="flex:1;min-width:120px">
+            <p style="font-size:12px;font-weight:600;color:#4a604a;margin:0 0 4px">Pro monthly ($)</p>
+            <input type="number" id="inp-pro-price" class="secret-input" placeholder="29" min="1" style="width:100%">
+          </div>
+          <div style="flex:1;min-width:120px">
+            <p style="font-size:12px;font-weight:600;color:#4a604a;margin:0 0 4px">Agency monthly ($)</p>
+            <input type="number" id="inp-agency-price" class="secret-input" placeholder="79" min="1" style="width:100%">
+          </div>
         </div>
-        <div class="save-status" id="st-square-agency"></div>
+        <button onclick="createSquarePlans(this)" style="margin-top:10px;background:#00C853;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;width:100%">Create Plans in Square</button>
+        <div id="st-square-plans" style="font-size:13px;margin-top:8px;color:#4a604a"></div>
+        <div class="note" style="margin-top:10px">Plans are created in your <strong>Production</strong> Square account. Re-running this creates new plans each time — only do it once unless you want to change prices.</div>
       </div>
     </div>
 
@@ -505,7 +491,7 @@ function toggleCheck(e, key) {
 
 function renderChecks() {
   const checks = loadChecks();
-  const checkable = ['square-plans','square-plans-ids',
+  const checkable = ['square-plans',
                      'google-api','google-creds','google-deploy',
                      'fb-app','fb-perms','fb-deploy',
                      'storage'];
@@ -521,7 +507,7 @@ function renderChecks() {
   document.getElementById('prog-bar').style.width = (done/total*100) + '%';
   document.getElementById('prog-label').textContent = `${done} / ${total} done`;
 
-  const squareKeys = ['square-plans','square-plans-ids'];
+  const squareKeys = ['square-plans'];
   const googleKeys = ['google-api','google-creds','google-deploy'];
   const fbKeys = ['fb-app','fb-perms','fb-deploy'];
   updateBadge('badge-square', squareKeys, checks);
@@ -621,6 +607,36 @@ async function smRequest(url, method, body) {
   });
   return resp;
 }
+
+// ── Create Square plans ───────────────────────────────────────────────────
+  window.createSquarePlans = async function(btn) {
+    const pro    = parseFloat(document.getElementById('inp-pro-price').value);
+    const agency = parseFloat(document.getElementById('inp-agency-price').value);
+    const st     = document.getElementById('st-square-plans');
+    if (!pro || !agency || pro <= 0 || agency <= 0) {
+      st.textContent = 'Enter both prices first.'; st.style.color = '#c0392b'; return;
+    }
+    btn.disabled = true; btn.textContent = 'Creating…'; st.textContent = ''; st.style.color = '#4a604a';
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not signed in');
+      const token = await user.getIdToken();
+      const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/adminUpdatePricing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ proMonthly: pro, agencyMonthly: agency })
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Failed');
+      if (data.squareError) throw new Error('Square: ' + data.squareError);
+      st.innerHTML = `✅ Plans created!<br><span style="font-size:11px;color:#4a604a">Pro ID: ${data.squareProPlanId}<br>Agency ID: ${data.squareAgencyPlanId}</span>`;
+      st.style.color = '#1a6630';
+    } catch(e) {
+      st.textContent = '✗ ' + e.message; st.style.color = '#c0392b';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Create Plans in Square';
+    }
+  };
 
 // ── Send test email ──────────────────────────────────────────────────────
   window.sendTestEmail = async function(btn) {
