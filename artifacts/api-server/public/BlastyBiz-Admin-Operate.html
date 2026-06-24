@@ -143,42 +143,6 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
   </div>
 
   <!-- ══════════════════════════════════════════
-       ANTHROPIC AI
-  ══════════════════════════════════════════ -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">🤖</span>
-      <span class="section-title">Anthropic AI</span>
-      <span class="section-badge warn" id="badge-anthropic">Setup required</span>
-    </div>
-
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-anthropic-key" onclick="toggleCheck(event,'anthropic-key')"></div>
-        <div style="flex:1">
-          <div class="card-title">Set your Anthropic API key</div>
-          <div class="card-sub">Powers all AI listing adaptation — required before any listing can be generated</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Sign in at <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com → API Keys</a> → click <strong>Create Key</strong> → name it <em>BlastyBiz</em></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Copy the key (starts with <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">sk-ant-</code>). <strong>You only see it once.</strong></div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">Paste it below and hit Save:</div></div>
-        </div>
-        <div class="secret-row">
-          <input type="password" id="inp-anthropic" class="secret-input" placeholder="sk-ant-…" autocomplete="off">
-          <button class="show-btn" onclick="toggleShow('inp-anthropic',this)">Show</button>
-          <button class="save-btn" onclick="saveSecret('ANTHROPIC_API_KEY','inp-anthropic','st-anthropic',this)">Save</button>
-        </div>
-        <div class="save-status" id="st-anthropic"></div>
-        <div class="note" style="margin-top:12px"><strong>Model used:</strong> claude-3-5-haiku (fast + cost-efficient). Usage billed to your Anthropic account — not Firebase. Check <a href="https://console.anthropic.com/settings/usage" target="_blank">console.anthropic.com → Usage</a> to monitor spend.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
        SQUARE
   ══════════════════════════════════════════ -->
   <div class="section">
@@ -208,32 +172,7 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
       </div>
     </div>
 
-    <!-- 2. Square Access Token -->
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-square-token" onclick="toggleCheck(event,'square-token')"></div>
-        <div style="flex:1">
-          <div class="card-title">Set your Square Access Token</div>
-          <div class="card-sub">Found in Square Developer Dashboard → your app → Credentials</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://developer.squareup.com/apps" target="_blank">Square Developer Dashboard → Applications</a></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Select your app → <strong>Credentials</strong> tab → copy your <strong>Production Access Token</strong></div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">Paste it below and hit Save:</div></div>
-        </div>
-        <div class="secret-row">
-          <input type="password" id="inp-square-token" class="secret-input" placeholder="EAAAl…" autocomplete="off">
-          <button class="show-btn" onclick="toggleShow('inp-square-token',this)">Show</button>
-          <button class="save-btn" onclick="saveSecret('SQUARE_ACCESS_TOKEN','inp-square-token','st-square-token',this)">Save</button>
-        </div>
-        <div class="save-status" id="st-square-token"></div>
-      </div>
-    </div>
-
-    <!-- 3. Set plan ID secrets -->
+    <!-- 2. Set plan ID secrets -->
     <div class="card">
       <div class="card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-square-plans-ids" onclick="toggleCheck(event,'square-plans-ids')"></div>
@@ -478,53 +417,6 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
   </div>
 
   <!-- ══════════════════════════════════════════
-       RESEND EMAIL
-  ══════════════════════════════════════════ -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">📧</span>
-      <span class="section-title">Resend Email</span>
-      <span class="section-badge warn" id="badge-resend">Setup required</span>
-    </div>
-
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-resend-key" onclick="toggleCheck(event,'resend-key')"></div>
-        <div style="flex:1">
-          <div class="card-title">Set your Resend API key</div>
-          <div class="card-sub">Enables welcome emails and job-failure alerts</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Sign in at <a href="https://resend.com/api-keys" target="_blank">resend.com/api-keys</a> → click <strong>Create API Key</strong> → name it <em>BlastyBiz</em>, permission: <em>Full access</em></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Copy the key (starts with <code style="background:#f0f4f0;padding:1px 5px;border-radius:4px">re_</code>). <strong>You only see it once.</strong></div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">Paste it below and hit Save:</div></div>
-        </div>
-        <div class="secret-row">
-          <input type="password" id="inp-resend" class="secret-input" placeholder="re_…" autocomplete="off">
-          <button class="show-btn" onclick="toggleShow('inp-resend',this)">Show</button>
-          <button class="save-btn" onclick="saveSecret('RESEND_API_KEY','inp-resend','st-resend',this)">Save</button>
-        </div>
-        <div class="save-status" id="st-resend"></div>
-        <div class="steps" style="margin-top:12px">
-          <div class="step"><div class="step-num">4</div><div class="step-text">In Resend, add and verify your sending domain so emails don't land in spam. Go to <a href="https://resend.com/domains" target="_blank">resend.com/domains</a> → Add Domain → follow DNS instructions for <strong>blastybiz.com</strong>. Until then, you can only send to addresses in your Resend account.</div></div>
-        </div>
-        <div class="note" style="margin-top:10px"><strong>What gets sent:</strong> Welcome email when a user signs up · Failure alert email when a publish job status changes to <code>failed</code></div>
-        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #eef0ee">
-          <div style="font-size:13px;font-weight:600;color:#0d1a0d;margin-bottom:8px">🧪 Send a test email</div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <input type="email" id="inp-test-email" placeholder="recipient@example.com" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid #c0d0c0;border-radius:8px;font-size:13px;font-family:inherit">
-            <button onclick="sendTestEmail(this)" style="background:#00C853;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">Send Test</button>
-          </div>
-          <div id="st-test-email" style="font-size:12px;margin-top:6px;color:#4a604a"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
        FIREBASE STORAGE
   ══════════════════════════════════════════ -->
   <div class="section">
@@ -673,10 +565,10 @@ function toggleCheck(e, key) {
 
 function renderChecks() {
   const checks = loadChecks();
-  const checkable = ['square-plans','square-token','square-plans-ids','square-webhook',
+  const checkable = ['square-plans','square-plans-ids','square-webhook',
                      'google-api','google-creds','google-deploy',
                      'fb-app','fb-perms','fb-deploy',
-                     'resend-key','storage','domain'];
+                     'storage','domain'];
   checkable.forEach(key => {
     const box = document.getElementById('chk-' + key);
     if (!box) return;
@@ -689,16 +581,12 @@ function renderChecks() {
   document.getElementById('prog-bar').style.width = (done/total*100) + '%';
   document.getElementById('prog-label').textContent = `${done} / ${total} done`;
 
-  const squareKeys = ['square-plans','square-token','square-plans-ids','square-webhook'];
+  const squareKeys = ['square-plans','square-plans-ids','square-webhook'];
   const googleKeys = ['google-api','google-creds','google-deploy'];
   const fbKeys = ['fb-app','fb-perms','fb-deploy'];
   updateBadge('badge-square', squareKeys, checks);
   updateBadge('badge-google', googleKeys, checks);
   updateBadge('badge-facebook', fbKeys, checks);
-
-  const resendDone = checks['resend-key'];
-  const resendBadge = document.getElementById('badge-resend');
-  if (resendBadge) { resendBadge.textContent = resendDone ? 'Complete ✓' : 'Setup required'; resendBadge.className = 'section-badge ' + (resendDone ? 'ok' : 'warn'); }
 
   const storageDone = checks['storage'];
   const storageBadge = document.getElementById('badge-storage');
