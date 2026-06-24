@@ -388,6 +388,189 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════════
+       BLASTYBIZ AS FIRST CLIENT
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🏢</span>
+      <span class="section-title">BlastyBiz as First Client</span>
+      <span class="section-badge warn" id="badge-client">Setup required</span>
+    </div>
+
+    <!-- Google Business Profile -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-google" onclick="toggleCheck(event,'client-google')"></div>
+        <div style="flex:1">
+          <div class="card-title">🔍 Google Business Profile</div>
+          <div class="card-sub">Auto-post — required for the postToGoogle function</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://business.google.com" target="_blank">business.google.com</a> and sign in with your Google account</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Click <strong>Add your business to Google</strong> → enter <strong>BlastyBiz</strong> as the business name</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Choose category: <strong>Software Company</strong> or <strong>Marketing Agency</strong></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Select <strong>No physical location</strong> (service-area business) → add your service area (city/state)</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Add phone number, website (<strong>blastybiz.com</strong>), and business hours</div></div>
+          <div class="step"><div class="step-num">6</div><div class="step-text">Verify the listing — Google will call or text to confirm. Once verified, the profile goes live</div></div>
+          <div class="step"><div class="step-num">7</div><div class="step-text">Connect it to BlastyBiz: when Google OAuth is set up, sign in with this Google account in the BlastyBiz app to link it</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Facebook Page -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-facebook" onclick="toggleCheck(event,'client-facebook')"></div>
+        <div style="flex:1">
+          <div class="card-title">📘 Facebook Page</div>
+          <div class="card-sub">Auto-post — required for postToFacebook + Facebook Marketplace</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://www.facebook.com/pages/create" target="_blank">facebook.com/pages/create</a></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Choose <strong>Business or Brand</strong> → Page name: <strong>BlastyBiz</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Category: <strong>Software</strong> or <strong>Marketing Agency</strong></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Add profile photo (logo), cover photo, website (<strong>blastybiz.com</strong>), and bio</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Once Facebook OAuth is set up in BlastyBiz, connect this Page through the app — it will request <strong>pages_manage_posts</strong> permission to auto-post</div></div>
+        </div>
+        <div class="note" style="margin-top:12px">Facebook Marketplace posts come from this same Page — no separate account needed.</div>
+      </div>
+    </div>
+
+    <!-- Instagram -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-instagram" onclick="toggleCheck(event,'client-instagram')"></div>
+        <div style="flex:1">
+          <div class="card-title">📸 Instagram Business</div>
+          <div class="card-sub">Auto-post — requires the Facebook Page above to be linked</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Create an Instagram account at <a href="https://www.instagram.com" target="_blank">instagram.com</a> — username: <strong>blastybiz</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Go to <strong>Settings → Account → Switch to Professional Account</strong> → choose <strong>Business</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">When prompted, link it to the <strong>BlastyBiz Facebook Page</strong> you created above — this is required for API posting</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Add website (<strong>blastybiz.com</strong>), bio, and contact email (<strong>info@blastybiz.com</strong>)</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Connect via Facebook OAuth in BlastyBiz — the Instagram Business account will be picked up automatically through the linked Page</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Yelp -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-yelp" onclick="toggleCheck(event,'client-yelp')"></div>
+        <div style="flex:1">
+          <div class="card-title">⭐ Yelp</div>
+          <div class="card-sub">Copy-paste — BlastyBiz generates the text, you paste it in</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://biz.yelp.com" target="_blank">biz.yelp.com</a> and click <strong>Manage my free listing</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Search for <strong>BlastyBiz</strong> — if it exists, claim it. If not, click <strong>Add your business</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Category: <strong>Marketing</strong> or <strong>Software Development</strong></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Add address (use your city), phone, website, and business description</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Yelp will send a verification call or postcard — complete verification to unlock the full listing</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nextdoor -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-nextdoor" onclick="toggleCheck(event,'client-nextdoor')"></div>
+        <div style="flex:1">
+          <div class="card-title">🏘️ Nextdoor</div>
+          <div class="card-sub">Copy-paste — community-focused business page</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://business.nextdoor.com" target="_blank">business.nextdoor.com</a> and click <strong>Get started for free</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Business name: <strong>BlastyBiz</strong> · Category: <strong>Advertising & Marketing</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Add your service area by zip code — use your local area to start</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Add website (<strong>blastybiz.com</strong>), phone, and a short description</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Verify via postcard or phone call — Nextdoor sends a confirmation to the business address</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Apple Maps -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-apple" onclick="toggleCheck(event,'client-apple')"></div>
+        <div style="flex:1">
+          <div class="card-title">🗺️ Apple Maps</div>
+          <div class="card-sub">Copy-paste — via Apple Business Connect (free)</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://businessconnect.apple.com" target="_blank">businessconnect.apple.com</a> — sign in with an Apple ID</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Click <strong>Add a place</strong> → search for BlastyBiz (probably won't exist yet, so add new)</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Business name: <strong>BlastyBiz</strong> · Category: <strong>Software Company</strong></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Add phone, website, hours, and mark as <strong>service-area business</strong> (no storefront)</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Apple verifies via SMS or email — usually approved within 1–3 days</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bing Places -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-bing" onclick="toggleCheck(event,'client-bing')"></div>
+        <div style="flex:1">
+          <div class="card-title">🔵 Bing Places</div>
+          <div class="card-sub">Copy-paste — Microsoft's business directory</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://www.bingplaces.com" target="_blank">bingplaces.com</a> and sign in with a Microsoft account</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Click <strong>Get started</strong> → search for BlastyBiz → if not found, click <strong>Create new business</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Pro tip: you can <strong>import directly from your Google Business Profile</strong> — saves re-entering everything</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Verify via phone PIN or email — takes a few minutes</div></div>
+        </div>
+        <div class="note" style="margin-top:12px">Set up Google Business Profile first — Bing's import feature makes this a 2-minute job.</div>
+      </div>
+    </div>
+
+    <!-- Thumbtack -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-thumbtack" onclick="toggleCheck(event,'client-thumbtack')"></div>
+        <div style="flex:1">
+          <div class="card-title">📌 Thumbtack</div>
+          <div class="card-sub">Copy-paste — local professional services marketplace</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://www.thumbtack.com/pro" target="_blank">thumbtack.com/pro</a> and click <strong>Join as a pro</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Select service type: <strong>Marketing Consultant</strong> or <strong>Social Media Manager</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Set your service area, hourly rate, and a profile description</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Add photos, certifications, and respond to a few quote requests early on to build your rating</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Note: Thumbtack charges per lead (not a flat fee) — set a monthly budget to control spend</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
 </main>
 
 <script>
@@ -411,7 +594,10 @@ function toggleCheck(e, key) {
 function renderChecks() {
   const checks = loadChecks();
   const checkable = ['google-api','google-creds','google-deploy',
-                     'fb-app','fb-perms','fb-deploy'];
+                     'fb-app','fb-perms','fb-deploy',
+                     'client-google','client-facebook','client-instagram',
+                     'client-yelp','client-nextdoor','client-apple',
+                     'client-bing','client-thumbtack'];
   checkable.forEach(key => {
     const box = document.getElementById('chk-' + key);
     if (!box) return;
@@ -426,8 +612,12 @@ function renderChecks() {
 
   const googleKeys = ['google-api','google-creds','google-deploy'];
   const fbKeys = ['fb-app','fb-perms','fb-deploy'];
+  const clientKeys = ['client-google','client-facebook','client-instagram',
+                      'client-yelp','client-nextdoor','client-apple',
+                      'client-bing','client-thumbtack'];
   updateBadge('badge-google', googleKeys, checks);
   updateBadge('badge-facebook', fbKeys, checks);
+  updateBadge('badge-client', clientKeys, checks);
 
 }
 
