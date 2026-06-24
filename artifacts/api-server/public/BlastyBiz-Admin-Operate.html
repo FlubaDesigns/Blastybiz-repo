@@ -797,17 +797,7 @@ async function smRequest(url, method, body) {
   return resp;
 }
 
-window.saveSecret = async function(name, inputId, statusId, btn) {
-  const value = document.getElementById(inputId).value.trim();
-  const statusEl = document.getElementById(statusId);
-
-  if (!value) {
-    statusEl.textContent = 'Please enter a value first.';
-    statusEl.className = 'save-status err';
-    return;
-  }
-
-  // ── Send test email ──────────────────────────────────────────────────────
+// ── Send test email ──────────────────────────────────────────────────────
   window.sendTestEmail = async function(btn) {
     const to = document.getElementById('inp-test-email').value.trim();
     const st = document.getElementById('st-test-email');
@@ -815,7 +805,7 @@ window.saveSecret = async function(name, inputId, statusId, btn) {
     btn.disabled = true; btn.textContent = 'Sending…'; st.textContent = ''; st.style.color='#4a604a';
     try {
       const user = auth.currentUser;
-      if (!user) throw new Error('Not signed in');
+      if (!user) throw new Error('Not signed in — refresh and sign in first');
       const token = await user.getIdToken();
       const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/sendTestEmail', {
         method: 'POST',
@@ -833,6 +823,16 @@ window.saveSecret = async function(name, inputId, statusId, btn) {
       btn.disabled = false; btn.textContent = 'Send Test';
     }
   };
+
+window.saveSecret = async function(name, inputId, statusId, btn) {
+  const value = document.getElementById(inputId).value.trim();
+  const statusEl = document.getElementById(statusId);
+
+  if (!value) {
+    statusEl.textContent = 'Please enter a value first.';
+    statusEl.className = 'save-status err';
+    return;
+  }
 
   btn.disabled = true;
   btn.textContent = 'Saving…';
