@@ -143,96 +143,6 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
   </div>
 
   <!-- ══════════════════════════════════════════
-       GOOGLE
-  ══════════════════════════════════════════ -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">🔍</span>
-      <span class="section-title">Google Business Profile OAuth</span>
-      <span class="section-badge warn" id="badge-google">Setup required</span>
-    </div>
-
-    <!-- Enable API -->
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-google-api" onclick="toggleCheck(event,'google-api')"></div>
-        <div style="flex:1">
-          <div class="card-title">Enable Google Business Profile API</div>
-          <div class="card-sub">In the blastybiz-9523e Google Cloud project</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://console.cloud.google.com/apis/library?project=blastybiz-9523e" target="_blank">Google Cloud Console → API Library</a> (make sure project <strong>blastybiz-9523e</strong> is selected in the top dropdown)</div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Search for <strong>Business Profile Performance API</strong> → Enable</div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">Also enable <strong>My Business Business Information API</strong> and <strong>My Business Account Management API</strong></div></div>
-        </div>
-        <a class="link-btn" href="https://console.cloud.google.com/apis/library?project=blastybiz-9523e" target="_blank">↗ Open API Library</a>
-      </div>
-    </div>
-
-    <!-- OAuth credentials -->
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-google-creds" onclick="toggleCheck(event,'google-creds')"></div>
-        <div style="flex:1">
-          <div class="card-title">Create OAuth 2.0 credentials and set secrets</div>
-          <div class="card-sub">Web application type · set the redirect URI to the Cloud Function</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://console.cloud.google.com/apis/credentials?project=blastybiz-9523e" target="_blank">Google Cloud Console → Credentials</a> → <strong>+ Create Credentials → OAuth client ID</strong></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Application type: <strong>Web application</strong> · Name: <strong>BlastyBiz</strong></div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">Under <strong>Authorized redirect URIs</strong> → Add URI:</div></div>
-        </div>
-        <div class="cf-url">https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback</div>
-        <div class="steps" style="margin-top:10px">
-          <div class="step"><div class="step-num">4</div><div class="step-text">Save — copy the <strong>Client ID</strong> and <strong>Client Secret</strong> and paste them below</div></div>
-        </div>
-
-        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">Client ID</p>
-        <div class="secret-row">
-          <input type="text" id="inp-google-id" class="secret-input" placeholder="xxxxxxxxxx.apps.googleusercontent.com" autocomplete="off">
-          <button class="save-btn" onclick="saveSecret('GOOGLE_CLIENT_ID','inp-google-id','st-google-id',this)">Save</button>
-        </div>
-        <div class="save-status" id="st-google-id"></div>
-
-        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">Client Secret</p>
-        <div class="secret-row">
-          <input type="password" id="inp-google-secret" class="secret-input" placeholder="GOCSPX-…" autocomplete="off">
-          <button class="show-btn" onclick="toggleShow('inp-google-secret',this)">Show</button>
-          <button class="save-btn" onclick="saveSecret('GOOGLE_CLIENT_SECRET','inp-google-secret','st-google-secret',this)">Save</button>
-        </div>
-        <div class="save-status" id="st-google-secret"></div>
-
-        <div class="note" style="margin-top:12px"><strong>Note:</strong> The OAuth consent screen must be configured first. Set User Type to <strong>External</strong> and add your own Google account as a test user while the app is in Testing mode.</div>
-      </div>
-    </div>
-
-    <!-- Redeploy Google functions -->
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-google-deploy" onclick="toggleCheck(event,'google-deploy')"></div>
-        <div style="flex:1">
-          <div class="card-title">Redeploy Google OAuth functions</div>
-          <div class="card-sub">Picks up the real credentials — run after setting secrets</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="code-block" style="margin-top:10px">
-          <span class="code-text">npx firebase-tools deploy --only functions:initiateGoogleOAuth,functions:googleOAuthCallback</span>
-          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:initiateGoogleOAuth,functions:googleOAuthCallback')">Copy</button>
-        </div>
-        <div class="note-info note">Run this in the Replit Shell after saving both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
        BLASTYBIZ AS FIRST CLIENT
   ══════════════════════════════════════════ -->
   <div class="section">
@@ -248,7 +158,7 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
         <div class="check-box" id="chk-client-google" onclick="toggleCheck(event,'client-google')"></div>
         <div style="flex:1">
           <div class="card-title">🔍 Google Business Profile</div>
-          <div class="card-sub">Auto-post — required for the postToGoogle function</div>
+          <div class="card-sub">Auto-post — set this up before connecting Google OAuth below</div>
         </div>
         <span class="chevron">▼</span>
       </div>
@@ -260,7 +170,6 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
           <div class="step"><div class="step-num">4</div><div class="step-text">Select <strong>No physical location</strong> (service-area business) → add your service area (city/state)</div></div>
           <div class="step"><div class="step-num">5</div><div class="step-text">Add phone number, website (<strong>blastybiz.com</strong>), and business hours</div></div>
           <div class="step"><div class="step-num">6</div><div class="step-text">Verify the listing — Google will call or text to confirm. Once verified, the profile goes live</div></div>
-          <div class="step"><div class="step-num">7</div><div class="step-text">Connect it to BlastyBiz: when Google OAuth is set up (above), sign in with this Google account in the BlastyBiz app to link it</div></div>
         </div>
       </div>
     </div>
@@ -271,7 +180,7 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
         <div class="check-box" id="chk-client-facebook" onclick="toggleCheck(event,'client-facebook')"></div>
         <div style="flex:1">
           <div class="card-title">📘 Facebook Page</div>
-          <div class="card-sub">⚠️ Do this before Facebook OAuth setup below — the Developer app requires a Page to exist first</div>
+          <div class="card-sub">Auto-post — set this up before connecting Facebook OAuth below</div>
         </div>
         <span class="chevron">▼</span>
       </div>
@@ -281,113 +190,9 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
           <div class="step"><div class="step-num">2</div><div class="step-text">Choose <strong>Business or Brand</strong> → Page name: <strong>BlastyBiz</strong></div></div>
           <div class="step"><div class="step-num">3</div><div class="step-text">Category: <strong>Software</strong> or <strong>Marketing Agency</strong></div></div>
           <div class="step"><div class="step-num">4</div><div class="step-text">Add profile photo (logo), cover photo, website (<strong>blastybiz.com</strong>), and bio</div></div>
-          <div class="step"><div class="step-num">5</div><div class="step-text">Once Facebook OAuth is set up in BlastyBiz (next section), connect this Page through the app — it will request <strong>pages_manage_posts</strong> permission to auto-post</div></div>
         </div>
         <div class="note" style="margin-top:12px">Facebook Marketplace posts come from this same Page — no separate account needed.</div>
       </div>
-    </div>
-
-  </div>
-
-  <!-- ══════════════════════════════════════════
-       FACEBOOK / META
-  ══════════════════════════════════════════ -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">📘</span>
-      <span class="section-title">Facebook & Instagram OAuth</span>
-      <span class="section-badge warn" id="badge-facebook">Setup required</span>
-    </div>
-    <div class="note" style="margin-bottom:14px;background:#fff8e1;border-color:#ffe082">⚠️ <strong>Requires Facebook Page first</strong> — complete the Facebook Page step in the section above before starting this. The Developer app must be linked to a Business Portfolio that has a Page.</div>
-
-    <!-- Create Meta App -->
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-fb-app" onclick="toggleCheck(event,'fb-app')"></div>
-        <div style="flex:1">
-          <div class="card-title">Create a Meta (Facebook) App and set secrets</div>
-          <div class="card-sub">Business type · enables Pages and Instagram permissions</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://developers.facebook.com/apps" target="_blank">Meta for Developers → My Apps</a> → <strong>Create App</strong></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Use case: <strong>Other</strong> → App type: <strong>Business</strong> · Name: <strong>BlastyBiz</strong></div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">In the left sidebar → <strong>Add Product</strong> → add <strong>Facebook Login</strong></div></div>
-          <div class="step"><div class="step-num">4</div><div class="step-text">Under Facebook Login → <strong>Settings</strong> → add to <strong>Valid OAuth Redirect URIs</strong>:</div></div>
-        </div>
-        <div class="cf-url">https://us-central1-blastybiz-9523e.cloudfunctions.net/facebookOAuthCallback</div>
-        <div class="steps" style="margin-top:10px">
-          <div class="step"><div class="step-num">5</div><div class="step-text">Go to <strong>App Settings → Basic</strong> → copy <strong>App ID</strong> and <strong>App Secret</strong> and paste them below</div></div>
-        </div>
-
-        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">App ID</p>
-        <div class="secret-row">
-          <input type="text" id="inp-fb-id" class="secret-input" placeholder="123456789…" autocomplete="off">
-          <button class="save-btn" onclick="saveSecret('FACEBOOK_APP_ID','inp-fb-id','st-fb-id',this)">Save</button>
-        </div>
-        <div class="save-status" id="st-fb-id"></div>
-
-        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">App Secret</p>
-        <div class="secret-row">
-          <input type="password" id="inp-fb-secret" class="secret-input" placeholder="…" autocomplete="off">
-          <button class="show-btn" onclick="toggleShow('inp-fb-secret',this)">Show</button>
-          <button class="save-btn" onclick="saveSecret('FACEBOOK_APP_SECRET','inp-fb-secret','st-fb-secret',this)">Save</button>
-        </div>
-        <div class="save-status" id="st-fb-secret"></div>
-      </div>
-    </div>
-
-    <!-- Permissions -->
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-fb-perms" onclick="toggleCheck(event,'fb-perms')"></div>
-        <div style="flex:1">
-          <div class="card-title">Request Pages and Instagram permissions</div>
-          <div class="card-sub">Required for posting — needs Meta App Review for production</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">In your Meta App → <strong>App Review → Permissions and Features</strong></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Request these permissions: <code>pages_manage_posts</code>, <code>pages_read_engagement</code>, <code>instagram_basic</code>, <code>instagram_content_publish</code></div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">While in <strong>Development Mode</strong>, only your own test Facebook accounts can connect — that's fine for testing</div></div>
-          <div class="step"><div class="step-num">4</div><div class="step-text">For production, submit for <strong>App Review</strong> with a screen recording showing how BlastyBiz uses each permission</div></div>
-        </div>
-        <div class="note"><strong>Timeline:</strong> Meta App Review typically takes 5–14 business days. Start this early.</div>
-      </div>
-    </div>
-
-    <!-- Redeploy Facebook functions -->
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-fb-deploy" onclick="toggleCheck(event,'fb-deploy')"></div>
-        <div style="flex:1">
-          <div class="card-title">Redeploy Facebook OAuth functions</div>
-          <div class="card-sub">Picks up the real credentials — run after setting secrets</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="code-block" style="margin-top:10px">
-          <span class="code-text">npx firebase-tools deploy --only functions:initiateFacebookOAuth,functions:facebookOAuthCallback</span>
-          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:initiateFacebookOAuth,functions:facebookOAuthCallback')">Copy</button>
-        </div>
-        <div class="note-info note">Run this in the Replit Shell after saving both FACEBOOK_APP_ID and FACEBOOK_APP_SECRET.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
-       REMAINING CLIENT PLATFORMS
-  ══════════════════════════════════════════ -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">📋</span>
-      <span class="section-title">Remaining Platform Listings</span>
-      <span class="section-badge warn" id="badge-platforms">Setup required</span>
     </div>
 
     <!-- Instagram -->
@@ -396,7 +201,7 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
         <div class="check-box" id="chk-client-instagram" onclick="toggleCheck(event,'client-instagram')"></div>
         <div style="flex:1">
           <div class="card-title">📸 Instagram Business</div>
-          <div class="card-sub">Auto-post — requires Facebook Page (above) to be linked first</div>
+          <div class="card-sub">Auto-post — requires the Facebook Page above to be linked first</div>
         </div>
         <span class="chevron">▼</span>
       </div>
@@ -406,7 +211,6 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
           <div class="step"><div class="step-num">2</div><div class="step-text">Go to <strong>Settings → Account → Switch to Professional Account</strong> → choose <strong>Business</strong></div></div>
           <div class="step"><div class="step-num">3</div><div class="step-text">When prompted, link it to the <strong>BlastyBiz Facebook Page</strong> — this is required for API posting</div></div>
           <div class="step"><div class="step-num">4</div><div class="step-text">Add website (<strong>blastybiz.com</strong>), bio, and contact email (<strong>info@blastybiz.com</strong>)</div></div>
-          <div class="step"><div class="step-num">5</div><div class="step-text">Connect via Facebook OAuth in BlastyBiz — the Instagram Business account is picked up automatically through the linked Page</div></div>
         </div>
       </div>
     </div>
@@ -519,6 +323,185 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
   </div>
 
   <!-- ══════════════════════════════════════════
+       GOOGLE
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🔍</span>
+      <span class="section-title">Google Business Profile OAuth</span>
+      <span class="section-badge warn" id="badge-google">Setup required</span>
+    </div>
+
+    <!-- Enable API -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-google-api" onclick="toggleCheck(event,'google-api')"></div>
+        <div style="flex:1">
+          <div class="card-title">Enable Google Business Profile API</div>
+          <div class="card-sub">In the blastybiz-9523e Google Cloud project</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://console.cloud.google.com/apis/library?project=blastybiz-9523e" target="_blank">Google Cloud Console → API Library</a> (make sure project <strong>blastybiz-9523e</strong> is selected in the top dropdown)</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Search for <strong>Business Profile Performance API</strong> → Enable</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Also enable <strong>My Business Business Information API</strong> and <strong>My Business Account Management API</strong></div></div>
+        </div>
+        <a class="link-btn" href="https://console.cloud.google.com/apis/library?project=blastybiz-9523e" target="_blank">↗ Open API Library</a>
+      </div>
+    </div>
+
+    <!-- OAuth credentials -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-google-creds" onclick="toggleCheck(event,'google-creds')"></div>
+        <div style="flex:1">
+          <div class="card-title">Create OAuth 2.0 credentials and set secrets</div>
+          <div class="card-sub">Web application type · set the redirect URI to the Cloud Function</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://console.cloud.google.com/apis/credentials?project=blastybiz-9523e" target="_blank">Google Cloud Console → Credentials</a> → <strong>+ Create Credentials → OAuth client ID</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Application type: <strong>Web application</strong> · Name: <strong>BlastyBiz</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Under <strong>Authorized redirect URIs</strong> → Add URI:</div></div>
+        </div>
+        <div class="cf-url">https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback</div>
+        <div class="steps" style="margin-top:10px">
+          <div class="step"><div class="step-num">4</div><div class="step-text">Save — copy the <strong>Client ID</strong> and <strong>Client Secret</strong> and paste them below</div></div>
+        </div>
+
+        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">Client ID</p>
+        <div class="secret-row">
+          <input type="text" id="inp-google-id" class="secret-input" placeholder="xxxxxxxxxx.apps.googleusercontent.com" autocomplete="off">
+          <button class="save-btn" onclick="saveSecret('GOOGLE_CLIENT_ID','inp-google-id','st-google-id',this)">Save</button>
+        </div>
+        <div class="save-status" id="st-google-id"></div>
+
+        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">Client Secret</p>
+        <div class="secret-row">
+          <input type="password" id="inp-google-secret" class="secret-input" placeholder="GOCSPX-…" autocomplete="off">
+          <button class="show-btn" onclick="toggleShow('inp-google-secret',this)">Show</button>
+          <button class="save-btn" onclick="saveSecret('GOOGLE_CLIENT_SECRET','inp-google-secret','st-google-secret',this)">Save</button>
+        </div>
+        <div class="save-status" id="st-google-secret"></div>
+
+        <div class="note" style="margin-top:12px"><strong>Note:</strong> The OAuth consent screen must be configured first. Set User Type to <strong>External</strong> and add your own Google account as a test user while the app is in Testing mode.</div>
+      </div>
+    </div>
+
+    <!-- Redeploy Google functions -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-google-deploy" onclick="toggleCheck(event,'google-deploy')"></div>
+        <div style="flex:1">
+          <div class="card-title">Redeploy Google OAuth functions</div>
+          <div class="card-sub">Picks up the real credentials — run after setting secrets</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="code-block" style="margin-top:10px">
+          <span class="code-text">npx firebase-tools deploy --only functions:initiateGoogleOAuth,functions:googleOAuthCallback</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:initiateGoogleOAuth,functions:googleOAuthCallback')">Copy</button>
+        </div>
+        <div class="note-info note">Run this in the Replit Shell after saving both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FACEBOOK / META
+  ══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">📘</span>
+      <span class="section-title">Facebook & Instagram OAuth</span>
+      <span class="section-badge warn" id="badge-facebook">Setup required</span>
+    </div>
+    <!-- Create Meta App -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-fb-app" onclick="toggleCheck(event,'fb-app')"></div>
+        <div style="flex:1">
+          <div class="card-title">Create a Meta (Facebook) App and set secrets</div>
+          <div class="card-sub">Business type · enables Pages and Instagram permissions</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://developers.facebook.com/apps" target="_blank">Meta for Developers → My Apps</a> → <strong>Create App</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Use case: <strong>Other</strong> → App type: <strong>Business</strong> · Name: <strong>BlastyBiz</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">In the left sidebar → <strong>Add Product</strong> → add <strong>Facebook Login</strong></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Under Facebook Login → <strong>Settings</strong> → add to <strong>Valid OAuth Redirect URIs</strong>:</div></div>
+        </div>
+        <div class="cf-url">https://us-central1-blastybiz-9523e.cloudfunctions.net/facebookOAuthCallback</div>
+        <div class="steps" style="margin-top:10px">
+          <div class="step"><div class="step-num">5</div><div class="step-text">Go to <strong>App Settings → Basic</strong> → copy <strong>App ID</strong> and <strong>App Secret</strong> and paste them below</div></div>
+        </div>
+
+        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">App ID</p>
+        <div class="secret-row">
+          <input type="text" id="inp-fb-id" class="secret-input" placeholder="123456789…" autocomplete="off">
+          <button class="save-btn" onclick="saveSecret('FACEBOOK_APP_ID','inp-fb-id','st-fb-id',this)">Save</button>
+        </div>
+        <div class="save-status" id="st-fb-id"></div>
+
+        <p style="font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600">App Secret</p>
+        <div class="secret-row">
+          <input type="password" id="inp-fb-secret" class="secret-input" placeholder="…" autocomplete="off">
+          <button class="show-btn" onclick="toggleShow('inp-fb-secret',this)">Show</button>
+          <button class="save-btn" onclick="saveSecret('FACEBOOK_APP_SECRET','inp-fb-secret','st-fb-secret',this)">Save</button>
+        </div>
+        <div class="save-status" id="st-fb-secret"></div>
+      </div>
+    </div>
+
+    <!-- Permissions -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-fb-perms" onclick="toggleCheck(event,'fb-perms')"></div>
+        <div style="flex:1">
+          <div class="card-title">Request Pages and Instagram permissions</div>
+          <div class="card-sub">Required for posting — needs Meta App Review for production</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">In your Meta App → <strong>App Review → Permissions and Features</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Request these permissions: <code>pages_manage_posts</code>, <code>pages_read_engagement</code>, <code>instagram_basic</code>, <code>instagram_content_publish</code></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">While in <strong>Development Mode</strong>, only your own test Facebook accounts can connect — that's fine for testing</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">For production, submit for <strong>App Review</strong> with a screen recording showing how BlastyBiz uses each permission</div></div>
+        </div>
+        <div class="note"><strong>Timeline:</strong> Meta App Review typically takes 5–14 business days. Start this early.</div>
+      </div>
+    </div>
+
+    <!-- Redeploy Facebook functions -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-fb-deploy" onclick="toggleCheck(event,'fb-deploy')"></div>
+        <div style="flex:1">
+          <div class="card-title">Redeploy Facebook OAuth functions</div>
+          <div class="card-sub">Picks up the real credentials — run after setting secrets</div>
+        </div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="code-block" style="margin-top:10px">
+          <span class="code-text">npx firebase-tools deploy --only functions:initiateFacebookOAuth,functions:facebookOAuthCallback</span>
+          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:initiateFacebookOAuth,functions:facebookOAuthCallback')">Copy</button>
+        </div>
+        <div class="note-info note">Run this in the Replit Shell after saving both FACEBOOK_APP_ID and FACEBOOK_APP_SECRET.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
        ONGOING
   ══════════════════════════════════════════ -->
   <div class="section">
@@ -604,11 +587,11 @@ function toggleCheck(e, key) {
 
 function renderChecks() {
   const checks = loadChecks();
-  const checkable = ['google-api','google-creds','google-deploy',
-                     'client-google','client-facebook',
-                     'fb-app','fb-perms','fb-deploy',
-                     'client-instagram','client-yelp','client-nextdoor',
-                     'client-apple','client-bing','client-thumbtack'];
+  const checkable = ['client-google','client-facebook','client-instagram',
+                     'client-yelp','client-nextdoor','client-apple',
+                     'client-bing','client-thumbtack',
+                     'google-api','google-creds','google-deploy',
+                     'fb-app','fb-perms','fb-deploy'];
   checkable.forEach(key => {
     const box = document.getElementById('chk-' + key);
     if (!box) return;
@@ -623,13 +606,12 @@ function renderChecks() {
 
   const googleKeys = ['google-api','google-creds','google-deploy'];
   const fbKeys = ['fb-app','fb-perms','fb-deploy'];
-  const clientKeys = ['client-google','client-facebook'];
-  const platformKeys = ['client-instagram','client-yelp','client-nextdoor',
-                        'client-apple','client-bing','client-thumbtack'];
+  const clientKeys = ['client-google','client-facebook','client-instagram',
+                      'client-yelp','client-nextdoor','client-apple',
+                      'client-bing','client-thumbtack'];
+  updateBadge('badge-client', clientKeys, checks);
   updateBadge('badge-google', googleKeys, checks);
   updateBadge('badge-facebook', fbKeys, checks);
-  updateBadge('badge-client', clientKeys, checks);
-  updateBadge('badge-platforms', platformKeys, checks);
 
 }
 
