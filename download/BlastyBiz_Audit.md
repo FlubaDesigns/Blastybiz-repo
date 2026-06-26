@@ -251,6 +251,7 @@ The Operator Setup page (`BlastyBiz-Admin-Operate.html`) has step-by-step instru
 | Jun 22, 2026 | Added `BlastyBiz-Contact.html` | Contact page with support@, info@, sales@, billing@ blastybiz.com; Englewood FL location; response time note; "Powered by Fluba Designs LLC" band. |
 | Jun 22, 2026 | Updated `BlastyBiz-Home.html` nav | Added About and Contact links to the top nav. |
 | Jun 22, 2026 | Updated `BlastyBiz-Home.html` footer | Added About, Contact, support@blastybiz.com links; updated copyright; added "Powered by Fluba Designs LLC" line. |
+| Jun 26, 2026 | `BlastyBiz.html` — overridden `window.saveProfile` Firestore write | `locationType` and `region` were never written to Firestore on profile save — only held in memory. On reload, Firestore returned no value so both silently reset to defaults. Fix: added `locationType` and `region` to the `setDoc` call in the overridden `window.saveProfile`. Deployed to Firebase Hosting. |
 
 ## ✅ Features Added (Jun 19, 2026)
 
