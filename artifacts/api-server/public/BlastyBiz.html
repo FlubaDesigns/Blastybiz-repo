@@ -1866,6 +1866,15 @@ function setSchedCampaign(id, name) {
   showToast(id ? '📣 Campaign set — auto-posts will use "' + schedState.activeCampaignName + '"' : '📋 Auto-posts will use general business profile');
 }
 
+// Auto-sync: when a campaign is picked/created on the Create tab,
+// silently update the scheduler to follow it — Schedule card dropdown overrides this any time.
+function _syncSchedCampaign(id, name) {
+  schedState.activeCampaignId   = id   || '';
+  schedState.activeCampaignName = (id ? name : '') || '';
+  _renderSchedCampaignSelect();
+  saveSchedule();
+}
+
 function toggleSchedEnabled() {
   schedState.enabled = document.getElementById('sched-enabled').checked;
   document.getElementById('sched-fields').style.display = schedState.enabled ? 'block' : 'none';
@@ -2377,6 +2386,7 @@ function selectCampaign(id, name) {
   activeCampaignName = name;
   renderCampaignChips();
   saveDraft();
+  _syncSchedCampaign(id, name);
 }
 
 function openNewCampaign() {
@@ -2412,6 +2422,7 @@ async function saveNewCampaign() {
   document.getElementById('new-campaign-row').style.display = 'none';
   renderCampaignChips();
   saveDraft();
+  _syncSchedCampaign(id, name);
   showToast('Campaign "' + name + '" created');
 }
 
