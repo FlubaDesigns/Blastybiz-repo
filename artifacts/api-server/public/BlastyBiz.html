@@ -978,6 +978,10 @@
 ══════════════════════════════════════════ -->
 <div class="section" id="section-profile">
 
+  <div id="biz-name-missing-banner" style="display:none;background:#3a1a00;border:1.5px solid var(--warn);border-radius:12px;padding:14px 18px;margin-bottom:12px;color:var(--warn);font-weight:600;font-size:15px;text-align:center;">
+    ⚠️ Your business name is not set — the AI is using a placeholder. Tap <strong>Business Name</strong> below and type your real name.
+  </div>
+
   <div class="card" style="text-align:center;">
     <div class="profile-avatar">🏪</div>
     <div id="profile-biz-name" style="font-family:'Bebas Neue';font-size:22px;letter-spacing:1px;color:var(--green);">Your Business</div>
@@ -1782,7 +1786,16 @@ function saveProfile() {
     hours:            document.getElementById('profile-hours').value,
     tone:             document.getElementById('profile-tone').value,
   };
-  document.getElementById('profile-biz-name').textContent = profile.name || 'Your Business';
+  const hasNameInline = !!profile.name;
+  const nameDisplayInline = document.getElementById('profile-biz-name');
+  if (nameDisplayInline) {
+    nameDisplayInline.textContent = hasNameInline ? profile.name : '⚠️ Business name not set';
+    nameDisplayInline.style.color = hasNameInline ? 'var(--green)' : 'var(--warn)';
+  }
+  const nameInput = document.getElementById('profile-name');
+  if (nameInput) nameInput.style.borderColor = hasNameInline ? '' : '#FFA726';
+  const missingBanner = document.getElementById('biz-name-missing-banner');
+  if (missingBanner) missingBanner.style.display = hasNameInline ? 'none' : 'block';
   document.getElementById('profile-biz-cat').textContent  = profile.category || 'Set up your profile below';
 
   // Pre-fill create form if empty
@@ -1807,7 +1820,12 @@ function loadProfile() {
   document.getElementById('profile-website').value = profile.website  || '';
   document.getElementById('profile-hours').value   = profile.hours    || '';
   document.getElementById('profile-tone').value    = profile.tone     || 'friendly';
-  document.getElementById('profile-biz-name').textContent = profile.name || 'Your Business';
+  const hasName = !!profile.name;
+  const nameDisplay = document.getElementById('profile-biz-name');
+  nameDisplay.textContent = hasName ? profile.name : '⚠️ Business name not set';
+  nameDisplay.style.color = hasName ? 'var(--green)' : 'var(--warn)';
+  document.getElementById('profile-name').style.borderColor = hasName ? '' : '#FFA726';
+  document.getElementById('biz-name-missing-banner').style.display = hasName ? 'none' : 'block';
   renderPlatformCats(profile.platformCats || {});
   document.getElementById('profile-biz-cat').textContent  = profile.category || 'Set up your profile below';
   if (profile.locationType) setProfileLocationType(profile.locationType);
@@ -2891,7 +2909,8 @@ window.saveProfile = async function() {
   if (!currentUser || !activeBizId) return;
   try {
     await setDoc(doc(db, 'businesses', activeBizId), {
-      businessName: profile.name,
+      // Never overwrite a saved name with blank — only write if user actually typed something
+      ...(profile.name ? { businessName: profile.name } : {}),
       category:     profile.category,
       phone:        profile.phone,
       email:        profile.email,
