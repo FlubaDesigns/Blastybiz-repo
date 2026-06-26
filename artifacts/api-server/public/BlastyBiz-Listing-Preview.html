@@ -108,11 +108,11 @@
             <div class="check"><strong class="warn">⚠ Copy-ready platforms</strong><span>Some platforms block all apps. Your text is written — just paste it.</span></div>
           </div>
 
-          <div class="btn-row">
-            <button class="btn btn-primary" onclick="approveSelected()">✅ Approve This Draft</button>
-            <button class="btn" onclick="regenerateDraft()">✨ Regenerate</button>
-            <button class="btn" onclick="saveDraft()">💾 Save Changes</button>
-            <button class="btn btn-warn" onclick="copyManual()">📋 Copy Text</button>
+          <div class="btn-row" style="flex-wrap:wrap;gap:10px;">
+            <button class="btn btn-primary" id="approve-btn" onclick="approveSelected()" style="flex:1;min-width:130px;">👍 Looks Good</button>
+            <button class="btn" id="regen-btn" onclick="regenDraft('')" style="flex:1;min-width:130px;">🔄 Regenerate</button>
+            <button class="btn" id="shorter-btn" onclick="regenDraft('Make it shorter — trim to the essential points only, keep punchy and under 80 words')" style="flex:1;min-width:130px;">✂️ Make Shorter</button>
+            <button class="btn btn-warn" onclick="copyManual()" style="flex:1;min-width:100px;">📋 Copy</button>
           </div>
         </div>
       </div>
@@ -199,6 +199,7 @@ let draftDocId = null;
 let currentUser = null;
 let businessId = null;
 let autoSendEnabled = false;
+let currentDraftData = {};
 
 function toggleAutoSend() {
   autoSendEnabled = !autoSendEnabled;
@@ -360,11 +361,76 @@ function approveAll() {
   window._firestoreApprove && window._firestoreApprove(keys);
 }
 
-function regenerateDraft() {
-  showToast('✨ Regenerating — go back to BlastyBiz to re-run adaptation');
+async function regenDraft(direction) {
+  if (!activeDraftKey) { showToast('Select a platform first'); return; }
+  const regenBtn   = document.getElementById('regen-btn');
+  const shorterBtn = document.getElementById('shorter-btn');
+  const textarea   = document.getElementById('draftText');
+  const label      = direction ? '✂️ Shortening…' : '🔄 Regenerating…';
+
+  regenBtn.disabled   = true;
+  shorterBtn.disabled = true;
+  regenBtn.textContent   = direction ? '🔄 Regenerate' : label;
+  shorterBtn.textContent = direction ? label : '✂️ Make Shorter';
+  textarea.style.opacity = '0.4';
+
+  try {
+    const idToken = currentUser ? await currentUser.getIdToken() : null;
+    const listing = {
+      name:         currentDraftData.name        || '',
+      category:     currentDraftData.category    || '',
+      offer:        currentDraftData.offer        || '',
+      price:        currentDraftData.price        || '',
+      phone:        currentDraftData.phone        || '',
+      address:      currentDraftData.address      || '',
+      region:       currentDraftData.region       || '',
+      locationType: currentDraftData.locationType || 'physical',
+      website:      currentDraftData.website      || '',
+      hours:        currentDraftData.hours        || '',
+      adName:       currentDraftData.adName       || '',
+      adDetails:    currentDraftData.adDetails    || '',
+      campaignName: currentDraftData.campaignName || '',
+      imageCount:   0,
+      bizInsights:  currentDraftData.bizInsights  || [],
+      bizAnnouncements: currentDraftData.bizAnnouncements || [],
+      aiContext:    currentDraftData.aiContext     || null,
+    };
+    const platform = { id: activeDraftKey, ...(PLATFORM_META[activeDraftKey] || { name: activeDraftKey, type: 'manual' }) };
+    const body = JSON.stringify({
+      listing,
+      platforms: [platform],
+      tone: currentDraftData.tone || 'friendly',
+      platformCats: currentDraftData.platformCats || {},
+      direction,
+    });
+    const res  = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/adaptListing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(idToken ? { 'Authorization': 'Bearer ' + idToken } : {}) },
+      body,
+    });
+    const json = await res.json();
+    const newText = (json.adaptations || {})[activeDraftKey] || '';
+    if (newText) {
+      drafts[activeDraftKey] = { ...drafts[activeDraftKey], text: newText };
+      textarea.value = newText;
+      showToast(direction ? '✂️ Shortened!' : '🔄 Regenerated!');
+    } else {
+      showToast('AI returned empty — try again');
+    }
+  } catch(e) {
+    console.error('regenDraft error:', e);
+    showToast('Error — try again');
+  } finally {
+    textarea.style.opacity = '1';
+    regenBtn.disabled   = false;
+    shorterBtn.disabled = false;
+    regenBtn.textContent   = '🔄 Regenerate';
+    shorterBtn.textContent = '✂️ Make Shorter';
+  }
 }
 
 function populateFromDraftData(draftData) {
+  currentDraftData = draftData;
   const adaptations = draftData.adaptations || {};
   Object.entries(adaptations).forEach(([pid, text]) => {
     drafts[pid] = { text, headline: '', cta: '' };
