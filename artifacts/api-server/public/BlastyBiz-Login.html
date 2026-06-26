@@ -443,6 +443,25 @@ input.error { border-color: var(--danger); }
   padding: 0;
 }
 .reset-back:hover { color: var(--silver); }
+
+/* ── AUTH LOADING STATE ── */
+#auth-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px 0;
+}
+#auth-loading .ring {
+  width: 44px;
+  height: 44px;
+  border: 3px solid var(--border);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+#auth-card-wrap { display: none; }
+#auth-card-wrap.ready { display: block; }
 </style>
 </head>
 <body>
@@ -457,7 +476,13 @@ input.error { border-color: var(--danger); }
     <div class="logo-tag">Lock. Load. Blast.</div>
   </div>
 
-  <!-- AUTH CARD -->
+  <!-- AUTH LOADING SPINNER (shown until Firebase resolves) -->
+  <div id="auth-loading">
+    <div class="ring"></div>
+  </div>
+
+  <!-- AUTH CARD (hidden until Firebase confirms no session) -->
+  <div id="auth-card-wrap">
   <div class="auth-card">
 
     <!-- TABS -->
@@ -611,6 +636,7 @@ input.error { border-color: var(--danger); }
     </div>
 
   </div>
+  </div><!-- /auth-card-wrap -->
 
   <!-- BACK TO HOME -->
   <div class="back-home">
@@ -857,10 +883,19 @@ async function afterAuth(user) {
 //   • page load when already signed in
 //   • returning from signInWithRedirect (mobile Google)
 //   • any other sign-in that changes auth state
+function showLoginForm() {
+  document.getElementById('auth-loading').style.display = 'none';
+  document.getElementById('auth-card-wrap').classList.add('ready');
+}
+
 let afterAuthCalled = false;
 onAuthStateChanged(auth, async (user) => {
-  if (!user || afterAuthCalled) return;
+  if (afterAuthCalled) return;
   afterAuthCalled = true;
+  if (!user) {
+    showLoginForm();
+    return;
+  }
   await afterAuth(user);
 });
 
