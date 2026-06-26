@@ -1583,23 +1583,28 @@ Return this exact JSON structure:
     });
 
     savePlatforms();
-    renderPlatforms();
-    showTab('platforms');
-    showToast('✅ ' + enabledPlatforms.length + ' platforms ready!');
 
-    // Show Rewrite + Clear controls
-    const rewriteRow = document.getElementById('rewrite-row');
-    if (rewriteRow) rewriteRow.style.display = 'flex';
+    // Save draft to Firestore then navigate straight to the review page
+    const loadingSub2 = document.getElementById('ai-loading-sub');
+    if (loadingSub2) loadingSub2.textContent = 'Saving your listings…';
 
-    // Save draft to Firestore + show "Review Listings" button
-    const reviewBtn = document.getElementById('review-listings-btn');
-    if (reviewBtn) {
-      reviewBtn.style.display = 'flex';
-      if (window._afterAdaptation) {
-        window._afterAdaptation(platforms).then(draftId => {
-          if (draftId) reviewBtn.href = 'BlastyBiz-Listing-Preview.html?draftId=' + draftId;
-        });
-      }
+    let draftId = null;
+    if (window._afterAdaptation) {
+      draftId = await window._afterAdaptation(platforms);
+    }
+
+    if (draftId) {
+      showToast('✅ ' + enabledPlatforms.length + ' platforms ready!');
+      window.location.href = 'BlastyBiz-Listing-Preview.html?draftId=' + draftId;
+    } else {
+      // Firestore save failed — fall back to platforms tab
+      renderPlatforms();
+      showTab('platforms');
+      const rewriteRow = document.getElementById('rewrite-row');
+      if (rewriteRow) rewriteRow.style.display = 'flex';
+      const reviewBtn = document.getElementById('review-listings-btn');
+      if (reviewBtn) reviewBtn.style.display = 'flex';
+      showToast('✅ ' + enabledPlatforms.length + ' platforms ready — tap Review to continue');
     }
 
   } catch (err) {
@@ -1768,11 +1773,14 @@ function saveProfile() {
   document.getElementById('profile-biz-cat').textContent  = profile.category || 'Set up your profile below';
 
   // Pre-fill create form if empty
-  if (!document.getElementById('biz-name').value && profile.name)    document.getElementById('biz-name').value    = profile.name;
-  if (!document.getElementById('biz-phone').value && profile.phone)  document.getElementById('biz-phone').value   = profile.phone;
-  if (profile.locationType && profile.locationType !== locationType)  setLocationType(profile.locationType);
-  if (!document.getElementById('biz-address').value && profile.address) document.getElementById('biz-address').value = profile.address;
-  if (!document.getElementById('biz-region')?.value && profile.region)  document.getElementById('biz-region').value  = profile.region;
+  if (!document.getElementById('biz-name').value && profile.name)       document.getElementById('biz-name').value     = profile.name;
+  if (!document.getElementById('biz-category').value && profile.category) document.getElementById('biz-category').value = profile.category;
+  if (!document.getElementById('biz-phone').value && profile.phone)     document.getElementById('biz-phone').value    = profile.phone;
+  if (!document.getElementById('biz-website').value && profile.website) document.getElementById('biz-website').value  = profile.website;
+  if (!document.getElementById('biz-hours').value && profile.hours)     document.getElementById('biz-hours').value    = profile.hours;
+  if (profile.locationType && profile.locationType !== locationType)     setLocationType(profile.locationType);
+  if (!document.getElementById('biz-address').value && profile.address) document.getElementById('biz-address').value  = profile.address;
+  if (!document.getElementById('biz-region')?.value && profile.region)  document.getElementById('biz-region').value   = profile.region;
 }
 
 function loadProfile() {
@@ -2461,16 +2469,18 @@ onAuthStateChanged(auth, async (user) => {
     if (bizSnap.exists()) {
       const biz = bizSnap.data();
       const p = {
-        name:     biz.businessName || biz.name || '',
-        category: biz.category || '',
-        phone:    biz.phone || '',
-        email:    biz.email || '',
-        address:  biz.address || (biz.city ? biz.city + ', ' + biz.state : ''),
-        website:  biz.website || '',
-        hours:    biz.hours || (biz.openTime ? biz.days + ' ' + biz.openTime + '–' + biz.closeTime : ''),
-        tone:     biz.tone || 'friendly',
+        name:         biz.businessName || biz.name || '',
+        category:     biz.category || '',
+        phone:        biz.phone || '',
+        email:        biz.email || '',
+        address:      biz.address || (biz.city ? biz.city + ', ' + biz.state : ''),
+        region:       biz.region || '',
+        locationType: biz.locationType || 'physical',
+        website:      biz.website || '',
+        hours:        biz.hours || (biz.openTime ? biz.days + ' ' + biz.openTime + '–' + biz.closeTime : ''),
+        tone:         biz.tone || 'friendly',
         platformCats: biz.platformCats || {},
-        ownerName: biz.ownerName || '',
+        ownerName:    biz.ownerName || '',
         postingSchedule: biz.postingSchedule || null,
       };
       if (window._bbSetProfile) window._bbSetProfile(p);
@@ -2639,16 +2649,15 @@ window._afterAdaptation = async function(adaptedPlatforms) {
       uid:        currentUser.uid,
       businessId: activeBizId,
       adaptations,
-      formData: {
-        name:     document.getElementById('biz-name')?.value || '',
-        category: document.getElementById('biz-category')?.value || '',
-        offer:    document.getElementById('biz-offer')?.value || '',
-        price:    document.getElementById('biz-price')?.value || '',
-        phone:    document.getElementById('biz-phone')?.value || '',
-        address:  document.getElementById('biz-address')?.value || '',
-        website:  document.getElementById('biz-website')?.value || '',
-        hours:    document.getElementById('biz-hours')?.value || '',
-      },
+      name:     document.getElementById('biz-name')?.value || '',
+      category: document.getElementById('biz-category')?.value || '',
+      offer:    document.getElementById('biz-offer')?.value || '',
+      price:    document.getElementById('biz-price')?.value || '',
+      phone:    document.getElementById('biz-phone')?.value || '',
+      address:  document.getElementById('biz-address')?.value || '',
+      region:   document.getElementById('biz-region')?.value || '',
+      website:  document.getElementById('biz-website')?.value || '',
+      hours:    document.getElementById('biz-hours')?.value || '',
       status:    'draft',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),

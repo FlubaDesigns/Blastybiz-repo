@@ -402,7 +402,7 @@ function populateFromDraftData(draftData) {
     }
   }
 
-  const tabContainer = document.querySelector('.tab-bar') || document.querySelector('.tabs');
+  const tabContainer = document.querySelector('.platform-tabs') || document.querySelector('.tab-bar') || document.querySelector('.tabs');
   if (tabContainer) {
     tabContainer.innerHTML = '';
     Object.keys(drafts).forEach((pid, i) => {
