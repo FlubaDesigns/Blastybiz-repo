@@ -2360,7 +2360,6 @@ async function saveNewCampaign() {
   const input = document.getElementById('new-campaign-input');
   const name  = input.value.trim();
   if (!name) { input.focus(); return; }
-  if (!activeBizId) { showToast('No business loaded'); return; }
 
   const id = 'c_' + Date.now();
   const newCampaign = { id, name };
@@ -2370,9 +2369,11 @@ async function saveNewCampaign() {
   activeCampaignId   = id;
   activeCampaignName = name;
 
-  try {
-    await updateDoc(doc(db, 'businesses', activeBizId), { campaigns });
-  } catch(e) { console.error('Campaign save error:', e); }
+  // _bbSaveCampaigns is set by the module script (has access to db + activeBizId)
+  if (window._bbSaveCampaigns) {
+    try { await window._bbSaveCampaigns(campaigns); }
+    catch(e) { console.error('Campaign save error:', e); }
+  }
 
   document.getElementById('new-campaign-row').style.display = 'none';
   renderCampaignChips();
@@ -2530,6 +2531,12 @@ import {
 let currentUser = null;
 let activeBizId = null;
 let userPlan = 'starter';
+
+// Exposed to regular script — module owns db + activeBizId
+window._bbSaveCampaigns = async function(cams) {
+  if (!activeBizId) throw new Error('No active business');
+  await updateDoc(doc(db, 'businesses', activeBizId), { campaigns: cams });
+};
 
 auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
