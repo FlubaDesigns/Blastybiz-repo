@@ -2490,18 +2490,42 @@ onAuthStateChanged(auth, async (user) => {
     console.error('Profile load error:', e);
   }
 
+  // ── Image compression (max 1200px, JPEG 85%) ─────────────
+  function compressImage(file) {
+    return new Promise(resolve => {
+      const MAX = 1200;
+      const img = new Image();
+      const objUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(objUrl);
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+          else                { width  = Math.round(width  * MAX / height); height = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob(blob => resolve(blob || file), 'image/jpeg', 0.85);
+      };
+      img.onerror = () => { URL.revokeObjectURL(objUrl); resolve(file); };
+      img.src = objUrl;
+    });
+  }
+
   // ── Photo upload ──────────────────────────────────────────
-  window._bbUploadPhoto = function(file) {
+  window._bbUploadPhoto = async function(file) {
     const localUrl = URL.createObjectURL(file);
     const uploadId = Date.now() + '_' + Math.random().toString(36).slice(2,8);
-    const storagePath = `photos/${currentUser.uid}/${uploadId}_${file.name}`;
+    const storagePath = `photos/${currentUser.uid}/${uploadId}.jpg`;
     const item = { url: null, path: storagePath, localUrl, done: false, progress: 0, uploadId };
     window._bbPhotoItems = window._bbPhotoItems || [];
     window._bbPhotoItems.push(item);
     if (window.renderAllPhotos) window.renderAllPhotos();
 
+    const compressed = await compressImage(file);
     const fileRef = storageRef(storage, storagePath);
-    const task = uploadBytesResumable(fileRef, file);
+    const task = uploadBytesResumable(fileRef, compressed, { contentType: 'image/jpeg' });
     task.on('state_changed',
       snapshot => {
         item.progress = Math.round(snapshot.bytesTransferred / snapshot.totalBytes * 100);
