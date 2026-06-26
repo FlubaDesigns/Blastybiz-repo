@@ -864,10 +864,6 @@ select option { background: var(--dark); }
         </button>
       </div>
 
-      <div class="field" style="margin-top:8px;">
-        <label>Tell us what makes you special (optional)</label>
-        <textarea id="s-special" placeholder="e.g. Family owned since 1995. Best authentic tacos in Southwest Florida. Fresh ingredients daily..."></textarea>
-      </div>
     </div>
 
     <!-- ── STEP 5: CONNECT PLATFORMS ── -->
@@ -1447,6 +1443,7 @@ function selectTone(btn, tone) {
   document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   selectedTone = tone;
+  window.selectedTone = tone;
 }
 
 // ══════════════════════════════════════════
@@ -1573,7 +1570,6 @@ window._buildProfileData = function() {
     email:        document.getElementById('s-email')?.value || '',
     website:      document.getElementById('s-website')?.value || '',
     tone:         window.selectedTone || 'friendly',
-    special:      document.getElementById('s-special')?.value || '',
     connectedPlatforms: window.connectedPlatforms || [],
     onboarded:    true,
     updatedAt:    serverTimestamp(),
