@@ -1810,7 +1810,6 @@ function saveProfile() {
 }
 
 function loadProfile() {
-  if (!profile.name) return;
   document.getElementById('profile-name').value    = profile.name     || '';
   document.getElementById('profile-cat').value     = profile.category || '';
   document.getElementById('profile-phone').value   = profile.phone    || '';
@@ -2642,6 +2641,16 @@ onAuthStateChanged(auth, async (user) => {
       if (window._bbSetProfile) window._bbSetProfile(p);
       if (window.loadInsights)      window.loadInsights(biz.bizInsights || []);
       if (window.loadAnnouncements) window.loadAnnouncements(biz.bizAnnouncements || []);
+
+      // ?edit=1 from Dashboard "Edit Business Info" button — jump straight to Profile tab
+      if (new URLSearchParams(window.location.search).get('edit') === '1') {
+        window.history.replaceState({}, '', window.location.pathname);
+        showTab('profile');
+        setTimeout(() => {
+          const nameInput = document.getElementById('profile-name');
+          if (nameInput) { nameInput.focus(); nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        }, 150);
+      }
 
 
       // Load saved photos
