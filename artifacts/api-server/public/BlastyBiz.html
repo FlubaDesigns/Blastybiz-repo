@@ -741,83 +741,78 @@
 
   <div class="ai-tag">⚡ AI-Powered</div>
 
+  <!-- Hidden business fields — populated from profile, used by JS -->
+  <div style="display:none">
+    <input type="text" id="biz-name" oninput="saveDraft()" />
+    <select id="biz-category" onchange="saveDraft()"><option value="">Select a category...</option></select>
+    <input type="tel" id="biz-phone" oninput="saveDraft()" />
+    <input type="text" id="biz-address" oninput="saveDraft()" />
+    <input type="text" id="biz-region" oninput="saveDraft()" />
+    <input type="url" id="biz-website" oninput="saveDraft()" />
+    <input type="text" id="biz-hours" oninput="saveDraft()" />
+    <div id="loc-physical-fields"></div>
+    <div id="loc-online-fields"></div>
+  </div>
+
   <div class="card">
-    <div class="card-title">📝 Your Listing</div>
+    <div class="card-title">📁 Campaign</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">Group your ads. Pick an existing campaign or create a new one.</p>
+    <div id="campaign-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+      <span style="font-size:12px;color:var(--muted);">Loading…</span>
+    </div>
+    <div id="new-campaign-row" style="display:none;margin-top:4px;">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="new-campaign-input" placeholder="Campaign name (e.g. Christmas, Summer Sale)"
+          style="flex:1;background:#081008;border:1px solid var(--green);border-radius:9px;color:var(--light);font-family:inherit;font-size:14px;padding:10px 14px;outline:none;"
+          onkeydown="if(event.key==='Enter')saveNewCampaign()" />
+        <button onclick="saveNewCampaign()"
+          style="background:var(--green);color:var(--dark);border:none;border-radius:9px;padding:10px 18px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap;">Save</button>
+        <button onclick="cancelNewCampaign()"
+          style="background:transparent;border:1px solid var(--border);border-radius:9px;padding:10px 14px;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;">✕</button>
+      </div>
+    </div>
+  </div>
 
-    <label>Business Name</label>
-    <input type="text" id="biz-name" placeholder="e.g. Maria's Kitchen" oninput="saveDraft()" />
+  <div class="card">
+    <div class="card-title">🚀 Your Ad</div>
 
-    <label>Category</label>
-    <select id="biz-category" onchange="saveDraft()">
-      <option value="">Select a category...</option>
-      <option>Restaurant / Food & Drink</option>
-      <option>Retail Shop</option>
-      <option>Beauty & Salon</option>
-      <option>Auto Services</option>
-      <option>Home Services</option>
-      <option>Health & Fitness</option>
-      <option>Professional Services</option>
-      <option>Church / Nonprofit</option>
-      <option>Entertainment</option>
-      <option>Other</option>
-    </select>
+    <label>Ad name</label>
+    <input type="text" id="biz-ad-name" placeholder="e.g. 50% off chocolate · Free consultation · Holiday special"
+      oninput="saveDraft()" style="margin-bottom:16px;" />
 
-    <label>What You're Offering</label>
+    <label>What's the offer?</label>
     <div class="char-wrap">
-      <textarea id="biz-offer" placeholder="Describe what you offer, what makes you special, any deals or promotions..." oninput="countChars(this, 'offer-count', 500)"></textarea>
+      <textarea id="biz-offer" placeholder="e.g. 20% off all haircuts this Saturday only · Grand reopening next week · New menu just dropped — come try it..." oninput="countChars(this, 'offer-count', 500);" style="min-height:90px;"></textarea>
       <span class="char-count" id="offer-count">0 / 500</span>
     </div>
 
-    <div class="input-row">
-      <div>
-        <label>Price / Range</label>
-        <input type="text" id="biz-price" placeholder="e.g. $10–$30" oninput="saveDraft()" />
-      </div>
-      <div>
-        <label>Phone</label>
-        <input type="tel" id="biz-phone" placeholder="555-000-0000" oninput="formatPhone(this);saveDraft()" inputmode="tel" />
-      </div>
-    </div>
+    <label style="margin-top:16px;">Tell us more <span style="color:var(--muted);font-weight:400;font-size:12px;">(optional)</span></label>
+    <textarea id="biz-ad-details"
+      placeholder="Add any details specific to this ad — flavors available, restrictions, what's included, dates, quantities, how to redeem, anything relevant..."
+      oninput="saveDraft()" style="min-height:90px;margin-bottom:16px;width:100%;background:#081008;border:1px solid var(--border);border-radius:10px;color:var(--light);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;padding:14px;resize:vertical;outline:none;transition:border-color .2s;"
+      onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'"></textarea>
 
-    <label>Location</label>
-    <div class="loc-type-toggle">
-      <button class="loc-type-btn active" id="loc-btn-physical" onclick="setLocationType('physical')">📍 Has a location</button>
-      <button class="loc-type-btn" id="loc-btn-online" onclick="setLocationType('online')">🌐 Online only</button>
-    </div>
-    <div class="loc-fields" id="loc-physical-fields">
-      <input type="text" id="biz-address" placeholder="e.g. 123 Main St, Naples FL" oninput="saveDraft()" />
-    </div>
-    <div class="loc-fields" id="loc-online-fields" style="display:none;">
-      <input type="text" id="biz-region" placeholder="Service area or region (optional) — e.g. Southwest Florida" oninput="saveDraft()" />
-    </div>
-
-    <label>Website (optional)</label>
-    <input type="url" id="biz-website" placeholder="https://yourbusiness.com" oninput="saveDraft()" />
-
-    <label>Hours (optional)</label>
-    <input type="text" id="biz-hours" placeholder="e.g. Mon–Sat 9am–8pm" oninput="saveDraft()" />
-
+    <label>Price <span style="color:var(--muted);font-weight:400;font-size:12px;">(optional)</span></label>
+    <input type="text" id="biz-price" placeholder="e.g. $25 · Free · Starting at $99" oninput="saveDraft()" style="max-width:260px;" />
   </div>
 
-  <!-- ── AI ENRICHMENT ── -->
+  <!-- ── ANNOUNCEMENTS ── -->
   <div class="card" id="enrichment-card">
-    <div class="card-title">💡 Help AI know you better</div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5;">AI asks questions to personalize every post. Add announcements (sales, events) and AI will weave them in automatically — and forget them after the date.</p>
-
-    <!-- ANNOUNCEMENTS ROW -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <span style="font-size:11px;font-weight:700;color:var(--silver);letter-spacing:.5px;text-transform:uppercase;">📣 What's coming up?</span>
-      <button onclick="openAnnounceDialog()"
-        style="padding:5px 10px;border-radius:7px;border:1px solid var(--green);background:transparent;color:var(--green);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">
-        + Add
-      </button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <div class="card-title" style="margin-bottom:0;">📣 Add an Announcement</div>
+      <span style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase;">Optional</span>
     </div>
-    <div id="announce-list" style="margin-bottom:16px;min-height:24px;">
-      <span style="font-size:12px;color:var(--muted);">No announcements yet.</span>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Time-sensitive events, sales, or news. AI weaves these into every platform automatically.</p>
+
+    <button onclick="openAnnounceDialog()"
+      style="padding:9px 16px;border-radius:8px;border:1px solid var(--green);background:transparent;color:var(--green);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:12px;">
+      + Add Announcement
+    </button>
+    <div id="announce-list" style="min-height:0;">
     </div>
 
     <!-- ANNOUNCEMENT DIALOG (inline, hidden) -->
-    <div id="announce-dialog" style="display:none;background:var(--dark);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px;">
+    <div id="announce-dialog" style="display:none;background:var(--dark);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:10px;">
       <p style="font-size:12px;color:var(--silver);font-weight:700;margin-bottom:8px;">What's the announcement?</p>
       <textarea id="announce-text" rows="2" placeholder="e.g. Half-off all services June 28th · Grand reopening July 1 · New menu items available now"
         style="width:100%;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--light);padding:10px;font-family:inherit;font-size:13px;resize:none;"></textarea>
@@ -827,28 +822,16 @@
       </div>
       <div style="display:flex;gap:8px;margin-top:10px;">
         <button onclick="saveAnnouncement()"
-          style="flex:1;padding:10px;border-radius:9px;border:none;background:var(--green);color:var(--dark);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">
-          Save
-        </button>
+          style="flex:1;padding:10px;border-radius:9px;border:none;background:var(--green);color:var(--dark);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Save</button>
         <button onclick="document.getElementById('announce-dialog').style.display='none'"
-          style="padding:10px 14px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;">
-          Cancel
-        </button>
+          style="padding:10px 14px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;">Cancel</button>
       </div>
     </div>
 
-    <!-- AI QUESTIONS -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <span style="font-size:11px;font-weight:700;color:var(--silver);letter-spacing:.5px;text-transform:uppercase;">🤖 AI wants to know</span>
-      <span id="enrichment-badge" style="font-size:11px;color:var(--muted);"></span>
-    </div>
-    <div id="enrichment-questions">
-      <p style="font-size:12px;color:var(--muted);padding:4px 0;">Loading…</p>
-    </div>
-    <button id="enrichment-more-btn" onclick="fetchEnrichmentQuestions(true)"
-      style="display:none;width:100%;margin-top:10px;padding:11px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--silver);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
-      ✨ Ask me something new
-    </button>
+    <!-- hidden enrichment stubs so existing JS doesn't break -->
+    <div id="enrichment-questions" style="display:none"></div>
+    <span id="enrichment-badge" style="display:none"></span>
+    <button id="enrichment-more-btn" style="display:none"></button>
   </div>
 
   <!-- IMAGE UPLOAD -->
@@ -1193,6 +1176,9 @@ let history   = [];                           // populated from Firestore after 
 let profile   = {};                           // populated from Firestore after auth
 let draft     = {};                           // form state only — draftId tracked separately
 let locationType        = 'physical';         // 'physical' | 'online' — create form
+let campaigns           = [];                 // [{id, name}] loaded from Firestore
+let activeCampaignId    = null;
+let activeCampaignName  = '';
 let platformReasons     = {};                 // AI-suggested reasons per platform id
 let profileLocationType = 'physical';         // 'physical' | 'online' — profile form
 window._bbPhotoItems = []; // [{url, path, localUrl, done, progress, error}]
@@ -1491,6 +1477,8 @@ async function runAdaptation() {
   const hours     = document.getElementById('biz-hours').value.trim();
   const tone      = profile.tone || 'friendly';
   const direction = document.getElementById('ai-direction')?.value?.trim() || '';
+  const adName    = document.getElementById('biz-ad-name')?.value?.trim() || '';
+  const adDetails = document.getElementById('biz-ad-details')?.value?.trim() || '';
 
   if (!offer) { showToast('Add your offer description first'); return; }
 
@@ -1515,8 +1503,10 @@ ${direction ? `\n⚡ PRIORITY DIRECTION FROM USER (apply to ALL platforms): "${d
 BUSINESS INFO:
 - Name: ${name || 'Local Business'}
 - Category: ${category || 'General'}
+- Campaign: ${activeCampaignName || 'Uncategorized'}
+- Ad: ${adName || offer}
 - Description: ${offer}
-- Price/Range: ${price || 'not specified'}
+${adDetails ? `- Additional details: ${adDetails}` : ''}- Price/Range: ${price || 'not specified'}
 - Phone: ${phone || 'not provided'}
 - Location: ${locationType === 'online' ? 'Online only' + (region ? ' — serves: ' + region : '') : (address || 'not provided')}
 - Website: ${website || 'none'}
@@ -1559,7 +1549,10 @@ Return this exact JSON structure:
       method: 'POST',
       headers: authHeaders,
       body: JSON.stringify({
-        listing: { name, category, offer, price, phone, address, region, locationType, website, hours, imageCount: (window._bbPhotoItems||[]).length,
+        listing: { name, category, offer, price, phone, address, region, locationType, website, hours,
+          adName, adDetails,
+          campaignName: activeCampaignName || '',
+          imageCount: (window._bbPhotoItems||[]).length,
           bizInsights: bizInsights.filter(i=>i.answer),
           bizAnnouncements: bizAnnouncements,
           aiContext: profile.aiContext || null,
@@ -2317,18 +2310,87 @@ function formatPhone(el) {
   }
 }
 
+// ══════════════════════════════════════════
+// CAMPAIGNS
+// ══════════════════════════════════════════
+function renderCampaignChips() {
+  const container = document.getElementById('campaign-chips');
+  if (!container) return;
+  let html = '';
+  campaigns.forEach(c => {
+    const active = c.id === activeCampaignId;
+    html += `<button onclick="selectCampaign('${c.id}','${c.name.replace(/'/g,"\\'")}',this)"
+      style="padding:8px 16px;border-radius:20px;border:1px solid ${active ? 'var(--green)' : 'var(--border)'};
+      background:${active ? 'rgba(0,255,0,.12)' : 'transparent'};color:${active ? 'var(--green)' : 'var(--silver)'};
+      font-size:13px;font-weight:${active?'700':'500'};cursor:pointer;font-family:inherit;transition:all .15s;"
+      data-cid="${c.id}">${c.name}</button>`;
+  });
+  html += `<button onclick="openNewCampaign()"
+    style="padding:8px 16px;border-radius:20px;border:1px dashed var(--border);background:transparent;
+    color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s;"
+    onmouseover="this.style.borderColor='var(--green)';this.style.color='var(--green)'"
+    onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">＋ New Campaign</button>`;
+  container.innerHTML = html;
+}
+
+function selectCampaign(id, name) {
+  activeCampaignId   = id;
+  activeCampaignName = name;
+  renderCampaignChips();
+  saveDraft();
+}
+
+function openNewCampaign() {
+  document.getElementById('new-campaign-row').style.display = 'block';
+  const input = document.getElementById('new-campaign-input');
+  input.value = '';
+  input.focus();
+}
+
+function cancelNewCampaign() {
+  document.getElementById('new-campaign-row').style.display = 'none';
+}
+
+async function saveNewCampaign() {
+  const input = document.getElementById('new-campaign-input');
+  const name  = input.value.trim();
+  if (!name) { input.focus(); return; }
+  if (!activeBizId) { showToast('No business loaded'); return; }
+
+  const id = 'c_' + Date.now();
+  const newCampaign = { id, name };
+  campaigns.push(newCampaign);
+  campaigns.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+
+  activeCampaignId   = id;
+  activeCampaignName = name;
+
+  try {
+    await updateDoc(doc(db, 'businesses', activeBizId), { campaigns });
+  } catch(e) { console.error('Campaign save error:', e); }
+
+  document.getElementById('new-campaign-row').style.display = 'none';
+  renderCampaignChips();
+  saveDraft();
+  showToast('Campaign "' + name + '" created');
+}
+
 function saveDraft() {
   draft = {
-    name:         document.getElementById('biz-name')?.value,
-    category:     document.getElementById('biz-category')?.value,
-    offer:        document.getElementById('biz-offer')?.value,
-    price:        document.getElementById('biz-price')?.value,
-    phone:        document.getElementById('biz-phone')?.value,
-    locationType: locationType,
-    address:      document.getElementById('biz-address')?.value,
-    region:       document.getElementById('biz-region')?.value,
-    website:      document.getElementById('biz-website')?.value,
-    hours:        document.getElementById('biz-hours')?.value,
+    name:           document.getElementById('biz-name')?.value,
+    category:       document.getElementById('biz-category')?.value,
+    offer:          document.getElementById('biz-offer')?.value,
+    price:          document.getElementById('biz-price')?.value,
+    phone:          document.getElementById('biz-phone')?.value,
+    locationType:   locationType,
+    address:        document.getElementById('biz-address')?.value,
+    region:         document.getElementById('biz-region')?.value,
+    website:        document.getElementById('biz-website')?.value,
+    hours:          document.getElementById('biz-hours')?.value,
+    adName:         document.getElementById('biz-ad-name')?.value || '',
+    adDetails:      document.getElementById('biz-ad-details')?.value || '',
+    campaignId:     activeCampaignId || '',
+    campaignName:   activeCampaignName || '',
   };
   checkAdaptBtn();
 }
@@ -2356,6 +2418,9 @@ function loadDraft() {
   document.getElementById('biz-website').value  = draft.website  || '';
   document.getElementById('biz-hours').value    = draft.hours    || '';
   if (draft.locationType) setLocationType(draft.locationType);
+  if (draft.adName)    document.getElementById('biz-ad-name').value    = draft.adName;
+  if (draft.adDetails) document.getElementById('biz-ad-details').value = draft.adDetails;
+  if (draft.campaignId) { activeCampaignId = draft.campaignId; activeCampaignName = draft.campaignName || ''; renderCampaignChips(); }
   if (draft.offer) {
     const span = document.getElementById('offer-count');
     if (span) span.textContent = draft.offer.length + ' / 500';
@@ -2506,6 +2571,10 @@ onAuthStateChanged(auth, async (user) => {
           : { ...p, localUrl: p.url, done: true, progress: 100 }
       );
       if (window.renderAllPhotos) window.renderAllPhotos();
+
+      // Load campaigns
+      campaigns = (biz.campaigns || []).sort((a,b) => (a.name||'').localeCompare(b.name||''));
+      renderCampaignChips();
     }
   } catch(e) {
     console.error('Profile load error:', e);
@@ -2657,21 +2726,25 @@ window._afterAdaptation = async function(adaptedPlatforms) {
     });
 
     const draftData = {
-      uid:        currentUser.uid,
-      businessId: activeBizId,
+      uid:          currentUser.uid,
+      businessId:   activeBizId,
       adaptations,
-      name:     document.getElementById('biz-name')?.value || '',
-      category: document.getElementById('biz-category')?.value || '',
-      offer:    document.getElementById('biz-offer')?.value || '',
-      price:    document.getElementById('biz-price')?.value || '',
-      phone:    document.getElementById('biz-phone')?.value || '',
-      address:  document.getElementById('biz-address')?.value || '',
-      region:   document.getElementById('biz-region')?.value || '',
-      website:  document.getElementById('biz-website')?.value || '',
-      hours:    document.getElementById('biz-hours')?.value || '',
-      status:    'draft',
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      name:         document.getElementById('biz-name')?.value || '',
+      category:     document.getElementById('biz-category')?.value || '',
+      offer:        document.getElementById('biz-offer')?.value || '',
+      price:        document.getElementById('biz-price')?.value || '',
+      phone:        document.getElementById('biz-phone')?.value || '',
+      address:      document.getElementById('biz-address')?.value || '',
+      region:       document.getElementById('biz-region')?.value || '',
+      website:      document.getElementById('biz-website')?.value || '',
+      hours:        document.getElementById('biz-hours')?.value || '',
+      adName:       document.getElementById('biz-ad-name')?.value || '',
+      adDetails:    document.getElementById('biz-ad-details')?.value || '',
+      campaignId:   activeCampaignId || '',
+      campaignName: activeCampaignName || '',
+      status:       'draft',
+      createdAt:    serverTimestamp(),
+      updatedAt:    serverTimestamp(),
     };
 
     const ref = await addDoc(collection(db, 'listingDrafts'), draftData);

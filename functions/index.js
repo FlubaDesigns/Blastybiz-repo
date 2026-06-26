@@ -218,8 +218,10 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
 BUSINESS INFO:
 - Name: ${listing.name || 'Local Business'}
 - Category: ${listing.category || 'General'}
-- Description: ${listing.offer}
-- Price/Range: ${listing.price || 'not specified'}
+- Campaign: ${listing.campaignName || 'General'}
+- Ad: ${listing.adName || listing.offer}
+- Offer description: ${listing.offer}
+${listing.adDetails ? `- Additional ad details: ${listing.adDetails}\n` : ''}- Price/Range: ${listing.price || 'not specified'}
 - Phone: ${listing.phone || 'not provided'}
 - Location type: ${listing.locationType === 'online' ? 'Online only' : 'Physical location'}
 - Address/Area: ${listing.locationType === 'online' ? (listing.region ? 'Serves: ' + listing.region : 'Online — no physical address') : (listing.address || 'not provided')}
