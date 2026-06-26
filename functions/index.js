@@ -231,7 +231,7 @@ ${listing.adDetails ? `- Additional ad details: ${listing.adDetails}\n` : ''}- P
 - Hours: ${listing.hours || 'not provided'}
 - Images attached: ${listing.imageCount > 0 ? listing.imageCount + ' photo(s)' : 'none'}
 - Preferred tone: ${tone}
-${aiContextBlock}${(listing.bizInsights||[]).length ? '\nBUSINESS PERSONALITY & LOCAL DETAILS (use these to make copy personal and specific — reference them naturally):\n' + listing.bizInsights.map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(listing.bizAnnouncements||[]).length ? '\nUPCOMING EVENTS / PROMOTIONS (weave into every platform\'s copy naturally — do NOT ignore these):\n' + listing.bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}
+${aiContextBlock}${(listing.bizInsights||[]).length ? '\n⚠️ OWNER-PROVIDED FACTS — MANDATORY. The owner answered these questions so their copy is never generic. You MUST reference these details directly and specifically in the copy. Do NOT write filler when real facts are available:\n' + listing.bizInsights.map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(listing.bizAnnouncements||[]).length ? '\n⚠️ ACTIVE PROMOTIONS — MUST APPEAR IN EVERY PLATFORM. Do not skip, bury, or paraphrase vaguely. Weave each one naturally but make sure it lands:\n' + listing.bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}
 PLATFORMS TO ADAPT FOR:
 ${platformList.map(p => `- ${p.id}: ${p.name}${p.cat}${p.rules.maxChars ? ', max ' + p.rules.maxChars + ' chars' : ''}${p.rules.notes ? ', note: ' + p.rules.notes : ''}`).join('\n')}
 
@@ -1837,7 +1837,7 @@ BUSINESS INFO:
 - Website: ${biz.website || 'none'}
 - Hours: ${biz.hours || 'not provided'}
 - Preferred tone: ${tone}
-${(biz.bizInsights||[]).filter(i=>i.answer).length ? '\nBUSINESS PERSONALITY & LOCAL DETAILS (use to make copy personal and specific):\n' + biz.bizInsights.filter(i=>i.answer).map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(biz.bizAnnouncements||[]).length ? '\nUPCOMING EVENTS / PROMOTIONS (weave into every platform\'s copy — do NOT ignore these):\n' + biz.bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}${campaignContext}
+${(biz.bizInsights||[]).filter(i=>i.answer).length ? '\n⚠️ OWNER-PROVIDED FACTS — MANDATORY. The owner answered these questions so their copy is never generic. You MUST reference these details directly and specifically in the copy. Do NOT write filler when real facts are available:\n' + biz.bizInsights.filter(i=>i.answer).map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(biz.bizAnnouncements||[]).length ? '\n⚠️ ACTIVE PROMOTIONS — MUST APPEAR IN EVERY PLATFORM. Do not skip, bury, or paraphrase vaguely. Weave each one naturally but make sure it lands:\n' + biz.bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}${campaignContext}
 PLATFORMS:
 ${platformList.map(p => `- ${p.id}: ${p.name}${p.cat}${p.rules.maxChars ? ', max ' + p.rules.maxChars + ' chars' : ''}${p.rules.notes ? ', note: ' + p.rules.notes : ''}`).join('\n')}
 

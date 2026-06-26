@@ -902,26 +902,8 @@
       <!-- populated by JS -->
     </div>
 
-    <button id="ai-suggest-btn" onclick="suggestPlatformsAI()"
-      style="margin-top:14px;width:100%;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.25);border-radius:10px;padding:11px 16px;color:var(--green);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;transition:background .15s;"
-      onmouseover="this.style.background='rgba(0,200,83,0.15)'" onmouseout="this.style.background='rgba(0,200,83,0.08)'">
-      ✨ Get AI Platform Suggestions
-    </button>
-    <p id="ai-suggest-note" style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px;display:none;">Based on your business info above — you can still adjust any toggle.</p>
   </div>
 
-  <!-- AI DIRECTION -->
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <div class="card-title" style="margin-bottom:0;">💬 Direction for AI</div>
-      <span style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase;">Optional</span>
-    </div>
-    <textarea id="ai-direction"
-      placeholder="e.g. Make it more casual · Focus on same-day service · Use the phrase 'family-owned' · Keep it short and punchy"
-      style="min-height:80px;margin-bottom:8px;"
-      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
-    <p style="font-size:12px;color:var(--muted);line-height:1.5;margin:0;">Tell the AI what to adjust — baked into every platform's copy on the next run.</p>
-  </div>
 
   <!-- ABOUT YOU IN COPY -->
   <div class="card" id="about-you-card" style="padding:14px 16px;display:none;">
@@ -1642,7 +1624,6 @@ async function runAdaptation() {
   const offer     = document.getElementById('biz-offer').value.trim();
   const price     = document.getElementById('biz-price').value.trim();
   const tone      = profile.tone || 'friendly';
-  const direction = document.getElementById('ai-direction')?.value?.trim() || '';
   const adName      = document.getElementById('biz-ad-name')?.value?.trim() || '';
   const adDetails   = document.getElementById('biz-ad-details')?.value?.trim() || '';
   const includeName = document.getElementById('copy-include-name')?.checked && profile.ownerName;
@@ -1667,7 +1648,6 @@ async function runAdaptation() {
   }));
 
   const prompt = `You are a local business marketing expert. Adapt the following business listing for each platform listed. Return ONLY a valid JSON object — no markdown, no explanation, no backticks.
-${direction ? `\n⚡ PRIORITY DIRECTION FROM USER (apply to ALL platforms): "${direction}"\nThis overrides default style rules where they conflict.\n` : ''}
 BUSINESS INFO:
 - Name: ${name || 'not provided'}
 - Category: ${category || 'General'}
@@ -1682,7 +1662,7 @@ ${adDetails ? `- Additional details: ${adDetails}` : ''}- Price/Range: ${price |
 - Images attached: ${(window._bbPhotoItems||[]).filter(p=>p.done).length > 0 ? (window._bbPhotoItems||[]).filter(p=>p.done).length + ' photo(s)' + (window._bbSelectedPhotoIndex !== null ? ' — featured: ' + (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || 'selected') : '') : 'none'}
 - Preferred tone: ${tone}
 ${includeName || includeRole ? `- Owner/contact to mention in copy: ${[includeName ? profile.ownerName : null, includeRole ? (profile.ownerRole === 'manager' ? 'Manager' : profile.ownerRole === 'other' ? profile.ownerRole : 'Owner') : null].filter(Boolean).join(', ')}` : ''}
-${bizInsights.filter(i=>i.answer).length ? '\nBUSINESS PERSONALITY & LOCAL DETAILS (use to make copy personal and specific):\n' + bizInsights.filter(i=>i.answer).map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${bizAnnouncements.length ? '\nUPCOMING EVENTS / PROMOTIONS (weave naturally into posts — include in every platform):\n' + bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}
+${bizInsights.filter(i=>i.answer).length ? '\n⚠️ OWNER-PROVIDED FACTS — MANDATORY. The owner answered these questions so their copy is never generic. You MUST reference these details directly and specifically in the copy. Do NOT write filler when real facts are available:\n' + bizInsights.filter(i=>i.answer).map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${bizAnnouncements.length ? '\n⚠️ ACTIVE PROMOTIONS — MUST APPEAR IN EVERY PLATFORM. Do not skip, bury, or paraphrase vaguely. Weave each one naturally but make sure it lands:\n' + bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}
 PLATFORMS TO ADAPT FOR:
 ${platformList.map(p => `- ${p.id}: ${p.name} (${p.type === 'api' ? 'auto-post' : 'copy-paste'})${p.rules.maxChars ? ', max ' + p.rules.maxChars + ' chars' : ''}${p.rules.notes ? ', note: ' + p.rules.notes : ''}`).join('\n')}
 
