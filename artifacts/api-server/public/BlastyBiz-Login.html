@@ -589,6 +589,15 @@ input.error { border-color: var(--danger); }
         <div class="field-error" id="su-password-err">Password must be at least 8 characters</div>
       </div>
 
+      <div class="field">
+        <label>Re-enter Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="su-password2" placeholder="Confirm your password" oninput="clearErr('su-password2')" />
+          <button class="pw-toggle" onclick="togglePw('su-password2', this)" type="button">👁️</button>
+        </div>
+        <div class="field-error" id="su-password2-err">Passwords don't match</div>
+      </div>
+
       <button class="btn-submit" id="btn-signup" onclick="handleSignUp()" disabled>
         <div class="spinner"></div>
         <span class="btn-text">Create Account →</span>
@@ -942,11 +951,13 @@ window.handleSignIn = async function() {
 window.handleSignUp = async function() {
   const name  = document.getElementById('su-name').value.trim();
   const email = document.getElementById('su-email').value.trim();
-  const pass  = document.getElementById('su-password').value;
+  const pass   = document.getElementById('su-password').value;
+  const pass2  = document.getElementById('su-password2').value;
   let valid = true;
   if (!name)                        valid = window.showErr('su-name', 'Name is required');
   if (!window.isValidEmail(email))  valid = window.showErr('su-email', 'Please enter a valid email');
   if (pass.length < 8)              valid = window.showErr('su-password', 'Password must be at least 8 characters');
+  if (pass !== pass2)               valid = window.showErr('su-password2', 'Passwords don\'t match');
   if (!valid) return;
   window.setLoading('btn-signup', true);
   try {
