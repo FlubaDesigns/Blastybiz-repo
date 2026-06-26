@@ -923,6 +923,25 @@
     <p style="font-size:12px;color:var(--muted);line-height:1.5;margin:0;">Tell the AI what to adjust — baked into every platform's copy on the next run.</p>
   </div>
 
+  <!-- ABOUT YOU IN COPY -->
+  <div class="card" id="about-you-card" style="padding:14px 16px;display:none;">
+    <div class="card-title" style="margin-bottom:12px;">🪪 About You in Copy</div>
+    <label style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;cursor:pointer;gap:12px;">
+      <span style="font-size:14px;color:var(--text);line-height:1.4;">
+        Mention my name
+        <span id="copy-name-preview" style="display:block;color:var(--muted);font-size:12px;margin-top:1px;"></span>
+      </span>
+      <input type="checkbox" id="copy-include-name" style="width:20px;height:20px;cursor:pointer;flex-shrink:0;accent-color:var(--green);" />
+    </label>
+    <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:12px;">
+      <span style="font-size:14px;color:var(--text);line-height:1.4;">
+        Mention my role
+        <span id="copy-role-preview" style="display:block;color:var(--muted);font-size:12px;margin-top:1px;"></span>
+      </span>
+      <input type="checkbox" id="copy-include-role" style="width:20px;height:20px;cursor:pointer;flex-shrink:0;accent-color:var(--green);" />
+    </label>
+  </div>
+
   <div class="ai-loading" id="ai-loading">
     <div class="ai-spinner"></div>
     <div class="ai-loading-text">⚡ AI is adapting your listing...</div>
@@ -1602,8 +1621,10 @@ async function runAdaptation() {
   const price     = document.getElementById('biz-price').value.trim();
   const tone      = profile.tone || 'friendly';
   const direction = document.getElementById('ai-direction')?.value?.trim() || '';
-  const adName    = document.getElementById('biz-ad-name')?.value?.trim() || '';
-  const adDetails = document.getElementById('biz-ad-details')?.value?.trim() || '';
+  const adName      = document.getElementById('biz-ad-name')?.value?.trim() || '';
+  const adDetails   = document.getElementById('biz-ad-details')?.value?.trim() || '';
+  const includeName = document.getElementById('copy-include-name')?.checked && profile.ownerName;
+  const includeRole = document.getElementById('copy-include-role')?.checked && profile.ownerRole;
 
   if (!offer) { showToast('Add your offer description first'); return; }
 
@@ -1638,6 +1659,7 @@ ${adDetails ? `- Additional details: ${adDetails}` : ''}- Price/Range: ${price |
 - Hours: ${hours || 'not provided'}
 - Images attached: ${(window._bbPhotoItems||[]).filter(p=>p.done).length > 0 ? (window._bbPhotoItems||[]).filter(p=>p.done).length + ' photo(s)' + (window._bbSelectedPhotoIndex !== null ? ' — featured: ' + (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || 'selected') : '') : 'none'}
 - Preferred tone: ${tone}
+${includeName || includeRole ? `- Owner/contact to mention in copy: ${[includeName ? profile.ownerName : null, includeRole ? (profile.ownerRole === 'manager' ? 'Manager' : profile.ownerRole === 'other' ? profile.ownerRole : 'Owner') : null].filter(Boolean).join(', ')}` : ''}
 ${bizInsights.filter(i=>i.answer).length ? '\nBUSINESS PERSONALITY & LOCAL DETAILS (use to make copy personal and specific):\n' + bizInsights.filter(i=>i.answer).map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${bizAnnouncements.length ? '\nUPCOMING EVENTS / PROMOTIONS (weave naturally into posts — include in every platform):\n' + bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}
 PLATFORMS TO ADAPT FOR:
 ${platformList.map(p => `- ${p.id}: ${p.name} (${p.type === 'api' ? 'auto-post' : 'copy-paste'})${p.rules.maxChars ? ', max ' + p.rules.maxChars + ' chars' : ''}${p.rules.notes ? ', note: ' + p.rules.notes : ''}`).join('\n')}
@@ -1956,6 +1978,26 @@ function loadProfile() {
   if (!document.getElementById('biz-hours').value && profile.hours)       document.getElementById('biz-hours').value    = profile.hours;
   if (!document.getElementById('biz-region')?.value && profile.region)    document.getElementById('biz-region').value   = profile.region;
   if (profile.locationType && profile.locationType !== locationType)       setLocationType(profile.locationType);
+  updateCopyPreview();
+}
+
+function updateCopyPreview() {
+  const namePreview = document.getElementById('copy-name-preview');
+  const rolePreview = document.getElementById('copy-role-preview');
+  const card        = document.getElementById('about-you-card');
+  if (!card) return;
+  const hasName = !!profile.ownerName;
+  const hasRole = !!profile.ownerRole;
+  // Show card only if at least a name is saved
+  card.style.display = hasName ? 'block' : 'none';
+  if (namePreview) namePreview.textContent = profile.ownerName ? `→ "${profile.ownerName}" added to prompt` : 'No name saved yet — add it in Profile';
+  if (rolePreview) {
+    const roleLabel = profile.ownerRole === 'manager' ? 'Manager' : profile.ownerRole === 'other' ? 'Other' : 'Owner';
+    rolePreview.textContent = hasRole ? `→ "${roleLabel}" added to prompt` : '';
+  }
+  // Disable role checkbox if no name saved (role alone isn't useful)
+  const roleCb = document.getElementById('copy-include-role');
+  if (roleCb) roleCb.disabled = !hasName;
 }
 
 // ══════════════════════════════════════════
