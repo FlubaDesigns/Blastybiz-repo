@@ -1065,14 +1065,15 @@
 
     <label>Location</label>
     <div class="loc-type-toggle">
-      <button class="loc-type-btn active" id="prof-loc-btn-physical" onclick="setProfileLocationType('physical')">📍 Has a location</button>
-      <button class="loc-type-btn" id="prof-loc-btn-online" onclick="setProfileLocationType('online')">🌐 Online only</button>
+      <button class="loc-type-btn active" id="prof-loc-btn-physical" onclick="setProfileLocationType('physical')">🧱 Brick</button>
+      <button class="loc-type-btn" id="prof-loc-btn-online" onclick="setProfileLocationType('online')">🌐 Online</button>
+      <button class="loc-type-btn" id="prof-loc-btn-both" onclick="setProfileLocationType('both')">🌍 Both</button>
     </div>
     <div class="loc-fields" id="prof-loc-physical-fields">
       <input type="text" id="profile-address" placeholder="123 Main St, City, State" oninput="saveProfile()" />
     </div>
     <div class="loc-fields" id="prof-loc-online-fields" style="display:none;">
-      <input type="text" id="profile-region" placeholder="Service area or region (optional) — e.g. Southwest Florida" oninput="saveProfile()" />
+      <input type="text" id="profile-region" placeholder="Service area or region — e.g. Southwest Florida" oninput="saveProfile()" />
     </div>
 
     <label>Website</label>
@@ -1580,8 +1581,8 @@ async function runAdaptation() {
   const website   = profile.website  || '';
   const hours     = profile.hours    || '';
   const effLocType = profile.locationType || 'physical';
-  const address   = effLocType === 'physical' ? (profile.address || '') : '';
-  const region    = effLocType === 'online'   ? (profile.region  || '') : '';
+  const address   = (effLocType === 'physical' || effLocType === 'both') ? (profile.address || '') : '';
+  const region    = effLocType === 'both' ? (profile.region || '') : '';
   const offer     = document.getElementById('biz-offer').value.trim();
   const price     = document.getElementById('biz-price').value.trim();
   const tone      = profile.tone || 'friendly';
@@ -1617,7 +1618,7 @@ BUSINESS INFO:
 - Description: ${offer}
 ${adDetails ? `- Additional details: ${adDetails}` : ''}- Price/Range: ${price || 'not specified'}
 - Phone: ${phone || 'not provided'}
-- Location type: ${effLocType === 'online' ? 'Online only' + (region ? ' — serves: ' + region : '') : 'Physical location — ' + (address || 'not provided')}
+- Location type: ${effLocType === 'online' ? 'Online only' + (region ? ' — serves: ' + region : '') : effLocType === 'both' ? 'Brick & online' + (address ? ' — ' + address : '') + (region ? ' — also serves: ' + region : '') : 'Physical location — ' + (address || 'not provided')}
 - Website: ${website || 'none'}
 - Hours: ${hours || 'not provided'}
 - Images attached: ${(window._bbPhotoItems||[]).filter(p=>p.done).length > 0 ? (window._bbPhotoItems||[]).filter(p=>p.done).length + ' photo(s)' + (window._bbSelectedPhotoIndex !== null ? ' — featured: ' + (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || 'selected') : '') : 'none'}
@@ -1855,8 +1856,11 @@ function setProfileLocationType(type) {
   profileLocationType = type;
   document.getElementById('prof-loc-btn-physical').classList.toggle('active', type === 'physical');
   document.getElementById('prof-loc-btn-online').classList.toggle('active', type === 'online');
-  document.getElementById('prof-loc-physical-fields').style.display = type === 'physical' ? '' : 'none';
-  document.getElementById('prof-loc-online-fields').style.display   = type === 'online'   ? '' : 'none';
+  document.getElementById('prof-loc-btn-both')?.classList.toggle('active', type === 'both');
+  const showAddress = type === 'physical' || type === 'both';
+  const showRegion  = type === 'both';
+  document.getElementById('prof-loc-physical-fields').style.display = showAddress ? '' : 'none';
+  document.getElementById('prof-loc-online-fields').style.display   = showRegion  ? '' : 'none';
   saveProfile();
 }
 
@@ -3033,17 +3037,17 @@ window.saveProfile = async function() {
   if (!currentUser || !activeBizId) return;
   try {
     await setDoc(doc(db, 'businesses', activeBizId), {
-      // Never overwrite a saved name with blank — only write if user actually typed something
-      ...(profile.name ? { businessName: profile.name } : {}),
-      category:     profile.category,
-      phone:        profile.phone,
-      email:        profile.email,
+      // Never overwrite saved fields with blank — only write a field if it has a value
+      ...(profile.name     ? { businessName: profile.name }     : {}),
+      ...(profile.category ? { category:     profile.category } : {}),
+      ...(profile.phone    ? { phone:        profile.phone }    : {}),
+      ...(profile.email    ? { email:        profile.email }    : {}),
+      ...(profile.address  ? { address:      profile.address }  : {}),
+      ...(profile.website  ? { website:      profile.website }  : {}),
+      ...(profile.hours    ? { hours:        profile.hours }    : {}),
       locationType: profile.locationType || 'physical',
-      address:      profile.address,
       region:       profile.region || '',
-      website:      profile.website,
-      hours:        profile.hours,
-      tone:         profile.tone,
+      tone:         profile.tone   || 'friendly',
       updatedAt:    serverTimestamp(),
     }, { merge: true });
   } catch(e) {
