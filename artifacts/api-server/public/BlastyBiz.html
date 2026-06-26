@@ -664,6 +664,21 @@
 
   /* ── BOTTOM NAV SAFE AREA ── */
   .bottom-safe { height: 20px; }
+  .step2-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--green);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 14px 0 10px;
+    font-family: inherit;
+    letter-spacing: .3px;
+  }
+  .step2-back:active { opacity: .7; }
 
   /* ── Schedule card ───────────────────────────────── */
   .sched-toggle-wrap { position:relative; display:inline-flex; cursor:pointer; }
@@ -758,6 +773,8 @@
     <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;">BlastyBiz drafted these on schedule. Approve to publish, or dismiss to skip.</p>
     <div id="pending-posts-list"></div>
   </div>
+
+  <div id="create-step-1">
 
   <div class="ai-tag">⚡ AI-Powered</div>
 
@@ -866,6 +883,16 @@
     <div class="thumb-grid" id="thumb-grid"></div>
   </div>
 
+  <button class="btn btn-primary" id="continue-btn" onclick="goToStep2()" style="margin-top:4px;">
+    Continue to Platforms →
+  </button>
+  <div class="bottom-safe"></div>
+  </div><!-- /create-step-1 -->
+
+  <!-- ── STEP 2: PLATFORM SELECT + AI ── -->
+  <div id="create-step-2" style="display:none;">
+  <button class="step2-back" onclick="goToStep1()">← Back to your ad</button>
+
   <!-- PLATFORM QUICK SELECT -->
   <div class="card">
     <div class="card-title">📡 Send To</div>
@@ -903,7 +930,7 @@
   </div>
 
   <button class="btn btn-primary" id="adapt-btn" onclick="runAdaptation()" disabled>
-    ⚡ Adapt & Prepare All Platforms
+    ⚡ Generate AI Copy
   </button>
 
   <!-- REWRITE + CLEAR — stacked, visible after first adaptation -->
@@ -919,6 +946,7 @@
   </div>
 
   <div class="bottom-safe"></div>
+  </div><!-- /create-step-2 -->
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -1241,6 +1269,10 @@ function showTab(name) {
   if (name === 'platforms') updateStats();
   if (name === 'history') renderHistory();
   if (name === 'profile') loadProfile();
+  if (name === 'create') {
+    document.getElementById('create-step-1').style.display = 'block';
+    document.getElementById('create-step-2').style.display = 'none';
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1429,6 +1461,19 @@ function checkAdaptBtn() {
   const hasContent = document.getElementById('biz-offer')?.value?.trim().length > 10;
   const hasEnabled = platforms.some(p => p.enabled);
   btn.disabled = !(hasContent && hasEnabled);
+}
+
+function goToStep2() {
+  saveDraft();
+  document.getElementById('create-step-1').style.display = 'none';
+  document.getElementById('create-step-2').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function goToStep1() {
+  document.getElementById('create-step-2').style.display = 'none';
+  document.getElementById('create-step-1').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ══════════════════════════════════════════
