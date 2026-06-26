@@ -623,6 +623,25 @@
     border-radius: 4px; padding: 2px 5px;
     pointer-events: none;
   }
+  .thumb-wrap.selected {
+    border: 2.5px solid var(--green);
+    box-shadow: 0 0 0 2px rgba(0,200,83,0.25);
+  }
+  .thumb-wrap.selectable { cursor: pointer; }
+  .thumb-wrap.selectable img { transition: opacity 0.15s; }
+  .thumb-wrap.selectable:active img { opacity: 0.75; }
+  .thumb-selected-badge {
+    position: absolute; top: 4px; left: 4px;
+    background: var(--green); color: #000;
+    font-size: 11px; font-weight: 900;
+    border-radius: 50%; width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .thumb-hint {
+    font-size: 11px; color: var(--muted); margin-top: -8px;
+    margin-bottom: 10px; text-align: center;
+  }
 
   /* ── AI LOADING ── */
   .ai-loading {
@@ -1197,6 +1216,7 @@ let activeCampaignName  = '';
 let platformReasons     = {};                 // AI-suggested reasons per platform id
 let profileLocationType = 'physical';         // 'physical' | 'online' — profile form
 window._bbPhotoItems = []; // [{url, path, localUrl, done, progress, error}]
+window._bbSelectedPhotoIndex = null; // index of featured/selected photo
 
 // ══════════════════════════════════════════
 // INIT
@@ -1451,10 +1471,19 @@ window.renderAllPhotos = function() {
           <div class="thumb-progress-bar"><div style="width:${item.progress}%;height:100%;background:var(--green);border-radius:2px;transition:width .2s;"></div></div>
         </div>`;
     } else {
+      const isSelected = window._bbSelectedPhotoIndex === i;
+      wrap.className = 'thumb-wrap selectable' + (isSelected ? ' selected' : '');
+      wrap.onclick = (e) => {
+        if (e.target.classList.contains('thumb-remove')) return;
+        if (window._bbSelectPhoto) window._bbSelectPhoto(i);
+      };
       wrap.innerHTML = `
         <img src="${item.localUrl}" />
-        <button class="thumb-remove" onclick="window._bbDeletePhoto&&window._bbDeletePhoto(${i})">✕</button>
-        <div class="thumb-saved-badge">☁ Saved</div>`;
+        <button class="thumb-remove" onclick="event.stopPropagation();window._bbDeletePhoto&&window._bbDeletePhoto(${i})">✕</button>
+        ${isSelected
+          ? `<div class="thumb-selected-badge">✓</div>`
+          : `<div class="thumb-saved-badge">☁ Saved</div>`
+        }`;
     }
     grid.appendChild(wrap);
   });
@@ -1476,8 +1505,21 @@ window.renderAllPhotos = function() {
     badge.innerHTML = uploading > 0
       ? `⬆️ Uploading ${uploading} photo${uploading > 1 ? 's' : ''}… (${saved} saved)`
       : `✅ ${saved} photo${saved !== 1 ? 's' : ''} saved to your account`;
-  } else if (badge) {
-    badge.remove();
+    let hint = document.getElementById('photo-select-hint');
+    if (saved > 0 && !hint) {
+      hint = document.createElement('div');
+      hint.id = 'photo-select-hint';
+      hint.className = 'thumb-hint';
+      hint.textContent = 'Tap a photo to feature it in your ad';
+      grid.parentNode.insertBefore(hint, grid);
+    } else if (saved === 0 && hint) {
+      hint.remove();
+    }
+  } else {
+    if (badge) badge.remove();
+    const hint = document.getElementById('photo-select-hint');
+    if (hint) hint.remove();
+    window._bbSelectedPhotoIndex = null;
   }
   checkAdaptBtn();
 };
@@ -1533,7 +1575,7 @@ ${adDetails ? `- Additional details: ${adDetails}` : ''}- Price/Range: ${price |
 - Location type: ${effLocType === 'online' ? 'Online only' + (region ? ' — serves: ' + region : '') : 'Physical location — ' + (address || 'not provided')}
 - Website: ${website || 'none'}
 - Hours: ${hours || 'not provided'}
-- Images attached: ${(window._bbPhotoItems||[]).length > 0 ? (window._bbPhotoItems||[]).length + ' photo(s)' : 'none'}
+- Images attached: ${(window._bbPhotoItems||[]).filter(p=>p.done).length > 0 ? (window._bbPhotoItems||[]).filter(p=>p.done).length + ' photo(s)' + (window._bbSelectedPhotoIndex !== null ? ' — featured: ' + (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || 'selected') : '') : 'none'}
 - Preferred tone: ${tone}
 ${bizInsights.filter(i=>i.answer).length ? '\nBUSINESS PERSONALITY & LOCAL DETAILS (use to make copy personal and specific):\n' + bizInsights.filter(i=>i.answer).map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${bizAnnouncements.length ? '\nUPCOMING EVENTS / PROMOTIONS (weave naturally into posts — include in every platform):\n' + bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}
 PLATFORMS TO ADAPT FOR:
@@ -1575,7 +1617,8 @@ Return this exact JSON structure:
           ownerName: profile.ownerName || '',
           adName, adDetails,
           campaignName: activeCampaignName || '',
-          imageCount: (window._bbPhotoItems||[]).length,
+          imageCount: (window._bbPhotoItems||[]).filter(p=>p.done).length,
+          featuredPhotoUrl: window._bbSelectedPhotoIndex !== null ? (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || '') : '',
           bizInsights: bizInsights.filter(i=>i.answer),
           bizAnnouncements: bizAnnouncements,
           aiContext: profile.aiContext || null,
@@ -2653,13 +2696,20 @@ onAuthStateChanged(auth, async (user) => {
       }
 
 
-      // Load saved photos
+      // Load saved photos + restore featured selection
       const savedPhotos = biz.photos || [];
       window._bbPhotoItems = savedPhotos.map(p =>
         typeof p === 'string'
           ? { url: p, path: null, localUrl: p, done: true, progress: 100 }
           : { ...p, localUrl: p.url, done: true, progress: 100 }
       );
+      const featuredUrl = biz.featuredPhoto || '';
+      if (featuredUrl) {
+        const fi = window._bbPhotoItems.findIndex(p => p.url === featuredUrl);
+        window._bbSelectedPhotoIndex = fi >= 0 ? fi : null;
+      } else {
+        window._bbSelectedPhotoIndex = null;
+      }
       if (window.renderAllPhotos) window.renderAllPhotos();
 
       // Load campaigns
@@ -2743,10 +2793,30 @@ onAuthStateChanged(auth, async (user) => {
     );
   };
 
+  window._bbSelectPhoto = async function(index) {
+    const items = window._bbPhotoItems || [];
+    const item = items[index];
+    if (!item || !item.done) return;
+    const alreadySelected = window._bbSelectedPhotoIndex === index;
+    window._bbSelectedPhotoIndex = alreadySelected ? null : index;
+    if (window.renderAllPhotos) window.renderAllPhotos();
+    try {
+      const featuredUrl = alreadySelected ? null : (item.url || item.localUrl);
+      await updateDoc(doc(db, 'businesses', activeBizId), { featuredPhoto: featuredUrl || '' });
+      window.showToast && window.showToast(alreadySelected ? 'Photo deselected' : '⭐ Featured photo set');
+    } catch(e) { console.error('featuredPhoto save error:', e); }
+  };
+
   window._bbDeletePhoto = async function(index) {
     const items = window._bbPhotoItems || [];
     const item = items[index];
     if (!item) return;
+    if (window._bbSelectedPhotoIndex === index) {
+      window._bbSelectedPhotoIndex = null;
+      try { await updateDoc(doc(db, 'businesses', activeBizId), { featuredPhoto: '' }); } catch(e) {}
+    } else if (window._bbSelectedPhotoIndex > index) {
+      window._bbSelectedPhotoIndex--;
+    }
     items.splice(index, 1);
     if (window.renderAllPhotos) window.renderAllPhotos();
     try {
