@@ -1500,7 +1500,7 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gst
 let currentUser = null;
 
 auth.authStateReady().then(() => {
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if (!user) {
       setTimeout(() => {
         if (!auth.currentUser) {
@@ -1511,6 +1511,27 @@ auth.authStateReady().then(() => {
     }
     currentUser = user;
     window._blastyUser = user;
+
+    // Pre-fill Step 1 fields from the user's account
+    try {
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      const data = snap.exists() ? snap.data() : {};
+
+      const ownerField = document.getElementById('s-owner');
+      const emailField  = document.getElementById('s-email');
+
+      if (ownerField && !ownerField.value) {
+        ownerField.value = data.ownerName || user.displayName || '';
+      }
+      if (emailField && !emailField.value) {
+        emailField.value = data.email || user.email || '';
+      }
+
+      // Re-run validation so Next button unlocks if name+phone already filled
+      if (typeof checkStep === 'function') checkStep(1);
+    } catch (e) {
+      // Non-fatal — user can still fill fields manually
+    }
   });
 });
 
