@@ -728,7 +728,7 @@ select option { background: var(--dark); }
 
       <div class="field">
         <label>Phone Number</label>
-        <input type="tel" id="s-phone" placeholder="(555) 000-0000" oninput="checkStep(1)" />
+        <input type="tel" id="s-phone" placeholder="(555) 000-0000" oninput="var d=this.value.replace(/\D/g,'').slice(0,10);this.value=d.length>6?'('+d.slice(0,3)+') '+d.slice(3,6)+'-'+d.slice(6):d.length>3?'('+d.slice(0,3)+') '+d.slice(3):d.length?'('+d:d;checkStep(1);" />
       </div>
 
       <div class="field">
