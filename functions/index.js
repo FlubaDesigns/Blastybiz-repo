@@ -1771,6 +1771,33 @@ async function _runScheduledPost(bizId, biz) {
   const locType  = biz.locationType || 'physical';
   const region   = biz.region || '';
 
+  // Look up active campaign's most recent ad details from listingDrafts
+  let campaignContext = '';
+  const activeCampaignId = sched.activeCampaignId || '';
+  if (activeCampaignId) {
+    try {
+      const draftQ = await db.collection('listingDrafts')
+        .where('businessId', '==', bizId)
+        .where('campaignId', '==', activeCampaignId)
+        .orderBy('createdAt', 'desc')
+        .limit(1)
+        .get();
+      if (!draftQ.empty) {
+        const d = draftQ.docs[0].data();
+        const lines = [
+          `Campaign: ${d.campaignName || sched.activeCampaignName || ''}`,
+          d.adName    ? `Ad: ${d.adName}`           : '',
+          d.offer     ? `Offer: ${d.offer}`          : '',
+          d.adDetails ? `Details: ${d.adDetails}`    : '',
+          d.price     ? `Price: ${d.price}`          : '',
+        ].filter(Boolean);
+        if (lines.length) campaignContext = '\nACTIVE CAMPAIGN (use this as the primary focus for every platform post):\n' + lines.join('\n');
+      }
+    } catch(e) {
+      console.warn('[scheduledPost] campaign draft lookup failed:', e.message);
+    }
+  }
+
   // Build a "what we offer" summary from profile
   const offerLines = [
     biz.category ? `Category: ${biz.category}` : '',
@@ -1808,7 +1835,7 @@ BUSINESS INFO:
 - Website: ${biz.website || 'none'}
 - Hours: ${biz.hours || 'not provided'}
 - Preferred tone: ${tone}
-${(biz.bizInsights||[]).filter(i=>i.answer).length ? '\nBUSINESS PERSONALITY & LOCAL DETAILS (use to make copy personal and specific):\n' + biz.bizInsights.filter(i=>i.answer).map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(biz.bizAnnouncements||[]).length ? '\nUPCOMING EVENTS / PROMOTIONS (weave into every platform\'s copy — do NOT ignore these):\n' + biz.bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}
+${(biz.bizInsights||[]).filter(i=>i.answer).length ? '\nBUSINESS PERSONALITY & LOCAL DETAILS (use to make copy personal and specific):\n' + biz.bizInsights.filter(i=>i.answer).map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(biz.bizAnnouncements||[]).length ? '\nUPCOMING EVENTS / PROMOTIONS (weave into every platform\'s copy — do NOT ignore these):\n' + biz.bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}${campaignContext}
 PLATFORMS:
 ${platformList.map(p => `- ${p.id}: ${p.name}${p.cat}${p.rules.maxChars ? ', max ' + p.rules.maxChars + ' chars' : ''}${p.rules.notes ? ', note: ' + p.rules.notes : ''}`).join('\n')}
 

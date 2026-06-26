@@ -1097,6 +1097,16 @@
 
       <div id="sched-next-preview" style="font-size:12px;color:var(--green);text-align:center;padding:6px 0 2px;min-height:24px;font-weight:600;"></div>
 
+      <!-- CAMPAIGN PICKER -->
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+        <div style="font-size:13px;font-weight:700;color:var(--light);margin-bottom:4px;">Which campaign?</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.4;">Auto-posts will use this campaign's offer and ad details.</div>
+        <select id="sched-campaign-select" onchange="setSchedCampaign(this.value, this.options[this.selectedIndex].text)"
+          style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--light);font-size:13px;appearance:none;-webkit-appearance:none;">
+          <option value="">— No campaign selected (use business profile) —</option>
+        </select>
+      </div>
+
       <!-- REVIEW TOGGLE -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0 2px;border-top:1px solid var(--border);margin-top:12px;">
         <div>
@@ -1812,16 +1822,18 @@ function loadProfile() {
 // ══════════════════════════════════════════
 // AUTO-POST SCHEDULE
 // ══════════════════════════════════════════
-var schedState = { enabled: false, frequency: 'weekly', dayOfWeek: 1, dayOfMonth: 1, timeSlot: 'morning', timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, requireApproval: false };
+var schedState = { enabled: false, frequency: 'weekly', dayOfWeek: 1, dayOfMonth: 1, timeSlot: 'morning', timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, requireApproval: false, activeCampaignId: '', activeCampaignName: '' };
 
 function loadSchedule(sched) {
   if (sched) {
-    schedState.enabled    = !!sched.enabled;
-    schedState.frequency  = sched.frequency  || 'weekly';
-    schedState.dayOfWeek  = sched.dayOfWeek  ?? 1;
-    schedState.dayOfMonth = sched.dayOfMonth || 1;
-    schedState.timeSlot   = sched.timeSlot   || 'morning';
-    schedState.timezone   = sched.timezone   || schedState.timezone;
+    schedState.enabled          = !!sched.enabled;
+    schedState.frequency        = sched.frequency  || 'weekly';
+    schedState.dayOfWeek        = sched.dayOfWeek  ?? 1;
+    schedState.dayOfMonth       = sched.dayOfMonth || 1;
+    schedState.timeSlot         = sched.timeSlot   || 'morning';
+    schedState.timezone         = sched.timezone   || schedState.timezone;
+    schedState.activeCampaignId   = sched.activeCampaignId   || '';
+    schedState.activeCampaignName = sched.activeCampaignName || '';
   }
   schedState.requireApproval = !!sched?.requireApproval;
   document.getElementById('sched-enabled').checked = schedState.enabled;
@@ -1829,7 +1841,29 @@ function loadSchedule(sched) {
   const reviewEl = document.getElementById('sched-review');
   if (reviewEl) reviewEl.checked = schedState.requireApproval;
   _renderSchedChips();
+  _renderSchedCampaignSelect();
   _updateSchedPreview();
+}
+
+function _renderSchedCampaignSelect() {
+  const sel = document.getElementById('sched-campaign-select');
+  if (!sel) return;
+  const prev = schedState.activeCampaignId || '';
+  sel.innerHTML = '<option value="">— No campaign selected (use business profile) —</option>';
+  (campaigns || []).forEach(function(c) {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name;
+    if (c.id === prev) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function setSchedCampaign(id, name) {
+  schedState.activeCampaignId   = id   || '';
+  schedState.activeCampaignName = (id ? name : '') || '';
+  saveSchedule();
+  showToast(id ? '📣 Campaign set — auto-posts will use "' + schedState.activeCampaignName + '"' : '📋 Auto-posts will use general business profile');
 }
 
 function toggleSchedEnabled() {
@@ -2873,13 +2907,16 @@ window._saveScheduleToFirestore = async function(sched) {
   if (!currentUser || !activeBizId) return;
   try {
     const payload = {
-      enabled:    sched.enabled,
-      frequency:  sched.frequency,
-      dayOfWeek:  sched.dayOfWeek,
-      dayOfMonth: sched.dayOfMonth,
-      timeSlot:   sched.timeSlot,
-      timezone:   sched.timezone,
-      updatedAt:  serverTimestamp(),
+      enabled:              sched.enabled,
+      frequency:            sched.frequency,
+      dayOfWeek:            sched.dayOfWeek,
+      dayOfMonth:           sched.dayOfMonth,
+      timeSlot:             sched.timeSlot,
+      timezone:             sched.timezone,
+      requireApproval:      !!sched.requireApproval,
+      activeCampaignId:     sched.activeCampaignId   || '',
+      activeCampaignName:   sched.activeCampaignName || '',
+      updatedAt:            serverTimestamp(),
     };
     if (sched.nextRunAt) {
       payload.nextRunAt = new Date(sched.nextRunAt);
