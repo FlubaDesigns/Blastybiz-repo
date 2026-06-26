@@ -1070,7 +1070,12 @@
       <button class="loc-type-btn" id="prof-loc-btn-both" onclick="setProfileLocationType('both')">🌍 Both</button>
     </div>
     <div class="loc-fields" id="prof-loc-physical-fields">
-      <input type="text" id="profile-address" placeholder="123 Main St, City, State" oninput="saveProfile()" />
+      <input type="text" id="profile-street" placeholder="Street address" oninput="saveProfile()" style="margin-bottom:8px;" />
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="profile-city"  placeholder="City"  oninput="saveProfile()" style="flex:1;min-width:0;" />
+        <input type="text" id="profile-state" placeholder="State" oninput="saveProfile()" style="width:72px;" />
+        <input type="text" id="profile-zip"   placeholder="ZIP"   oninput="saveProfile()" style="width:84px;" />
+      </div>
     </div>
     <div class="loc-fields" id="prof-loc-online-fields" style="display:none;">
       <input type="text" id="profile-region" placeholder="Service area or region — e.g. Southwest Florida" oninput="saveProfile()" />
@@ -1872,8 +1877,12 @@ function saveProfile() {
     phone:            document.getElementById('profile-phone').value,
     email:            document.getElementById('profile-email').value,
     locationType:     profileLocationType,
-    address:          document.getElementById('profile-address').value,
-    region:           document.getElementById('profile-region')?.value || '',
+    street:           document.getElementById('profile-street')?.value  || '',
+    city:             document.getElementById('profile-city')?.value    || '',
+    state:            document.getElementById('profile-state')?.value   || '',
+    zip:              document.getElementById('profile-zip')?.value     || '',
+    get address() { return [this.street, this.city, this.state, this.zip].filter(Boolean).join(', '); },
+    region:           document.getElementById('profile-region')?.value  || '',
     website:          document.getElementById('profile-website').value,
     hours:            document.getElementById('profile-hours').value,
     tone:             document.getElementById('profile-tone').value,
@@ -1906,7 +1915,10 @@ function loadProfile() {
   document.getElementById('profile-cat').value     = profile.category || '';
   document.getElementById('profile-phone').value   = profile.phone    || '';
   document.getElementById('profile-email').value   = profile.email    || '';
-  document.getElementById('profile-address').value = profile.address  || '';
+  if (document.getElementById('profile-street')) document.getElementById('profile-street').value = profile.street || '';
+  if (document.getElementById('profile-city'))   document.getElementById('profile-city').value   = profile.city   || '';
+  if (document.getElementById('profile-state'))  document.getElementById('profile-state').value  = profile.state  || '';
+  if (document.getElementById('profile-zip'))    document.getElementById('profile-zip').value    = profile.zip    || '';
   if (document.getElementById('profile-region')) document.getElementById('profile-region').value = profile.region || '';
   document.getElementById('profile-website').value = profile.website  || '';
   document.getElementById('profile-hours').value   = profile.hours    || '';
@@ -2719,7 +2731,11 @@ onAuthStateChanged(auth, async (user) => {
         category:     biz.category || '',
         phone:        biz.phone || '',
         email:        biz.email || '',
-        address:      biz.address || (biz.city ? biz.city + ', ' + biz.state : ''),
+        street:       biz.street || biz.address || '',
+        city:         biz.city   || '',
+        state:        biz.state  || '',
+        zip:          biz.zip    || '',
+        get address() { return [this.street, this.city, this.state, this.zip].filter(Boolean).join(', '); },
         region:       biz.region || '',
         locationType: biz.locationType || 'physical',
         website:      biz.website || '',
@@ -3042,6 +3058,10 @@ window.saveProfile = async function() {
       ...(profile.category ? { category:     profile.category } : {}),
       ...(profile.phone    ? { phone:        profile.phone }    : {}),
       ...(profile.email    ? { email:        profile.email }    : {}),
+      ...(profile.street   ? { street:       profile.street }   : {}),
+      ...(profile.city     ? { city:         profile.city }     : {}),
+      ...(profile.state    ? { state:        profile.state }    : {}),
+      ...(profile.zip      ? { zip:          profile.zip }      : {}),
       ...(profile.address  ? { address:      profile.address }  : {}),
       ...(profile.website  ? { website:      profile.website }  : {}),
       ...(profile.hours    ? { hours:        profile.hours }    : {}),
