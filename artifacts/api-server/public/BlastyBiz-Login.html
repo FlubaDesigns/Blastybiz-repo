@@ -863,7 +863,7 @@ import {
   getRedirectResult,
   sendPasswordResetEmail
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // Module is loaded — unlock auth buttons (they start disabled to prevent
 // clicks before window.handleSignIn/handleSignUp are overridden below)
@@ -876,12 +876,23 @@ async function afterAuth(user) {
   try {
     const snap = await getDoc(doc(db, 'users', user.uid));
     const plan = new URLSearchParams(window.location.search).get('plan');
-    if (snap.exists() && snap.data().onboarded) {
-      window.location.href = plan
-        ? `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(plan)}`
-        : 'BlastyBiz-Dashboard.html?from=login';
+    const userData = snap.exists() ? snap.data() : {};
+    const dashUrl = plan
+      ? `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(plan)}`
+      : 'BlastyBiz-Dashboard.html?from=login';
+
+    if (userData.onboarded) {
+      window.location.href = dashUrl;
     } else {
-      window.location.href = 'BlastyBiz-Onboarding.html';
+      // Flag missing — check if they already have a business (existing customer)
+      const bizSnap = await getDocs(query(collection(db, 'businesses'), where('uid', '==', user.uid)));
+      if (!bizSnap.empty) {
+        // Has businesses but flag wasn't set — fix it silently and go to dashboard
+        await setDoc(doc(db, 'users', user.uid), { onboarded: true }, { merge: true });
+        window.location.href = dashUrl;
+      } else {
+        window.location.href = 'BlastyBiz-Onboarding.html';
+      }
     }
   } catch (e) {
     window.showToast('Error loading account: ' + (e.code || e.message), true);
