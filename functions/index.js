@@ -200,6 +200,19 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
     rules: PLATFORM_RULES[p.id] || {}
   }));
 
+  const { aiContext } = listing;
+  const aiContextBlock = (() => {
+    if (!aiContext) return '';
+    const lines = [];
+    if (aiContext.story)     lines.push(`Story & History: ${aiContext.story}`);
+    if (aiContext.different) lines.push(`What Makes Them Different: ${aiContext.different}`);
+    if (aiContext.awards)    lines.push(`Awards & Recognition: ${aiContext.awards}`);
+    if (aiContext.customer)  lines.push(`Ideal Customer: ${aiContext.customer}`);
+    if (aiContext.other)     lines.push(`Additional Context: ${aiContext.other}`);
+    if (!lines.length) return '';
+    return '\nBUSINESS BACKGROUND (this is the owner\'s voice — read carefully and weave this authenticity into every platform\'s copy naturally):\n' + lines.join('\n');
+  })();
+
   const prompt = `You are a local business marketing expert. Adapt the following business listing for each platform listed. Return ONLY a valid JSON object — no markdown, no explanation, no backticks.
 
 BUSINESS INFO:
@@ -214,7 +227,7 @@ BUSINESS INFO:
 - Hours: ${listing.hours || 'not provided'}
 - Images attached: ${listing.imageCount > 0 ? listing.imageCount + ' photo(s)' : 'none'}
 - Preferred tone: ${tone}
-${(listing.bizInsights||[]).length ? '\nBUSINESS PERSONALITY & LOCAL DETAILS (use these to make copy personal and specific — reference them naturally):\n' + listing.bizInsights.map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(listing.bizAnnouncements||[]).length ? '\nUPCOMING EVENTS / PROMOTIONS (weave into every platform\'s copy naturally — do NOT ignore these):\n' + listing.bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}
+${aiContextBlock}${(listing.bizInsights||[]).length ? '\nBUSINESS PERSONALITY & LOCAL DETAILS (use these to make copy personal and specific — reference them naturally):\n' + listing.bizInsights.map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(listing.bizAnnouncements||[]).length ? '\nUPCOMING EVENTS / PROMOTIONS (weave into every platform\'s copy naturally — do NOT ignore these):\n' + listing.bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}
 PLATFORMS TO ADAPT FOR:
 ${platformList.map(p => `- ${p.id}: ${p.name} (${p.type === 'api' ? 'auto-post' : 'copy-paste'})${p.rules.maxChars ? ', max ' + p.rules.maxChars + ' chars' : ''}${p.rules.notes ? ', note: ' + p.rules.notes : ''}`).join('\n')}
 

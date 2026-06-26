@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BlastyBiz — Business Story</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --green:#00C853; --dark:#070D07; --silver:#7AB87A; --light:#EEF7EE;
+    --card:#0D160D; --border:#1E2E1E; --muted:#587058; --danger:#FF4444;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;min-height:100dvh;padding-bottom:60px}
+  header{background:rgba(7,13,7,.96);border-bottom:1px solid var(--border);padding:16px 20px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(10px)}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--green);line-height:1;text-decoration:none}
+  .logo span{color:var(--silver);font-size:11px;display:block;letter-spacing:3px;font-family:'DM Sans';font-weight:300;margin-top:2px}
+  .back-btn{background:var(--card);border:1px solid var(--border);border-radius:999px;color:var(--silver);height:40px;padding:0 16px;display:flex;align-items:center;gap:6px;text-decoration:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+  .back-btn:hover{border-color:var(--green);color:var(--green)}
+  main{max-width:700px;margin:0 auto;padding:32px 20px}
+  .page-title{font-family:'Bebas Neue';font-size:38px;letter-spacing:2px;color:var(--light);margin-bottom:6px}
+  .page-title span{color:var(--green)}
+  .page-sub{color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:32px;max-width:560px}
+  .page-sub strong{color:var(--silver)}
+  .section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:16px}
+  .section-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--green);font-weight:700;margin-bottom:6px}
+  .section-hint{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+  textarea{width:100%;background:#081008;border:1px solid var(--border);border-radius:10px;color:var(--light);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;padding:14px;resize:vertical;min-height:90px;transition:border-color .2s;outline:none}
+  textarea:focus{border-color:var(--green)}
+  textarea::placeholder{color:var(--muted)}
+  textarea.big{min-height:140px}
+  .char-count{font-size:11px;color:var(--muted);text-align:right;margin-top:4px}
+  .save-row{display:flex;align-items:center;gap:16px;margin-top:8px}
+  .btn-save{background:var(--green);color:var(--dark);border:none;border-radius:10px;padding:14px 32px;font-size:15px;font-weight:800;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+  .btn-save:hover{background:#00b84c}
+  .btn-save:disabled{opacity:.5;cursor:not-allowed}
+  .save-status{font-size:13px;color:var(--muted)}
+  .save-status.ok{color:var(--green)}
+  .save-status.err{color:var(--danger)}
+  .ai-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,200,83,.08);border:1px solid rgba(0,200,83,.25);border-radius:999px;padding:5px 12px;font-size:11px;color:var(--green);font-weight:700;letter-spacing:.5px;margin-bottom:24px}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:var(--dark);padding:12px 24px;border-radius:30px;font-weight:700;font-size:14px;opacity:0;transition:all .3s;z-index:999;white-space:nowrap;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media(max-width:600px){main{padding:20px 14px}.page-title{font-size:30px}}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="BlastyBiz-Dashboard.html">BlastyBiz<span>Business Story</span></a>
+  <a class="back-btn" href="BlastyBiz-Dashboard.html">← Dashboard</a>
+</header>
+
+<main>
+  <div class="ai-badge">🤖 Feeds the AI every time it writes for you</div>
+  <h1 class="page-title">Your Business <span>Story</span></h1>
+  <p class="page-sub">
+    Everything you put here gets read by the AI <strong>before it writes a single word</strong> of your marketing. 
+    The more detail you give it, the more personal and authentic every post becomes.
+    You only have to write this once.
+  </p>
+
+  <div class="section">
+    <div class="section-label">Your Story</div>
+    <div class="section-hint">How did you get started? When? What's the history behind the business?</div>
+    <textarea id="ctx-story" placeholder="e.g. We opened our doors in 1987 after my father emigrated from Mexico with nothing but a family recipe and a dream. Started as a food cart on Main Street, now we've got two locations and a catering operation..."></textarea>
+    <div class="char-count"><span id="cnt-story">0</span> characters</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">What Makes You Different</div>
+    <div class="section-hint">Why should someone choose you over the competitor down the street?</div>
+    <textarea id="ctx-different" placeholder="e.g. We source all our produce from local farms within 50 miles. Every item is made from scratch daily — we don't touch frozen food. Our head chef trained in Lyon, France for 3 years..."></textarea>
+    <div class="char-count"><span id="cnt-different">0</span> characters</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Awards, Recognition & Milestones</div>
+    <div class="section-hint">Any press coverage, awards, certifications, or achievements worth mentioning?</div>
+    <textarea id="ctx-awards" placeholder="e.g. Best Local Pizza 3 years running (City Weekly 2021-2023). Featured in the Chicago Tribune. 4.9 stars across 600+ Google reviews. Certified organic by the USDA since 2019..."></textarea>
+    <div class="char-count"><span id="cnt-awards">0</span> characters</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Your Ideal Customer</div>
+    <div class="section-hint">Who are you talking to? Who gets the most value from what you do?</div>
+    <textarea id="ctx-customer" placeholder="e.g. Homeowners aged 35-60 in the suburbs who want quality work done right the first time and don't mind paying for it. They've been burned by cheap contractors before. They value reliability over price..."></textarea>
+    <div class="char-count"><span id="cnt-customer">0</span> characters</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Anything Else the AI Should Know</div>
+    <div class="section-hint">Special services, insider details, seasonal offerings, team members, community involvement — anything that makes your business worth talking about.</div>
+    <textarea id="ctx-other" class="big" placeholder="e.g. We offer free estimates. We have a loyalty program — every 10th visit is free. My son just joined the business after graduating culinary school. We sponsor the local little league. We're the only shop in town that does same-day repairs..."></textarea>
+    <div class="char-count"><span id="cnt-other">0</span> characters</div>
+  </div>
+
+  <div class="save-row">
+    <button class="btn-save" id="btn-save" onclick="saveContext()" disabled>Save Story</button>
+    <span class="save-status" id="save-status"></span>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+const FIELDS = [
+  { id: 'ctx-story',     key: 'story',       cnt: 'cnt-story' },
+  { id: 'ctx-different', key: 'different',   cnt: 'cnt-different' },
+  { id: 'ctx-awards',    key: 'awards',      cnt: 'cnt-awards' },
+  { id: 'ctx-customer',  key: 'customer',    cnt: 'cnt-customer' },
+  { id: 'ctx-other',     key: 'other',       cnt: 'cnt-other' },
+];
+
+FIELDS.forEach(f => {
+  const el = document.getElementById(f.id);
+  el.addEventListener('input', () => {
+    document.getElementById(f.cnt).textContent = el.value.length;
+    document.getElementById('btn-save').disabled = false;
+    document.getElementById('save-status').textContent = '';
+    document.getElementById('save-status').className = 'save-status';
+  });
+});
+</script>
+
+<script type="module">
+import { auth, db } from './firebase-init-v2.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+let currentUser = null;
+let activeBizId = null;
+
+const FIELDS = [
+  { id: 'ctx-story',     key: 'story' },
+  { id: 'ctx-different', key: 'different' },
+  { id: 'ctx-awards',    key: 'awards' },
+  { id: 'ctx-customer',  key: 'customer' },
+  { id: 'ctx-other',     key: 'other' },
+];
+
+auth.authStateReady().then(() => {
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = 'BlastyBiz-Login.html'; return; }
+    currentUser = user;
+
+    try {
+      const userSnap = await getDoc(doc(db, 'users', user.uid));
+      const userData = userSnap.exists() ? userSnap.data() : {};
+      activeBizId = userData.activeBusiness || null;
+
+      if (!activeBizId) {
+        const bizQ = await getDocs(query(collection(db, 'businesses'), where('uid', '==', user.uid)));
+        if (!bizQ.empty) activeBizId = bizQ.docs[0].id;
+      }
+
+      if (!activeBizId) return;
+
+      const bizSnap = await getDoc(doc(db, 'businesses', activeBizId));
+      if (bizSnap.exists()) {
+        const ctx = bizSnap.data().aiContext || {};
+        FIELDS.forEach(f => {
+          const el = document.getElementById(f.id);
+          if (ctx[f.key]) {
+            el.value = ctx[f.key];
+            document.getElementById('cnt-' + f.id.replace('ctx-', '')).textContent = el.value.length;
+          }
+        });
+        document.getElementById('btn-save').disabled = false;
+      }
+    } catch(e) {
+      console.error('Load error:', e);
+    }
+  });
+});
+
+window.saveContext = async function() {
+  if (!activeBizId) { showToast('No active business found'); return; }
+
+  const btn = document.getElementById('btn-save');
+  const status = document.getElementById('save-status');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  status.textContent = '';
+
+  const aiContext = {};
+  FIELDS.forEach(f => {
+    aiContext[f.key] = document.getElementById(f.id).value.trim();
+  });
+
+  try {
+    await setDoc(doc(db, 'businesses', activeBizId), { aiContext }, { merge: true });
+    btn.textContent = 'Save Story';
+    status.textContent = '✓ Saved — AI will use this next time';
+    status.className = 'save-status ok';
+    showToast('Business story saved');
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Save Story';
+    status.textContent = 'Save failed — try again';
+    status.className = 'save-status err';
+  }
+};
+</script>
+</body>
+</html>

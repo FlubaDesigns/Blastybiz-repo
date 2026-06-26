@@ -1562,6 +1562,7 @@ Return this exact JSON structure:
         listing: { name, category, offer, price, phone, address, region, locationType, website, hours, imageCount: (window._bbPhotoItems||[]).length,
           bizInsights: bizInsights.filter(i=>i.answer),
           bizAnnouncements: bizAnnouncements,
+          aiContext: profile.aiContext || null,
         },
         platforms: enabledPlatforms,
         tone,
@@ -2491,6 +2492,7 @@ onAuthStateChanged(auth, async (user) => {
         platformCats: biz.platformCats || {},
         ownerName:    biz.ownerName || '',
         postingSchedule: biz.postingSchedule || null,
+        aiContext:    biz.aiContext || null,
       };
       if (window._bbSetProfile) window._bbSetProfile(p);
       if (window.loadInsights)      window.loadInsights(biz.bizInsights || []);
