@@ -1481,15 +1481,17 @@ window.renderAllPhotos = function() {
 // RUN ADAPTATION — Real AI Call
 // ══════════════════════════════════════════
 async function runAdaptation() {
-  const name      = document.getElementById('biz-name').value.trim();
-  const category  = document.getElementById('biz-category').value;
+  // Profile is the dossier — always primary source for business identity fields
+  const name      = profile.name     || '';
+  const category  = profile.category || '';
+  const phone     = profile.phone    || '';
+  const website   = profile.website  || '';
+  const hours     = profile.hours    || '';
+  const effLocType = profile.locationType || 'physical';
+  const address   = effLocType === 'physical' ? (profile.address || '') : '';
+  const region    = effLocType === 'online'   ? (profile.region  || '') : '';
   const offer     = document.getElementById('biz-offer').value.trim();
   const price     = document.getElementById('biz-price').value.trim();
-  const phone     = document.getElementById('biz-phone').value.trim();
-  const address   = locationType === 'physical' ? document.getElementById('biz-address').value.trim() : '';
-  const region    = locationType === 'online'   ? (document.getElementById('biz-region')?.value.trim() || '') : '';
-  const website   = document.getElementById('biz-website').value.trim();
-  const hours     = document.getElementById('biz-hours').value.trim();
   const tone      = profile.tone || 'friendly';
   const direction = document.getElementById('ai-direction')?.value?.trim() || '';
   const adName    = document.getElementById('biz-ad-name')?.value?.trim() || '';
@@ -1516,14 +1518,14 @@ async function runAdaptation() {
   const prompt = `You are a local business marketing expert. Adapt the following business listing for each platform listed. Return ONLY a valid JSON object — no markdown, no explanation, no backticks.
 ${direction ? `\n⚡ PRIORITY DIRECTION FROM USER (apply to ALL platforms): "${direction}"\nThis overrides default style rules where they conflict.\n` : ''}
 BUSINESS INFO:
-- Name: ${name || 'Local Business'}
+- Name: ${name || 'not provided'}
 - Category: ${category || 'General'}
 - Campaign: ${activeCampaignName || 'Uncategorized'}
 - Ad: ${adName || offer}
 - Description: ${offer}
 ${adDetails ? `- Additional details: ${adDetails}` : ''}- Price/Range: ${price || 'not specified'}
 - Phone: ${phone || 'not provided'}
-- Location: ${locationType === 'online' ? 'Online only' + (region ? ' — serves: ' + region : '') : (address || 'not provided')}
+- Location type: ${effLocType === 'online' ? 'Online only' + (region ? ' — serves: ' + region : '') : 'Physical location — ' + (address || 'not provided')}
 - Website: ${website || 'none'}
 - Hours: ${hours || 'not provided'}
 - Images attached: ${(window._bbPhotoItems||[]).length > 0 ? (window._bbPhotoItems||[]).length + ' photo(s)' : 'none'}
@@ -1564,7 +1566,7 @@ Return this exact JSON structure:
       method: 'POST',
       headers: authHeaders,
       body: JSON.stringify({
-        listing: { name, category, offer, price, phone, address, region, locationType, website, hours,
+        listing: { name, category, offer, price, phone, address, region, locationType: effLocType, website, hours,
           adName, adDetails,
           campaignName: activeCampaignName || '',
           imageCount: (window._bbPhotoItems||[]).length,

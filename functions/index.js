@@ -216,7 +216,7 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
   const prompt = `You are a local business marketing expert. Adapt the following business listing for each platform listed. Return ONLY a valid JSON object — no markdown, no explanation, no backticks.
 
 BUSINESS INFO:
-- Name: ${listing.name || 'Local Business'}
+- Name: ${listing.name || 'not provided'}
 - Category: ${listing.category || 'General'}
 - Campaign: ${listing.campaignName || 'General'}
 - Ad: ${listing.adName || listing.offer}
