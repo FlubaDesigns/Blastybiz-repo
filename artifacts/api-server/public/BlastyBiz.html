@@ -1380,28 +1380,115 @@ function renderQuickSelect() {
   const el = document.getElementById('quick-platform-list');
   el.innerHTML = '';
   platforms.forEach(p => {
-    const reason = platformReasons[p.id] || '';
+    const catInfo  = window.PLATFORM_CATS ? window.PLATFORM_CATS[p.id] : null;
+    const savedCat = (profile.platformCats || {})[p.id] || (catInfo ? catInfo.cats[0] : '');
+    const hasCats  = !!catInfo;
+
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px;';
-    row.innerHTML = `
+    row.id = 'qp-row-' + p.id;
+    row.style.cssText = 'border-bottom:1px solid var(--border);';
+
+    // ── Header (always visible) ──────────────────────────────
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 0;gap:8px;' + (hasCats ? 'cursor:pointer;' : '');
+    header.onclick = (e) => {
+      if (e.target.closest('label') || e.target.type === 'checkbox') return;
+      if (hasCats) togglePlatformAccordion(p.id);
+    };
+    header.innerHTML = `
       <div style="flex:1;display:flex;align-items:flex-start;gap:10px;min-width:0;">
-        <span style="font-size:18px;flex-shrink:0;">${p.icon}</span>
-        <div style="min-width:0;">
+        <span style="font-size:18px;flex-shrink:0;padding-top:2px;">${p.icon}</span>
+        <div style="min-width:0;flex:1;">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <span style="font-size:14px;font-weight:500;">${p.name}</span>
+            <span style="font-size:14px;font-weight:600;color:var(--light);">${p.name}</span>
             <span class="badge ${p.type === 'api' ? 'badge-ready' : 'badge-idle'}" style="font-size:9px;">${p.type === 'api' ? 'AUTO' : 'COPY'}</span>
           </div>
-          ${reason ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4;">🤖 ${reason}</div>` : ''}
+          <div id="qp-cat-preview-${p.id}" style="font-size:11px;color:var(--muted);margin-top:2px;${hasCats && savedCat ? '' : 'display:none;'}">${escHtml(savedCat)}</div>
         </div>
       </div>
-      <label class="toggle" style="flex-shrink:0;">
-        <input type="checkbox" ${p.enabled ? 'checked' : ''} onchange="togglePlatform('${p.id}', this.checked)" />
-        <span class="toggle-slider"></span>
-      </label>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <label class="toggle" onclick="event.stopPropagation()">
+          <input type="checkbox" ${p.enabled ? 'checked' : ''} onchange="togglePlatform('${p.id}', this.checked)" />
+          <span class="toggle-slider"></span>
+        </label>
+        ${hasCats ? `<span id="qp-chevron-${p.id}" style="font-size:20px;color:var(--muted);transition:transform .2s;line-height:1;user-select:none;">›</span>` : ''}
+      </div>
     `;
+    row.appendChild(header);
+
+    // ── Accordion body (only platforms with categories) ──────
+    if (hasCats) {
+      const body = document.createElement('div');
+      body.id = 'qp-body-' + p.id;
+      body.style.cssText = 'display:none;padding-bottom:14px;';
+      const catOptions = catInfo.cats.map(c =>
+        `<option value="${escHtml(c)}"${c === savedCat ? ' selected' : ''}>${escHtml(c)}</option>`
+      ).join('');
+      body.innerHTML = `
+        <label style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;display:block;margin-bottom:6px;">Category</label>
+        <select id="qp-cat-${p.id}"
+          style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--light);font-size:13px;font-family:inherit;-webkit-appearance:none;margin-bottom:10px;"
+          onchange="saveStepCat('${p.id}', this.value)">
+          ${catOptions}
+        </select>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="qp-custom-${p.id}"
+            placeholder="Not listed? Type a custom category…"
+            style="flex:1;background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--light);font-size:12px;font-family:inherit;"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomStepCat('${p.id}');}" />
+          <button onclick="addCustomStepCat('${p.id}')"
+            style="padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;flex-shrink:0;">
+            + Add
+          </button>
+        </div>
+      `;
+      row.appendChild(body);
+    }
+
     el.appendChild(row);
   });
   checkAdaptBtn();
+}
+
+function togglePlatformAccordion(pid) {
+  const body    = document.getElementById('qp-body-' + pid);
+  const chevron = document.getElementById('qp-chevron-' + pid);
+  if (!body) return;
+  const isOpen = body.style.display !== 'none';
+  platforms.forEach(p => {
+    const b = document.getElementById('qp-body-' + p.id);
+    const c = document.getElementById('qp-chevron-' + p.id);
+    if (b) b.style.display = 'none';
+    if (c) c.style.transform = '';
+  });
+  if (!isOpen) {
+    body.style.display = 'block';
+    if (chevron) chevron.style.transform = 'rotate(90deg)';
+  }
+}
+
+function saveStepCat(pid, val) {
+  if (!profile.platformCats) profile.platformCats = {};
+  profile.platformCats[pid] = val;
+  const preview = document.getElementById('qp-cat-preview-' + pid);
+  if (preview) { preview.textContent = val; preview.style.display = ''; }
+  const profSel = document.getElementById('prof-pcat-' + pid);
+  if (profSel) profSel.value = val;
+  savePlatformCatsToFirestore(profile.platformCats);
+}
+
+function addCustomStepCat(pid) {
+  const inp = document.getElementById('qp-custom-' + pid);
+  const sel = document.getElementById('qp-cat-' + pid);
+  if (!inp || !sel) return;
+  const val = inp.value.trim();
+  if (!val) return;
+  const opt = document.createElement('option');
+  opt.value = val; opt.textContent = val; opt.selected = true;
+  sel.appendChild(opt);
+  inp.value = '';
+  saveStepCat(pid, val);
+  showToast('✓ Category added');
 }
 
 // ══════════════════════════════════════════
