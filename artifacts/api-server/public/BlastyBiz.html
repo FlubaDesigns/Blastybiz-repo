@@ -1218,6 +1218,28 @@
     <p id="platcats-note" style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;min-height:16px;"></p>
   </div>
 
+  <!-- TEACH AI ACCORDION -->
+  <div class="card" style="padding:0;overflow:hidden;" id="teach-ai-card">
+    <button onclick="toggleTeachAI()" id="teach-ai-header"
+      style="width:100%;background:none;border:none;padding:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-family:inherit;text-align:left;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">🧠</span>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--light);line-height:1.3;">Teach AI to know you better</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="teach-ai-sub">Answer a few questions — AI uses them in every post</div>
+        </div>
+      </div>
+      <span id="teach-ai-chevron" style="font-size:20px;color:var(--muted);flex-shrink:0;margin-left:10px;transition:transform .2s;">›</span>
+    </button>
+    <div id="teach-ai-body" style="display:none;padding:0 16px 16px;">
+      <div id="profile-insight-list"></div>
+      <button id="profile-enrich-more-btn" onclick="fetchEnrichmentQuestions(true)"
+        style="display:none;margin-top:14px;width:100%;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.25);border-radius:10px;padding:11px 16px;color:var(--green);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">
+        ✨ Ask me something new
+      </button>
+    </div>
+  </div>
+
   <button class="btn btn-outline" onclick="clearAll()" style="margin-top:8px;">
     🗑️ Clear All Data
   </button>
@@ -2262,6 +2284,97 @@ var bizAnnouncements = [];   // [{text, endDate, createdAt, id}]
 function loadInsights(insights) {
   bizInsights = insights || [];
   renderEnrichmentQuestions();
+  renderProfileInsights();
+}
+
+var teachAIOpen = false;
+
+function toggleTeachAI() {
+  teachAIOpen = !teachAIOpen;
+  document.getElementById('teach-ai-body').style.display = teachAIOpen ? 'block' : 'none';
+  document.getElementById('teach-ai-chevron').style.transform = teachAIOpen ? 'rotate(90deg)' : '';
+  if (teachAIOpen && !bizInsights.length) fetchEnrichmentQuestions(false);
+}
+
+function renderProfileInsights() {
+  const el      = document.getElementById('profile-insight-list');
+  const sub     = document.getElementById('teach-ai-sub');
+  const moreBtn = document.getElementById('profile-enrich-more-btn');
+  if (!el) return;
+
+  const answered   = bizInsights.filter(i => !!i.answer);
+  const unanswered = bizInsights.filter(i => !i.answer);
+
+  if (sub) {
+    sub.textContent = answered.length
+      ? answered.length + ' answered — AI knows you better!'
+      : 'Answer a few questions — AI uses them in every post';
+  }
+
+  if (!bizInsights.length) {
+    el.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:8px 0;">Generating personalized questions…</p>';
+    if (moreBtn) moreBtn.style.display = 'none';
+    return;
+  }
+
+  el.innerHTML = bizInsights.map((item, idx) => {
+    const hasAnswer = !!item.answer;
+    return `<div style="border-bottom:1px solid var(--border);">
+      <button onclick="toggleInsightRow(${idx})"
+        style="width:100%;background:none;border:none;padding:12px 0;cursor:pointer;font-family:inherit;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;text-align:left;">
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:600;color:var(--light);line-height:1.4;">${escHtml(item.question)}</div>
+          <div style="font-size:12px;margin-top:3px;color:${hasAnswer ? 'var(--green)' : 'var(--muted)'};">${hasAnswer ? '✓ ' + escHtml(item.answer) : 'Tap to answer'}</div>
+        </div>
+        <span id="pir-chevron-${idx}" style="font-size:18px;color:var(--muted);flex-shrink:0;padding-top:2px;transition:transform .2s;">›</span>
+      </button>
+      <div id="pir-body-${idx}" style="display:none;padding-bottom:12px;">
+        <textarea id="pir-inp-${idx}" rows="2"
+          style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;color:var(--light);padding:10px;font-family:inherit;font-size:13px;resize:none;box-sizing:border-box;"
+          placeholder="Your answer…"
+          oninput="this.style.height='auto';this.style.height=Math.max(42,this.scrollHeight)+'px'"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();saveProfileInsightAnswer(${idx},this.value);}"
+        >${escHtml(item.answer||'')}</textarea>
+        <button onclick="saveProfileInsightAnswer(${idx},document.getElementById('pir-inp-${idx}').value)"
+          style="margin-top:8px;padding:9px 22px;border-radius:8px;border:none;background:var(--green);color:var(--dark);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">
+          ✓ Save
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+
+  if (moreBtn) moreBtn.style.display = unanswered.length === 0 ? 'block' : 'none';
+}
+
+function toggleInsightRow(idx) {
+  const body    = document.getElementById('pir-body-' + idx);
+  const chevron = document.getElementById('pir-chevron-' + idx);
+  const isOpen  = body && body.style.display !== 'none';
+  bizInsights.forEach((_, i) => {
+    const b = document.getElementById('pir-body-' + i);
+    const c = document.getElementById('pir-chevron-' + i);
+    if (b) b.style.display = 'none';
+    if (c) c.style.transform = '';
+  });
+  if (!isOpen && body) {
+    body.style.display = 'block';
+    if (chevron) chevron.style.transform = 'rotate(90deg)';
+    const inp = document.getElementById('pir-inp-' + idx);
+    if (inp) setTimeout(() => inp.focus(), 50);
+  }
+}
+
+function saveProfileInsightAnswer(idx, answer) {
+  answer = (answer || '').trim();
+  if (!answer) { showToast('Type your answer first'); return; }
+  if (bizInsights[idx]) {
+    bizInsights[idx].answer     = answer;
+    bizInsights[idx].answeredAt = new Date().toISOString();
+  }
+  renderProfileInsights();
+  renderEnrichmentQuestions();
+  if (window._saveInsightToFirestore) window._saveInsightToFirestore(bizInsights);
+  showToast('✓ Saved — AI will use this in every post');
 }
 
 function loadAnnouncements(ann) {
