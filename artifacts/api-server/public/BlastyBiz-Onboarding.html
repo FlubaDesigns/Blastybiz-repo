@@ -1242,8 +1242,12 @@ function checkStep(step) {
   } else if (step === 3) {
     const lt = window._onboardingLocType || 'physical';
     if (lt === 'online') {
+      valid = true; // no required fields for online-only businesses
+    } else if (lt === 'both') {
+      const addr = document.getElementById('s-address')?.value?.trim();
+      const city = document.getElementById('s-city')?.value?.trim();
       const region = document.getElementById('s-region')?.value?.trim();
-      valid = region?.length > 2;
+      valid = addr?.length > 3 && city?.length > 1 && region?.length > 2;
     } else {
       const addr = document.getElementById('s-address')?.value?.trim();
       const city = document.getElementById('s-city')?.value?.trim();
@@ -1274,7 +1278,7 @@ window.setOnboardingLoc = function(type) {
   const hoursSection = document.getElementById('hours-section');
   if (type === 'online') {
     if (addrFields)   addrFields.style.display   = 'none';
-    if (regionField)  regionField.style.display  = 'block';
+    if (regionField)  regionField.style.display  = 'none';
     if (hoursSection) hoursSection.style.display = 'none';
   } else if (type === 'both') {
     if (addrFields)   addrFields.style.display   = 'block';
