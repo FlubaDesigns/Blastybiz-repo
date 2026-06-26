@@ -1486,7 +1486,7 @@ init();
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // ── Load live Yelp categories from Firestore cache ──────────────────────────
 // Runs immediately; resolveCats() only fires on button click so timing is fine.
@@ -1519,6 +1519,19 @@ auth.authStateReady().then(() => {
     }
     currentUser = user;
     window._blastyUser = user;
+
+    // If user already has businesses and didn't explicitly click "Add New",
+    // send them to the dashboard (business picker will auto-open there)
+    const isAddingNew = new URLSearchParams(window.location.search).get('new') === '1';
+    if (!isAddingNew) {
+      try {
+        const bizSnap = await getDocs(query(collection(db, 'businesses'), where('uid', '==', user.uid)));
+        if (!bizSnap.empty) {
+          window.location.href = 'BlastyBiz-Dashboard.html?from=login';
+          return;
+        }
+      } catch(e) { /* non-fatal — let them continue */ }
+    }
 
     // Pre-fill Step 1 fields from the user's account
     try {

@@ -446,6 +446,9 @@ function editActiveBusiness() {
 // ADD BUSINESS
 // ══════════════════════════════════════════
 function addBusiness() {
+  window.location.href = 'BlastyBiz-Onboarding.html?new=1';
+}
+function addBusiness_unused_() {
   closeSwitcher();
   if (BUSINESSES.length >= MAX_BUSINESSES) {
     showToast('Agency limit reached (10 businesses)');
@@ -576,12 +579,7 @@ onAuthStateChanged(auth, async (user) => {
       showToast('Agency limit reached (10 businesses)');
       return;
     }
-    const newRef = doc(collection(db, 'businesses'));
-    await setDoc(newRef, {
-      uid: user.uid, businessName: '', onboarded: false, createdAt: serverTimestamp()
-    });
-    await setDoc(doc(db, 'users', user.uid), { activeBusiness: newRef.id }, { merge: true });
-    window.location.href = 'BlastyBiz-Onboarding.html';
+    window.location.href = 'BlastyBiz-Onboarding.html?new=1';
   };
 
   async function loadBusinessContextFirestore(bizId) {
