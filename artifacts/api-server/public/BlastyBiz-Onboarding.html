@@ -1527,8 +1527,10 @@ auth.authStateReady().then(() => {
         emailField.value = data.email || user.email || '';
       }
 
-      // Re-run validation so Next button unlocks if name+phone already filled
-      if (typeof checkStep === 'function') checkStep(1);
+      // Re-run validation for whichever step is currently active
+      if (typeof checkStep === 'function' && typeof currentStep !== 'undefined') {
+        checkStep(currentStep);
+      }
     } catch (e) {
       // Non-fatal — user can still fill fields manually
     }
