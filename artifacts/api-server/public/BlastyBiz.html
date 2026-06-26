@@ -1799,6 +1799,15 @@ function loadProfile() {
   document.getElementById('profile-biz-cat').textContent  = profile.category || 'Set up your profile below';
   if (profile.locationType) setProfileLocationType(profile.locationType);
   loadSchedule(profile.postingSchedule || null);
+
+  // Pre-fill main create form with business data (only if fields are empty)
+  if (!document.getElementById('biz-name').value && profile.name)         document.getElementById('biz-name').value     = profile.name;
+  if (!document.getElementById('biz-phone').value && profile.phone)       document.getElementById('biz-phone').value    = profile.phone;
+  if (!document.getElementById('biz-address').value && profile.address)   document.getElementById('biz-address').value  = profile.address;
+  if (!document.getElementById('biz-website').value && profile.website)   document.getElementById('biz-website').value  = profile.website;
+  if (!document.getElementById('biz-hours').value && profile.hours)       document.getElementById('biz-hours').value    = profile.hours;
+  if (!document.getElementById('biz-region')?.value && profile.region)    document.getElementById('biz-region').value   = profile.region;
+  if (profile.locationType && profile.locationType !== locationType)       setLocationType(profile.locationType);
 }
 
 // ══════════════════════════════════════════
