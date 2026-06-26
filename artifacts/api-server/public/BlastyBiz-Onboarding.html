@@ -730,6 +730,11 @@ select option { background: var(--dark); }
         <label>Phone Number</label>
         <input type="tel" id="s-phone" placeholder="(555) 000-0000" oninput="checkStep(1)" />
       </div>
+
+      <div class="field">
+        <label>Business Email</label>
+        <input type="email" id="s-email" placeholder="you@yourbusiness.com" oninput="checkStep(1)" />
+      </div>
     </div>
 
     <!-- ── STEP 2: CATEGORY ── -->
@@ -819,11 +824,6 @@ select option { background: var(--dark); }
           <label>Closes At</label>
           <input type="time" id="s-close" value="17:00" oninput="checkStep(3)" onchange="checkStep(3)" />
         </div>
-      </div>
-
-      <div class="field">
-        <label>Email</label>
-        <input type="email" id="s-email" placeholder="hello@yourbusiness.com" oninput="checkStep(3)" onchange="checkStep(3)" />
       </div>
 
       <div class="field">
@@ -1226,7 +1226,8 @@ function checkStep(step) {
   if (step === 1) {
     const name  = document.getElementById('s-name')?.value?.trim();
     const phone = document.getElementById('s-phone')?.value?.trim();
-    valid = name?.length > 1 && phone?.length > 6;
+    const email = document.getElementById('s-email')?.value?.trim();
+    valid = name?.length > 1 && phone?.length > 6 && email?.includes('@');
   } else if (step === 2) {
     const desc = document.getElementById('s-biztype')?.value?.trim();
     valid = desc?.length > 5;
