@@ -551,6 +551,13 @@ onAuthStateChanged(auth, async (user) => {
     window.activeBizId = null;
   }
 
+  // Auto-open business picker on fresh login
+  const urlParams2 = new URLSearchParams(window.location.search);
+  if (urlParams2.get('from') === 'login' && window.BUSINESSES && window.BUSINESSES.length) {
+    window.history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => openSwitcher(), 300);
+  }
+
   window.switchBusiness = async function(bizId) {
     window.activeBizId = bizId;
     await setDoc(doc(db, 'users', user.uid), { activeBusiness: bizId }, { merge: true });

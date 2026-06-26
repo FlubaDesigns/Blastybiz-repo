@@ -879,7 +879,7 @@ async function afterAuth(user) {
     if (snap.exists() && snap.data().onboarded) {
       window.location.href = plan
         ? `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(plan)}`
-        : 'BlastyBiz-Dashboard.html';
+        : 'BlastyBiz-Dashboard.html?from=login';
     } else {
       window.location.href = 'BlastyBiz-Onboarding.html';
     }
