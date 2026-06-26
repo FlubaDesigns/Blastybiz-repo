@@ -537,7 +537,7 @@ onAuthStateChanged(auth, async (user) => {
     if (!snap.empty) {
       allBusinesses = snap.docs.map(d => ({
         id: d.id,
-        name: d.data().businessName || d.data().name || 'My Business',
+        name: d.data().businessName || d.data().name,
         avatar: '📢',
         score: 75,
         platforms: (d.data().connectedPlatforms || []).length || 4,

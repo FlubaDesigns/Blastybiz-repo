@@ -1207,7 +1207,7 @@ function updateUI() {
 
   // Success screen update
   if (currentStep === TOTAL_STEPS) {
-    const name = document.getElementById('s-name')?.value || 'Your business';
+    const name = document.getElementById('s-name')?.value;
     document.getElementById('success-sub').textContent =
       `${name} is all set. AI is ready to post you everywhere.`;
     document.getElementById('ss-platforms').textContent = 12;

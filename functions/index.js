@@ -119,7 +119,7 @@ exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['
   const prompt = `You are a local business marketing AI. Help me write more personal, specific posts for this business.
 
 WHAT I KNOW:
-- Business: ${businessName || 'Local business'}
+- Business: ${businessName}
 - Category: ${category || 'General'}
 - Location: ${locationType === 'online' ? `Online — serves ${region || 'nationwide'}` : (address || 'physical location')}
 ${answered.length ? '\nWHAT I ALREADY KNOW:\n' + answered.map(i => `Q: ${i.question}\nA: ${i.answer}`).join('\n') : ''}
@@ -1470,7 +1470,7 @@ exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_A
   const prompt = `You are a local business marketing expert. Based on the business info below, decide which platforms this business should target.
 
 BUSINESS:
-- Name: ${name || 'Local Business'}
+- Name: ${name}
 - Category: ${category || 'General'}
 - Description: ${description || 'No description provided'}
 - Location type: ${locationType || 'physical'} (physical = fixed storefront or office, service_area = goes to customer, online = digital/remote only)
@@ -1767,7 +1767,7 @@ function _computeNextRunAt(sched, fromDate) {
 
 async function _runScheduledPost(bizId, biz) {
   const sched    = biz.postingSchedule;
-  const bizName  = biz.businessName || biz.name || 'Local Business';
+  const bizName  = biz.businessName || biz.name;
   const tone     = biz.tone || 'friendly';
   const address  = biz.address || (biz.city ? `${biz.city}, ${biz.state}` : '');
   const locType  = biz.locationType || 'physical';
