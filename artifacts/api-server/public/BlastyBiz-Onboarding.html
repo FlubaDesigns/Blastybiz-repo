@@ -728,6 +728,15 @@ select option { background: var(--dark); }
       </div>
 
       <div class="field">
+        <label>Your Role</label>
+        <select id="s-owner-role">
+          <option value="owner">Owner</option>
+          <option value="manager">Manager</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="field">
         <label>Phone Number</label>
         <input type="tel" id="s-phone" placeholder="(555) 000-0000" oninput="var d=this.value.replace(/\D/g,'').slice(0,10);this.value=d.length>6?'('+d.slice(0,3)+') '+d.slice(3,6)+'-'+d.slice(6):d.length>3?'('+d.slice(0,3)+') '+d.slice(3):d.length?'('+d:d;checkStep(1);" />
       </div>
@@ -1568,7 +1577,8 @@ window._buildProfileData = function() {
     : 'Hours not set';
   return {
     businessName: document.getElementById('s-name')?.value || '',
-    ownerName:    document.getElementById('s-owner')?.value || '',
+    ownerName:    document.getElementById('s-owner')?.value      || '',
+    ownerRole:    document.getElementById('s-owner-role')?.value || 'owner',
     phone:        document.getElementById('s-phone')?.value || '',
     category:     window.selectedCategory || '',
     platformCats: window.resolvedCats || {},

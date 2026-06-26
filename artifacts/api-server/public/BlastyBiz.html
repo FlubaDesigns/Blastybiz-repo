@@ -1042,6 +1042,16 @@
     <label>Business Name</label>
     <input type="text" id="profile-name" placeholder="Your business name" oninput="saveProfile()" />
 
+    <label>Your Name</label>
+    <input type="text" id="profile-owner-name" placeholder="e.g. Maria Rodriguez" oninput="saveProfile()" />
+
+    <label>Your Role</label>
+    <select id="profile-owner-role" onchange="saveProfile()">
+      <option value="owner">Owner</option>
+      <option value="manager">Manager</option>
+      <option value="other">Other</option>
+    </select>
+
     <label>Category</label>
     <select id="profile-cat" onchange="saveProfile()">
       <option value="">Select a category...</option>
@@ -1873,6 +1883,8 @@ function setProfileLocationType(type) {
 function saveProfile() {
   profile = {
     name:             document.getElementById('profile-name').value,
+    ownerName:        document.getElementById('profile-owner-name')?.value || '',
+    ownerRole:        document.getElementById('profile-owner-role')?.value || 'owner',
     category:         document.getElementById('profile-cat').value,
     phone:            document.getElementById('profile-phone').value,
     email:            document.getElementById('profile-email').value,
@@ -1911,8 +1923,10 @@ function saveProfile() {
 }
 
 function loadProfile() {
-  document.getElementById('profile-name').value    = profile.name     || '';
-  document.getElementById('profile-cat').value     = profile.category || '';
+  document.getElementById('profile-name').value    = profile.name      || '';
+  if (document.getElementById('profile-owner-name')) document.getElementById('profile-owner-name').value = profile.ownerName || '';
+  if (document.getElementById('profile-owner-role')) document.getElementById('profile-owner-role').value = profile.ownerRole || 'owner';
+  document.getElementById('profile-cat').value     = profile.category  || '';
   document.getElementById('profile-phone').value   = profile.phone    || '';
   document.getElementById('profile-email').value   = profile.email    || '';
   if (document.getElementById('profile-street')) document.getElementById('profile-street').value = profile.street || '';
@@ -2728,7 +2742,9 @@ onAuthStateChanged(auth, async (user) => {
       const biz = bizSnap.data();
       const p = {
         name:         biz.businessName || biz.name || '',
-        category:     biz.category || '',
+        ownerName:    biz.ownerName  || '',
+        ownerRole:    biz.ownerRole  || 'owner',
+        category:     biz.category   || '',
         phone:        biz.phone || '',
         email:        biz.email || '',
         street:       biz.street || biz.address || '',
@@ -3054,8 +3070,10 @@ window.saveProfile = async function() {
   try {
     await setDoc(doc(db, 'businesses', activeBizId), {
       // Never overwrite saved fields with blank — only write a field if it has a value
-      ...(profile.name     ? { businessName: profile.name }     : {}),
-      ...(profile.category ? { category:     profile.category } : {}),
+      ...(profile.name      ? { businessName: profile.name }      : {}),
+      ...(profile.ownerName ? { ownerName:   profile.ownerName } : {}),
+      ownerRole: profile.ownerRole || 'owner',
+      ...(profile.category  ? { category:    profile.category }  : {}),
       ...(profile.phone    ? { phone:        profile.phone }    : {}),
       ...(profile.email    ? { email:        profile.email }    : {}),
       ...(profile.street   ? { street:       profile.street }   : {}),
