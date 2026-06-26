@@ -1390,10 +1390,10 @@ function renderQuickSelect() {
 
     // ── Header (always visible) ──────────────────────────────
     const header = document.createElement('div');
-    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 0;gap:8px;' + (hasCats ? 'cursor:pointer;' : '');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 0;gap:8px;cursor:pointer;';
     header.onclick = (e) => {
       if (e.target.closest('label') || e.target.type === 'checkbox') return;
-      if (hasCats) togglePlatformAccordion(p.id);
+      togglePlatformAccordion(p.id);
     };
     header.innerHTML = `
       <div style="flex:1;display:flex;align-items:flex-start;gap:10px;min-width:0;">
@@ -1411,37 +1411,62 @@ function renderQuickSelect() {
           <input type="checkbox" ${p.enabled ? 'checked' : ''} onchange="togglePlatform('${p.id}', this.checked)" />
           <span class="toggle-slider"></span>
         </label>
-        ${hasCats ? `<span id="qp-chevron-${p.id}" style="font-size:20px;color:var(--muted);transition:transform .2s;line-height:1;user-select:none;">›</span>` : ''}
+        <span id="qp-chevron-${p.id}" style="font-size:20px;color:var(--muted);transition:transform .2s;line-height:1;user-select:none;">›</span>
       </div>
     `;
     row.appendChild(header);
 
-    // ── Accordion body (only platforms with categories) ──────
-    if (hasCats) {
+    // ── Accordion body (all platforms get one) ───────────────
+    {
       const body = document.createElement('div');
       body.id = 'qp-body-' + p.id;
       body.style.cssText = 'display:none;padding-bottom:14px;';
-      const catOptions = catInfo.cats.map(c =>
-        `<option value="${escHtml(c)}"${c === savedCat ? ' selected' : ''}>${escHtml(c)}</option>`
-      ).join('');
-      body.innerHTML = `
-        <label style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;display:block;margin-bottom:6px;">Category</label>
-        <select id="qp-cat-${p.id}"
-          style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--light);font-size:13px;font-family:inherit;-webkit-appearance:none;margin-bottom:10px;"
-          onchange="saveStepCat('${p.id}', this.value)">
-          ${catOptions}
-        </select>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="qp-custom-${p.id}"
-            placeholder="Not listed? Type a custom category…"
-            style="flex:1;background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--light);font-size:12px;font-family:inherit;"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomStepCat('${p.id}');}" />
-          <button onclick="addCustomStepCat('${p.id}')"
-            style="padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;flex-shrink:0;">
-            + Add
-          </button>
-        </div>
-      `;
+      let bodyInner = '';
+
+      if (hasCats) {
+        const catOptions = catInfo.cats.map(c =>
+          `<option value="${escHtml(c)}"${c === savedCat ? ' selected' : ''}>${escHtml(c)}</option>`
+        ).join('');
+        bodyInner += `
+          <label style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;display:block;margin-bottom:6px;">Category</label>
+          <select id="qp-cat-${p.id}"
+            style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--light);font-size:13px;font-family:inherit;-webkit-appearance:none;margin-bottom:10px;"
+            onchange="saveStepCat('${p.id}', this.value)">
+            ${catOptions}
+          </select>
+          <div style="display:flex;gap:8px;margin-bottom:4px;">
+            <input type="text" id="qp-custom-${p.id}"
+              placeholder="Not listed? Type a custom category…"
+              style="flex:1;background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--light);font-size:12px;font-family:inherit;"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomStepCat('${p.id}');}" />
+            <button onclick="addCustomStepCat('${p.id}')"
+              style="padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;flex-shrink:0;">
+              + Add
+            </button>
+          </div>`;
+      }
+
+      // Copy output section — always present, populated after AI generation
+      const existingCopy = p.adaptedContent || '';
+      bodyInner += `
+        <div id="qp-copy-${p.id}" style="display:${existingCopy ? 'block' : 'none'};${hasCats ? 'margin-top:14px;' : ''}">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:6px;">
+            <span style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--green);flex:1;">⚡ AI-Generated Copy</span>
+            <button id="qp-regen-${p.id}" onclick="regeneratePlatformCopy('${p.id}')"
+              style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0;">
+              🔄 Regenerate
+            </button>
+            <button onclick="copyQpText('${p.id}')"
+              style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0;">
+              📋 Copy
+            </button>
+          </div>
+          <div id="qp-copy-text-${p.id}"
+            style="font-size:13px;color:var(--silver);background:rgba(0,200,83,0.04);border:1px solid rgba(0,200,83,0.2);border-radius:8px;padding:12px;white-space:pre-wrap;line-height:1.6;">${escHtml(existingCopy)}</div>
+          <div id="qp-copy-img-${p.id}" style="display:none;margin-top:8px;font-size:12px;color:var(--muted);word-break:break-all;"></div>
+        </div>`;
+
+      body.innerHTML = bodyInner;
       row.appendChild(body);
     }
 
@@ -1464,6 +1489,142 @@ function togglePlatformAccordion(pid) {
   if (!isOpen) {
     body.style.display = 'block';
     if (chevron) chevron.style.transform = 'rotate(90deg)';
+  }
+}
+
+function showCopyInAccordions(adaptations, featuredPhotoUrl) {
+  // Collapse all first
+  platforms.forEach(p => {
+    const b = document.getElementById('qp-body-' + p.id);
+    const c = document.getElementById('qp-chevron-' + p.id);
+    if (b) b.style.display = 'none';
+    if (c) c.style.transform = '';
+  });
+
+  let expandedFirst = false;
+  platforms.forEach(p => {
+    if (!p.enabled) return;
+    const adapted = adaptations[p.id];
+    if (!adapted) return;
+
+    const copySection = document.getElementById('qp-copy-' + p.id);
+    const copyText    = document.getElementById('qp-copy-text-' + p.id);
+    const copyImg     = document.getElementById('qp-copy-img-' + p.id);
+
+    if (copyText) copyText.textContent = adapted;
+    if (copySection) copySection.style.display = 'block';
+
+    if (copyImg && featuredPhotoUrl) {
+      copyImg.innerHTML = '🖼️ Image: <a href="' + escHtml(featuredPhotoUrl) + '" target="_blank" style="color:var(--green);">' + escHtml(featuredPhotoUrl) + '</a>';
+      copyImg.style.display = 'block';
+    }
+
+    // Expand the first enabled platform; rest stay collapsed but populated
+    if (!expandedFirst) {
+      const body    = document.getElementById('qp-body-' + p.id);
+      const chevron = document.getElementById('qp-chevron-' + p.id);
+      if (body)    body.style.display = 'block';
+      if (chevron) chevron.style.transform = 'rotate(90deg)';
+      expandedFirst = true;
+    }
+  });
+}
+
+function copyQpText(pid) {
+  const el = document.getElementById('qp-copy-text-' + pid);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent)
+    .then(() => showToast('📋 Copied!'))
+    .catch(() => showToast('❌ Copy failed'));
+}
+
+async function regeneratePlatformCopy(pid) {
+  const platform = platforms.find(p => p.id === pid);
+  if (!platform) return;
+
+  const regenBtn  = document.getElementById('qp-regen-' + pid);
+  const copyTextEl = document.getElementById('qp-copy-text-' + pid);
+  if (!copyTextEl) return;
+
+  // Loading state
+  if (regenBtn) { regenBtn.disabled = true; regenBtn.textContent = '⏳ Regenerating…'; }
+  copyTextEl.style.opacity = '0.4';
+
+  // Build full dossier — same context as runAdaptation
+  const name        = profile.name     || '';
+  const category    = profile.category || '';
+  const phone       = profile.phone    || '';
+  const website     = profile.website  || '';
+  const hours       = profile.hours    || '';
+  const effLocType  = profile.locationType || 'physical';
+  const address     = (effLocType === 'physical' || effLocType === 'both') ? (profile.address || '') : '';
+  const region      = effLocType === 'both' ? (profile.region || '') : '';
+  const offer       = document.getElementById('biz-offer')?.value?.trim() || '';
+  const price       = document.getElementById('biz-price')?.value?.trim() || '';
+  const tone        = profile.tone || 'friendly';
+  const adName      = document.getElementById('biz-ad-name')?.value?.trim() || '';
+  const adDetails   = document.getElementById('biz-ad-details')?.value?.trim() || '';
+  const includeName = document.getElementById('copy-include-name')?.checked && profile.ownerName;
+  const includeRole = document.getElementById('copy-include-role')?.checked && profile.ownerRole;
+  const featuredPhotoUrl = (window._bbSelectedPhotoIndex !== null && window._bbPhotoItems)
+    ? (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || '') : '';
+
+  try {
+    const idToken = window._bbGetToken ? await window._bbGetToken() : null;
+    const authHeaders = idToken
+      ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken }
+      : { 'Content-Type': 'application/json' };
+
+    const response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/adaptListing', {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({
+        listing: { name, category, offer, price, phone, address, region, locationType: effLocType,
+          website, hours, ownerName: profile.ownerName || '', adName, adDetails,
+          campaignName: activeCampaignName || '',
+          imageCount: (window._bbPhotoItems||[]).filter(p=>p.done).length,
+          featuredPhotoUrl,
+          bizInsights: (bizInsights||[]).filter(i=>i.answer),
+          bizAnnouncements: bizAnnouncements||[],
+          aiContext: profile.aiContext || null,
+        },
+        platforms: [{ id: platform.id, name: platform.name, type: platform.type, enabled: true }],
+        tone,
+        platformCats: profile.platformCats || {},
+        ownerMention: (includeName || includeRole)
+          ? [includeName ? profile.ownerName : null,
+             includeRole ? (profile.ownerRole === 'manager' ? 'Manager' : profile.ownerRole === 'other' ? profile.ownerRole : 'Owner') : null]
+              .filter(Boolean).join(', ')
+          : null
+      })
+    });
+
+    if (!response.ok) throw new Error('API error ' + response.status);
+    const parsed = await response.json();
+    const newText = (parsed.adaptations || {})[pid];
+    if (!newText) throw new Error('No content returned');
+
+    // Update in place
+    copyTextEl.textContent = newText;
+
+    // Update platforms array + save
+    platforms = platforms.map(p => p.id === pid ? { ...p, adaptedContent: newText, status: 'ready' } : p);
+    savePlatforms();
+
+    // Show image link if photo present
+    const imgEl = document.getElementById('qp-copy-img-' + pid);
+    if (imgEl && featuredPhotoUrl) {
+      imgEl.innerHTML = '🖼️ Image: <a href="' + escHtml(featuredPhotoUrl) + '" target="_blank" style="color:var(--green);">' + escHtml(featuredPhotoUrl) + '</a>';
+      imgEl.style.display = 'block';
+    }
+
+    showToast('✅ Copy regenerated for ' + platform.name);
+  } catch (err) {
+    console.error('regeneratePlatformCopy error:', err);
+    showToast('❌ Regenerate failed — try again');
+  } finally {
+    if (regenBtn) { regenBtn.disabled = false; regenBtn.textContent = '🔄 Regenerate'; }
+    copyTextEl.style.opacity = '1';
   }
 }
 
@@ -1816,28 +1977,20 @@ Return this exact JSON structure:
 
     savePlatforms();
 
-    // Save draft to Firestore then navigate straight to the review page
+    // Save draft to Firestore in background, then show copy inside accordions
     const loadingSub2 = document.getElementById('ai-loading-sub');
-    if (loadingSub2) loadingSub2.textContent = 'Saving your listings…';
+    if (loadingSub2) loadingSub2.textContent = 'Done!';
 
-    let draftId = null;
     if (window._afterAdaptation) {
-      draftId = await window._afterAdaptation(platforms);
+      window._afterAdaptation(platforms).catch(err => console.warn('Draft save failed:', err));
     }
 
-    if (draftId) {
-      showToast('✅ ' + enabledPlatforms.length + ' platforms ready!');
-      window.location.href = 'BlastyBiz-Listing-Preview.html?draftId=' + draftId;
-    } else {
-      // Firestore save failed — fall back to platforms tab
-      renderPlatforms();
-      showTab('platforms');
-      const rewriteRow = document.getElementById('rewrite-row');
-      if (rewriteRow) rewriteRow.style.display = 'flex';
-      const reviewBtn = document.getElementById('review-listings-btn');
-      if (reviewBtn) reviewBtn.style.display = 'flex';
-      showToast('✅ ' + enabledPlatforms.length + ' platforms ready — tap Review to continue');
-    }
+    const featuredPhotoUrl = (window._bbSelectedPhotoIndex !== null && window._bbPhotoItems)
+      ? (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || '')
+      : '';
+
+    showCopyInAccordions(adaptations, featuredPhotoUrl);
+    showToast('✅ ' + enabledPlatforms.length + ' platform' + (enabledPlatforms.length > 1 ? 's' : '') + ' ready!');
 
   } catch (err) {
     console.error(err);
