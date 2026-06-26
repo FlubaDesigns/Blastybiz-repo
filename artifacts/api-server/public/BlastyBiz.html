@@ -1403,11 +1403,16 @@ function handleImages(e) {
   const items = window._bbPhotoItems || [];
   const MAX = 10;
   const remaining = MAX - items.length;
-  Array.from(e.target.files).slice(0, remaining).forEach(file => {
-    if (window._bbUploadPhoto) window._bbUploadPhoto(file);
-  });
+  const files = Array.from(e.target.files).slice(0, remaining);
   e.target.value = '';
   checkAdaptBtn();
+  // Sequential: compress one at a time to avoid concurrent canvas.toBlob() hangs on mobile.
+  // Firebase uploads still run in parallel (uploadBytesResumable fires & forgets).
+  (async () => {
+    for (const file of files) {
+      if (window._bbUploadPhoto) await window._bbUploadPhoto(file);
+    }
+  })();
 }
 
 window.renderAllPhotos = function() {
@@ -2586,6 +2591,15 @@ onAuthStateChanged(auth, async (user) => {
       const MAX = 1200;
       const img = new Image();
       const objUrl = URL.createObjectURL(file);
+      let settled = false;
+      const done = (result) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(giveUp);
+        resolve(result);
+      };
+      // Safety net: if canvas.toBlob() never fires (known mobile/HEIC bug), fall back to original file
+      const giveUp = setTimeout(() => done(file), 8000);
       img.onload = () => {
         URL.revokeObjectURL(objUrl);
         let { width, height } = img;
@@ -2596,9 +2610,11 @@ onAuthStateChanged(auth, async (user) => {
         const canvas = document.createElement('canvas');
         canvas.width = width; canvas.height = height;
         canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        canvas.toBlob(blob => resolve(blob || file), 'image/jpeg', 0.85);
+        // toBlob timeout: if it stalls (seen on iOS with large images), fall back after 5s
+        const blobTimeout = setTimeout(() => done(file), 5000);
+        canvas.toBlob(blob => { clearTimeout(blobTimeout); done(blob || file); }, 'image/jpeg', 0.85);
       };
-      img.onerror = () => { URL.revokeObjectURL(objUrl); resolve(file); };
+      img.onerror = () => { URL.revokeObjectURL(objUrl); done(file); };
       img.src = objUrl;
     });
   }
