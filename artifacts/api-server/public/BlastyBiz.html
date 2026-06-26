@@ -2563,6 +2563,7 @@ window._saveAnnouncementsToFirestore = async function(ann) {
   try { await setDoc(doc(db, 'businesses', activeBizId), { bizAnnouncements: ann }, { merge: true }); }
   catch(e) { console.error('saveAnnouncements:', e); }
 };
+
 </script>
 
 <script type="module">
@@ -2622,6 +2623,7 @@ onAuthStateChanged(auth, async (user) => {
       if (window._bbSetProfile) window._bbSetProfile(p);
       if (window.loadInsights)      window.loadInsights(biz.bizInsights || []);
       if (window.loadAnnouncements) window.loadAnnouncements(biz.bizAnnouncements || []);
+
 
       // Load saved photos
       const savedPhotos = biz.photos || [];
