@@ -197,7 +197,8 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
 
   const platformList = (platforms || []).map(p => ({
     id: p.id, name: p.name, type: p.type,
-    rules: PLATFORM_RULES[p.id] || {}
+    rules: PLATFORM_RULES[p.id] || {},
+    cat: (platformCats || {})[p.id] ? ` (category: ${platformCats[p.id]})` : ''
   }));
 
   const { aiContext } = listing;
@@ -216,7 +217,8 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
   const prompt = `You are a local business marketing expert. Adapt the following business listing for each platform listed. Return ONLY a valid JSON object — no markdown, no explanation, no backticks.
 
 BUSINESS INFO:
-- Name: ${listing.name || 'not provided'}
+- Business name: ${listing.name || 'not provided'}
+- Owner name: ${listing.ownerName || 'not provided'}
 - Category: ${listing.category || 'General'}
 - Campaign: ${listing.campaignName || 'General'}
 - Ad: ${listing.adName || listing.offer}
@@ -231,7 +233,7 @@ ${listing.adDetails ? `- Additional ad details: ${listing.adDetails}\n` : ''}- P
 - Preferred tone: ${tone}
 ${aiContextBlock}${(listing.bizInsights||[]).length ? '\nBUSINESS PERSONALITY & LOCAL DETAILS (use these to make copy personal and specific — reference them naturally):\n' + listing.bizInsights.map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(listing.bizAnnouncements||[]).length ? '\nUPCOMING EVENTS / PROMOTIONS (weave into every platform\'s copy naturally — do NOT ignore these):\n' + listing.bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}
 PLATFORMS TO ADAPT FOR:
-${platformList.map(p => `- ${p.id}: ${p.name} (${p.type === 'api' ? 'auto-post' : 'copy-paste'})${p.rules.maxChars ? ', max ' + p.rules.maxChars + ' chars' : ''}${p.rules.notes ? ', note: ' + p.rules.notes : ''}`).join('\n')}
+${platformList.map(p => `- ${p.id}: ${p.name}${p.cat}${p.rules.maxChars ? ', max ' + p.rules.maxChars + ' chars' : ''}${p.rules.notes ? ', note: ' + p.rules.notes : ''}`).join('\n')}
 
 Return this exact JSON structure:
 {

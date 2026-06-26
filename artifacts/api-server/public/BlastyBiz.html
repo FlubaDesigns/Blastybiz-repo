@@ -1567,6 +1567,7 @@ Return this exact JSON structure:
       headers: authHeaders,
       body: JSON.stringify({
         listing: { name, category, offer, price, phone, address, region, locationType: effLocType, website, hours,
+          ownerName: profile.ownerName || '',
           adName, adDetails,
           campaignName: activeCampaignName || '',
           imageCount: (window._bbPhotoItems||[]).length,
