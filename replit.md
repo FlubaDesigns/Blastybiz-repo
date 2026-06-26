@@ -29,7 +29,7 @@ Local business marketing distribution tool. Business owner fills out one form, A
 
 ## User preferences
 
-- **Call me Rep** — the user works with both Replit Agent and Anthropic Claude directly; "Rep" distinguishes this agent from the other.
+- **User is Dave. I am Rep** (Replit agent). Dave works with both Rep and Anthropic Claude directly; "Rep" is this agent's name.
 
 - **This is a Firebase + Cloud Functions build. Do NOT create Vite apps, React apps, dev servers, or any Replit-hosted frontend artifacts. Ever.**
 - All frontend work goes directly to `artifacts/api-server/public/` and is deployed to Firebase Hosting.
