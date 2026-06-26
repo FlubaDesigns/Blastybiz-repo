@@ -802,33 +802,36 @@ select option { background: var(--dark); }
         </div>
       </div>
 
-      <div class="field">
-        <label>Days Open</label>
-        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:4px;" id="days-grid">
-          <button class="day-btn selected" onclick="toggleDay(this,'Mon')">Mon</button>
-          <button class="day-btn selected" onclick="toggleDay(this,'Tue')">Tue</button>
-          <button class="day-btn selected" onclick="toggleDay(this,'Wed')">Wed</button>
-          <button class="day-btn selected" onclick="toggleDay(this,'Thu')">Thu</button>
-          <button class="day-btn selected" onclick="toggleDay(this,'Fri')">Fri</button>
-          <button class="day-btn selected" onclick="toggleDay(this,'Sat')">Sat</button>
-          <button class="day-btn" onclick="toggleDay(this,'Sun')">Sun</button>
+      <div id="hours-section">
+        <div class="field">
+          <label>Days Open</label>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:4px;" id="days-grid">
+            <button class="day-btn selected" onclick="toggleDay(this,'Mon')">Mon</button>
+            <button class="day-btn selected" onclick="toggleDay(this,'Tue')">Tue</button>
+            <button class="day-btn selected" onclick="toggleDay(this,'Wed')">Wed</button>
+            <button class="day-btn selected" onclick="toggleDay(this,'Thu')">Thu</button>
+            <button class="day-btn selected" onclick="toggleDay(this,'Fri')">Fri</button>
+            <button class="day-btn selected" onclick="toggleDay(this,'Sat')">Sat</button>
+            <button class="day-btn" onclick="toggleDay(this,'Sun')">Sun</button>
+          </div>
         </div>
-      </div>
 
-      <div class="input-row">
-        <div class="field">
-          <label>Opens At</label>
-          <input type="time" id="s-open" value="09:00" oninput="checkStep(3)" onchange="checkStep(3)" />
-        </div>
-        <div class="field">
-          <label>Closes At</label>
-          <input type="time" id="s-close" value="17:00" oninput="checkStep(3)" onchange="checkStep(3)" />
+        <div class="input-row">
+          <div class="field">
+            <label>Opens At</label>
+            <input type="time" id="s-open" value="09:00" oninput="checkStep(3)" onchange="checkStep(3)" />
+          </div>
+          <div class="field">
+            <label>Closes At</label>
+            <input type="time" id="s-close" value="17:00" oninput="checkStep(3)" onchange="checkStep(3)" />
+          </div>
         </div>
       </div>
 
       <div class="field">
         <label>Website (optional)</label>
-        <input type="url" id="s-website" placeholder="https://yourbusiness.com" oninput="checkStep(3)" onchange="checkStep(3)" />
+        <input type="text" id="s-website" placeholder="yourbusiness.com" oninput="checkStep(3)" onchange="checkStep(3)"
+          onblur="var v=this.value.trim();if(v&&!/^https?:\/\//i.test(v)){this.value='https://'+v;}" />
       </div>
     </div>
 
@@ -1268,15 +1271,19 @@ window.setOnboardingLoc = function(type) {
   });
   const addrFields   = document.getElementById('s-addr-fields');
   const regionField  = document.getElementById('s-region-field');
+  const hoursSection = document.getElementById('hours-section');
   if (type === 'online') {
-    if (addrFields)  addrFields.style.display  = 'none';
-    if (regionField) regionField.style.display = 'block';
+    if (addrFields)   addrFields.style.display   = 'none';
+    if (regionField)  regionField.style.display  = 'block';
+    if (hoursSection) hoursSection.style.display = 'none';
   } else if (type === 'both') {
-    if (addrFields)  addrFields.style.display  = 'block';
-    if (regionField) regionField.style.display = 'block';
+    if (addrFields)   addrFields.style.display   = 'block';
+    if (regionField)  regionField.style.display  = 'block';
+    if (hoursSection) hoursSection.style.display = 'block';
   } else {
-    if (addrFields)  addrFields.style.display  = 'block';
-    if (regionField) regionField.style.display = 'none';
+    if (addrFields)   addrFields.style.display   = 'block';
+    if (regionField)  regionField.style.display  = 'none';
+    if (hoursSection) hoursSection.style.display = 'block';
   }
   checkStep(3);
 };
