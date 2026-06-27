@@ -173,12 +173,16 @@ body.has-site-header .mobile-menu { top: 156px; }
 body.logged-in #sh-login-link  { display: none; }
 body.logged-in #sh-logout-btn  { display: inline; }
 
-@media (max-width: 600px) {
-  .site-header { height: 56px; }
+/* ── Mobile (max-width: 599px) ──────────────────────────────── */
+@media (max-width: 599px) {
+  html { font-size: 17px; }
+  input, textarea, select, button { font-size: 16px; }
+  label { font-size: 14px; }
+  .site-header { height: 56px; gap: 0; padding: 0 0 0 4px; }
   #sh-left { padding-left: 0; }
   .site-header-icon { height: 48px; width: 48px; }
   .site-header-wordmark { height: 28px; }
-  .site-header-tagline  { height: 13px; margin-right: 3px; margin-top: -4px; }
+  .site-header-tagline { height: 13px; margin-right: 3px; margin-top: -4px; }
   #sh-right { padding-right: 12px; gap: 0; }
   #sh-right .sh-nav-link,
   #sh-right .sh-nav-cta { display: none; }
@@ -186,6 +190,7 @@ body.logged-in #sh-logout-btn  { display: inline; }
   .site-subheader { display: none; }
   body.has-site-header { padding-top: 56px; }
   body.has-site-header .mobile-menu { top: 56px; }
+  body.login-page { padding-top: 130px; }
 }
 
 /* bolt-action animation — extends to flush with wordmark right edge, snaps back */
@@ -195,23 +200,6 @@ body.logged-in #sh-logout-btn  { display: inline; }
   55%  { transform: translateX(10px); }
   70%  { transform: translateX(-2px); }
   100% { transform: translateX(0); }
-}
-
-@media (max-width: 600px) {
-  .site-header {
-    height: 56px;
-    gap: 0;
-    padding: 0 0 0 4px;
-  }
-  .site-header-icon { height: 48px; width: 48px; }
-  .site-header-wordmark { height: 28px; }
-  .site-header-tagline { height: 13px; }
-}
-
-@media (max-width: 600px) {
-  html { font-size: 17px; }
-  input, textarea, select, button { font-size: 16px; }
-  label { font-size: 14px; }
 }
 
 /* ── Navigation ──────────────────────────────────────────── */
@@ -378,14 +366,14 @@ html .contact-img-col   { display: none; }
 html .nav-right         { display: flex; }
 html .hamburger         { display: none; }
 
-/* ── Hamburger breakpoint: phones + small tablets (<= 900px) */
+/* ── Hamburger breakpoint (max-width: 900px) ────────────────── */
 @media (max-width: 900px) {
   html .nav-right  { display: none; }
   html .hamburger  { display: flex; }
 }
 
-/* ── Tablet (768px – 1099px) ─────────────────────────────── */
-@media (min-width: 768px) {
+/* ── Tablet (600px – 1099px) ───────────────────────────────── */
+@media (min-width: 600px) {
   :root                      { --section-v: 80px; }
   section                    { max-width: 720px; padding: var(--section-v) var(--gutter); }
   html nav                   { padding: 18px 48px; }
@@ -727,12 +715,10 @@ body.login-page {
   position: relative;
   padding-top: 185px;
 }
-@media (max-width: 600px) {
-  body.login-page { padding-top: 130px; }
-}
+
 body.login-page .login-img-panel { display: none; }
 
-@media (min-width: 768px) {
+@media (min-width: 600px) {
   body.login-page {
     flex-direction: row;
     height: 100dvh;
