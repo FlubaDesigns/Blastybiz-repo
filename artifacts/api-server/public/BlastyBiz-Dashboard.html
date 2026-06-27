@@ -151,7 +151,7 @@
   <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Command Dashboard</span></a>
   <div class="top-actions">
     <a class="icon-btn hide-mobile" href="BlastyBiz.html">Create Listing</a>
-    <a class="icon-btn" href="BlastyBiz-Login.html">👤</a>
+    <button class="icon-btn" onclick="auth.signOut().then(()=>{ window.location.href='BlastyBiz-Login.html'; })">Log Out</button>
   </div>
 </header>
 
