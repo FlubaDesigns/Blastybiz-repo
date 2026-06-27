@@ -390,6 +390,7 @@ The Operator Setup page (`BlastyBiz-Admin-Operate.html`) has step-by-step instru
 
 | Jun 27, 2026 | `blastybiz-global.css` — vertical spacing tokens | Section vertical padding was haphazard (mix of 40px/80px/100px hardcoded on individual elements). Introduced `--section-v` CSS token (60px mobile / 80px tablet / 100px desktop) and `--gutter: 1%` horizontal token. Applied to `section`, `.cta-section`, and `.platform-strip` (strip uses `calc(--section-v * 0.6)`). Removed all per-breakpoint hardcoded padding values. One token change now adjusts every row in sync. |
 | Jun 27, 2026 | `BlastyBiz-Home.html` — inline style elimination | Four remaining inline `style=` attributes removed from the home page. `.stat-unit` class added to global CSS for the "min" superscript. `.btn-hero` given `margin: 0 auto` globally. `.footer-copy a` rule added globally. Orphan `<p>` given `class="hero-note"`. Home page now has zero inline styles. |
+| Jun 27, 2026 | `BlastyBiz-About.html` + `blastybiz-global.css` — bare p-tags | About page had 6 `<p>` tags using `class="section-body"`, `class="page-sub"`, `class="powered-desc"`, and `style="margin-top:14px;"`. All classes and inline styles stripped; every `<p>` is now bare. Global `p` rule updated to carry `color: var(--silver); font-size: 16px; font-weight: 300;` and top margin changed from `2em` to `14px` (bottom stays `2em`) so visual output is unchanged. Playwright confirmed all paragraphs render silver/muted-green with no class or inline style attributes present in the DOM. |
 
 ---
 
