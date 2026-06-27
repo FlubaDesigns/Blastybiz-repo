@@ -279,8 +279,8 @@ nav {
 .hero { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 24px 40px; position: relative; overflow: hidden; }
 .hero-glow { position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 600px; height: 600px; background: radial-gradient(circle, rgba(0,200,83,0.08) 0%, transparent 70%); pointer-events: none; }
 .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,200,83,0.08); border: 1px solid rgba(0,200,83,0.3); border-radius: 30px; padding: 6px 16px; font-size: 12px; font-weight: 600; color: var(--green); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 28px; animation: fadeUp 0.6s ease both; }
-.hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 6vw, 62px); line-height: 0.95; letter-spacing: 2px; color: var(--light); margin: 0 0 8px 0; animation: fadeUp 0.6s 0.1s ease both; }
-.hero-title span { color: var(--green); display: block; }
+.hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 6vw, 62px); line-height: 0.95; letter-spacing: 2px; color: var(--light); margin: 0 0 8px 0; animation: fadeUp 0.6s 0.1s ease both; }
+.hero h1 span { color: var(--green); display: block; }
 .hero-sub { font-size: clamp(16px, 4vw, 20px); color: var(--silver); font-weight: 300; line-height: 1.6; max-width: 480px; margin: 20px auto 40px; animation: fadeUp 0.6s 0.2s ease both; }
 .hero-sub strong { color: var(--light); font-weight: 600; }
 .hero-actions { display: flex; flex-direction: column; gap: 12px; align-items: center; animation: fadeUp 0.6s 0.3s ease both; }
@@ -297,9 +297,9 @@ nav {
 section { padding: var(--section-v) var(--gutter); max-width: 600px; margin: 0 auto; }
 .section-label { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; font-weight: 600; margin-top: 8px; margin-bottom: 12px; }
 .powered-band { padding: 32px var(--gutter); max-width: 600px; margin: 0 auto; }
-.section-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 56px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-bottom: 16px; }
-.section-title span { color: var(--green); }
-.section-body { font-size: 16px; color: var(--silver); line-height: 1.7; font-weight: 300; }
+section h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 56px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-bottom: 16px; }
+section h2 span { color: var(--green); }
+section > p { font-size: 16px; color: var(--silver); line-height: 1.7; font-weight: 300; }
 
 /* ── Tag-based styles (no classes needed) ────────────────── */
 .page-hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px, 12vw, 80px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-bottom: 20px; }
@@ -344,8 +344,8 @@ article td:first-child { font-weight: 600; color: var(--light); white-space: now
 .how-block { display: flex; align-items: flex-start; gap: 14px; }
 .step-num { width: 40px; height: 40px; border-radius: 50%; background: rgba(0,200,83,0.1); border: 1px solid var(--green); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--green); flex-shrink: 0; }
 .step-content { padding-top: 4px; }
-.step-title { font-size: 16px; font-weight: 700; color: var(--light); margin-bottom: 6px; }
-.step-desc { font-size: 14px; color: var(--muted); line-height: 1.6; }
+.step-content strong { font-size: 16px; font-weight: 700; color: var(--light); margin-bottom: 6px; display: block; }
+.step-content p { font-size: 14px; color: var(--muted); line-height: 1.6; }
 
 /* ── Pain / Problem ──────────────────────────────────────── */
 .pain-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-top: 32px; }
@@ -388,17 +388,17 @@ article td:first-child { font-weight: 600; color: var(--light); white-space: now
 /* ── Testimonials ────────────────────────────────────────── */
 .testimonials { display: flex; flex-direction: column; gap: 16px; margin-top: 40px; }
 .testimonial { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
-.testimonial-text { font-size: 15px; color: var(--light); line-height: 1.7; font-style: italic; margin-bottom: 16px; }
+.testimonial p { font-size: 15px; color: var(--light); line-height: 1.7; font-style: italic; margin-bottom: 16px; }
 .testimonial-author { display: flex; align-items: center; gap: 12px; }
 .testimonial-avatar { width: 40px; height: 40px; border-radius: 50%; background: rgba(0,200,83,0.1); border: 1px solid var(--green); display: flex; align-items: center; justify-content: center; font-size: 18px; }
-.testimonial-name { font-size: 14px; font-weight: 600; color: var(--light); }
+.testimonial strong { font-size: 14px; font-weight: 600; color: var(--light); display: block; }
 .testimonial-biz { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
 /* ── CTA Section ─────────────────────────────────────────── */
 .cta-section { background: var(--card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: var(--section-v) var(--gutter); text-align: center; }
-.cta-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(40px, 10vw, 72px); line-height: 1; letter-spacing: 2px; color: var(--light); margin-bottom: 16px; }
-.cta-title span { color: var(--green); }
-.cta-sub { font-size: 16px; color: var(--silver); margin-bottom: 36px; font-weight: 300; }
+.cta-section h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(40px, 10vw, 72px); line-height: 1; letter-spacing: 2px; color: var(--light); margin-bottom: 16px; }
+.cta-section h2 span { color: var(--green); }
+.cta-section > p { font-size: 16px; color: var(--silver); margin-bottom: 36px; font-weight: 300; }
 
 /* ── FAQ ─────────────────────────────────────────────────── */
 .faq { display: flex; flex-direction: column; gap: 2px; margin-top: 40px; }

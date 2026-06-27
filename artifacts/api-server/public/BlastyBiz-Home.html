@@ -4,18 +4,14 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="stylesheet" href="blastybiz-global.css?v=92" />
+<link rel="stylesheet" href="blastybiz-global.css?v=94" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
-<style>
-/* Page-specific overrides only — all shared styles are in blastybiz-global.css */
-</style>
 </head>
 <body class="has-site-header">
 <div id="site-header-inject"></div>
 <div class="main-inner">
 
-<!-- NAV -->
 <nav>
   <a class="nav-logo" href="#">BlastyBiz</a>
   <div class="nav-right">
@@ -32,7 +28,6 @@
   </button>
 </nav>
 
-<!-- MOBILE MENU -->
 <div class="mobile-menu" id="mobileMenu">
   <a class="mobile-link" href="#how" onclick="closeMenu()">How It Works</a>
   <a class="mobile-link" href="#pricing" onclick="closeMenu()">Pricing</a>
@@ -43,71 +38,51 @@
   <a class="mobile-cta" href="BlastyBiz-Login.html">Try It Free →</a>
 </div>
 
-<!-- ══════════════════════════════════════════
-     HERO
-══════════════════════════════════════════ -->
-<div class="hero">
+<header class="hero">
   <div class="hero-glow"></div>
-
-  <!-- hero-inner becomes a flex row on desktop -->
   <div class="hero-inner">
     <div class="hero-text">
-      <h1 class="hero-title">
+      <h1>
         Post Once.
         <span>Reach Everywhere.</span>
       </h1>
-
       <p class="hero-sub">
         Stop spending hours posting your business to <strong>12 different platforms.</strong>
         Write it once — AI adapts it for every surface. One tap and you're done.
       </p>
-
       <div class="hero-actions">
-        <a class="btn-hero" href="BlastyBiz-Login.html">
-          🚀 Start Posting Free
-        </a>
-        <a class="btn-ghost" href="#how">
-          See how it works ↓
-        </a>
+        <a class="btn-hero" href="BlastyBiz-Login.html">🚀 Start Posting Free</a>
+        <a class="btn-ghost" href="#how">See how it works ↓</a>
       </div>
-
       <p class="hero-note">No credit card required &nbsp;·&nbsp; Setup in 2 minutes &nbsp;·&nbsp; Cancel anytime</p>
-
       <div class="stat-row reveal">
         <div class="stat-box">
-          <div class="stat-big">12+</div>
-          <div class="stat-lbl">Platforms</div>
+          <strong class="stat-big">12+</strong>
+          <p class="stat-lbl">Platforms</p>
         </div>
         <div class="stat-box">
-          <div class="stat-big">2<span class="stat-unit">min</span></div>
-          <div class="stat-lbl">To Post All</div>
+          <strong class="stat-big">2<span class="stat-unit">min</span></strong>
+          <p class="stat-lbl">To Post All</p>
         </div>
         <div class="stat-box">
-          <div class="stat-big">$0</div>
-          <div class="stat-lbl">To Start</div>
+          <strong class="stat-big">$0</strong>
+          <p class="stat-lbl">To Start</p>
         </div>
       </div>
-    </div><!-- /.hero-text -->
-
-    <!-- Image: visible only on tablet/desktop via CSS -->
+    </div>
     <div class="hero-img-col">
       <div class="hero-img-overlay">LOCK. LOAD. BLAST.</div>
       <img src="img/hero-blast-new.png" alt="BlastyBiz — blast your message to 12 platforms" />
     </div>
-  </div><!-- /.hero-inner -->
-</div>
+  </div>
+</header>
 
-<!-- ══════════════════════════════════════════
-     PROBLEM
-══════════════════════════════════════════ -->
-<div class="problem-wrap reveal row-gap">
-
+<section class="problem-wrap reveal row-gap">
   <div class="problem-header">
     <p class="font-accent-color">The Problem</p>
-    <h2 class="section-title">You Don't Have <span>Time For This</span></h2>
-    <p class="section-body">You're running a business. You don't have time to log into 12 different platforms, rewrite your listing 12 different ways, and do it all over again next week.</p>
+    <h2>You Don't Have <span>Time For This</span></h2>
+    <p>You're running a business. You don't have time to log into 12 different platforms, rewrite your listing 12 different ways, and do it all over again next week.</p>
   </div>
-
   <div class="problem-split">
     <div class="problem-col problem-col--list">
       <ul class="pain-list">
@@ -122,54 +97,44 @@
       </ul>
     </div>
   </div>
+</section>
 
-</div>
-
-<!-- ══════════════════════════════════════════
-     HOW IT WORKS
-══════════════════════════════════════════ -->
 <section id="how" class="reveal row-gap">
   <div class="how-header">
     <p class="font-accent-color">How It Works</p>
-    <h2 class="section-title">Three Steps. <span>Done.</span></h2>
-    <p class="section-body">No learning curve. No tech skills needed. If you can fill out a form, you can use BlastyBiz.</p>
+    <h2>Three Steps. <span>Done.</span></h2>
+    <p>No learning curve. No tech skills needed. If you can fill out a form, you can use BlastyBiz.</p>
   </div>
-
   <div class="how-steps-row">
     <div class="how-block">
       <div class="step-num">1</div>
       <div class="step-content">
-        <div class="step-title">Tell us about your business</div>
-        <div class="step-desc">Fill out one simple form. Your name, what you offer, your price, your hours. Takes about 2 minutes. Add photos straight from your phone.</div>
+        <strong>Tell us about your business</strong>
+        <p>Fill out one simple form. Your name, what you offer, your price, your hours. Takes about 2 minutes. Add photos straight from your phone.</p>
       </div>
     </div>
     <div class="how-block">
       <div class="step-num">2</div>
       <div class="step-content">
-        <div class="step-title">AI adapts it for every platform</div>
-        <div class="step-desc">Our AI knows exactly how each platform works — the right tone, the right length, the right keywords. It rewrites your listing perfectly for each one automatically.</div>
+        <strong>AI adapts it for every platform</strong>
+        <p>Our AI knows exactly how each platform works — the right tone, the right length, the right keywords. It rewrites your listing perfectly for each one automatically.</p>
       </div>
     </div>
     <div class="how-block">
       <div class="step-num">3</div>
       <div class="step-content">
-        <div class="step-title">Post everywhere in one tap</div>
-        <div class="step-desc">For every platform, your perfectly formatted post is ready to copy and paste in seconds. Done in minutes, not hours.</div>
+        <strong>Post everywhere in one tap</strong>
+        <p>For every platform, your perfectly formatted post is ready to copy and paste in seconds. Done in minutes, not hours.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════
-     PRICING
-══════════════════════════════════════════ -->
 <section id="pricing" class="pricing-section reveal row-gap">
   <p class="font-accent-color">Pricing</p>
-  <h2 class="section-title">Simple.<br/><span>No Surprises.</span></h2>
-  <p class="section-body">One flat price. Unlimited listings. Cancel anytime. Cheaper than one hour of a social media manager.</p>
-
+  <h2>Simple.<br/><span>No Surprises.</span></h2>
+  <p>One flat price. Unlimited listings. Cancel anytime. Cheaper than one hour of a social media manager.</p>
   <div class="pricing-grid">
-
     <div class="price-card">
       <div class="price-tier">Starter</div>
       <div class="price-amount">
@@ -187,7 +152,6 @@
       </ul>
       <a href="BlastyBiz-Login.html" class="btn-price btn-price-outline">Get Started Free</a>
     </div>
-
     <div class="price-card featured">
       <div class="price-badge">Most Popular</div>
       <div class="price-tier">Pro</div>
@@ -206,7 +170,6 @@
       </ul>
       <a href="BlastyBiz-Login.html?plan=pro" class="btn-price btn-price-primary">Start Free Trial</a>
     </div>
-
     <div class="price-card">
       <div class="price-tier">Agency</div>
       <div class="price-amount">
@@ -222,11 +185,9 @@
       </ul>
       <a href="mailto:info@blastybiz.com" class="btn-price btn-price-outline">Contact Us</a>
     </div>
-
   </div>
 </section>
 
-<!-- PLATFORM STRIP -->
 <div class="platform-strip platform-strip--wide bleed-out row-gap">
   <div class="strip-label">Platforms we post to</div>
   <div class="platform-icons">
@@ -245,109 +206,80 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     TESTIMONIALS
-══════════════════════════════════════════ -->
 <div class="sexy-rule row-gap"><span></span></div>
 
 <section class="reviews-section reveal row-gap">
   <p class="font-accent-color">Early Users</p>
-  <h2 class="section-title">They Got <span>Their Time Back</span></h2>
-
+  <h2>They Got <span>Their Time Back</span></h2>
   <div class="testimonials">
     <div class="testimonial">
-      <div class="testimonial-text">"I used to spend Sunday afternoons posting to Google, Facebook, Craigslist — every week. Now I do it in 5 minutes and I'm back with my family."</div>
+      <p class="testimonial-text">"I used to spend Sunday afternoons posting to Google, Facebook, Craigslist — every week. Now I do it in 5 minutes and I'm back with my family."</p>
       <div class="testimonial-author">
         <div class="testimonial-avatar">🍕</div>
         <div>
-          <div class="testimonial-name">Maria R.</div>
-          <div class="testimonial-biz">Pizzeria Owner · Naples, FL</div>
+          <strong class="testimonial-name">Maria R.</strong>
+          <p class="testimonial-biz">Pizzeria Owner · Naples, FL</p>
         </div>
       </div>
     </div>
     <div class="testimonial">
-      <div class="testimonial-text">"I had no idea what to write for Instagram vs Craigslist. BlastyBiz just handles it. My phone started ringing more within a week."</div>
+      <p class="testimonial-text">"I had no idea what to write for Instagram vs Craigslist. BlastyBiz just handles it. My phone started ringing more within a week."</p>
       <div class="testimonial-author">
         <div class="testimonial-avatar">🔧</div>
         <div>
-          <div class="testimonial-name">James T.</div>
-          <div class="testimonial-biz">AC & Plumbing · Fort Myers, FL</div>
+          <strong class="testimonial-name">James T.</strong>
+          <p class="testimonial-biz">AC & Plumbing · Fort Myers, FL</p>
         </div>
       </div>
     </div>
     <div class="testimonial">
-      <div class="testimonial-text">"I don't have a website, don't want one. BlastyBiz puts me everywhere people are looking. That's all I need."</div>
+      <p class="testimonial-text">"I don't have a website, don't want one. BlastyBiz puts me everywhere people are looking. That's all I need."</p>
       <div class="testimonial-author">
         <div class="testimonial-avatar">✂️</div>
         <div>
-          <div class="testimonial-name">Sandra M.</div>
-          <div class="testimonial-biz">Hair Salon · Cape Coral, FL</div>
+          <strong class="testimonial-name">Sandra M.</strong>
+          <p class="testimonial-biz">Hair Salon · Cape Coral, FL</p>
         </div>
       </div>
     </div>
   </div>
-</section><!-- /.reviews-section -->
+</section>
 
-<!-- ══════════════════════════════════════════
-     FAQ
-══════════════════════════════════════════ -->
 <section class="faq-section reveal row-gap">
   <p class="font-accent-color">FAQ</p>
-  <h2 class="section-title">Got<br/><span>Questions?</span></h2>
-
+  <h2>Got<br/><span>Questions?</span></h2>
   <div class="faq">
     <div class="faq-item">
-      <button class="faq-q" onclick="toggleFaq(this)">
-        Do I need a website to use BlastyBiz?
-        <span class="arrow">▾</span>
-      </button>
+      <button class="faq-q" onclick="toggleFaq(this)">Do I need a website to use BlastyBiz?<span class="arrow">▾</span></button>
       <div class="faq-a">Not at all. BlastyBiz posts directly to platforms where official integrations are available — Google, Facebook, Instagram, and more. For manual platforms like Craigslist and Nextdoor, BlastyBiz prepares your listing so you can copy and paste in seconds. A website is optional.</div>
     </div>
     <div class="faq-item">
-      <button class="faq-q" onclick="toggleFaq(this)">
-        How does the AI adapt my listing?
-        <span class="arrow">▾</span>
-      </button>
+      <button class="faq-q" onclick="toggleFaq(this)">How does the AI adapt my listing?<span class="arrow">▾</span></button>
       <div class="faq-a">Each platform has different rules — character limits, tone, hashtag usage, keyword preferences. Our AI knows all of these and rewrites your listing appropriately for each one automatically. You write it once, it handles the rest.</div>
     </div>
     <div class="faq-item">
-      <button class="faq-q" onclick="toggleFaq(this)">
-        What's the difference between auto-post and copy & paste?
-        <span class="arrow">▾</span>
-      </button>
-      <div class="faq-a">We're working on automating direct posting for at least three platforms — Google Business, Facebook, and Instagram — and those connections are coming soon. In the meantime, BlastyBiz formats your copy perfectly for every platform and it's ready to paste in yourself. Copy & paste platforms like Craigslist and Nextdoor don't allow any third-party automation at all, so BlastyBiz will always give you paste-ready copy for those. Takes about 30 seconds per platform either way.</div>
+      <button class="faq-q" onclick="toggleFaq(this)">What's the difference between auto-post and copy & paste?<span class="arrow">▾</span></button>
+      <div class="faq-a">We're working on automating direct posting for at least three platforms — Google Business, Facebook, and Instagram. In the meantime, BlastyBiz formats your copy perfectly for every platform and it's ready to paste in yourself. Copy & paste platforms like Craigslist and Nextdoor don't allow any third-party automation at all, so BlastyBiz will always give you paste-ready copy for those.</div>
     </div>
     <div class="faq-item">
-      <button class="faq-q" onclick="toggleFaq(this)">
-        Is my business information safe?
-        <span class="arrow">▾</span>
-      </button>
+      <button class="faq-q" onclick="toggleFaq(this)">Is my business information safe?<span class="arrow">▾</span></button>
       <div class="faq-a">Yes. Your data is stored securely and never shared or sold. We only use it to generate your listings. You can delete your account and all data at any time.</div>
     </div>
     <div class="faq-item">
-      <button class="faq-q" onclick="toggleFaq(this)">
-        Can I cancel anytime?
-        <span class="arrow">▾</span>
-      </button>
+      <button class="faq-q" onclick="toggleFaq(this)">Can I cancel anytime?<span class="arrow">▾</span></button>
       <div class="faq-a">Absolutely. No contracts, no cancellation fees. Cancel with one tap from your account settings. You keep access until the end of your billing period.</div>
     </div>
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════
-     CTA
-══════════════════════════════════════════ -->
-<div class="cta-section cta-section--wide bleed-out reveal row-gap">
+<section class="cta-section cta-section--wide bleed-out reveal row-gap">
   <p class="font-accent-color">Ready?</p>
-  <h2 class="cta-title">Stop Hiding.<br/><span>Get Loud.</span></h2>
-  <p class="cta-sub">Your next customer is searching right now.<br/>Make sure they find you.</p>
-  <a class="btn-hero" href="BlastyBiz-Login.html">
-    🚀 Start Posting Free
-  </a>
+  <h2>Stop Hiding.<br/><span>Get Loud.</span></h2>
+  <p>Your next customer is searching right now.<br/>Make sure they find you.</p>
+  <a class="btn-hero" href="BlastyBiz-Login.html">🚀 Start Posting Free</a>
   <p class="hero-note">No credit card · 2 minute setup · Cancel anytime</p>
-</div>
+</section>
 
-<!-- FOOTER -->
 </div><!-- /.main-inner -->
 <footer>
   <div class="footer-logo">BlastyBiz</div>
@@ -366,7 +298,6 @@
 </footer>
 
 <script>
-// ── HAMBURGER MENU ──
 function _getHamburgerBtn() {
   return document.getElementById('sh-hamburger') || document.getElementById('hamburger');
 }
@@ -384,33 +315,18 @@ function closeMenu() {
 document.addEventListener('click', e => {
   const btn = _getHamburgerBtn();
   const menu = document.getElementById('mobileMenu');
-  if (menu.classList.contains('open') && !menu.contains(e.target) && (!btn || !btn.contains(e.target))) {
-    closeMenu();
-  }
+  if (menu.classList.contains('open') && !menu.contains(e.target) && (!btn || !btn.contains(e.target))) closeMenu();
 });
-
-// ── FAQ TOGGLE ──
 function toggleFaq(btn) {
   const answer = btn.nextElementSibling;
   const isOpen = answer.classList.contains('open');
   document.querySelectorAll('.faq-a').forEach(a => a.classList.remove('open'));
   document.querySelectorAll('.faq-q').forEach(b => b.classList.remove('open'));
-  if (!isOpen) {
-    answer.classList.add('open');
-    btn.classList.add('open');
-  }
+  if (!isOpen) { answer.classList.add('open'); btn.classList.add('open'); }
 }
-
-// ── SCROLL REVEAL ──
 const observer = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      e.target.classList.add('visible');
-      observer.unobserve(e.target);
-    }
-  });
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
 }, { threshold: 0.1 });
-
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 </script>
 <script type="module">
@@ -420,34 +336,19 @@ import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/fi
 const app = initializeApp({ apiKey:"AIzaSyDJbLFQLVbMFE8LG22mN4JVmSBHOlimFUs",authDomain:"blastybiz-9523e.firebaseapp.com",projectId:"blastybiz-9523e" });
 const db = getFirestore(app);
 const auth = getAuth(app);
-
 function setAuthUI(loggedIn) {
-  ['nav-login-link','menu-login-link'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = loggedIn ? 'none' : '';
-  });
-  ['nav-logout-btn','menu-logout-btn'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = loggedIn ? '' : 'none';
-  });
+  ['nav-login-link','menu-login-link'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'none':''; });
+  ['nav-logout-btn','menu-logout-btn'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'':'none'; });
 }
-setAuthUI(localStorage.getItem('bb_auth') === '1');
-onAuthStateChanged(auth, user => {
-  document.body.classList.toggle('logged-in', !!user);
-  localStorage.setItem('bb_auth', user ? '1' : '0');
-  setAuthUI(!!user);
-});
-window.doSignOut = () => {
-  localStorage.setItem('bb_auth', '0');
-  signOut(auth).finally(() => { window.location.href = 'BlastyBiz-Login.html'; });
-};
-
-getDoc(doc(db, 'settings', 'pricing')).then(snap => {
+setAuthUI(localStorage.getItem('bb_auth')==='1');
+onAuthStateChanged(auth, user => { document.body.classList.toggle('logged-in',!!user); localStorage.setItem('bb_auth',user?'1':'0'); setAuthUI(!!user); });
+window.doSignOut = () => { localStorage.setItem('bb_auth','0'); signOut(auth).finally(()=>{ window.location.href='BlastyBiz-Login.html'; }); };
+getDoc(doc(db,'settings','pricing')).then(snap => {
   if (!snap.exists()) return;
   const { proMonthly, agencyMonthly } = snap.data();
   if (proMonthly)    document.getElementById('price-pro').textContent    = '$' + proMonthly;
   if (agencyMonthly) document.getElementById('price-agency').textContent = '$' + agencyMonthly;
-}).catch(() => {});
+}).catch(()=>{});
 </script>
 <script>
 fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){
