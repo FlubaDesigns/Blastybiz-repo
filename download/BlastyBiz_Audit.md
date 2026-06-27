@@ -1,99 +1,126 @@
 # BlastyBiz — Full Site Audit
-**Last updated: June 27, 2026 (Session 10 — Full System Audit + Admin Wiring)**
+**Last updated: June 27, 2026 (Session 11 — AI Cost Tracking + Full Audit Reconciliation)**
 **Firebase Project:** blastybiz-9523e
 **Live URL:** https://blastybiz-9523e.web.app
 
 ---
 
-## Deployed Cloud Functions (31 total — all v2, us-central1)
+## Deployed Cloud Functions (34 total — all v2, us-central1)
 
 | # | Function | Type | Purpose |
 |---|---|---|---|
-| 1 | `adaptListing` | HTTP | AI listing adaptation (Anthropic Claude); verifyBearer() + AI_LIMITS cap |
-| 2 | `resolveCategories` | HTTP | AI category resolution; verifyBearer() + AI_LIMITS cap |
-| 3 | `approveDraft` | HTTP | Creates publishJobs batch; verifyBearer(); enforces Starter plan-gating |
-| 4 | `uploadImage` | HTTP | Uploads images to Firebase Storage; verifyBearer() |
-| 5 | `postToGoogle` | HTTP | Internal: posts to Google Business Profile; called by onJobCreated trigger |
-| 6 | `postToFacebook` | HTTP | Internal: posts to Facebook Business Page; called by onJobCreated trigger |
-| 7 | `postToInstagram` | HTTP | Internal: two-step IG container+publish; called by onJobCreated trigger |
-| 8 | `postToBing` | HTTP | Marks job manual_required (Bing has no public write API) |
-| 9 | `postToAppleMaps` | HTTP | Marks job manual_required (Apple Maps has no public write API) |
-| 10 | `createCheckoutSession` | HTTP | Square Payment Link checkout; verifyBearer() |
-| 11 | `createPortalSession` | HTTP | Returns mailto billing support link (Square has no hosted portal); verifyBearer() |
-| 12 | `squareWebhook` | HTTP | Square HMAC-SHA256 webhook; handles payment.completed + subscription.canceled |
-| 13 | `initiateGoogleOAuth` | HTTP | Starts Google OAuth flow (redirect to Google consent screen) |
-| 14 | `googleOAuthCallback` | HTTP | Exchanges code for tokens; stores accessToken/refreshToken/platformId:'google' |
-| 15 | `initiateFacebookOAuth` | HTTP | Starts Facebook OAuth flow (redirect to Facebook consent screen) |
-| 16 | `facebookOAuthCallback` | HTTP | Exchanges code for page token; stores page + Instagram platformConnections |
-| 17 | `deleteAccount` | HTTP | Wipes all user Firestore docs; deletes Auth user; attempts Square sub cancel |
-| 18 | `setOperatorSecret` | HTTP | Admin-only: writes/updates Secret Manager secrets via Cloud IAM token |
-| 19 | `onJobCreated` | Firestore trigger | publishJobs/{jobId} created → dispatches pending jobs to platform helpers |
-| 20 | `onJobFailed` | Firestore trigger | publishJobs/{jobId} status → failed → sends failure email via Resend |
-| 21 | `onUserCreated` | Firestore trigger | users/{uid} created → sends welcome email via Resend |
-| 22 | `adminListPublishJobs` | HTTP | Admin: publishJobs list with optional status filter; requireAdmin() |
-| 23 | `adminListFailedJobs` | HTTP | Admin: failed/manual_required/manual_followup jobs; requireAdmin() |
-| 24 | `adminRetryJob` | HTTP | Admin: reads job, claims it (processing), calls platform helper directly, writes result; requireAdmin() |
-| 25 | `adminMarkManualFollowup` | HTTP | Admin: sets job status → manual_followup; requireAdmin() |
-| 26 | `adminListBusinesses` | HTTP | Admin: all businesses ordered by createdAt desc; requireAdmin() |
-| 27 | `adminListPlatformConnections` | HTTP | Admin: all platformConnections ordered by connectedAt desc; requireAdmin() |
-| 28 | `adminListActivityLogs` | HTTP | Admin: activityLogs with optional uid filter; requireAdmin() |
-| 29 | `adminSubscriptionSummary` | HTTP | Admin: live plan counts + MRR calculation from Firestore; requireAdmin() |
-| 30 | `generateEnrichmentQuestions` | HTTP | AI generates 2-3 personalized follow-up questions for a business; verifyBearer(); claude-haiku-4-5 |
-| 31 | `approvePendingPost` | HTTP | Owner approves a scheduled draft from the review queue; creates publishJobs; verifyBearer() + ownership check. **Note:** needs `allUsers run.invoker` IAM set in Cloud Run console — Firebase CLI keeps timing out before setting it in Replit's 120s shell limit. |
+| 1 | `generateEnrichmentQuestions` | HTTP | AI generates 2–3 follow-up questions (claude-haiku-4-5); verifyBearer(); trackAiUsage |
+| 2 | `adaptListing` | HTTP | AI listing adaptation (claude-sonnet-4-5-20250929); verifyBearer() + AI_LIMITS cap; trackAiUsage |
+| 3 | `resolveCategories` | HTTP | AI category resolution (claude-sonnet-4-5-20250929); verifyBearer() + AI_LIMITS cap; trackAiUsage |
+| 4 | `approvePendingPost` | HTTP | Owner approves a scheduled pending draft; creates publishJobs; verifyBearer() + ownership check |
+| 5 | `approveDraft` | HTTP | Creates publishJobs batch from a listing draft; verifyBearer(); Starter plan-gating |
+| 6 | `uploadImage` | HTTP | Uploads images to Firebase Storage; verifyBearer() |
+| 7 | `createCheckoutSession` | HTTP | Square quickPay checkout (price from Firestore settings/pricing); verifyBearer() |
+| 8 | `createPortalSession` | HTTP | Returns mailto billing support link (no Square hosted portal); verifyBearer() |
+| 9 | `squareWebhook` | HTTP | Square HMAC-SHA256; handles payment.completed + subscription.created + subscription.canceled |
+| 10 | `initiateGoogleOAuth` | HTTP | Starts Google OAuth (redirect to consent screen); includes returnTo in state |
+| 11 | `googleOAuthCallback` | HTTP | Exchanges code for tokens; stores accessToken/refreshToken in platformConnections |
+| 12 | `initiateFacebookOAuth` | HTTP | Starts Facebook OAuth (redirect to consent screen); includes returnTo in state |
+| 13 | `facebookOAuthCallback` | HTTP | Exchanges code for page token; stores page + Instagram platformConnections |
+| 14 | `postToBing` | HTTP | Marks job manual_required (Bing has no public write API) |
+| 15 | `postToAppleMaps` | HTTP | Marks job manual_required (Apple Maps has no public write API) |
+| 16 | `dispatchPublishJob` | Firestore trigger | publishJobs/{jobId} created → dispatches to platform helpers (Google/Facebook/Instagram/Bing/Apple) |
+| 17 | `jobFailedTrigger` | Firestore trigger | publishJobs/{jobId} status → failed → sends failure email via Resend |
+| 18 | `userCreatedTrigger` | Firestore trigger | users/{uid} created → sends welcome email via Resend |
+| 19 | `deleteAccount` | HTTP | Wipes all Firestore docs; deletes Auth user; cancels Square subscription |
+| 20 | `setOperatorSecret` | HTTP | Admin-only: writes/updates Firebase Secret Manager secrets via Cloud IAM token |
+| 21 | `adminListPublishJobs` | HTTP | Admin: publishJobs list with optional status filter; requireAdmin() |
+| 22 | `adminListFailedJobs` | HTTP | Admin: failed/manual_required/manual_followup jobs; requireAdmin() |
+| 23 | `adminRetryJob` | HTTP | Admin: directly calls platform publish helper + writes result (no re-queue); requireAdmin() |
+| 24 | `adminMarkManualFollowup` | HTTP | Admin: sets job status → manual_followup; requireAdmin() |
+| 25 | `adminListBusinesses` | HTTP | Admin: all businesses ordered by createdAt desc; requireAdmin() |
+| 26 | `adminListPlatformConnections` | HTTP | Admin: all platformConnections; requireAdmin() |
+| 27 | `adminListActivityLogs` | HTTP | Admin: activityLogs with optional uid filter; requireAdmin() |
+| 28 | `adminSubscriptionSummary` | HTTP | Admin: live plan counts + MRR from Firestore; requireAdmin() |
+| 29 | `suggestPlatforms` | HTTP | AI recommends which platforms fit a business (claude-sonnet-4-5-20250929); verifyBearer(); trackAiUsage |
+| 30 | `sendTestEmail` | HTTP | Sends a test email via Resend; requireAdmin() |
+| 31 | `adminUpdatePricing` | HTTP | Creates Square subscription plan catalog objects; saves IDs to Firestore settings/pricing; requireAdmin() |
+| 32 | `refreshYelpCategories` | HTTP | Fetches latest Yelp category taxonomy; caches in Firestore platformCategoryCache; verifyBearer() |
+| 33 | `scheduledPostingCheck` | Scheduled (hourly) | Queries businesses with enabled schedules; generates AI content (claude-sonnet-4-5-20250929); creates publishJobs or pendingPosts; trackAiUsage |
+| 34 | `scheduledYelpCategoryRefresh` | Scheduled (weekly) | Refreshes Yelp category cache via refreshYelpCategories |
+
+**Deleted (no longer in index.js or Firebase):** `postToGoogle`, `postToFacebook`, `postToInstagram` — removed Jun 20, 2026; posting to those platforms is handled internally by `dispatchPublishJob`.
 
 ---
 
-## HTML Pages (18 total — all deployed to Firebase Hosting)
+## HTML Pages (24 total — all deployed to Firebase Hosting)
 
-| Page | Auth Guard | Status |
+| Page | Auth Guard | Notes |
 |---|---|---|
-| BlastyBiz-Home.html | No | Marketing landing page — fully live |
-| BlastyBiz-Login.html | No | Email/password + Google (popup on desktop, redirect on mobile) + Facebook sign-in/sign-up |
-| BlastyBiz.html | Yes | Main listing form — AI adapt, platform gating, approve; bb:addHistory writes to activityLogs |
-| BlastyBiz-Dashboard.html | Yes | User dashboard — plan/billing/delete account; renderNoBusinessState() when no businesses |
-| BlastyBiz-Connect.html | Yes | Google + Facebook OAuth platform connect |
-| BlastyBiz-Publishing-Status.html | Yes | Live publish job status from Firestore; showEmptyState() when no jobs |
-| BlastyBiz-Onboarding.html | Yes | Multi-step business setup wizard |
-| BlastyBiz-Listing-Preview.html | Yes | Preview adapted listing; approve calls approveDraft CF (not direct Firestore write) |
-| BlastyBiz-Connected.html | Yes | Post-OAuth landing; reads platformConnections, shows linked accounts |
-| BlastyBiz-Admin.html | Yes | Admin hub |
-| BlastyBiz-Admin-Queue-Manager.html | Yes | Live job queue from Firestore |
-| BlastyBiz-Admin-Failed-Jobs.html | Yes | Failed/manual jobs; per-row data-job-id; Retry/Manual/CSV wired to CFs |
-| BlastyBiz-Admin-Subscriptions.html | Yes | Subscription overview — "Demo data" banner on Money Snapshot |
-| BlastyBiz-Admin-Users.html | Yes | User list from Firestore |
-| BlastyBiz-Admin-Platform-Health.html | Yes | Platform health (auth-guarded, static content) |
-| BlastyBiz-Admin-Logs.html | Yes | Live activityLogs from Firestore |
-| BlastyBiz-Admin-Operate.html | Yes | Operator setup — browser-based secret manager |
+| index.html | No | Root — meta-refresh + JS redirect to BlastyBiz-Home.html; no CDN redirect rule |
+| BlastyBiz-Home.html | No | Marketing landing page; hero badge "⚡ AI-Powered Marketing" |
+| BlastyBiz-Login.html | No | Email/password + Google (popup desktop / redirect mobile) + Facebook |
+| BlastyBiz.html | Auth | Main app — Create tab (Campaign → Ad → AI) + Profile tab; inline AI copy per platform accordion |
+| BlastyBiz-Dashboard.html | Auth | User dashboard — plan/billing/business switcher/delete account |
+| BlastyBiz-Onboarding.html | Auth | Multi-step business setup wizard (5 steps) |
+| BlastyBiz-Connect.html | Auth | Google + Facebook OAuth platform connect; returnTo param survives OAuth round-trip |
+| BlastyBiz-Connected.html | Auth | Post-OAuth landing; shows linked account; routes back to onboarding or dashboard |
+| BlastyBiz-Publishing-Status.html | Auth | Live publish job status via Firestore onSnapshot |
+| BlastyBiz-Listing-Preview.html | Auth | Legacy per-platform review page (pre-Jun 26 flow; file retained) |
+| BlastyBiz-BizContext.html | Auth | Business context / AI enrichment data page |
+| BlastyBiz-About.html | No | About Us — Dave Percey / Fluba Designs LLC, Englewood FL |
+| BlastyBiz-Contact.html | No | Contact — support/sales/billing/info@blastybiz.com |
 | BlastyBiz-Privacy.html | No | Privacy policy |
 | BlastyBiz-Terms.html | No | Terms of service |
+| BlastyBiz-Admin.html | Admin | Admin hub |
+| BlastyBiz-Admin-Queue-Manager.html | Admin | Live job queue from Firestore |
+| BlastyBiz-Admin-Failed-Jobs.html | Admin | Failed/manual jobs; per-row Retry/Manual wired to CFs; Export CSV |
+| BlastyBiz-Admin-Subscriptions.html | Admin | Subscription overview — "Demo data" banner on Money Snapshot |
+| BlastyBiz-Admin-Users.html | Admin | All Accounts table + Accounts to Watch with admin delete |
+| BlastyBiz-Admin-Platform-Health.html | Admin | Platform health overview (static content) |
+| BlastyBiz-Admin-Logs.html | Admin | Live activityLogs from Firestore |
+| BlastyBiz-Admin-Operate.html | Admin | Browser-based Secret Manager + operator setup guide |
+| dev-login.html | No | Dev/test auto-login page — Playwright use only; not linked in nav |
 
 ---
 
 ## Firestore Rules
 
-All 6 collections secured. Owner-only access on all user data.
-**Key gotcha:** `businesses` collection checks the `uid` field on the document, not the document ID.
-`subscriptions` — write: false (backend only via squareWebhook Cloud Function).
+13 collections secured. Owner-only access on all user data. `isAdmin()` grants `perceys@gmail.com` and `rep-test@blastybiz.com` elevated access.
+
+| Collection | Owner access | Admin access | Notes |
+|---|---|---|---|
+| `users` | read + write | read | — |
+| `businesses` | read + write | read + **delete** | Rule checks `uid` **field** on doc, not doc ID |
+| `listingDrafts` | read + write | read | — |
+| `publishJobs` | read + write | read | — |
+| `platformConnections` | read + write | read | — |
+| `subscriptions` | read only | read | Write: backend only via `squareWebhook` CF |
+| `activityLogs` | read + write | read | — |
+| `reviews` | read + write | read | — |
+| `settings` | public read | write | Pricing, plan IDs |
+| `platformCategoryCache` | public read | — | Backend write only |
+| `pendingPosts` | read + write | read | Scheduled draft review queue |
+| `copyLibrary` | read + write | read | Owner-saved AI copy snippets |
+| `aiUsageLogs` | **none** | read only | Backend write only; stores cost per AI call |
 
 ---
 
 ## ✅ What's Working
 
 - Full user auth flow (email + Google + Facebook)
-- AI listing adaptation (Anthropic Claude) — per-plan AI cap enforced: Starter 10 / Pro 100 / Agency 500 (lifetime counter; see Known Issues for monthly reset)
-- Platform plan gating: Starter users see "🔒 Pro only" + upgrade link on API platforms; API platforms are converted to `manual_required` jobs server-side in `approveDraft`
-- Google and Facebook OAuth connect/disconnect; `platformId` stored in `platformConnections` doc
+- AI listing adaptation (Claude) — per-plan cap: Starter 10 / Pro 100 / Agency 500 (30-day rolling window via `aiActionsResetAt`)
+- **AI cost tracking** — all 5 call sites (`generateEnrichmentQuestions`/haiku, `adaptListing`/sonnet, `resolveCategories`/sonnet, `suggestPlatforms`/sonnet, `scheduledPostingCheck`/sonnet) write to `aiUsageLogs` with inputTokens, outputTokens, costUsd, fn, model, ts
+- Platform plan gating: Starter users see "🔒 Pro only" + upgrade link; API platforms converted to `manual_required` server-side in `approveDraft`
+- Google and Facebook OAuth connect/disconnect; `platform` stored in `platformConnections` doc
 - Square checkout + billing portal (mailto fallback)
-- Square webhook updates Firestore plan on payment.completed + subscription.canceled events
-- `onJobCreated` trigger: auto-dispatches pending publish jobs; idempotency guard (sets processing before calling API); handles 401 token refresh for Google
-- `adminRetryJob`: directly calls the platform publish helper (Google/Facebook/Instagram) and writes result — does not just re-queue; retry fires immediately without waiting for a Firestore trigger
+- Square webhook updates Firestore plan on payment.completed + subscription.created + subscription.canceled events
+- `dispatchPublishJob` trigger: auto-dispatches pending publish jobs; idempotency guard; handles 401 token refresh for Google
+- `adminRetryJob`: directly calls the platform publish helper and writes result — no re-queue; fires immediately
 - Publish job creation and status tracking; Publishing Status page shows empty state (not mock data)
-- Resend welcome email on new user signup (Firestore trigger)
-- Resend failure alert email when publish job status → failed (Firestore trigger)
-- Account deletion: wipes all Firestore docs, deletes Auth user; Square subscription cancel attempted (see Known Issues)
-- 8 admin endpoints (all behind requireAdmin): list jobs, list failed, retry job, mark manual, list businesses, list connections, list logs, subscription summary
-- Admin Failed Jobs: per-row checkboxes with data-job-id; Retry and Manual Follow-up wired to Cloud Functions; Export CSV
-- Admin queue, failed jobs, logs — all reading from Firestore live; no mock data on any page
+- Resend welcome email on new user signup (`userCreatedTrigger`)
+- Resend failure alert email when publish job status → failed (`jobFailedTrigger`)
+- Account deletion: wipes all Firestore docs, deletes Auth user; Square subscription cancelled
+- Admin: 14 endpoints behind `requireAdmin()` — list/retry/mark jobs, list businesses/connections/logs, subscription summary, pricing update, test email, refresh categories
+- Admin Failed Jobs: per-row checkboxes; Retry and Manual Follow-up wired to CFs; Export CSV
+- Admin Users: live All Accounts table + Accounts to Watch with admin delete capability
+- **Admin AI Usage/Margin card**: live `onSnapshot` on `aiUsageLogs` — real monthly spend, call count, token totals, per-function breakdown
+- Admin queue, failed jobs, logs — all live from Firestore; no mock data on any page
 
 ---
 
@@ -244,6 +271,18 @@ The Operator Setup page (`BlastyBiz-Admin-Operate.html`) has step-by-step instru
 
 ---
 
+## ✅ Features Added (Jun 27, 2026 — Session 11)
+
+| What | Files | Details |
+|------|-------|---------|
+| AI cost tracking | `functions/index.js`, `firestore.rules` | Added `trackAiUsage(uid, fn, model, usage)` helper. Instruments all 5 Anthropic call sites: `generateEnrichmentQuestions` (haiku), `adaptListing` (sonnet), `resolveCategories` (sonnet), `suggestPlatforms` (sonnet), `scheduledPostingCheck` (sonnet). Each call writes a doc to `aiUsageLogs` with inputTokens, outputTokens, costUsd (haiku $0.80/$4.00 per M, sonnet $3.00/$15.00 per M), fn, model, ts. Firestore rules updated: admin read on `aiUsageLogs`. |
+| Admin AI Usage/Margin card (live) | `BlastyBiz-Admin.html` | Replaced hardcoded $126 placeholder with live `onSnapshot` on `aiUsageLogs`. Shows: current month spend, total calls, input/output tokens, per-function breakdown table. Updates in real-time as AI calls fire. |
+| Admin Users — All Accounts table | `BlastyBiz-Admin-Users.html` | Live table of every named business (sorted by join date) reading from Firestore. Shows name, owner email, plan, join date, onboarding status. |
+| Admin Users — Accounts to Watch | `BlastyBiz-Admin-Users.html` | Separate table for onboarding-incomplete accounts with 🗑 delete buttons. Admin delete wired to Firestore `businesses` collection (rules updated to allow `isAdmin()` delete). |
+| Homepage badge corrected | `BlastyBiz-Home.html` | Changed hero badge from "AI-Powered Local Marketing" to "AI-Powered Marketing" — BlastyBiz handles any marketing, not just local. |
+
+---
+
 ## ✅ Features Added (Jun 22, 2026 — Session 9)
 
 | Date | What | Details |
@@ -336,8 +375,8 @@ The Operator Setup page (`BlastyBiz-Admin-Operate.html`) has step-by-step instru
 - **Hosting:** Firebase Hosting (blastybiz-9523e.web.app)
 - **Auth:** Firebase Auth — Email/Password + Google + Facebook
 - **Database:** Firestore (us-east1, production mode)
-- **Functions:** 29 Cloud Functions v2 (us-central1), Node 22; `square@^44.0.0`
-- **AI:** Anthropic Claude via `@anthropic-ai/sdk`; per-plan caps: Starter 10 / Pro 100 / Agency 500 (lifetime counter — see Known Issues)
+- **Functions:** 34 Cloud Functions v2 (us-central1), Node 22; `square@^44.0.0`
+- **AI:** Anthropic Claude (claude-haiku-4-5 + claude-sonnet-4-5-20250929) via native Node 22 `fetch` (no SDK); per-plan caps: Starter 10 / Pro 100 / Agency 500 (30-day rolling window); all 5 call sites write to `aiUsageLogs` Firestore collection
 - **Payments:** Square (Payment Links checkout + subscription + HMAC webhook)
 - **Email:** Resend via native fetch (Node 22)
 - **Storage:** Firebase Storage (needs enablement — see Operate page)
