@@ -293,28 +293,28 @@ nav {
 .plat-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--dark); border: 1px solid var(--border); border-radius: 30px; padding: 8px 14px; font-size: 13px; font-weight: 500; color: var(--silver); transition: all 0.2s; }
 .plat-pill:hover { border-color: var(--green); color: var(--light); }
 
-/* ── Sections ────────────────────────────────────────────── */
-section { padding: var(--section-v) var(--gutter); max-width: 600px; margin: 0 auto; }
+/* ── Sections (public pages only — body.has-site-header) ─── */
+body.has-site-header section { padding: var(--section-v) var(--gutter); max-width: 600px; margin: 0 auto; }
 .section-label { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; font-weight: 600; margin-top: 8px; margin-bottom: 12px; }
 .powered-band { padding: 32px var(--gutter); max-width: 600px; margin: 0 auto; }
-section h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 56px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-bottom: 16px; }
-section h2 span { color: var(--green); }
-section > p { font-size: 16px; color: var(--silver); line-height: 1.7; font-weight: 300; }
+body.has-site-header section h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 56px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-bottom: 16px; }
+body.has-site-header section h2 span { color: var(--green); }
+body.has-site-header section > p { font-size: 16px; color: var(--silver); line-height: 1.7; font-weight: 300; }
 
 /* ── Tag-based styles (no classes needed) ────────────────── */
 .page-hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px, 12vw, 80px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-bottom: 20px; }
 .page-hero h1 span { color: var(--green); }
 .font-accent-color { color: var(--green); display: block; font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; font-weight: 600; margin-top: 8px; margin-bottom: 12px; }
-section > h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 56px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-bottom: 16px; }
-section > h2 span { color: var(--green); }
-section > ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 20px; }
-section > ul li { display: flex; align-items: flex-start; gap: 12px; }
-section > ul li > span { font-size: 24px; flex-shrink: 0; margin-top: 2px; }
-section figure { display: flex; flex-direction: column; margin: 0 0 20px; }
-section figure img { width: 100%; max-width: 360px; aspect-ratio: 4/3; object-fit: cover; object-position: top; border-radius: 10px; margin-bottom: 16px; border: 2px solid var(--border); display: block; }
-section figure h3 { font-size: 18px; font-weight: 600; color: var(--light); margin: 0 0 2px; }
-section figure em { font-size: 13px; color: var(--green); letter-spacing: 0.3px; font-style: normal; display: block; margin-bottom: 10px; }
-section figure p { font-size: 14px; color: var(--silver); line-height: 1.6; margin: 0; }
+body.has-site-header section > h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 56px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-bottom: 16px; }
+body.has-site-header section > h2 span { color: var(--green); }
+body.has-site-header section > ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 20px; }
+body.has-site-header section > ul li { display: flex; align-items: flex-start; gap: 12px; }
+body.has-site-header section > ul li > span { font-size: 24px; flex-shrink: 0; margin-top: 2px; }
+body.has-site-header section figure { display: flex; flex-direction: column; margin: 0 0 20px; }
+body.has-site-header section figure img { width: 100%; max-width: 360px; aspect-ratio: 4/3; object-fit: cover; object-position: top; border-radius: 10px; margin-bottom: 16px; border: 2px solid var(--border); display: block; }
+body.has-site-header section figure h3 { font-size: 18px; font-weight: 600; color: var(--light); margin: 0 0 2px; }
+body.has-site-header section figure em { font-size: 13px; color: var(--green); letter-spacing: 0.3px; font-style: normal; display: block; margin-bottom: 10px; }
+body.has-site-header section figure p { font-size: 14px; color: var(--silver); line-height: 1.6; margin: 0; }
 .main-inner aside { padding: 32px var(--gutter); max-width: 600px; margin: 0 auto; }
 .main-inner aside small { display: block; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
 .main-inner aside h3 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--light); margin: 0 0 12px; }
@@ -326,12 +326,12 @@ section figure p { font-size: 14px; color: var(--silver); line-height: 1.6; marg
 .contact-card strong { display: block; font-size: 14px; font-weight: 600; color: var(--light); margin-bottom: 2px; }
 .contact-card em { display: block; font-size: 13px; color: var(--green); font-style: normal; margin-bottom: 6px; }
 .contact-card p { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 0; }
-section address { font-style: normal; }
-section address p { color: var(--silver); }
-article { padding: 0 var(--gutter); max-width: 600px; margin: 0 auto; }
-article section { padding: var(--section-v) 0; border-bottom: 1px solid var(--border); max-width: none; margin: 0; }
-article section:last-child { border-bottom: none; }
-article h2 { font-size: 20px; font-weight: 700; color: var(--light); margin-bottom: 12px; }
+body.has-site-header section address { font-style: normal; }
+body.has-site-header section address p { color: var(--silver); }
+body.has-site-header article { padding: 0 var(--gutter); max-width: 600px; margin: 0 auto; }
+body.has-site-header article section { padding: var(--section-v) 0; border-bottom: 1px solid var(--border); max-width: none; margin: 0; }
+body.has-site-header article section:last-child { border-bottom: none; }
+body.has-site-header article h2 { font-size: 20px; font-weight: 700; color: var(--light); margin-bottom: 12px; }
 article table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
 article th { text-align: left; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--border); }
 article td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--silver); vertical-align: top; }
