@@ -153,10 +153,33 @@
 </head>
 <body>
 
-<header>
-  <a class="logo" href="BlastyBiz-Home.html">BlastyBiz</a>
-  <a class="back-link" href="BlastyBiz-Home.html">← Back to Home</a>
-</header>
+<nav>
+  <a class="nav-logo" href="BlastyBiz-Home.html">BlastyBiz</a>
+  <div class="nav-right">
+    <a class="nav-link" href="BlastyBiz-Home.html#how">How It Works</a>
+    <a class="nav-link" href="BlastyBiz-Home.html#pricing">Pricing</a>
+    <a class="nav-link" href="BlastyBiz-About.html">About</a>
+    <a class="nav-link" href="BlastyBiz-Contact.html">Contact</a>
+    <a class="nav-link" href="BlastyBiz-Login.html">Log In</a>
+    <a class="nav-cta" href="BlastyBiz-Login.html">Try It Free</a>
+  </div>
+  <button class="hamburger" id="hamburger" aria-label="Open menu" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a class="mobile-link" href="BlastyBiz-Home.html">Home</a>
+  <a class="mobile-link" href="BlastyBiz-Home.html#how">How It Works</a>
+  <a class="mobile-link" href="BlastyBiz-Home.html#pricing">Pricing</a>
+  <a class="mobile-link" href="BlastyBiz-About.html">About</a>
+  <a class="mobile-link" href="BlastyBiz-Contact.html">Contact</a>
+  <a class="mobile-link" href="BlastyBiz-Login.html">Log In</a>
+  <button class="mobile-link" onclick="doSignOut()" style="background:none;border:none;color:var(--silver);font-size:15px;font-weight:500;text-align:left;cursor:pointer;width:100%;padding:0;">Log Out</button>
+  <a class="mobile-cta" href="BlastyBiz-Login.html">Try It Free →</a>
+</div>
+
+<div class="breadcrumb"><a href="BlastyBiz-Home.html">Home</a> <span>›</span> Terms of Service</div>
 
 <div class="hero">
   <div class="page-label">Legal</div>
@@ -285,5 +308,27 @@
   <p>© 2026 BlastyBiz · A Fluba Designs Product · <a href="BlastyBiz-Privacy.html">Privacy</a> · <a href="BlastyBiz-Terms.html">Terms</a></p>
 </footer>
 
+<script>
+function toggleMenu() {
+  const btn = document.getElementById('hamburger'), menu = document.getElementById('mobileMenu');
+  const open = menu.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+}
+function closeMenu() {
+  document.getElementById('hamburger').classList.remove('open');
+  document.getElementById('mobileMenu').classList.remove('open');
+}
+document.addEventListener('click', e => {
+  const btn = document.getElementById('hamburger'), menu = document.getElementById('mobileMenu');
+  if (menu.classList.contains('open') && !menu.contains(e.target) && !btn.contains(e.target)) closeMenu();
+});
+</script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+const auth = getAuth(initializeApp({ apiKey:"AIzaSyDJbLFQLVbMFE8LG22mN4JVmSBHOlimFUs",authDomain:"blastybiz-9523e.firebaseapp.com",projectId:"blastybiz-9523e" }));
+window.doSignOut = () => signOut(auth).finally(() => { window.location.href = 'BlastyBiz-Login.html'; });
+</script>
 </body>
 </html>
