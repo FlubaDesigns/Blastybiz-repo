@@ -315,9 +315,10 @@ footer { padding: 40px 24px; text-align: center; border-top: 1px solid var(--bor
 html .hero          { display: flex; flex-direction: column; align-items: center;
                        justify-content: center; text-align: center;
                        padding: 80px 24px 48px; position: relative; overflow: hidden; }
-html .hero-img-col  { display: none; }
-html .nav-right     { display: flex; }
-html .hamburger     { display: none; }
+html .hero-img-col      { display: none; }
+html .problem-col--img  { display: none; }
+html .nav-right         { display: flex; }
+html .hamburger         { display: none; }
 
 /* ── Hamburger breakpoint: phones + small tablets (<= 900px) */
 @media (max-width: 900px) {
