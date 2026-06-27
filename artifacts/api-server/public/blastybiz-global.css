@@ -21,6 +21,23 @@
   --gutter:    5%;     /* horizontal gutter — all breakpoints */
 }
 
+/* ── Main content wrapper — global gutter ───────────────── */
+.main-inner {
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+  box-sizing: border-box;
+  width: 100%;
+}
+/* sections inside main-inner don't double-add gutter */
+.main-inner section { padding-left: 0; padding-right: 0; }
+/* full-bleed elements break out of the gutter */
+.bleed-out {
+  margin-left: calc(-1 * var(--gutter));
+  margin-right: calc(-1 * var(--gutter));
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+}
+
 /* ── Reset ───────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
