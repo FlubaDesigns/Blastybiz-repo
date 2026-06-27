@@ -404,7 +404,7 @@ html .hamburger         { display: none; }
                              font-size: clamp(48px, 6vw, 80px);
                              letter-spacing: 5px; color: #fff;
                              margin-bottom: 12px; line-height: 1; }
-  html .hero-img-col img { width: 100%; flex: 1; object-fit: cover; display: block; min-height: 0; }
+  html .hero-img-col img { width: 80%; margin: 0 auto; object-fit: contain; display: block; }
   html .hero-sub      { margin-left: 0; margin-right: 0; }
   html .hero-actions  { flex-direction: row; align-items: center; }
   html .btn-hero      { width: auto; }
@@ -421,10 +421,8 @@ html .hamburger         { display: none; }
 
   /* How It Works — heading normal width, steps row 98% across */
   html #how             { max-width: none; padding-bottom: 40px; }
-  html .how-steps-row        { display: flex; align-items: flex-start; justify-content: space-between; margin-top: 32px; }
-  html .how-block            { flex: 1 1 0; margin: 0 1%; min-width: 0; }
-  html .how-block--img       { display: flex; flex-direction: column; }
-  html .how-block--img img   { width: 100%; border-radius: 16px; display: block; object-fit: cover; flex: 1; min-height: 0; }
+  html .how-steps-row  { display: flex; align-items: flex-start; gap: 5%; margin-top: 32px; }
+  html .how-block      { flex: 0 0 30%; min-width: 0; }
 
   /* Sexy horizontal rule */
   html .sexy-rule        { display: flex; align-items: center; padding: 16px 0; }
