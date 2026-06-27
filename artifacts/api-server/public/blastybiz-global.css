@@ -295,7 +295,7 @@ nav {
 
 /* ── Sections ────────────────────────────────────────────── */
 section { padding: var(--section-v) var(--gutter); max-width: 600px; margin: 0 auto; }
-.section-label { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--green); font-weight: 600; margin-top: 8px; margin-bottom: 12px; }
+.section-label { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; font-weight: 600; margin-top: 8px; margin-bottom: 12px; }
 .powered-band { padding: 32px var(--gutter); max-width: 600px; margin: 0 auto; }
 .section-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 56px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-bottom: 16px; }
 .section-title span { color: var(--green); }
@@ -304,7 +304,7 @@ section { padding: var(--section-v) var(--gutter); max-width: 600px; margin: 0 a
 /* ── Tag-based styles (no classes needed) ────────────────── */
 .page-hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px, 12vw, 80px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-bottom: 20px; }
 .page-hero h1 span { color: var(--green); }
-section > small { display: block; font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--green); font-weight: 600; margin-top: 8px; margin-bottom: 12px; }
+.font-accent-color { color: var(--green); display: block; font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; font-weight: 600; margin-top: 8px; margin-bottom: 12px; }
 section > h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 56px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-bottom: 16px; }
 section > h2 span { color: var(--green); }
 section > ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 20px; }
@@ -336,7 +336,6 @@ article table { width: 100%; border-collapse: collapse; margin: 16px 0; font-siz
 article th { text-align: left; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--border); }
 article td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--silver); vertical-align: top; }
 article td:first-child { font-weight: 600; color: var(--light); white-space: nowrap; }
-.font-accent-color { color: var(--green); }
 
 /* ── Steps (How It Works) ────────────────────────────────── */
 .steps { display: flex; flex-direction: column; gap: 0; margin-top: 48px; }
