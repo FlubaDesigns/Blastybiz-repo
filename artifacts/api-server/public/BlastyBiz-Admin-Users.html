@@ -48,7 +48,7 @@ onAuthStateChanged(auth, (user) => {
       nums[0].textContent = all.filter(b => b.subscriptionStatus === 'active').length || all.length;
       nums[1].textContent = all.filter(b => b.subscriptionStatus === 'trial').length;
       nums[2].textContent = all.filter(b => b.subscriptionStatus === 'past_due').length;
-      nums[3].textContent = all.filter(b => !b.onboarded).length;
+      nums[3].textContent = all.filter(b => !b.onboarded && !b.businessName).length;
     }
   });
 });
