@@ -502,92 +502,6 @@ main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
   </div>
 
   <!-- ══════════════════════════════════════════
-       EMAIL & INFRASTRUCTURE
-  ══════════════════════════════════════════ -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">⚙️</span>
-      <span class="section-title">Email & Infrastructure</span>
-      <span class="section-badge warn" id="badge-infra">Setup required</span>
-    </div>
-
-    <!-- Resend API key -->
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-infra-resend" onclick="toggleCheck(event,'infra-resend')"></div>
-        <div style="flex:1">
-          <div class="card-title">Set Resend API key and verify domain</div>
-          <div class="card-sub">Welcome emails and failure alerts won't send until this is real</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://resend.com/api-keys" target="_blank">resend.com/api-keys</a> → <strong>Create API Key</strong> · name it <strong>BlastyBiz</strong> · Full Access</div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Paste the key below and click Save</div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">Go to <a href="https://resend.com/domains" target="_blank">resend.com/domains</a> → <strong>Add Domain</strong> → enter <strong>blastybiz.com</strong> → add the DNS records Resend gives you to your DNS provider</div></div>
-          <div class="step"><div class="step-num">4</div><div class="step-text">Once domain is verified, redeploy the email functions from the Replit Shell:</div></div>
-        </div>
-        <div class="code-block" style="margin-top:8px">
-          <span class="code-text">npx firebase-tools deploy --only functions:jobFailedTrigger,functions:userCreatedTrigger,functions:sendTestEmail</span>
-          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:jobFailedTrigger,functions:userCreatedTrigger,functions:sendTestEmail')">Copy</button>
-        </div>
-
-        <p style="font-size:13px;color:#4a604a;margin-top:16px;margin-bottom:2px;font-weight:600">Resend API Key</p>
-        <div class="secret-row">
-          <input type="password" id="inp-resend-key" class="secret-input" placeholder="re_…" autocomplete="off">
-          <button class="show-btn" onclick="toggleShow('inp-resend-key',this)">Show</button>
-          <button class="save-btn" onclick="saveSecret('RESEND_API_KEY','inp-resend-key','st-resend-key',this)">Save</button>
-        </div>
-        <div class="save-status" id="st-resend-key"></div>
-
-        <div class="note" style="margin-top:12px">After saving, use the <strong>Send Test Email</strong> button on the Admin hub to confirm delivery.</div>
-      </div>
-    </div>
-
-    <!-- Firebase Storage -->
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-infra-storage" onclick="toggleCheck(event,'infra-storage')"></div>
-        <div style="flex:1">
-          <div class="card-title">Enable Firebase Storage</div>
-          <div class="card-sub">Required for image uploads — needs Blaze plan</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://console.firebase.google.com/project/blastybiz-9523e/storage" target="_blank">Firebase Console → Storage</a></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Click <strong>Get started</strong> → choose <strong>Production mode</strong> → pick region <strong>us-central1</strong></div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">Once enabled, image uploads in the app will work immediately — no redeploy needed</div></div>
-        </div>
-        <a class="link-btn" href="https://console.firebase.google.com/project/blastybiz-9523e/storage" target="_blank">↗ Open Firebase Storage</a>
-      </div>
-    </div>
-
-    <!-- Cloud Run IAM -->
-    <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-infra-iam" onclick="toggleCheck(event,'infra-iam')"></div>
-        <div style="flex:1">
-          <div class="card-title">Grant Cloud Run service account Firestore access</div>
-          <div class="card-sub">Required for AI usage tracking — 2 minutes in Google Cloud Console</div>
-        </div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://console.cloud.google.com/iam-admin/iam?project=blastybiz-9523e" target="_blank">Google Cloud Console → IAM</a> (project: <strong>blastybiz-9523e</strong>)</div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-text">Find the service account <strong>745597683278-compute@developer.gserviceaccount.com</strong> → click the pencil (Edit)</div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-text">Click <strong>+ Add another role</strong> → search for <strong>Cloud Datastore User</strong> → select it → Save</div></div>
-        </div>
-        <div class="note">Without this, AI usage is still tracked as a best-effort — the app works, but per-user counters may be inaccurate.</div>
-        <a class="link-btn" href="https://console.cloud.google.com/iam-admin/iam?project=blastybiz-9523e" target="_blank">↗ Open IAM Console</a>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
        ONGOING
   ══════════════════════════════════════════ -->
   <div class="section">
@@ -705,8 +619,7 @@ function renderChecks() {
                      'client-yelp','client-nextdoor','client-apple',
                      'client-bing','client-thumbtack',
                      'google-api','google-creds','google-deploy',
-                     'fb-app','fb-perms','fb-deploy',
-                     'infra-resend','infra-storage','infra-iam'];
+                     'fb-app','fb-perms','fb-deploy'];
   checkable.forEach(key => {
     const box = document.getElementById('chk-' + key);
     if (!box) return;
@@ -724,11 +637,9 @@ function renderChecks() {
   const clientKeys = ['client-google','client-facebook','client-instagram',
                       'client-yelp','client-nextdoor','client-apple',
                       'client-bing','client-thumbtack'];
-  const infraKeys = ['infra-resend','infra-storage','infra-iam'];
   updateBadge('badge-client', clientKeys, checks);
   updateBadge('badge-google', googleKeys, checks);
   updateBadge('badge-facebook', fbKeys, checks);
-  updateBadge('badge-infra', infraKeys, checks);
 
 }
 
