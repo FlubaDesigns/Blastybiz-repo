@@ -60,28 +60,23 @@
   </section>
 
   <section class="grid" id="finance">
-    <div class="stat"><div class="stat-num">$1,842</div><div class="stat-label">MRR</div><div class="stat-note money">Monthly recurring revenue</div></div>
+    <div class="stat"><div class="stat-num" id="stat-mrr">$0</div><div class="stat-label">MRR</div><div class="stat-note money">Monthly recurring revenue</div></div>
     <div class="stat"><div class="stat-num">$126</div><div class="stat-label">AI Spend</div><div class="stat-note warn">Owner-only metric</div></div>
     <div class="stat"><div class="stat-num">86%</div><div class="stat-label">Gross Margin</div><div class="stat-note money">After AI + platform costs</div></div>
-    <div class="stat"><div class="stat-num">7</div><div class="stat-label">Failed Jobs</div><div class="stat-note bad">Needs review</div></div>
+    <div class="stat"><div class="stat-num" id="stat-failed">0</div><div class="stat-label">Failed Jobs</div><div class="stat-note bad">Needs review</div></div>
   </section>
 
   <section class="grid">
-    <div class="stat"><div class="stat-num">64</div><div class="stat-label">Businesses</div><div class="stat-note">42 active / 22 trial</div></div>
-    <div class="stat"><div class="stat-num">9</div><div class="stat-label">Past Due</div><div class="stat-note warn">Square follow-up</div></div>
-    <div class="stat"><div class="stat-num">311</div><div class="stat-label">Posts Generated</div><div class="stat-note">This month</div></div>
-    <div class="stat"><div class="stat-num">18</div><div class="stat-label">Manual Tasks</div><div class="stat-note blue">Copy/paste platforms</div></div>
+    <div class="stat"><div class="stat-num" id="stat-biz">0</div><div class="stat-label">Businesses</div><div class="stat-note" id="stat-biz-note">— active / — trial</div></div>
+    <div class="stat"><div class="stat-num" id="stat-pastdue">0</div><div class="stat-label">Past Due</div><div class="stat-note warn">Square follow-up</div></div>
+    <div class="stat"><div class="stat-num" id="stat-posts">0</div><div class="stat-label">Posts Generated</div><div class="stat-note">This month</div></div>
+    <div class="stat"><div class="stat-num" id="stat-manual">0</div><div class="stat-label">Manual Tasks</div><div class="stat-note blue">Copy/paste platforms</div></div>
   </section>
 
   <section class="two-col">
     <div class="card" id="failed">
       <div class="card-title">⚠️ Failed Job Queue</div>
-      <div class="list">
-        <div class="row"><div class="icon">G</div><div class="row-main"><div class="row-title">Google sync failed</div><div class="row-sub">ARO Drone Services • token expired • retry after reconnect</div></div><span class="badge error">Failed</span></div>
-        <div class="row"><div class="icon">Y</div><div class="row-main"><div class="row-title">Yelp category rejected</div><div class="row-sub">Business category mismatch • requires manual confirmation</div></div><span class="badge needs">Review</span></div>
-        <div class="row"><div class="icon">f</div><div class="row-main"><div class="row-title">Facebook post delayed</div><div class="row-sub">Meta rate limit • scheduled retry queued</div></div><span class="badge info">Retry</span></div>
-        <div class="row"><div class="icon">AI</div><div class="row-main"><div class="row-title">AI prompt exceeded budget</div><div class="row-sub">Listing rewrite too long • trimmed and regenerated</div></div><span class="badge needs">Watch</span></div>
-      </div>
+      <div class="list" id="admin-failed-list"><div class="row"><div class="icon">…</div><div class="row-main"><div class="row-title">Loading…</div></div></div></div>
     </div>
 
     <div class="card">
@@ -100,12 +95,7 @@
       <div class="card-title">👥 Accounts To Watch</div>
       <table>
         <thead><tr><th>Business</th><th>Plan</th><th>Status</th><th>Issue</th></tr></thead>
-        <tbody>
-          <tr><td>ARO Drone Services</td><td>Pro</td><td><span class="badge needs">Reconnect</span></td><td class="muted">Google token</td></tr>
-          <tr><td>Suncoast Roofing</td><td>Trial</td><td><span class="badge live">Active</span></td><td class="muted">Converts in 4 days</td></tr>
-          <tr><td>Harbor Plumbing</td><td>Agency</td><td><span class="badge error">Past Due</span></td><td class="muted">Square payment failed</td></tr>
-          <tr><td>Faith Auto Repair</td><td>Free</td><td><span class="badge off">Limited</span></td><td class="muted">Upsell opportunity</td></tr>
-        </tbody>
+        <tbody id="admin-accounts-tbody"><tr><td colspan="4" style="text-align:center;padding:16px;opacity:.6">Loading…</td></tr></tbody>
       </table>
     </div>
 
@@ -127,8 +117,8 @@
     <div class="card">
       <div class="card-title">💳 Billing</div>
       <div class="list">
-        <div class="row"><div class="icon">$</div><div class="row-main"><div class="row-title">9 past due</div><div class="row-sub">Send billing recovery email or downgrade after grace period.</div></div></div>
-        <div class="row"><div class="icon">↗</div><div class="row-main"><div class="row-title">12 trials ending</div><div class="row-sub">Prioritize users with completed profiles and live listings.</div></div></div>
+        <div class="row" id="admin-billing-pastdue"><div class="icon">$</div><div class="row-main"><div class="row-title">0 past due</div><div class="row-sub">Send billing recovery email or downgrade after grace period.</div></div></div>
+        <div class="row" id="admin-billing-trials"><div class="icon">↗</div><div class="row-main"><div class="row-title">0 trials active</div><div class="row-sub">Prioritize users with completed profiles and live listings.</div></div></div>
       </div>
     </div>
     <div class="card">
@@ -154,6 +144,76 @@
   <a href="#users">👥<br>Users</a>
   <a href="#finance">💵<br>Money</a>
 </nav>
+<script type="module">
+import { auth, db } from './firebase-init-v2.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { collection, query, where, orderBy, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+onAuthStateChanged(auth, (user) => {
+  if (!user) return;
+  const el = id => document.getElementById(id);
+  const PRICES = { pro: 19, agency: 99 };
+
+  // Businesses snapshot
+  onSnapshot(query(collection(db, 'businesses'), limit(200)), (snap) => {
+    const all = snap.docs.map(d => d.data());
+    const active = all.filter(b => b.subscriptionStatus === 'active').length;
+    const trial  = all.filter(b => b.subscriptionStatus === 'trial').length;
+    const pastDue = all.filter(b => b.subscriptionStatus === 'past_due').length;
+    const mrr = all.reduce((s, b) => s + (PRICES[(b.currentPlan||'').toLowerCase()] || 0), 0);
+
+    if (el('stat-mrr'))      el('stat-mrr').textContent      = '$' + mrr.toLocaleString();
+    if (el('stat-biz'))      el('stat-biz').textContent      = all.length;
+    if (el('stat-biz-note')) el('stat-biz-note').textContent = active + ' active / ' + trial + ' trial';
+    if (el('stat-pastdue'))  el('stat-pastdue').textContent  = pastDue;
+
+    const billingPD = el('admin-billing-pastdue');
+    if (billingPD) billingPD.querySelector('.row-title').textContent = pastDue + ' past due';
+    const billingTr = el('admin-billing-trials');
+    if (billingTr) billingTr.querySelector('.row-title').textContent = trial + ' trials active';
+
+    const attn = all.filter(b => ['past_due','canceled','trial'].includes(b.subscriptionStatus) || !b.onboardingComplete);
+    const tbody = el('admin-accounts-tbody');
+    if (tbody) {
+      const bc = { active:'live', trial:'info', past_due:'error', canceled:'off' };
+      tbody.innerHTML = attn.length
+        ? attn.slice(0,8).map(b => {
+            const s = b.subscriptionStatus || 'active';
+            const issue = !b.onboardingComplete ? 'Onboarding incomplete'
+              : s === 'past_due' ? 'Square payment failed'
+              : s === 'trial'    ? 'Trial — needs upgrade'
+              : s === 'canceled' ? 'Canceled' : '—';
+            return '<tr><td>' + (b.businessName||'—') + '</td><td>' + (b.currentPlan||'Free') + '</td><td><span class="badge ' + (bc[s]||'live') + '">' + s + '</span></td><td class="muted">' + issue + '</td></tr>';
+          }).join('')
+        : '<tr><td colspan="4" style="text-align:center;padding:16px;opacity:.6">All accounts healthy.</td></tr>';
+    }
+  });
+
+  // Failed jobs snapshot
+  onSnapshot(query(collection(db, 'publishJobs'), where('status','in',['failed','manual_required']), orderBy('updatedAt','desc'), limit(50)), (snap) => {
+    const failed = snap.docs.filter(d => d.data().status === 'failed');
+    const manual = snap.docs.filter(d => d.data().status === 'manual_required');
+    if (el('stat-failed')) el('stat-failed').textContent = failed.length;
+    if (el('stat-manual')) el('stat-manual').textContent = manual.length;
+    const list = el('admin-failed-list');
+    if (list) {
+      const icons = { google:'G', facebook:'f', instagram:'IG', yelp:'Y', nextdoor:'N', craigslist:'CL' };
+      list.innerHTML = failed.length
+        ? failed.slice(0,5).map(d => {
+            const j = d.data();
+            const ic = icons[j.platform] || (j.platform||'?')[0].toUpperCase();
+            return '<div class="row"><div class="icon">' + ic + '</div><div class="row-main"><div class="row-title">' + (j.platform||'Unknown') + ' failed</div><div class="row-sub">' + (j.businessName||j.uid||'—') + ' • ' + (j.customerVisibleMessage||j.error||'See logs') + '</div></div><span class="badge error">Failed</span></div>';
+          }).join('')
+        : '<div class="row"><div class="icon">✓</div><div class="row-main"><div class="row-title">No failed jobs</div><div class="row-sub">All clear.</div></div><span class="badge live">Good</span></div>';
+    }
+  });
+
+  // Successful posts count
+  onSnapshot(query(collection(db, 'publishJobs'), where('status','==','success'), limit(500)), (snap) => {
+    if (el('stat-posts')) el('stat-posts').textContent = snap.size;
+  });
+});
+</script>
 <script type="module" src="./admin-guard.js"></script>
 </body>
 </html>

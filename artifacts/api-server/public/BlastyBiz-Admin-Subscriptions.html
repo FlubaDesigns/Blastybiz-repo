@@ -31,9 +31,8 @@ onAuthStateChanged(auth, (user) => {
   if (!user) return;
   const q = query(collection(db, 'businesses'), orderBy('businessName'), limit(100));
   onSnapshot(q, (snap) => {
-    if (snap.empty) return;
     const all = snap.docs.map(d => d.data());
-    const prices = { Pro: 49, Agency: 149 };
+    const prices = { Pro: 19, Agency: 99 };
     const mrr = all.reduce((sum, b) => sum + (prices[b.currentPlan] || 0), 0);
     const trialsEnding = all.filter(b => b.subscriptionStatus === 'trial').length;
     const active = all.filter(b => b.subscriptionStatus === 'active').length;
@@ -44,6 +43,23 @@ onAuthStateChanged(auth, (user) => {
       if (all.length > 0) nums[2].textContent = Math.round(active / all.length * 100) + '%';
     }
     const tables = document.querySelectorAll('table');
+
+    // Plan mix table (first table)
+    if (tables[0]) {
+      const tb0 = tables[0].querySelector('tbody');
+      if (tb0) {
+        const starter = all.filter(b => !b.currentPlan || b.currentPlan === 'Starter' || b.currentPlan === 'Free').length;
+        const pro     = all.filter(b => b.currentPlan === 'Pro').length;
+        const agency  = all.filter(b => b.currentPlan === 'Agency').length;
+        const proRev  = pro * 19;
+        const agencyRev = agency * 99;
+        tb0.innerHTML =
+          '<tr><td>Starter (Free)</td><td>$0</td><td>' + starter + '</td><td>$0</td></tr>' +
+          '<tr><td>Pro</td><td>$19</td><td>' + pro + '</td><td>$' + proRev.toLocaleString() + '</td></tr>' +
+          '<tr><td>Agency</td><td>$99</td><td>' + agency + '</td><td>$' + agencyRev.toLocaleString() + '</td></tr>';
+      }
+    }
+
     const needsAttn = all.filter(b => ['past_due','canceled','trial'].includes(b.subscriptionStatus));
     if (tables[1]) {
       const tb = tables[1].querySelector('tbody');
