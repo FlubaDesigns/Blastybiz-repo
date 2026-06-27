@@ -28,8 +28,8 @@
   box-sizing: border-box;
   width: 100%;
 }
-/* sections inside main-inner don't double-add gutter */
-.main-inner section { padding-left: 0; padding-right: 0; }
+/* sections inside main-inner: no extra gutter, fill full available width */
+.main-inner section { padding-left: 0; padding-right: 0; max-width: none; margin-left: 0; margin-right: 0; }
 /* full-bleed elements break out of the gutter */
 .bleed-out {
   margin-left: calc(-1 * var(--gutter));
@@ -372,7 +372,7 @@ html .hero          { display: flex; flex-direction: column; align-items: center
                        padding: 80px 24px 48px; position: relative; overflow: hidden; }
 html .hero-img-col      { display: none; }
 html .problem-col--img  { display: none; }
-html .how-block--img    { display: none; }
+html .how-block--img    { display: none; } /* shown at tablet+ below */
 html .section-img-col   { display: none; }
 html .contact-img-col   { display: none; }
 html .nav-right         { display: flex; }
@@ -431,9 +431,10 @@ html .hamburger         { display: none; }
 
   /* How It Works — heading normal width, steps row 98% across */
   html #how             { max-width: none; padding-bottom: 40px; }
-  html .how-steps-row        { display: flex; align-items: flex-start; margin-top: 32px; }
-  html .how-block            { flex: 0 0 23%; margin: 0 1%; min-width: 0; }
-  html .how-block--img img   { width: 100%; border-radius: 16px; display: block; object-fit: cover; }
+  html .how-steps-row        { display: flex; align-items: flex-start; justify-content: space-between; margin-top: 32px; }
+  html .how-block            { flex: 1 1 0; margin: 0 1%; min-width: 0; }
+  html .how-block--img       { display: flex; flex-direction: column; }
+  html .how-block--img img   { width: 100%; border-radius: 16px; display: block; object-fit: cover; flex: 1; min-height: 0; }
 
   /* Sexy horizontal rule */
   html .sexy-rule        { display: flex; align-items: center; padding: 16px 0; }
