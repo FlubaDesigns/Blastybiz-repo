@@ -111,13 +111,11 @@
       <div class="card-title">🤖 AI Usage / Margin</div>
       <table>
         <thead><tr><th>Metric</th><th>This Month</th><th>Target</th></tr></thead>
-        <tbody>
-          <tr><td>AI spend</td><td class="warn">$126</td><td>&lt; 12% revenue</td></tr>
-          <tr><td>Avg AI cost / customer</td><td>$1.97</td><td>&lt; $5.00</td></tr>
-          <tr><td>Avg revenue / customer</td><td class="money">$28.78</td><td>&gt; $25.00</td></tr>
-          <tr><td>Estimated gross margin</td><td class="money">86%</td><td>&gt; 75%</td></tr>
+        <tbody id="admin-ai-tbody">
+          <tr><td colspan="3" style="text-align:center;padding:16px;opacity:.6">Loading…</td></tr>
         </tbody>
       </table>
+      <div style="font-size:11px;color:var(--muted);margin-top:10px" id="admin-ai-note">Tracking live AI calls. Historical data available once calls are logged.</div>
     </div>
   </section>
 
@@ -155,7 +153,7 @@
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { collection, query, where, orderBy, limit, onSnapshot, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { collection, query, where, orderBy, limit, onSnapshot, deleteDoc, doc, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 onAuthStateChanged(auth, (user) => {
   if (!user) return;
@@ -225,6 +223,39 @@ onAuthStateChanged(auth, (user) => {
         : '<tr><td colspan="5" style="text-align:center;padding:16px;opacity:.6">All accounts healthy.</td></tr>';
     }
   });
+
+  // AI usage logs — live cost from Firestore
+  const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+  onSnapshot(
+    query(collection(db, 'aiUsageLogs'), where('ts', '>=', Timestamp.fromDate(monthStart)), orderBy('ts','desc'), limit(1000)),
+    (snap) => {
+      const logs = snap.docs.map(d => d.data());
+      const totalCost    = logs.reduce((s, l) => s + (l.costUsd || 0), 0);
+      const totalTokensIn  = logs.reduce((s, l) => s + (l.inputTokens  || 0), 0);
+      const totalTokensOut = logs.reduce((s, l) => s + (l.outputTokens || 0), 0);
+      const callCounts   = {};
+      logs.forEach(l => { callCounts[l.fn] = (callCounts[l.fn] || 0) + 1; });
+      const tbody = el('admin-ai-tbody');
+      if (tbody) {
+        const fmt = n => '$' + n.toFixed(4);
+        const fmtK = n => n >= 1000 ? (n/1000).toFixed(1) + 'k' : n.toString();
+        const rows = [
+          ['AI spend this month',    '<span class="' + (totalCost > 50 ? 'warn' : 'money') + '">' + fmt(totalCost) + '</span>', '< $50/mo'],
+          ['Total AI calls',         logs.length,       '—'],
+          ['Input tokens',           fmtK(totalTokensIn),  '—'],
+          ['Output tokens',          fmtK(totalTokensOut), '—'],
+          ...Object.entries(callCounts).map(([fn, n]) => [fn, n + ' calls', '—']),
+        ];
+        tbody.innerHTML = rows.map(([m, v, t]) =>
+          '<tr><td>' + m + '</td><td>' + v + '</td><td class="muted">' + t + '</td></tr>'
+        ).join('');
+        const note = el('admin-ai-note');
+        if (note) note.textContent = logs.length
+          ? 'Live data · tracking started when calls were instrumented'
+          : 'No AI calls logged yet this month — data accumulates as users run the tool';
+      }
+    }
+  );
 
   // Failed jobs snapshot
   onSnapshot(query(collection(db, 'publishJobs'), where('status','in',['failed','manual_required']), orderBy('updatedAt','desc'), limit(50)), (snap) => {

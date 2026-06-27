@@ -57,6 +57,31 @@ function getSquare() {
 admin.initializeApp();
 const db = admin.firestore();
 
+// ── AI cost tracking ──────────────────────────────────────────────────────────
+// Prices per million tokens (update if Anthropic changes rates)
+const AI_COSTS = {
+  'claude-haiku-4-5':           { input: 0.80, output: 4.00 },
+  'claude-sonnet-4-5-20250929': { input: 3.00, output: 15.00 },
+};
+async function trackAiUsage(uid, fnName, model, usage) {
+  if (!usage) return;
+  try {
+    const rates = AI_COSTS[model] || { input: 3.00, output: 15.00 };
+    const costUsd = ((usage.input_tokens || 0) * rates.input + (usage.output_tokens || 0) * rates.output) / 1_000_000;
+    await db.collection('aiUsageLogs').add({
+      uid:          uid || 'system',
+      fn:           fnName,
+      model,
+      inputTokens:  usage.input_tokens  || 0,
+      outputTokens: usage.output_tokens || 0,
+      costUsd,
+      ts: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch (e) {
+    console.warn('[trackAiUsage] failed:', e.message);
+  }
+}
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type,Authorization',
@@ -162,6 +187,7 @@ Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
     if (!aiResp.ok) throw new Error(`Anthropic ${aiResp.status}: ${await aiResp.text()}`);
     const aiJson = await aiResp.json();
     const parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
+    trackAiUsage(decoded.uid, 'followUpQuestions', 'claude-haiku-4-5', aiJson.usage);
     res.json({ questions: parsed.questions || [] });
   } catch(e) {
     console.error('generateEnrichmentQuestions error:', e.message);
@@ -256,6 +282,7 @@ Return this exact JSON structure:
     if (!aiResp.ok) { const t = await aiResp.text(); throw new Error(`Anthropic ${aiResp.status}: ${t.slice(0,200)}`); }
     const aiJson = await aiResp.json();
     parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
+    trackAiUsage(decoded.uid, 'adaptListing', 'claude-sonnet-4-5-20250929', aiJson.usage);
   } catch(e) {
     console.error('adaptListing AI error:', e.message);
     return res.status(500).json({ error: 'AI adaptation failed: ' + e.message });
@@ -380,6 +407,7 @@ ${platformBlocks}`;
     if (!aiResp.ok) { const t = await aiResp.text(); throw new Error(`Anthropic ${aiResp.status}: ${t.slice(0,200)}`); }
     const aiJson = await aiResp.json();
     parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
+    trackAiUsage(decoded.uid, 'resolveCategories', 'claude-sonnet-4-5-20250929', aiJson.usage);
   } catch(e) {
     console.error('resolveCategories AI error:', e.message);
     return res.status(500).json({ error: 'AI category resolution failed: ' + e.message });
@@ -1533,6 +1561,7 @@ Return ONLY valid JSON, no markdown, no explanation:
     if (!aiResp.ok) { const t = await aiResp.text(); throw new Error(`Anthropic ${aiResp.status}: ${t.slice(0,200)}`); }
     const aiJson = await aiResp.json();
     const parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
+    trackAiUsage(decoded.uid, 'suggestPlatforms', 'claude-sonnet-4-5-20250929', aiJson.usage);
     res.json(parsed);
   } catch(e) {
     console.error('suggestPlatforms error:', e.message);
@@ -1857,6 +1886,7 @@ Return ONLY valid JSON: { "adaptations": { "PLATFORM_ID": "text" } }`;
   if (!aiResp.ok) throw new Error(`Anthropic ${aiResp.status}: ${await aiResp.text()}`);
   const aiJson  = await aiResp.json();
   const parsed  = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
+  trackAiUsage('system', 'generateScheduledPost', 'claude-sonnet-4-5-20250929', aiJson.usage);
   const adapted = parsed.adaptations || {};
 
   // If owner wants to review before posting — save draft to pendingPosts and stop
