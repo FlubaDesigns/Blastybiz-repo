@@ -33,33 +33,62 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 200;
-  height: 64px;
+  height: 68px;
   background: #000;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 0 0 20px;
-  border-bottom: 1px solid rgba(0,200,83,0.15);
+  gap: 16px;
+  padding: 0 0 0 48px;
+  border-bottom: 1px solid rgba(0,200,83,0.18);
 }
-.site-header-icon {
-  height: 46px;
-  width: 46px;
-  object-fit: contain;
+.site-header-left {
+  display: flex;
+  align-items: center;
   flex-shrink: 0;
 }
-.site-header-wordmark {
-  height: 28px;
+.site-header-icon {
+  height: 50px;
+  width: 50px;
   object-fit: contain;
+  display: block;
+}
+.site-header-brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+.site-header-wordmark {
+  height: 26px;
+  object-fit: contain;
+}
+.site-header-tagline {
+  height: 11px;
+  object-fit: contain;
+  opacity: 0.85;
+}
+
+/* bolt-action animation */
+@keyframes bolt-action {
+  0%   { transform: translateX(0); }
+  20%  { transform: translateX(-22px); }
+  45%  { transform: translateX(-22px); }
+  65%  { transform: translateX(4px); }
+  100% { transform: translateX(0); }
+}
+.site-header-icon.bolt-fired {
+  animation: bolt-action 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
 @media (max-width: 600px) {
   .site-header {
-    height: 48px;
+    height: 50px;
     gap: 10px;
     padding: 0 0 0 14px;
   }
-  .site-header-icon { height: 32px; width: 32px; }
-  .site-header-wordmark { height: 20px; }
+  .site-header-icon { height: 34px; width: 34px; }
+  .site-header-wordmark { height: 19px; }
+  .site-header-tagline { display: none; }
 }
 
 @media (max-width: 600px) {
@@ -570,10 +599,10 @@ body.login-page {
   display: flex;
   flex-direction: column;
   position: relative;
-  padding-top: 64px;
+  padding-top: 68px;
 }
 @media (max-width: 600px) {
-  body.login-page { padding-top: 48px; }
+  body.login-page { padding-top: 50px; }
 }
 body.login-page .login-img-panel { display: none; }
 
