@@ -172,14 +172,14 @@ onAuthStateChanged(auth, (user) => {
     const billingTr = el('admin-billing-trials');
     if (billingTr) billingTr.querySelector('.row-title').textContent = trial + ' trials active';
 
-    const attn = all.filter(b => ['past_due','canceled','trial'].includes(b.subscriptionStatus) || !b.onboardingComplete);
+    const attn = all.filter(b => ['past_due','canceled','trial'].includes(b.subscriptionStatus) || !b.onboarded);
     const tbody = el('admin-accounts-tbody');
     if (tbody) {
       const bc = { active:'live', trial:'info', past_due:'error', canceled:'off' };
       tbody.innerHTML = attn.length
         ? attn.slice(0,8).map(b => {
             const s = b.subscriptionStatus || 'active';
-            const issue = !b.onboardingComplete ? 'Onboarding incomplete'
+            const issue = !b.onboarded ? 'Onboarding incomplete'
               : s === 'past_due' ? 'Square payment failed'
               : s === 'trial'    ? 'Trial — needs upgrade'
               : s === 'canceled' ? 'Canceled' : '—';
