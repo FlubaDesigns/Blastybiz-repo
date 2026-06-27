@@ -103,7 +103,7 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   z-index: 2;
 }
 .site-header-wordmark { height: 25px; max-width: 100%; object-fit: contain; object-position: left center; display: block; margin-left: 5px; }
-.site-header-tagline  { display: none; height: 8px; width: auto; margin: 6px 0 0 5px; padding: 0; }
+.site-header-tagline  { height: 5px; width: auto; display: block; margin: 0; padding: 0; }
 
 /* right 50% — nav links */
 #sh-right {
@@ -471,7 +471,6 @@ html .hamburger         { display: none; }
 /* ── Desktop (1100px+) ───────────────────────────────────── */
 @media (min-width: 1100px) {
   :root                      { --section-v: 100px; }
-  .site-header-tagline       { display: block; }
   section                    { max-width: 1240px; padding: var(--section-v) var(--gutter); }
   html .desk-only            { display: block !important; }
   html nav                   { padding: 18px 80px; }
