@@ -19,6 +19,7 @@
   /* Spacing tokens */
   --section-v: 60px;   /* vertical section padding — mobile */
   --gutter:    5%;     /* horizontal gutter — all breakpoints */
+  --v-gutter:  3%;     /* vertical gutter — all breakpoints */
   --row-gap:   20px;   /* vertical gutter between homepage rows */
 }
 
@@ -26,6 +27,8 @@
 .main-inner {
   padding-left: var(--gutter);
   padding-right: var(--gutter);
+  padding-top: var(--v-gutter);
+  padding-bottom: var(--v-gutter);
   box-sizing: border-box;
   width: 100%;
 }
