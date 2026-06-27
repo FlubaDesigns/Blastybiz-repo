@@ -168,10 +168,15 @@ body.has-site-header { padding-top: 156px; }
 body.has-site-header nav { display: none; }
 body.has-site-header .mobile-menu { top: 156px; }
 
-/* auth state — add body.logged-in on sign-in, remove on sign-out */
-#sh-logout-btn { display: none; }
-body.logged-in #sh-login-link  { display: none; }
-body.logged-in #sh-logout-btn  { display: inline; }
+/* auth state — JS adds body.logged-in on sign-in, removes on sign-out */
+#sh-logout-btn   { display: none; }
+#nav-logout-btn  { display: none; background: none; border: none; color: var(--silver); font-size: 15px; font-weight: 500; cursor: pointer; padding: 0; }
+#menu-login-link { display: none; }
+#menu-logout-btn { display: none; background: none; border: none; color: var(--silver); font-size: 15px; font-weight: 500; text-align: left; cursor: pointer; width: 100%; padding: 0; }
+body.logged-in #sh-login-link   { display: none; }
+body.logged-in #sh-logout-btn   { display: inline; }
+body.logged-in #nav-logout-btn  { display: inline-block; }
+body.logged-in #menu-logout-btn { display: block; }
 
 /* ── Mobile (max-width: 599px) ──────────────────────────────── */
 @media (max-width: 599px) {
