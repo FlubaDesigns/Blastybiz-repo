@@ -17,6 +17,9 @@ body { font-size: 1rem; line-height: 1.5; }
 
 .desk-only { display: none !important; }
 
+/* ── Hero image column: hidden on mobile ─────────────────── */
+html .hero-img-col { display: none; }
+
 /* ── Tablet (768px – 1099px) ─────────────────────────────── */
 @media (min-width: 768px) {
   html nav                   { padding: 18px 48px; }
@@ -29,6 +32,20 @@ body { font-size: 1rem; line-height: 1.5; }
   html .contact-grid         { display: grid; grid-template-columns: 1fr 1fr; }
   html footer                { padding-left: 48px; padding-right: 48px; }
   html .powered-band         { padding-left: 48px; padding-right: 48px; }
+
+  /* Hero — 3/4 text + 1/4 image split */
+  html .hero-inner            { display: flex; align-items: center; gap: 40px; width: 100%; }
+  html .hero-text             { flex: 3; min-width: 0; }
+  html .hero-img-col          { display: block; flex: 1; min-width: 0; }
+  html .hero-img-col img      { width: 100%; display: block; }
+
+  /* Section splits — 50/50 */
+  html .section-split         { display: flex; align-items: center; gap: 48px; }
+  html .section-col           { flex: 1; min-width: 0; }
+  html .section-img-col       { flex: 1; min-width: 0; }
+  html .section-img-col img   { width: 100%; border-radius: 20px; object-fit: cover;
+                                  box-shadow: 0 24px 60px rgba(0,0,0,0.5); display: block; }
+  html .section-split.reverse { flex-direction: row-reverse; }
 }
 
 /* ── Desktop (1100px+) ───────────────────────────────────── */
@@ -43,6 +60,9 @@ body { font-size: 1rem; line-height: 1.5; }
   html .text-section         { max-width: 960px; padding-left: 80px; padding-right: 80px; }
   html footer                { padding-left: 80px; padding-right: 80px; }
   html .powered-band         { padding-left: 80px; padding-right: 80px; }
+
+  /* Hero — wider gap on desktop */
+  html .hero-inner            { gap: 72px; max-width: 1240px; margin: 0 auto; }
 
   /* Contact — split layout with image */
   html .contact-section-inner { display: flex; gap: 80px; align-items: flex-start; }

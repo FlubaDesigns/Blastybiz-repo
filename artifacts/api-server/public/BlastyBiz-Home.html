@@ -777,40 +777,15 @@ footer {
 }
 
 /* ══ RESPONSIVE — DESKTOP (1100px+) ═════════════════════════ */
-/* Hero image column (hidden below desktop) */
-.hero-img-col { display: none; }
-
 @media (min-width: 1100px) {
-  nav { padding: 18px 80px; }
-
-  /* Hero becomes left-text / right-image split */
+  /* Hero layout adjustments on desktop */
   .hero {
     text-align: left;
     align-items: flex-start;
     padding: 0 80px;
     min-height: 100vh;
   }
-  .hero-inner {
-    display: flex;
-    align-items: center;
-    gap: 72px;
-    max-width: 1240px;
-    width: 100%;
-    margin: 0 auto;
-    padding: 140px 0 80px;
-  }
-  .hero-text { flex: 1; min-width: 0; }
-  .hero-img-col {
-    display: block;
-    flex: 0 0 500px;
-  }
-  .hero-img-col img {
-    width: 100%;
-    border-radius: 24px;
-    object-fit: cover;
-    box-shadow: 0 40px 100px rgba(0,0,0,0.6);
-    display: block;
-  }
+  .hero-inner { padding: 140px 0 80px; }
   .hero-sub { margin-left: 0; margin-right: 0; }
   .hero-actions { flex-direction: row; align-items: center; }
   .btn-hero { width: auto; }
@@ -818,27 +793,6 @@ footer {
 
   /* Wider sections */
   section { max-width: 1240px; padding: 100px 80px; }
-
-  /* Split sections: text left, image right */
-  .section-split {
-    display: flex;
-    align-items: center;
-    gap: 80px;
-  }
-  .section-col { flex: 1; min-width: 0; }
-  .section-img-col {
-    flex: 0 0 420px;
-  }
-  .section-img-col img {
-    width: 100%;
-    border-radius: 20px;
-    object-fit: cover;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
-    display: block;
-  }
-
-  /* Reverse split: image left, text right */
-  .section-split.reverse { flex-direction: row-reverse; }
 
   /* Platform strip */
   .platform-strip { padding: 56px 80px; }
@@ -934,7 +888,7 @@ footer {
 
     <!-- Image: visible only on desktop via CSS -->
     <div class="hero-img-col">
-      <img src="img/people-hero.jpg" alt="Happy small business owners" />
+      <img src="img/hero-blast.jpg" alt="BlastyBiz — blast your message to 12 platforms" />
     </div>
   </div><!-- /.hero-inner -->
 </div>
