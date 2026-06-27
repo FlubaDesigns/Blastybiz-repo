@@ -68,6 +68,17 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   opacity: 0.85;
 }
 
+/* pages with site header — push nav below it */
+body.has-site-header { padding-top: 68px; }
+body.has-site-header nav { top: 68px; }
+body.has-site-header .mobile-menu { top: calc(68px + 56px); }
+body.has-site-header .nav-logo { display: none; }
+@media (max-width: 600px) {
+  body.has-site-header { padding-top: 50px; }
+  body.has-site-header nav { top: 50px; }
+  body.has-site-header .mobile-menu { top: calc(50px + 56px); }
+}
+
 /* bolt-action animation */
 @keyframes bolt-action {
   0%   { transform: translateX(0); }

@@ -10,7 +10,8 @@
 /* Page-specific overrides only — all shared styles are in blastybiz-global.css */
 </style>
 </head>
-<body>
+<body class="has-site-header">
+<div id="site-header-inject"></div>
 
 <!-- NAV -->
 <nav>
@@ -444,6 +445,10 @@ getDoc(doc(db, 'settings', 'pricing')).then(snap => {
   if (proMonthly)    document.getElementById('price-pro').textContent    = '$' + proMonthly;
   if (agencyMonthly) document.getElementById('price-agency').textContent = '$' + agencyMonthly;
 }).catch(() => {});
+</script>
+<script>
+fetch('blastybiz-header.html').then(r=>r.text()).then(html=>{document.getElementById('site-header-inject').innerHTML=html;});
+(function(){var fired=false;function playClickClick(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)();function mc(w,f,d){var b=ctx.createBuffer(1,Math.floor(ctx.sampleRate*d),ctx.sampleRate),D=b.getChannelData(0);for(var i=0;i<D.length;i++){var t=i/ctx.sampleRate;D[i]=(Math.random()*2-1)*Math.exp(-t/0.008)*0.9+Math.sin(2*Math.PI*f*t)*Math.exp(-t/0.012)*0.4;}var s=ctx.createBufferSource();s.buffer=b;var g=ctx.createGain();g.gain.setValueAtTime(1,w);g.gain.exponentialRampToValueAtTime(0.001,w+d);s.connect(g);g.connect(ctx.destination);s.start(w);}mc(ctx.currentTime,180,0.08);mc(ctx.currentTime+0.18,140,0.08);}catch(e){}}function fire(){if(fired)return;fired=true;playClickClick();var ic=document.getElementById('site-header-icon');if(ic){ic.classList.remove('bolt-fired');void ic.offsetWidth;ic.classList.add('bolt-fired');ic.addEventListener('animationend',function(){ic.classList.remove('bolt-fired');},{once:true});}}window.addEventListener('pointermove',fire,{once:true});window.addEventListener('pointerdown',fire,{once:true});window.addEventListener('touchstart',fire,{once:true,passive:true});})();
 </script>
 </body>
 </html>
