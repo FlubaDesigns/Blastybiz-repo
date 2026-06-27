@@ -977,7 +977,7 @@ window.handleSignUp = async function() {
     await setDoc(doc(db, 'users', cred.user.uid), {
       ownerName: name,
       email,
-      plan: window._selectedPlanId || 'pro',
+      plan: 'starter',
       onboarded: false,
       createdAt: serverTimestamp()
     });
@@ -1035,7 +1035,7 @@ window.selectPlan = function(btn, plan) {
   window._selectedPlanId = plan;
   if (origSelectPlan) origSelectPlan(btn, plan);
 };
-window._selectedPlanId = 'pro';
+window._selectedPlanId = 'starter';
 </script>
 </body>
 </html>

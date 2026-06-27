@@ -1,0 +1,8 @@
+**/node_modules/**
+.git
+**/.*
+firebase-debug.log
+firestore-debug.log
+
+# Dev-only tools — never deploy to public hosting
+public/dev-login.html

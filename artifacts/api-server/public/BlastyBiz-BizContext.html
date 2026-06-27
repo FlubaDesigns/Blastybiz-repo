@@ -161,7 +161,15 @@ auth.authStateReady().then(() => {
         if (!bizQ.empty) activeBizId = bizQ.docs[0].id;
       }
 
-      if (!activeBizId) return;
+      if (!activeBizId) {
+        document.getElementById('save-btn').disabled = true;
+        const container = document.querySelector('.form-container') || document.querySelector('main') || document.body;
+        const msg = document.createElement('p');
+        msg.style.cssText = 'text-align:center;color:#666;margin:2rem 0;font-size:1rem;';
+        msg.innerHTML = 'No business found — <a href="BlastyBiz-Onboarding.html">finish onboarding first</a>.';
+        container.prepend(msg);
+        return;
+      }
 
       const bizSnap = await getDoc(doc(db, 'businesses', activeBizId));
       if (bizSnap.exists()) {

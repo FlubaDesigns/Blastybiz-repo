@@ -64,7 +64,9 @@
 
     const auth = getAuth(app);
     const params = new URLSearchParams(location.search);
-    const next = params.get('next') || 'BlastyBiz.html';
+    const rawNext = params.get('next') || 'BlastyBiz.html';
+    // Restrict to relative paths only — block open-redirect to external URLs
+    const next = /^(https?:)?\/\//i.test(rawNext) ? 'BlastyBiz.html' : rawNext;
     const status = document.getElementById('status');
 
     try {
