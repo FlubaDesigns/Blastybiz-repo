@@ -34,8 +34,8 @@
   <a class="mobile-link" href="#pricing" onclick="closeMenu()">Pricing</a>
   <a class="mobile-link" href="BlastyBiz-About.html">About</a>
   <a class="mobile-link" href="BlastyBiz-Contact.html">Contact</a>
-  <a class="mobile-link" id="menu-login-link" href="BlastyBiz-Login.html">Log In</a>
-  <button class="mobile-link" id="menu-signout-btn" onclick="doSignOut()" style="display:none;background:none;border:none;color:var(--silver);font-size:15px;font-weight:500;text-align:left;cursor:pointer;width:100%;padding:0;">Log Out</button>
+  <a class="mobile-link" href="BlastyBiz-Login.html">Log In</a>
+  <button class="mobile-link" onclick="doSignOut()" style="background:none;border:none;color:var(--silver);font-size:15px;font-weight:500;text-align:left;cursor:pointer;width:100%;padding:0;">Log Out</button>
   <a class="mobile-cta" href="BlastyBiz-Login.html">Try It Free →</a>
 </div>
 
@@ -417,16 +417,7 @@ const app = initializeApp({ apiKey:"AIzaSyDJbLFQLVbMFE8LG22mN4JVmSBHOlimFUs",aut
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// Show Sign Out in hamburger if logged in
-onAuthStateChanged(auth, user => {
-  const loginLink   = document.getElementById('menu-login-link');
-  const signoutBtn  = document.getElementById('menu-signout-btn');
-  if (user) {
-    if (loginLink)  loginLink.style.display  = 'none';
-    if (signoutBtn) signoutBtn.style.display = '';
-  }
-});
-window.doSignOut = () => signOut(auth).then(() => { window.location.href = 'BlastyBiz-Login.html'; });
+window.doSignOut = () => signOut(auth).finally(() => { window.location.href = 'BlastyBiz-Login.html'; });
 
 getDoc(doc(db, 'settings', 'pricing')).then(snap => {
   if (!snap.exists()) return;
