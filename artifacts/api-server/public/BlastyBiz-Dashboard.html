@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="blastybiz-global.css?v=92" />
+<link rel="stylesheet" href="blastybiz-global.css?v=94" />
 <title>BlastyBiz — Command Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -14,10 +14,10 @@
     --warn:#FFA726; --blue:#54A8FF;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;min-height:100dvh;padding-bottom:60px}
+  body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;min-height:100dvh;padding-bottom:60px;padding-top:120px}
 
   /* ── HEADER ── */
-  header{background:rgba(7,13,7,.96);border-bottom:1px solid var(--border);padding:16px 20px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(10px)}
+  body > header{background:rgba(7,13,7,.96);border-bottom:1px solid var(--border);padding:16px 20px;position:sticky;top:120px;z-index:100;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(10px)}
   .logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--green);line-height:1;text-decoration:none}
   .logo span{color:var(--silver);font-size:11px;display:block;letter-spacing:3px;font-family:'DM Sans';font-weight:300;margin-top:2px}
   .top-actions{display:flex;gap:8px;align-items:center}
@@ -25,7 +25,7 @@
   .icon-btn:hover{border-color:var(--green);color:var(--green)}
 
   /* ── BUSINESS SWITCHER BAR ── */
-  .biz-bar{background:rgba(13,22,13,0.95);border-bottom:1px solid var(--border);padding:10px 20px;position:sticky;top:73px;z-index:99;display:flex;align-items:center;gap:10px;backdrop-filter:blur(8px)}
+  .biz-bar{background:rgba(13,22,13,0.95);border-bottom:1px solid var(--border);padding:10px 20px;position:sticky;top:193px;z-index:99;display:flex;align-items:center;gap:10px;backdrop-filter:blur(8px)}
   .biz-active{display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;background:var(--dark);border:1px solid var(--green);border-radius:10px;padding:10px 14px;transition:all 0.2s}
   .biz-active:hover{background:#0A1A0A}
   .biz-avatar{width:36px;height:36px;border-radius:9px;background:rgba(0,200,83,0.1);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
@@ -137,7 +137,9 @@
     .big-title{font-size:36px}
     .top-actions .hide-mobile{display:none}
     .mobile-nav{display:grid}
-    body{padding-bottom:78px}
+    body{padding-bottom:78px;padding-top:56px}
+    body > header{top:56px}
+    .biz-bar{top:129px}
     .score-wrap{align-items:flex-start}
     .score-ring{width:100px;height:100px}
     .score-number{font-size:34px}
@@ -145,7 +147,8 @@
 
 </style>
 </head>
-<body>
+<body class="logged-in">
+<div id="site-header-inject"></div>
 
 <!-- HEADER -->
 <header>
@@ -312,6 +315,20 @@
 </nav>
 
 <div class="toast" id="toast"></div>
+
+<footer>
+  <div class="footer-logo">BlastyBiz</div>
+  <div class="footer-tagline">Lock. Load. Blast.</div>
+  <div class="footer-links">
+    <a class="footer-link" href="BlastyBiz-Home.html">Home</a>
+    <a class="footer-link" href="BlastyBiz-About.html">About</a>
+    <a class="footer-link" href="BlastyBiz-Contact.html">Contact</a>
+    <a class="footer-link" href="BlastyBiz-Privacy.html">Privacy</a>
+    <a class="footer-link" href="BlastyBiz-Terms.html">Terms</a>
+    <a class="footer-link" href="mailto:support@blastybiz.com">support@blastybiz.com</a>
+  </div>
+  <div class="footer-copy">© 2026 BlastyBiz · All rights reserved.</div>
+</footer>
 
 <script>
 // ══════════════════════════════════════════
@@ -857,6 +874,9 @@ window.confirmDeleteAccount = async function() {
     btn.style.opacity = '1';
   }
 };
+</script>
+<script>
+fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('site-header-inject').innerHTML=html;});
 </script>
 </body>
 </html>
