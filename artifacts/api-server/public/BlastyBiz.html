@@ -1458,10 +1458,9 @@ function renderQuickSelect() {
           </div>`;
       }
 
-      // Copy output section — always present, populated after AI generation
-      const existingCopy = p.adaptedContent || '';
+      // Copy output section — hidden until Generate is clicked this session
       bodyInner += `
-        <div id="qp-copy-${p.id}" style="display:${existingCopy ? 'block' : 'none'};${hasCats ? 'margin-top:14px;' : ''}">
+        <div id="qp-copy-${p.id}" style="display:none;${hasCats ? 'margin-top:14px;' : ''}">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:6px;flex-wrap:wrap;">
             <span style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--green);flex:1;min-width:80px;">⚡ AI Copy</span>
             <button id="qp-regen-${p.id}" onclick="regeneratePlatformCopy('${p.id}')"
