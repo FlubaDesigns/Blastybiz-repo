@@ -123,7 +123,7 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
 
 /* pages with site header — nav now inside header, hide old nav bar */
 body.has-site-header { padding-top: 185px; }
-body.has-site-header nav { display: none; }
+body.has-site-header nav:not(.site-header-nav) { display: none; }
 body.has-site-header .mobile-menu { top: 185px; }
 @media (max-width: 600px) {
   body.has-site-header { padding-top: 130px; }
