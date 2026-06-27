@@ -37,7 +37,7 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   background: #000;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
   padding: 0 0 0 48px;
   border-bottom: 1px solid rgba(0,200,83,0.18);
 }
@@ -58,7 +58,7 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   justify-content: center;
   align-items: center;
   gap: 8px;
-  margin-top: 22px;
+  margin-left: -18px;
 }
 .site-header-wordmark {
   height: 80px;
