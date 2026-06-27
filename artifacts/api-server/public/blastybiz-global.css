@@ -328,6 +328,14 @@ section figure p { font-size: 14px; color: var(--silver); line-height: 1.6; marg
 .contact-card p { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 0; }
 section address { font-style: normal; }
 section address p { color: var(--silver); }
+article { padding: 0 var(--gutter); max-width: 600px; margin: 0 auto; }
+article section { padding: var(--section-v) 0; border-bottom: 1px solid var(--border); max-width: none; margin: 0; }
+article section:last-child { border-bottom: none; }
+article h2 { font-size: 20px; font-weight: 700; color: var(--light); margin-bottom: 12px; }
+article table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+article th { text-align: left; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--border); }
+article td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--silver); vertical-align: top; }
+article td:first-child { font-weight: 600; color: var(--light); white-space: nowrap; }
 
 /* ── Steps (How It Works) ────────────────────────────────── */
 .steps { display: flex; flex-direction: column; gap: 0; margin-top: 48px; }
