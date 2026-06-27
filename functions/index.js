@@ -962,6 +962,7 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', secrets: ['FACEBO
 exports.postToBing = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  try { const dec = await verifyBearer(req); if (!dec) throw new Error(); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
   const { jobId } = req.body;
   if (jobId) {
     await db.collection('publishJobs').doc(jobId).update({
@@ -982,6 +983,7 @@ exports.postToBing = onRequest({ invoker: 'public' }, async (req, res) => {
 exports.postToAppleMaps = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  try { const dec = await verifyBearer(req); if (!dec) throw new Error(); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
   const { jobId } = req.body;
   if (jobId) {
     await db.collection('publishJobs').doc(jobId).update({

@@ -1507,7 +1507,6 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, whe
       const { cats } = snap.data();
       if (Array.isArray(cats) && cats.length > 0 && window.PLATFORM_CATS && window.PLATFORM_CATS.yelp) {
         window.PLATFORM_CATS.yelp.cats = cats;
-        console.log('[BlastyBiz] Loaded', cats.length, 'Yelp categories from live cache');
       }
     }
   } catch (e) {
