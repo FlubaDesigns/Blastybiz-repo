@@ -383,6 +383,7 @@ html .hamburger         { display: none; }
 /* ── Tablet (600px – 1099px) ───────────────────────────────── */
 @media (min-width: 600px) {
   :root                      { --section-v: 80px; }
+  .site-header-tagline       { height: 8px; }
   section                    { max-width: 720px; padding: var(--section-v) var(--gutter); }
   html nav                   { padding: 18px 48px; }
   html header,
