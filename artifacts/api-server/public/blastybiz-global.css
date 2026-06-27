@@ -877,15 +877,18 @@ body.login-page .login-img-panel { display: none; }
 
 
 /* ══ DASHBOARD PAGE ══════════════════════════════════════════════
-   Scoped to body.dashboard-page — same pattern as body.login-page
+   All rules scoped to body.dashboard-page to avoid bleed.
    ═══════════════════════════════════════════════════════════════ */
-body.dashboard-page { min-height: 100dvh; padding-bottom: 60px; }
+
+body.dashboard-page { background: var(--dark); color: var(--light); font-family: 'DM Sans', sans-serif; min-height: 100dvh; padding-bottom: 60px; }
 body.dashboard-page header { background: rgba(7,13,7,.96); border-bottom: 1px solid var(--border); padding: 16px 20px; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; backdrop-filter: blur(10px); }
 body.dashboard-page .logo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; color: var(--green); line-height: 1; text-decoration: none; }
 body.dashboard-page .logo span { color: var(--silver); font-size: 11px; display: block; letter-spacing: 3px; font-family: 'DM Sans'; font-weight: 300; margin-top: 2px; }
 body.dashboard-page .top-actions { display: flex; gap: 8px; align-items: center; }
 body.dashboard-page .icon-btn { background: var(--card); border: 1px solid var(--border); border-radius: 999px; color: var(--silver); height: 40px; min-width: 40px; padding: 0 13px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
 body.dashboard-page .icon-btn:hover { border-color: var(--green); color: var(--green); }
+
+/* ── Business Switcher Bar ── */
 body.dashboard-page .biz-bar { background: rgba(13,22,13,0.95); border-bottom: 1px solid var(--border); padding: 10px 20px; position: sticky; top: 73px; z-index: 99; display: flex; align-items: center; gap: 10px; backdrop-filter: blur(8px); }
 body.dashboard-page .biz-active { display: flex; align-items: center; gap: 10px; flex: 1; cursor: pointer; background: var(--dark); border: 1px solid var(--green); border-radius: 10px; padding: 10px 14px; transition: all 0.2s; }
 body.dashboard-page .biz-active:hover { background: #0A1A0A; }
@@ -897,6 +900,8 @@ body.dashboard-page .biz-active.open .biz-chevron { transform: rotate(180deg); }
 body.dashboard-page .biz-count { font-size: 11px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
 body.dashboard-page .add-biz-btn { background: transparent; border: 1px dashed var(--border); border-radius: 10px; color: var(--muted); height: 40px; width: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; transition: all 0.2s; flex-shrink: 0; }
 body.dashboard-page .add-biz-btn:hover { border-color: var(--green); color: var(--green); }
+
+/* ── Switcher Sheet ── */
 body.dashboard-page .biz-sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
 body.dashboard-page .biz-sheet-overlay.open { opacity: 1; pointer-events: all; }
 body.dashboard-page .biz-sheet { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); border-radius: 20px 20px 0 0; padding: 20px; z-index: 201; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); max-height: 75vh; overflow-y: auto; }
@@ -904,6 +909,8 @@ body.dashboard-page .biz-sheet.open { transform: translateY(0); }
 body.dashboard-page .sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 4px; margin: 0 auto 18px; }
 body.dashboard-page .sheet-title { font-family: 'Bebas Neue'; font-size: 22px; letter-spacing: 1.5px; color: var(--light); margin-bottom: 4px; }
 body.dashboard-page .sheet-sub { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+
+/* ── Business Cards in Sheet ── */
 body.dashboard-page .biz-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
 body.dashboard-page .biz-card { background: var(--dark); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; }
 body.dashboard-page .biz-card:hover { border-color: var(--silver); }
@@ -916,11 +923,15 @@ body.dashboard-page .biz-card-status { display: flex; flex-direction: column; al
 body.dashboard-page .biz-score { font-family: 'Bebas Neue'; font-size: 22px; color: var(--green); line-height: 1; }
 body.dashboard-page .biz-platforms { font-size: 10px; color: var(--muted); letter-spacing: 0.5px; }
 body.dashboard-page .biz-card.active .biz-card-name::after { content: ' ✓'; color: var(--green); }
+
+/* ── Add New Business Card ── */
 body.dashboard-page .add-biz-card { background: transparent; border: 1px dashed var(--border); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; }
 body.dashboard-page .add-biz-card:hover { border-color: var(--green); }
 body.dashboard-page .add-biz-icon { width: 44px; height: 44px; border-radius: 11px; background: rgba(0,200,83,0.06); border: 1px dashed var(--green); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
 body.dashboard-page .add-biz-text { font-size: 14px; font-weight: 600; color: var(--silver); }
 body.dashboard-page .add-biz-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ── Agency Limit Bar ── */
 body.dashboard-page .agency-bar { background: #0A1A0A; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-top: 12px; display: flex; align-items: center; gap: 10px; }
 body.dashboard-page .agency-label { font-size: 12px; color: var(--muted); flex: 1; }
 body.dashboard-page .agency-label strong { color: var(--silver); display: block; font-size: 13px; margin-bottom: 2px; }
@@ -928,6 +939,8 @@ body.dashboard-page .agency-pips { display: flex; gap: 4px; }
 body.dashboard-page .pip { width: 12px; height: 12px; border-radius: 3px; background: var(--border); }
 body.dashboard-page .pip.used { background: var(--green); }
 body.dashboard-page .pip.active-pip { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+/* ── Main Content ── */
 body.dashboard-page main { width: min(1180px,100%); margin: 0 auto; padding: 20px; }
 body.dashboard-page .hero { display: grid; grid-template-columns: 1.15fr .85fr; gap: 16px; margin-bottom: 16px; }
 body.dashboard-page .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
@@ -959,6 +972,7 @@ body.dashboard-page .badge { font-size: 10px; text-transform: uppercase; letter-
 body.dashboard-page .live { background: #0A2A0A; color: var(--green); border: 1px solid var(--green); }
 body.dashboard-page .needs { background: #2A1A00; color: var(--warn); border: 1px solid var(--warn); }
 body.dashboard-page .off { background: #151f15; color: var(--muted); border: 1px solid var(--border); }
+body.dashboard-page .error { background: #2A0A0A; color: var(--danger); border: 1px solid var(--danger); }
 body.dashboard-page .btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
 body.dashboard-page .btn { border-radius: 10px; padding: 13px 16px; text-decoration: none; font-weight: 800; font-size: 14px; border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: var(--light); background: transparent; cursor: pointer; transition: all 0.2s; }
 body.dashboard-page .btn-primary { background: var(--green); color: var(--dark); border-color: var(--green); }
@@ -975,10 +989,16 @@ body.dashboard-page .manage-link { display: inline-block; margin-top: 10px; font
 body.dashboard-page .manage-link:hover { text-decoration: underline; }
 body.dashboard-page .snapshot-foot { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
 body.dashboard-page .delete-link { background: none; border: none; color: #c0392b; font-size: 12px; cursor: pointer; padding: 0; font-family: inherit; text-decoration: underline; }
+
+/* ── Mobile Nav ── */
 body.dashboard-page .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(7,13,7,.98); border-top: 1px solid var(--border); display: none; grid-template-columns: repeat(4,1fr); z-index: 200; }
 body.dashboard-page .mobile-nav a { padding: 10px 4px; text-align: center; text-decoration: none; color: var(--muted); font-size: 11px; }
 body.dashboard-page .mobile-nav a.active { color: var(--green); }
+
+/* ── Toast: sit above mobile nav ── */
 body.dashboard-page .toast { bottom: 80px; }
+
+/* ── Delete Account Modal ── */
 body.dashboard-page .delete-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
 body.dashboard-page .delete-modal-overlay.open { display: flex; }
 body.dashboard-page .delete-modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px; max-width: 440px; width: 90%; margin: auto; }
