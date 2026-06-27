@@ -29,7 +29,7 @@ a { color: inherit; text-decoration: none; }
   /* Spacing tokens */
   --section-v: 60px;   /* vertical section padding — mobile */
   --gutter:    10%;    /* horizontal gutter — all breakpoints */
-  --v-gutter:  15%;    /* vertical gutter — all breakpoints */
+  --v-gutter:  10%;    /* vertical gutter — all breakpoints */
   --row-gap:   20px;   /* vertical gutter between homepage rows */
 }
 
