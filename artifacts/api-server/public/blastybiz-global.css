@@ -33,7 +33,7 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 200;
-  height: 185px;
+  height: 145px;
   background: #000;
   display: flex;
   align-items: center;
@@ -51,8 +51,8 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   min-width: 0;
 }
 .site-header-icon {
-  height: 170px;
-  width: 170px;
+  height: 130px;
+  width: 130px;
   flex-shrink: 0;
   object-fit: contain;
   display: block;
@@ -62,13 +62,13 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   flex-direction: column;
   align-items: flex-end;
   gap: 0;
-  margin-left: -18px;
+  margin-left: -12px;
   min-width: 0;
   flex: 1;
   overflow: hidden;
 }
-.site-header-wordmark { height: 104px; max-width: 100%; object-fit: contain; object-position: right center; }
-.site-header-tagline  { height: 46px;  max-width: 100%; object-fit: contain; object-position: right center; opacity: 1; margin-right: 8px; margin-top: -14px; }
+.site-header-wordmark { height: 80px; max-width: 100%; object-fit: contain; object-position: right center; }
+.site-header-tagline  { height: 36px; max-width: 100%; object-fit: contain; object-position: right center; opacity: 1; margin-right: 6px; margin-top: -10px; }
 
 /* right 50% — nav links */
 #sh-right {
@@ -116,7 +116,7 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
 .sh-hamburger span { display: block; width: 24px; height: 2px; background: #fff; border-radius: 2px; }
 
 /* pages with site header — hide old nav bar, keep mobile menu */
-body.has-site-header { padding-top: 185px; }
+body.has-site-header { padding-top: 145px; }
 body.has-site-header nav { display: none; }
 body.has-site-header .mobile-menu { top: 185px; }
 
@@ -126,17 +126,17 @@ body.logged-in #sh-login-link  { display: none; }
 body.logged-in #sh-logout-btn  { display: inline; }
 
 @media (max-width: 600px) {
-  .site-header { height: 130px; }
+  .site-header { height: 80px; }
   #sh-left { padding-left: 0; }
-  .site-header-icon { height: 104px; width: 104px; }
-  .site-header-wordmark { height: 62px; }
-  .site-header-tagline  { height: 27px; margin-right: 5px; }
+  .site-header-icon { height: 70px; width: 70px; }
+  .site-header-wordmark { height: 40px; }
+  .site-header-tagline  { height: 18px; margin-right: 4px; margin-top: -6px; }
   #sh-right { padding-right: 16px; gap: 0; }
   #sh-right .sh-nav-link,
   #sh-right .sh-nav-cta { display: none; }
   .sh-hamburger { display: flex; }
-  body.has-site-header { padding-top: 130px; }
-  body.has-site-header .mobile-menu { top: 130px; }
+  body.has-site-header { padding-top: 80px; }
+  body.has-site-header .mobile-menu { top: 80px; }
 }
 
 /* bolt-action animation — extends to flush with wordmark right edge, snaps back */
@@ -150,13 +150,13 @@ body.logged-in #sh-logout-btn  { display: inline; }
 
 @media (max-width: 600px) {
   .site-header {
-    height: 130px;
+    height: 80px;
     gap: 0;
     padding: 0 0 0 16px;
   }
-  .site-header-icon { height: 104px; width: 104px; }
-  .site-header-wordmark { height: 62px; }
-  .site-header-tagline { height: 23px; }
+  .site-header-icon { height: 70px; width: 70px; }
+  .site-header-wordmark { height: 40px; }
+  .site-header-tagline { height: 18px; }
 }
 
 @media (max-width: 600px) {
