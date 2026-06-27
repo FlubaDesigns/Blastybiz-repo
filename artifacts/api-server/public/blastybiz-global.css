@@ -62,7 +62,7 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   margin-left: -18px;
 }
 .site-header-wordmark { height: 104px; object-fit: contain; }
-.site-header-tagline  { height: 46px;  object-fit: contain; opacity: 1; margin-right: 8px; }
+.site-header-tagline  { height: 46px;  object-fit: contain; opacity: 1; margin-right: 8px; margin-top: -14px; }
 
 /* right 50% — nav links */
 #sh-right {
