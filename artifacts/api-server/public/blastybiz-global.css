@@ -18,7 +18,7 @@
 
   /* Spacing tokens */
   --section-v: 60px;   /* vertical section padding — mobile */
-  --gutter:    1%;     /* horizontal gutter — all breakpoints */
+  --gutter:    5%;     /* horizontal gutter — all breakpoints */
 }
 
 /* ── Reset ───────────────────────────────────────────────── */
@@ -401,7 +401,7 @@ html .hamburger         { display: none; }
   html .stat-row      { display: none; }
 
   /* Problem section — 98% wide, headline then 50/50 split */
-  html .problem-wrap   { width: 98%; margin: 0 1%; }
+  html .problem-wrap   { max-width: none; }
   html .problem-header { margin-bottom: 32px; }
   html .problem-split       { display: flex; align-items: center; }
   html .problem-col--img    { flex: 0 0 23%; margin: 1%; min-width: 0; }
@@ -413,29 +413,29 @@ html .hamburger         { display: none; }
   html .pain-list--grid .pain-icon { font-size: 26px; flex-shrink: 0; }
 
   /* How It Works — heading normal width, steps row 98% across */
-  html #how             { width: 98%; max-width: none; margin-left: 1%; margin-right: 1%; padding-left: 0; padding-right: 0; padding-bottom: 40px; box-sizing: border-box; }
+  html #how             { max-width: none; padding-bottom: 40px; }
   html .how-steps-row        { display: flex; align-items: flex-start; margin-top: 32px; }
   html .how-block            { flex: 0 0 23%; margin: 0 1%; min-width: 0; }
   html .how-block--img img   { width: 100%; border-radius: 16px; display: block; object-fit: cover; }
 
   /* Sexy horizontal rule */
-  html .sexy-rule        { width: 98%; margin: 0 1%; display: flex; align-items: center; padding: 16px 0; }
+  html .sexy-rule        { display: flex; align-items: center; padding: 16px 0; }
   html .sexy-rule span   { flex: 1; height: 2px;
                             background: linear-gradient(90deg, transparent, #00C853 20%, #00C853 80%, transparent);
                             border-radius: 2px; }
 
   /* Platform strip — 98% wide on tablet/desktop */
-  html .platform-strip--wide { width: 98%; max-width: none; margin-left: 1%; margin-right: 1%; box-sizing: border-box; }
+  html .platform-strip--wide { max-width: none; }
 
   /* Pricing — 98% wide, 3 equal columns */
-  html .pricing-section  { width: 98%; max-width: none; margin-left: 1%; margin-right: 1%; padding-left: 0; padding-right: 0; box-sizing: border-box; }
+  html .pricing-section  { max-width: none; }
 
   /* FAQ + CTA — 98% wide */
-  html .faq-section       { width: 98%; max-width: none; margin-left: 1%; margin-right: 1%; padding-left: 0; padding-right: 0; box-sizing: border-box; }
-  html .cta-section--wide { width: 98%; max-width: none; margin-left: 1%; margin-right: 1%; box-sizing: border-box; }
+  html .faq-section       { max-width: none; }
+  html .cta-section--wide { max-width: none; }
 
   /* Reviews — 98% wide, 3 equal columns */
-  html .reviews-section  { width: 98%; max-width: none; margin-left: 1%; margin-right: 1%; padding-left: 0; padding-right: 0; box-sizing: border-box; }
+  html .reviews-section  { max-width: none; }
   html .reviews-section .testimonials { grid-template-columns: 1fr 1fr 1fr; }
 
   /* Section splits — 50/50, 1% margin all sides */
@@ -475,8 +475,8 @@ html .hamburger         { display: none; }
   html .powered-band         { padding-left: 80px; padding-right: 80px; }
 
   /* Tighten gap between How It Works and Pricing */
-  html #how             { padding-bottom: 40px; }
-  html .pricing-section { padding-top: 40px; }
+  html #how             { max-width: none; padding-bottom: 40px; }
+  html .pricing-section { max-width: none; padding-top: 40px; }
 
   /* Hero — desktop padding */
   html .hero          { padding: 0; }
