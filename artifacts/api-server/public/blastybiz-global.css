@@ -336,6 +336,7 @@ article table { width: 100%; border-collapse: collapse; margin: 16px 0; font-siz
 article th { text-align: left; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--border); }
 article td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--silver); vertical-align: top; }
 article td:first-child { font-weight: 600; color: var(--light); white-space: nowrap; }
+.font-accent-color { color: var(--green); }
 
 /* ── Steps (How It Works) ────────────────────────────────── */
 .steps { display: flex; flex-direction: column; gap: 0; margin-top: 48px; }
