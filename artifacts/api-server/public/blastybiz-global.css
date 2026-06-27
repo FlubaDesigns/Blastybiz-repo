@@ -317,6 +317,9 @@ html .hero          { display: flex; flex-direction: column; align-items: center
                        padding: 80px 24px 48px; position: relative; overflow: hidden; }
 html .hero-img-col      { display: none; }
 html .problem-col--img  { display: none; }
+html .how-block--img    { display: none; }
+html .section-img-col   { display: none; }
+html .contact-img-col   { display: none; }
 html .nav-right         { display: flex; }
 html .hamburger         { display: none; }
 
