@@ -303,8 +303,9 @@ section { padding: var(--section-v) var(--gutter); max-width: 600px; margin: 0 a
 .steps { display: flex; flex-direction: column; gap: 0; margin-top: 48px; }
 .step { display: flex; gap: 20px; padding-bottom: 36px; position: relative; }
 .step:not(:last-child)::before { content: ''; position: absolute; left: 19px; top: 44px; bottom: 0; width: 1px; background: var(--border); }
+.how-block { display: flex; align-items: flex-start; gap: 14px; }
 .step-num { width: 40px; height: 40px; border-radius: 50%; background: rgba(0,200,83,0.1); border: 1px solid var(--green); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--green); flex-shrink: 0; }
-.step-content { padding-top: 8px; }
+.step-content { padding-top: 4px; }
 .step-title { font-size: 16px; font-weight: 700; color: var(--light); margin-bottom: 6px; }
 .step-desc { font-size: 14px; color: var(--muted); line-height: 1.6; }
 
@@ -312,8 +313,9 @@ section { padding: var(--section-v) var(--gutter); max-width: 600px; margin: 0 a
 .pain-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-top: 32px; }
 .pain-row { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
 .pain-row:last-child { border-bottom: none; }
-.pain-list { list-style: none; padding: 0; margin: 0; }
-.pain-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.pain-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 20px; }
+.pain-list li { display: flex; align-items: flex-start; gap: 12px; }
+.pain-icon { font-size: 24px; flex-shrink: 0; margin-top: 2px; }
 .pain-text { font-size: 14px; color: var(--silver); line-height: 1.5; }
 .pain-text strong { color: var(--light); display: block; font-size: 15px; margin-bottom: 2px; }
 
