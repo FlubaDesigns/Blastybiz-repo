@@ -982,9 +982,11 @@ onAuthStateChanged(auth, async (user) => {
   if (afterAuthCalled) return;
   afterAuthCalled = true;
   if (!user) {
+    localStorage.setItem('bb_auth', '0');
     showLoginForm();
     return;
   }
+  localStorage.setItem('bb_auth', '1');
   await afterAuth(user);
 });
 
