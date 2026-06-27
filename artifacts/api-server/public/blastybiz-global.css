@@ -46,7 +46,7 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   width: 50%;
   display: flex;
   align-items: center;
-  margin-left: -12px;
+  margin-left: -20px;
 }
 .site-header-icon {
   height: 170px;
@@ -121,7 +121,7 @@ body.logged-in #sh-logout-btn  { display: inline; }
 
 @media (max-width: 600px) {
   .site-header { height: 130px; }
-  #sh-left { padding-left: 16px; }
+  #sh-left { padding-left: 0; }
   .site-header-icon { height: 104px; width: 104px; }
   .site-header-wordmark { height: 62px; }
   .site-header-tagline  { height: 23px; }
