@@ -33,7 +33,7 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 200;
-  height: 100px;
+  height: 120px;
   background: #000;
   display: flex;
   align-items: center;
@@ -122,7 +122,7 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
 .sh-hamburger span { display: block; width: 24px; height: 2px; background: #fff; border-radius: 2px; }
 
 /* pages with site header — hide old nav bar, keep mobile menu */
-body.has-site-header { padding-top: 100px; }
+body.has-site-header { padding-top: 120px; }
 body.has-site-header nav { display: none; }
 body.has-site-header .mobile-menu { top: 185px; }
 
