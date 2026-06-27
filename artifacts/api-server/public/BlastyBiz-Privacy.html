@@ -135,7 +135,8 @@
     <a class="nav-link" href="BlastyBiz-Home.html#pricing">Pricing</a>
     <a class="nav-link" href="BlastyBiz-About.html">About</a>
     <a class="nav-link" href="BlastyBiz-Contact.html">Contact</a>
-    <a class="nav-link" href="BlastyBiz-Login.html">Log In</a>
+    <a class="nav-link" id="nav-login-link" href="BlastyBiz-Login.html">Log In</a>
+    <button class="nav-link" id="nav-logout-btn" onclick="doSignOut()" style="display:none;background:none;border:none;color:var(--silver);font-size:15px;font-weight:500;cursor:pointer;padding:0;">Log Out</button>
     <a class="nav-cta" href="BlastyBiz-Login.html">Try It Free</a>
   </div>
   <button class="hamburger" id="hamburger" aria-label="Open menu" onclick="toggleMenu()">
@@ -149,8 +150,8 @@
   <a class="mobile-link" href="BlastyBiz-Home.html#pricing">Pricing</a>
   <a class="mobile-link" href="BlastyBiz-About.html">About</a>
   <a class="mobile-link" href="BlastyBiz-Contact.html">Contact</a>
-  <a class="mobile-link" href="BlastyBiz-Login.html">Log In</a>
-  <button class="mobile-link" onclick="doSignOut()" style="background:none;border:none;color:var(--silver);font-size:15px;font-weight:500;text-align:left;cursor:pointer;width:100%;padding:0;">Log Out</button>
+  <a class="mobile-link" id="menu-login-link" href="BlastyBiz-Login.html" style="display:none;">Log In</a>
+  <button class="mobile-link" id="menu-logout-btn" onclick="doSignOut()" style="display:none;background:none;border:none;color:var(--silver);font-size:15px;font-weight:500;text-align:left;cursor:pointer;width:100%;padding:0;">Log Out</button>
   <a class="mobile-cta" href="BlastyBiz-Login.html">Try It Free →</a>
 </div>
 
@@ -269,9 +270,15 @@ document.addEventListener('click', e => {
 </script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 const auth = getAuth(initializeApp({ apiKey:"AIzaSyDJbLFQLVbMFE8LG22mN4JVmSBHOlimFUs",authDomain:"blastybiz-9523e.firebaseapp.com",projectId:"blastybiz-9523e" }));
-window.doSignOut = () => signOut(auth).finally(() => { window.location.href = 'BlastyBiz-Login.html'; });
+function setAuthUI(loggedIn) {
+  ['nav-login-link','menu-login-link'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'none':''; });
+  ['nav-logout-btn','menu-logout-btn'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'':'none'; });
+}
+setAuthUI(localStorage.getItem('bb_auth')==='1');
+onAuthStateChanged(auth, user => { localStorage.setItem('bb_auth',user?'1':'0'); setAuthUI(!!user); });
+window.doSignOut = () => { localStorage.setItem('bb_auth','0'); signOut(auth).finally(()=>{ window.location.href='BlastyBiz-Login.html'; }); };
 </script>
 </body>
 </html>
