@@ -110,6 +110,68 @@ footer { padding: 40px 24px; text-align: center; border-top: 1px solid var(--bor
 @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
 .reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ── ABOUT IMAGE BAND ── */
+.about-img-band {
+  display: none;
+  width: 100%;
+  max-height: 420px;
+  overflow: hidden;
+  position: relative;
+}
+.about-img-band img {
+  width: 100%;
+  height: 420px;
+  object-fit: cover;
+  object-position: center 25%;
+  display: block;
+}
+.about-img-band-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(7,13,7,0.3) 0%, rgba(7,13,7,0.7) 100%);
+}
+
+/* ── DESKTOP LAYOUT ── */
+@media (min-width: 768px) {
+  nav { padding: 18px 48px; }
+  section { max-width: 800px; padding: 60px 48px; }
+  .page-hero { max-width: 800px; padding: 120px 48px 60px; }
+}
+
+@media (min-width: 1100px) {
+  nav { padding: 18px 80px; }
+
+  .about-img-band { display: block; }
+
+  section { max-width: 1200px; padding: 80px 80px; }
+  .page-hero { max-width: 1200px; padding: 140px 80px 60px; text-align: left; }
+
+  /* Story + image split */
+  .story-split {
+    display: flex;
+    gap: 80px;
+    align-items: center;
+  }
+  .story-split .story-text { flex: 1; min-width: 0; }
+  .story-split .story-img {
+    flex: 0 0 380px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  }
+  .story-split .story-img img { width: 100%; display: block; object-fit: cover; height: 380px; }
+
+  /* Values + team grid */
+  .values-team-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: start;
+  }
+
+  footer { padding: 48px 80px; }
+}
 </style>
 </head>
 <body>
@@ -129,14 +191,27 @@ footer { padding: 40px 24px; text-align: center; border-top: 1px solid var(--bor
   <p class="page-sub">BlastyBiz was built because local business owners work too hard to spend their evenings copy-pasting listings into 12 different tabs.</p>
 </div>
 
+<!-- Desktop image band (hidden on mobile) -->
+<div class="about-img-band">
+  <img src="img/people-about.png" alt="Business professionals collaborating" />
+  <div class="about-img-band-overlay"></div>
+</div>
+
 <hr class="divider"/>
 
 <section class="reveal">
   <div class="section-label">Our Story</div>
   <h2 class="section-title">Why We <span>Built This</span></h2>
-  <p class="section-body">Local businesses are the backbone of every community — the plumber who answers on weekends, the salon that knows every customer by name, the restaurant that's been on the same corner for 20 years. They work harder than anyone. But when it comes to getting found online, they're expected to become social media managers on top of everything else.</p>
-  <p class="section-body" style="margin-top:14px;">BlastyBiz was born in Englewood, Florida to solve one specific problem: you should be able to describe your business once and have it show up everywhere that matters. No rewriting. No logging into a dozen platforms. No guessing what to say on Instagram vs. Craigslist vs. Google.</p>
-  <p class="section-body" style="margin-top:14px;">One form. AI does the rest. That's the whole idea.</p>
+  <div class="story-split">
+    <div class="story-text">
+      <p class="section-body">Local businesses are the backbone of every community — the plumber who answers on weekends, the salon that knows every customer by name, the restaurant that's been on the same corner for 20 years. They work harder than anyone. But when it comes to getting found online, they're expected to become social media managers on top of everything else.</p>
+      <p class="section-body" style="margin-top:14px;">BlastyBiz was born in Englewood, Florida to solve one specific problem: you should be able to describe your business once and have it show up everywhere that matters. No rewriting. No logging into a dozen platforms. No guessing what to say on Instagram vs. Craigslist vs. Google.</p>
+      <p class="section-body" style="margin-top:14px;">One form. AI does the rest. That's the whole idea.</p>
+    </div>
+    <div class="story-img">
+      <img src="img/people-feature-1.png" alt="Business owner using BlastyBiz" />
+    </div>
+  </div>
 </section>
 
 <hr class="divider"/>

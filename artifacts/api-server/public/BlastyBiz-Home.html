@@ -756,6 +756,104 @@ footer {
   text-transform: uppercase;
   margin-top: 4px;
 }
+
+/* ══ RESPONSIVE — TABLET (768px+) ═══════════════════════════ */
+@media (min-width: 768px) {
+  nav { padding: 18px 40px; }
+
+  section { max-width: 720px; padding: 80px 40px; }
+
+  .hero { padding: 130px 40px 80px; }
+
+  .cta-section { padding: 80px 40px; }
+
+  .pricing-grid { flex-direction: row; flex-wrap: wrap; }
+  .price-card { flex: 1; min-width: 220px; }
+
+  .testimonials { flex-direction: row; flex-wrap: wrap; }
+  .testimonial { flex: 1; min-width: 220px; }
+
+  .platform-strip { padding: 48px 40px; }
+}
+
+/* ══ RESPONSIVE — DESKTOP (1100px+) ═════════════════════════ */
+/* Hero image column (hidden below desktop) */
+.hero-img-col { display: none; }
+
+@media (min-width: 1100px) {
+  nav { padding: 18px 80px; }
+
+  /* Hero becomes left-text / right-image split */
+  .hero {
+    text-align: left;
+    align-items: flex-start;
+    padding: 0 80px;
+    min-height: 100vh;
+  }
+  .hero-inner {
+    display: flex;
+    align-items: center;
+    gap: 72px;
+    max-width: 1240px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 140px 0 80px;
+  }
+  .hero-text { flex: 1; min-width: 0; }
+  .hero-img-col {
+    display: block;
+    flex: 0 0 500px;
+  }
+  .hero-img-col img {
+    width: 100%;
+    border-radius: 24px;
+    object-fit: cover;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+    display: block;
+  }
+  .hero-sub { margin-left: 0; margin-right: 0; }
+  .hero-actions { flex-direction: row; align-items: center; }
+  .btn-hero { width: auto; }
+  .hero-glow { left: 40%; }
+
+  /* Wider sections */
+  section { max-width: 1240px; padding: 100px 80px; }
+
+  /* Split sections: text left, image right */
+  .section-split {
+    display: flex;
+    align-items: center;
+    gap: 80px;
+  }
+  .section-col { flex: 1; min-width: 0; }
+  .section-img-col {
+    flex: 0 0 420px;
+  }
+  .section-img-col img {
+    width: 100%;
+    border-radius: 20px;
+    object-fit: cover;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    display: block;
+  }
+
+  /* Reverse split: image left, text right */
+  .section-split.reverse { flex-direction: row-reverse; }
+
+  /* Platform strip */
+  .platform-strip { padding: 56px 80px; }
+
+  /* Pricing cards in a row */
+  .pricing-grid { flex-direction: row; align-items: stretch; }
+  .price-card { flex: 1; }
+
+  /* Testimonials in a row */
+  .testimonials { flex-direction: row; }
+  .testimonial { flex: 1; }
+
+  /* CTA */
+  .cta-section { padding: 100px 80px; }
+}
 </style>
 </head>
 <body>
@@ -792,43 +890,53 @@ footer {
 <div class="hero">
   <div class="hero-glow"></div>
 
-  <div class="hero-badge">⚡ AI-Powered Marketing</div>
+  <!-- hero-inner becomes a flex row on desktop -->
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="hero-badge">⚡ AI-Powered Marketing</div>
 
-  <h1 class="hero-title">
-    Post Once.
-    <span>Reach Everywhere.</span>
-  </h1>
+      <h1 class="hero-title">
+        Post Once.
+        <span>Reach Everywhere.</span>
+      </h1>
 
-  <p class="hero-sub">
-    Stop spending hours posting your business to <strong>12 different platforms.</strong>
-    Write it once — AI adapts it for every surface. One tap and you're done.
-  </p>
+      <p class="hero-sub">
+        Stop spending hours posting your business to <strong>12 different platforms.</strong>
+        Write it once — AI adapts it for every surface. One tap and you're done.
+      </p>
 
-  <div class="hero-actions">
-    <a class="btn-hero" href="BlastyBiz-Login.html">
-      🚀 Start Posting Free
-    </a>
-    <a class="btn-ghost" href="#how">
-      See how it works ↓
-    </a>
-  </div>
+      <div class="hero-actions">
+        <a class="btn-hero" href="BlastyBiz-Login.html">
+          🚀 Start Posting Free
+        </a>
+        <a class="btn-ghost" href="#how">
+          See how it works ↓
+        </a>
+      </div>
 
-  <p class="hero-note">No credit card required &nbsp;·&nbsp; Setup in 2 minutes &nbsp;·&nbsp; Cancel anytime</p>
+      <p class="hero-note">No credit card required &nbsp;·&nbsp; Setup in 2 minutes &nbsp;·&nbsp; Cancel anytime</p>
 
-  <div class="stat-row reveal">
-    <div class="stat-box">
-      <div class="stat-big">12+</div>
-      <div class="stat-lbl">Platforms</div>
+      <div class="stat-row reveal">
+        <div class="stat-box">
+          <div class="stat-big">12+</div>
+          <div class="stat-lbl">Platforms</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-big">2<span style="font-size:20px">min</span></div>
+          <div class="stat-lbl">To Post All</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-big">$0</div>
+          <div class="stat-lbl">To Start</div>
+        </div>
+      </div>
+    </div><!-- /.hero-text -->
+
+    <!-- Image: visible only on desktop via CSS -->
+    <div class="hero-img-col">
+      <img src="img/people-hero.png" alt="Happy small business owners" />
     </div>
-    <div class="stat-box">
-      <div class="stat-big">2<span style="font-size:20px">min</span></div>
-      <div class="stat-lbl">To Post All</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-big">$0</div>
-      <div class="stat-lbl">To Start</div>
-    </div>
-  </div>
+  </div><!-- /.hero-inner -->
 </div>
 
 <!-- PLATFORM STRIP -->
@@ -853,73 +961,83 @@ footer {
 <!-- ══════════════════════════════════════════
      PROBLEM
 ══════════════════════════════════════════ -->
-<section class="reveal">
-  <div class="section-label">The Problem</div>
-  <h2 class="section-title">You Don't Have<br/><span>Time For This</span></h2>
-  <p class="section-body">You're running a business. You don't have time to log into 12 different platforms, rewrite your listing 12 different ways, and do it all over again next week.</p>
+<section class="reveal section-split reverse">
+  <div class="section-col">
+    <div class="section-label">The Problem</div>
+    <h2 class="section-title">You Don't Have<br/><span>Time For This</span></h2>
+    <p class="section-body">You're running a business. You don't have time to log into 12 different platforms, rewrite your listing 12 different ways, and do it all over again next week.</p>
 
-  <div class="pain-card">
-    <div class="pain-row">
-      <div class="pain-icon">⏰</div>
-      <div class="pain-text">
-        <strong>Hours wasted every week</strong>
-        Posting to Facebook, then Google, then Craigslist, then Nextdoor — each one different, each one manual.
+    <div class="pain-card">
+      <div class="pain-row">
+        <div class="pain-icon">⏰</div>
+        <div class="pain-text">
+          <strong>Hours wasted every week</strong>
+          Posting to Facebook, then Google, then Craigslist, then Nextdoor — each one different, each one manual.
+        </div>
+      </div>
+      <div class="pain-row">
+        <div class="pain-icon">😤</div>
+        <div class="pain-text">
+          <strong>Every platform wants something different</strong>
+          Instagram wants hashtags. Craigslist wants plain text. Google wants keywords. Yelp wants a story. It never ends.
+        </div>
+      </div>
+      <div class="pain-row">
+        <div class="pain-icon">💸</div>
+        <div class="pain-text">
+          <strong>Paying someone to do it is expensive</strong>
+          A social media manager costs $300–$800/month. That's money that should stay in your business.
+        </div>
+      </div>
+      <div class="pain-row">
+        <div class="pain-icon">📉</div>
+        <div class="pain-text">
+          <strong>Not posting means losing customers</strong>
+          Your competitor down the street is showing up everywhere. You're not. That's customers walking past you.
+        </div>
       </div>
     </div>
-    <div class="pain-row">
-      <div class="pain-icon">😤</div>
-      <div class="pain-text">
-        <strong>Every platform wants something different</strong>
-        Instagram wants hashtags. Craigslist wants plain text. Google wants keywords. Yelp wants a story. It never ends.
-      </div>
-    </div>
-    <div class="pain-row">
-      <div class="pain-icon">💸</div>
-      <div class="pain-text">
-        <strong>Paying someone to do it is expensive</strong>
-        A social media manager costs $300–$800/month. That's money that should stay in your business.
-      </div>
-    </div>
-    <div class="pain-row">
-      <div class="pain-icon">📉</div>
-      <div class="pain-text">
-        <strong>Not posting means losing customers</strong>
-        Your competitor down the street is showing up everywhere. You're not. That's customers walking past you.
-      </div>
-    </div>
+  </div>
+  <div class="section-img-col">
+    <img src="img/people-feature-2.png" alt="Small business owner" />
   </div>
 </section>
 
 <!-- ══════════════════════════════════════════
      HOW IT WORKS
 ══════════════════════════════════════════ -->
-<section id="how" class="reveal">
-  <div class="section-label">How It Works</div>
-  <h2 class="section-title">Three Steps.<br/><span>Done.</span></h2>
-  <p class="section-body">No learning curve. No tech skills needed. If you can fill out a form, you can use BlastyBiz.</p>
+<section id="how" class="reveal section-split">
+  <div class="section-col">
+    <div class="section-label">How It Works</div>
+    <h2 class="section-title">Three Steps.<br/><span>Done.</span></h2>
+    <p class="section-body">No learning curve. No tech skills needed. If you can fill out a form, you can use BlastyBiz.</p>
 
-  <div class="steps">
-    <div class="step">
-      <div class="step-num">1</div>
-      <div class="step-content">
-        <div class="step-title">Tell us about your business</div>
-        <div class="step-desc">Fill out one simple form. Your name, what you offer, your price, your hours. Takes about 2 minutes. Add photos straight from your phone.</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Tell us about your business</div>
+          <div class="step-desc">Fill out one simple form. Your name, what you offer, your price, your hours. Takes about 2 minutes. Add photos straight from your phone.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">AI adapts it for every platform</div>
+          <div class="step-desc">Our AI knows exactly how each platform works — the right tone, the right length, the right keywords. It rewrites your listing perfectly for each one automatically.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Post everywhere in one tap</div>
+          <div class="step-desc">We're actively building direct auto-posting for Google Business, Facebook, and Instagram — coming soon. For every platform, your perfectly formatted post is ready to copy and paste in seconds. Done in minutes, not hours.</div>
+        </div>
       </div>
     </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div class="step-content">
-        <div class="step-title">AI adapts it for every platform</div>
-        <div class="step-desc">Our AI knows exactly how each platform works — the right tone, the right length, the right keywords. It rewrites your listing perfectly for each one automatically.</div>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div class="step-content">
-        <div class="step-title">Post everywhere in one tap</div>
-        <div class="step-desc">We're actively building direct auto-posting for Google Business, Facebook, and Instagram — coming soon. For every platform, your perfectly formatted post is ready to copy and paste in seconds. Done in minutes, not hours.</div>
-      </div>
-    </div>
+  </div>
+  <div class="section-img-col">
+    <img src="img/people-feature-1.png" alt="Business owner using laptop" />
   </div>
 </section>
 

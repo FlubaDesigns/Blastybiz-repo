@@ -1,5 +1,34 @@
 uploads = []
-generated = []
+
+[[generated]]
+id = "OuCaZZ7CSrSynHi6IUaQ-"
+uri = "file://artifacts/api-server/public/img/people-hero.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "mMdRamXRY6x-44RF47b-D"
+uri = "file://artifacts/api-server/public/img/people-login.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "wvsToiQUwz8uqA2DKEarP"
+uri = "file://artifacts/api-server/public/img/people-feature-1.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "aLFSKfwvFPEAS4ddpn21H"
+uri = "file://artifacts/api-server/public/img/people-about.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "TkDBs9JRYI5jmUomkTCl1"
+uri = "file://artifacts/api-server/public/img/people-feature-2.png"
+type = "image"
+title = "generated_image"
 
 [[outputs]]
 id = "OlLytVLFMpzHayK0XXDkK"

@@ -29,3 +29,16 @@ body {
 
   p, li, span, div { font-size: inherit; }
 }
+
+/* ── Tablet (768px – 1099px) ────────────────────────────────── */
+@media (min-width: 768px) {
+  html { font-size: 16px; }
+}
+
+/* ── Desktop (1100px+) ──────────────────────────────────────── */
+/* Utility class: visible only on desktop */
+.desk-only { display: none; }
+
+@media (min-width: 1100px) {
+  .desk-only { display: block; }
+}

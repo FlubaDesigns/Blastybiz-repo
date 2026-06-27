@@ -463,9 +463,93 @@ input.error { border-color: var(--danger); }
 }
 #auth-card-wrap { display: none; }
 #auth-card-wrap.ready { display: block; }
+
+/* ══ DESKTOP SPLIT PANEL (1100px+) ══════════════════════════ */
+.login-img-panel { display: none; }
+
+@media (min-width: 1100px) {
+  body {
+    flex-direction: row;
+    overflow: hidden;
+    height: 100dvh;
+  }
+
+  /* Left image panel */
+  .login-img-panel {
+    display: flex;
+    flex: 0 0 50%;
+    position: relative;
+    overflow: hidden;
+  }
+  .login-img-panel img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+  }
+  .login-img-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(160deg, rgba(0,200,83,0.25) 0%, rgba(7,13,7,0.75) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 56px 48px;
+  }
+  .login-panel-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    letter-spacing: 4px;
+    color: #EEF7EE;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .login-panel-logo span { color: #00C853; }
+  .login-panel-tag {
+    font-size: 15px;
+    color: rgba(238,247,238,0.75);
+    font-weight: 300;
+    letter-spacing: 0.5px;
+  }
+  .login-panel-quote {
+    margin-top: 28px;
+    font-size: 14px;
+    color: rgba(238,247,238,0.6);
+    font-style: italic;
+    line-height: 1.6;
+    max-width: 320px;
+    border-left: 2px solid rgba(0,200,83,0.5);
+    padding-left: 16px;
+  }
+
+  /* Right form panel */
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 100dvh;
+  }
+
+  /* Hide canvas on desktop — panel image replaces the background */
+  #canvas { display: none; }
+}
+
+@media (min-width: 768px) {
+  .main { padding: 60px 48px; }
+}
 </style>
 </head>
 <body>
+
+<!-- Desktop image panel (hidden on mobile/tablet) -->
+<div class="login-img-panel">
+  <img src="img/people-login.png" alt="Business owner smiling" />
+  <div class="login-img-overlay">
+    <div class="login-panel-logo">Blasty<span>Biz</span></div>
+    <div class="login-panel-tag">Post Once. Reach Everywhere.</div>
+    <div class="login-panel-quote">"I used to spend my whole Sunday posting. Now it takes 5 minutes." — Maria R., Pizzeria Owner</div>
+  </div>
+</div>
 
 <canvas id="canvas"></canvas>
 
