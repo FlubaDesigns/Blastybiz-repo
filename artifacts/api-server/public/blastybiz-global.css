@@ -72,6 +72,7 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
 body.has-site-header { padding-top: 217px; }
 body.has-site-header nav { top: 160px; }
 body.has-site-header .mobile-menu { top: 217px; }
+body.has-site-header .nav-logo { display: none; }
 @media (max-width: 900px) {
   body.has-site-header { padding-top: 217px; }
   body.has-site-header nav { top: 160px; }
