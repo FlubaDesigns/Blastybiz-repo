@@ -384,9 +384,9 @@ html .hamburger         { display: none; }
   html .powered-band         { padding-left: 48px; padding-right: 48px; }
 
   /* Hero — 50/50, 1% margin all sides (gap between = 2%) */
-  html .hero          { padding: 40px 0 0; text-align: left; align-items: stretch; }
+  html .hero          { padding: 0; text-align: left; align-items: stretch; }
   html .hero-inner    { display: flex; align-items: stretch; width: 100%; }
-  html .hero-text     { flex: 0 0 46.5%; margin: 1%; min-width: 0; padding: 40px 0; }
+  html .hero-text     { flex: 0 0 46.5%; margin: 1%; min-width: 0; padding: 8px 0 40px; }
   html .hero-img-col  { display: flex; flex-direction: column;
                          flex: 0 0 46.5%; margin: 1%; min-width: 0; }
   html .hero-img-overlay { display: block; width: 100%; text-align: center;
@@ -479,8 +479,8 @@ html .hamburger         { display: none; }
   html .pricing-section { padding-top: 40px; }
 
   /* Hero — desktop padding */
-  html .hero          { padding: 24px 0 0; }
-  html .hero-text     { padding: 48px 56px 48px 80px; }
+  html .hero          { padding: 0; }
+  html .hero-text     { padding: 8px 56px 48px 80px; }
   html .hero-glow     { left: 40%; }
   html .wiz-header            { padding: 20px 80px 0; }
 
