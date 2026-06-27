@@ -1462,8 +1462,8 @@ function renderQuickSelect() {
       const existingCopy = p.adaptedContent || '';
       bodyInner += `
         <div id="qp-copy-${p.id}" style="display:${existingCopy ? 'block' : 'none'};${hasCats ? 'margin-top:14px;' : ''}">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:6px;">
-            <span style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--green);flex:1;">⚡ AI-Generated Copy</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--green);flex:1;min-width:80px;">⚡ AI Copy</span>
             <button id="qp-regen-${p.id}" onclick="regeneratePlatformCopy('${p.id}')"
               style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0;">
               🔄 Regenerate
@@ -1472,10 +1472,9 @@ function renderQuickSelect() {
               style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0;">
               📋 Copy
             </button>
-            <button onclick="saveCopyToLibrary('${p.id}')"
-              style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0;"
-              title="Save to Copy Library (Pro &amp; Agency)">
-              💾 Save
+            <button id="qp-accept-${p.id}" onclick="acceptPlatformCopy('${p.id}')"
+              style="background:var(--green);border:none;border-radius:6px;padding:4px 12px;color:#000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">
+              ✅ Accept
             </button>
           </div>
           <div id="qp-copy-text-${p.id}"
@@ -1546,6 +1545,18 @@ function showCopyInAccordions(adaptations, featuredPhotoUrl) {
 
     if (copyText) copyText.textContent = adapted;
     if (copySection) copySection.style.display = 'block';
+
+    // Reset Accept button for this fresh copy
+    const acceptBtn = document.getElementById('qp-accept-' + p.id);
+    if (acceptBtn) {
+      acceptBtn.textContent = '✅ Accept';
+      acceptBtn.disabled = false;
+      acceptBtn.style.background = 'var(--green)';
+      acceptBtn.style.border = 'none';
+      acceptBtn.style.color = '#000';
+      acceptBtn.style.fontWeight = '700';
+      delete acceptBtn.dataset.accepted;
+    }
 
     // Photo strip — only for platforms that support images
     const imgSupport = PLATFORM_IMAGE_SUPPORT[p.id];
@@ -1665,6 +1676,71 @@ async function saveCopyToLibrary(pid) {
     showToast('💾 Saved to library!');
   } catch (e) {
     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Save'; }
+    showToast('❌ Save failed: ' + (e.message || 'unknown'));
+  }
+}
+
+async function acceptPlatformCopy(pid) {
+  const el = document.getElementById('qp-copy-text-' + pid);
+  const btn = document.getElementById('qp-accept-' + pid);
+  const plan = window._bbUserPlan || 'starter';
+
+  // No copy yet — different message depending on plan
+  if (!el || !el.textContent.trim()) {
+    if (plan === 'starter') {
+      showToast('⚡ Generate copy first — upgrade to Pro to save it to your library');
+    } else {
+      showToast('Generate AI copy first, then accept it');
+    }
+    return;
+  }
+
+  // Starter — nudge upgrade
+  if (plan === 'starter') {
+    showToast('💾 Accept & save to library is a Pro & Agency feature — tap Upgrade to unlock');
+    return;
+  }
+
+  // Already accepted
+  if (btn && btn.dataset.accepted === '1') {
+    showToast('Already saved to library');
+    return;
+  }
+
+  // Pro / Agency — save to library and lock the button
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+
+  const platform = platforms.find(p => p.id === pid);
+  const copy    = el.textContent.trim();
+  const offer   = document.getElementById('biz-offer')?.value?.trim() || '';
+  const adName  = document.getElementById('biz-ad-name')?.value?.trim() || '';
+  const tone    = profile.tone || 'friendly';
+
+  try {
+    if (!window._bbSaveLibraryItem) throw new Error('Library not ready');
+    await window._bbSaveLibraryItem({
+      platformId:   pid,
+      platformName: platform ? platform.name : pid,
+      copy,
+      campaignId:   activeCampaignId,
+      campaignName: activeCampaignName,
+      adName,
+      offer,
+      tone,
+      savedAt: new Date().toISOString(),
+    });
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '✅ Accepted';
+      btn.style.background = 'transparent';
+      btn.style.border = '1px solid var(--green)';
+      btn.style.color = 'var(--green)';
+      btn.style.fontWeight = '600';
+      btn.dataset.accepted = '1';
+    }
+    showToast('✅ Accepted & saved to library');
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Accept'; }
     showToast('❌ Save failed: ' + (e.message || 'unknown'));
   }
 }
@@ -1841,6 +1917,17 @@ async function regeneratePlatformCopy(pid) {
       imgEl.style.display = 'block';
     }
 
+    // Reset Accept button — new copy, needs fresh acceptance
+    const acceptBtn = document.getElementById('qp-accept-' + pid);
+    if (acceptBtn) {
+      acceptBtn.textContent = '✅ Accept';
+      acceptBtn.disabled = false;
+      acceptBtn.style.background = 'var(--green)';
+      acceptBtn.style.border = 'none';
+      acceptBtn.style.color = '#000';
+      acceptBtn.style.fontWeight = '700';
+      delete acceptBtn.dataset.accepted;
+    }
     showToast('✅ Copy regenerated for ' + platform.name);
   } catch (err) {
     console.error('regeneratePlatformCopy error:', err);
