@@ -19,7 +19,7 @@
   /* Spacing tokens */
   --section-v: 60px;   /* vertical section padding — mobile */
   --gutter:    5%;     /* horizontal gutter — all breakpoints */
-  --row-gap:   10px;   /* vertical gutter between homepage rows */
+  --row-gap:   20px;   /* vertical gutter between homepage rows */
 }
 
 /* ── Main content wrapper — global gutter ───────────────── */
