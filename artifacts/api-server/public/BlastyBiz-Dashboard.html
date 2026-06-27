@@ -4,11 +4,148 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="blastybiz-global.css?v=94" />
+<link rel="stylesheet" href="blastybiz-global.css?v=92" />
 <title>BlastyBiz — Command Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --green:#00C853; --dark:#070D07; --silver:#7AB87A; --light:#EEF7EE;
+    --card:#0D160D; --border:#1E2E1E; --muted:#587058; --danger:#FF4444;
+    --warn:#FFA726; --blue:#54A8FF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;min-height:100dvh;padding-bottom:60px}
+
+  /* ── HEADER ── */
+  header{background:rgba(7,13,7,.96);border-bottom:1px solid var(--border);padding:16px 20px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(10px)}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--green);line-height:1;text-decoration:none}
+  .logo span{color:var(--silver);font-size:11px;display:block;letter-spacing:3px;font-family:'DM Sans';font-weight:300;margin-top:2px}
+  .top-actions{display:flex;gap:8px;align-items:center}
+  .icon-btn{background:var(--card);border:1px solid var(--border);border-radius:999px;color:var(--silver);height:40px;min-width:40px;padding:0 13px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s}
+  .icon-btn:hover{border-color:var(--green);color:var(--green)}
+
+  /* ── BUSINESS SWITCHER BAR ── */
+  .biz-bar{background:rgba(13,22,13,0.95);border-bottom:1px solid var(--border);padding:10px 20px;position:sticky;top:73px;z-index:99;display:flex;align-items:center;gap:10px;backdrop-filter:blur(8px)}
+  .biz-active{display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;background:var(--dark);border:1px solid var(--green);border-radius:10px;padding:10px 14px;transition:all 0.2s}
+  .biz-active:hover{background:#0A1A0A}
+  .biz-avatar{width:36px;height:36px;border-radius:9px;background:rgba(0,200,83,0.1);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .biz-name{font-size:15px;font-weight:700;color:var(--light)}
+  .biz-plan{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-top:2px}
+  .biz-chevron{margin-left:auto;color:var(--muted);font-size:12px;transition:transform 0.2s}
+  .biz-active.open .biz-chevron{transform:rotate(180deg)}
+  .biz-count{font-size:11px;color:var(--muted);white-space:nowrap;flex-shrink:0}
+  .add-biz-btn{background:transparent;border:1px dashed var(--border);border-radius:10px;color:var(--muted);height:40px;width:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:all 0.2s;flex-shrink:0}
+  .add-biz-btn:hover{border-color:var(--green);color:var(--green)}
+
+  /* ── BUSINESS SWITCHER SHEET ── */
+  .biz-sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;opacity:0;pointer-events:none;transition:opacity 0.25s}
+  .biz-sheet-overlay.open{opacity:1;pointer-events:all}
+  .biz-sheet{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px;z-index:201;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);max-height:75vh;overflow-y:auto}
+  .biz-sheet.open{transform:translateY(0)}
+  .sheet-handle{width:40px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 18px}
+  .sheet-title{font-family:'Bebas Neue';font-size:22px;letter-spacing:1.5px;color:var(--light);margin-bottom:4px}
+  .sheet-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+
+  /* ── BUSINESS CARDS IN SHEET ── */
+  .biz-cards{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+  .biz-card{background:var(--dark);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.2s}
+  .biz-card:hover{border-color:var(--silver)}
+  .biz-card.active{border-color:var(--green);background:rgba(0,200,83,0.05)}
+  .biz-card-avatar{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;border:1px solid var(--border)}
+  .biz-card-info{flex:1}
+  .biz-card-name{font-size:15px;font-weight:700;color:var(--light)}
+  .biz-card-meta{font-size:11px;color:var(--muted);margin-top:3px}
+  .biz-card-status{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+  .biz-score{font-family:'Bebas Neue';font-size:22px;color:var(--green);line-height:1}
+  .biz-platforms{font-size:10px;color:var(--muted);letter-spacing:0.5px}
+  .biz-card.active .biz-card-name::after{content:' ✓';color:var(--green)}
+
+  /* ── ADD NEW BUSINESS CARD ── */
+  .add-biz-card{background:transparent;border:1px dashed var(--border);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.2s}
+  .add-biz-card:hover{border-color:var(--green)}
+  .add-biz-icon{width:44px;height:44px;border-radius:11px;background:rgba(0,200,83,0.06);border:1px dashed var(--green);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .add-biz-text{font-size:14px;font-weight:600;color:var(--silver)}
+  .add-biz-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+  /* ── AGENCY LIMIT BAR ── */
+  .agency-bar{background:#0A1A0A;border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:12px;display:flex;align-items:center;gap:10px}
+  .agency-label{font-size:12px;color:var(--muted);flex:1}
+  .agency-label strong{color:var(--silver);display:block;font-size:13px;margin-bottom:2px}
+  .agency-pips{display:flex;gap:4px}
+  .pip{width:12px;height:12px;border-radius:3px;background:var(--border)}
+  .pip.used{background:var(--green)}
+  .pip.active-pip{background:var(--green);box-shadow:0 0 6px var(--green)}
+
+  /* ── MAIN CONTENT ── */
+  main{width:min(1180px,100%);margin:0 auto;padding:20px}
+  .hero{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin-bottom:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
+  .card-title{font-family:'Bebas Neue';font-size:21px;letter-spacing:1.5px;color:var(--green);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .eyebrow{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--silver);font-weight:700;margin-bottom:8px}
+  .big-title{font-family:'Bebas Neue';font-size:44px;line-height:.95;letter-spacing:2px;color:var(--light);margin-bottom:10px}
+  .big-title span{color:var(--green)}
+  .sub{color:var(--muted);font-size:15px;line-height:1.6;max-width:650px}
+  .score-wrap{display:flex;align-items:center;gap:18px}
+  .score-ring{width:122px;height:122px;border-radius:50%;background:conic-gradient(var(--green) 0 0%, var(--border) 0% 100%);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0}
+  .score-ring:after{content:'';position:absolute;inset:10px;background:var(--card);border-radius:50%}
+  .score-number{position:relative;z-index:2;font-family:'Bebas Neue';font-size:42px;color:var(--green)}
+  .score-meta h3{font-size:18px;margin-bottom:6px}
+  .score-meta p{font-size:13px;color:var(--muted);line-height:1.5}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+  .stat{background:#081008;border:1px solid var(--border);border-radius:12px;padding:16px}
+  .stat-num{font-family:'Bebas Neue';font-size:34px;color:var(--green);line-height:1}
+  .stat-label{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-top:4px}
+  .stat-note{font-size:12px;color:var(--silver);margin-top:10px}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .platform-list,.activity-list,.task-list{display:flex;flex-direction:column;gap:10px}
+  .platform-row,.activity-row,.task-row{background:#081008;border:1px solid var(--border);border-radius:12px;padding:13px;display:flex;align-items:center;gap:12px}
+  .platform-icon{width:40px;height:40px;border-radius:10px;background:var(--dark);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .row-main{flex:1}
+  .row-title{font-size:14px;font-weight:700;color:var(--light)}
+  .row-sub{font-size:12px;color:var(--muted);margin-top:3px}
+  .badge{font-size:10px;text-transform:uppercase;letter-spacing:.7px;font-weight:800;border-radius:999px;padding:5px 8px;white-space:nowrap}
+  .live{background:#0A2A0A;color:var(--green);border:1px solid var(--green)}
+  .needs{background:#2A1A00;color:var(--warn);border:1px solid var(--warn)}
+  .off{background:#151f15;color:var(--muted);border:1px solid var(--border)}
+  .error{background:#2A0A0A;color:var(--danger);border:1px solid var(--danger)}
+  .btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  .btn{border-radius:10px;padding:13px 16px;text-decoration:none;font-weight:800;font-size:14px;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;gap:8px;color:var(--light);background:transparent;cursor:pointer;transition:all 0.2s}
+  .btn-primary{background:var(--green);color:var(--dark);border-color:var(--green)}
+  .btn:hover{border-color:var(--green);color:var(--green)}
+  .btn-primary:hover{color:var(--dark);background:#00b84c}
+  .progress-wrap{height:6px;background:var(--border);border-radius:999px;overflow:hidden;margin-top:10px}
+  .progress-bar{height:100%;background:var(--green);border-radius:999px}
+  .mini-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--silver);font-weight:800;margin-top:16px}
+  .cost-line{display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:10px 0;font-size:13px}
+  .cost-line:last-child{border-bottom:none}
+  .ok{color:var(--green)}
+  .warn{color:var(--warn)}
+
+  /* ── MOBILE NAV ── */
+  .mobile-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(7,13,7,.98);border-top:1px solid var(--border);display:none;grid-template-columns:repeat(4,1fr);z-index:200}
+  .mobile-nav a{padding:10px 4px;text-align:center;text-decoration:none;color:var(--muted);font-size:11px}
+  .mobile-nav a.active{color:var(--green)}
+
+  /* ── TOAST ── */
+  .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:var(--dark);padding:12px 24px;border-radius:30px;font-weight:700;font-size:14px;opacity:0;transition:all 0.3s;z-index:999;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media(max-width:850px){
+    main{padding:14px}
+    .hero,.two-col{grid-template-columns:1fr}
+    .grid{grid-template-columns:repeat(2,1fr)}
+    .big-title{font-size:36px}
+    .top-actions .hide-mobile{display:none}
+    .mobile-nav{display:grid}
+    body{padding-bottom:78px}
+    .score-wrap{align-items:flex-start}
+    .score-ring{width:100px;height:100px}
+    .score-number{font-size:34px}
+  }
+
+</style>
 </head>
-<body class="dashboard-page">
+<body>
 
 <!-- HEADER -->
 <header>
@@ -84,8 +221,8 @@
       <div class="score-wrap">
         <div class="score-ring" id="score-ring"><div class="score-number" id="visibility-score">—</div></div>
         <div class="score-meta">
-          <h3 id="score-label">—</h3>
-          <p id="score-desc"></p>
+          <h3 id="score-label" style="font-size:18px;margin-bottom:6px">—</h3>
+          <p id="score-desc" style="font-size:13px;color:var(--muted);line-height:1.5"></p>
           <div class="mini-label">Completion</div>
           <div class="progress-wrap"><div class="progress-bar" id="score-bar" style="width:0%"></div></div>
         </div>
@@ -106,7 +243,7 @@
       <div class="platform-list" id="platform-list">
         <div style="color:#587058;font-size:13px;padding:4px 0">Loading…</div>
       </div>
-      <a href="BlastyBiz-Connect.html" class="manage-link">⚙ Manage connections →</a>
+      <a href="BlastyBiz-Connect.html" style="display:inline-block;margin-top:10px;font-size:12px;color:#00C853;text-decoration:none;font-weight:600">⚙ Manage connections →</a>
     </div>
 
     <div class="card" id="tasks">
@@ -117,7 +254,7 @@
     </div>
   </section>
 
-  <section class="two-col">
+  <section class="two-col" style="margin-top:16px;">
     <div class="card">
       <div class="card-title">📋 Recent Activity</div>
       <div class="activity-list" id="activity-list">
@@ -137,25 +274,32 @@
         <a class="btn" id="billing-btn" href="#" onclick="handleBilling(event)">View Billing</a>
         <a class="btn" href="BlastyBiz-Admin.html">Admin</a>
       </div>
-      <div class="snapshot-foot">
-        <button onclick="openDeleteModal()" class="delete-link">Delete account</button>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <button onclick="openDeleteModal()" style="background:none;border:none;color:#c0392b;font-size:12px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline">Delete account</button>
       </div>
     </div>
   </section>
 
 <!-- DELETE ACCOUNT MODAL -->
-<div id="delete-overlay" class="delete-modal-overlay">
-  <div class="delete-modal">
-    <h3>Delete Account</h3>
-    <p>This permanently deletes your account, all businesses, listings, and publish history. Your Square subscription will be cancelled. <strong class="danger-text">This cannot be undone.</strong></p>
-    <p>Type <strong>DELETE</strong> to confirm:</p>
-    <input id="delete-confirm-input" type="text" placeholder="DELETE" class="delete-modal-input"
+<div id="delete-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#0d160d;border:1px solid #1e2e1e;border-radius:16px;padding:32px;max-width:440px;width:90%;margin:auto;">
+    <h3 style="color:#fff;margin-bottom:8px;font-size:18px;">Delete Account</h3>
+    <p style="color:#7ab87a;font-size:13px;line-height:1.6;margin-bottom:16px;">
+      This permanently deletes your account, all businesses, listings, and publish history. Your Square subscription will be cancelled. <strong style="color:#ff6b6b">This cannot be undone.</strong>
+    </p>
+    <p style="color:#7ab87a;font-size:13px;margin-bottom:8px;">Type <strong style="color:#fff">DELETE</strong> to confirm:</p>
+    <input id="delete-confirm-input" type="text" placeholder="DELETE"
+      style="width:100%;background:#081008;border:1px solid #1e2e1e;border-radius:8px;padding:10px 14px;color:#fff;font-size:14px;margin-bottom:16px;box-sizing:border-box;"
       oninput="document.getElementById('delete-confirm-btn').disabled = this.value !== 'DELETE'"/>
-    <div class="delete-modal-actions">
-      <button onclick="closeDeleteModal()" class="btn-cancel">Cancel</button>
-      <button id="delete-confirm-btn" onclick="confirmDeleteAccount()" disabled class="btn-destroy">Delete Everything</button>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeDeleteModal()" style="flex:1;background:#1e2e1e;border:none;border-radius:8px;padding:11px;color:#7ab87a;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
+      <button id="delete-confirm-btn" onclick="confirmDeleteAccount()" disabled
+        style="flex:1;background:#c0392b;border:none;border-radius:8px;padding:11px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;opacity:0.5;transition:opacity .2s"
+        onmouseenter="if(!this.disabled)this.style.opacity='.85'" onmouseleave="if(!this.disabled)this.style.opacity='1'">
+        Delete Everything
+      </button>
     </div>
-    <p id="delete-error" class="delete-error"></p>
+    <p id="delete-error" style="color:#ff6b6b;font-size:12px;margin-top:10px;display:none"></p>
   </div>
 </div>
 </main>
@@ -669,14 +813,16 @@ window.handleBilling = async function(e) {
 
 // ── Delete Account ──────────────────────────────────────────────────────────
 window.openDeleteModal = function() {
-  document.getElementById('delete-overlay').classList.add('open');
+  const overlay = document.getElementById('delete-overlay');
+  overlay.style.display = 'flex';
   document.getElementById('delete-confirm-input').value = '';
   document.getElementById('delete-confirm-btn').disabled = true;
-  document.getElementById('delete-error').classList.remove('visible');
+  document.getElementById('delete-confirm-btn').style.opacity = '0.5';
+  document.getElementById('delete-error').style.display = 'none';
 };
 
 window.closeDeleteModal = function() {
-  document.getElementById('delete-overlay').classList.remove('open');
+  document.getElementById('delete-overlay').style.display = 'none';
 };
 
 window.confirmDeleteAccount = async function() {
@@ -701,12 +847,14 @@ window.confirmDeleteAccount = async function() {
       errEl.style.display = 'block';
       btn.textContent = 'Delete Everything';
       btn.disabled = false;
+      btn.style.opacity = '1';
     }
   } catch(e) {
     errEl.textContent = 'Something went wrong. Please try again.';
     errEl.style.display = 'block';
     btn.textContent = 'Delete Everything';
     btn.disabled = false;
+    btn.style.opacity = '1';
   }
 };
 </script>
