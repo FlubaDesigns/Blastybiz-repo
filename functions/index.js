@@ -17,6 +17,11 @@ const { onRequest } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onDocumentUpdated, onDocumentCreated } = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
+
+// ── Base URL for all web-app redirects (checkout, OAuth, emails) ──────────────
+// Set APP_BASE_URL env var when adding a custom domain so all redirects update
+// without a code change. Falls back to Firebase default domain.
+const APP_BASE_URL = process.env.APP_BASE_URL || 'https://blastybiz-9523e.web.app';
 const Anthropic = require('@anthropic-ai/sdk');
 const axios = require('axios');
 
@@ -716,7 +721,7 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
       locationId: process.env.SQUARE_LOCATION_ID,
     },
     checkoutOptions: {
-      redirectUrl: `https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html?success=1`,
+      redirectUrl: `${APP_BASE_URL}/BlastyBiz-Dashboard.html?success=1`,
       merchantSupportEmail: 'info@blastybiz.com',
     },
     prePopulatedData: { buyerEmail: email },
@@ -783,7 +788,10 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
         status: 'active',
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       }, { merge: true });
-      // Mirror plan onto businesses docs so Admin pages read the correct plan
+      // Mirror plan onto businesses docs so Admin pages read the correct plan.
+      // ⚠️  SYNC RISK — users, subscriptions, and businesses are all updated here in sequence.
+      //     If you add another collection that mirrors billing state, add it in this same block
+      //     so all three stay in sync. Never update billing state from any other Cloud Function.
       const bizSnaps = await db.collection('businesses').where('uid', '==', uid).get();
       for (const biz of bizSnaps.docs) {
         await biz.ref.update({ currentPlan: plan, subscriptionStatus: 'active' });
@@ -889,7 +897,7 @@ exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
 // ══════════════════════════════════════════
 exports.googleOAuthCallback = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, async (req, res) => {
   const { code, state } = req.query;
-  if (!code) { res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?error=google'); return; }
+  if (!code) { res.redirect(`${APP_BASE_URL}/BlastyBiz-Connect.html?error=google`); return; }
 
   // Verify nonce — prevents forged OAuth state attacks
   let businessId = '', uid = '', returnTo = '';
@@ -906,8 +914,8 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
     console.error('googleOAuthCallback nonce error:', e.message);
     return res.status(400).send('OAuth state verification failed.');
   }
-  const connectedRedirect = `https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?connected=google${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
-  const errorRedirect     = `https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?error=google${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
+  const connectedRedirect = `${APP_BASE_URL}/BlastyBiz-Connected.html?connected=google${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
+  const errorRedirect     = `${APP_BASE_URL}/BlastyBiz-Connected.html?error=google${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
 
   try {
     const tokenResp = await axios.post('https://oauth2.googleapis.com/token', null, {
@@ -990,7 +998,7 @@ exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBO
 // ══════════════════════════════════════════
 exports.facebookOAuthCallback = onRequest({ invoker: 'public', secrets: ['FACEBOOK_APP_ID', 'FACEBOOK_APP_SECRET'] }, async (req, res) => {
   const { code, state } = req.query;
-  if (!code) { res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?error=facebook'); return; }
+  if (!code) { res.redirect(`${APP_BASE_URL}/BlastyBiz-Connect.html?error=facebook`); return; }
 
   // Verify nonce — prevents forged OAuth state attacks
   let businessId = '', uid = '', returnTo = '';
@@ -1007,8 +1015,8 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', secrets: ['FACEBO
     console.error('facebookOAuthCallback nonce error:', e.message);
     return res.status(400).send('OAuth state verification failed.');
   }
-  const fbConnectedRedirect = `https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?connected=facebook${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
-  const fbErrorRedirect     = `https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?error=facebook${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
+  const fbConnectedRedirect = `${APP_BASE_URL}/BlastyBiz-Connected.html?connected=facebook${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
+  const fbErrorRedirect     = `${APP_BASE_URL}/BlastyBiz-Connected.html?error=facebook${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
 
   try {
     const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/facebookOAuthCallback';
@@ -1225,11 +1233,11 @@ exports.jobFailedTrigger = onDocumentUpdated(
           <div style="background:#fff8e1;border-left:4px solid #ffc107;padding:12px 16px;margin:20px 0;border-radius:4px">
             <strong>Error:</strong> ${after.adminError || after.customerVisibleMessage || 'Unknown error'}
           </div>
-          <a href="https://blastybiz-9523e.web.app/BlastyBiz-Publishing-Status.html"
+          <a href="${APP_BASE_URL}/BlastyBiz-Publishing-Status.html"
              style="display:inline-block;background:#00C853;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin:16px 0">
             View Publishing Status →
           </a>
-          <p style="color:#888;font-size:12px;margin-top:24px">BlastyBiz · <a href="https://blastybiz-9523e.web.app" style="color:#888">blastybiz.com</a></p>
+          <p style="color:#888;font-size:12px;margin-top:24px">BlastyBiz · <a href="${APP_BASE_URL}" style="color:#888">blastybiz.com</a></p>
         </div>`,
     });
   }
@@ -1263,11 +1271,11 @@ exports.userCreatedTrigger = onDocumentCreated(
             <li>Create your first listing — AI adapts it for every platform</li>
             <li>Approve and blast</li>
           </ol>
-          <a href="https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html"
+          <a href="${APP_BASE_URL}/BlastyBiz-Dashboard.html"
              style="display:inline-block;background:#00C853;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin:20px 0">
             Go to Dashboard →
           </a>
-          <p style="color:#888;font-size:12px;margin-top:24px">BlastyBiz · <a href="https://blastybiz-9523e.web.app" style="color:#888">blastybiz.com</a></p>
+          <p style="color:#888;font-size:12px;margin-top:24px">BlastyBiz · <a href="${APP_BASE_URL}" style="color:#888">blastybiz.com</a></p>
         </div>`,
     });
   }

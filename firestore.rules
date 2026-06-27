@@ -16,6 +16,9 @@ service cloud.firestore {
       allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
       allow create: if request.auth != null && request.auth.uid == userId
         && request.resource.data.plan == 'starter';
+      // ⚠️  MAINTAINED DENYLIST — if you add a new billing/entitlement field to users docs
+      //     (e.g. squareCustomerId, subscriptionId, usageCounters) you MUST add it here too,
+      //     or it will be client-writable by default.
       allow update: if request.auth != null && request.auth.uid == userId
         && !('plan'       in request.resource.data.diff(resource.data).affectedKeys())
         && !('planActive' in request.resource.data.diff(resource.data).affectedKeys())

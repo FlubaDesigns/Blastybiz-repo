@@ -162,7 +162,7 @@ auth.authStateReady().then(() => {
       }
 
       if (!activeBizId) {
-        document.getElementById('save-btn').disabled = true;
+        document.getElementById('btn-save').disabled = true;
         const container = document.querySelector('.form-container') || document.querySelector('main') || document.body;
         const msg = document.createElement('p');
         msg.style.cssText = 'text-align:center;color:#666;margin:2rem 0;font-size:1rem;';
