@@ -10,6 +10,8 @@
 </head>
 <body class="login-page">
 
+<div id="site-header-inject"></div>
+
 <canvas id="canvas"></canvas>
 
 <img class="mobile-login-img" src="img/people-login-new.png" alt="BlastyBiz" />
@@ -571,6 +573,11 @@ window.selectPlan = function(btn, plan) {
   if (origSelectPlan) origSelectPlan(btn, plan);
 };
 window._selectedPlanId = 'starter';
+</script>
+<script>
+fetch('blastybiz-header.html').then(r=>r.text()).then(html=>{
+  document.getElementById('site-header-inject').innerHTML = html;
+});
 </script>
 </body>
 </html>

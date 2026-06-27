@@ -28,6 +28,29 @@
 html { font-size: 16px; -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--light); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
 
+/* ── SITE HEADER ─────────────────────────────────────────── */
+.site-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+  height: 64px;
+  background: #000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  border-bottom: 1px solid rgba(0,200,83,0.15);
+}
+.site-header-icon {
+  height: 44px;
+  width: 44px;
+  object-fit: contain;
+}
+.site-header-wordmark {
+  height: 32px;
+  object-fit: contain;
+}
+
 @media (max-width: 600px) {
   html { font-size: 17px; }
   input, textarea, select, button { font-size: 16px; }
@@ -536,6 +559,7 @@ body.login-page {
   display: flex;
   flex-direction: column;
   position: relative;
+  padding-top: 64px;
 }
 body.login-page .login-img-panel { display: none; }
 
