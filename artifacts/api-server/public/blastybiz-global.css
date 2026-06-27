@@ -33,7 +33,7 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 200;
-  height: 160px;
+  height: 185px;
   background: #000;
   display: flex;
   align-items: center;
@@ -47,8 +47,8 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   flex-shrink: 0;
 }
 .site-header-icon {
-  height: 130px;
-  width: 130px;
+  height: 170px;
+  width: 170px;
   object-fit: contain;
   display: block;
 }
@@ -57,33 +57,34 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin-left: -18px;
+  margin-top: 20px;
 }
 .site-header-wordmark {
-  height: 80px;
+  height: 104px;
   object-fit: contain;
 }
 .site-header-tagline {
-  height: 30px;
+  height: 40px;
   object-fit: contain;
   opacity: 0.85;
 }
 
-/* pages with site header — header (160px) + nav (~57px) above content */
-body.has-site-header { padding-top: 217px; }
-body.has-site-header nav { top: 160px; }
-body.has-site-header .mobile-menu { top: 217px; }
+/* pages with site header — header (185px) + nav (~57px) above content */
+body.has-site-header { padding-top: 242px; }
+body.has-site-header nav { top: 185px; }
+body.has-site-header .mobile-menu { top: 242px; }
 body.has-site-header .nav-logo { display: none; }
 @media (max-width: 900px) {
-  body.has-site-header { padding-top: 217px; }
-  body.has-site-header nav { top: 160px; }
-  body.has-site-header .mobile-menu { top: 217px; }
+  body.has-site-header { padding-top: 242px; }
+  body.has-site-header nav { top: 185px; }
+  body.has-site-header .mobile-menu { top: 242px; }
 }
 @media (max-width: 600px) {
-  body.has-site-header { padding-top: 157px; }
-  body.has-site-header nav { top: 100px; }
-  body.has-site-header .mobile-menu { top: 157px; }
+  body.has-site-header { padding-top: 187px; }
+  body.has-site-header nav { top: 130px; }
+  body.has-site-header .mobile-menu { top: 187px; }
 }
 
 /* bolt-action animation */
@@ -97,13 +98,13 @@ body.has-site-header .nav-logo { display: none; }
 
 @media (max-width: 600px) {
   .site-header {
-    height: 100px;
-    gap: 10px;
+    height: 130px;
+    gap: 0;
     padding: 0 0 0 16px;
   }
-  .site-header-icon { height: 80px; width: 80px; }
-  .site-header-wordmark { height: 48px; }
-  .site-header-tagline { height: 18px; }
+  .site-header-icon { height: 104px; width: 104px; }
+  .site-header-wordmark { height: 62px; }
+  .site-header-tagline { height: 23px; }
 }
 
 @media (max-width: 600px) {
@@ -614,10 +615,10 @@ body.login-page {
   display: flex;
   flex-direction: column;
   position: relative;
-  padding-top: 160px;
+  padding-top: 185px;
 }
 @media (max-width: 600px) {
-  body.login-page { padding-top: 100px; }
+  body.login-page { padding-top: 130px; }
 }
 body.login-page .login-img-panel { display: none; }
 
