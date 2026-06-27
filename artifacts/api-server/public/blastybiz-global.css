@@ -86,6 +86,9 @@ html .hamburger     { display: none; }
                             background: linear-gradient(90deg, transparent, #00C853 20%, #00C853 80%, transparent);
                             border-radius: 2px; }
 
+  /* Platform strip — 98% wide on tablet/desktop */
+  html .platform-strip--wide { width: 98%; max-width: none; margin-left: 1%; margin-right: 1%; box-sizing: border-box; }
+
   /* Pricing — 98% wide, 3 equal columns */
   html .pricing-section  { width: 98%; max-width: none; margin-left: 1%; margin-right: 1%; padding-left: 0; padding-right: 0; box-sizing: border-box; }
 
