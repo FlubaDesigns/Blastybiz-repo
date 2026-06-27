@@ -51,8 +51,8 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   min-width: 0;
 }
 .site-header-icon {
-  height: 115px;
-  width: 115px;
+  height: 120px;
+  width: 120px;
   flex-shrink: 0;
   object-fit: contain;
   object-position: left center;
