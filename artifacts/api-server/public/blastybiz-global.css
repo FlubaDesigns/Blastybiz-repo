@@ -19,6 +19,7 @@
   /* Spacing tokens */
   --section-v: 60px;   /* vertical section padding — mobile */
   --gutter:    5%;     /* horizontal gutter — all breakpoints */
+  --row-gap:   10px;   /* vertical gutter between homepage rows */
 }
 
 /* ── Main content wrapper — global gutter ───────────────── */
@@ -29,7 +30,9 @@
   width: 100%;
 }
 /* sections inside main-inner: no extra gutter, fill full available width */
-.main-inner section { padding-left: 0; padding-right: 0; max-width: none; margin-left: 0; margin-right: 0; }
+.main-inner section { padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; max-width: none; margin-left: 0; margin-right: 0; }
+/* row gap — 10px vertical gutter between homepage rows */
+.row-gap { margin-top: var(--row-gap); }
 /* full-bleed elements break out of the gutter */
 .bleed-out {
   margin-left: calc(-1 * var(--gutter));
@@ -420,7 +423,7 @@ html .hamburger         { display: none; }
   html .pain-list .pain-icon { font-size: 26px; flex-shrink: 0; }
 
   /* How It Works — heading normal width, steps row 98% across */
-  html #how             { max-width: none; padding-bottom: 40px; }
+  html #how             { max-width: none; }
   html .how-steps-row  { display: flex; align-items: flex-start; gap: 5%; margin-top: 32px; }
   html .how-block      { flex: 0 0 30%; min-width: 0; }
 
@@ -480,9 +483,8 @@ html .hamburger         { display: none; }
   html footer                { padding-left: 80px; padding-right: 80px; }
   html .powered-band         { padding-left: 80px; padding-right: 80px; }
 
-  /* Tighten gap between How It Works and Pricing */
-  html #how             { max-width: none; padding-bottom: 40px; }
-  html .pricing-section { max-width: none; padding-top: 40px; }
+  html #how             { max-width: none; }
+  html .pricing-section { max-width: none; }
 
   /* Hero — desktop padding */
   html .hero          { padding: 0; }
