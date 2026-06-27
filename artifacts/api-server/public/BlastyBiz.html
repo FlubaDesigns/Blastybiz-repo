@@ -873,12 +873,15 @@
 
   <!-- IMAGE UPLOAD -->
   <div class="card">
-    <div class="card-title">📷 Photos</div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Add photos of your business, menu, work, or products.</p>
-    <div class="image-upload-area" onclick="document.getElementById('img-input').click()">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px;">
+      <div class="card-title" style="margin-bottom:0;">📷 Campaign Photos</div>
+      <span id="photo-cap-label" style="font-size:11px;color:var(--muted);"></span>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Photos belong to this campaign. Select a campaign above first.</p>
+    <div id="photo-upload-area" class="image-upload-area" onclick="document.getElementById('img-input').click()">
       <input type="file" id="img-input" accept="image/*" multiple onchange="handleImages(event)" />
       <div class="upload-icon">📸</div>
-      <div class="upload-text">Tap to add photos<br/><span>from your camera roll</span></div>
+      <div class="upload-text" id="photo-upload-text">Tap to add photos<br/><span>from your camera roll</span></div>
     </div>
     <div class="thumb-grid" id="thumb-grid"></div>
   </div>
@@ -1277,9 +1280,12 @@ let history   = [];                           // populated from Firestore after 
 let profile   = {};                           // populated from Firestore after auth
 let draft     = {};                           // form state only — draftId tracked separately
 let locationType        = 'physical';         // 'physical' | 'online' — create form
-let campaigns           = [];                 // [{id, name}] loaded from Firestore
+let campaigns           = [];                 // [{id, name, photos:[]}] loaded from Firestore
 let activeCampaignId    = null;
 let activeCampaignName  = '';
+// Per-platform photo selection (session only — resets on reload)
+// { pid: Set of selected photo URLs }
+window._bbPlatformPhotoSel = {};
 let platformReasons     = {};                 // AI-suggested reasons per platform id
 let profileLocationType = 'physical';         // 'physical' | 'online' — profile form
 window._bbPhotoItems = []; // [{url, path, localUrl, done, progress, error}]
@@ -1464,6 +1470,11 @@ function renderQuickSelect() {
           <div id="qp-copy-text-${p.id}"
             style="font-size:13px;color:var(--silver);background:rgba(0,200,83,0.04);border:1px solid rgba(0,200,83,0.2);border-radius:8px;padding:12px;white-space:pre-wrap;line-height:1.6;">${escHtml(existingCopy)}</div>
           <div id="qp-copy-img-${p.id}" style="display:none;margin-top:8px;font-size:12px;color:var(--muted);word-break:break-all;"></div>
+          <!-- Per-platform photo picker — populated by showCopyInAccordions() -->
+          <div id="qp-photos-${p.id}" style="display:none;margin-top:12px;">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">📷 Photos for this post</div>
+            <div id="qp-photo-strip-${p.id}" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+          </div>
         </div>`;
 
       body.innerHTML = bodyInner;
@@ -1492,7 +1503,17 @@ function togglePlatformAccordion(pid) {
   }
 }
 
+// Platforms that support images in posts (not text-only)
+const PLATFORM_IMAGE_SUPPORT = {
+  google: { max: 1 }, facebook: { max: 10 }, instagram: { max: 10 },
+  nextdoor: { max: 10 }, craigslist: { max: 24 }
+  // yelp, alignable, thumbtack, angi, applemaps — no per-post image upload
+};
+
 function showCopyInAccordions(adaptations, featuredPhotoUrl) {
+  // Reset all platform photo selections for this new generation
+  window._bbPlatformPhotoSel = {};
+
   // Collapse all first
   platforms.forEach(p => {
     const b = document.getElementById('qp-body-' + p.id);
@@ -1500,6 +1521,8 @@ function showCopyInAccordions(adaptations, featuredPhotoUrl) {
     if (b) b.style.display = 'none';
     if (c) c.style.transform = '';
   });
+
+  const campaignPhotos = (window._bbPhotoItems || []).filter(i => i.done && i.url);
 
   let expandedFirst = false;
   platforms.forEach(p => {
@@ -1509,14 +1532,18 @@ function showCopyInAccordions(adaptations, featuredPhotoUrl) {
 
     const copySection = document.getElementById('qp-copy-' + p.id);
     const copyText    = document.getElementById('qp-copy-text-' + p.id);
-    const copyImg     = document.getElementById('qp-copy-img-' + p.id);
 
     if (copyText) copyText.textContent = adapted;
     if (copySection) copySection.style.display = 'block';
 
-    if (copyImg && featuredPhotoUrl) {
-      copyImg.innerHTML = '🖼️ Image: <a href="' + escHtml(featuredPhotoUrl) + '" target="_blank" style="color:var(--green);">' + escHtml(featuredPhotoUrl) + '</a>';
-      copyImg.style.display = 'block';
+    // Photo strip — only for platforms that support images
+    const imgSupport = PLATFORM_IMAGE_SUPPORT[p.id];
+    if (imgSupport && campaignPhotos.length > 0) {
+      // Pre-select featured photo if set
+      window._bbPlatformPhotoSel[p.id] = new Set(
+        featuredPhotoUrl ? [featuredPhotoUrl] : []
+      );
+      renderPlatformPhotoStrip(p.id, campaignPhotos, imgSupport.max);
     }
 
     // Expand the first enabled platform; rest stay collapsed but populated
@@ -1528,6 +1555,53 @@ function showCopyInAccordions(adaptations, featuredPhotoUrl) {
       expandedFirst = true;
     }
   });
+}
+
+function renderPlatformPhotoStrip(pid, photos, maxPhotos) {
+  const container = document.getElementById('qp-photos-' + pid);
+  const strip     = document.getElementById('qp-photo-strip-' + pid);
+  if (!container || !strip) return;
+
+  const sel = window._bbPlatformPhotoSel[pid] || new Set();
+  const label = container.querySelector('div');
+  if (label) {
+    label.textContent = '📷 Photos for this post'
+      + (maxPhotos > 1 ? ' (select up to ' + maxPhotos + ')' : ' (select 1)');
+  }
+
+  strip.innerHTML = '';
+  photos.forEach(photo => {
+    const isSelected = sel.has(photo.url);
+    const thumb = document.createElement('div');
+    thumb.style.cssText = 'position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;cursor:pointer;flex-shrink:0;border:2px solid ' + (isSelected ? 'var(--green)' : 'transparent') + ';';
+    thumb.onclick = () => togglePlatformPhoto(pid, photo.url, maxPhotos, photos);
+    thumb.innerHTML = `
+      <img src="${escHtml(photo.url)}" style="width:100%;height:100%;object-fit:cover;" />
+      ${isSelected ? '<div style="position:absolute;inset:0;background:rgba(0,200,83,.25);display:flex;align-items:center;justify-content:center;font-size:18px;">✓</div>' : ''}
+    `;
+    strip.appendChild(thumb);
+  });
+
+  container.style.display = 'block';
+}
+
+function togglePlatformPhoto(pid, url, maxPhotos, photos) {
+  if (!window._bbPlatformPhotoSel[pid]) window._bbPlatformPhotoSel[pid] = new Set();
+  const sel = window._bbPlatformPhotoSel[pid];
+  if (sel.has(url)) {
+    sel.delete(url);
+  } else {
+    if (sel.size >= maxPhotos) {
+      if (maxPhotos === 1) {
+        sel.clear(); // single-select: replace
+      } else {
+        showToast('Max ' + maxPhotos + ' photos for this platform');
+        return;
+      }
+    }
+    sel.add(url);
+  }
+  renderPlatformPhotoStrip(pid, photos, maxPhotos);
 }
 
 function copyQpText(pid) {
@@ -1766,15 +1840,61 @@ function goToStep1() {
 // ══════════════════════════════════════════
 // IMAGE HANDLING
 // ══════════════════════════════════════════
-function handleImages(e) {
+function photoCap() {
+  const plan = window._bbUserPlan || 'starter';
+  if (plan === 'agency') return Infinity;
+  if (plan === 'pro')    return 20;
+  return 2; // starter
+}
+
+function updatePhotoCapLabel() {
+  const label = document.getElementById('photo-cap-label');
+  const area  = document.getElementById('photo-upload-area');
+  if (!label) return;
   const items = window._bbPhotoItems || [];
-  const MAX = 10;
-  const remaining = MAX - items.length;
+  const saved = items.filter(i => i.done).length;
+  const cap   = photoCap();
+  const plan  = window._bbUserPlan || 'starter';
+  if (!activeCampaignId) {
+    label.textContent = '';
+    label.style.color = 'var(--muted)';
+    if (area) area.style.opacity = '0.45';
+    return;
+  }
+  if (area) area.style.opacity = cap === Infinity || saved < cap ? '1' : '0.45';
+  if (cap === Infinity) {
+    label.textContent = saved + ' photos';
+    label.style.color = 'var(--muted)';
+  } else {
+    label.textContent = saved + ' / ' + cap + (plan === 'starter' ? ' · Starter' : ' · Pro');
+    label.style.color = saved >= cap ? '#ff6b35' : 'var(--muted)';
+  }
+}
+
+function handleImages(e) {
+  if (!activeCampaignId) {
+    showToast('Pick a campaign first, then add photos');
+    e.target.value = '';
+    return;
+  }
+  const items = window._bbPhotoItems || [];
+  const cap   = photoCap();
+  const current = items.length;
+  if (current >= cap) {
+    const plan = window._bbUserPlan || 'starter';
+    if (plan === 'starter') {
+      showToast('Starter plan: 2 photos per campaign. Upgrade to Pro for 20.');
+    } else {
+      showToast('Pro plan: 20 photos per campaign. Remove one to add more.');
+    }
+    e.target.value = '';
+    return;
+  }
+  const remaining = cap === Infinity ? 999 : cap - current;
   const files = Array.from(e.target.files).slice(0, remaining);
   e.target.value = '';
   checkAdaptBtn();
   // Sequential: compress one at a time to avoid concurrent canvas.toBlob() hangs on mobile.
-  // Firebase uploads still run in parallel (uploadBytesResumable fires & forgets).
   (async () => {
     for (const file of files) {
       if (window._bbUploadPhoto) await window._bbUploadPhoto(file);
@@ -1820,8 +1940,10 @@ window.renderAllPhotos = function() {
     grid.appendChild(wrap);
   });
 
-  const area = document.querySelector('.image-upload-area');
-  if (area) area.style.display = items.length >= 10 ? 'none' : 'flex';
+  const cap = photoCap();
+  const uploadArea = document.getElementById('photo-upload-area');
+  if (uploadArea) uploadArea.style.display = (cap !== Infinity && items.length >= cap) ? 'none' : 'flex';
+  updatePhotoCapLabel();
 
   let badge = document.getElementById('photo-count-badge');
   const uploading = items.filter(i => !i.done && !i.error).length;
@@ -1836,7 +1958,7 @@ window.renderAllPhotos = function() {
     badge.style.color = uploading > 0 ? '#fff' : 'var(--green)';
     badge.innerHTML = uploading > 0
       ? `⬆️ Uploading ${uploading} photo${uploading > 1 ? 's' : ''}… (${saved} saved)`
-      : `✅ ${saved} photo${saved !== 1 ? 's' : ''} saved to your account`;
+      : `✅ ${saved} photo${saved !== 1 ? 's' : ''} saved to this campaign`;
     let hint = document.getElementById('photo-select-hint');
     if (saved > 0 && !hint) {
       hint = document.createElement('div');
@@ -2901,6 +3023,17 @@ function selectCampaign(id, name) {
   renderCampaignChips();
   saveDraft();
   _syncSchedCampaign(id, name);
+  // Load this campaign's photos
+  const cam = campaigns.find(c => c.id === id);
+  const savedPhotos = cam && cam.photos ? cam.photos : [];
+  window._bbPhotoItems = savedPhotos.map(p =>
+    typeof p === 'string'
+      ? { url: p, path: null, localUrl: p, done: true, progress: 100 }
+      : { ...p, localUrl: p.url, done: true, progress: 100 }
+  );
+  window._bbSelectedPhotoIndex = null;
+  if (window.renderAllPhotos) window.renderAllPhotos();
+  updatePhotoCapLabel();
 }
 
 function openNewCampaign() {
@@ -3152,25 +3285,36 @@ onAuthStateChanged(auth, async (user) => {
       }
 
 
-      // Load saved photos + restore featured selection
-      const savedPhotos = biz.photos || [];
-      window._bbPhotoItems = savedPhotos.map(p =>
-        typeof p === 'string'
-          ? { url: p, path: null, localUrl: p, done: true, progress: 100 }
-          : { ...p, localUrl: p.url, done: true, progress: 100 }
-      );
-      const featuredUrl = biz.featuredPhoto || '';
-      if (featuredUrl) {
-        const fi = window._bbPhotoItems.findIndex(p => p.url === featuredUrl);
-        window._bbSelectedPhotoIndex = fi >= 0 ? fi : null;
-      } else {
-        window._bbSelectedPhotoIndex = null;
-      }
-      if (window.renderAllPhotos) window.renderAllPhotos();
-
-      // Load campaigns
+      // Load campaigns first — photos live on the campaign
       campaigns = (biz.campaigns || []).sort((a,b) => (a.name||'').localeCompare(b.name||''));
       renderCampaignChips();
+
+      // Load photos from first/active campaign (or fall back to legacy biz.photos)
+      const firstCam = campaigns[0];
+      if (firstCam && firstCam.photos && firstCam.photos.length > 0) {
+        if (!activeCampaignId) {
+          activeCampaignId   = firstCam.id;
+          activeCampaignName = firstCam.name;
+          renderCampaignChips();
+        }
+        const camToLoad = campaigns.find(c => c.id === activeCampaignId) || firstCam;
+        window._bbPhotoItems = (camToLoad.photos || []).map(p =>
+          typeof p === 'string'
+            ? { url: p, path: null, localUrl: p, done: true, progress: 100 }
+            : { ...p, localUrl: p.url, done: true, progress: 100 }
+        );
+      } else {
+        // Legacy fallback: photos on biz doc — migrate display only, writes go to campaign
+        const legacyPhotos = biz.photos || [];
+        window._bbPhotoItems = legacyPhotos.map(p =>
+          typeof p === 'string'
+            ? { url: p, path: null, localUrl: p, done: true, progress: 100 }
+            : { ...p, localUrl: p.url, done: true, progress: 100 }
+        );
+      }
+      window._bbSelectedPhotoIndex = null;
+      if (window.renderAllPhotos) window.renderAllPhotos();
+      if (window.updatePhotoCapLabel) window.updatePhotoCapLabel();
     }
   } catch(e) {
     console.error('Profile load error:', e);
@@ -3240,10 +3384,18 @@ onAuthStateChanged(auth, async (user) => {
         item.done = true;
         item.progress = 100;
         if (window.renderAllPhotos) window.renderAllPhotos();
+        // Save photo to the active campaign, not the business doc
         try {
-          await updateDoc(doc(db, 'businesses', activeBizId), {
-            photos: arrayUnion({ url: dlUrl, path: storagePath })
-          });
+          const cid = activeCampaignId;
+          if (cid) {
+            const updatedCams = campaigns.map(c =>
+              c.id === cid
+                ? { ...c, photos: [...(c.photos || []), { url: dlUrl, path: storagePath }] }
+                : c
+            );
+            campaigns = updatedCams;
+            await updateDoc(doc(db, 'businesses', activeBizId), { campaigns: updatedCams });
+          }
         } catch(e) { console.error('Photo save error:', e); }
       }
     );
@@ -3269,7 +3421,6 @@ onAuthStateChanged(auth, async (user) => {
     if (!item) return;
     if (window._bbSelectedPhotoIndex === index) {
       window._bbSelectedPhotoIndex = null;
-      try { await updateDoc(doc(db, 'businesses', activeBizId), { featuredPhoto: '' }); } catch(e) {}
     } else if (window._bbSelectedPhotoIndex > index) {
       window._bbSelectedPhotoIndex--;
     }
@@ -3277,10 +3428,16 @@ onAuthStateChanged(auth, async (user) => {
     if (window.renderAllPhotos) window.renderAllPhotos();
     try {
       if (item.path) await deleteObject(storageRef(storage, item.path));
-      if (item.url) {
-        await updateDoc(doc(db, 'businesses', activeBizId), {
-          photos: arrayRemove({ url: item.url, path: item.path })
-        });
+      // Remove from the campaign's photos array
+      const cid = activeCampaignId;
+      if (cid && item.url) {
+        const updatedCams = campaigns.map(c =>
+          c.id === cid
+            ? { ...c, photos: (c.photos || []).filter(p => p.url !== item.url) }
+            : c
+        );
+        campaigns = updatedCams;
+        await updateDoc(doc(db, 'businesses', activeBizId), { campaigns: updatedCams });
       }
     } catch(e) { console.error('Photo delete error:', e); }
   };
