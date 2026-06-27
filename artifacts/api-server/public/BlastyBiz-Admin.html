@@ -153,17 +153,31 @@
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { collection, query, where, orderBy, limit, onSnapshot, deleteDoc, doc, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { collection, query, where, orderBy, limit, onSnapshot, deleteDoc, getDocs, doc, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 onAuthStateChanged(auth, (user) => {
   if (!user) return;
   const el = id => document.getElementById(id);
   const PRICES = { pro: 19, agency: 99 };
 
-  // Delete a business doc — admin only
+  // Delete a business doc and all related records — admin only
   window._adminDeleteBiz = async function(docId, name) {
-    if (!confirm('Delete "' + (name || docId) + '"? This cannot be undone.')) return;
+    if (!confirm('Delete "' + (name || docId) + '" and all related records? This cannot be undone.')) return;
     try {
+      // Cascade: delete all child records keyed to this business
+      const relatedCollections = [
+        ['listingDrafts',      'businessId'],
+        ['publishJobs',        'businessId'],
+        ['platformConnections','businessId'],
+        ['pendingPosts',       'businessId'],
+        ['copyLibrary',        'businessId'],
+        ['activityLogs',       'businessId'],
+      ];
+      for (const [col, field] of relatedCollections) {
+        const snap = await getDocs(query(collection(db, col), where(field, '==', docId)));
+        for (const d of snap.docs) await deleteDoc(d.ref);
+      }
+      // Also delete the businesses doc itself
       await deleteDoc(doc(db, 'businesses', docId));
     } catch(e) {
       alert('Delete failed: ' + e.message);

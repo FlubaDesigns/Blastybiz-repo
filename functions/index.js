@@ -783,6 +783,11 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
         status: 'active',
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       }, { merge: true });
+      // Mirror plan onto businesses docs so Admin pages read the correct plan
+      const bizSnaps = await db.collection('businesses').where('uid', '==', uid).get();
+      for (const biz of bizSnaps.docs) {
+        await biz.ref.update({ currentPlan: plan, subscriptionStatus: 'active' });
+      }
     } catch (e) {
       console.error('squareWebhook order lookup error:', e.message);
     }
@@ -830,6 +835,11 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
                 status: 'canceled',
                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
               });
+              // Mirror cancellation onto businesses docs
+              const bizSnaps = await db.collection('businesses').where('uid', '==', uid).get();
+              for (const biz of bizSnaps.docs) {
+                await biz.ref.update({ currentPlan: 'starter', subscriptionStatus: 'canceled' });
+              }
             }
           } catch (e) {
             console.error('squareWebhook subscription.updated error:', e.message);
