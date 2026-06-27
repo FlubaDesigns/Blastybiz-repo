@@ -32,6 +32,8 @@
   box-sizing: border-box;
   width: 100%;
 }
+.main-inner > *:first-child { margin-top: 0; }
+.main-inner > *:last-child  { margin-bottom: 0; }
 /* sections inside main-inner: no extra gutter, fill full available width */
 .main-inner section { padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; max-width: none; margin-left: 0; margin-right: 0; }
 /* row gap — 10px vertical gutter between homepage rows */
