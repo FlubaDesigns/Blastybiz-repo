@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Contact — BlastyBiz</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="blastybiz-global.css"/>
 <style>
 :root {
   --green:  #00C853;
@@ -104,34 +105,6 @@ footer { padding: 40px 24px; text-align: center; border-top: 1px solid var(--bor
 .reveal.visible { opacity: 1; transform: translateY(0); }
 
 .contact-img-col { display: none; }
-
-@media (min-width: 768px) {
-  nav { padding: 18px 48px; }
-  .page-hero { max-width: 800px; padding: 120px 48px 60px; }
-  section { max-width: 800px; padding: 60px 48px; }
-  .contact-grid { display: grid; grid-template-columns: 1fr 1fr; }
-  footer { padding: 40px 48px; }
-  .powered-band { padding: 48px 48px; }
-}
-
-@media (min-width: 1100px) {
-  nav { padding: 18px 80px; }
-  .page-hero { max-width: 1200px; padding: 140px 80px 60px; text-align: left; }
-  section { max-width: 1200px; padding: 80px 80px; }
-  .contact-section-inner { display: flex; gap: 80px; align-items: flex-start; }
-  .contact-col { flex: 1; min-width: 0; }
-  .contact-img-col {
-    display: block;
-    flex: 0 0 360px;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
-    align-self: stretch;
-  }
-  .contact-img-col img { width: 100%; height: 100%; object-fit: cover; display: block; min-height: 420px; }
-  footer { padding: 48px 80px; }
-  .powered-band { padding: 64px 80px; }
-}
 </style>
 </head>
 <body>
@@ -153,7 +126,7 @@ footer { padding: 40px 24px; text-align: center; border-top: 1px solid var(--bor
 
 <hr class="divider"/>
 
-<section class="reveal">
+<section class="reveal text-section">
   <div class="section-label">Contact</div>
   <h2 class="section-title">Reach <span>Us Anytime</span></h2>
 
@@ -213,7 +186,7 @@ footer { padding: 40px 24px; text-align: center; border-top: 1px solid var(--bor
 
 <hr class="divider"/>
 
-<section class="reveal">
+<section class="reveal text-section">
   <div class="section-label">Location</div>
   <h2 class="section-title">Where We're <span>Based</span></h2>
 
