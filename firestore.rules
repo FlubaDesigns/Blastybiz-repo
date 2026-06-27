@@ -123,6 +123,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // OAuth nonces — written/deleted by Cloud Functions (admin SDK, bypasses rules)
+    // Explicitly blocked from direct client access
+    match /oauthNonces/{nonceId} {
+      allow read, write: if false;
+    }
+
     // Block everything else
     match /{document=**} {
       allow read, write: if false;

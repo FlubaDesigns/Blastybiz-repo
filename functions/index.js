@@ -113,6 +113,18 @@ async function requireAdmin(req) {
 // ── AI usage limits (actions per month by plan) ──────────────────────────────
 const AI_LIMITS = { starter: 10, pro: 100, agency: 500 };
 
+// ── Canonical job status values ───────────────────────────────────────────────
+const JOB_STATUS = {
+  PENDING:            'pending',
+  PROCESSING:         'processing',
+  SUCCESS:            'success',
+  FAILED:             'failed',
+  MANUAL_REQUIRED:    'manual_required',
+  MANUAL_FOLLOWUP:    'manual_followup',
+  MANUAL_COMPLETED:   'manual_completed',
+  CLOSED:             'closed',
+};
+
 const PLATFORM_RULES = {
   google:     { maxChars: 1500, notes: 'Professional, keyword-rich, include all contact info' },
   facebook:   { maxChars: 2000, notes: 'Engaging, emoji welcome, strong call to action' },
@@ -137,6 +149,19 @@ exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+
+  try {
+    const userSnap = await db.collection('users').doc(decoded.uid).get();
+    const userData  = userSnap.exists ? userSnap.data() : {};
+    const plan      = userData.plan || 'starter';
+    const cap       = AI_LIMITS[plan] || AI_LIMITS.starter;
+    const resetAt   = userData.aiActionsResetAt?.toDate?.() || null;
+    const needsReset = !resetAt || new Date() > resetAt;
+    const used      = needsReset ? 0 : (userData.aiActionsUsed || 0);
+    if (used >= cap) return res.status(429).json({ error: `AI limit reached (${used}/${cap} this month). Upgrade your plan for more.` });
+  } catch(fsErr) {
+    console.warn('generateEnrichmentQuestions: Firestore read failed (IAM?), proceeding with starter defaults:', fsErr.message);
+  }
 
   const { businessName, category, address, locationType, region, existingInsights } = req.body;
   const answered = (existingInsights || []).filter(i => i.answer);
@@ -501,6 +526,18 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
   const { draftId, businessId, platforms } = req.body;
   const uid = decoded.uid;
 
+  // Ownership verification — both draftId and businessId must belong to the caller
+  const [draftSnap, bizSnap] = await Promise.all([
+    db.collection('listingDrafts').doc(draftId).get(),
+    db.collection('businesses').doc(businessId).get()
+  ]);
+  if (!draftSnap.exists || draftSnap.data().uid !== uid) {
+    return res.status(403).json({ error: 'Forbidden: draft does not belong to you' });
+  }
+  if (!bizSnap.exists || bizSnap.data().uid !== uid) {
+    return res.status(403).json({ error: 'Forbidden: business does not belong to you' });
+  }
+
   // Check user plan — starter users can't auto-post via API platforms
   let userPlan = 'starter';
   try {
@@ -812,14 +849,18 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
 // Google Cloud Console: enable Business Profile API,
 // OAuth 2.0 redirect URI = https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback
 // ══════════════════════════════════════════
-exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID'] }, (req, res) => {
+exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID'] }, async (req, res) => {
   const { businessId, uid, returnTo } = req.query;
   if (!businessId) { res.status(400).send('Missing businessId'); return; }
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId) { res.status(503).send('Google OAuth not configured. Set GOOGLE_CLIENT_ID secret.'); return; }
+  const nonce = require('crypto').randomUUID();
+  await db.collection('oauthNonces').doc(nonce).set({
+    uid: uid || '', businessId, returnTo: returnTo || '',
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+  });
   const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback';
   const scope = 'https://www.googleapis.com/auth/business.manage';
-  const state = encodeURIComponent(JSON.stringify({ businessId, uid: uid || '', returnTo: returnTo || '' }));
   res.redirect(
     `https://accounts.google.com/o/oauth2/v2/auth` +
     `?client_id=${encodeURIComponent(clientId)}` +
@@ -827,7 +868,7 @@ exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
     `&response_type=code` +
     `&scope=${encodeURIComponent(scope)}` +
     `&access_type=offline&prompt=consent` +
-    `&state=${state}`
+    `&state=${encodeURIComponent(nonce)}`
   );
 });
 
@@ -840,8 +881,21 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
   const { code, state } = req.query;
   if (!code) { res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?error=google'); return; }
 
+  // Verify nonce — prevents forged OAuth state attacks
   let businessId = '', uid = '', returnTo = '';
-  try { const s = JSON.parse(decodeURIComponent(state)); businessId = s.businessId; uid = s.uid; returnTo = s.returnTo || ''; } catch(e) { businessId = state || ''; }
+  try {
+    const nonce = decodeURIComponent(state || '');
+    const nonceRef = db.collection('oauthNonces').doc(nonce);
+    const nonceSnap = await nonceRef.get();
+    if (!nonceSnap.exists || nonceSnap.data().expiresAt.toDate() < new Date()) {
+      return res.status(400).send('Invalid or expired OAuth state. Please try connecting again.');
+    }
+    ({ businessId, uid, returnTo = '' } = nonceSnap.data());
+    await nonceRef.delete();
+  } catch(e) {
+    console.error('googleOAuthCallback nonce error:', e.message);
+    return res.status(400).send('OAuth state verification failed.');
+  }
   const connectedRedirect = `https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?connected=google${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
   const errorRedirect     = `https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?error=google${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
 
@@ -897,20 +951,24 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
 // Required permissions: pages_manage_posts, pages_read_engagement,
 //   instagram_basic, instagram_content_publish
 // ══════════════════════════════════════════
-exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBOOK_APP_ID'] }, (req, res) => {
+exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBOOK_APP_ID'] }, async (req, res) => {
   const { businessId, uid, returnTo } = req.query;
   if (!businessId) { res.status(400).send('Missing businessId'); return; }
   const appId = process.env.FACEBOOK_APP_ID;
   if (!appId) { res.status(503).send('Facebook OAuth not configured. Set FACEBOOK_APP_ID secret.'); return; }
+  const nonce = require('crypto').randomUUID();
+  await db.collection('oauthNonces').doc(nonce).set({
+    uid: uid || '', businessId, returnTo: returnTo || '',
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+  });
   const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/facebookOAuthCallback';
   const scope = 'pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish';
-  const state = encodeURIComponent(JSON.stringify({ businessId, uid: uid || '', returnTo: returnTo || '' }));
   res.redirect(
     `https://www.facebook.com/v18.0/dialog/oauth` +
     `?client_id=${encodeURIComponent(appId)}` +
     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
     `&scope=${encodeURIComponent(scope)}` +
-    `&state=${state}`
+    `&state=${encodeURIComponent(nonce)}`
   );
 });
 
@@ -924,8 +982,21 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', secrets: ['FACEBO
   const { code, state } = req.query;
   if (!code) { res.redirect('https://blastybiz-9523e.web.app/BlastyBiz-Connect.html?error=facebook'); return; }
 
+  // Verify nonce — prevents forged OAuth state attacks
   let businessId = '', uid = '', returnTo = '';
-  try { const s = JSON.parse(decodeURIComponent(state)); businessId = s.businessId; uid = s.uid; returnTo = s.returnTo || ''; } catch(e) { businessId = state || ''; }
+  try {
+    const nonce = decodeURIComponent(state || '');
+    const nonceRef = db.collection('oauthNonces').doc(nonce);
+    const nonceSnap = await nonceRef.get();
+    if (!nonceSnap.exists || nonceSnap.data().expiresAt.toDate() < new Date()) {
+      return res.status(400).send('Invalid or expired OAuth state. Please try connecting again.');
+    }
+    ({ businessId, uid, returnTo = '' } = nonceSnap.data());
+    await nonceRef.delete();
+  } catch(e) {
+    console.error('facebookOAuthCallback nonce error:', e.message);
+    return res.status(400).send('OAuth state verification failed.');
+  }
   const fbConnectedRedirect = `https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?connected=facebook${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
   const fbErrorRedirect     = `https://blastybiz-9523e.web.app/BlastyBiz-Connected.html?error=facebook${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
 
@@ -1068,9 +1139,9 @@ exports.dispatchPublishJob = onDocumentCreated(
         case 'instagram': result = await _publishInstagramJob(job, conn); break;
         default:
           await db.collection('publishJobs').doc(jobId).update({
-            status: 'failed',
-            adminError: `Unknown auto-post platform: ${job.platform}`,
-            customerVisibleMessage: 'Automatic posting is not available for this platform.',
+            status: 'manual_required',
+            adminError: `No automated publisher for platform: ${job.platform}`,
+            customerVisibleMessage: `Your AI-written copy for ${job.platform} is ready — this platform requires manual posting. Copy your text from the listing preview and paste it directly.`,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
           });
           return;
@@ -1376,11 +1447,12 @@ exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_
       case 'instagram': result = await _publishInstagramJob(job, conn); break;
       default:
         await jobRef.update({
-          status: 'failed',
-          adminError: `Unknown auto-post platform: ${job.platform}`,
+          status: 'manual_required',
+          adminError: `No automated publisher for platform: ${job.platform}`,
+          customerVisibleMessage: `Your AI-written copy for ${job.platform} is ready — this platform requires manual posting.`,
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
-        return res.status(400).json({ error: 'Unknown platform' });
+        return res.status(200).json({ status: 'manual_required', platform: job.platform });
     }
     await jobRef.update({
       status: 'success',
@@ -1493,6 +1565,19 @@ exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_A
 
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+
+  try {
+    const userSnap = await db.collection('users').doc(decoded.uid).get();
+    const userData  = userSnap.exists ? userSnap.data() : {};
+    const plan      = userData.plan || 'starter';
+    const cap       = AI_LIMITS[plan] || AI_LIMITS.starter;
+    const resetAt   = userData.aiActionsResetAt?.toDate?.() || null;
+    const needsReset = !resetAt || new Date() > resetAt;
+    const used      = needsReset ? 0 : (userData.aiActionsUsed || 0);
+    if (used >= cap) return res.status(429).json({ error: `AI limit reached (${used}/${cap} this month). Upgrade your plan for more.` });
+  } catch(fsErr) {
+    console.warn('suggestPlatforms: Firestore read failed (IAM?), proceeding with starter defaults:', fsErr.message);
+  }
 
   const { name, category, description, locationType, website } = req.body;
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });

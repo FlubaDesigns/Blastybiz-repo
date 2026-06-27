@@ -770,9 +770,10 @@ const CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
 async function startCheckout(plan) {
   showToast('Setting up checkout…');
   try {
+    const idToken = await currentUser.getIdToken();
     const r = await fetch(`${CF}/createCheckoutSession`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
       body: JSON.stringify({ plan, uid: currentUser.uid, email: currentUser.email })
     });
     const data = await r.json();
@@ -792,9 +793,10 @@ window.handleBilling = async function(e) {
     if (userPlan === 'starter') {
       await startCheckout('pro');
     } else {
+      const idToken = await currentUser.getIdToken();
       const r = await fetch(`${CF}/createPortalSession`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
         body: JSON.stringify({ uid: currentUser.uid })
       });
       const data = await r.json();
