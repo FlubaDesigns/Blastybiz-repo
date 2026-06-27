@@ -45,7 +45,7 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   width: 50%;
   display: flex;
   align-items: center;
-  padding-left: 48px;
+  padding-left: 0;
 }
 .site-header-icon {
   height: 170px;
