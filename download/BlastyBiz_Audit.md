@@ -1,4 +1,4 @@
-# BlastyBiz — Full Site Audit
+# BlastyBiz — Fulwl Site Audit
 **Last updated: June 27, 2026 (Session 11 — AI Cost Tracking + Full Audit Reconciliation)**
 **Firebase Project:** blastybiz-9523e
 **Live URL:** https://blastybiz-9523e.web.app
