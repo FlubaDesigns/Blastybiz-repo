@@ -65,13 +65,13 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   align-items: flex-start;
   justify-content: center;
   gap: 2px;
-  margin-left: -6px;
+  margin-left: 0;
   margin-top: 5px;
   min-width: 0;
   flex: 1;
   overflow: hidden;
 }
-.site-header-wordmark { height: 38px; max-width: 100%; object-fit: contain; object-position: left center; align-self: flex-start; margin-left: 5px; margin-top: 5px; }
+.site-header-wordmark { height: 38px; max-width: 100%; object-fit: contain; object-position: left center; align-self: flex-start; margin-left: 0; margin-top: 5px; }
 .site-header-tagline  { height: 20px; max-width: 100%; object-fit: contain; object-position: left center; opacity: 1; margin-left: 2px; }
 
 /* right 50% — nav links */
