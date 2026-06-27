@@ -413,14 +413,11 @@ html .hamburger         { display: none; }
   /* Problem section — 98% wide, headline then 50/50 split */
   html .problem-wrap   { max-width: none; }
   html .problem-header { margin-bottom: 32px; }
-  html .problem-split       { display: flex; align-items: center; gap: 10%; }
-  html .problem-col--img    { flex: 0 0 45%; margin: 0; min-width: 0; }
-  html .problem-col--list   { flex: 0 0 45%; margin: 0; min-width: 0; }
-  html .problem-col--img img { width: 100%; border-radius: 16px; display: block; object-fit: cover; }
-  html .pain-list--grid      { list-style: none; padding: 0; margin: 0;
-                                display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  html .pain-list--grid li   { display: flex; align-items: flex-start; gap: 12px; }
-  html .pain-list--grid .pain-icon { font-size: 26px; flex-shrink: 0; }
+  html .problem-split     { display: flex; align-items: flex-start; gap: 10%; }
+  html .problem-col--list { flex: 0 0 45%; margin: 0; min-width: 0; }
+  html .pain-list         { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 24px; }
+  html .pain-list li      { display: flex; align-items: flex-start; gap: 12px; }
+  html .pain-list .pain-icon { font-size: 26px; flex-shrink: 0; }
 
   /* How It Works — heading normal width, steps row 98% across */
   html #how             { max-width: none; padding-bottom: 40px; }
