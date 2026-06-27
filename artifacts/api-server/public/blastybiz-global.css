@@ -194,7 +194,6 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
 body.has-site-header { padding-top: 156px; }
 body.has-site-header nav { display: none; }
 body.has-site-header .mobile-menu { top: 156px; }
-body.has-site-header .main-inner { padding-top: 0; }
 
 /* auth state — JS adds body.logged-in on sign-in, removes on sign-out */
 #sh-logout-btn   { display: none; }
