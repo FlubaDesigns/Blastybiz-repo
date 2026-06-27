@@ -780,6 +780,8 @@ body.login-page .back-home a:hover { color: var(--silver); }
 
 body.login-page .reset-view { display: none; animation: fadeUp 0.3s ease both; }
 body.login-page .reset-view.visible { display: block; }
+body.login-page .reset-view h2 { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 1px; color: var(--light); margin-bottom: 6px; }
+body.login-page .reset-view p { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
 body.login-page .reset-back { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; margin-bottom: 20px; transition: color 0.2s; background: none; border: none; font-family: 'DM Sans', sans-serif; padding: 0; }
 body.login-page .reset-back:hover { color: var(--silver); }
 
