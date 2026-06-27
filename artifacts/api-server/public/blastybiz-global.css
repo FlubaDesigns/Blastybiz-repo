@@ -295,7 +295,8 @@ nav {
 
 /* ── Sections ────────────────────────────────────────────── */
 section { padding: var(--section-v) var(--gutter); max-width: 600px; margin: 0 auto; }
-.section-label { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--green); font-weight: 600; margin-bottom: 12px; }
+.section-label { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--green); font-weight: 600; margin-top: 8px; margin-bottom: 12px; }
+.powered-band { padding: 32px var(--gutter); max-width: 600px; margin: 0 auto; }
 .section-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 56px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-bottom: 16px; }
 .section-title span { color: var(--green); }
 .section-body { font-size: 16px; color: var(--silver); line-height: 1.7; font-weight: 300; }
