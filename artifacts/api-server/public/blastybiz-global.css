@@ -65,12 +65,14 @@ html .hamburger     { display: none; }
   /* Problem section — 98% wide, headline then 50/50 split */
   html .problem-wrap   { width: 98%; margin: 0 1%; }
   html .problem-header { margin-bottom: 32px; }
-  html .problem-split  { display: flex; align-items: flex-start; }
-  html .problem-col    { flex: 0 0 46.5%; margin: 1%; min-width: 0; }
-  html .problem-col img { width: 100%; border-radius: 16px; display: block; object-fit: cover; }
-  html .pain-list      { list-style: none; padding: 0; margin: 0; }
-  html .pain-list li   { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 24px; }
-  html .pain-list .pain-icon { font-size: 28px; flex-shrink: 0; }
+  html .problem-split       { display: flex; align-items: flex-start; }
+  html .problem-col--img    { flex: 0 0 23%; margin: 1%; min-width: 0; }
+  html .problem-col--list   { flex: 0 0 73%; margin: 1%; min-width: 0; }
+  html .problem-col--img img { width: 100%; border-radius: 16px; display: block; object-fit: cover; }
+  html .pain-list--grid      { list-style: none; padding: 0; margin: 0;
+                                display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  html .pain-list--grid li   { display: flex; align-items: flex-start; gap: 12px; }
+  html .pain-list--grid .pain-icon { font-size: 26px; flex-shrink: 0; }
 
   /* Section splits — 50/50, 1% margin all sides */
   html .section-split         { display: flex; align-items: center; }
