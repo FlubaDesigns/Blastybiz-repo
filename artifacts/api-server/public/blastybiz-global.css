@@ -323,3 +323,86 @@ html .hamburger     { display: none; }
                                   object-fit: cover; display: block; }
   html .contact-grid          { display: grid; grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Login Page: Full-Screen Split Layout ────────────────── */
+body.login-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+body.login-page .login-img-panel { display: none; }
+
+@media (min-width: 768px) {
+  body.login-page {
+    flex-direction: row;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  body.login-page .mobile-login-img { display: none; }
+  body.login-page #canvas { display: none; }
+  body.login-page .login-img-panel {
+    display: flex;
+    flex: 0 0 40%;
+    order: 2;
+    position: relative;
+    overflow: hidden;
+  }
+  body.login-page .login-img-panel img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+  }
+  body.login-page .login-img-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(160deg, rgba(0,200,83,0.25) 0%, rgba(7,13,7,0.75) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 48px 40px;
+  }
+  body.login-page .login-panel-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    letter-spacing: 4px;
+    color: #EEF7EE;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  body.login-page .login-panel-logo span { color: #00C853; }
+  body.login-page .login-panel-tag {
+    font-size: 15px;
+    color: rgba(238,247,238,0.75);
+    font-weight: 300;
+    letter-spacing: 0.5px;
+  }
+  body.login-page .login-panel-quote {
+    margin-top: 28px;
+    font-size: 14px;
+    color: rgba(238,247,238,0.6);
+    font-style: italic;
+    line-height: 1.6;
+    max-width: 320px;
+    border-left: 2px solid rgba(0,200,83,0.5);
+    padding-left: 16px;
+  }
+  body.login-page .main {
+    flex: 1;
+    order: 1;
+    overflow-y: auto;
+    max-width: none !important;
+    min-height: 100dvh;
+    padding: 60px 48px !important;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  body.login-page .logo-wrap { text-align: left; }
+}
+
+@media (min-width: 1100px) {
+  body.login-page .login-img-panel { flex: 0 0 50%; }
+  body.login-page .main { padding: 60px 80px !important; }
+}
