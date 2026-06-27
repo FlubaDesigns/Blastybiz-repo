@@ -74,6 +74,9 @@ html .hamburger     { display: none; }
   html .pain-list--grid li   { display: flex; align-items: flex-start; gap: 12px; }
   html .pain-list--grid .pain-icon { font-size: 26px; flex-shrink: 0; }
 
+  /* How It Works — 98% wide on tablet/desktop */
+  html #how { width: 98%; max-width: none; margin-left: 1%; margin-right: 1%; padding-left: 0; padding-right: 0; box-sizing: border-box; }
+
   /* Section splits — 50/50, 1% margin all sides */
   html .section-split         { display: flex; align-items: center; }
   html .section-col           { flex: 0 0 46.5%; margin: 1%; min-width: 0; }
