@@ -102,6 +102,36 @@ footer { padding: 40px 24px; text-align: center; border-top: 1px solid var(--bor
 @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
 .reveal.visible { opacity: 1; transform: translateY(0); }
+
+.contact-img-col { display: none; }
+
+@media (min-width: 768px) {
+  nav { padding: 18px 48px; }
+  .page-hero { max-width: 800px; padding: 120px 48px 60px; }
+  section { max-width: 800px; padding: 60px 48px; }
+  .contact-grid { display: grid; grid-template-columns: 1fr 1fr; }
+  footer { padding: 40px 48px; }
+  .powered-band { padding: 48px 48px; }
+}
+
+@media (min-width: 1100px) {
+  nav { padding: 18px 80px; }
+  .page-hero { max-width: 1200px; padding: 140px 80px 60px; text-align: left; }
+  section { max-width: 1200px; padding: 80px 80px; }
+  .contact-section-inner { display: flex; gap: 80px; align-items: flex-start; }
+  .contact-col { flex: 1; min-width: 0; }
+  .contact-img-col {
+    display: block;
+    flex: 0 0 360px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    align-self: stretch;
+  }
+  .contact-img-col img { width: 100%; height: 100%; object-fit: cover; display: block; min-height: 420px; }
+  footer { padding: 48px 80px; }
+  .powered-band { padding: 64px 80px; }
+}
 </style>
 </head>
 <body>
@@ -127,50 +157,58 @@ footer { padding: 40px 24px; text-align: center; border-top: 1px solid var(--bor
   <div class="section-label">Contact</div>
   <h2 class="section-title">Reach <span>Us Anytime</span></h2>
 
-  <div class="contact-grid">
+  <div class="contact-section-inner">
+    <div class="contact-col">
+      <div class="contact-grid">
 
-    <a class="contact-card" href="mailto:support@blastybiz.com">
-      <div class="contact-icon">🛠️</div>
-      <div>
-        <div class="contact-type">Support</div>
-        <div class="contact-value">support@blastybiz.com</div>
-        <div class="contact-desc">Technical help, account issues, platform questions. This is your fastest route to a fix.</div>
+        <a class="contact-card" href="mailto:support@blastybiz.com">
+          <div class="contact-icon">🛠️</div>
+          <div>
+            <div class="contact-type">Support</div>
+            <div class="contact-value">support@blastybiz.com</div>
+            <div class="contact-desc">Technical help, account issues, platform questions. This is your fastest route to a fix.</div>
+          </div>
+        </a>
+
+        <a class="contact-card" href="mailto:info@blastybiz.com">
+          <div class="contact-icon">💬</div>
+          <div>
+            <div class="contact-type">General Inquiries</div>
+            <div class="contact-value">info@blastybiz.com</div>
+            <div class="contact-desc">Questions about how BlastyBiz works, partnership inquiries, or anything else.</div>
+          </div>
+        </a>
+
+        <a class="contact-card" href="mailto:sales@blastybiz.com">
+          <div class="contact-icon">📈</div>
+          <div>
+            <div class="contact-type">Sales</div>
+            <div class="contact-value">sales@blastybiz.com</div>
+            <div class="contact-desc">Interested in the Agency plan or want to discuss a custom setup for your team?</div>
+          </div>
+        </a>
+
+        <a class="contact-card" href="mailto:billing@blastybiz.com">
+          <div class="contact-icon">💳</div>
+          <div>
+            <div class="contact-type">Billing</div>
+            <div class="contact-value">billing@blastybiz.com</div>
+            <div class="contact-desc">Invoice questions, subscription changes, or payment concerns.</div>
+          </div>
+        </a>
+
       </div>
-    </a>
 
-    <a class="contact-card" href="mailto:info@blastybiz.com">
-      <div class="contact-icon">💬</div>
-      <div>
-        <div class="contact-type">General Inquiries</div>
-        <div class="contact-value">info@blastybiz.com</div>
-        <div class="contact-desc">Questions about how BlastyBiz works, partnership inquiries, or anything else.</div>
+      <div class="response-band">
+        <div class="response-band-icon">⏱️</div>
+        <div class="response-band-text"><strong>Typical response time: same business day.</strong> We're a small team and we read every email personally.</div>
       </div>
-    </a>
+    </div><!-- /.contact-col -->
 
-    <a class="contact-card" href="mailto:sales@blastybiz.com">
-      <div class="contact-icon">📈</div>
-      <div>
-        <div class="contact-type">Sales</div>
-        <div class="contact-value">sales@blastybiz.com</div>
-        <div class="contact-desc">Interested in the Agency plan or want to discuss a custom setup for your team?</div>
-      </div>
-    </a>
-
-    <a class="contact-card" href="mailto:billing@blastybiz.com">
-      <div class="contact-icon">💳</div>
-      <div>
-        <div class="contact-type">Billing</div>
-        <div class="contact-value">billing@blastybiz.com</div>
-        <div class="contact-desc">Invoice questions, subscription changes, or payment concerns.</div>
-      </div>
-    </a>
-
-  </div>
-
-  <div class="response-band">
-    <div class="response-band-icon">⏱️</div>
-    <div class="response-band-text"><strong>Typical response time: same business day.</strong> We're a small team and we read every email personally.</div>
-  </div>
+    <div class="contact-img-col">
+      <img src="img/people-contact.jpg" alt="Friendly support team" />
+    </div>
+  </div><!-- /.contact-section-inner -->
 </section>
 
 <hr class="divider"/>

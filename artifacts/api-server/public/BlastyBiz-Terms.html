@@ -147,6 +147,18 @@
   }
   footer a { color: var(--silver); text-decoration: none; }
   footer a:hover { color: var(--green); }
+
+  @media (min-width: 768px) {
+    header { padding: 16px 48px; }
+    .hero, section { max-width: 840px; padding-left: 48px; padding-right: 48px; }
+    footer { max-width: 840px; padding-left: 48px; padding-right: 48px; }
+  }
+  @media (min-width: 1100px) {
+    header { padding: 16px 80px; }
+    .hero { max-width: 960px; padding: 40px 80px 24px; }
+    section { max-width: 960px; padding-left: 80px; padding-right: 80px; }
+    footer { max-width: 960px; padding-left: 80px; padding-right: 80px; }
+  }
 </style>
 </head>
 <body>
