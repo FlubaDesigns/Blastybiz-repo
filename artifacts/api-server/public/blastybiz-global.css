@@ -102,7 +102,7 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   position: relative;
   z-index: 2;
 }
-.site-header-wordmark { height: 25px; max-width: 100%; object-fit: contain; object-position: left center; display: block; margin-left: 3px; }
+.site-header-wordmark { height: 25px; max-width: 100%; object-fit: contain; object-position: left center; display: block; margin-left: 5px; }
 .site-header-tagline  { height: 15px; max-width: 100%; object-fit: contain; object-position: left center; opacity: 1; display: block; margin-left: -2px; margin-top: -10px; }
 
 /* right 50% — nav links */
@@ -190,7 +190,7 @@ body.logged-in #menu-logout-btn { display: block; }
   #sh-left { padding-left: 0; }
   .site-header-icon { height: 48px; width: 48px; }
   .site-header-wordmark { height: 28px; }
-  .site-header-tagline { height: 13px; margin-right: 3px; margin-top: -4px; }
+  .site-header-tagline { height: 15px; margin-right: 3px; margin-top: -4px; }
   #sh-right { padding-right: 12px; gap: 0; }
   #sh-right .sh-nav-link,
   #sh-right .sh-nav-cta { display: none; }
