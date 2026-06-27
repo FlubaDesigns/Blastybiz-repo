@@ -45,7 +45,15 @@ html .hero-img-col { display: none; }
   html .section-img-col       { flex: 1; min-width: 0; }
   html .section-img-col img   { width: 100%; border-radius: 20px; object-fit: cover;
                                   box-shadow: 0 24px 60px rgba(0,0,0,0.5); display: block; }
-  html .section-split.reverse { flex-direction: row-reverse; }
+  html .section-split.reverse  { flex-direction: row-reverse; }
+
+  /* img-wide: image gets 3/4, text gets 1/4 */
+  html .section-split.img-wide .section-col     { flex: 1; }
+  html .section-split.img-wide .section-img-col { flex: 3; }
+
+  /* Pricing — three equal columns */
+  html .pricing-grid  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+  html .price-card    { flex: unset; min-width: unset; }
 }
 
 /* ── Desktop (1100px+) ───────────────────────────────────── */
