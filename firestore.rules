@@ -100,6 +100,16 @@ service cloud.firestore {
         request.auth.uid == request.resource.data.uid;
     }
 
+    // Copy Library — owner read/write; admin can read any
+    match /copyLibrary/{docId} {
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.uid || isAdmin());
+      allow write: if request.auth != null &&
+        request.auth.uid == resource.data.uid;
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.uid;
+    }
+
     // Block everything else
     match /{document=**} {
       allow read, write: if false;

@@ -797,6 +797,12 @@
     <div id="campaign-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
       <span style="font-size:12px;color:var(--muted);">Loading…</span>
     </div>
+    <div id="campaign-library-row" style="display:none;margin-top:10px;">
+      <button onclick="openLibraryModal()"
+        style="padding:7px 16px;border-radius:20px;border:1px solid rgba(0,200,83,.4);background:rgba(0,200,83,.08);color:var(--green);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;">
+        📚 <span></span> Library
+      </button>
+    </div>
     <div id="new-campaign-row" style="display:none;margin-top:4px;">
       <div style="display:flex;gap:8px;align-items:center;">
         <input type="text" id="new-campaign-input" placeholder="Campaign name (e.g. Christmas, Summer Sale)"
@@ -1466,6 +1472,11 @@ function renderQuickSelect() {
               style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0;">
               📋 Copy
             </button>
+            <button onclick="saveCopyToLibrary('${p.id}')"
+              style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0;"
+              title="Save to Copy Library (Pro &amp; Agency)">
+              💾 Save
+            </button>
           </div>
           <div id="qp-copy-text-${p.id}"
             style="font-size:13px;color:var(--silver);background:rgba(0,200,83,0.04);border:1px solid rgba(0,200,83,0.2);border-radius:8px;padding:12px;white-space:pre-wrap;line-height:1.6;">${escHtml(existingCopy)}</div>
@@ -1610,6 +1621,144 @@ function copyQpText(pid) {
   navigator.clipboard.writeText(el.textContent)
     .then(() => showToast('📋 Copied!'))
     .catch(() => showToast('❌ Copy failed'));
+}
+
+async function saveCopyToLibrary(pid) {
+  const plan = window._bbUserPlan || 'starter';
+  if (plan === 'starter') {
+    showToast('💾 Copy Library is a Pro & Agency feature — tap Upgrade');
+    return;
+  }
+  if (!activeCampaignId) {
+    showToast('Select a campaign first');
+    return;
+  }
+  const el = document.getElementById('qp-copy-text-' + pid);
+  if (!el || !el.textContent.trim()) {
+    showToast('Generate copy first');
+    return;
+  }
+  const platform = platforms.find(p => p.id === pid);
+  const copy = el.textContent.trim();
+  const offer = document.getElementById('biz-offer')?.value?.trim() || '';
+  const adName = document.getElementById('biz-ad-name')?.value?.trim() || '';
+  const tone = profile.tone || 'friendly';
+
+  const saveBtn = document.querySelector(`button[onclick="saveCopyToLibrary('${pid}')"]`);
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳'; }
+
+  try {
+    if (!window._bbSaveLibraryItem) throw new Error('Library save not ready');
+    await window._bbSaveLibraryItem({
+      platformId: pid,
+      platformName: platform ? platform.name : pid,
+      copy,
+      campaignId: activeCampaignId,
+      campaignName: activeCampaignName,
+      adName,
+      offer,
+      tone,
+      savedAt: new Date().toISOString(),
+    });
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '✅ Saved'; }
+    setTimeout(() => { if (saveBtn) saveBtn.textContent = '💾 Save'; }, 2000);
+    showToast('💾 Saved to library!');
+  } catch (e) {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Save'; }
+    showToast('❌ Save failed: ' + (e.message || 'unknown'));
+  }
+}
+
+async function openLibraryModal() {
+  const plan = window._bbUserPlan || 'starter';
+  if (plan === 'starter') {
+    showToast('💾 Copy Library is a Pro & Agency feature — tap Upgrade');
+    return;
+  }
+  if (!activeCampaignId) { showToast('Select a campaign first'); return; }
+
+  const modal = document.getElementById('library-modal');
+  const title = document.getElementById('library-modal-title');
+  const body  = document.getElementById('library-modal-body');
+  if (!modal) return;
+
+  if (title) title.textContent = '📚 ' + (activeCampaignName || 'Campaign') + ' — Copy Library';
+  if (body)  body.innerHTML = '<div style="color:var(--muted);font-size:14px;padding:24px 0;text-align:center;">Loading…</div>';
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  try {
+    if (!window._bbLoadLibrary) throw new Error('Library not ready');
+    const items = await window._bbLoadLibrary(activeCampaignId);
+    renderLibraryItems(items);
+  } catch (e) {
+    if (body) body.innerHTML = '<div style="color:#ff6b35;padding:16px;">Failed to load: ' + escHtml(e.message) + '</div>';
+  }
+}
+
+function closeLibraryModal() {
+  const modal = document.getElementById('library-modal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function renderLibraryItems(items) {
+  const body = document.getElementById('library-modal-body');
+  if (!body) return;
+  if (!items || items.length === 0) {
+    body.innerHTML = `
+      <div style="text-align:center;padding:32px 16px;">
+        <div style="font-size:36px;margin-bottom:12px;">📭</div>
+        <div style="color:var(--silver);font-size:15px;margin-bottom:6px;">No saved copy yet</div>
+        <div style="color:var(--muted);font-size:13px;">Generate AI copy and tap 💾 Save in any platform accordion</div>
+      </div>`;
+    return;
+  }
+  // Group by platform
+  const grouped = {};
+  items.forEach(item => {
+    const key = item.platformId || 'other';
+    if (!grouped[key]) grouped[key] = { name: item.platformName || key, items: [] };
+    grouped[key].items.push(item);
+  });
+
+  let html = '';
+  Object.values(grouped).forEach(group => {
+    html += `<div style="margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--green);margin-bottom:10px;">${escHtml(group.name)}</div>`;
+    group.items.sort((a,b) => (b.savedAt||'').localeCompare(a.savedAt||'')).forEach(item => {
+      const date = item.savedAt ? new Date(item.savedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+      const adLabel = item.adName ? escHtml(item.adName) : (item.offer ? escHtml(item.offer.slice(0,40) + (item.offer.length>40?'…':'')) : '');
+      html += `
+        <div style="background:rgba(0,200,83,0.04);border:1px solid rgba(0,200,83,0.15);border-radius:10px;padding:14px;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;">
+            <div style="font-size:11px;color:var(--muted);">${adLabel} ${date ? '· ' + date : ''}</div>
+            <div style="display:flex;gap:6px;flex-shrink:0;">
+              <button onclick="navigator.clipboard.writeText(${JSON.stringify(item.copy)}).then(()=>showToast('📋 Copied!'))"
+                style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:3px 9px;color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;">📋 Copy</button>
+              <button onclick="deleteLibraryItem('${escHtml(item.docId)}')"
+                style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:3px 9px;color:#ff6b35;font-size:11px;cursor:pointer;font-family:inherit;">🗑</button>
+            </div>
+          </div>
+          <div style="font-size:13px;color:var(--silver);white-space:pre-wrap;line-height:1.6;max-height:120px;overflow-y:auto;">${escHtml(item.copy)}</div>
+        </div>`;
+    });
+    html += '</div>';
+  });
+  body.innerHTML = html;
+}
+
+async function deleteLibraryItem(docId) {
+  if (!docId || !window._bbDeleteLibraryItem) return;
+  try {
+    await window._bbDeleteLibraryItem(docId);
+    // Refresh modal
+    const items = await window._bbLoadLibrary(activeCampaignId);
+    renderLibraryItems(items);
+    showToast('🗑 Deleted');
+  } catch(e) {
+    showToast('❌ Delete failed');
+  }
 }
 
 async function regeneratePlatformCopy(pid) {
@@ -1863,7 +2012,7 @@ function updatePhotoCapLabel() {
   }
   if (area) area.style.opacity = cap === Infinity || saved < cap ? '1' : '0.45';
   if (cap === Infinity) {
-    label.textContent = saved + ' photos';
+    label.textContent = saved + ' photos · Agency';
     label.style.color = 'var(--muted)';
   } else {
     label.textContent = saved + ' / ' + cap + (plan === 'starter' ? ' · Starter' : ' · Pro');
@@ -3015,6 +3164,18 @@ function renderCampaignChips() {
     onmouseover="this.style.borderColor='var(--green)';this.style.color='var(--green)'"
     onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">＋ New Campaign</button>`;
   container.innerHTML = html;
+
+  // Library button row — only for Pro/Agency with an active campaign
+  const libRow = document.getElementById('campaign-library-row');
+  if (libRow) {
+    const plan = window._bbUserPlan || 'starter';
+    if (activeCampaignId && plan !== 'starter') {
+      libRow.style.display = 'block';
+      libRow.querySelector('span') && (libRow.querySelector('span').textContent = activeCampaignName || 'Campaign');
+    } else {
+      libRow.style.display = 'none';
+    }
+  }
 }
 
 function selectCampaign(id, name) {
@@ -3229,6 +3390,33 @@ let userPlan = 'starter';
 window._bbSaveCampaigns = async function(cams) {
   if (!activeBizId) throw new Error('No active business');
   await updateDoc(doc(db, 'businesses', activeBizId), { campaigns: cams });
+};
+
+// Copy Library — Firestore helpers exposed to regular script
+window._bbSaveLibraryItem = async function(item) {
+  if (!currentUser || !activeBizId) throw new Error('Not authenticated');
+  await addDoc(collection(db, 'copyLibrary'), {
+    uid: currentUser.uid,
+    bizId: activeBizId,
+    ...item,
+  });
+};
+
+window._bbLoadLibrary = async function(campaignId) {
+  if (!currentUser) throw new Error('Not authenticated');
+  const q = query(
+    collection(db, 'copyLibrary'),
+    where('uid', '==', currentUser.uid),
+    where('campaignId', '==', campaignId),
+    orderBy('savedAt', 'desc')
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+};
+
+window._bbDeleteLibraryItem = async function(docId) {
+  if (!currentUser) throw new Error('Not authenticated');
+  await deleteDoc(doc(db, 'copyLibrary', docId));
 };
 
 auth.authStateReady().then(() => {
@@ -3665,5 +3853,19 @@ window._saveScheduleToFirestore = async function(sched) {
   }
 };
 </script>
+
+<!-- ── COPY LIBRARY MODAL ─────────────────────────────────── -->
+<div id="library-modal" style="display:none;position:fixed;inset:0;z-index:1000;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.7);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);">
+  <div style="background:var(--panel);border:1px solid var(--border);border-radius:18px 18px 0 0;width:100%;max-width:600px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <span id="library-modal-title" style="font-size:15px;font-weight:700;color:var(--light);">📚 Copy Library</span>
+      <button onclick="closeLibraryModal()" style="background:transparent;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;padding:0 4px;">✕</button>
+    </div>
+    <!-- Body -->
+    <div id="library-modal-body" style="flex:1;overflow-y:auto;padding:16px 20px 24px;"></div>
+  </div>
+</div>
+
 </body>
 </html>

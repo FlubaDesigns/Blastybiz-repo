@@ -33,7 +33,7 @@ onAuthStateChanged(auth, (user) => {
   onSnapshot(q, (snap) => {
     if (snap.empty) return;
     const all = snap.docs.map(d => d.data());
-    const prices = { Pro: 49, Agency: 149, Business: 49 };
+    const prices = { Pro: 49, Agency: 149 };
     const mrr = all.reduce((sum, b) => sum + (prices[b.currentPlan] || 0), 0);
     const trialsEnding = all.filter(b => b.subscriptionStatus === 'trial').length;
     const active = all.filter(b => b.subscriptionStatus === 'active').length;
