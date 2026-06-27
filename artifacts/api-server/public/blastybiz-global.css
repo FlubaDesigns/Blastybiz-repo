@@ -321,6 +321,19 @@ section { padding: var(--section-v) var(--gutter); max-width: 600px; margin: 0 a
 .pain-text { font-size: 14px; color: var(--silver); line-height: 1.5; }
 .pain-text strong { color: var(--light); display: block; font-size: 15px; margin-bottom: 2px; }
 
+/* ── Team card ───────────────────────────────────────────── */
+.team-card { display: flex; flex-direction: column; gap: 0; }
+.team-avatar { width: 100%; max-width: 360px; aspect-ratio: 4/3; object-fit: cover; object-position: top; border-radius: 10px; margin-bottom: 16px; border: 2px solid var(--border); display: block; }
+.team-name { font-size: 18px; font-weight: 600; color: var(--light); margin-bottom: 2px; }
+.team-role { font-size: 13px; color: var(--green); letter-spacing: 0.3px; margin-bottom: 10px; }
+.team-bio { font-size: 14px; color: var(--silver); line-height: 1.6; margin-bottom: 20px; }
+
+/* ── Service area ────────────────────────────────────────── */
+.service-area { display: flex; align-items: flex-start; gap: 12px; padding: 16px; background: rgba(0,200,83,0.05); border: 1px solid rgba(0,200,83,0.15); border-radius: 8px; margin-top: 4px; }
+.service-area-icon { font-size: 22px; flex-shrink: 0; line-height: 1.4; }
+.service-area-text { font-size: 14px; color: var(--silver); line-height: 1.6; }
+.service-area-text strong { color: var(--light); }
+
 /* ── Pricing ─────────────────────────────────────────────── */
 .pricing-grid { display: flex; flex-direction: column; gap: 16px; margin-top: 40px; }
 .price-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px 24px; position: relative; transition: border-color 0.2s; }
