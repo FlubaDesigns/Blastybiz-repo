@@ -18,8 +18,8 @@
 
   /* Spacing tokens */
   --section-v: 60px;   /* vertical section padding — mobile */
-  --gutter:    5%;     /* horizontal gutter — all breakpoints */
-  --v-gutter:  3%;     /* vertical gutter — all breakpoints */
+  --gutter:    10%;    /* horizontal gutter — all breakpoints */
+  --v-gutter:  5%;     /* vertical gutter — all breakpoints */
   --row-gap:   20px;   /* vertical gutter between homepage rows */
 }
 
@@ -372,7 +372,7 @@ footer { padding: 40px 24px; text-align: center; border-top: 1px solid var(--bor
 /* ── Mobile defaults ─────────────────────────────────────── */
 html .hero          { display: flex; flex-direction: column; align-items: center;
                        justify-content: center; text-align: center;
-                       padding: 5% 10%; position: relative; overflow: hidden; }
+                       padding: 0; position: relative; overflow: hidden; }
 html .hero-img-col      { display: none; }
 html .problem-col--img  { display: none; }
 html .how-block--img    { display: none; } /* shown at tablet+ below */
@@ -405,7 +405,7 @@ html .hamburger         { display: none; }
   html .powered-band         { padding-left: 48px; padding-right: 48px; }
 
   /* Hero — 50/50, 1% margin all sides (gap between = 2%) */
-  html .hero          { padding: 5% 10%; text-align: left; align-items: stretch; }
+  html .hero          { padding: 0; text-align: left; align-items: stretch; }
   html .hero-inner    { display: flex; align-items: stretch; width: 100%; }
   html .hero-text     { flex: 0 0 46.5%; margin: 1%; min-width: 0; padding: 8px 0 40px; }
   html .hero-img-col  { display: flex; flex-direction: column;
