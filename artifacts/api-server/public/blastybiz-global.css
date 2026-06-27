@@ -468,14 +468,14 @@ body.login-page .logo-tag {
   text-transform: uppercase; margin-top: 4px; font-weight: 300;
 }
 
-body.login-page .auth-card { width: 100%; padding: 28px 0; animation: fadeUp 0.5s 0.1s ease both; }
+body.login-page .auth-card { width: 100%; padding: 40px 48px; animation: fadeUp 0.5s 0.1s ease both; }
 
 body.login-page .auth-tabs {
   display: grid; grid-template-columns: 1fr 1fr; background: var(--dark);
-  border-radius: 10px; padding: 4px; margin-bottom: 24px; border: 1px solid var(--border);
+  border-radius: 10px; padding: 4px; margin-bottom: 32px; border: 1px solid var(--border);
 }
 body.login-page .auth-tab {
-  padding: 10px; text-align: center; font-size: 14px; font-weight: 600;
+  padding: 18px 20px; text-align: center; font-size: 15px; font-weight: 600;
   color: var(--muted); cursor: pointer; border-radius: 8px; transition: all 0.2s;
   border: none; background: transparent; font-family: 'DM Sans', sans-serif;
 }
