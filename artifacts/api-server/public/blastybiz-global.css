@@ -319,6 +319,15 @@ section figure p { font-size: 14px; color: var(--silver); line-height: 1.6; marg
 .main-inner aside small { display: block; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
 .main-inner aside h3 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--light); margin: 0 0 12px; }
 .main-inner aside h3 span { color: var(--green); }
+.contact-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+.contact-card { display: flex; align-items: flex-start; gap: 14px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-decoration: none; color: inherit; transition: border-color 0.2s; }
+.contact-card:hover { border-color: var(--green); }
+.contact-card > span { font-size: 26px; flex-shrink: 0; }
+.contact-card strong { display: block; font-size: 14px; font-weight: 600; color: var(--light); margin-bottom: 2px; }
+.contact-card em { display: block; font-size: 13px; color: var(--green); font-style: normal; margin-bottom: 6px; }
+.contact-card p { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 0; }
+section address { font-style: normal; }
+section address p { color: var(--silver); }
 
 /* ── Steps (How It Works) ────────────────────────────────── */
 .steps { display: flex; flex-direction: column; gap: 0; margin-top: 48px; }
