@@ -37,18 +37,29 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   background: #000;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 24px;
+  gap: 14px;
+  padding: 0 0 0 20px;
   border-bottom: 1px solid rgba(0,200,83,0.15);
 }
 .site-header-icon {
-  height: 44px;
-  width: 44px;
+  height: 46px;
+  width: 46px;
   object-fit: contain;
+  flex-shrink: 0;
 }
 .site-header-wordmark {
-  height: 32px;
+  height: 28px;
   object-fit: contain;
+}
+
+@media (max-width: 600px) {
+  .site-header {
+    height: 48px;
+    gap: 10px;
+    padding: 0 0 0 14px;
+  }
+  .site-header-icon { height: 32px; width: 32px; }
+  .site-header-wordmark { height: 20px; }
 }
 
 @media (max-width: 600px) {
@@ -560,6 +571,9 @@ body.login-page {
   flex-direction: column;
   position: relative;
   padding-top: 64px;
+}
+@media (max-width: 600px) {
+  body.login-page { padding-top: 48px; }
 }
 body.login-page .login-img-panel { display: none; }
 
