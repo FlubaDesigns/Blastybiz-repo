@@ -57,7 +57,7 @@ body { font-size: 1rem; line-height: 1.5; background: var(--dark); color: var(--
   object-fit: contain;
   object-position: left center;
   display: block;
-  margin-left: -2px;
+  margin-left: 0;
 }
 .site-header-brand {
   display: flex;
