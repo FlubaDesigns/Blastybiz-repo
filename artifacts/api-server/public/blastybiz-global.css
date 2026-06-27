@@ -114,6 +114,11 @@ body.has-site-header { padding-top: 185px; }
 body.has-site-header nav { display: none; }
 body.has-site-header .mobile-menu { top: 185px; }
 
+/* auth state — add body.logged-in on sign-in, remove on sign-out */
+#sh-logout-btn { display: none; }
+body.logged-in #sh-login-link  { display: none; }
+body.logged-in #sh-logout-btn  { display: inline; }
+
 @media (max-width: 600px) {
   .site-header { height: 130px; }
   #sh-left { padding-left: 16px; }

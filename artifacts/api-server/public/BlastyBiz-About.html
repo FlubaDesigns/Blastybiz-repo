@@ -349,7 +349,7 @@ function setAuthUI(loggedIn) {
   ['nav-logout-btn','menu-logout-btn'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'':'none'; });
 }
 setAuthUI(localStorage.getItem('bb_auth')==='1');
-onAuthStateChanged(auth, user => { localStorage.setItem('bb_auth',user?'1':'0'); setAuthUI(!!user); });
+onAuthStateChanged(auth, user => { document.body.classList.toggle('logged-in',!!user); localStorage.setItem('bb_auth',user?'1':'0'); setAuthUI(!!user); });
 window.doSignOut = () => { localStorage.setItem('bb_auth','0'); signOut(auth).finally(()=>{ window.location.href='BlastyBiz-Login.html'; }); };
 </script>
 <script>

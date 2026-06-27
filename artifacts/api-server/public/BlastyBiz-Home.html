@@ -431,6 +431,7 @@ function setAuthUI(loggedIn) {
 }
 setAuthUI(localStorage.getItem('bb_auth') === '1');
 onAuthStateChanged(auth, user => {
+  document.body.classList.toggle('logged-in', !!user);
   localStorage.setItem('bb_auth', user ? '1' : '0');
   setAuthUI(!!user);
 });
