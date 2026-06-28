@@ -659,6 +659,140 @@
   .announce-chip.upcoming { border-color:rgba(255,180,0,.5); color:#ffb400; }
   .announce-chip .remove-x { opacity:.5; font-size:13px; line-height:1; }
 
+  /* ── UTILITIES ── */
+  .row         { display:flex; align-items:center; gap:8px; }
+  .row-sb      { display:flex; align-items:center; justify-content:space-between; }
+  .row-base-sb { display:flex; align-items:baseline; justify-content:space-between; }
+  .flex-1      { flex:1; min-width:0; }
+  .shrink-0    { flex-shrink:0; }
+  .wrap        { flex-wrap:wrap; }
+  .mb-0        { margin-bottom:0 !important; }
+  .mb-4        { margin-bottom:4px; }
+  .mb-6        { margin-bottom:6px; }
+  .mb-8        { margin-bottom:8px; }
+  .mb-10       { margin-bottom:10px; }
+  .mb-12       { margin-bottom:12px; }
+  .mb-14       { margin-bottom:14px; }
+  .mb-16       { margin-bottom:16px; }
+  .mt-2        { margin-top:2px; }
+  .mt-4        { margin-top:4px; }
+  .mt-6        { margin-top:6px; }
+  .mt-8        { margin-top:8px; }
+  .mt-10       { margin-top:10px; }
+  .mt-12       { margin-top:12px; }
+  .mt-14       { margin-top:14px; }
+  .mt-16       { margin-top:16px; }
+  .gap-6       { gap:6px; }
+  .gap-10      { gap:10px; }
+  .gap-12      { gap:12px; }
+  .fw-600      { font-weight:600; }
+  .fw-700      { font-weight:700; }
+  .text-xs     { font-size:11px; }
+  .text-sm     { font-size:12px; }
+  .text-base   { font-size:13px; }
+  .text-muted  { color:var(--muted); }
+  .text-green  { color:var(--green); }
+  .text-light  { color:var(--light); }
+  .text-silver { color:var(--silver); }
+  .lh-14       { line-height:1.4; }
+  .lh-16       { line-height:1.6; }
+  .min-w-0     { min-width:0; }
+  .min-h-0     { min-height:0; }
+  .min-h-90    { min-height:90px; }
+  .max-w-260   { max-width:260px; }
+  .w-72        { width:72px; }
+  .w-84        { width:84px; }
+  .text-center { text-align:center; }
+  .icon-md     { font-size:18px; }
+  .icon-lg     { font-size:20px; }
+
+  /* ── HELPER / PARA TEXT ── */
+  .helper    { font-size:13px; color:var(--muted); margin-bottom:14px; line-height:1.6; }
+  .helper-sm { font-size:12px; color:var(--muted); margin-bottom:14px; line-height:1.5; }
+  .optional  { color:var(--muted); font-weight:400; font-size:12px; }
+  .optional-tag { font-size:11px; color:var(--muted); font-weight:600; letter-spacing:1px; text-transform:uppercase; }
+
+  /* ── COUNT BADGE ── */
+  .count-badge { background:rgba(255,180,0,.15); color:#ffb400; font-size:11px; font-weight:700; padding:2px 7px; border-radius:20px; border:1px solid rgba(255,180,0,.3); }
+
+  /* ── CAMPAIGN CHIPS ── */
+  .chip-row     { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  .chip-loading { font-size:12px; color:var(--muted); }
+  .chip-green   { padding:7px 16px; border-radius:20px; border:1px solid rgba(0,200,83,.4); background:rgba(0,200,83,.08); color:var(--green); font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; transition:all .15s; }
+
+  /* ── FORM ELEMENTS ── */
+  .input-campaign { flex:1; background:#081008; border:1px solid var(--green); border-radius:9px; color:var(--light); font-family:inherit; font-size:14px; padding:10px 14px; outline:none; }
+  .input-date     { flex:1; background:var(--card); border:1px solid var(--border); border-radius:8px; color:var(--light); padding:9px 10px; font-family:inherit; font-size:12px; }
+  .date-hint      { font-size:11px; color:var(--muted); flex-shrink:0; }
+  .textarea-naked { width:100%; background:transparent; border:1px solid var(--border); border-radius:8px; color:var(--light); padding:10px; font-family:inherit; font-size:13px; resize:none; }
+  .textarea-rich  { width:100%; background:#081008; border:1px solid var(--border); border-radius:10px; color:var(--light); font-family:'DM Sans',sans-serif; font-size:14px; line-height:1.6; padding:14px; resize:vertical; outline:none; transition:border-color .2s; }
+  .sched-select   { width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--card); color:var(--light); font-size:13px; appearance:none; -webkit-appearance:none; }
+
+  /* ── BUTTONS ── */
+  .btn-green-out   { padding:9px 16px; border-radius:8px; border:1px solid var(--green); background:transparent; color:var(--green); font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; margin-bottom:12px; }
+  .btn-save        { flex:1; padding:10px; border-radius:9px; border:none; background:var(--green); color:var(--dark); font-weight:700; font-size:13px; cursor:pointer; font-family:inherit; }
+  .btn-cancel      { padding:10px 14px; border-radius:9px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:13px; cursor:pointer; font-family:inherit; }
+  .btn-camp-save   { background:var(--green); color:var(--dark); border:none; border-radius:9px; padding:10px 18px; font-weight:700; font-size:13px; cursor:pointer; font-family:inherit; white-space:nowrap; }
+  .btn-camp-cancel { background:transparent; border:1px solid var(--border); border-radius:9px; padding:10px 14px; color:var(--muted); font-size:13px; cursor:pointer; font-family:inherit; }
+  .btn-icon-close  { background:transparent; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; padding:0 4px; }
+  .btn-rewrite     { background:rgba(0,200,83,0.12); border:1.5px solid var(--green); color:var(--green); font-weight:700; margin-bottom:10px; }
+  .btn-clear       { background:transparent; border:1.5px solid var(--border); color:var(--muted); }
+  .btn-more-qs     { display:none; margin-top:14px; width:100%; background:rgba(0,200,83,0.08); border:1px solid rgba(0,200,83,0.25); border-radius:10px; padding:11px 16px; color:var(--green); font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+
+  /* ── ANNOUNCE DIALOG ── */
+  .announce-dialog { background:var(--dark); border:1px solid var(--border); border-radius:12px; padding:14px; margin-top:10px; }
+  .dialog-label    { font-size:12px; color:var(--silver); font-weight:700; margin-bottom:8px; }
+
+  /* ── ABOUT-YOU CHECKBOXES ── */
+  .about-you-card { padding:14px 16px; }
+  .check-row      { display:flex; align-items:center; justify-content:space-between; cursor:pointer; gap:12px; }
+  .check-text     { font-size:14px; color:var(--text); line-height:1.4; }
+  .check-hint     { display:block; color:var(--muted); font-size:12px; margin-top:1px; }
+  .check-input    { width:20px; height:20px; cursor:pointer; flex-shrink:0; accent-color:var(--green); }
+
+  /* ── SCHEDULE ── */
+  .sched-review-row  { display:flex; align-items:center; justify-content:space-between; padding:14px 0 2px; border-top:1px solid var(--border); margin-top:12px; }
+  .sched-camp-row    { margin-top:14px; padding-top:14px; border-top:1px solid var(--border); }
+  .sched-label       { font-size:13px; font-weight:700; color:var(--light); }
+  .sched-sublabel    { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.4; }
+  .sched-camp-title  { font-size:13px; font-weight:700; color:var(--light); margin-bottom:4px; }
+  .sched-camp-hint   { font-size:11px; color:var(--muted); margin-bottom:8px; line-height:1.4; }
+  .sched-next-preview { font-size:12px; color:var(--green); text-align:center; padding:6px 0 2px; min-height:24px; font-weight:600; }
+  .sched-toggle-ml   { margin-left:14px; flex-shrink:0; }
+
+  /* ── TEACH AI CARD ── */
+  .teach-btn   { width:100%; background:none; border:none; padding:16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-family:inherit; text-align:left; }
+  .teach-icon  { font-size:20px; }
+  .teach-title { font-size:14px; font-weight:700; color:var(--light); line-height:1.3; }
+  .teach-sub   { font-size:12px; color:var(--muted); margin-top:2px; }
+  .chevron     { font-size:20px; color:var(--muted); flex-shrink:0; margin-left:10px; transition:transform .2s; }
+  .teach-inner { padding:0 16px 16px; }
+  .card-flush  { padding:0; overflow:hidden; }
+
+  /* ── PROFILE CARD ── */
+  .card-centered    { text-align:center; }
+  .profile-name     { font-family:'Bebas Neue'; font-size:22px; letter-spacing:1px; color:var(--green); }
+  .profile-cat-text { font-size:12px; color:var(--muted); margin-top:4px; }
+
+  /* ── ADDRESS FIELDS ── */
+  .addr-row { display:flex; gap:8px; }
+
+  /* ── BIZ MISSING BANNER ── */
+  .biz-missing-banner { background:#3a1a00; border:1.5px solid var(--warn); border-radius:12px; padding:14px 18px; margin-bottom:12px; color:var(--warn); font-weight:600; font-size:15px; text-align:center; }
+
+  /* ── REVIEW LISTINGS LINK ── */
+  .review-btn { display:none; margin:20px 0 0; padding:15px 20px; background:var(--green); color:var(--dark); border-radius:12px; font-weight:700; font-size:15px; text-decoration:none; align-items:center; justify-content:center; gap:8px; }
+
+  /* ── PLATCATS NOTE ── */
+  .platcats-note { font-size:11px; color:var(--muted); margin-top:8px; text-align:center; min-height:16px; }
+
+  /* ── LIBRARY MODAL ── */
+  .modal-overlay { position:fixed; inset:0; z-index:1000; display:none; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.7); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
+  .modal-panel   { background:var(--panel); border:1px solid var(--border); border-radius:18px 18px 0 0; width:100%; max-width:600px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; }
+  .modal-head    { display:flex; align-items:center; justify-content:space-between; padding:16px 20px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .modal-title   { font-size:15px; font-weight:700; color:var(--light); }
+  .modal-body    { flex:1; overflow-y:auto; padding:16px 20px 24px; }
+
 </style>
 </head>
 <body class="logged-in has-site-header">
@@ -680,12 +814,12 @@
 
   <!-- PENDING POSTS — shown only when scheduled drafts need approval -->
   <div id="pending-posts-card" style="display:none;" class="card">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-      <span style="font-size:18px;">📬</span>
-      <div class="card-title" style="margin-bottom:0;">Ready for your review</div>
-      <span id="pending-posts-count" style="background:rgba(255,180,0,.15);color:#ffb400;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;border:1px solid rgba(255,180,0,.3);"></span>
+    <div class="row mb-6">
+      <span class="icon-md">📬</span>
+      <div class="card-title mb-0">Ready for your review</div>
+      <span id="pending-posts-count" class="count-badge"></span>
     </div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;">BlastyBiz drafted these on schedule. Approve to publish, or dismiss to skip.</p>
+    <p class="helper-sm">BlastyBiz drafted these on schedule. Approve to publish, or dismiss to skip.</p>
     <div id="pending-posts-list"></div>
   </div>
 
@@ -706,25 +840,22 @@
 
   <div class="card">
     <div class="card-title">📁 Campaign</div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">Group your ads. Pick an existing campaign or create a new one.</p>
-    <div id="campaign-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-      <span style="font-size:12px;color:var(--muted);">Loading…</span>
+    <p class="helper">Group your ads. Pick an existing campaign or create a new one.</p>
+    <div id="campaign-chips" class="chip-row">
+      <span class="chip-loading">Loading…</span>
     </div>
-    <div id="campaign-library-row" style="display:none;margin-top:10px;">
-      <button onclick="openLibraryModal()"
-        style="padding:7px 16px;border-radius:20px;border:1px solid rgba(0,200,83,.4);background:rgba(0,200,83,.08);color:var(--green);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;">
+    <div id="campaign-library-row" class="mt-10" style="display:none;">
+      <button onclick="openLibraryModal()" class="chip-green">
         📚 <span></span> Library
       </button>
     </div>
-    <div id="new-campaign-row" style="display:none;margin-top:4px;">
-      <div style="display:flex;gap:8px;align-items:center;">
+    <div id="new-campaign-row" class="mt-4" style="display:none;">
+      <div class="row">
         <input type="text" id="new-campaign-input" placeholder="Campaign name (e.g. Christmas, Summer Sale)"
-          style="flex:1;background:#081008;border:1px solid var(--green);border-radius:9px;color:var(--light);font-family:inherit;font-size:14px;padding:10px 14px;outline:none;"
+          class="input-campaign"
           onkeydown="if(event.key==='Enter')saveNewCampaign()" />
-        <button onclick="saveNewCampaign()"
-          style="background:var(--green);color:var(--dark);border:none;border-radius:9px;padding:10px 18px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap;">Save</button>
-        <button onclick="cancelNewCampaign()"
-          style="background:transparent;border:1px solid var(--border);border-radius:9px;padding:10px 14px;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;">✕</button>
+        <button onclick="saveNewCampaign()" class="btn-camp-save">Save</button>
+        <button onclick="cancelNewCampaign()" class="btn-camp-cancel">✕</button>
       </div>
     </div>
   </div>
@@ -734,53 +865,51 @@
 
     <label>Ad name</label>
     <input type="text" id="biz-ad-name" placeholder="e.g. 50% off chocolate · Free consultation · Holiday special"
-      oninput="saveDraft()" style="margin-bottom:16px;" />
+      oninput="saveDraft()" class="mb-16" />
 
     <label>What's the offer?</label>
     <div class="char-wrap">
-      <textarea id="biz-offer" placeholder="e.g. 20% off all haircuts this Saturday only · Grand reopening next week · New menu just dropped — come try it..." oninput="countChars(this, 'offer-count', 500);" style="min-height:90px;"></textarea>
+      <textarea id="biz-offer" placeholder="e.g. 20% off all haircuts this Saturday only · Grand reopening next week · New menu just dropped — come try it..." oninput="countChars(this, 'offer-count', 500);" class="min-h-90"></textarea>
       <span class="char-count" id="offer-count">0 / 500</span>
     </div>
 
-    <label style="margin-top:16px;">Tell us more <span style="color:var(--muted);font-weight:400;font-size:12px;">(optional)</span></label>
+    <label class="mt-16">Tell us more <span class="optional">(optional)</span></label>
     <textarea id="biz-ad-details"
       placeholder="Add any details specific to this ad — flavors available, restrictions, what's included, dates, quantities, how to redeem, anything relevant..."
-      oninput="saveDraft()" style="min-height:90px;margin-bottom:16px;width:100%;background:#081008;border:1px solid var(--border);border-radius:10px;color:var(--light);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;padding:14px;resize:vertical;outline:none;transition:border-color .2s;"
+      oninput="saveDraft()" class="textarea-rich mb-16"
       onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'"></textarea>
 
-    <label>Price <span style="color:var(--muted);font-weight:400;font-size:12px;">(optional)</span></label>
-    <input type="text" id="biz-price" placeholder="e.g. $25 · Free · Starting at $99" oninput="saveDraft()" style="max-width:260px;" />
+    <label>Price <span class="optional">(optional)</span></label>
+    <input type="text" id="biz-price" placeholder="e.g. $25 · Free · Starting at $99" oninput="saveDraft()" class="max-w-260" />
   </div>
 
   <!-- ── ANNOUNCEMENTS ── -->
   <div class="card" id="enrichment-card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-      <div class="card-title" style="margin-bottom:0;">📣 Add an Announcement</div>
-      <span style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase;">Optional</span>
+    <div class="row-sb mb-6">
+      <div class="card-title mb-0">📣 Add an Announcement</div>
+      <span class="optional-tag">Optional</span>
     </div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Time-sensitive events, sales, or news. AI weaves these into every platform automatically.</p>
+    <p class="helper-sm">Time-sensitive events, sales, or news. AI weaves these into every platform automatically.</p>
 
-    <button onclick="openAnnounceDialog()"
-      style="padding:9px 16px;border-radius:8px;border:1px solid var(--green);background:transparent;color:var(--green);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:12px;">
+    <button onclick="openAnnounceDialog()" class="btn-green-out">
       + Add Announcement
     </button>
-    <div id="announce-list" style="min-height:0;">
+    <div id="announce-list" class="min-h-0">
     </div>
 
     <!-- ANNOUNCEMENT DIALOG (inline, hidden) -->
-    <div id="announce-dialog" style="display:none;background:var(--dark);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:10px;">
-      <p style="font-size:12px;color:var(--silver);font-weight:700;margin-bottom:8px;">What's the announcement?</p>
+    <div id="announce-dialog" class="announce-dialog" style="display:none;">
+      <p class="dialog-label">What's the announcement?</p>
       <textarea id="announce-text" rows="2" placeholder="e.g. Half-off all services June 28th · Grand reopening July 1 · New menu items available now"
-        style="width:100%;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--light);padding:10px;font-family:inherit;font-size:13px;resize:none;"></textarea>
-      <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
-        <input type="date" id="announce-date" style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--light);padding:9px 10px;font-family:inherit;font-size:12px;" />
-        <span style="font-size:11px;color:var(--muted);flex-shrink:0;">optional end date</span>
+        class="textarea-naked"></textarea>
+      <div class="row mt-8">
+        <input type="date" id="announce-date" class="input-date" />
+        <span class="date-hint">optional end date</span>
       </div>
-      <div style="display:flex;gap:8px;margin-top:10px;">
-        <button onclick="saveAnnouncement()"
-          style="flex:1;padding:10px;border-radius:9px;border:none;background:var(--green);color:var(--dark);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Save</button>
+      <div class="row mt-10">
+        <button onclick="saveAnnouncement()" class="btn-save">Save</button>
         <button onclick="document.getElementById('announce-dialog').style.display='none'"
-          style="padding:10px 14px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;">Cancel</button>
+          class="btn-cancel">Cancel</button>
       </div>
     </div>
 
@@ -792,11 +921,11 @@
 
   <!-- IMAGE UPLOAD -->
   <div class="card">
-    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px;">
-      <div class="card-title" style="margin-bottom:0;">📷 Campaign Photos</div>
-      <span id="photo-cap-label" style="font-size:11px;color:var(--muted);"></span>
+    <div class="row-base-sb mb-4">
+      <div class="card-title mb-0">📷 Campaign Photos</div>
+      <span id="photo-cap-label" class="text-xs text-muted"></span>
     </div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Photos belong to this campaign. Select a campaign above first.</p>
+    <p class="text-base text-muted mb-12">Photos belong to this campaign. Select a campaign above first.</p>
     <div id="photo-upload-area" class="image-upload-area" onclick="document.getElementById('img-input').click()">
       <input type="file" id="img-input" accept="image/*" multiple onchange="handleImages(event)" />
       <div class="upload-icon">📸</div>
@@ -805,7 +934,7 @@
     <div class="thumb-grid" id="thumb-grid"></div>
   </div>
 
-  <button class="btn btn-primary" id="continue-btn" onclick="goToStep2()" style="margin-top:4px;">
+  <button class="btn btn-primary mt-4" id="continue-btn" onclick="goToStep2()">
     Continue to Platforms →
   </button>
   <div class="bottom-safe"></div>
@@ -818,7 +947,7 @@
   <!-- PLATFORM QUICK SELECT -->
   <div class="card">
     <div class="card-title">📡 Send To</div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Select which platforms to target. AI will adapt your listing for each one.</p>
+    <p class="helper">Select which platforms to target. AI will adapt your listing for each one.</p>
 
     <div id="quick-platform-list">
       <!-- populated by JS -->
@@ -828,21 +957,21 @@
 
 
   <!-- ABOUT YOU IN COPY -->
-  <div class="card" id="about-you-card" style="padding:14px 16px;display:none;">
-    <div class="card-title" style="margin-bottom:12px;">🪪 About You in Copy</div>
-    <label style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;cursor:pointer;gap:12px;">
-      <span style="font-size:14px;color:var(--text);line-height:1.4;">
+  <div class="card about-you-card" id="about-you-card" style="display:none;">
+    <div class="card-title mb-12">🪪 About You in Copy</div>
+    <label class="check-row mb-12">
+      <span class="check-text">
         Mention my name
-        <span id="copy-name-preview" style="display:block;color:var(--muted);font-size:12px;margin-top:1px;"></span>
+        <span id="copy-name-preview" class="check-hint"></span>
       </span>
-      <input type="checkbox" id="copy-include-name" style="width:20px;height:20px;cursor:pointer;flex-shrink:0;accent-color:var(--green);" />
+      <input type="checkbox" id="copy-include-name" class="check-input" />
     </label>
-    <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:12px;">
-      <span style="font-size:14px;color:var(--text);line-height:1.4;">
+    <label class="check-row">
+      <span class="check-text">
         Mention my role
-        <span id="copy-role-preview" style="display:block;color:var(--muted);font-size:12px;margin-top:1px;"></span>
+        <span id="copy-role-preview" class="check-hint"></span>
       </span>
-      <input type="checkbox" id="copy-include-role" style="width:20px;height:20px;cursor:pointer;flex-shrink:0;accent-color:var(--green);" />
+      <input type="checkbox" id="copy-include-role" class="check-input" />
     </label>
   </div>
 
@@ -858,12 +987,10 @@
 
   <!-- REWRITE + CLEAR — stacked, visible after first adaptation -->
   <div id="rewrite-row" style="display:none;">
-    <button class="btn" onclick="runAdaptation()"
-      style="background:rgba(0,200,83,0.12);border:1.5px solid var(--green);color:var(--green);font-weight:700;margin-bottom:10px;">
+    <button class="btn btn-rewrite" onclick="runAdaptation()">
       🔄 Rewrite with Direction
     </button>
-    <button class="btn" onclick="clearAndStartOver()"
-      style="background:transparent;border:1.5px solid var(--border);color:var(--muted);">
+    <button class="btn btn-clear" onclick="clearAndStartOver()">
       🗑️ Clear & Start Over
     </button>
   </div>
@@ -900,10 +1027,7 @@
   <div class="section-label">Copy & Paste Platforms</div>
   <div class="platform-grid" id="manual-platforms"></div>
 
-  <a id="review-listings-btn" href="BlastyBiz-Listing-Preview.html"
-     style="display:none;margin:20px 16px 0;padding:15px 20px;background:var(--green);color:var(--dark);
-            border-radius:12px;font-weight:700;font-size:15px;text-decoration:none;
-            align-items:center;justify-content:center;gap:8px;">
+  <a id="review-listings-btn" href="BlastyBiz-Listing-Preview.html" class="review-btn">
     ✅ Review &amp; Approve All Listings →
   </a>
 
@@ -948,19 +1072,19 @@
 ══════════════════════════════════════════ -->
 <div class="section" id="section-profile">
 
-  <div id="biz-name-missing-banner" style="display:none;background:#3a1a00;border:1.5px solid var(--warn);border-radius:12px;padding:14px 18px;margin-bottom:12px;color:var(--warn);font-weight:600;font-size:15px;text-align:center;">
+  <div id="biz-name-missing-banner" class="biz-missing-banner" style="display:none;">
     ⚠️ Your business name is not set — the AI is using a placeholder. Tap <strong>Business Name</strong> below and type your real name.
   </div>
 
-  <div class="card" style="text-align:center;">
+  <div class="card card-centered">
     <div class="profile-avatar">🏪</div>
-    <div id="profile-biz-name" style="font-family:'Bebas Neue';font-size:22px;letter-spacing:1px;color:var(--green);"></div>
-    <div id="profile-biz-cat" style="font-size:12px;color:var(--muted);margin-top:4px;">Set up your profile below</div>
+    <div id="profile-biz-name" class="profile-name"></div>
+    <div id="profile-biz-cat" class="profile-cat-text">Set up your profile below</div>
   </div>
 
   <div class="card">
     <div class="card-title">🏪 Business Profile</div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Saved automatically. Used to pre-fill every listing.</p>
+    <p class="helper mb-16">Saved automatically. Used to pre-fill every listing.</p>
 
     <label>Business Name</label>
     <input type="text" id="profile-name" placeholder="Your business name" oninput="saveProfile()" />
@@ -1003,11 +1127,11 @@
       <button class="loc-type-btn" id="prof-loc-btn-both" onclick="setProfileLocationType('both')">🌍 Both</button>
     </div>
     <div class="loc-fields" id="prof-loc-physical-fields">
-      <input type="text" id="profile-street" placeholder="Street address" oninput="saveProfile()" style="margin-bottom:8px;" />
-      <div style="display:flex;gap:8px;">
-        <input type="text" id="profile-city"  placeholder="City"  oninput="saveProfile()" style="flex:1;min-width:0;" />
-        <input type="text" id="profile-state" placeholder="State" oninput="saveProfile()" style="width:72px;" />
-        <input type="text" id="profile-zip"   placeholder="ZIP"   oninput="saveProfile()" style="width:84px;" />
+      <input type="text" id="profile-street" placeholder="Street address" oninput="saveProfile()" class="mb-8" />
+      <div class="addr-row">
+        <input type="text" id="profile-city"  placeholder="City"  oninput="saveProfile()" class="flex-1" />
+        <input type="text" id="profile-state" placeholder="State" oninput="saveProfile()" class="w-72" />
+        <input type="text" id="profile-zip"   placeholder="ZIP"   oninput="saveProfile()" class="w-84" />
       </div>
     </div>
     <div class="loc-fields" id="prof-loc-online-fields" style="display:none;">
@@ -1033,19 +1157,19 @@
     </select>
 
     <label>Default Platforms</label>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Toggle platforms on/off in the Platforms tab.</p>
+    <p class="helper-sm mb-10">Toggle platforms on/off in the Platforms tab.</p>
   </div>
 
   <!-- ── AUTO-POST SCHEDULE ── -->
   <div class="card" id="schedule-card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-      <div class="card-title" style="margin-bottom:0;">📅 Auto-Post Schedule</div>
+    <div class="row-sb mb-6">
+      <div class="card-title mb-0">📅 Auto-Post Schedule</div>
       <label class="sched-toggle-wrap">
         <input type="checkbox" id="sched-enabled" onchange="toggleSchedEnabled()" />
         <span class="sched-toggle-track"></span>
       </label>
     </div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Turn on to have BlastyBiz re-post your listing on a recurring schedule. Direct auto-posting for Google Business, Facebook, and Instagram is coming soon.</p>
+    <p class="helper-sm">Turn on to have BlastyBiz re-post your listing on a recurring schedule. Direct auto-posting for Google Business, Facebook, and Instagram is coming soon.</p>
 
     <div id="sched-fields" style="display:none;">
       <label>How often?</label>
@@ -1086,25 +1210,25 @@
         <button class="sched-chip"        id="sched-time-evening"   onclick="setSchedTime('evening')">🌙 6pm</button>
       </div>
 
-      <div id="sched-next-preview" style="font-size:12px;color:var(--green);text-align:center;padding:6px 0 2px;min-height:24px;font-weight:600;"></div>
+      <div id="sched-next-preview" class="sched-next-preview"></div>
 
       <!-- CAMPAIGN PICKER -->
-      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
-        <div style="font-size:13px;font-weight:700;color:var(--light);margin-bottom:4px;">Which campaign?</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.4;">Auto-posts will use this campaign's offer and ad details.</div>
+      <div class="sched-camp-row">
+        <div class="sched-camp-title">Which campaign?</div>
+        <div class="sched-camp-hint">Auto-posts will use this campaign's offer and ad details.</div>
         <select id="sched-campaign-select" onchange="setSchedCampaign(this.value, this.options[this.selectedIndex].text)"
-          style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--light);font-size:13px;appearance:none;-webkit-appearance:none;">
+          class="sched-select">
           <option value="">— No campaign selected (use business profile) —</option>
         </select>
       </div>
 
       <!-- REVIEW TOGGLE -->
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0 2px;border-top:1px solid var(--border);margin-top:12px;">
+      <div class="sched-review-row">
         <div>
-          <div style="font-size:13px;font-weight:700;color:var(--light);">Review before posting</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4;">AI drafts land in a queue — you approve before anything goes live</div>
+          <div class="sched-label">Review before posting</div>
+          <div class="sched-sublabel">AI drafts land in a queue — you approve before anything goes live</div>
         </div>
-        <label class="sched-toggle-wrap" style="margin-left:14px;flex-shrink:0;">
+        <label class="sched-toggle-wrap sched-toggle-ml">
           <input type="checkbox" id="sched-review" onchange="toggleSchedReview()" />
           <span class="sched-toggle-track"></span>
         </label>
@@ -1114,37 +1238,35 @@
 
   <div class="card" id="profile-platcats-card">
     <div class="card-title">🏷️ Platform Categories</div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">The category BlastyBiz uses when adapting your listing for each platform. AI picks these automatically — update any time.</p>
+    <p class="helper mb-16">The category BlastyBiz uses when adapting your listing for each platform. AI picks these automatically — update any time.</p>
     <div id="profile-cat-list"></div>
-    <button class="btn btn-outline" id="rerun-ai-cats-btn" onclick="rerunAICats()" style="margin-top:12px;font-size:13px;">
+    <button class="btn btn-outline mt-12" id="rerun-ai-cats-btn" onclick="rerunAICats()">
       🤖 Re-run AI Category Picker
     </button>
-    <p id="platcats-note" style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;min-height:16px;"></p>
+    <p id="platcats-note" class="platcats-note"></p>
   </div>
 
   <!-- TEACH AI ACCORDION -->
-  <div class="card" style="padding:0;overflow:hidden;" id="teach-ai-card">
-    <button onclick="toggleTeachAI()" id="teach-ai-header"
-      style="width:100%;background:none;border:none;padding:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-family:inherit;text-align:left;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:20px;">🧠</span>
+  <div class="card card-flush" id="teach-ai-card">
+    <button onclick="toggleTeachAI()" id="teach-ai-header" class="teach-btn">
+      <div class="row gap-10">
+        <span class="teach-icon">🧠</span>
         <div>
-          <div style="font-size:14px;font-weight:700;color:var(--light);line-height:1.3;">Teach AI to know you better</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="teach-ai-sub">Answer a few questions — AI uses them in every post</div>
+          <div class="teach-title">Teach AI to know you better</div>
+          <div class="teach-sub" id="teach-ai-sub">Answer a few questions — AI uses them in every post</div>
         </div>
       </div>
-      <span id="teach-ai-chevron" style="font-size:20px;color:var(--muted);flex-shrink:0;margin-left:10px;transition:transform .2s;">›</span>
+      <span id="teach-ai-chevron" class="chevron">›</span>
     </button>
-    <div id="teach-ai-body" style="display:none;padding:0 16px 16px;">
+    <div id="teach-ai-body" class="teach-inner" style="display:none;">
       <div id="profile-insight-list"></div>
-      <button id="profile-enrich-more-btn" onclick="fetchEnrichmentQuestions(true)"
-        style="display:none;margin-top:14px;width:100%;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.25);border-radius:10px;padding:11px 16px;color:var(--green);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">
+      <button id="profile-enrich-more-btn" onclick="fetchEnrichmentQuestions(true)" class="btn-more-qs">
         ✨ Ask me something new
       </button>
     </div>
   </div>
 
-  <button class="btn btn-outline" onclick="clearAll()" style="margin-top:8px;">
+  <button class="btn btn-outline mt-8" onclick="clearAll()">
     🗑️ Clear All Data
   </button>
 
@@ -3854,15 +3976,15 @@ window._saveScheduleToFirestore = async function(sched) {
 </script>
 
 <!-- ── COPY LIBRARY MODAL ─────────────────────────────────── -->
-<div id="library-modal" style="display:none;position:fixed;inset:0;z-index:1000;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.7);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);">
-  <div style="background:var(--panel);border:1px solid var(--border);border-radius:18px 18px 0 0;width:100%;max-width:600px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
+<div id="library-modal" class="modal-overlay">
+  <div class="modal-panel">
     <!-- Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0;">
-      <span id="library-modal-title" style="font-size:15px;font-weight:700;color:var(--light);">📚 Copy Library</span>
-      <button onclick="closeLibraryModal()" style="background:transparent;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;padding:0 4px;">✕</button>
+    <div class="modal-head">
+      <span id="library-modal-title" class="modal-title">📚 Copy Library</span>
+      <button onclick="closeLibraryModal()" class="btn-icon-close">✕</button>
     </div>
     <!-- Body -->
-    <div id="library-modal-body" style="flex:1;overflow-y:auto;padding:16px 20px 24px;"></div>
+    <div id="library-modal-body" class="modal-body"></div>
   </div>
 </div>
 
