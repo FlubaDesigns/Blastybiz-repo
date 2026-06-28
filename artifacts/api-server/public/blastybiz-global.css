@@ -546,8 +546,7 @@ html .contact-img-col   { display: none; }
   .site-header-tagline       { height: 5px; margin-left: 10px; padding: 0; }
   body.has-site-header section { max-width: 720px; padding: var(--section-v) var(--gutter); }
   html nav                   { padding: 18px 48px; }
-  html header,
-  html .header               { padding: 16px 48px; }
+  .site-header               { padding: 16px 48px; }
   html .wiz-header           { padding: 20px 48px 0; }
   html .biz-bar              { padding: 10px 48px; }
   html .main-inner           { padding-left: 48px; padding-right: 48px; }
@@ -635,8 +634,7 @@ html .contact-img-col   { display: none; }
   body.has-site-header section { max-width: 1240px; padding: var(--section-v) var(--gutter); }
   html .desk-only            { display: block !important; }
   html nav                   { padding: 18px 80px; }
-  html header,
-  html .header               { padding: 16px 60px; }
+  .site-header               { padding: 16px 60px; }
   html .biz-bar              { padding: 10px 60px; }
   html .main-inner           { padding-left: 80px; padding-right: 80px; }
   html .page-hero            { padding-left: 80px; padding-right: 80px; max-width: 1200px; text-align: left; }
@@ -801,7 +799,7 @@ button.mobile-link {
   padding: 0;
 }
 /* ── page-hero fade-up animation (static, same on About/Contact/Privacy/Terms) ── */
-.page-hero { animation: fadeUp 0.6s ease both; }
+.page-hero { animation: fadeUp 0.6s ease both; padding-top: 0; padding-bottom: 0; }
 
 /* ── cross-page utility classes extracted from inline styles ── */
 .mb-10 { margin-bottom: 10px; }
