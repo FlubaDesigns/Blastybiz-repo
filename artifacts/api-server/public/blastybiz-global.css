@@ -36,7 +36,7 @@ a { color: inherit; text-decoration: none; }
 /* ── Main content wrapper — global gutter ───────────────── */
 main {
   width: 100%;
-  padding: 0 var(--gutter) 60px;
+  padding-bottom: 60px;
   box-sizing: border-box;
 }
 .main-inner {
