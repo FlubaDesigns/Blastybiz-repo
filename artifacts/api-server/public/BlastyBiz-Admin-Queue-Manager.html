@@ -46,6 +46,7 @@ pre{white-space:pre-wrap;background:#0f172a;color:#e5e7eb;padding:14px;border-ra
 @media(max-width:900px){.grid{grid-template-columns:1fr 1fr}.detail{grid-template-columns:1fr}}
 @media(max-width:600px){.grid{grid-template-columns:1fr}table{display:block;overflow-x:auto}}
 .nav a.active{background:#f0fdf4;border-color:#16a34a}
+.empty-row{text-align:center;padding:20px;opacity:.6}
 </style>
 <style>body{visibility:hidden}</style></head>
 <body>
@@ -209,7 +210,7 @@ onAuthStateChanged(auth, (user) => {
   const q = query(collection(db, 'publishJobs'), orderBy('updatedAt', 'desc'), limit(50));
   onSnapshot(q, (snap) => {
     if (snap.empty) {
-      document.querySelector('tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;opacity:.6">No jobs yet.</td></tr>';
+      document.querySelector('tbody').innerHTML = '<tr><td colspan="7" class="empty-row">No jobs yet.</td></tr>';
       return;
     }
     let queued = 0, posting = 0, attention = 0, completed = 0;
