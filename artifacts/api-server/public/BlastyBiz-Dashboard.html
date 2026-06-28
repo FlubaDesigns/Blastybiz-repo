@@ -161,22 +161,22 @@
   </div>
 </div>
 
-<!-- BUSINESS SWITCHER BAR — full width, before gutter -->
-<div class="biz-bar">
-  <div class="biz-active" id="biz-active-btn" onclick="openSwitcher()">
-    <div class="biz-avatar" id="active-avatar">🏪</div>
-    <div>
-      <div class="biz-name" id="active-name"></div>
-      <div class="biz-plan" id="active-plan"></div>
-    </div>
-    <div class="biz-chevron">▾</div>
-  </div>
-  <div class="biz-count" id="biz-count"></div>
-  <button class="add-biz-btn" onclick="addBusiness()" title="Add business">＋</button>
-</div>
-
 <!-- MAIN CONTENT -->
 <div class="main-inner">
+  <!-- BUSINESS SWITCHER BAR -->
+  <div class="biz-bar">
+    <div class="biz-active" id="biz-active-btn" onclick="openSwitcher()">
+      <div class="biz-avatar" id="active-avatar">🏪</div>
+      <div>
+        <div class="biz-name" id="active-name"></div>
+        <div class="biz-plan" id="active-plan"></div>
+      </div>
+      <div class="biz-chevron">▾</div>
+    </div>
+    <div class="biz-count" id="biz-count"></div>
+    <button class="add-biz-btn" onclick="addBusiness()" title="Add business">＋</button>
+  </div>
+
   <div class="dash-hero">
     <div class="card">
       <p class="sub" id="dashboard-sub">Showing data for <strong id="dashboard-biz-name"></strong>.</p>
