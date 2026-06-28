@@ -78,7 +78,7 @@
 
   /* ── MAIN CONTENT ── */
   main{width:min(1180px,100%);margin:0 auto;padding:20px}
-  .hero{display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:16px}
+  .dash-hero{display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:16px}
   .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
   .card-title{font-family:'Bebas Neue';font-size:21px;letter-spacing:1.5px;color:var(--green);margin-bottom:14px;display:flex;align-items:center;gap:8px}
   .eyebrow{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--silver);font-weight:700;margin-bottom:8px}
@@ -132,7 +132,10 @@
 
   @media(max-width:850px){
     main{padding:14px}
-    .hero,.two-col{grid-template-columns:1fr}
+    .two-col{grid-template-columns:1fr}
+  }
+  @media(max-width:600px){
+    .dash-hero{grid-template-columns:1fr}
     .grid{grid-template-columns:repeat(2,1fr)}
     .big-title{font-size:36px}
     .top-actions .hide-mobile{display:none}
@@ -197,7 +200,7 @@
 
 <!-- MAIN CONTENT -->
 <main>
-  <section class="hero">
+  <section class="dash-hero">
     <div class="card">
       <p class="sub" id="dashboard-sub">Showing data for <strong id="dashboard-biz-name"></strong>.</p>
       <div class="btn-row">
