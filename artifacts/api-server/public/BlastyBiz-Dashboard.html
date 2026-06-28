@@ -10,9 +10,9 @@
 <style>
   /* ── BUSINESS SWITCHER BAR ── */
   .biz-bar{background:rgba(13,22,13,0.95);border-bottom:1px solid var(--border);padding:10px 0;position:sticky;top:120px;z-index:99;display:flex;align-items:center;backdrop-filter:blur(8px)}
-  .biz-bar-left{width:50%;display:flex;align-items:center;gap:10px}
-  .biz-bar-right{width:50%;display:flex;align-items:center;justify-content:flex-end}
-  .biz-bar-title{font-family:'Bebas Neue';font-size:22px;letter-spacing:2px;color:var(--light)}
+  .biz-bar-left{width:50%;display:flex;align-items:center}
+  .biz-bar-right{width:50%;display:flex;align-items:center;justify-content:flex-end;gap:10px}
+  .biz-bar-title{font-family:'Bebas Neue';font-size:22px;letter-spacing:2px;color:var(--green)}
   .biz-active{display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;background:var(--dark);border:1px solid var(--green);border-radius:10px;padding:10px 14px;transition:all 0.2s}
   .biz-active:hover{background:#0A1A0A}
   .biz-avatar{width:36px;height:36px;border-radius:9px;background:rgba(0,200,83,0.1);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
@@ -168,6 +168,9 @@
   <!-- BUSINESS SWITCHER BAR -->
   <div class="biz-bar">
     <div class="biz-bar-left">
+      <div class="biz-bar-title">⚙ Control Panel</div>
+    </div>
+    <div class="biz-bar-right">
       <div class="biz-active" id="biz-active-btn" onclick="openSwitcher()">
         <div class="biz-avatar" id="active-avatar">🏪</div>
         <div>
@@ -178,9 +181,6 @@
       </div>
       <div class="biz-count" id="biz-count"></div>
       <button class="add-biz-btn" onclick="addBusiness()" title="Add business">＋</button>
-    </div>
-    <div class="biz-bar-right">
-      <div class="biz-bar-title">⚙ Control Panel</div>
     </div>
   </div>
 
