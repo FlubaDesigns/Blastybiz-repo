@@ -12,17 +12,6 @@
 <div id="site-header-inject"></div>
 <div class="main-inner">
 
-<div class="mobile-menu" id="mobileMenu">
-  <a class="mobile-link" href="BlastyBiz-Home.html">Home</a>
-  <a class="mobile-link" href="BlastyBiz-Home.html#how">How It Works</a>
-  <a class="mobile-link" href="BlastyBiz-Home.html#pricing">Pricing</a>
-  <a class="mobile-link" href="BlastyBiz-About.html">About</a>
-  <a class="mobile-link" href="BlastyBiz-Contact.html">Contact</a>
-  <a class="mobile-link" id="menu-login-link" href="BlastyBiz-Login.html">Log In</a>
-  <button class="mobile-link" id="menu-logout-btn" onclick="doSignOut()">Log Out</button>
-  <a class="mobile-cta" href="BlastyBiz-Login.html">Try It Free →</a>
-</div>
-
 <div class="breadcrumb"><a href="BlastyBiz-Home.html">Home</a> <span>›</span> Privacy Policy</div>
 
 <header class="page-hero">
@@ -119,26 +108,6 @@
 <div id="site-footer-inject"></div>
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 
-<script>
-function _getHamburgerBtn() {
-  return document.getElementById('sh-hamburger') || document.getElementById('hamburger');
-}
-function toggleMenu() {
-  const btn = _getHamburgerBtn();
-  const menu = document.getElementById('mobileMenu');
-  const open = menu.classList.toggle('open');
-  if (btn) { btn.classList.toggle('open', open); btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu'); }
-}
-function closeMenu() {
-  const btn = _getHamburgerBtn();
-  if (btn) btn.classList.remove('open');
-  document.getElementById('mobileMenu').classList.remove('open');
-}
-document.addEventListener('click', e => {
-  const btn = _getHamburgerBtn(), menu = document.getElementById('mobileMenu');
-  if (menu.classList.contains('open') && !menu.contains(e.target) && (!btn || !btn.contains(e.target))) closeMenu();
-});
-</script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
