@@ -13,10 +13,10 @@
 
 <div id="site-header-inject"></div>
 
-<div class="main-inner">
+<div class="main">
 <canvas id="canvas"></canvas>
 <img class="mobile-login-img" src="img/people-login-new.png" alt="BlastyBiz" />
-<div class="main">
+<div class="main-inner">
 
   <!-- AUTH LOADING SPINNER (shown until Firebase resolves) -->
   <div id="auth-loading">
@@ -190,7 +190,7 @@
   </div>
 </div>
 
-</div><!-- /.main-inner -->
+</div><!-- /.main -->
 <div id="site-footer-inject"></div>
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 

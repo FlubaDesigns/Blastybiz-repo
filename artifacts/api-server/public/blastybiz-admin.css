@@ -120,7 +120,8 @@ header      { background: rgba(7,13,7,.96); border-bottom: 1px solid var(--borde
 .icon-btn:hover, .icon-btn.active { border-color: var(--green); color: var(--green); }
 
 /* ── Main wrapper ───────────────────────────────────────────── */
-main { width: min(1220px, 100%); margin: 0 auto; padding: 20px; }
+main, .main { width: 100%; }
+.main-inner  { width: min(1220px, 100%); margin: 0 auto; padding: 20px; }
 
 /* ── Card ───────────────────────────────────────────────────── */
 .card       { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--gap-xl); }
@@ -172,7 +173,7 @@ main { width: min(1220px, 100%); margin: 0 auto; padding: 20px; }
 
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  main                  { padding: 14px; }
+  .main-inner           { padding: 14px; }
   .split-wide, .two-col,
   .three-col, .split-3  { grid-template-columns: 1fr; }
   .grid, .split-4       { grid-template-columns: repeat(2, 1fr); }

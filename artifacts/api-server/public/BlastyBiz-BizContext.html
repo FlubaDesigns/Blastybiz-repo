@@ -8,18 +8,18 @@
 <title>BlastyBiz — Business Story</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>body{padding-bottom:60px}
-@media(max-width:600px){main{padding-top:56px}}
+@media(max-width:600px){.main-inner{padding-top:56px}}
 
-  main{max-width:700px;margin:0 auto;padding:120px 20px}
+  main{max-width:700px;margin:0 auto}
+  .main-inner{padding:120px 20px}
   .page-title{font-family:'Bebas Neue';font-size:38px;letter-spacing:2px;color:var(--light);margin-bottom:6px}
   .page-title span{color:var(--green)}
   .page-sub{color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:32px;max-width:560px}
   .page-sub strong{color:var(--silver)}
-  .section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:16px}
+  .card{padding:22px;margin-bottom:16px}
   .section-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--green);font-weight:700;margin-bottom:6px}
   .section-hint{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5}
-  textarea{width:100%;background:#081008;border:1px solid var(--border);border-radius:10px;color:var(--light);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;padding:14px;resize:vertical;min-height:90px;transition:border-color .2s;outline:none}
-  textarea:focus{border-color:var(--green)}
+  textarea{background:#081008;line-height:1.6;resize:vertical;min-height:90px}
   textarea::placeholder{color:var(--muted)}
   textarea.big{min-height:140px}
   .char-count{font-size:11px;color:var(--muted);text-align:right;margin-top:4px}
@@ -31,7 +31,7 @@
   .save-status.ok{color:var(--green)}
   .save-status.err{color:var(--danger)}
   .ai-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,200,83,.08);border:1px solid rgba(0,200,83,.25);border-radius:999px;padding:5px 12px;font-size:11px;color:var(--green);font-weight:700;letter-spacing:.5px;margin-bottom:24px}
-  @media(max-width:600px){main{padding:20px 14px}.page-title{font-size:30px}}
+  @media(max-width:600px){.main-inner{padding:20px 14px}.page-title{font-size:30px}}
 </style>
 <style>body{visibility:hidden}</style>
 <script type="module" src="./auth-guard.js"></script>
@@ -41,7 +41,8 @@
 <div id="site-header-inject"></div>
 <script>fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('site-header-inject').innerHTML=html;});</script>
 
-<main>
+<main class="main">
+<div class="main-inner">
   <div class="ai-badge">🤖 Feeds the AI every time it writes for you</div>
   <h1 class="page-title">Your Business <span>Story</span></h1>
   <p class="page-sub">
@@ -50,35 +51,35 @@
     You only have to write this once.
   </p>
 
-  <div class="section">
+  <div class="card">
     <div class="section-label">Your Story</div>
     <div class="section-hint">How did you get started? When? What's the history behind the business?</div>
     <textarea id="ctx-story" placeholder="e.g. We opened our doors in 1987 after my father emigrated from Mexico with nothing but a family recipe and a dream. Started as a food cart on Main Street, now we've got two locations and a catering operation..."></textarea>
     <div class="char-count"><span id="cnt-story">0</span> characters</div>
   </div>
 
-  <div class="section">
+  <div class="card">
     <div class="section-label">What Makes You Different</div>
     <div class="section-hint">Why should someone choose you over the competitor down the street?</div>
     <textarea id="ctx-different" placeholder="e.g. We source all our produce from local farms within 50 miles. Every item is made from scratch daily — we don't touch frozen food. Our head chef trained in Lyon, France for 3 years..."></textarea>
     <div class="char-count"><span id="cnt-different">0</span> characters</div>
   </div>
 
-  <div class="section">
+  <div class="card">
     <div class="section-label">Awards, Recognition & Milestones</div>
     <div class="section-hint">Any press coverage, awards, certifications, or achievements worth mentioning?</div>
     <textarea id="ctx-awards" placeholder="e.g. Best Local Pizza 3 years running (City Weekly 2021-2023). Featured in the Chicago Tribune. 4.9 stars across 600+ Google reviews. Certified organic by the USDA since 2019..."></textarea>
     <div class="char-count"><span id="cnt-awards">0</span> characters</div>
   </div>
 
-  <div class="section">
+  <div class="card">
     <div class="section-label">Your Ideal Customer</div>
     <div class="section-hint">Who are you talking to? Who gets the most value from what you do?</div>
     <textarea id="ctx-customer" placeholder="e.g. Homeowners aged 35-60 in the suburbs who want quality work done right the first time and don't mind paying for it. They've been burned by cheap contractors before. They value reliability over price..."></textarea>
     <div class="char-count"><span id="cnt-customer">0</span> characters</div>
   </div>
 
-  <div class="section">
+  <div class="card">
     <div class="section-label">Anything Else the AI Should Know</div>
     <div class="section-hint">Special services, insider details, seasonal offerings, team members, community involvement — anything that makes your business worth talking about.</div>
     <textarea id="ctx-other" class="big" placeholder="e.g. We offer free estimates. We have a loyalty program — every 10th visit is free. My son just joined the business after graduating culinary school. We sponsor the local little league. We're the only shop in town that does same-day repairs..."></textarea>
@@ -89,6 +90,7 @@
     <button class="btn-save" id="btn-save" onclick="saveContext()" disabled>Save Story</button>
     <span class="save-status" id="save-status"></span>
   </div>
+</div><!-- /.main-inner -->
 </main>
 
 <div class="toast" id="toast"></div>

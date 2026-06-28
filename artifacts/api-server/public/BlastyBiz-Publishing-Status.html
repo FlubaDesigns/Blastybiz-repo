@@ -8,129 +8,112 @@
 <title>BlastyBiz — Publishing Status</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>@media(max-width:599px){.main{padding-top:56px}}
-.main{max-width:600px;margin:0 auto;padding:120px 20px 80px;}
+.main{max-width:600px;margin:0 auto}
 
 .page-title{
   font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:1px;
-  color:var(--light);margin-bottom:4px;
-}
-.page-sub{font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.5;}
+  color:var(--light);margin-bottom:4px}
+.page-sub{font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.5}
 
 .progress-card{
   background:var(--card);border:1px solid var(--border);border-radius:16px;
-  padding:20px;margin-bottom:16px;
-}
+  padding:20px;margin-bottom:16px}
 .progress-header{
-  display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;
-}
-.progress-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
-.progress-count{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green);}
-.progress-track{height:6px;background:var(--border);border-radius:6px;overflow:hidden;margin-bottom:20px;}
-.progress-bar{height:100%;background:linear-gradient(90deg,var(--green),#00FF88);border-radius:6px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1);}
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.progress-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.progress-count{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green)}
+.progress-track{height:6px;background:var(--border);border-radius:6px;overflow:hidden;margin-bottom:20px}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--green),#00FF88);border-radius:6px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1)}
 
-.platform-list{display:flex;flex-direction:column;gap:10px;}
+.platform-list{display:flex;flex-direction:column;gap:10px}
 
 .platform-row{
   display:flex;align-items:center;gap:12px;
   padding:12px 14px;
   background:var(--dark);border:1px solid var(--border);border-radius:12px;
-  transition:border-color 0.2s;
-}
-.platform-row.status-live{border-color:rgba(0,200,83,0.25);}
-.platform-row.status-manual{border-color:rgba(255,167,38,0.25);}
-.platform-row.status-running{border-color:rgba(84,168,255,0.25);}
-.platform-row.status-failed{border-color:rgba(255,68,68,0.25);}
+  transition:border-color 0.2s}
+.platform-row.status-live{border-color:rgba(0,200,83,0.25)}
+.platform-row.status-manual{border-color:rgba(255,167,38,0.25)}
+.platform-row.status-running{border-color:rgba(84,168,255,0.25)}
+.platform-row.status-failed{border-color:rgba(255,68,68,0.25)}
 
 .platform-icon{
   width:36px;height:36px;border-radius:8px;
   display:flex;align-items:center;justify-content:center;
   font-size:16px;font-weight:700;flex-shrink:0;
-  font-family:'Bebas Neue',sans-serif;
-}
-.platform-info{flex:1;min-width:0;}
-.platform-name{font-size:14px;font-weight:600;color:var(--light);}
-.platform-msg{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4;}
+  font-family:'Bebas Neue',sans-serif}
+.platform-info{flex:1;min-width:0}
+.platform-name{font-size:14px;font-weight:600;color:var(--light)}
+.platform-msg{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4}
 
 .status-pill{
   font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-  padding:4px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;
-}
-.pill-live{background:rgba(0,200,83,0.12);color:var(--green);}
-.pill-manual{background:rgba(255,167,38,0.12);color:var(--warn);}
-.pill-running{background:rgba(84,168,255,0.12);color:var(--blue);}
-.pill-failed{background:rgba(255,68,68,0.12);color:var(--danger);}
-.pill-pending{background:rgba(122,184,122,0.1);color:var(--silver);}
+  padding:4px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.pill-live{background:rgba(0,200,83,0.12);color:var(--green)}
+.pill-manual{background:rgba(255,167,38,0.12);color:var(--warn)}
+.pill-running{background:rgba(84,168,255,0.12);color:var(--blue)}
+.pill-failed{background:rgba(255,68,68,0.12);color:var(--danger)}
+.pill-pending{background:rgba(122,184,122,0.1);color:var(--silver)}
 
 .action-card{
   background:var(--card);border:1px solid rgba(255,167,38,0.3);border-radius:16px;
-  padding:20px;margin-bottom:16px;
-}
+  padding:20px;margin-bottom:16px}
 .action-card-title{
   font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;
   color:var(--warn);margin-bottom:16px;
-  display:flex;align-items:center;gap:8px;
-}
+  display:flex;align-items:center;gap:8px}
 .action-item{
-  border-top:1px solid var(--border);padding:14px 0;
-}
-.action-item:first-of-type{border-top:none;padding-top:0;}
-.action-platform{font-size:14px;font-weight:600;color:var(--light);margin-bottom:4px;}
-.action-desc{font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;}
-.action-btns{display:flex;gap:8px;flex-wrap:wrap;}
+  border-top:1px solid var(--border);padding:14px 0}
+.action-item:first-of-type{border-top:none;padding-top:0}
+.action-platform{font-size:14px;font-weight:600;color:var(--light);margin-bottom:4px}
+.action-desc{font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5}
+.action-btns{display:flex;gap:8px;flex-wrap:wrap}
 .btn-copy{
   padding:8px 14px;background:var(--green);color:var(--dark);
   border:none;border-radius:8px;font-size:12px;font-weight:700;
-  font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.2s;
-}
-.btn-copy:hover{background:var(--green2);}
+  font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.2s}
+.btn-copy:hover{background:var(--green2)}
 .btn-instructions{
   padding:8px 14px;background:transparent;color:var(--silver);
   border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;
-  font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.2s;
-}
-.btn-instructions:hover{border-color:var(--silver);}
+  font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.2s}
+.btn-instructions:hover{border-color:var(--silver)}
 
 .stat-card{
   background:var(--card);border:1px solid var(--border);border-radius:16px;
   padding:20px;margin-bottom:16px;
-  display:flex;align-items:center;gap:16px;
-}
+  display:flex;align-items:center;gap:16px}
 .stat-num{
   font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--green);
-  line-height:1;flex-shrink:0;
-}
-.stat-label{font-size:13px;color:var(--muted);line-height:1.5;}
-.stat-label strong{display:block;font-size:16px;color:var(--light);font-weight:600;margin-bottom:2px;}
+  line-height:1;flex-shrink:0}
+.stat-label{font-size:13px;color:var(--muted);line-height:1.5}
+.stat-label strong{display:block;font-size:16px;color:var(--light);font-weight:600;margin-bottom:2px}
 
 .dash-btn{
   display:block;width:100%;padding:15px;
   background:var(--green);color:var(--dark);
   border:none;border-radius:12px;font-size:16px;font-weight:700;
   font-family:'DM Sans',sans-serif;cursor:pointer;text-align:center;
-  text-decoration:none;transition:background 0.2s;margin-bottom:12px;
-}
-.dash-btn:hover{background:var(--green2);}
+  text-decoration:none;transition:background 0.2s;margin-bottom:12px}
+.dash-btn:hover{background:var(--green2)}
 .dash-btn-outline{
   display:block;width:100%;padding:14px;
   background:transparent;color:var(--silver);
   border:1px solid var(--border);border-radius:12px;font-size:14px;font-weight:600;
   font-family:'DM Sans',sans-serif;cursor:pointer;text-align:center;
-  text-decoration:none;transition:all 0.2s;
-}
-.dash-btn-outline:hover{border-color:var(--silver);}
+  text-decoration:none;transition:all 0.2s}
+.dash-btn-outline:hover{border-color:var(--silver)}
 
 .loading-state{
-  text-align:center;padding:60px 20px;
-}
+  text-align:center;padding:60px 20px}
 .loading-spinner{
   width:36px;height:36px;border:3px solid var(--border);
   border-top-color:var(--green);border-radius:50%;
-  animation:spin 0.8s linear infinite;margin:0 auto 16px;
-}
-@keyframes spin{to{transform:rotate(360deg);}}
-.loading-text{font-size:14px;color:var(--muted);}
+  animation:spin 0.8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:14px;color:var(--muted)}
 
-.dash-btn-ghost { background:var(--card); color:var(--green); border:1px solid var(--green); }
+.dash-btn-ghost { background:var(--card); color:var(--green); border:1px solid var(--green)}
 
 </style>
 <style>body{visibility:hidden}</style>
@@ -139,9 +122,10 @@
 <body>
 
 <div id="site-header-inject"></div>
-<script>fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('site-header-inject').innerHTML=html;});</script>
+<script>fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('site-header-inject').innerHTML=html});</script>
 
 <div class="main">
+<div class="main-inner">
   <div class="page-title">Publishing Status</div>
   <div class="page-sub" id="page-sub">We're distributing your listing across every platform you selected.</div>
 
@@ -179,6 +163,7 @@
     <a id="sched-refire-link" href="#" class="dash-btn dash-btn-ghost" style="display:none;">🗓 Schedule Refire</a>
     <a href="BlastyBiz-Dashboard.html" class="dash-btn-outline">← Back to Dashboard</a>
   </div>
+</div><!-- /.main-inner -->
 </div>
 
 <div class="toast" id="toast"></div>
@@ -210,8 +195,7 @@ function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
+  setTimeout(() => t.classList.remove('show'), 2500)}
 
 function renderJobs(jobs) {
   const total = jobs.length;
@@ -236,8 +220,7 @@ function renderJobs(jobs) {
       </div>
       <div class="status-pill ${status.cls}">${status.label}</div>
     `;
-    list.appendChild(row);
-  });
+    list.appendChild(row)});
 
   const manualJobs = jobs.filter(j => j.status === 'manual_required');
   const actionCard = document.getElementById('action-card');
@@ -256,22 +239,17 @@ function renderJobs(jobs) {
             <button class="btn-instructions" onclick="showInstructions('${job.platform}')">View Instructions</button>
           </div>
         </div>
-      `;
-    }).join('');
-  } else {
-    actionCard.style.display = 'none';
-  }
+      `}).join('')} else {
+    actionCard.style.display = 'none'}
 
   const hoursSaved = (done * 0.8).toFixed(1);
   document.getElementById('hours-saved').textContent = hoursSaved;
 
   document.getElementById('loading-state').style.display = 'none';
-  document.getElementById('content-state').style.display = '';
-}
+  document.getElementById('content-state').style.display = ''}
 
 function copyListing(jobId, text) {
-  navigator.clipboard.writeText(text).then(() => showToast('📋 Listing copied!'));
-}
+  navigator.clipboard.writeText(text).then(() => showToast('📋 Listing copied!'))}
 
 function showInstructions(platform) {
   const instructions = {
@@ -279,8 +257,7 @@ function showInstructions(platform) {
     craigslist: 'Go to craigslist.org → your city → Services → paste your listing.',
     fbmarket:   'Go to facebook.com/marketplace → Create listing → paste your text.',
   };
-  showToast(instructions[platform] || 'Open the platform website and paste your listing.');
-}
+  showToast(instructions[platform] || 'Open the platform website and paste your listing.')}
 
 function showEmptyState(msg) {
   document.getElementById('loading-state').style.display = 'none';
@@ -292,8 +269,7 @@ function showEmptyState(msg) {
   const actionCard = document.getElementById('action-card');
   if (actionCard) actionCard.style.display = 'none';
   const hoursSaved = document.getElementById('hours-saved');
-  if (hoursSaved) hoursSaved.textContent = '0';
-}
+  if (hoursSaved) hoursSaved.textContent = '0'}
 </script>
 
 <script type="module">
@@ -303,7 +279,7 @@ import { collection, query, where, orderBy, limit, onSnapshot, getDoc, doc } fro
 
 auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
-  if (!user) { window.location.href = 'BlastyBiz-Login.html'; return; }
+  if (!user) { window.location.href = 'BlastyBiz-Login.html'; return}
 
   try {
     const userSnap = await getDoc(doc(db, 'users', user.uid));
@@ -316,7 +292,7 @@ onAuthStateChanged(auth, async (user) => {
     // Wire "Schedule Refire" link back to the draft's review page
     if (draftId) {
       const schedLink = document.getElementById('sched-refire-link');
-      if (schedLink) { schedLink.href = `BlastyBiz-Listing-Preview.html?draftId=${draftId}`; schedLink.style.display = ''; }
+      if (schedLink) { schedLink.href = `BlastyBiz-Listing-Preview.html?draftId=${draftId}`; schedLink.style.display = ''}
     }
 
     let q;
@@ -325,38 +301,29 @@ onAuthStateChanged(auth, async (user) => {
         collection(db, 'publishJobs'),
         where('draftId', '==', draftId),
         where('uid', '==', user.uid)
-      );
-    } else {
+      )} else {
       q = query(
         collection(db, 'publishJobs'),
         where('businessId', '==', bizId),
         where('uid', '==', user.uid),
         orderBy('createdAt', 'desc'),
         limit(20)
-      );
-    }
+      )}
 
     // Live listener — updates status cards in real-time as jobs complete
     onSnapshot(q, (snap) => {
       if (snap.empty) {
-        window.showEmptyState('No publishing jobs yet. Approve a listing to start blasting.');
-      } else {
+        window.showEmptyState('No publishing jobs yet. Approve a listing to start blasting.')} else {
         const jobs = snap.docs.map(d => ({ jobId: d.id, ...d.data() }));
-        window.renderJobs(jobs);
-      }
+        window.renderJobs(jobs)}
     }, (e) => {
       console.error('Failed to load jobs:', e);
-      window.showEmptyState('Could not load jobs. Refresh to try again.');
-    });
-
-  } catch (e) {
+      window.showEmptyState('Could not load jobs. Refresh to try again.')})} catch (e) {
     console.error('Failed to init:', e);
-    window.showEmptyState('Could not load jobs. Refresh to try again.');
-  }
-});
-});
+    window.showEmptyState('Could not load jobs. Refresh to try again.')}
+})});
 </script>
 <div id="site-footer-inject"></div>
-<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
+<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html});</script>
 </body>
 </html>

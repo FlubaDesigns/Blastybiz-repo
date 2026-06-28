@@ -8,27 +8,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="blastybiz-admin.css">
 <style>
-.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
-input,select{padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--light);font-family:'DM Sans',sans-serif;font-size:13px}
-button{border:0;border-radius:10px;padding:10px 12px;font-weight:bold;cursor:pointer;font-family:'DM Sans',sans-serif}
-.primary{background:#2563eb;color:white}
-.light{background:var(--card);color:var(--light);border:1px solid var(--border)}
-.badge.success{background:#0A2A0A;color:#00C853;border:1px solid #00C853}
-.badge.warn{background:#2A1A00;color:#e6b84a;border:1px solid #7a5500}
-.badge.error{background:#2A0A0A;color:#f87171;border:1px solid #dc2626}
-.badge.info{background:#07192a;color:#60a5fa;border:1px solid #2563eb}
-h2{color:var(--light);font-family:'DM Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:12px;margin-top:0}
-.impl-note{color:var(--muted);font-size:14px}
+.filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+.primary { background: #2563eb; color: white; }
+.light   { background: var(--card); color: var(--light); border: 1px solid var(--border); }
+.badge.success { background: #0A2A0A; color: #00C853; border: 1px solid #00C853; }
+.badge.warn    { background: #2A1A00; color: #e6b84a;  border: 1px solid #7a5500; }
+.badge.error   { background: #2A0A0A; color: #f87171;  border: 1px solid #dc2626; }
+.badge.info    { background: #07192a; color: #60a5fa;  border: 1px solid #2563eb; }
 </style>
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
 </head>
 <body>
 <header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Admin Logs</span></a><div class="top-actions"><a class="icon-btn hide-mobile" href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile active" href="#">Logs</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Operate.html">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header>
-<main>
+<main><div class="main"><div class="main-inner">
 
   <section class="card">
-    <h2>Find Logs</h2>
+    <h3>Find Logs</h3>
     <div class="filters">
       <input type="text" placeholder="Search business, user, platform, message..." />
       <select>
@@ -54,7 +50,7 @@ h2{color:var(--light);font-family:'DM Sans',sans-serif;font-size:17px;font-weigh
   </section>
 
   <section>
-    <h2>Recent Activity</h2>
+    <h3>Recent Activity</h3>
     <table>
       <thead>
         <tr>
@@ -112,11 +108,11 @@ h2{color:var(--light);font-family:'DM Sans',sans-serif;font-size:17px;font-weigh
   </section>
 
   <section class="card">
-    <h2>Implementation Notes</h2>
+    <h3>Implementation Notes</h3>
     <p class="impl-note">Use this page to display records from <strong>activityLogs</strong>. This is an admin-only page. Customers should never see raw system logs, internal errors, payloads, tokens, or stack traces.</p>
   </section>
 
-</main>
+</div></div></main>
 <nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Queue-Manager.html">📋<br>Queue</a><a class="" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="active" href="#">🧾<br>Logs</a><a class="" href="BlastyBiz-Admin-Operate.html">⚙️<br>Operate</a></nav>
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';

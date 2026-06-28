@@ -61,7 +61,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ── Main content wrapper — global gutter ───────────────── */
-main {
+main, .main {
   width: 100%;
   padding-bottom: 60px;
   box-sizing: border-box;
@@ -547,7 +547,7 @@ html .contact-img-col   { display: none; }
   html .header               { padding: 16px 48px; }
   html .wiz-header           { padding: 20px 48px 0; }
   html .biz-bar              { padding: 10px 48px; }
-  html .main                 { max-width: 800px; padding-left: 48px; padding-right: 48px; }
+  html .main-inner           { max-width: 800px; padding-left: 48px; padding-right: 48px; }
   html .page-hero            { padding-left: 48px; padding-right: 48px; max-width: 840px; }
   html .text-section         { max-width: 840px; padding-left: 48px; padding-right: 48px; }
   html .contact-grid         { display: grid; grid-template-columns: 1fr 1fr; }
@@ -635,7 +635,7 @@ html .contact-img-col   { display: none; }
   html header,
   html .header               { padding: 16px 60px; }
   html .biz-bar              { padding: 10px 60px; }
-  html .main                 { max-width: 960px; padding-left: 80px; padding-right: 80px; }
+  html .main-inner           { max-width: 960px; padding-left: 80px; padding-right: 80px; }
   html .page-hero            { padding-left: 80px; padding-right: 80px; max-width: 1200px; text-align: left; }
   html .text-section         { max-width: 960px; padding-left: 80px; padding-right: 80px; }
   html footer                { padding-left: 80px; padding-right: 80px; }
@@ -781,7 +781,7 @@ html .contact-img-col   { display: none; }
   50%       { text-shadow: 0 0 60px rgba(0,200,83,0.6), 0 0 100px rgba(0,200,83,0.2); }
 }
 
-body.login-page .main-inner { padding: 0; }
+body.login-page .main { padding: 0; }
 
 /* ── mobile menu auth elements (initial state; JS overrides display to show) ── */
 #menu-login-link { display: none; }
@@ -853,7 +853,7 @@ body.login-page .mobile-login-img {
   object-fit: cover; object-position: center 20%; display: block; flex-shrink: 0;
 }
 
-body.login-page .main {
+body.login-page .main-inner {
   position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   padding: 40px 24px 32px; min-height: 100dvh;
@@ -1001,7 +1001,7 @@ body.login-page .login-img-panel { display: none; }
     border-left: 2px solid rgba(0,200,83,0.5);
     padding-left: 16px;
   }
-  body.login-page .main {
+  body.login-page .main-inner {
     flex: 1;
     order: 1;
     overflow-y: auto;
@@ -1016,7 +1016,7 @@ body.login-page .login-img-panel { display: none; }
 
 @media (min-width: 1100px) {
   body.login-page .login-img-panel { flex: 0 0 33.333%; }
-  body.login-page .main { padding: 0 !important; }
+  body.login-page .main-inner { padding: 0 !important; }
 }
 
 /* ══ DASHBOARD ══════════════════════════════════════════════════════════════ */

@@ -54,8 +54,7 @@
 .guide-note{font-size:12px;color:var(--muted);text-align:center;margin-bottom:4px}
 .btn-cancel-modal{width:100%;padding:11px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.2s}
 .btn-cancel-modal:hover{color:var(--light);border-color:var(--silver)}
-.main{max-width:680px;margin:0 auto;padding:28px 20px}
-.page-eyebrow{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--silver);font-weight:700;margin-bottom:8px}
+.main{max-width:680px;margin:0 autoletter-spacing:2.5px;text-transform:uppercase;color:var(--silver);font-weight:700;margin-bottom:8px}
 .page-title{font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:1px;color:var(--light);line-height:1;margin-bottom:8px}
 .page-title span{color:var(--green)}
 .page-sub{font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.6}
@@ -105,9 +104,10 @@
 <body>
 
 <div id="site-header-inject"></div>
-<script>fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('site-header-inject').innerHTML=html;});</script>
+<script>fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('site-header-inject').innerHTML=html});</script>
 
 <div class="main">
+<div class="main-inner">
   <div class="page-eyebrow">Platform Connections</div>
   <h1 class="page-title">Connect <span>Your Platforms</span></h1>
   <p class="page-sub">Connect once. BlastyBiz adapts your listing for every platform — and we're working on automating direct posting for Google Business, Facebook, and Instagram. Coming soon.</p>
@@ -229,6 +229,7 @@
     <p>Once your platforms are connected, create a listing and BlastyBiz adapts your copy for every platform. Direct auto-posting for Google Business, Facebook, and Instagram is coming soon — for now, your perfectly formatted copy is ready to paste in seconds.</p>
     <a class="btn-primary" href="BlastyBiz.html">⚡ Create a Listing</a>
   </div>
+</div><!-- /.main-inner -->
 </div>
 
 <!-- Facebook Gate Modal -->
@@ -300,41 +301,32 @@ function showToast(msg, isError) {
   t.textContent = msg;
   t.classList.toggle('error-toast', !!isError);
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
+  setTimeout(() => t.classList.remove('show'), 3000)}
 
 // ── Google explainer toggle ──
 window.openGoogleExplainer = function() {
-  document.getElementById('explainer-google').classList.add('open');
-};
+  document.getElementById('explainer-google').classList.add('open')};
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-proceed-google')?.addEventListener('click', () => {
-    if (_googleConnectUrl) window.location.href = _googleConnectUrl;
-  });
-});
+    if (_googleConnectUrl) window.location.href = _googleConnectUrl})});
 
 // ── Facebook gate ──
 window.openFbGate = function() {
   document.getElementById('fb-gate-step1').style.display = '';
   document.getElementById('fb-gate-step2').classList.remove('open');
-  document.getElementById('fb-gate-modal').classList.add('open');
-};
+  document.getElementById('fb-gate-modal').classList.add('open')};
 window.closeFbGate = function() {
-  document.getElementById('fb-gate-modal').classList.remove('open');
-};
+  document.getElementById('fb-gate-modal').classList.remove('open')};
 window.fbGateYes = function() {
-  if (_fbConnectUrl) window.location.href = _fbConnectUrl;
-};
+  if (_fbConnectUrl) window.location.href = _fbConnectUrl};
 window.fbGateNo = function() {
   document.getElementById('fb-gate-step1').style.display = 'none';
-  document.getElementById('fb-gate-step2').classList.add('open');
-};
+  document.getElementById('fb-gate-step2').classList.add('open')};
 
 // Close modal on backdrop click
 document.getElementById('fb-gate-modal')?.addEventListener('click', function(e) {
-  if (e.target === this) closeFbGate();
-});
+  if (e.target === this) closeFbGate()});
 
 function renderPlatform(platformId, conn, bizId, uid) {
   const actionsEl = document.getElementById('actions-' + platformId);
@@ -346,13 +338,10 @@ function renderPlatform(platformId, conn, bizId, uid) {
     if (conn && conn.status === 'connected') {
       cardEl.classList.add('connected');
       statusEl.textContent = 'Connected through Facebook · IG: ' + (conn.igUserId || 'linked');
-      actionsEl.innerHTML = '<span class="status-badge badge-live">Connected</span>';
-    } else {
+      actionsEl.innerHTML = '<span class="status-badge badge-live">Connected</span>'} else {
       statusEl.textContent = 'Connects automatically when you link Facebook.';
-      actionsEl.innerHTML = '<span class="status-badge badge-none">Via Facebook</span>';
-    }
-    return;
-  }
+      actionsEl.innerHTML = '<span class="status-badge badge-none">Via Facebook</span>'}
+    return}
 
   const initiateFn = platformId === 'google' ? 'initiateGoogleOAuth' : 'initiateFacebookOAuth';
   const returnToParam = new URLSearchParams(window.location.search).get('returnTo') || '';
@@ -367,10 +356,8 @@ function renderPlatform(platformId, conn, bizId, uid) {
       ? 'Auto-posts to your Google Business Profile when you approve a listing.'
       : 'Auto-posts to your Facebook Page (and Instagram) when you approve a listing.';
     if (platformId === 'google') {
-      actionsEl.innerHTML = `<button class="btn-connect" onclick="openGoogleExplainer()">Connect</button>`;
-    } else {
-      actionsEl.innerHTML = `<button class="btn-connect" onclick="openFbGate()">Connect</button>`;
-    }
+      actionsEl.innerHTML = `<button class="btn-connect" onclick="openGoogleExplainer()">Connect</button>`} else {
+      actionsEl.innerHTML = `<button class="btn-connect" onclick="openFbGate()">Connect</button>`}
   } else if (conn.status === 'connected') {
     cardEl.classList.add('connected');
     // Hide explainer if already connected
@@ -382,20 +369,17 @@ function renderPlatform(platformId, conn, bizId, uid) {
     actionsEl.innerHTML = `
       <span class="status-badge badge-live">Connected</span>
       <button class="btn-disconnect" onclick="disconnectPlatform('${platformId}')">Disconnect</button>
-    `;
-  } else if (conn.status === 'expired' || conn.status === 'error') {
+    `} else if (conn.status === 'expired' || conn.status === 'error') {
     cardEl.classList.add('error');
     statusEl.textContent = 'Token expired — reconnect to resume auto-posting.';
     actionsEl.innerHTML = `
       <span class="status-badge badge-error">Expired</span>
       <button class="btn-reconnect" onclick="window.location.href='${connectUrl}'">Reconnect</button>
-    `;
-  }
+    `}
 }
 
 window.disconnectPlatform = async function(platformId) {
-  window._disconnectPlatform(platformId);
-};
+  window._disconnectPlatform(platformId)};
 </script>
 
 <script type="module">
@@ -412,17 +396,15 @@ const errorParam     = params.get('error');
 if (connectedParam) {
   const names = { google: 'Google Business Profile', facebook: 'Facebook Pages' };
   setTimeout(() => showToast('✅ ' + (names[connectedParam] || connectedParam) + ' connected!'), 300);
-  history.replaceState({}, '', window.location.pathname);
-}
+  history.replaceState({}, '', window.location.pathname)}
 if (errorParam) {
   const names = { google: 'Google', facebook: 'Facebook' };
   setTimeout(() => showToast('Connection failed for ' + (names[errorParam] || errorParam) + '. Try again.', true), 300);
-  history.replaceState({}, '', window.location.pathname);
-}
+  history.replaceState({}, '', window.location.pathname)}
 
 auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
-  if (!user) { window.location.href = 'BlastyBiz-Login.html'; return; }
+  if (!user) { window.location.href = 'BlastyBiz-Login.html'; return}
 
   const userSnap = await getDoc(doc(db, 'users', user.uid));
   const userData = userSnap.exists() ? userSnap.data() : {};
@@ -431,17 +413,15 @@ onAuthStateChanged(auth, async (user) => {
   const q = query(collection(db, 'platformConnections'), where('businessId', '==', bizId));
   const snap = await getDocs(q);
   const connMap = {};
-  snap.docs.forEach(d => { connMap[d.data().platform] = { ...d.data(), _id: d.id }; });
+  snap.docs.forEach(d => { connMap[d.data().platform] = { ...d.data(), _id: d.id }});
 
   ['google', 'facebook', 'instagram'].forEach(pid => {
-    renderPlatform(pid, connMap[pid] || null, bizId, user.uid);
-  });
+    renderPlatform(pid, connMap[pid] || null, bizId, user.uid)});
 
   const hasOAuthCreds = true;
   if (!hasOAuthCreds) {
     document.getElementById('setup-note').style.display = '';
-    document.querySelectorAll('.btn-connect').forEach(b => b.disabled = true);
-  }
+    document.querySelectorAll('.btn-connect').forEach(b => b.disabled = true)}
 
   window._disconnectPlatform = async function(platformId) {
     const conn = connMap[platformId];
@@ -455,16 +435,12 @@ onAuthStateChanged(auth, async (user) => {
       if (igConn) {
         await updateDoc(doc(db, 'platformConnections', igConn._id), { status: 'disconnected' });
         connMap['instagram'] = { ...igConn, status: 'disconnected' };
-        renderPlatform('instagram', connMap['instagram'], bizId, user.uid);
-      }
+        renderPlatform('instagram', connMap['instagram'], bizId, user.uid)}
     }
-    showToast(platformId.charAt(0).toUpperCase() + platformId.slice(1) + ' disconnected.');
-  };
-});
-});
+    showToast(platformId.charAt(0).toUpperCase() + platformId.slice(1) + ' disconnected.')}})});
 </script>
 <script type="module" src="./auth-guard.js"></script>
 <div id="site-footer-inject"></div>
-<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
+<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html});</script>
 </body>
 </html>
