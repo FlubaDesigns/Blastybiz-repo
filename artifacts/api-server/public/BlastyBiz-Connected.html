@@ -147,9 +147,9 @@ auth.authStateReady().then(() => {
       const meta = PLATFORM_META[errorPlatform] || { label: errorPlatform };
       content.innerHTML = `
         <div class="hero">
-          <div class="hero-icon" style="background:rgba(255,68,68,0.1)">⚠️</div>
-          <div class="hero-badge" style="background:rgba(255,68,68,0.12);color:var(--danger)">Connection Failed</div>
-          <h1 class="hero-title">Couldn't connect <span style="color:var(--danger)">${meta.label}</span></h1>
+          <div class="hero-icon icon-danger">⚠️</div>
+          <div class="hero-badge badge-danger-soft">Connection Failed</div>
+          <h1 class="hero-title">Couldn't connect <span class="text-danger">${meta.label}</span></h1>
           <p class="hero-sub">Something went wrong during the connection. This is usually a temporary issue — try again and it should work.</p>
         </div>
         <div class="error-card">
@@ -211,10 +211,10 @@ auth.authStateReady().then(() => {
         <div class="ig-pill-badge">Also connected</div>
       </div>
     ` : (platform === 'facebook' && !igData) ? `
-      <div class="ig-pill" style="background:rgba(255,167,38,0.06);border-color:rgba(255,167,38,0.2)">
+      <div class="ig-pill ig-pill-warn">
         <div class="ig-pill-icon">📸</div>
-        <div class="ig-pill-text" style="color:var(--muted)">No Instagram Business account was found linked to this Page. To connect Instagram, link it to your Facebook Page in Meta Business Suite first.</div>
-        <div class="ig-pill-badge" style="background:rgba(255,167,38,0.15);color:var(--warn)">Not linked</div>
+        <div class="ig-pill-text muted">No Instagram Business account was found linked to this Page. To connect Instagram, link it to your Facebook Page in Meta Business Suite first.</div>
+        <div class="ig-pill-badge ig-badge-warn">Not linked</div>
       </div>
     ` : '';
 

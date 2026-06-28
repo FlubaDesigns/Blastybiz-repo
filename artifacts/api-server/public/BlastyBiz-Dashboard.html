@@ -208,10 +208,10 @@ function renderNoBusinessState() {
     const div = document.createElement('div');
     div.id = 'no-biz-state';
     div.style.cssText = 'text-align:center;padding:80px 20px;';
-    div.innerHTML = '<div style="font-size:52px;margin-bottom:16px">📢</div>'
-      + '<h2 style="font-family:\'Bebas Neue\',sans-serif;font-size:36px;color:var(--green);margin-bottom:12px">No Business Yet</h2>'
-      + '<p style="color:var(--muted);font-size:15px;max-width:380px;margin:0 auto 28px">Add your first business to start blasting across every platform.</p>'
-      + '<button onclick="window.addBusiness && window.addBusiness()" style="background:var(--green);color:#070D07;border:none;border-radius:10px;padding:14px 30px;font-size:15px;font-weight:700;cursor:pointer">+ Add Your Business</button>';
+    div.innerHTML = '<div class="no-biz-icon">📢</div>'
+      + '<h2 class="no-biz-h2">No Business Yet</h2>'
+      + '<p class="no-biz-p">Add your first business to start blasting across every platform.</p>'
+      + '<button onclick="window.addBusiness && window.addBusiness()" class="no-biz-btn">+ Add Your Business</button>';
     body.appendChild(div);
   }
 }
@@ -239,7 +239,7 @@ function renderSheet() {
     card.className = 'biz-card' + (biz.id === activeBizId ? ' active' : '');
     card.onclick = () => switchBusiness(biz.id);
     card.innerHTML = `
-      <div class="biz-card-avatar" style="background:rgba(0,200,83,0.08);">${biz.avatar}</div>
+      <div class="biz-card-avatar avatar-green-tint">${biz.avatar}</div>
       <div class="biz-card-info">
         <div class="biz-card-name">${biz.name}</div>
         <div class="biz-card-meta">${biz.platforms} platforms · Score ${biz.score}</div>
@@ -489,7 +489,7 @@ onAuthStateChanged(auth, async (user) => {
       API_PLATFORMS.forEach(p => {
         const isConn = p.conn && p.conn.status === 'connected';
         if (isConn) connectedCount++;
-        const sub  = isConn ? p.connectedSub(p.conn) : 'Not connected — <a href="BlastyBiz-Connect.html" style="color:#00C853">Connect</a>';
+        const sub  = isConn ? p.connectedSub(p.conn) : 'Not connected — <a href="BlastyBiz-Connect.html" class="link-green">Connect</a>';
         const badge = isConn
           ? '<span class="badge live">Live</span>'
           : '<span class="badge off">Off</span>';
@@ -556,14 +556,14 @@ onAuthStateChanged(auth, async (user) => {
 
       let actRows = '';
       if (jobs.length === 0) {
-        actRows = '<div style="color:#587058;font-size:13px;padding:4px 0">No activity yet — create your first listing.</div>';
+        actRows = '<div class="activity-empty">No activity yet — create your first listing.</div>';
       } else {
         jobs.slice(0, 5).forEach(j => {
           const icon  = icons[j.platform] || '📡';
           const title = j.platform ? `${j.platform.replace(/_/g,' ')} · ${j.offerTitle || 'Post'}` : (j.offerTitle || 'Post');
           const ts    = j.createdAt?.toDate ? timeAgo(j.createdAt.toDate()) : '';
           const badge = `<span class="badge ${statusBadge[j.status] || 'off'}">${statusLabel[j.status] || j.status}</span>`;
-          actRows += `<div class="activity-row"><div class="platform-icon">${icon}</div><div class="row-main"><div class="row-title" style="text-transform:capitalize">${title}</div><div class="row-sub">${ts}</div></div>${badge}</div>`;
+          actRows += `<div class="activity-row"><div class="platform-icon">${icon}</div><div class="row-main"><div class="row-title text-cap">${title}</div><div class="row-sub">${ts}</div></div>${badge}</div>`;
         });
       }
       const actEl = document.getElementById('activity-list');
@@ -576,13 +576,13 @@ onAuthStateChanged(auth, async (user) => {
         let taskRows = '';
         let taskNum = 1;
         apiMissing.forEach(p => {
-          taskRows += `<div class="task-row"><div class="platform-icon">${taskNum++}</div><div class="row-main"><div class="row-title">Connect ${p.label}</div><div class="row-sub">Enable auto-posting to this platform.</div></div><a href="BlastyBiz-Connect.html" class="badge needs" style="text-decoration:none">Connect</a></div>`;
+          taskRows += `<div class="task-row"><div class="platform-icon">${taskNum++}</div><div class="row-main"><div class="row-title">Connect ${p.label}</div><div class="row-sub">Enable auto-posting to this platform.</div></div><a href="BlastyBiz-Connect.html" class="badge needs no-underline">Connect</a></div>`;
         });
         if (jobs.length === 0) {
-          taskRows += `<div class="task-row"><div class="platform-icon">${taskNum++}</div><div class="row-main"><div class="row-title">Create your first listing</div><div class="row-sub">AI adapts it for every platform in seconds.</div></div><a href="BlastyBiz.html" class="badge off" style="text-decoration:none">Create</a></div>`;
+          taskRows += `<div class="task-row"><div class="platform-icon">${taskNum++}</div><div class="row-main"><div class="row-title">Create your first listing</div><div class="row-sub">AI adapts it for every platform in seconds.</div></div><a href="BlastyBiz.html" class="badge off no-underline">Create</a></div>`;
         }
         if (!taskRows) {
-          taskRows = '<div style="color:#587058;font-size:13px;padding:4px 0">All caught up — create a new listing to keep going.</div>';
+          taskRows = '<div class="activity-empty">All caught up — create a new listing to keep going.</div>';
         }
         taskEl.innerHTML = taskRows;
       }

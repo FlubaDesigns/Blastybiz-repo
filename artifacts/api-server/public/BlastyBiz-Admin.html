@@ -91,11 +91,11 @@
     </div>
   </section>
 
-  <section class="card" id="users" style="margin-bottom:16px">
+  <section class="card mb-16" id="users">
     <div class="card-title">👥 All Accounts</div>
     <table>
       <thead><tr><th>Business</th><th>Plan</th><th>Status</th><th>Joined</th></tr></thead>
-      <tbody id="admin-all-accounts-tbody"><tr><td colspan="4" style="text-align:center;padding:16px;opacity:.6">Loading…</td></tr></tbody>
+      <tbody id="admin-all-accounts-tbody"><tr><td colspan="4" class="td-empty">Loading…</td></tr></tbody>
     </table>
   </section>
 
@@ -104,7 +104,7 @@
       <div class="card-title">⚠️ Accounts To Watch</div>
       <table>
         <thead><tr><th>Business</th><th>Plan</th><th>Status</th><th>Issue</th><th></th></tr></thead>
-        <tbody id="admin-accounts-tbody"><tr><td colspan="5" style="text-align:center;padding:16px;opacity:.6">Loading…</td></tr></tbody>
+        <tbody id="admin-accounts-tbody"><tr><td colspan="5" class="td-empty">Loading…</td></tr></tbody>
       </table>
     </div>
 
@@ -113,10 +113,10 @@
       <table>
         <thead><tr><th>Metric</th><th>This Month</th><th>Target</th></tr></thead>
         <tbody id="admin-ai-tbody">
-          <tr><td colspan="3" style="text-align:center;padding:16px;opacity:.6">Loading…</td></tr>
+          <tr><td colspan="3" class="td-empty">Loading…</td></tr>
         </tbody>
       </table>
-      <div style="font-size:11px;color:var(--muted);margin-top:10px" id="admin-ai-note">Tracking live AI calls. Historical data available once calls are logged.</div>
+      <div class="ai-note-text" id="admin-ai-note">Tracking live AI calls. Historical data available once calls are logged.</div>
     </div>
   </section>
 
@@ -214,7 +214,7 @@ onAuthStateChanged(auth, (user) => {
             const joined = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
             return '<tr><td>' + b.businessName + '</td><td>' + (b.currentPlan||'Free') + '</td><td><span class="badge ' + (bc[s]||'live') + '">' + s + '</span></td><td class="muted">' + joined + '</td></tr>';
           }).join('')
-        : '<tr><td colspan="4" style="text-align:center;padding:16px;opacity:.6">No accounts yet.</td></tr>';
+        : '<tr><td colspan="4" class="td-empty">No accounts yet.</td></tr>';
     }
 
     // A business is considered onboarded if it has a businessName — the flag is unreliable
@@ -231,11 +231,11 @@ onAuthStateChanged(auth, (user) => {
               : s === 'past_due' ? 'Square payment failed'
               : s === 'trial'    ? 'Trial — needs upgrade'
               : s === 'canceled' ? 'Canceled' : '—';
-            const name = b.businessName || ('<span style="opacity:.45;font-style:italic">No name · ' + b.id.slice(0,8) + '</span>');
-            const delBtn = '<button onclick="_adminDeleteBiz(\'' + b.id + '\',\'' + (b.businessName||'').replace(/'/g,"\\'") + '\')" style="background:none;border:none;cursor:pointer;color:#c00;font-size:15px;padding:0 4px" title="Delete">🗑</button>';
+            const name = b.businessName || ('<span class="name-na">No name · ' + b.id.slice(0,8) + '</span>');
+            const delBtn = '<button onclick="_adminDeleteBiz(\'' + b.id + '\',\'' + (b.businessName||'').replace(/'/g,"\\'") + '\')" class="del-btn" title="Delete">🗑</button>';
             return '<tr><td>' + name + '</td><td>' + (b.currentPlan||'Free') + '</td><td><span class="badge ' + (bc[s]||'live') + '">' + s + '</span></td><td class="muted">' + issue + '</td><td>' + delBtn + '</td></tr>';
           }).join('')
-        : '<tr><td colspan="5" style="text-align:center;padding:16px;opacity:.6">All accounts healthy.</td></tr>';
+        : '<tr><td colspan="5" class="td-empty">All accounts healthy.</td></tr>';
     }
   });
 

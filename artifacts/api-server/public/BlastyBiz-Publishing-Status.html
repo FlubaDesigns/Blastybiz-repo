@@ -171,6 +171,8 @@ body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
 </style>
+<style>body{visibility:hidden}</style>
+<script type="module" src="./auth-guard.js"></script>
 </head>
 <body>
 
@@ -326,7 +328,7 @@ function showEmptyState(msg) {
   document.getElementById('progress-count').textContent = '0 of 0 Complete';
   document.getElementById('progress-bar').style.width = '0%';
   document.getElementById('platform-list').innerHTML =
-    `<div style="text-align:center;padding:48px 20px;color:var(--muted)">${msg}</div>`;
+    `<div class="empty-state-msg">${msg}</div>`;
   const actionCard = document.getElementById('action-card');
   if (actionCard) actionCard.style.display = 'none';
   const hoursSaved = document.getElementById('hours-saved');

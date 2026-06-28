@@ -707,6 +707,70 @@ html .hamburger         { display: none; }
 }
 
 body.login-page .main-inner { padding: 0; }
+
+/* ── mobile menu auth elements (initial state; JS overrides display to show) ── */
+#menu-login-link { display: none; }
+button.mobile-link {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--silver);
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  padding: 0;
+}
+/* ── page-hero fade-up animation (static, same on About/Contact/Privacy/Terms) ── */
+.page-hero { animation: fadeUp 0.6s ease both; }
+
+/* ── cross-page utility classes extracted from inline styles ── */
+.mb-10 { margin-bottom: 10px; }
+.mb-16 { margin-bottom: 16px; }
+.text-warn  { color: var(--warn); }
+.text-light { color: var(--light); }
+.link-blue  { color: var(--blue); font-weight: 600; }
+.td-empty   { text-align: center; padding: 16px; opacity: .6; }
+.empty-state-msg { text-align: center; padding: 48px 20px; color: var(--muted); }
+.ai-note-text { font-size: 11px; color: var(--muted); margin-top: 10px; }
+.name-na    { opacity: .45; font-style: italic; }
+.del-btn    { background: none; border: none; cursor: pointer; color: #c00; font-size: 15px; padding: 0 4px; }
+.email-verify-box { background: #f0faf4; border: 1px solid #b2dfdb; border-radius: 10px; padding: 14px 18px; text-align: center; color: #2e7d32; font-size: 14px; line-height: 1.5; }
+.demo-notice { background: #1a120a; border: 1px solid #FFA726; border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #FFA726; display: flex; align-items: center; gap: 10px; }
+.pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.pricing-field-label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--silver); display: block; margin-bottom: 6px; }
+.admin-num-input { width: 100%; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; color: var(--light); padding: 10px 14px; font-size: 16px; font-family: inherit; }
+.btn-min-140 { min-width: 140px; }
+.pricing-status { font-size: 13px; margin-left: 12px; color: var(--muted); }
+.mono-faint  { font-family: monospace; opacity: .7; }
+.desc-text   { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+.btn-create-page { display: block; text-decoration: none; text-align: center; margin-bottom: 10px; }
+/* Connect page: platform icon background/color combos */
+.pi-google { background: rgba(66,133,244,0.1);  color: #4285F4; }
+.pi-fb     { background: rgba(24,119,242,0.1);  color: #1877F2; }
+.pi-ig     { background: rgba(225,48,108,0.1);  color: #E1306C; }
+.pi-bing   { background: rgba(0,128,157,0.1);   color: #00809D; }
+.pi-apple  { background: rgba(85,85,85,0.15);   color: #999; }
+.pi-nd     { background: rgba(0,178,70,0.1);    color: #00B246; }
+.pi-cl     { background: rgba(107,0,215,0.1);   color: #6B00D7; }
+.pi-fbm    { background: rgba(0,130,251,0.1);   color: #0082FB; }
+/* Connected / Dashboard / Onboarding extracted styles */
+.text-danger       { color: var(--danger); }
+.link-green        { color: var(--green); }
+.no-underline      { text-decoration: none; }
+.text-cap          { text-transform: capitalize; }
+.activity-empty    { color: #587058; font-size: 13px; padding: 4px 0; }
+.avatar-green-tint { background: rgba(0,200,83,0.08); }
+.icon-danger       { background: rgba(255,68,68,0.1); }
+.badge-danger-soft { background: rgba(255,68,68,0.12); color: var(--danger); }
+.ig-pill-warn      { background: rgba(255,167,38,0.06); border-color: rgba(255,167,38,0.2); }
+.ig-badge-warn     { background: rgba(255,167,38,0.15); color: var(--warn); }
+.no-biz-icon { font-size: 52px; margin-bottom: 16px; }
+.no-biz-h2   { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--green); margin-bottom: 12px; }
+.no-biz-p    { color: var(--muted); font-size: 15px; max-width: 380px; margin: 0 auto 28px; }
+.no-biz-btn  { background: var(--green); color: #070D07; border: none; border-radius: 10px; padding: 14px 30px; font-size: 15px; font-weight: 700; cursor: pointer; }
+
 body.login-page #canvas { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
 
 body.login-page .mobile-login-img {

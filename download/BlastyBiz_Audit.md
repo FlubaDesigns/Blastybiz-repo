@@ -1,5 +1,5 @@
 # BlastyBiz — Fulwl Site Audit
-**Last updated: June 27, 2026 (Session 11 — AI Cost Tracking + Full Audit Reconciliation)**
+**Last updated: June 28, 2026 (Session 12 — Audit Items 6, 7, 8: Auth Guards, Admin Nav, Inline Style Extraction)**
 **Firebase Project:** blastybiz-9523e
 **Live URL:** https://blastybiz-9523e.web.app
 
@@ -243,6 +243,7 @@ The Operator Setup page (`BlastyBiz-Admin-Operate.html`) has step-by-step instru
 
 | Date | Location | What was wrong | How it was fixed |
 |------|----------|---------------|-----------------|
+| Jun 28, 2026 | Site-wide HTML (18 pages) | **Item 7 — Sub-flow auth guard:** Publishing-Status, BizContext, Listing-Preview had inline `onAuthStateChanged` with no flash-prevent. Added `<style>body{visibility:hidden}</style>` + `auth-guard.js` to all three `<head>` blocks. **Item 6 — Admin nav/guard consistency:** Admin-Operate was missing `body{visibility:hidden}`; Admin-Logs and Admin-Queue-Manager were missing nav links to Operate and the full admin cluster. Fixed: all 8 admin pages now have visibility guard; all navs link to all 8 sibling pages. **Item 8 — Inline style extraction:** 160+ static `style=""` attributes removed across Admin-Operate (55), Listing-Preview (44), Admin-Subscriptions (12), Connect (13), Admin (9), Dashboard (8), Connected (6), Login (1), and more. All extracted to named CSS utility classes in `blastybiz-global.css` and page-level `<style>` blocks. JS-controlled `style=` (display:none toggles, dynamic template values) intentionally left in place. |
 | Jun 19, 2026 | `functions/index.js` · `adminSubscriptionSummary` | MRR hardcoded at $49/$99 (old Stripe prices) | Reads from Firestore `settings/pricing` with $19/$99 fallback |
 | Jun 19, 2026 | `BlastyBiz-Admin-Subscriptions.html` | Pricing editor fields showed placeholder text, not pre-filled values | Changed `placeholder` to `value` so $19/$99 appear immediately |
 | Jun 19, 2026 | `BlastyBiz.html` — `#biz-phone`, `#profile-phone` | Phone number typed as raw digits with no formatting | Added `formatPhone()` — auto-inserts hyphens on input (e.g. `555-123-4567`); capped at 10 digits; `inputmode="tel"` for mobile keyboard |

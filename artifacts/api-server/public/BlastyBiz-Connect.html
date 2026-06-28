@@ -136,7 +136,7 @@ body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;
   <div class="section-label">Auto-Post Platforms</div>
 
   <div class="platform-card" id="card-google">
-    <div class="platform-icon" style="background:rgba(66,133,244,0.1);color:#4285F4">G</div>
+    <div class="platform-icon pi-google">G</div>
     <div class="platform-info">
       <div class="platform-name">Google Business Profile</div>
       <div class="platform-mode">Auto-Post · API/OAuth</div>
@@ -154,12 +154,12 @@ body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;
       <div class="explainer-step"><div class="explainer-step-num">2</div>You click "Allow" — BlastyBiz stores a secure token (never your password).</div>
       <div class="explainer-step"><div class="explainer-step-num">3</div>Nothing posts yet. BlastyBiz only posts when you review and approve a listing.</div>
     </div>
-    <div class="explainer-note"><strong>Need a Google Business Profile first?</strong> Go to <a href="https://business.google.com" target="_blank" rel="noopener" style="color:var(--blue);font-weight:600">business.google.com</a> → Add your business → come back here to connect.</div>
+    <div class="explainer-note"><strong>Need a Google Business Profile first?</strong> Go to <a href="https://business.google.com" target="_blank" rel="noopener" class="link-blue">business.google.com</a> → Add your business → come back here to connect.</div>
     <button class="btn-proceed" id="btn-proceed-google">I have a Business Profile — Connect Google →</button>
   </div>
 
   <div class="platform-card" id="card-facebook">
-    <div class="platform-icon" style="background:rgba(24,119,242,0.1);color:#1877F2">f</div>
+    <div class="platform-icon pi-fb">f</div>
     <div class="platform-info">
       <div class="platform-name">Facebook Pages</div>
       <div class="platform-mode">Auto-Post · API/OAuth</div>
@@ -171,7 +171,7 @@ body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;
   </div>
 
   <div class="platform-card" id="card-instagram">
-    <div class="platform-icon" style="background:rgba(225,48,108,0.1);color:#E1306C">📸</div>
+    <div class="platform-icon pi-ig">📸</div>
     <div class="platform-info">
       <div class="platform-name">Instagram Business</div>
       <div class="platform-mode">Auto-Post · Via Facebook OAuth</div>
@@ -190,7 +190,7 @@ body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;
   </div>
 
   <div class="manual-card">
-    <div class="platform-icon" style="background:rgba(0,128,157,0.1);color:#00809D">B</div>
+    <div class="platform-icon pi-bing">B</div>
     <div class="platform-info">
       <div class="platform-name">Bing Places for Business</div>
       <div class="platform-mode">Copy-Ready · Bing blocks third-party posting</div>
@@ -200,7 +200,7 @@ body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;
   </div>
 
   <div class="manual-card">
-    <div class="platform-icon" style="background:rgba(85,85,85,0.15);color:#999">🍎</div>
+    <div class="platform-icon pi-apple">🍎</div>
     <div class="platform-info">
       <div class="platform-name">Apple Maps Connect</div>
       <div class="platform-mode">Copy-Ready · Apple has no partner posting API</div>
@@ -210,7 +210,7 @@ body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;
   </div>
 
   <div class="manual-card">
-    <div class="platform-icon" style="background:rgba(0,178,70,0.1);color:#00B246">N</div>
+    <div class="platform-icon pi-nd">N</div>
     <div class="platform-info">
       <div class="platform-name">Nextdoor</div>
       <div class="platform-mode">Copy-Ready · Nextdoor blocks all third-party apps</div>
@@ -220,7 +220,7 @@ body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;
   </div>
 
   <div class="manual-card">
-    <div class="platform-icon" style="background:rgba(107,0,215,0.1);color:#6B00D7">C</div>
+    <div class="platform-icon pi-cl">C</div>
     <div class="platform-info">
       <div class="platform-name">Craigslist</div>
       <div class="platform-mode">Copy-Ready · Craigslist has banned all posting APIs</div>
@@ -230,7 +230,7 @@ body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;
   </div>
 
   <div class="manual-card">
-    <div class="platform-icon" style="background:rgba(0,130,251,0.1);color:#0082FB">M</div>
+    <div class="platform-icon pi-fbm">M</div>
     <div class="platform-info">
       <div class="platform-name">Facebook Marketplace</div>
       <div class="platform-mode">Copy-Ready · Meta closed Marketplace to all apps in 2018</div>
@@ -254,7 +254,7 @@ body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;
     <!-- Step 1: Do you have a Page? -->
     <div id="fb-gate-step1">
       <div class="modal-title">Before we connect Facebook…</div>
-      <p class="modal-sub">BlastyBiz posts to your <strong style="color:var(--light)">Facebook Business Page</strong> — not your personal profile. Do you have a Business Page set up?</p>
+      <p class="modal-sub">BlastyBiz posts to your <strong class="text-light">Facebook Business Page</strong> — not your personal profile. Do you have a Business Page set up?</p>
       <div class="modal-choice-group">
         <div class="modal-choice yes" onclick="fbGateYes()">
           <div class="modal-choice-icon">✅</div>
@@ -297,7 +297,7 @@ body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;
         </div>
       </div>
       <p class="guide-note">Want Instagram too? Link your Instagram Business account to the Page inside Meta Business Suite after creating it.</p>
-      <a href="https://www.facebook.com/pages/create" target="_blank" rel="noopener" class="btn-proceed" style="display:block;text-decoration:none;text-align:center;margin-bottom:10px">Open Facebook → Create Page</a>
+      <a href="https://www.facebook.com/pages/create" target="_blank" rel="noopener" class="btn-proceed btn-create-page">Open Facebook → Create Page</a>
       <button class="btn-cancel-modal" onclick="closeFbGate()">I'll come back later</button>
     </div>
   </div>
