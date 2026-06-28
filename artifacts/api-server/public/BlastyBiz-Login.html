@@ -17,6 +17,7 @@
 
 <img class="mobile-login-img" src="img/people-login-new.png" alt="BlastyBiz" />
 
+<div class="main-inner">
 <div class="main">
 
   <!-- AUTH LOADING SPINNER (shown until Firebase resolves) -->
@@ -190,6 +191,10 @@
     <blockquote class="login-panel-quote">"I used to spend my whole Sunday posting. Now it takes 5 minutes." — Maria R., Pizzeria Owner</blockquote>
   </div>
 </div>
+
+</div><!-- /.main-inner -->
+<div id="site-footer-inject"></div>
+<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>

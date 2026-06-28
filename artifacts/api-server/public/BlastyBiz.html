@@ -3991,6 +3991,8 @@ window._saveScheduleToFirestore = async function(sched) {
 </div>
 
 </div><!-- /.main-inner -->
+<div id="site-footer-inject"></div>
+<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 
 <script>
 fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){

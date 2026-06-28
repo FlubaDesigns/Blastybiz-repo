@@ -169,19 +169,8 @@
 
 <div class="toast" id="toast"></div>
 
-<footer>
-  <div class="footer-logo">BlastyBiz</div>
-  <div class="footer-tagline">Lock. Load. Blast.</div>
-  <div class="footer-links">
-    <a class="footer-link" href="BlastyBiz-Home.html">Home</a>
-    <a class="footer-link" href="BlastyBiz-About.html">About</a>
-    <a class="footer-link" href="BlastyBiz-Contact.html">Contact</a>
-    <a class="footer-link" href="BlastyBiz-Privacy.html">Privacy</a>
-    <a class="footer-link" href="BlastyBiz-Terms.html">Terms</a>
-    <a class="footer-link" href="mailto:support@blastybiz.com">support@blastybiz.com</a>
-  </div>
-  <div class="footer-copy">© 2026 BlastyBiz · All rights reserved.</div>
-</footer>
+<div id="site-footer-inject"></div>
+<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 
 <script>
 // ══════════════════════════════════════════

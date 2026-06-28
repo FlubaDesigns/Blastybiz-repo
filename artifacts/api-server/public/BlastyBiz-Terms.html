@@ -12,22 +12,6 @@
 <div id="site-header-inject"></div>
 <div class="main-inner">
 
-<nav>
-  <a class="nav-logo" href="BlastyBiz-Home.html">BlastyBiz</a>
-  <div class="nav-right">
-    <a class="nav-link" href="BlastyBiz-Home.html#how">How It Works</a>
-    <a class="nav-link" href="BlastyBiz-Home.html#pricing">Pricing</a>
-    <a class="nav-link" href="BlastyBiz-About.html">About</a>
-    <a class="nav-link" href="BlastyBiz-Contact.html">Contact</a>
-    <a class="nav-link" id="nav-login-link" href="BlastyBiz-Login.html">Log In</a>
-    <button class="nav-link" id="nav-logout-btn" style="display:none;background:none;border:none;color:var(--silver);font-size:15px;font-weight:500;cursor:pointer;padding:0;" onclick="doSignOut()">Log Out</button>
-    <a class="nav-cta" href="BlastyBiz-Login.html">Try It Free</a>
-  </div>
-  <button class="hamburger" id="hamburger" aria-label="Open menu" onclick="toggleMenu()">
-    <span></span><span></span><span></span>
-  </button>
-</nav>
-
 <div class="mobile-menu" id="mobileMenu">
   <a class="mobile-link" href="BlastyBiz-Home.html">Home</a>
   <a class="mobile-link" href="BlastyBiz-Home.html#how">How It Works</a>
@@ -164,19 +148,8 @@
 </article>
 
 </div><!-- /.main-inner -->
-<footer>
-  <div class="footer-logo">BlastyBiz</div>
-  <div class="footer-tagline">Lock. Load. Blast.</div>
-  <div class="footer-links">
-    <a class="footer-link" href="BlastyBiz-Home.html">Home</a>
-    <a class="footer-link" href="BlastyBiz-About.html">About</a>
-    <a class="footer-link" href="BlastyBiz-Contact.html">Contact</a>
-    <a class="footer-link" href="BlastyBiz-Privacy.html">Privacy</a>
-    <a class="footer-link" href="BlastyBiz-Terms.html">Terms</a>
-  </div>
-  <div class="footer-copy">© 2026 BlastyBiz · All rights reserved.</div>
-  <div class="footer-powered">Powered by <a href="mailto:info@flubadesigns.com">Fluba Designs LLC</a></div>
-</footer>
+<div id="site-footer-inject"></div>
+<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 
 <script>
 function _getHamburgerBtn() {
