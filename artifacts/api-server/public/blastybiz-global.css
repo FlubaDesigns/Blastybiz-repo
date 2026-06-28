@@ -381,6 +381,8 @@ nav {
 
 /* ── Sections (public pages only — body.has-site-header) ─── */
 body.has-site-header section { padding: var(--section-v) var(--gutter); max-width: 600px; margin: 0 auto; }
+/* .row on a section overrides the 600px cap — goes full available width */
+body.has-site-header section.row { max-width: none; margin: 0; }
 .section-label { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; font-weight: 600; margin-top: 8px; margin-bottom: 12px; }
 .powered-band { padding: 32px var(--gutter); max-width: 600px; margin: 0 auto; }
 body.has-site-header section h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 56px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-bottom: 16px; }
