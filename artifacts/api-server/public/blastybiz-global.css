@@ -277,6 +277,9 @@ body.logged-in #sh-logout-btn   { display: inline; }
 body.logged-in #sh-create-link  { display: inline; }
 body.logged-in #nav-logout-btn  { display: inline-block; }
 body.logged-in #menu-logout-btn { display: block; }
+/* mobile menu: show Log In by default; hide when logged in */
+.mobile-menu #menu-login-link            { display: block; }
+body.logged-in .mobile-menu #menu-login-link { display: none; }
 
 /* ── Mobile (max-width: 599px) ──────────────────────────────── */
 @media (max-width: 599px) {

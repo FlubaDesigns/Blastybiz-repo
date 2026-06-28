@@ -23,3 +23,21 @@
 <div class="site-subheader">
   <span class="hero-badge">⚡ AI-Powered Marketing</span>
 </div>
+<nav class="mobile-menu" id="mobile-menu">
+  <a class="mobile-link" href="BlastyBiz-About.html"   onclick="closeMenu()">About</a>
+  <a class="mobile-link" href="BlastyBiz-Contact.html" onclick="closeMenu()">Contact</a>
+  <a class="mobile-link" href="BlastyBiz.html"         onclick="closeMenu()">Create Listing</a>
+  <a class="mobile-link" id="menu-login-link"  href="BlastyBiz-Login.html" onclick="closeMenu()">Log In</a>
+  <button class="mobile-link" id="menu-logout-btn" onclick="if(typeof doSignOut==='function'){closeMenu();doSignOut()}">Log Out</button>
+  <a class="mobile-link sh-nav-cta" href="BlastyBiz-Login.html" onclick="closeMenu()">Try It Free</a>
+</nav>
+<script>
+function toggleMenu(){
+  var m=document.getElementById('mobile-menu');
+  if(m)m.classList.toggle('open');
+}
+function closeMenu(){
+  var m=document.getElementById('mobile-menu');
+  if(m)m.classList.remove('open');
+}
+</script>
