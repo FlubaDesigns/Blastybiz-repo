@@ -112,7 +112,7 @@
   <h1 class="page-title">Connect <span>Your Platforms</span></h1>
   <p class="page-sub">Connect once. BlastyBiz adapts your listing for every platform — and we're working on automating direct posting for Google Business, Facebook, and Instagram. Coming soon.</p>
 
-  <div id="setup-note" class="setup-note" style="display:none">
+  <div id="setup-note" class="setup-note hidden">
     <strong>Setup Required</strong>
     Google and Facebook OAuth require API credentials set up in Firebase Secret Manager.
     Contact your developer to configure <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, <code>FACEBOOK_APP_ID</code>, and <code>FACEBOOK_APP_SECRET</code>.
@@ -420,7 +420,7 @@ onAuthStateChanged(auth, async (user) => {
 
   const hasOAuthCreds = true;
   if (!hasOAuthCreds) {
-    document.getElementById('setup-note').style.display = '';
+    document.getElementById('setup-note').classList.remove('hidden');
     document.querySelectorAll('.btn-connect').forEach(b => b.disabled = true)}
 
   window._disconnectPlatform = async function(platformId) {

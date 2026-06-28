@@ -134,7 +134,7 @@
     <div class="loading-text">Loading your publishing status…</div>
   </div>
 
-  <div id="content-state" style="display:none;">
+  <div id="content-state" class="hidden">
     <div class="progress-card">
       <div class="progress-header">
         <div class="progress-label">Overall Progress</div>
@@ -146,7 +146,7 @@
       <div class="platform-list" id="platform-list"></div>
     </div>
 
-    <div class="action-card" id="action-card" style="display:none;">
+    <div class="action-card hidden" id="action-card">
       <div class="action-card-title">⚠️ Action Needed</div>
       <div id="action-items"></div>
     </div>
@@ -160,7 +160,7 @@
     </div>
 
     <a href="BlastyBiz.html" class="dash-btn">＋ Create Another Listing</a>
-    <a id="sched-refire-link" href="#" class="dash-btn dash-btn-ghost" style="display:none;">🗓 Schedule Refire</a>
+    <a id="sched-refire-link" href="#" class="dash-btn dash-btn-ghost hidden">🗓 Schedule Refire</a>
     <a href="BlastyBiz-Dashboard.html" class="dash-btn-outline">← Back to Dashboard</a>
   </div>
 </div><!-- /.main-inner -->
@@ -226,7 +226,7 @@ function renderJobs(jobs) {
   const actionCard = document.getElementById('action-card');
   const actionItems = document.getElementById('action-items');
   if (manualJobs.length) {
-    actionCard.style.display = '';
+    actionCard.classList.remove('hidden');
     actionItems.innerHTML = manualJobs.map(job => {
       const meta = PLATFORM_META[job.platform] || { name: job.platform };
       const text = typeof job.payload === 'object' ? (job.payload.adaptedContent || '') : '';
@@ -240,13 +240,13 @@ function renderJobs(jobs) {
           </div>
         </div>
       `}).join('')} else {
-    actionCard.style.display = 'none'}
+    actionCard.classList.add('hidden')}
 
   const hoursSaved = (done * 0.8).toFixed(1);
   document.getElementById('hours-saved').textContent = hoursSaved;
 
   document.getElementById('loading-state').style.display = 'none';
-  document.getElementById('content-state').style.display = ''}
+  document.getElementById('content-state').classList.remove('hidden')}
 
 function copyListing(jobId, text) {
   navigator.clipboard.writeText(text).then(() => showToast('📋 Listing copied!'))}
@@ -261,13 +261,13 @@ function showInstructions(platform) {
 
 function showEmptyState(msg) {
   document.getElementById('loading-state').style.display = 'none';
-  document.getElementById('content-state').style.display = '';
+  document.getElementById('content-state').classList.remove('hidden');
   document.getElementById('progress-count').textContent = '0 of 0 Complete';
   document.getElementById('progress-bar').style.width = '0%';
   document.getElementById('platform-list').innerHTML =
     `<div class="empty-state-msg">${msg}</div>`;
   const actionCard = document.getElementById('action-card');
-  if (actionCard) actionCard.style.display = 'none';
+  if (actionCard) actionCard.classList.add('hidden');
   const hoursSaved = document.getElementById('hours-saved');
   if (hoursSaved) hoursSaved.textContent = '0'}
 </script>
@@ -292,7 +292,7 @@ onAuthStateChanged(auth, async (user) => {
     // Wire "Schedule Refire" link back to the draft's review page
     if (draftId) {
       const schedLink = document.getElementById('sched-refire-link');
-      if (schedLink) { schedLink.href = `BlastyBiz-Listing-Preview.html?draftId=${draftId}`; schedLink.style.display = ''}
+      if (schedLink) { schedLink.href = `BlastyBiz-Listing-Preview.html?draftId=${draftId}`; schedLink.classList.remove('hidden')}
     }
 
     let q;

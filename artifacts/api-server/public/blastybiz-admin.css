@@ -45,6 +45,7 @@
 
 /* ── Reset ──────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+.hidden { display: none; }
 
 /* ── Element Defaults ───────────────────────────────────────── */
 body    { background: var(--dark); color: var(--light); font-family: 'DM Sans', sans-serif; min-height: 100vh; padding-bottom: 74px; }
