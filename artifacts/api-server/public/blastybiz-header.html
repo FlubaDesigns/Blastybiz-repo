@@ -1,28 +1,30 @@
 <header class="site-header">
-  <div id="sh-left">
-    <a href="BlastyBiz-Home.html" class="sh-home-link" aria-label="BlastyBiz — go to home">
-      <img class="site-header-icon" src="img/blastie-blizz-logo.png" alt="BlastyBiz logo" />
-      <div class="site-header-brand">
-        <img class="site-header-wordmark" src="img/blastybiz-title.png" alt="BlastyBiz" />
-        <img class="site-header-tagline" id="site-header-tagline" src="img/blastybiz-tagline.png" alt="Lock. Load. Blast." />
-      </div>
-    </a>
+  <div class="sh-nav-row">
+    <div id="sh-left">
+      <a href="BlastyBiz-Home.html" class="sh-home-link" aria-label="BlastyBiz — go to home">
+        <img class="site-header-icon" src="img/blastie-blizz-logo.png" alt="BlastyBiz logo" />
+        <div class="site-header-brand">
+          <img class="site-header-wordmark" src="img/blastybiz-title.png" alt="BlastyBiz" />
+          <img class="site-header-tagline" id="site-header-tagline" src="img/blastybiz-tagline.png" alt="Lock. Load. Blast." />
+        </div>
+      </a>
+    </div>
+    <div id="sh-right">
+      <a class="sh-nav-link" href="BlastyBiz-About.html">About</a>
+      <a class="sh-nav-link" href="BlastyBiz-Contact.html">Contact</a>
+      <a class="sh-nav-link" id="sh-create-link" href="BlastyBiz.html">Create Listing</a>
+      <a class="sh-nav-link" id="sh-login-link" href="BlastyBiz-Login.html">Log In</a>
+      <button class="sh-nav-link sh-logout-btn" id="sh-logout-btn" onclick="if(typeof doSignOut==='function')doSignOut()">Log Out</button>
+      <a class="sh-nav-cta" href="BlastyBiz-Login.html">Try It Free</a>
+      <button class="sh-hamburger" id="sh-hamburger" aria-label="Open menu" onclick="if(typeof toggleMenu==='function')toggleMenu()">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </div>
-  <div id="sh-right">
-    <a class="sh-nav-link" href="BlastyBiz-About.html">About</a>
-    <a class="sh-nav-link" href="BlastyBiz-Contact.html">Contact</a>
-    <a class="sh-nav-link" id="sh-create-link" href="BlastyBiz.html">Create Listing</a>
-    <a class="sh-nav-link" id="sh-login-link" href="BlastyBiz-Login.html">Log In</a>
-    <button class="sh-nav-link sh-logout-btn" id="sh-logout-btn" onclick="if(typeof doSignOut==='function')doSignOut()">Log Out</button>
-    <a class="sh-nav-cta" href="BlastyBiz-Login.html">Try It Free</a>
-    <button class="sh-hamburger" id="sh-hamburger" aria-label="Open menu" onclick="if(typeof toggleMenu==='function')toggleMenu()">
-      <span></span><span></span><span></span>
-    </button>
+  <div class="site-subheader">
+    <span class="hero-badge">⚡ AI-Powered Marketing</span>
   </div>
 </header>
-<div class="site-subheader">
-  <span class="hero-badge">⚡ AI-Powered Marketing</span>
-</div>
 <nav class="mobile-menu" id="mobile-menu">
   <a class="mobile-link" href="BlastyBiz-About.html"   onclick="closeMenu()">About</a>
   <a class="mobile-link" href="BlastyBiz-Contact.html" onclick="closeMenu()">Contact</a>

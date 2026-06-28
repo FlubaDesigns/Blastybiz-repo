@@ -155,9 +155,16 @@ td      { font-size: var(--fs-base); color: var(--light); padding: 12px; border-
   height: 120px;
   background: #000;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   overflow: hidden;
   border-bottom: 1px solid rgba(0,200,83,0.18);
+}
+.sh-nav-row {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  width: 100%;
 }
 
 /* left 50% — BB icon + wordmark + tagline */
@@ -251,17 +258,13 @@ td      { font-size: var(--fs-base); color: var(--light); padding: 12px; border-
 
 /* sub-header badge bar — full width, centered, desktop+tablet only */
 .site-subheader {
-  position: fixed;
-  top: 120px;
-  left: 0;
-  right: 0;
   height: 36px;
   display: none;
   align-items: center;
   justify-content: center;
   background: rgba(0,0,0,0.85);
-  border-bottom: 1px solid rgba(0,200,83,0.18);
-  z-index: 999;
+  border-top: 1px solid rgba(0,200,83,0.18);
+  width: 100%;
 }
 body.home-page .site-subheader { display: flex; }
 .site-subheader .hero-badge { margin-bottom: 0; animation: none; }
