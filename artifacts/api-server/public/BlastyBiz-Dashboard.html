@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="blastybiz-global.css?v=94" />
+<link rel="stylesheet" href="blastybiz-global.css?v=95" />
 <title>BlastyBiz — Command Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -181,7 +181,7 @@
 
 <!-- MAIN CONTENT -->
 <main>
-  <section class="dash-hero">
+  <div class="dash-hero">
     <div class="card">
       <p class="sub" id="dashboard-sub">Showing data for <strong id="dashboard-biz-name"></strong>.</p>
       <div class="btn-row">
@@ -203,16 +203,16 @@
         </div>
       </div>
     </div>
-  </section>
+  </div>
 
-  <section class="grid">
+  <div class="grid">
     <div class="stat"><div class="stat-num" id="stat-platforms">—</div><div class="stat-label">Platforms Ready</div><div class="stat-note" id="stat-platforms-note">loading…</div></div>
     <div class="stat"><div class="stat-num" id="stat-posts">—</div><div class="stat-label">Posts This Month</div><div class="stat-note" id="stat-posts-note"> </div></div>
     <div class="stat"><div class="stat-num" id="stat-review">—</div><div class="stat-label">Needs Review</div><div class="stat-note warn" id="stat-review-note"> </div></div>
     <div class="stat"><div class="stat-num">$0</div><div class="stat-label">AI Cost</div><div class="stat-note ok">This month</div></div>
-  </section>
+  </div>
 
-  <section class="two-col" id="platforms">
+  <div class="two-col" id="platforms">
     <div class="card">
       <div class="card-title">📡 Platform Status</div>
       <div class="platform-list" id="platform-list">
@@ -227,9 +227,9 @@
         <div style="color:#587058;font-size:13px;padding:4px 0">Loading…</div>
       </div>
     </div>
-  </section>
+  </div>
 
-  <section class="two-col" style="margin-top:16px;">
+  <div class="two-col" style="margin-top:16px;">
     <div class="card">
       <div class="card-title">📋 Recent Activity</div>
       <div class="activity-list" id="activity-list">
@@ -253,7 +253,7 @@
         <button onclick="openDeleteModal()" style="background:none;border:none;color:#c0392b;font-size:12px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline">Delete account</button>
       </div>
     </div>
-  </section>
+  </div>
 
 <!-- DELETE ACCOUNT MODAL -->
 <div id="delete-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
