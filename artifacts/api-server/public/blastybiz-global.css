@@ -456,13 +456,20 @@ html .problem-col--img  { display: none; }
 html .how-block--img    { display: none; } /* shown at tablet+ below */
 html .section-img-col   { display: none; }
 html .contact-img-col   { display: none; }
-html .nav-right         { display: flex; }
-html .hamburger         { display: none; }
-
-/* ── Hamburger breakpoint (max-width: 900px) ────────────────── */
+/* ── Tablet-width header fix (600px – 900px) ───────────────── */
 @media (max-width: 900px) {
-  html .nav-right  { display: none; }
-  html .hamburger  { display: flex; }
+  #sh-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: auto;
+    margin-left: auto;
+    padding-right: 20px;
+    gap: 0;
+  }
+  #sh-right .sh-nav-link,
+  #sh-right .sh-nav-cta { display: none; }
+  .sh-hamburger { display: flex; }
 }
 
 /* ── Tablet (600px – 1099px) ───────────────────────────────── */
