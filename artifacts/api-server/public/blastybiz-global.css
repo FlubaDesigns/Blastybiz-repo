@@ -114,7 +114,7 @@ td      { font-size: var(--fs-base); color: var(--light); padding: 12px; border-
 
 /* ── Layout Primitives ───────────────────────────────── */
 /* layout row wrapper — wrap any split/stack inside a .row */
-.row        { width: 100%; margin-bottom: var(--gap-lg); }
+.row        { width: 100%; margin-bottom: 10px; }
 /* 50/50 two-column */
 .split      { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 /* three equal columns */
@@ -136,8 +136,8 @@ td      { font-size: var(--fs-base); color: var(--light); padding: 12px; border-
 /* side-by-side form fields */
 .form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-md); margin-bottom: var(--gap-lg); }
 
-/* row gap — 10px vertical gutter between homepage rows */
-.row-gap { margin-top: var(--row-gap); }
+/* row gap — no longer used; spacing handled by .row margin-bottom */
+.row-gap { margin-top: 0; }
 /* full-bleed elements break out of the gutter */
 .bleed-out {
   margin-left: calc(-1 * var(--gutter));
@@ -380,7 +380,7 @@ nav {
 .plat-pill:hover { border-color: var(--green); color: var(--light); }
 
 /* ── Sections (public pages only — body.has-site-header) ─── */
-body.has-site-header section { padding: var(--section-v) 0; }
+body.has-site-header section { padding: 0; }
 .section-label { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; font-weight: 600; margin-top: 8px; margin-bottom: 12px; }
 .powered-band { padding: 32px var(--gutter); max-width: 600px; margin: 0 auto; }
 body.has-site-header section h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 56px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-bottom: 16px; }
@@ -550,7 +550,7 @@ html .contact-img-col   { display: none; }
 @media (min-width: 600px) {
   :root                      { --section-v: 80px; }
   .site-header-tagline       { height: 5px; margin-left: 10px; padding: 0; }
-  body.has-site-header section { padding: var(--section-v) 0; }
+  body.has-site-header section { padding: 0; }
   html nav                   { padding: 18px 48px; }
   .site-header               { padding: 16px 48px; }
   html .wiz-header           { padding: 20px 48px 0; }
@@ -606,7 +606,7 @@ html .contact-img-col   { display: none; }
 /* ── Desktop (1100px+) ───────────────────────────────────── */
 @media (min-width: 1100px) {
   :root                      { --section-v: 100px; }
-  body.has-site-header section { padding: var(--section-v) 0; }
+  body.has-site-header section { padding: 0; }
   html .desk-only            { display: block !important; }
   html nav                   { padding: 18px 80px; }
   .site-header               { padding: 16px 60px; }
