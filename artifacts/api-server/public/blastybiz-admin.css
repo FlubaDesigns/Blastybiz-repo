@@ -139,13 +139,16 @@ main, .main { width: 100%; }
 .stat-label { font-size: var(--fs-xs); letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
 .stat-note  { font-size: var(--fs-sm); color: var(--silver); margin-top: 10px; }
 
+/* ── Layout row wrapper ─────────────────────────────────────── */
+.row { width: 100%; margin-bottom: var(--gap-lg); }
+
 /* ── List rows ──────────────────────────────────────────────── */
-.list     { display: flex; flex-direction: column; gap: 10px; }
-.row      { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 13px; display: flex; align-items: center; gap: var(--gap-md); }
-.icon     { width: 40px; height: 40px; border-radius: 10px; background: var(--dark); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-.row-main { flex: 1; }
+.list      { display: flex; flex-direction: column; gap: 10px; }
+.list-item { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 13px; display: flex; align-items: center; gap: var(--gap-md); }
+.icon      { width: 40px; height: 40px; border-radius: 10px; background: var(--dark); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.row-main  { flex: 1; }
 .row-title { font-size: var(--fs-base); font-weight: 800; color: var(--light); }
-.row-sub  { font-size: var(--fs-sm); color: var(--muted); margin-top: 3px; line-height: 1.4; }
+.row-sub   { font-size: var(--fs-sm); color: var(--muted); margin-top: 3px; line-height: 1.4; }
 
 /* ── Status badges ──────────────────────────────────────────── */
 .badge { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .7px; font-weight: 900; border-radius: var(--radius-full); padding: 5px 8px; white-space: nowrap; }

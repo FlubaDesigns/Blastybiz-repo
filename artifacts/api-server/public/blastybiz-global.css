@@ -113,6 +113,8 @@ td      { font-size: var(--fs-base); color: var(--light); padding: 12px; border-
 .eyebrow-label { font-size: var(--fs-xs); letter-spacing: 2px; text-transform: uppercase; color: var(--silver); font-weight: 700; margin-bottom: 8px; }
 
 /* ── Layout Primitives ───────────────────────────────── */
+/* layout row wrapper — wrap any split/stack inside a .row */
+.row        { width: 100%; margin-bottom: var(--gap-lg); }
 /* 50/50 two-column */
 .split      { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 /* three equal columns */
