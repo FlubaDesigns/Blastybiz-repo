@@ -4,68 +4,39 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>BlastyBiz Admin - Queue Manager</title>
+<title>BlastyBiz Admin — Queue Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="blastybiz-admin.css">
 <style>
-:root{
-  --bg:#f6f8fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280;
-  --line:#d9e1ec; --blue:#2563eb; --green:#16a34a; --yellow:#ca8a04;
-  --red:#dc2626; --purple:#7c3aed;
-}
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}
-header{background:#0f172a;color:white;padding:22px}
-header h1{margin:0;font-size:26px}
-header p{margin:6px 0 0;color:#cbd5e1}
-.wrap{max-width:1200px;margin:0 auto;padding:22px}
-.nav{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
-.nav a{text-decoration:none;color:#0f172a;background:white;border:1px solid var(--line);padding:10px 12px;border-radius:10px;font-weight:bold}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(15,23,42,.04)}
-.metric{font-size:30px;font-weight:bold;margin-top:8px}
-.muted{color:var(--muted);font-size:14px}
-.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-select,input{padding:10px;border:1px solid var(--line);border-radius:10px;background:white}
-button{border:0;border-radius:10px;padding:10px 12px;font-weight:bold;cursor:pointer}
-.primary{background:var(--blue);color:white}
-.safe{background:var(--green);color:white}
-.warn{background:var(--yellow);color:white}
-.danger{background:var(--red);color:white}
-.light{background:#eef2ff;color:#1e3a8a}
-table{width:100%;border-collapse:collapse;background:white;border:1px solid var(--line);border-radius:14px;overflow:hidden}
-th,td{padding:12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:14px}
-th{background:#f1f5f9;color:#334155}
-.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:12px;font-weight:bold}
-.pending{background:#e0f2fe;color:#075985}
-.posting{background:#ede9fe;color:#5b21b6}
-.success{background:#dcfce7;color:#166534}
-.failed{background:#fee2e2;color:#991b1b}
-.manual{background:#fef3c7;color:#92400e}
+h2{color:var(--light);font-family:'DM Sans',sans-serif;font-size:17px;font-weight:700;margin-bottom:12px;margin-top:0}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+select,input{padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--panel);color:var(--light);font-family:'DM Sans',sans-serif;font-size:13px}
+button{border:0;border-radius:10px;padding:10px 12px;font-weight:bold;cursor:pointer;font-family:'DM Sans',sans-serif}
+.primary{background:#2563eb;color:white}
+.safe{background:#16a34a;color:white}
+.warn-btn{background:#ca8a04;color:white}
+.danger{background:#dc2626;color:white}
+.light{background:var(--card);color:var(--light);border:1px solid var(--border)}
+.badge.pending{background:#07192a;color:#60a5fa;border:1px solid #2563eb}
+.badge.posting{background:#1a0a2a;color:#c084fc;border:1px solid #7c3aed}
+.badge.success{background:#0A2A0A;color:#00C853;border:1px solid #00C853}
+.badge.failed{background:#2A0A0A;color:#f87171;border:1px solid #dc2626}
+.badge.manual{background:#2A1A00;color:#e6b84a;border:1px solid #7a5500}
+.metric{font-size:30px;font-weight:bold;margin-top:8px;color:var(--light)}
 .actions{display:flex;flex-wrap:wrap;gap:6px}
 .detail{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
-pre{white-space:pre-wrap;background:#0f172a;color:#e5e7eb;padding:14px;border-radius:12px;overflow:auto;font-size:13px}
-@media(max-width:900px){.grid{grid-template-columns:1fr 1fr}.detail{grid-template-columns:1fr}}
-@media(max-width:600px){.grid{grid-template-columns:1fr}table{display:block;overflow-x:auto}}
-.nav a.active{background:#f0fdf4;border-color:#16a34a}
+pre{white-space:pre-wrap;background:var(--dark);color:var(--light);padding:14px;border-radius:12px;overflow:auto;font-size:13px;border:1px solid var(--border)}
 .empty-row{text-align:center;padding:20px;opacity:.6}
+.job-field{color:var(--light);font-size:14px;margin-bottom:4px}
+.actions-mt{margin-top:14px}
+@media(max-width:900px){.detail{grid-template-columns:1fr}}
 </style>
-<style>body{visibility:hidden}</style></head>
+<style>body{visibility:hidden}</style>
+<script type="module" src="./admin-guard.js"></script>
+</head>
 <body>
-<header>
-  <h1>BlastyBiz Admin Queue Manager</h1>
-  <p>Control center for approved listing distribution jobs.</p>
-</header>
-
-<div class="wrap">
-  <nav class="nav">
-    <a href="BlastyBiz-Admin.html">Admin Dashboard</a>
-    <a href="BlastyBiz-Admin-Queue-Manager.html" class="active">Queue Manager</a>
-    <a href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a>
-    <a href="BlastyBiz-Admin-Users.html">Users</a>
-    <a href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a>
-    <a href="BlastyBiz-Admin-Platform-Health.html">Platform Health</a>
-    <a href="BlastyBiz-Admin-Logs.html">Logs</a>
-    <a href="BlastyBiz-Admin-Operate.html">Operate</a>
-  </nav>
+<header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Queue Manager</span></a><div class="top-actions"><a class="icon-btn hide-mobile" href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile active" href="#">Queue</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Logs.html">Logs</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Operate.html">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header>
+<main>
 
   <section class="grid">
     <div class="card"><div class="muted">Queued</div><div class="metric">18</div><div class="muted">Waiting to run</div></div>
@@ -101,7 +72,7 @@ pre{white-space:pre-wrap;background:#0f172a;color:#e5e7eb;padding:14px;border-ra
           <td>Sending approved listing update.</td>
           <td>1</td>
           <td>2 minutes ago</td>
-          <td class="actions"><button class="light">View</button><button class="warn">Pause</button></td>
+          <td class="actions"><button class="light">View</button><button class="warn-btn">Pause</button></td>
         </tr>
         <tr>
           <td><strong>ABC Roofing</strong><br><span class="muted">Agency Plan · Tampa, FL</span></td>
@@ -143,15 +114,15 @@ pre{white-space:pre-wrap;background:#0f172a;color:#e5e7eb;padding:14px;border-ra
     </table>
   </section>
 
-  <section class="detail">
+  <div class="detail">
     <div class="card">
       <h2>Selected Job Details</h2>
-      <p><strong>Business:</strong> ABC Roofing</p>
-      <p><strong>Platform:</strong> Facebook</p>
-      <p><strong>Status:</strong> Failed</p>
-      <p><strong>Safe customer message:</strong> Facebook needs to be reconnected before BlastyBiz can publish your update.</p>
-      <p><strong>Internal error:</strong> OAuth token expired.</p>
-      <div class="actions">
+      <p class="job-field"><strong>Business:</strong> ABC Roofing</p>
+      <p class="job-field"><strong>Platform:</strong> Facebook</p>
+      <p class="job-field"><strong>Status:</strong> Failed</p>
+      <p class="job-field"><strong>Safe customer message:</strong> Facebook needs to be reconnected before BlastyBiz can publish your update.</p>
+      <p class="job-field"><strong>Internal error:</strong> OAuth token expired.</p>
+      <div class="actions actions-mt">
         <button class="primary">Retry Job</button>
         <button class="light">Send Reconnect Email</button>
         <button class="danger">Mark Resolved</button>
@@ -170,9 +141,10 @@ pre{white-space:pre-wrap;background:#0f172a;color:#e5e7eb;padding:14px;border-ra
   "adminError": "OAuth token expired"
 }</pre>
     </div>
-  </section>
+  </div>
 
-</div>
+</main>
+<nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="active" href="#">📋<br>Queue</a><a class="" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a><a class="" href="BlastyBiz-Admin-Operate.html">⚙️<br>Operate</a></nav>
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -232,7 +204,7 @@ onAuthStateChanged(auth, (user) => {
         : j.status === 'manual_required'
         ? `<button class="safe" onclick="jobAction('${id}','complete')">Mark Complete</button><button class="light">View Instructions</button>`
         : j.status === 'pending'
-        ? `<button class="primary" onclick="jobAction('${id}','run')">Run Now</button><button class="warn" onclick="jobAction('${id}','pause')">Pause</button>`
+        ? `<button class="primary" onclick="jobAction('${id}','run')">Run Now</button><button class="warn-btn" onclick="jobAction('${id}','pause')">Pause</button>`
         : `<button class="light">View Receipt</button>`;
       return `<tr>
         <td><strong>${j.businessId || '—'}</strong><br><span class="muted">${j.platform || ''}</span></td>
@@ -255,6 +227,5 @@ onAuthStateChanged(auth, (user) => {
   });
 });
 </script>
-<script type="module" src="./admin-guard.js"></script>
 </body>
 </html>

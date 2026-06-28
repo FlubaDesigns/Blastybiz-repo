@@ -6,163 +6,118 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>BlastyBiz — Operator Setup</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="blastybiz-admin.css">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:#f4f6f4;color:#0d1a0d;min-height:100vh}
-
-/* ── NAV ── */
-header{background:#fff;border-bottom:1px solid #dde5dd;padding:0 28px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:100}
-.logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:#0d1a0d;text-decoration:none}
-.logo span{color:#00C853;margin-left:6px;font-size:14px;letter-spacing:2px}
-.nav-links{display:flex;gap:8px;margin-left:auto}
-.nav-link{font-size:13px;color:#4a604a;text-decoration:none;padding:6px 12px;border-radius:8px;transition:background .15s}
-.nav-link:hover{background:#eef5ee}
-.nav-link.active{background:#00C853;color:#fff}
-
 /* ── LAYOUT ── */
-main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
+main{max-width:860px}
 
 /* ── PROGRESS ── */
-.progress-block{background:#fff;border:1px solid #dde5dd;border-radius:14px;padding:20px 24px;margin-bottom:28px;display:flex;align-items:center;gap:20px}
-.progress-bar-wrap{flex:1;background:#eef5ee;border-radius:99px;height:10px;overflow:hidden}
+.progress-block{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:28px;display:flex;align-items:center;gap:20px}
+.progress-bar-wrap{flex:1;background:var(--panel);border-radius:99px;height:10px;overflow:hidden}
 .progress-bar{height:10px;background:#00C853;border-radius:99px;transition:width .4s ease}
-.progress-label{font-size:13px;color:#4a604a;white-space:nowrap}
-.progress-title{font-weight:700;font-size:16px;color:#0d1a0d;min-width:120px}
+.progress-label{font-size:13px;color:var(--muted);white-space:nowrap}
+.progress-title{font-weight:700;font-size:16px;color:var(--light);min-width:120px}
 
 /* ── SECTION ── */
 .section{margin-bottom:28px}
 .section-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .section-icon{font-size:20px}
-.section-title{font-size:18px;font-weight:700;color:#0d1a0d}
-.section-badge{font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:99px;background:#ffeaea;color:#c0392b}
-.section-badge.ok{background:#eef5ee;color:#1a6630}
-.section-badge.warn{background:#fff8e1;color:#b07d00}
+.section-title{font-size:18px;font-weight:700;color:var(--light)}
+.section-badge{font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:99px;background:#2A0A0A;color:#f87171;border:1px solid #dc2626}
+.section-badge.ok{background:#0A2A0A;color:var(--green);border-color:var(--green)}
+.section-badge.warn{background:#1a1200;color:#e6b84a;border:1px solid #7a5500}
 
 /* ── CARD ── */
-.card{background:#fff;border:1px solid #dde5dd;border-radius:14px;overflow:hidden;margin-bottom:10px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px}
 .card-header{display:flex;align-items:center;gap:12px;padding:16px 18px;cursor:pointer;user-select:none}
-.card-header:hover{background:#fafcfa}
+.card-header:hover{background:var(--panel)}
 .check-wrap{width:22px;height:22px;flex-shrink:0}
-.check-box{width:22px;height:22px;border:2px solid #c0d0c0;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;background:#fff}
+.check-box{width:22px;height:22px;border:2px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;background:var(--card)}
 .check-box.done{background:#00C853;border-color:#00C853}
 .check-box.done::after{content:'✓';color:#fff;font-size:13px;font-weight:700}
-.card-title{font-size:15px;font-weight:600;color:#0d1a0d;flex:1}
-.card-sub{font-size:12px;color:#6a806a;margin-top:1px}
-.chevron{font-size:12px;color:#8aaa8a;transition:transform .2s}
+.card-title{font-size:15px;font-weight:600;color:var(--light);flex:1}
+.card-sub{font-size:12px;color:var(--muted);margin-top:1px}
+.chevron{font-size:12px;color:var(--silver);transition:transform .2s}
 .chevron.open{transform:rotate(180deg)}
-.card-body{padding:0 18px 18px;border-top:1px solid #eef2ee;display:none}
+.card-body{padding:0 18px 18px;border-top:1px solid var(--border);display:none}
 .card-body.open{display:block}
 
 /* ── STEPS ── */
 .steps{margin-top:14px;display:flex;flex-direction:column;gap:10px}
 .step{display:flex;gap:12px;align-items:flex-start}
-.step-num{width:22px;height:22px;background:#eef5ee;border-radius:6px;font-size:12px;font-weight:700;color:#1a6630;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
-.step-text{font-size:14px;color:#2a3a2a;line-height:1.5}
-.step-text a{color:#00b04a;text-decoration:none;font-weight:500}
+.step-num{width:22px;height:22px;background:var(--panel);border-radius:6px;font-size:12px;font-weight:700;color:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-text{font-size:14px;color:var(--light);line-height:1.5}
+.step-text a{color:var(--green);text-decoration:none;font-weight:500}
 .step-text a:hover{text-decoration:underline}
 
 /* ── CODE BLOCK ── */
-.code-block{background:#f0f4f0;border:1px solid #dde5dd;border-radius:8px;padding:10px 14px;margin-top:8px;display:flex;align-items:center;gap:10px}
-.code-text{font-family:'Courier New',monospace;font-size:12px;color:#1a3a1a;flex:1;word-break:break-all}
-.copy-btn{font-size:11px;font-weight:600;color:#00b04a;background:none;border:1px solid #c0d8c0;border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap;transition:all .15s}
-.copy-btn:hover{background:#eef5ee}
-.copy-btn.copied{color:#fff;background:#00C853;border-color:#00C853}
+.code-block{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-top:8px;display:flex;align-items:center;gap:10px}
+.code-text{font-family:'Courier New',monospace;font-size:12px;color:var(--light);flex:1;word-break:break-all}
+.copy-btn{font-size:11px;font-weight:600;color:var(--green);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.copy-btn:hover{background:var(--panel)}
+.copy-btn.copied{color:var(--dark);background:#00C853;border-color:#00C853}
 
 /* ── SECRET INPUT ── */
 .secret-row{display:flex;gap:8px;margin-top:12px;align-items:stretch}
-.secret-input{flex:1;padding:10px 13px;border:1.5px solid #dde5dd;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:#0d1a0d;background:#fff;outline:none;transition:border-color .15s;min-width:0}
+.secret-input{flex:1;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--light);background:var(--card);outline:none;transition:border-color .15s;min-width:0}
 .secret-input:focus{border-color:#00C853}
-.show-btn{padding:10px 13px;background:#f0f4f0;border:1.5px solid #dde5dd;border-radius:8px;font-size:12px;font-weight:600;color:#4a604a;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
-.show-btn:hover{background:#e4ece4}
+.show-btn{padding:10px 13px;background:var(--panel);border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--silver);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.show-btn:hover{background:var(--card)}
 .save-btn{padding:10px 18px;background:#00C853;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s;flex-shrink:0}
 .save-btn:hover{background:#00b04a}
-.save-btn:disabled{background:#b0c8b0;cursor:not-allowed}
+.save-btn:disabled{background:var(--border);cursor:not-allowed}
 .save-status{font-size:12px;margin-top:6px;min-height:18px;font-weight:500}
-.save-status.ok{color:#1a6630}
-.save-status.err{color:#c0392b}
+.save-status.ok{color:var(--green)}
+.save-status.err{color:#f87171}
 
 /* ── NOTE ── */
-.note{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;font-size:13px;color:#6b4f00;margin-top:10px;line-height:1.5}
-.note strong{color:#4a3400}
-.note-info{background:#e8f4fd;border-color:#90caf9;color:#0d3a5c}
-.note-info strong{color:#083a5c}
-.note-success{background:#eef5ee;border-color:#a5d6a7;color:#1a4020}
+.note{background:#1a1200;border:1px solid #7a5500;border-radius:8px;padding:10px 14px;font-size:13px;color:#e6b84a;margin-top:10px;line-height:1.5}
+.note strong{color:#e6b84a}
+.note-info{background:#07192a;border-color:#2563eb;color:#60a5fa}
+.note-info strong{color:#60a5fa}
+.note-success{background:#0A2A0A;border-color:var(--green);color:var(--green)}
 
 /* ── LINK BTN ── */
-.link-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#0d1a0d;background:#f0f4f0;border:1px solid #dde5dd;border-radius:8px;padding:7px 14px;text-decoration:none;margin-top:10px;transition:all .15s}
-.link-btn:hover{background:#e4ece4;border-color:#c0d0c0}
-.link-btn-primary{background:#00C853;color:#fff;border-color:#00C853}
+.link-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--light);background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:7px 14px;text-decoration:none;margin-top:10px;transition:all .15s}
+.link-btn:hover{background:var(--card);border-color:var(--green)}
+.link-btn-primary{background:#00C853;color:var(--dark);border-color:#00C853}
 .link-btn-primary:hover{background:#00b04a;border-color:#00b04a}
 
 /* ── DIVIDER ── */
-.divider{height:1px;background:#eef2ee;margin:16px 0}
+.divider{height:1px;background:var(--border);margin:16px 0}
 
 /* ── CF URL ── */
-.cf-url{font-family:'Courier New',monospace;font-size:12px;color:#1a3a1a;background:#f0f4f0;border:1px solid #dde5dd;border-radius:6px;padding:6px 10px;display:inline-block;margin-top:4px;word-break:break-all}
+.cf-url{font-family:'Courier New',monospace;font-size:12px;color:var(--light);background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:6px 10px;display:inline-block;margin-top:4px;word-break:break-all}
 
 /* ── REDEPLOY BANNER ── */
-#redeploy-banner{display:none;background:#fff8e1;border:2px solid #ffe082;border-radius:14px;padding:20px 24px;margin-bottom:28px}
+#redeploy-banner{display:none;background:#1a1200;border:2px solid #7a5500;border-radius:14px;padding:20px 24px;margin-bottom:28px}
 #redeploy-banner.visible{display:block}
-.redeploy-title{font-size:15px;font-weight:700;color:#6b4f00;margin-bottom:8px}
-.redeploy-sub{font-size:13px;color:#6b4f00;margin-bottom:12px;line-height:1.5}
-/* ── extracted utility ── */
+.redeploy-title{font-size:15px;font-weight:700;color:#e6b84a;margin-bottom:8px}
+.redeploy-sub{font-size:13px;color:#e6b84a;margin-bottom:12px;line-height:1.5}
+
+/* ── EXTRACTED UTILITIES ── */
 .flex-1{flex:1}
 .mt-10{margin-top:10px}
 .mt-12{margin-top:12px}
 .op-page-header{margin-bottom:24px}
-.op-page-title{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:1px;color:#0d1a0d}
-.op-page-sub{font-size:14px;color:#5a705a;margin-top:4px}
-.op-field-label{font-size:13px;color:#4a604a;margin-top:14px;margin-bottom:2px;font-weight:600}
-.op-sub-text{font-size:13px;color:#4a604a;margin-top:4px;margin-bottom:10px}
-.op-cmd-label{font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:10px}
-.op-cmd-label-12{font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px;margin-top:12px}
-.op-cmd-label-hd{font-size:12px;font-weight:600;color:#1a3a1a;margin-bottom:4px}
-.op-fn-group{font-size:12px;font-weight:600;color:#4a604a;margin-top:8px;margin-bottom:2px}
-.op-fn-list{font-size:13px;color:#4a604a;line-height:1.8}
+.op-page-title{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:1px;color:var(--light)}
+.op-page-sub{font-size:14px;color:var(--muted);margin-top:4px}
+.op-field-label{font-size:13px;color:var(--silver);margin-top:14px;margin-bottom:2px;font-weight:600}
+.op-sub-text{font-size:13px;color:var(--muted);margin-top:4px;margin-bottom:10px}
+.op-cmd-label{font-size:12px;font-weight:600;color:var(--light);margin-bottom:4px;margin-top:10px}
+.op-cmd-label-12{font-size:12px;font-weight:600;color:var(--light);margin-bottom:4px;margin-top:12px}
+.op-cmd-label-hd{font-size:12px;font-weight:600;color:var(--light);margin-bottom:4px}
+.op-fn-group{font-size:12px;font-weight:600;color:var(--silver);margin-top:8px;margin-bottom:2px}
+.op-fn-list{font-size:13px;color:var(--muted);line-height:1.8}
 .check-hidden{visibility:hidden}
-.plan-sub-note{font-size:11px;color:#4a604a}
-@media (max-width: 900px) {
-  header {
-    height: auto;
-    min-height: 56px;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    padding: 10px 16px;
-  }
-  .nav-links {
-    width: 100%;
-    margin-left: 0;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    gap: 6px;
-  }
-  .nav-link {
-    white-space: nowrap;
-    font-size: 12px;
-    padding: 6px 10px;
-  }
-  main { padding: 24px 14px 60px; }
-}
+.plan-sub-note{font-size:11px;color:var(--muted)}
 </style>
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
 </head>
 <body>
 
-<header>
-  <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>OPERATE</span></a>
-  <nav class="nav-links">
-    <a class="nav-link" href="BlastyBiz-Admin.html">Admin</a>
-    <a class="nav-link" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a>
-    <a class="nav-link" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a>
-    <a class="nav-link" href="BlastyBiz-Admin-Users.html">Users</a>
-    <a class="nav-link" href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a>
-    <a class="nav-link" href="BlastyBiz-Admin-Platform-Health.html">Health</a>
-    <a class="nav-link" href="BlastyBiz-Admin-Logs.html">Logs</a>
-    <a class="nav-link active" href="#">Operate</a>
-    <a class="nav-link" href="BlastyBiz-Dashboard.html">Dashboard</a>
-  </nav>
-</header>
+<header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Operator Setup</span></a><div class="top-actions"><a class="icon-btn hide-mobile" href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Logs.html">Logs</a><a class="icon-btn hide-mobile active" href="#">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header>
 
 <main>
 
@@ -895,5 +850,6 @@ window.saveSecret = async function(name, inputId, statusId, btn) {
   }
 };
 </script>
+<nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Queue-Manager.html">📋<br>Queue</a><a class="" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a><a class="active" href="#">⚙️<br>Operate</a></nav>
 </body>
 </html>
