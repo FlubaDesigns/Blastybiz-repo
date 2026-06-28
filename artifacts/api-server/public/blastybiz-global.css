@@ -464,7 +464,7 @@ html .hamburger         { display: none; }
 @media (min-width: 600px) {
   :root                      { --section-v: 80px; }
   .site-header-tagline       { height: 5px; margin-left: 10px; padding: 0; }
-  section                    { max-width: 720px; padding: var(--section-v) var(--gutter); }
+  body.has-site-header section { max-width: 720px; padding: var(--section-v) var(--gutter); }
   html nav                   { padding: 18px 48px; }
   html header,
   html .header               { padding: 16px 48px; }
@@ -552,7 +552,7 @@ html .hamburger         { display: none; }
 /* ── Desktop (1100px+) ───────────────────────────────────── */
 @media (min-width: 1100px) {
   :root                      { --section-v: 100px; }
-  section                    { max-width: 1240px; padding: var(--section-v) var(--gutter); }
+  body.has-site-header section { max-width: 1240px; padding: var(--section-v) var(--gutter); }
   html .desk-only            { display: block !important; }
   html nav                   { padding: 18px 80px; }
   html header,
