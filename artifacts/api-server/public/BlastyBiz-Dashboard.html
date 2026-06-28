@@ -11,6 +11,9 @@
 <body class="logged-in has-site-header">
 <div id="site-header-inject"></div>
 
+<!-- MAIN CONTENT -->
+<div class="main-inner">
+
 <!-- SWITCHER SHEET OVERLAY -->
 <div class="biz-sheet-overlay" id="sheet-overlay" onclick="closeSwitcher()"></div>
 
@@ -43,8 +46,6 @@
   </div>
 </div>
 
-<!-- MAIN CONTENT -->
-<div class="main-inner">
   <!-- BUSINESS SWITCHER BAR -->
   <div class="biz-bar">
     <div class="biz-bar-left">
@@ -158,8 +159,6 @@
     <p id="delete-error"></p>
   </div>
 </div>
-</div><!-- /.main-inner -->
-
 <nav class="mobile-nav">
   <a class="active" href="#">🏠<br>Home</a>
   <a href="BlastyBiz.html">✏️<br>Create</a>
@@ -168,6 +167,7 @@
 </nav>
 
 <div class="toast" id="toast"></div>
+</div><!-- /.main-inner -->
 
 <div id="site-footer-inject"></div>
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
