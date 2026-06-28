@@ -884,3 +884,145 @@ body.login-page .login-img-panel { display: none; }
   body.login-page .login-img-panel { flex: 0 0 33.333%; }
   body.login-page .main { padding: 0 !important; }
 }
+
+/* ══ DASHBOARD ══════════════════════════════════════════════════════════════ */
+
+/* ── Business Switcher Bar ── */
+.biz-bar { background: rgba(13,22,13,0.95); border-bottom: 1px solid var(--border); padding: 10px 0; display: flex; align-items: center; backdrop-filter: blur(8px); }
+.biz-bar-left { width: 50%; display: flex; align-items: center; }
+.biz-bar-right { width: 50%; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.biz-bar-title { font-family: 'Bebas Neue'; font-size: 22px; letter-spacing: 2px; color: var(--green); }
+.biz-active { display: flex; align-items: center; gap: 10px; flex: 1; cursor: pointer; background: var(--dark); border: 1px solid var(--green); border-radius: 10px; padding: 10px 14px; transition: all 0.2s; }
+.biz-active:hover { background: #0A1A0A; }
+.biz-avatar { width: 36px; height: 36px; border-radius: 9px; background: rgba(0,200,83,0.1); border: 1px solid var(--green); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.biz-name { font-size: 15px; font-weight: 700; color: var(--light); }
+.biz-plan { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--green); margin-top: 2px; }
+.biz-chevron { margin-left: auto; color: var(--muted); font-size: 12px; transition: transform 0.2s; }
+.biz-active.open .biz-chevron { transform: rotate(180deg); }
+.biz-count { font-size: 11px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+.add-biz-btn { background: transparent; border: 1px dashed var(--border); border-radius: 10px; color: var(--muted); height: 40px; width: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; transition: all 0.2s; flex-shrink: 0; }
+.add-biz-btn:hover { border-color: var(--green); color: var(--green); }
+
+/* ── Business Switcher Sheet ── */
+.biz-sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+.biz-sheet-overlay.open { opacity: 1; pointer-events: all; }
+.biz-sheet { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); border-radius: 20px 20px 0 0; padding: 20px; z-index: 201; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); max-height: 75vh; overflow-y: auto; }
+.biz-sheet.open { transform: translateY(0); }
+.sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 4px; margin: 0 auto 18px; }
+.sheet-title { font-family: 'Bebas Neue'; font-size: 22px; letter-spacing: 1.5px; color: var(--light); margin-bottom: 4px; }
+.sheet-sub { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+
+/* ── Business Cards in Sheet ── */
+.biz-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.biz-card { background: var(--dark); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; }
+.biz-card:hover { border-color: var(--silver); }
+.biz-card.active { border-color: var(--green); background: rgba(0,200,83,0.05); }
+.biz-card-avatar { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; border: 1px solid var(--border); }
+.biz-card-info { flex: 1; }
+.biz-card-name { font-size: 15px; font-weight: 700; color: var(--light); }
+.biz-card-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.biz-card-status { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.biz-score { font-family: 'Bebas Neue'; font-size: 22px; color: var(--green); line-height: 1; }
+.biz-platforms { font-size: 10px; color: var(--muted); letter-spacing: 0.5px; }
+.biz-card.active .biz-card-name::after { content: ' ✓'; color: var(--green); }
+
+/* ── Add New Business Card ── */
+.add-biz-card { background: transparent; border: 1px dashed var(--border); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; }
+.add-biz-card:hover { border-color: var(--green); }
+.add-biz-icon { width: 44px; height: 44px; border-radius: 11px; background: rgba(0,200,83,0.06); border: 1px dashed var(--green); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.add-biz-text { font-size: 14px; font-weight: 600; color: var(--silver); }
+.add-biz-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ── Agency Limit Bar ── */
+.agency-bar { background: #0A1A0A; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-top: 12px; display: flex; align-items: center; gap: 10px; }
+.agency-label { font-size: 12px; color: var(--muted); flex: 1; }
+.agency-label strong { color: var(--silver); display: block; font-size: 13px; margin-bottom: 2px; }
+.agency-pips { display: flex; gap: 4px; }
+.pip { width: 12px; height: 12px; border-radius: 3px; background: var(--border); }
+.pip.used { background: var(--green); }
+.pip.active-pip { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+/* ── Dashboard Content ── */
+.dash-hero { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 16px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.card-title { font-family: 'Bebas Neue'; font-size: 21px; letter-spacing: 1.5px; color: var(--green); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.sub { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 650px; }
+.score-wrap { display: flex; align-items: center; gap: 18px; }
+.score-ring { width: 122px; height: 122px; border-radius: 50%; background: conic-gradient(var(--green) 0 0%, var(--border) 0% 100%); display: flex; align-items: center; justify-content: center; position: relative; flex-shrink: 0; }
+.score-ring:after { content: ''; position: absolute; inset: 10px; background: var(--card); border-radius: 50%; }
+.score-number { position: relative; z-index: 2; font-family: 'Bebas Neue'; font-size: 42px; color: var(--green); }
+.score-meta h3 { font-size: 18px; margin-bottom: 6px; }
+.score-meta p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.stat { background: #081008; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.stat-num { font-family: 'Bebas Neue'; font-size: 34px; color: var(--green); line-height: 1; }
+.stat-label { font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+.stat-note { font-size: 12px; color: var(--silver); margin-top: 10px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.platform-list, .activity-list, .task-list { display: flex; flex-direction: column; gap: 10px; }
+.platform-row, .activity-row, .task-row { background: #081008; border: 1px solid var(--border); border-radius: 12px; padding: 13px; display: flex; align-items: center; gap: 12px; }
+.platform-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--dark); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.row-main { flex: 1; }
+.row-title { font-size: 14px; font-weight: 700; color: var(--light); }
+.row-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.badge { font-size: 10px; text-transform: uppercase; letter-spacing: .7px; font-weight: 800; border-radius: 999px; padding: 5px 8px; white-space: nowrap; }
+.live { background: #0A2A0A; color: var(--green); border: 1px solid var(--green); }
+.needs { background: #2A1A00; color: var(--warn); border: 1px solid var(--warn); }
+.off { background: #151f15; color: var(--muted); border: 1px solid var(--border); }
+.error { background: #2A0A0A; color: var(--danger); border: 1px solid var(--danger); }
+.btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.btn { border-radius: 10px; padding: 13px 16px; text-decoration: none; font-weight: 800; font-size: 14px; border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: var(--light); background: transparent; cursor: pointer; transition: all 0.2s; }
+.btn-primary { background: var(--green); color: var(--dark); border-color: var(--green); }
+.btn:hover { border-color: var(--green); color: var(--green); }
+.btn-primary:hover { color: var(--dark); background: #00b84c; }
+.progress-wrap { height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; margin-top: 10px; }
+.progress-bar { height: 100%; background: var(--green); border-radius: 999px; }
+.mini-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--silver); font-weight: 800; margin-top: 16px; }
+.cost-line { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 10px 0; font-size: 13px; }
+.cost-line:last-child { border-bottom: none; }
+.ok { color: var(--green); }
+.warn { color: var(--warn); }
+
+/* ── Mobile Nav ── */
+.mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(7,13,7,.98); border-top: 1px solid var(--border); display: none; grid-template-columns: repeat(4, 1fr); z-index: 200; }
+.mobile-nav a { padding: 10px 4px; text-align: center; text-decoration: none; color: var(--muted); font-size: 11px; }
+.mobile-nav a.active { color: var(--green); }
+
+/* ── Toast — sits above mobile nav on dashboard ── */
+body.logged-in .toast { bottom: 80px; }
+
+/* ── Utility ── */
+.loading-text { color: #587058; font-size: 13px; padding: 4px 0; }
+.manage-link { display: inline-block; margin-top: 10px; font-size: 12px; color: #00C853; text-decoration: none; font-weight: 600; }
+.dash-stack { margin-top: 16px; display: flex; flex-direction: column; gap: 16px; }
+#tasks { margin-top: 16px; }
+.danger-zone { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.delete-account-btn { background: none; border: none; color: #c0392b; font-size: 12px; cursor: pointer; padding: 0; font-family: inherit; text-decoration: underline; }
+
+/* ── Delete Account Modal ── */
+#delete-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
+.delete-modal { background: #0d160d; border: 1px solid #1e2e1e; border-radius: 16px; padding: 32px; max-width: 440px; width: 90%; margin: auto; }
+.delete-modal h3 { color: #fff; margin-bottom: 8px; font-size: 18px; }
+.delete-modal p { color: #7ab87a; font-size: 13px; line-height: 1.6; margin-bottom: 16px; }
+.delete-modal p strong { color: #fff; }
+.danger-text { color: #ff6b6b; }
+.delete-input { width: 100%; background: #081008; border: 1px solid #1e2e1e; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 14px; margin-bottom: 16px; box-sizing: border-box; }
+.delete-actions { display: flex; gap: 10px; }
+.delete-cancel { flex: 1; background: #1e2e1e; border: none; border-radius: 8px; padding: 11px; color: #7ab87a; font-size: 14px; font-weight: 600; cursor: pointer; }
+#delete-confirm-btn { flex: 1; background: #c0392b; border: none; border-radius: 8px; padding: 11px; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; opacity: 0.5; transition: opacity .2s; }
+#delete-error { color: #ff6b6b; font-size: 12px; margin-top: 10px; display: none; }
+
+/* ── Dashboard breakpoints ── */
+@media (max-width: 850px) {
+  .two-col { grid-template-columns: 1fr; }
+}
+@media (max-width: 599px) {
+  .dash-hero { grid-template-columns: 1fr; }
+  .grid { grid-template-columns: repeat(2, 1fr); }
+  .mobile-nav { display: grid; }
+  .biz-bar { flex-direction: column; align-items: stretch; gap: 10px; }
+  .biz-bar-left, .biz-bar-right { width: 100%; justify-content: flex-start; }
+  .score-wrap { align-items: flex-start; }
+  .score-ring { width: 100px; height: 100px; }
+  .score-number { font-size: 34px; }
+}
