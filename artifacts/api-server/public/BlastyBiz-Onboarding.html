@@ -59,13 +59,6 @@ body {
   flex-shrink: 0;
 }
 
-.wiz-logo {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 22px;
-  letter-spacing: 2px;
-  color: var(--green);
-}
-
 .wiz-step-label {
   font-size: 11px;
   font-weight: 600;
@@ -656,6 +649,26 @@ select option { background: var(--dark); }
 .field-focus-glow:focus-within {
   animation: borderGlow 2s ease infinite;
 }
+
+/* ── Extracted inline styles ── */
+.loc-type-btn { flex:1; padding:10px 6px; border-radius:10px; border:1.5px solid var(--border); background:var(--card); color:var(--light); cursor:pointer; font-size:13px; font-weight:600; transition:.2s; }
+.loc-btn-row { display:flex; gap:8px; margin-top:4px; }
+.cat-divider-row { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+.cat-divider-line { flex:1; height:1px; background:var(--border); }
+.cat-divider-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); }
+.cat-note { font-size:12px; color:var(--muted); margin-bottom:14px; }
+.btn-cat-resolve { background:var(--card); border:1px solid var(--green); color:var(--green); margin-top:4px; }
+.days-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:4px; }
+.btn-coming-soon { opacity:0.5; cursor:default; background:var(--card); border:1px solid var(--border); color:var(--muted); }
+.sstat-unit { font-size:14px; }
+.cat-loading-msg { padding:12px; opacity:.7; }
+.cat-qs-wrap { background:rgba(0,200,83,0.05); border:1px solid var(--border); border-radius:12px; padding:16px; }
+.cat-qs-note { font-size:12px; color:var(--muted); margin-bottom:14px; }
+.cat-q-field { margin-bottom:12px; }
+.cat-q-label { display:block; font-size:11px; color:var(--silver); font-weight:700; margin-bottom:5px; }
+.cat-q-input { width:100%; background:var(--dark); border:1px solid var(--border); border-radius:8px; color:var(--light); padding:10px; font-family:inherit; font-size:13px; }
+.cat-q-submit { width:100%; margin-top:4px; padding:12px; border-radius:10px; border:1px solid var(--green); background:transparent; color:var(--green); font-weight:700; font-size:13px; cursor:pointer; }
+
 @media (max-width: 767px) {
   .wizard { padding-top: 56px; }
 }
@@ -765,16 +778,16 @@ select option { background: var(--dark); }
       </div>
 
       <div id="cat-resolve-wrap" style="display:none;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-          <div style="flex:1;height:1px;background:var(--border);"></div>
-          <span style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);">Platform Categories</span>
-          <div style="flex:1;height:1px;background:var(--border);"></div>
+        <div class="cat-divider-row">
+          <div class="cat-divider-line"></div>
+          <span class="cat-divider-label">Platform Categories</span>
+          <div class="cat-divider-line"></div>
         </div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">These are used for copy-paste platforms. AI auto-resolves when backend is live. Override any below.</p>
+        <p class="cat-note">These are used for copy-paste platforms. AI auto-resolves when backend is live. Override any below.</p>
         <div id="platform-cat-list"></div>
       </div>
 
-      <button class="btn-next" id="cat-resolve-btn" onclick="resolveCats()" style="background:var(--card);border:1px solid var(--green);color:var(--green);margin-top:4px;" disabled>
+      <button class="btn-next btn-cat-resolve" id="cat-resolve-btn" onclick="resolveCats()" disabled>
         🔍 Find My Categories
       </button>
     </div>
@@ -787,10 +800,10 @@ select option { background: var(--dark); }
 
       <div class="field">
         <label>Business Type</label>
-        <div style="display:flex;gap:8px;margin-top:4px;">
-          <button class="loc-type-btn active" id="lbt-physical" onclick="setOnboardingLoc('physical')" style="flex:1;padding:10px 6px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--light);cursor:pointer;font-size:13px;font-weight:600;transition:.2s;">📍 Has a Location</button>
-          <button class="loc-type-btn" id="lbt-online" onclick="setOnboardingLoc('online')" style="flex:1;padding:10px 6px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--light);cursor:pointer;font-size:13px;font-weight:600;transition:.2s;">🌐 Online Only</button>
-          <button class="loc-type-btn" id="lbt-both" onclick="setOnboardingLoc('both')" style="flex:1;padding:10px 6px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--light);cursor:pointer;font-size:13px;font-weight:600;transition:.2s;">🌍 Both</button>
+        <div class="loc-btn-row">
+          <button class="loc-type-btn active" id="lbt-physical" onclick="setOnboardingLoc('physical')">📍 Has a Location</button>
+          <button class="loc-type-btn" id="lbt-online" onclick="setOnboardingLoc('online')">🌐 Online Only</button>
+          <button class="loc-type-btn" id="lbt-both" onclick="setOnboardingLoc('both')">🌍 Both</button>
         </div>
       </div>
 
@@ -821,7 +834,7 @@ select option { background: var(--dark); }
       <div id="hours-section">
         <div class="field">
           <label>Days Open</label>
-          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:4px;" id="days-grid">
+          <div class="days-grid" id="days-grid">
             <button class="day-btn selected" onclick="toggleDay(this,'Mon')">Mon</button>
             <button class="day-btn selected" onclick="toggleDay(this,'Tue')">Tue</button>
             <button class="day-btn selected" onclick="toggleDay(this,'Wed')">Wed</button>
@@ -897,7 +910,7 @@ select option { background: var(--dark); }
             <a class="connect-setup" href="https://business.google.com/create" target="_blank" rel="noopener">No profile yet? Create one →</a>
             <span class="connect-tag tag-auto">Auto-Post</span>
           </div>
-          <button class="connect-btn" style="opacity:0.5;cursor:default;background:var(--card);border:1px solid var(--border);color:var(--muted);" onclick="return false;">Coming Soon</button>
+          <button class="connect-btn btn-coming-soon" onclick="return false;">Coming Soon</button>
         </div>
 
         <div class="connect-card" id="cc-facebook">
@@ -908,7 +921,7 @@ select option { background: var(--dark); }
             <a class="connect-setup" href="https://www.facebook.com/pages/create" target="_blank" rel="noopener">No Page yet? Create one →</a>
             <span class="connect-tag tag-auto">Auto-Post</span>
           </div>
-          <button class="connect-btn" style="opacity:0.5;cursor:default;background:var(--card);border:1px solid var(--border);color:var(--muted);" onclick="return false;">Coming Soon</button>
+          <button class="connect-btn btn-coming-soon" onclick="return false;">Coming Soon</button>
         </div>
 
         <div class="connect-card" id="cc-instagram">
@@ -919,7 +932,7 @@ select option { background: var(--dark); }
             <a class="connect-setup" href="https://business.instagram.com" target="_blank" rel="noopener">Convert to Business account →</a>
             <span class="connect-tag tag-auto">Auto-Post</span>
           </div>
-          <button class="connect-btn" style="opacity:0.5;cursor:default;background:var(--card);border:1px solid var(--border);color:var(--muted);" onclick="return false;">Coming Soon</button>
+          <button class="connect-btn btn-coming-soon" onclick="return false;">Coming Soon</button>
         </div>
 
         <div class="connect-card" id="cc-nextdoor">
@@ -1038,7 +1051,7 @@ select option { background: var(--dark); }
             <div class="sstat-lbl">Platforms</div>
           </div>
           <div class="sstat">
-            <div class="sstat-num">2<span style="font-size:14px">min</span></div>
+            <div class="sstat-num">2<span class="sstat-unit">min</span></div>
             <div class="sstat-lbl">To Post All</div>
           </div>
           <div class="sstat">
@@ -1394,7 +1407,7 @@ async function resolveCats(followUpAnswers) {
 
   document.getElementById('cat-resolve-wrap').style.display = 'block';
   const list = document.getElementById('platform-cat-list');
-  list.innerHTML = '<p style="padding:12px;opacity:.7">Picking best categories with AI…</p>';
+  list.innerHTML = '<p class="cat-loading-msg">Picking best categories with AI…</p>';
 
   const platformCatLists = _buildPlatformCatLists(ctx.locationType);
   const body = { ...ctx, platformCatLists };
@@ -1418,17 +1431,15 @@ async function resolveCats(followUpAnswers) {
     const questions = data.followUpQuestions.slice(0, 3);
     window._fuContext = { questions };
     list.innerHTML = `
-      <div style="background:rgba(0,200,83,0.05);border:1px solid var(--border);border-radius:12px;padding:16px;">
-        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">A couple quick questions to get you better matches:</p>
+      <div class="cat-qs-wrap">
+        <p class="cat-qs-note">A couple quick questions to get you better matches:</p>
         ${questions.map((q, i) => `
-          <div style="margin-bottom:12px;">
-            <label style="display:block;font-size:11px;color:var(--silver);font-weight:700;margin-bottom:5px;">${q}</label>
-            <input type="text" id="fuq-${i}" placeholder="Your answer…"
-              style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;color:var(--light);padding:10px;font-family:inherit;font-size:13px;" />
+          <div class="cat-q-field">
+            <label class="cat-q-label">${q}</label>
+            <input type="text" id="fuq-${i}" placeholder="Your answer…" class="cat-q-input" />
           </div>
         `).join('')}
-        <button onclick="submitFollowUpAnswers()"
-          style="width:100%;margin-top:4px;padding:12px;border-radius:10px;border:1px solid var(--green);background:transparent;color:var(--green);font-weight:700;font-size:13px;cursor:pointer;">
+        <button onclick="submitFollowUpAnswers()" class="cat-q-submit">
           Submit Answers →
         </button>
       </div>`;

@@ -25,6 +25,9 @@ a { color: inherit; text-decoration: none; }
   --border: #1E2E1E;
   --muted:  #587058;
   --green2: #00B04A;
+  --danger: #FF4444;
+  --warn:   #FFA726;
+  --blue:   #54A8FF;
 
   /* Spacing tokens */
   --section-v: 60px;   /* vertical section padding — mobile */
