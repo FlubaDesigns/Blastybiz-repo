@@ -114,7 +114,7 @@ td      { font-size: var(--fs-base); color: var(--light); padding: 12px; border-
 
 /* ── Layout Primitives ───────────────────────────────── */
 /* layout row wrapper — wrap any split/stack inside a .row */
-.row        { width: 100%; margin-bottom: 10px; }
+.row        { width: 100%; }
 /* 50/50 two-column */
 .split      { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 /* three equal columns */
@@ -136,7 +136,7 @@ td      { font-size: var(--fs-base); color: var(--light); padding: 12px; border-
 /* side-by-side form fields */
 .form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-md); margin-bottom: var(--gap-lg); }
 
-/* row gap — no longer used; spacing handled by .row margin-bottom */
+/* row gap — spacing handled per-section */
 .row-gap { margin-top: 0; }
 /* full-bleed elements break out of the gutter */
 .bleed-out {
@@ -383,7 +383,7 @@ nav {
 body.has-site-header section { padding: 0; }
 .section-label { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; font-weight: 600; margin-top: 8px; margin-bottom: 12px; }
 .powered-band { padding: 32px var(--gutter); max-width: 600px; margin: 0 auto; }
-body.has-site-header section h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 56px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-top: 0; margin-bottom: 16px; }
+body.has-site-header section h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 56px); line-height: 1; letter-spacing: 1px; color: var(--light); margin: 0; }
 body.has-site-header section h2 span { color: var(--green); }
 body.has-site-header section > p { font-size: 16px; color: var(--silver); line-height: 1.7; font-weight: 300; }
 
