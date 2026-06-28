@@ -13,6 +13,7 @@ auth.authStateReady()
     onAuthStateChanged(auth, (user) => {
       if (user) {
         clearTimeout(_safetyTimer);
+        document.body.classList.add('logged-in');
         document.body.style.visibility = 'visible';
       } else {
         // Wait for any in-flight OAuth redirect or token refresh before evicting

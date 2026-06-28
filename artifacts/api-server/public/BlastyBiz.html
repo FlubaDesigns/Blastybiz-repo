@@ -7,6 +7,8 @@
 <link rel="stylesheet" href="blastybiz-global.css?v=97" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>body{visibility:hidden}</style>
+<script type="module" src="./auth-guard.js"></script>
 <style>
   /* ── TABS ── */
   .tabs {
@@ -868,8 +870,9 @@
 
 </style>
 </head>
-<body class="logged-in has-site-header">
+<body class="has-site-header">
 <div id="site-header-inject"></div>
+<div class="main">
 <div class="main-inner">
 
 <!-- TABS -->
@@ -4050,6 +4053,7 @@ window._saveScheduleToFirestore = async function(sched) {
 </div>
 
 </div><!-- /.main-inner -->
+</div><!-- /.main -->
 <div id="site-footer-inject"></div>
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 
