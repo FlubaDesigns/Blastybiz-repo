@@ -4,43 +4,11 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="stylesheet" href="blastybiz-global.css?v=92" />
+<link rel="stylesheet" href="blastybiz-global.css?v=99" />
 <title>BlastyBiz — Publishing Status</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<style>
-:root {
-  --green:  #00C853;
-  --dark:   #070D07;
-  --card:   #0D160D;
-  --silver: #7AB87A;
-  --light:  #EEF7EE;
-  --border: #1E2E1E;
-  --muted:  #587058;
-  --green2: #00B04A;
-  --danger: #FF4444;
-  --warn:   #FFA726;
-  --blue:   #54A8FF;
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;}
-body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;min-height:100dvh;}
-
-.header{
-  padding:16px 20px;
-  display:flex;align-items:center;justify-content:space-between;
-  border-bottom:1px solid var(--border);
-  background:rgba(13,22,13,0.95);
-  position:sticky;top:0;z-index:10;
-  backdrop-filter:blur(10px);
-}
-.header-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--green);}
-.header-back{
-  font-size:13px;color:var(--muted);text-decoration:none;
-  display:flex;align-items:center;gap:5px;transition:color 0.2s;
-}
-.header-back:hover{color:var(--silver);}
-
-.main{max-width:600px;margin:0 auto;padding:24px 20px 80px;}
+<style>@media(max-width:599px){.main{padding-top:56px}}
+.main{max-width:600px;margin:0 auto;padding:120px 20px 80px;}
 
 .page-title{
   font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:1px;
@@ -177,10 +145,8 @@ body{background:var(--dark);color:var(--light);font-family:'DM Sans',sans-serif;
 </head>
 <body>
 
-<div class="header">
-  <div class="header-logo">BlastyBiz</div>
-  <a href="BlastyBiz-Dashboard.html" class="header-back">← Dashboard</a>
-</div>
+<div id="site-header-inject"></div>
+<script>fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('site-header-inject').innerHTML=html;});</script>
 
 <div class="main">
   <div class="page-title">Publishing Status</div>
@@ -397,5 +363,7 @@ onAuthStateChanged(auth, async (user) => {
 });
 });
 </script>
+<div id="site-footer-inject"></div>
+<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 </body>
 </html>
