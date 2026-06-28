@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="blastybiz-global.css?v=92" />
+<link rel="stylesheet" href="blastybiz-global.css?v=97" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>
@@ -83,7 +83,7 @@
     border-bottom: 1px solid var(--border);
     background: var(--dark);
     position: sticky;
-    top: 73px;
+    top: 120px;
     z-index: 99;
   }
 
@@ -740,16 +740,9 @@
 
 </style>
 </head>
-<body>
-
-<!-- HEADER -->
-<header>
-  <div class="logo">
-    BlastyBiz
-    <span>Lock. Load. Blast.</span>
-  </div>
-  <button class="profile-btn" onclick="showTab('profile')" title="Profile">👤</button>
-</header>
+<body class="logged-in has-site-header">
+<div id="site-header-inject"></div>
+<div class="main-inner">
 
 <!-- TABS -->
 <div class="tabs">
@@ -3954,5 +3947,16 @@ window._saveScheduleToFirestore = async function(sched) {
   </div>
 </div>
 
+</div><!-- /.main-inner -->
+
+<script>
+fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){
+  document.getElementById('site-header-inject').innerHTML=html;
+  function playSound(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)();function ck(t,f){var b=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.03),ctx.sampleRate),D=b.getChannelData(0);for(var i=0;i<D.length;i++){var s=i/ctx.sampleRate;D[i]=(Math.random()*2-1)*Math.exp(-s/0.004)*1.2+Math.sin(2*Math.PI*f*s)*Math.exp(-s/0.005)*0.3;}var src=ctx.createBufferSource();src.buffer=b;var g=ctx.createGain();g.gain.setValueAtTime(1,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.03);src.connect(g);g.connect(ctx.destination);src.start(t);}ctx.resume().then(function(){var n=ctx.currentTime;ck(n+0.01,220);ck(n+0.30,160);}).catch(function(){});}catch(e){}}
+  function runAnim(){var tl=document.getElementById('site-header-tagline');if(tl){tl.style.animation='none';void tl.offsetWidth;tl.style.animation='tagline-bolt 0.55s cubic-bezier(0.25,0.46,0.45,0.94) 0s both';}}
+  runAnim();
+  document.addEventListener('pointerdown',function onPD(){document.removeEventListener('pointerdown',onPD);playSound();runAnim();},{once:true});
+});
+</script>
 </body>
 </html>
