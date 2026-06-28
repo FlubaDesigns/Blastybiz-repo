@@ -25,7 +25,7 @@
   .icon-btn:hover{border-color:var(--green);color:var(--green)}
 
   /* ── BUSINESS SWITCHER BAR ── */
-  .biz-bar{background:rgba(13,22,13,0.95);border-bottom:1px solid var(--border);padding:10px 20px;position:sticky;top:193px;z-index:99;display:flex;align-items:center;gap:10px;backdrop-filter:blur(8px)}
+  .biz-bar{background:rgba(13,22,13,0.95);border-bottom:1px solid var(--border);padding:10px 20px;position:sticky;top:120px;z-index:99;display:flex;align-items:center;gap:10px;backdrop-filter:blur(8px)}
   .biz-active{display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;background:var(--dark);border:1px solid var(--green);border-radius:10px;padding:10px 14px;transition:all 0.2s}
   .biz-active:hover{background:#0A1A0A}
   .biz-avatar{width:36px;height:36px;border-radius:9px;background:rgba(0,200,83,0.1);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
@@ -138,8 +138,7 @@
     .top-actions .hide-mobile{display:none}
     .mobile-nav{display:grid}
     body{padding-bottom:78px;padding-top:56px}
-    body > header{top:56px}
-    .biz-bar{top:129px}
+    .biz-bar{top:56px}
     .score-wrap{align-items:flex-start}
     .score-ring{width:100px;height:100px}
     .score-number{font-size:34px}
@@ -149,15 +148,6 @@
 </head>
 <body class="logged-in">
 <div id="site-header-inject"></div>
-
-<!-- HEADER -->
-<header>
-  <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Command Dashboard</span></a>
-  <div class="top-actions">
-    <a class="icon-btn hide-mobile" href="BlastyBiz.html">Create Listing</a>
-    <button class="icon-btn" onclick="auth.signOut().then(()=>{ window.location.href='BlastyBiz-Login.html'; })">Log Out</button>
-  </div>
-</header>
 
 <!-- BUSINESS SWITCHER BAR -->
 <div class="biz-bar">
