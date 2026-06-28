@@ -380,7 +380,7 @@ nav {
 .plat-pill:hover { border-color: var(--green); color: var(--light); }
 
 /* ── Sections (public pages only — body.has-site-header) ─── */
-body.has-site-header section { padding: var(--section-v) var(--gutter); }
+body.has-site-header section { padding: var(--section-v) 0; }
 .section-label { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; font-weight: 600; margin-top: 8px; margin-bottom: 12px; }
 .powered-band { padding: 32px var(--gutter); max-width: 600px; margin: 0 auto; }
 body.has-site-header section h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 56px); line-height: 1; letter-spacing: 1px; color: var(--light); margin-bottom: 16px; }
@@ -550,7 +550,7 @@ html .contact-img-col   { display: none; }
 @media (min-width: 600px) {
   :root                      { --section-v: 80px; }
   .site-header-tagline       { height: 5px; margin-left: 10px; padding: 0; }
-  body.has-site-header section { max-width: 720px; padding: var(--section-v) var(--gutter); }
+  body.has-site-header section { padding: var(--section-v) 0; }
   html nav                   { padding: 18px 48px; }
   .site-header               { padding: 16px 48px; }
   html .wiz-header           { padding: 20px 48px 0; }
@@ -586,18 +586,7 @@ html .contact-img-col   { display: none; }
                             background: linear-gradient(90deg, transparent, #00C853 20%, #00C853 80%, transparent);
                             border-radius: 2px; }
 
-  /* Platform strip — 98% wide on tablet/desktop */
-  html .platform-strip--wide { max-width: none; }
-
-  /* Pricing — 98% wide, 3 equal columns */
-  html .pricing-section  { max-width: none; }
-
-  /* FAQ + CTA — 98% wide */
-  html .faq-section       { max-width: none; }
-  html .cta-section--wide { max-width: none; }
-
-  /* Reviews — 98% wide, 3 equal columns */
-  html .reviews-section  { max-width: none; }
+  /* Reviews */
   html .reviews-section .testimonials { grid-template-columns: 1fr 1fr 1fr; }
 
   /* Section splits — 50/50, 1% margin all sides */
@@ -617,7 +606,7 @@ html .contact-img-col   { display: none; }
 /* ── Desktop (1100px+) ───────────────────────────────────── */
 @media (min-width: 1100px) {
   :root                      { --section-v: 100px; }
-  body.has-site-header section { max-width: 1240px; padding: var(--section-v) var(--gutter); }
+  body.has-site-header section { padding: var(--section-v) 0; }
   html .desk-only            { display: block !important; }
   html nav                   { padding: 18px 80px; }
   .site-header               { padding: 16px 60px; }
