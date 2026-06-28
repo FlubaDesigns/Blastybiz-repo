@@ -267,6 +267,7 @@ td      { font-size: var(--fs-base); color: var(--light); padding: 12px; border-
   width: 100%;
 }
 body.home-page .site-subheader { display: flex; }
+body.home-page .site-header    { height: 156px; }
 .site-subheader .hero-badge { margin-bottom: 0; animation: none; }
 
 /* pages with site header — hide old nav bar, keep mobile menu */
