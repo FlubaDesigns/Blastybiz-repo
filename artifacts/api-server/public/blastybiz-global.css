@@ -556,7 +556,9 @@ html .contact-img-col   { display: none; }
   .site-header               { padding: 16px 48px; }
   html .wiz-header           { padding: 20px 48px 0; }
   html .biz-bar              { padding: 10px 48px; }
-  html .main-inner           { padding-left: 48px; padding-right: 48px; }
+  html .main-inner           { padding-left: 48px; padding-right: 48px; padding-top: 24px; padding-bottom: 24px; }
+  html .hero .split-2-1     { align-items: start; }
+  html .btn-hero             { margin: 0; }
   html .page-hero            { padding-left: 48px; padding-right: 48px; max-width: 840px; }
   html .text-section         { max-width: 840px; padding-left: 48px; padding-right: 48px; }
   html .contact-grid         { display: grid; grid-template-columns: 1fr 1fr; }
@@ -613,7 +615,8 @@ html .contact-img-col   { display: none; }
   html nav                   { padding: 18px 80px; }
   .site-header               { padding: 16px 60px; }
   html .biz-bar              { padding: 10px 60px; }
-  html .main-inner           { padding-left: 80px; padding-right: 80px; }
+  html .main-inner           { padding-left: 80px; padding-right: 80px; padding-top: 32px; padding-bottom: 32px; }
+  html .hero .split-2-1     { align-items: start; }
   html .page-hero            { padding-left: 80px; padding-right: 80px; max-width: 1200px; text-align: left; }
   html .text-section         { max-width: 960px; padding-left: 80px; padding-right: 80px; }
   html footer                { padding-left: 80px; padding-right: 80px; }
