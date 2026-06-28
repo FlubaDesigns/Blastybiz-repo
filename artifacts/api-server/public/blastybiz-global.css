@@ -152,19 +152,18 @@ td      { font-size: var(--fs-base); color: var(--light); padding: 12px; border-
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 200;
-  height: 120px;
   background: #000;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  overflow: hidden;
   border-bottom: 1px solid rgba(0,200,83,0.18);
 }
+
 .sh-nav-row {
   display: flex;
   align-items: center;
-  flex: 1;
   width: 100%;
+  padding: 10px 0;
 }
 
 /* left 50% — BB icon + wordmark + tagline */
@@ -267,16 +266,11 @@ td      { font-size: var(--fs-base); color: var(--light); padding: 12px; border-
   width: 100%;
 }
 body.home-page .site-subheader { display: flex; }
-body.home-page .site-header    { height: 156px; }
 .site-subheader .hero-badge { margin-bottom: 0; animation: none; }
 
 /* pages with site header — hide old nav bar, keep mobile menu */
-body.has-site-header { padding-top: 120px; }
-body.home-page.has-site-header { padding-top: 156px; }
-body.home-page .main-inner { padding-top: 10px; padding-bottom: 0; }
 body.has-site-header nav { display: none; }
-body.has-site-header .mobile-menu { top: 120px; }
-body.home-page.has-site-header .mobile-menu { top: 156px; }
+body.home-page .main-inner { padding-top: 10px; padding-bottom: 0; }
 
 /* auth state — JS adds body.logged-in on sign-in, removes on sign-out */
 #sh-logout-btn   { display: none; }
@@ -301,7 +295,7 @@ body.logged-in .mobile-menu #menu-login-link { display: none; }
   html { font-size: 17px; }
   input, textarea, select, button { font-size: 16px; }
   label { font-size: 14px; }
-  .site-header { height: 56px; gap: 0; padding: 0 0 0 4px; }
+  .site-header { gap: 0; padding: 0; }
   #sh-left { padding-left: 0; }
   .site-header-icon { height: 48px; width: 48px; }
   .site-header-wordmark { height: 28px; margin-left: 7px; }
@@ -311,8 +305,7 @@ body.logged-in .mobile-menu #menu-login-link { display: none; }
   #sh-right .sh-nav-cta { display: none; }
   .sh-hamburger { display: flex; }
   .site-subheader { display: none; }
-  body.has-site-header { padding-top: 56px; }
-  body.has-site-header .mobile-menu { top: 56px; }
+  body.has-site-header .mobile-menu { top: var(--header-h, 56px); }
   body.login-page { padding-top: 130px; }
 }
 

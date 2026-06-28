@@ -42,4 +42,17 @@ function closeMenu(){
   var m=document.getElementById('mobile-menu');
   if(m)m.classList.remove('open');
 }
+function _setHeaderOffset(){
+  var h=document.querySelector('.site-header');
+  if(!h)return;
+  var px=h.offsetHeight+'px';
+  document.body.style.paddingTop=px;
+  document.documentElement.style.setProperty('--header-h',px);
+}
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',_setHeaderOffset);
+}else{
+  _setHeaderOffset();
+}
+window.addEventListener('resize',_setHeaderOffset);
 </script>
