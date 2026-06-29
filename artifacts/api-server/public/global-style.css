@@ -304,6 +304,16 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
   transform: translateY(-1px);
 }
 
+/* Ghost variant */
+.btn__ghost {
+  color: var(--silver);
+  font-size: 14px;
+  font-weight: 500;
+  gap: 6px;
+  transition: color 0.2s;
+}
+.btn__ghost:hover { color: var(--light); }
+
 
 /* ── HOME ──────────────────────────────────────────────────── */
 
