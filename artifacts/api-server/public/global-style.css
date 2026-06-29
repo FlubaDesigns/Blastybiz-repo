@@ -274,19 +274,27 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 
 /* ── BUTTONS ───────────────────────────────────────────────── */
 
-.btn__primary {
+/* Base — shared by every button */
+.btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  border: none;
+  border-radius: 12px;
+  text-decoration: none;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+/* Primary variant */
+.btn__primary {
   background: var(--green);
   color: var(--dark);
   font-size: 16px;
   font-weight: 700;
   padding: 16px 36px;
-  border-radius: 12px;
-  text-decoration: none;
-  transition: all 0.2s;
   width: 100%;
   max-width: 320px;
   margin: 0 auto;
