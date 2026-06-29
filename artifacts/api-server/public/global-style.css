@@ -311,11 +311,6 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 }
 
 .home__hero {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   padding: 0 24px 40px;
   position: relative;
   overflow: hidden;
