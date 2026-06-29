@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
 </head>
 <body class="has-site-header home-page">
-<div id="site-header-inject"></div>
+<div id="header__inject"></div>
 <div class="main"><div class="main-inner">
 
 <header class="hero row">
@@ -301,8 +301,8 @@ const app = initializeApp({ apiKey:"AIzaSyDJbLFQLVbMFE8LG22mN4JVmSBHOlimFUs",aut
 const db = getFirestore(app);
 const auth = getAuth(app);
 function setAuthUI(loggedIn) {
-  ['nav-login-link','menu-login-link'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'none':''; });
-  ['nav-logout-btn','menu-logout-btn'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'':'none'; });
+  ['header__nav-login','header__mobile-login'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'none':''; });
+  ['header__nav-logout','header__mobile-logout'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'':'none'; });
 }
 setAuthUI(localStorage.getItem('bb_auth')==='1');
 onAuthStateChanged(auth, user => { document.body.classList.toggle('logged-in',!!user); localStorage.setItem('bb_auth',user?'1':'0'); setAuthUI(!!user); });
@@ -316,7 +316,7 @@ getDoc(doc(db,'settings','pricing')).then(snap => {
 </script>
 <script>
 fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){
-  document.getElementById('site-header-inject').innerHTML=html;
+  document.getElementById('header__inject').innerHTML=html;
   function _setHeaderOffset(){
     var h=document.querySelector('.header');
     if(!h)return;
@@ -325,18 +325,18 @@ fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){
     document.documentElement.style.setProperty('--header-h',px);
   }
   window.toggleMenu=function(){
-    var m=document.getElementById('mobile-menu');
+    var m=document.getElementById('header__mobile-menu');
     if(m)m.classList.toggle('open');
   };
   window.closeMenu=function(){
-    var m=document.getElementById('mobile-menu');
+    var m=document.getElementById('header__mobile-menu');
     if(m)m.classList.remove('open');
   };
   _setHeaderOffset();
   window.addEventListener('load',_setHeaderOffset);
   window.addEventListener('resize',_setHeaderOffset);
   function playSound(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)();function ck(t,f){var b=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.03),ctx.sampleRate),D=b.getChannelData(0);for(var i=0;i<D.length;i++){var s=i/ctx.sampleRate;D[i]=(Math.random()*2-1)*Math.exp(-s/0.004)*1.2+Math.sin(2*Math.PI*f*s)*Math.exp(-s/0.005)*0.3;}var src=ctx.createBufferSource();src.buffer=b;var g=ctx.createGain();g.gain.setValueAtTime(1,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.03);src.connect(g);g.connect(ctx.destination);src.start(t);}ctx.resume().then(function(){var n=ctx.currentTime;ck(n+0.01,220);ck(n+0.30,160);}).catch(function(){});}catch(e){}}
-  function runAnim(){var tl=document.getElementById('site-header-tagline');if(tl){tl.style.animation='none';void tl.offsetWidth;tl.style.animation='tagline-bolt 0.55s cubic-bezier(0.25,0.46,0.45,0.94) 0s both';}}
+  function runAnim(){var tl=document.getElementById('header__logo-tagline');if(tl){tl.style.animation='none';void tl.offsetWidth;tl.style.animation='tagline-bolt 0.55s cubic-bezier(0.25,0.46,0.45,0.94) 0s both';}}
   runAnim();
   document.addEventListener('pointerdown',function onPD(){document.removeEventListener('pointerdown',onPD);playSound();runAnim();},{once:true});
 });

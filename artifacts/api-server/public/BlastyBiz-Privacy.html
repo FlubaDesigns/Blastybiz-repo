@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="blastybiz-global.css?v=94"/>
 </head>
 <body class="has-site-header">
-<div id="site-header-inject"></div>
+<div id="header__inject"></div>
 <div class="main"><div class="main-inner">
 
 <div class="breadcrumb"><a href="BlastyBiz-Home.html">Home</a> <span>›</span> Privacy Policy</div>
@@ -114,15 +114,15 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 const auth = getAuth(initializeApp({ apiKey:"AIzaSyDJbLFQLVbMFE8LG22mN4JVmSBHOlimFUs",authDomain:"blastybiz-9523e.firebaseapp.com",projectId:"blastybiz-9523e" }));
 function setAuthUI(loggedIn) {
-  ['nav-login-link','menu-login-link'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'none':''; });
-  ['nav-logout-btn','menu-logout-btn'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'':'none'; });
+  ['header__nav-login','header__mobile-login'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'none':''; });
+  ['header__nav-logout','header__mobile-logout'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'':'none'; });
 }
 setAuthUI(localStorage.getItem('bb_auth')==='1');
 onAuthStateChanged(auth, user => { document.body.classList.toggle('logged-in',!!user); localStorage.setItem('bb_auth',user?'1':'0'); setAuthUI(!!user); });
 window.doSignOut = () => { localStorage.setItem('bb_auth','0'); signOut(auth).finally(()=>{ window.location.href='BlastyBiz-Login.html'; }); };
 </script>
 <script>
-fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('site-header-inject').innerHTML=html;(function(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)();function ck(t,f){var b=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.03),ctx.sampleRate),D=b.getChannelData(0);for(var i=0;i<D.length;i++){var s=i/ctx.sampleRate;D[i]=(Math.random()*2-1)*Math.exp(-s/0.004)*1.2+Math.sin(2*Math.PI*f*s)*Math.exp(-s/0.005)*0.3;}var src=ctx.createBufferSource();src.buffer=b;var g=ctx.createGain();g.gain.setValueAtTime(1,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.03);src.connect(g);g.connect(ctx.destination);src.start(t);}var n=ctx.currentTime;ck(n+0.01,220);ck(n+0.30,160);}catch(e){}var tl=document.getElementById('site-header-tagline');if(tl){tl.style.animation='tagline-bolt 0.55s cubic-bezier(0.25,0.46,0.45,0.94) 0s both';}})();});
+fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('header__inject').innerHTML=html;(function(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)();function ck(t,f){var b=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.03),ctx.sampleRate),D=b.getChannelData(0);for(var i=0;i<D.length;i++){var s=i/ctx.sampleRate;D[i]=(Math.random()*2-1)*Math.exp(-s/0.004)*1.2+Math.sin(2*Math.PI*f*s)*Math.exp(-s/0.005)*0.3;}var src=ctx.createBufferSource();src.buffer=b;var g=ctx.createGain();g.gain.setValueAtTime(1,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.03);src.connect(g);g.connect(ctx.destination);src.start(t);}var n=ctx.currentTime;ck(n+0.01,220);ck(n+0.30,160);}catch(e){}var tl=document.getElementById('header__logo-tagline');if(tl){tl.style.animation='tagline-bolt 0.55s cubic-bezier(0.25,0.46,0.45,0.94) 0s both';}})();});
 </script>
 </body>
 </html>

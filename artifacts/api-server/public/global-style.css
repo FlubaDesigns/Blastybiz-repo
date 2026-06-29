@@ -157,10 +157,10 @@ body.home-page .header__badge-bar { display: flex; }
 body.has-site-header nav:not(.header__nav):not(.header__mobile-menu) { display: none; }
 
 /* Auth state — JS adds/removes body.logged-in */
-#sh-logout-btn  { display: none; }
-#sh-create-link { display: none; }
-#menu-login-link { display: none; }
-#menu-logout-btn {
+#header__nav-logout  { display: none; }
+#header__nav-create { display: none; }
+#header__mobile-login { display: none; }
+#header__mobile-logout {
   display: none;
   background: none;
   border: none;
@@ -172,12 +172,12 @@ body.has-site-header nav:not(.header__nav):not(.header__mobile-menu) { display: 
   width: 100%;
   padding: 0;
 }
-body.logged-in #sh-login-link               { display: none; }
-body.logged-in #sh-logout-btn               { display: inline; }
-body.logged-in #sh-create-link              { display: inline; }
-body.logged-in #menu-logout-btn             { display: block; }
-.header__mobile-menu #menu-login-link            { display: block; }
-body.logged-in .header__mobile-menu #menu-login-link { display: none; }
+body.logged-in #header__nav-login               { display: none; }
+body.logged-in #header__nav-logout               { display: inline; }
+body.logged-in #header__nav-create              { display: inline; }
+body.logged-in #header__mobile-logout             { display: block; }
+.header__mobile-menu #header__mobile-login            { display: block; }
+body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 
 /* Mobile slide-down menu */
 .header__mobile-menu {

@@ -664,7 +664,7 @@ select option { background: var(--dark); }
 <script type="module" src="./auth-guard.js"></script>
 </head>
 <body>
-<div id="site-header-inject"></div>
+<div id="header__inject"></div>
 <canvas id="canvas"></canvas>
 
 <div class="wizard">
@@ -1625,7 +1625,7 @@ window.nextStep = async function() {
   if (origNextStep) origNextStep();
 };
 </script>
-<script>fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('site-header-inject').innerHTML=html;});</script>
+<script>fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('header__inject').innerHTML=html;});</script>
 <div id="site-footer-inject"></div>
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 </body>
