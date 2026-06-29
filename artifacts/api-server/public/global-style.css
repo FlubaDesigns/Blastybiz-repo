@@ -215,14 +215,15 @@ body.logged-in .header__mobile-menu #menu-login-link { display: none; }
 
 /* ── HEADER — Mobile (≤599px) ───────────────────────────── */
 @media (max-width: 599px) {
-  .header__nav-row      { padding: 0 12px; }
-  .header__logo-icon    { height: 48px; width: 48px; }
-  .header__logo-wordmark { height: 14px; margin-left: 7px; }
-  .header__logo-tagline  { height: 8px; }
+  .header__nav-row       { padding: 0 12px; }
+  .header__logo-icon     { height: 40px !important; width: 40px !important; }
+  .header__logo-brand    { margin-left: 6px; }
+  .header__logo-wordmark { height: 11px !important; width: auto !important; margin-left: 0; }
+  .header__logo-tagline  { height: 7px !important; width: auto !important; }
   .header__nav-link,
-  .header__nav-cta      { display: none; }
-  .header__hamburger    { display: flex; }
-  .header__badge-bar    { display: none !important; }
+  .header__nav-cta       { display: none; }
+  .header__hamburger     { display: flex; }
+  .header__badge-bar     { display: none !important; }
 }
 
 /* ── HEADER — Tablet (600px – 1099px) ──────────────────── */
