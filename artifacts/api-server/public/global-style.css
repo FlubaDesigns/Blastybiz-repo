@@ -398,10 +398,13 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 
 .home__hero-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 12px;
   margin-top: 48px;
   width: 100%;
+}
+@media (min-width: 600px) {
+  .home__hero-stats { grid-template-columns: repeat(3, 1fr); }
 }
 .home__hero-stat {
   background: var(--card);
