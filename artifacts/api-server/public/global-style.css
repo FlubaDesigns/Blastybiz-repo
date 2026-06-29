@@ -506,7 +506,6 @@ main.home                { width: 100%; }
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
-  margin-top: 48px;
   width: 100%;
   min-width: 0;
 }
