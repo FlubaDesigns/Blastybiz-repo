@@ -357,6 +357,8 @@ main.home                { width: 100%; }
   font-size: 16px;
   font-weight: 700;
   padding: 16px 36px;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 .btn__primary:hover {
   background: var(--green2);
