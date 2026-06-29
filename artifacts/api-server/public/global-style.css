@@ -9,6 +9,9 @@
   --green:      #00c853;
   --green-hover: #00e676;
   --green-rgb:  0, 200, 83;
+  --light:      #EEF7EE;
+  --silver:     #7AB87A;
+  --muted:      #587058;
   --gap-md:     12px;
   --gap-lg:     16px;
 }
@@ -257,6 +260,24 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 /* ── HOME ──────────────────────────────────────────────────── */
 
 .home {
+}
+
+/* Hero text column — left grid cell, no styles yet */
+.home__hero-text {}
+
+/* Hero headline */
+.home__hero h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(36px, 6vw, 62px);
+  line-height: 0.95;
+  letter-spacing: 2px;
+  color: var(--light);
+  margin: 0 0 8px 0;
+  animation: fadeUp 0.6s 0.1s ease both;
+}
+.home__hero h1 span {
+  color: var(--green);
+  display: block;
 }
 
 /* Hero — full-width centered section */
