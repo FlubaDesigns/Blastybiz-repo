@@ -7,27 +7,27 @@
         <img class="header__logo-tagline" id="site-header-tagline" src="img/blastybiz-tagline.png?v=2" alt="Lock. Load. Blast." />
       </div>
     </a>
-    <nav class="header__nav">
+    <div class="header__nav">
       <a class="header__nav-link" href="BlastyBiz-About.html">About</a>
       <a class="header__nav-link" href="BlastyBiz-Contact.html">Contact</a>
       <a class="header__nav-link" id="sh-create-link" href="BlastyBiz.html">Create Listing</a>
       <a class="header__nav-link" id="sh-login-link" href="BlastyBiz-Login.html">Log In</a>
-      <button class="header__nav-link sh-logout-btn" id="sh-logout-btn" onclick="if(typeof doSignOut==='function')doSignOut()">Log Out</button>
+      <button class="header__nav-link" id="sh-logout-btn" onclick="if(typeof doSignOut==='function')doSignOut()">Log Out</button>
       <a class="header__nav-cta" href="BlastyBiz-Login.html">Try It Free</a>
       <button class="header__hamburger" id="sh-hamburger" aria-label="Open menu" onclick="if(typeof toggleMenu==='function')toggleMenu()">
         <span></span><span></span><span></span>
       </button>
-    </nav>
+    </div>
   </div>
   <div class="header__badge-bar">
     <span class="header__badge">⚡ AI-Powered Marketing</span>
   </div>
 </header>
-<nav class="header__mobile-menu" id="mobile-menu">
+<div class="header__mobile-menu" id="mobile-menu">
   <a class="header__mobile-link" href="BlastyBiz-About.html"   onclick="closeMenu()">About</a>
   <a class="header__mobile-link" href="BlastyBiz-Contact.html" onclick="closeMenu()">Contact</a>
   <a class="header__mobile-link" href="BlastyBiz.html"         onclick="closeMenu()">Create Listing</a>
   <a class="header__mobile-link" id="menu-login-link"  href="BlastyBiz-Login.html" onclick="closeMenu()">Log In</a>
   <button class="header__mobile-link" id="menu-logout-btn" onclick="if(typeof doSignOut==='function'){closeMenu();doSignOut()}">Log Out</button>
   <a class="header__mobile-link header__nav-cta" href="BlastyBiz-Login.html" onclick="closeMenu()">Try It Free</a>
-</nav>
+</div>
