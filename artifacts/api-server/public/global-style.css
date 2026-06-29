@@ -298,6 +298,9 @@ main.home                { width: 100%; }
 .home .layout__split-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 
 @media (max-width: 599px) {
+  .home .layout__split-3,
+  .home .layout__split-4,
+  .home .layout__split-wide,
   .home .layout__split-2-1,
   .home .layout__split-1-2 { grid-template-columns: 1fr; }
 }
