@@ -429,6 +429,14 @@ main.home                { width: 100%; }
 .how__step-content p      { font-size: 14px; color: var(--muted); line-height: 1.6; }
 
 
+/* ── PLATFORMS STRIP ───────────────────────────────────────── */
+
+.platforms         { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding: 36px var(--gutter); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--card); margin-left: calc(-1 * var(--gutter)); margin-right: calc(-1 * var(--gutter)); }
+.platforms__label  { width: 100%; text-align: center; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.platforms__pill   { display: inline-flex; align-items: center; gap: 6px; background: var(--dark); border: 1px solid var(--border); border-radius: 30px; padding: 8px 14px; font-size: 13px; font-weight: 500; color: var(--silver); transition: all 0.2s; }
+.platforms__pill:hover { border-color: var(--green); color: var(--light); }
+
+
 /* ── PRICING ───────────────────────────────────────────────── */
 
 .pricing__card         { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px 24px; position: relative; transition: border-color 0.2s; }
