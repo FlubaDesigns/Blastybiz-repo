@@ -5,7 +5,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <link rel="stylesheet" href="blastybiz-global.css?v=108" />
-<link rel="stylesheet" href="global-style.css?v=53" />
+<link rel="stylesheet" href="global-style.css?v=54" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
 </head>
@@ -219,33 +219,33 @@
   </div>
 </section>
 
-<section class="faq-section reveal row-gap">
+<section class="faq reveal">
   <div class="row">
     <h2>Got<br/><span>Questions?</span></h2>
   </div>
   <div class="row">
-  <div class="faq">
-    <div class="faq-item">
-      <button class="faq-q" onclick="toggleFaq(this)">Do I need a website to use BlastyBiz?<span class="arrow">▾</span></button>
-      <div class="faq-a">Not at all. BlastyBiz posts directly to platforms where official integrations are available — Google, Facebook, Instagram, and more. For manual platforms like Craigslist and Nextdoor, BlastyBiz prepares your listing so you can copy and paste in seconds. A website is optional.</div>
+    <div class="faq__list">
+      <div class="faq__item">
+        <button class="faq__q" onclick="toggleFaq(this)">Do I need a website to use BlastyBiz?<span class="faq__arrow">▾</span></button>
+        <div class="faq__a">Not at all. BlastyBiz posts directly to platforms where official integrations are available — Google, Facebook, Instagram, and more. For manual platforms like Craigslist and Nextdoor, BlastyBiz prepares your listing so you can copy and paste in seconds. A website is optional.</div>
+      </div>
+      <div class="faq__item">
+        <button class="faq__q" onclick="toggleFaq(this)">How does the AI adapt my listing?<span class="faq__arrow">▾</span></button>
+        <div class="faq__a">Each platform has different rules — character limits, tone, hashtag usage, keyword preferences. Our AI knows all of these and rewrites your listing appropriately for each one automatically. You write it once, it handles the rest.</div>
+      </div>
+      <div class="faq__item">
+        <button class="faq__q" onclick="toggleFaq(this)">What's the difference between auto-post and copy & paste?<span class="faq__arrow">▾</span></button>
+        <div class="faq__a">We're working on automating direct posting for at least three platforms — Google Business, Facebook, and Instagram. In the meantime, BlastyBiz formats your copy perfectly for every platform and it's ready to paste in yourself. Copy & paste platforms like Craigslist and Nextdoor don't allow any third-party automation at all, so BlastyBiz will always give you paste-ready copy for those.</div>
+      </div>
+      <div class="faq__item">
+        <button class="faq__q" onclick="toggleFaq(this)">Is my business information safe?<span class="faq__arrow">▾</span></button>
+        <div class="faq__a">Yes. Your data is stored securely and never shared or sold. We only use it to generate your listings. You can delete your account and all data at any time.</div>
+      </div>
+      <div class="faq__item">
+        <button class="faq__q" onclick="toggleFaq(this)">Can I cancel anytime?<span class="faq__arrow">▾</span></button>
+        <div class="faq__a">Absolutely. No contracts, no cancellation fees. Cancel with one tap from your account settings. You keep access until the end of your billing period.</div>
+      </div>
     </div>
-    <div class="faq-item">
-      <button class="faq-q" onclick="toggleFaq(this)">How does the AI adapt my listing?<span class="arrow">▾</span></button>
-      <div class="faq-a">Each platform has different rules — character limits, tone, hashtag usage, keyword preferences. Our AI knows all of these and rewrites your listing appropriately for each one automatically. You write it once, it handles the rest.</div>
-    </div>
-    <div class="faq-item">
-      <button class="faq-q" onclick="toggleFaq(this)">What's the difference between auto-post and copy & paste?<span class="arrow">▾</span></button>
-      <div class="faq-a">We're working on automating direct posting for at least three platforms — Google Business, Facebook, and Instagram. In the meantime, BlastyBiz formats your copy perfectly for every platform and it's ready to paste in yourself. Copy & paste platforms like Craigslist and Nextdoor don't allow any third-party automation at all, so BlastyBiz will always give you paste-ready copy for those.</div>
-    </div>
-    <div class="faq-item">
-      <button class="faq-q" onclick="toggleFaq(this)">Is my business information safe?<span class="arrow">▾</span></button>
-      <div class="faq-a">Yes. Your data is stored securely and never shared or sold. We only use it to generate your listings. You can delete your account and all data at any time.</div>
-    </div>
-    <div class="faq-item">
-      <button class="faq-q" onclick="toggleFaq(this)">Can I cancel anytime?<span class="arrow">▾</span></button>
-      <div class="faq-a">Absolutely. No contracts, no cancellation fees. Cancel with one tap from your account settings. You keep access until the end of your billing period.</div>
-    </div>
-  </div>
   </div>
 </section>
 
@@ -267,8 +267,8 @@
 function toggleFaq(btn) {
   const answer = btn.nextElementSibling;
   const isOpen = answer.classList.contains('open');
-  document.querySelectorAll('.faq-a').forEach(a => a.classList.remove('open'));
-  document.querySelectorAll('.faq-q').forEach(b => b.classList.remove('open'));
+  document.querySelectorAll('.faq__a').forEach(a => a.classList.remove('open'));
+  document.querySelectorAll('.faq__q').forEach(b => b.classList.remove('open'));
   if (!isOpen) { answer.classList.add('open'); btn.classList.add('open'); }
 }
 const observer = new IntersectionObserver((entries) => {

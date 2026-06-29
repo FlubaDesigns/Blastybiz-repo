@@ -429,6 +429,18 @@ main.home                { width: 100%; }
 .how__step-content p      { font-size: 14px; color: var(--muted); line-height: 1.6; }
 
 
+/* ── FAQ ───────────────────────────────────────────────────── */
+
+.faq__list           { display: flex; flex-direction: column; gap: 2px; margin-top: 40px; }
+.faq__item           { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
+.faq__q              { width: 100%; background: var(--card); border: none; padding: 18px 20px; text-align: left; color: var(--light); font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+.faq__q:hover        { background: #111911; }
+.faq__arrow          { color: var(--green); font-size: 18px; transition: transform 0.2s; }
+.faq__q.open .faq__arrow { transform: rotate(180deg); }
+.faq__a              { display: none; padding: 0 20px 18px; background: var(--card); font-size: 14px; color: var(--muted); line-height: 1.7; }
+.faq__a.open         { display: block; }
+
+
 /* ── REVIEWS ───────────────────────────────────────────────── */
 
 .reviews__card   { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
