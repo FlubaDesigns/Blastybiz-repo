@@ -9,6 +9,7 @@
 .center      { text-align: center; margin-left: auto; margin-right: auto; }
 .img-fill    { width: 100%; height: auto; display: block; object-fit: contain; }
 .text--green { color: var(--green); }
+.text--lime  { color: var(--green-lime); }
 .reveal      { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
 .reveal.visible { opacity: 1; transform: translateY(0); }
 
@@ -19,6 +20,7 @@
   --green-hover: #00e676;
   --green-rgb:  0, 200, 83;
   --green2:     #00B04A;
+  --green-lime: #AAFC08;
   --dark:       #070D07;
   --light:      #EEF7EE;
   --silver:     #7AB87A;
