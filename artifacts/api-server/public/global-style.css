@@ -687,3 +687,57 @@ main.home                { width: 100%; }
 .about__team-info h3    { font-size: 18px; font-weight: 600; color: var(--light); margin: 0 0 2px; }
 .about__team-info em    { font-size: 13px; color: var(--green); letter-spacing: 0.3px; font-style: normal; display: block; margin-bottom: 10px; }
 .about__team-info p     { font-size: 14px; color: var(--silver); line-height: 1.6; margin: 0; }
+
+
+/* ── CONTACT PAGE ───────────────────────────────────────────── */
+
+/* Reveal animation */
+.contact .reveal          { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.contact .reveal.visible  { opacity: 1; transform: translateY(0); }
+
+/* Outer wrapper */
+.contact.main             { width: 100%; max-width: 100vw; overflow-x: hidden; }
+.contact .main-inner      { padding-left: var(--gutter); padding-right: var(--gutter); padding-top: 10px; width: 100%; box-sizing: border-box; }
+.contact .main-inner section { padding: 0; max-width: none; margin: 0; }
+
+/* Sections — spaced, no hr */
+.contact section.reveal   { margin-top: 2.5rem; }
+.contact aside.reveal     { margin-top: 2.5rem; }
+.contact hr.divider       { display: none; }
+
+/* Rows */
+.contact .row             { width: 100%; padding: 0; margin-bottom: 0.5rem; }
+@media (min-width: 600px) { .contact .row { margin-bottom: 1.5rem; } }
+
+/* Images */
+.contact img              { max-width: 100%; height: auto; }
+
+/* Hero */
+.contact .page-hero       { position: relative; padding: 2rem 0 1rem; overflow: hidden; }
+.contact__hero-glow       { position: absolute; top: -40px; left: -5%; width: 70%; height: 320px; background: radial-gradient(ellipse at 20% 40%, rgba(0,200,83,0.18) 0%, transparent 65%); pointer-events: none; z-index: 0; }
+.contact .page-hero .row  { position: relative; z-index: 1; }
+.contact .page-hero h1    { font-family: 'Bebas Neue', sans-serif; font-size: clamp(52px, 14vw, 96px); line-height: 1; margin: 0 0 0.3em; color: var(--light); }
+.contact .page-hero h1 span { color: var(--green-lime); display: block; }
+.contact .page-hero p     { font-size: 1.05rem; color: var(--silver); max-width: 540px; }
+
+/* Accent labels */
+.contact__label           { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--green-lime); font-weight: 600; margin: 0 0 0.4rem; }
+
+/* Typography */
+.contact h2               { font-family: 'Bebas Neue', sans-serif; font-size: clamp(32px, 8vw, 52px); line-height: 1.2; font-weight: 300; color: var(--h2-color); margin: 0 0 0.6rem; }
+.contact h2 span          { color: var(--green-lime); }
+.contact h3               { margin: 0 0 0.25em; line-height: 1.25; color: var(--h3-color); font-size: 18px; font-weight: 600; }
+.contact h3 span          { color: var(--green-lime); }
+.contact p                { all: revert; color: var(--light); }
+.contact address          { font-style: normal; }
+.contact address p        { color: var(--silver); }
+
+/* Contact cards grid */
+.contact .contact-grid    { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+@media (min-width: 600px) { .contact .contact-grid { display: grid; grid-template-columns: 1fr 1fr; } }
+.contact .contact-card    { display: flex; align-items: flex-start; gap: 14px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-decoration: none; color: inherit; transition: border-color 0.2s; }
+.contact .contact-card:hover { border-color: var(--green); }
+.contact .contact-card > span { font-size: 26px; flex-shrink: 0; }
+.contact .contact-card strong { display: block; font-size: 14px; font-weight: 600; color: var(--light); margin-bottom: 2px; }
+.contact .contact-card em { display: block; font-size: 13px; color: var(--green); font-style: normal; margin-bottom: 6px; }
+.contact .contact-card p  { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 0; }
