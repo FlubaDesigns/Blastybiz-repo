@@ -40,8 +40,10 @@
   --gap-lg:     16px;
   --gutter:     1rem;
   --v-gutter:   8%;
+  --section-v:  60px;
 }
-@media (min-width: 600px) { :root { --gutter: 3rem; } }
+@media (min-width: 600px)  { :root { --gutter: 3rem; --section-v: 80px; } }
+@media (min-width: 1100px) { :root { --section-v: 100px; } }
 
 html, body { background-color: var(--bg); overflow-x: hidden; }
 main.home  { max-width: 100vw; overflow-x: hidden; }
@@ -220,10 +222,11 @@ body.home-page .header__badge-bar { display: flex; }
 /* Hide old nav bar on pages using the new site header */
 body.has-site-header nav:not(.header__nav):not(.header__mobile-menu) { display: none; }
 
-/* Sticky footer — tablet/desktop only */
+/* Clear fixed site header + sticky footer */
+body.has-site-header .main  { padding-top: 56px; }
 @media (min-width: 600px) {
   body.has-site-header      { display: flex; flex-direction: column; min-height: 100vh; }
-  body.has-site-header .main { flex: 1; }
+  body.has-site-header .main { flex: 1; padding-top: 80px; }
 }
 
 /* Auth state — JS adds/removes body.logged-in */
@@ -753,13 +756,13 @@ main.home                { width: 100%; }
 
 /* Outer wrapper */
 .legal.main               { width: 100%; max-width: 100vw; overflow-x: hidden; }
-.legal .main-inner        { padding-left: var(--gutter); padding-right: var(--gutter); padding-top: 10px; width: 100%; box-sizing: border-box; }
+.legal .main-inner        { padding-left: max(16px, var(--gutter)); padding-right: max(16px, var(--gutter)); padding-top: 10px; width: 100%; box-sizing: border-box; }
 
 /* Hero */
-.legal .page-hero         { position: relative; padding: 2rem 0 1rem; overflow: hidden; }
-.legal__hero-glow         { position: absolute; top: -40px; left: -5%; width: 70%; height: 280px; background: radial-gradient(ellipse at 20% 40%, rgba(0,200,83,0.15) 0%, transparent 65%); pointer-events: none; z-index: 0; }
+.legal .page-hero         { position: relative; padding: var(--section-v) 0 1.5rem; overflow: hidden; }
+.legal__hero-glow         { position: absolute; top: 0; left: -5%; width: 70%; height: 280px; background: radial-gradient(ellipse at 20% 40%, rgba(0,200,83,0.15) 0%, transparent 65%); pointer-events: none; z-index: 0; }
 .legal .page-hero .row    { position: relative; z-index: 1; }
-.legal .page-hero h1      { font-family: 'Bebas Neue', sans-serif; font-size: clamp(44px, 10vw, 80px); line-height: 1; margin: 0 0 0.3em; color: var(--light); }
+.legal .page-hero h1      { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 80px); line-height: 1; margin: 0 0 0.3em; color: var(--light); }
 .legal .page-hero p       { font-size: 0.9rem; color: var(--muted); }
 
 /* Rows */
