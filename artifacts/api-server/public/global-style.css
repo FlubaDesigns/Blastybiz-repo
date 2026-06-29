@@ -635,8 +635,10 @@ main.home                { width: 100%; }
 .about .reveal.visible  { opacity: 1; transform: translateY(0); }
 
 .about img              { max-width: 100%; height: auto; }
+.about figure img       { max-width: 180px; }
 
-.about .main-inner      { padding-left: var(--gutter); padding-right: var(--gutter); padding-top: 10px; width: 100%; }
+div.about               { width: 100%; max-width: 100vw; overflow-x: hidden; }
+.about .main-inner      { padding-left: var(--gutter); padding-right: var(--gutter); padding-top: 10px; width: 100%; box-sizing: border-box; }
 .about .main-inner section { padding: 0; max-width: none; margin: 0; }
 
 .about .row             { width: 100%; padding: 0; margin-bottom: 0.5rem; }
