@@ -222,11 +222,16 @@ body.home-page .header__badge-bar { display: flex; }
 /* Hide old nav bar on pages using the new site header */
 body.has-site-header nav:not(.header__nav):not(.header__mobile-menu) { display: none; }
 
-/* Clear fixed site header + sticky footer */
-body.has-site-header .main  { padding-top: 56px; }
+/* Clear fixed site header + sticky footer
+   Mobile  (≤767px): header icon 70px + 0px nav padding  = 70px header
+   Desktop (≥768px): header icon 100px + 20px nav padding = 120px header */
+body.has-site-header .main  { padding-top: 72px; }
 @media (min-width: 600px) {
   body.has-site-header      { display: flex; flex-direction: column; min-height: 100vh; }
-  body.has-site-header .main { flex: 1; padding-top: 80px; }
+  body.has-site-header .main { flex: 1; padding-top: 72px; }
+}
+@media (min-width: 768px) {
+  body.has-site-header .main { padding-top: 124px; }
 }
 
 /* Auth state — JS adds/removes body.logged-in */
