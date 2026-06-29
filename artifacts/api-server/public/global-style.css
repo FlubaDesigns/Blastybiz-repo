@@ -306,9 +306,9 @@ main.home                { width: 100%; }
   .home .main-inner      { padding-top: 5px; }
 }
 
-.home .row               { width: 100%; padding: 0; margin-bottom: 5px; }
+.home .row               { width: 100%; padding: 0; margin-bottom: 0.5rem; }
 @media (min-width: 600px) {
-  .home .row             { margin-bottom: 10px; }
+  .home .row             { margin-bottom: 1.5rem; }
 }
 .home .layout__split     { display: grid; grid-template-columns: 1fr;               gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 @media (min-width: 600px) {
