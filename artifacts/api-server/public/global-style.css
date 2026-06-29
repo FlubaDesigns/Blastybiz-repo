@@ -38,8 +38,8 @@
 }
 
 .header__logo-icon {
-  height: 70px;
-  width: 70px;
+  height: 100px;
+  width: 100px;
   flex-shrink: 0;
   object-fit: contain;
   object-position: left center;
@@ -215,7 +215,7 @@ body.logged-in .header__mobile-menu #menu-login-link { display: none; }
 /* ── HEADER — Mobile (≤599px) ───────────────────────────── */
 @media (max-width: 599px) {
   .header__nav-row       { padding: 0 12px; }
-  .header__logo-icon     { height: 65px; width: 65px; }
+  .header__logo-icon     { height: 70px; width: 70px; }
   .header__logo-wordmark { height: 16px; }
   .header__logo-tagline  { height: 9px; }
   .header__nav-link,
