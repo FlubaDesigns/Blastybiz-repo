@@ -242,6 +242,12 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 }
 
 
+/* ── HOME ──────────────────────────────────────────────────── */
+
+.home {
+}
+
+
 /* ── FOOTER ────────────────────────────────────────────────── */
 
 .footer {
