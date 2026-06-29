@@ -343,13 +343,17 @@ main.home                { width: 100%; }
   font-size: 16px;
   font-weight: 700;
   padding: 16px 36px;
-  width: 100%;
-  max-width: 320px;
-  margin: 0 auto;
 }
 .btn__primary:hover {
   background: var(--green2);
   transform: translateY(-1px);
+}
+
+/* Hero-specific: primary button goes full-width up to 320px, centred */
+.home__hero-actions .btn__primary {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
 }
 
 /* Ghost variant */
@@ -594,7 +598,7 @@ main.home                { width: 100%; }
 .cta__text        { text-align: left; }
 .cta__text h2     { font-family: 'Bebas Neue', sans-serif; font-size: clamp(40px, 8vw, 72px); line-height: 1; letter-spacing: 2px; color: var(--light); margin-bottom: 16px; }
 .cta__text h2 span { color: var(--green); }
-.cta__text > p    { font-size: 16px; color: var(--silver); margin-bottom: 36px; font-weight: 300; }
+.cta__text > p    { font-size: 16px; color: var(--light); margin-bottom: 36px; font-weight: 300; }
 .cta__img-wrap    { max-height: 420px; overflow: hidden; border-radius: 16px; }
 .cta__img         { width: 100%; height: 420px; object-fit: cover; object-position: top; display: block; }
 .hero-note        { font-size: 12px; color: var(--muted); margin-top: 16px; }
