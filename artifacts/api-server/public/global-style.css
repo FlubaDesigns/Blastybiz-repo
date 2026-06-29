@@ -409,6 +409,7 @@ main.home                { width: 100%; }
   letter-spacing: 2px;
   color: var(--light);
   margin: 0 0 1rem 0;
+  text-align: center;
   animation: fadeUp 0.6s 0.1s ease both;
 }
 .hero h1 span {
