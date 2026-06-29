@@ -332,7 +332,7 @@ main.home                { width: 100%; }
 /* Image column — hidden on mobile, shows on desktop */
 .home__hero-img-col { display: none; }
 @media (min-width: 600px) {
-  .home__hero-img-col { display: flex; justify-content: center; align-items: center; }
+  .home__hero-img-col { display: flex; justify-content: center; align-items: center; padding-top: 15px; }
 }
 
 
