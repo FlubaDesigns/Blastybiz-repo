@@ -29,6 +29,8 @@
   --border:     #1E2E1E;
   --gap-md:     12px;
   --gap-lg:     16px;
+  --gutter:     10%;
+  --v-gutter:   8%;
 }
 
 
@@ -276,6 +278,13 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 
 
 /* ── LAYOUT ────────────────────────────────────────────────── */
+
+main.home                { width: 100%; }
+.home .main-inner        { padding-left: var(--gutter); padding-right: var(--gutter); padding-top: 10px; width: 100%; }
+.home .main-inner section{ padding: 0; max-width: none; margin: 0; }
+@media (max-width: 599px) {
+  .home .main-inner      { padding-top: 5px; }
+}
 
 .home .row               { width: 100%; }
 .home .layout__split     { display: grid; grid-template-columns: 1fr;               gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
