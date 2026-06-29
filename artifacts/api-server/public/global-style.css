@@ -35,7 +35,7 @@
   --v-gutter:   8%;
 }
 
-html, body { background-color: var(--bg); }
+html, body { background-color: var(--bg); overflow-x: hidden; }
 
 
 /* ── TYPOGRAPHY ────────────────────────────────────────────── */
@@ -48,7 +48,7 @@ html, body { background-color: var(--bg); }
 .home h2:first-child,
 .home h3:first-child,
 .home h4:first-child { margin-top: 0; }
-.home p { all: revert; }
+.home p { all: revert; color: var(--light); }
 
 
 /* ── HEADER ────────────────────────────────────────────────── */
@@ -349,11 +349,9 @@ main.home                { width: 100%; }
   transform: translateY(-1px);
 }
 
-/* Hero-specific: primary button goes full-width up to 320px, centred */
+/* Hero-specific: primary button constrained and centred */
 .home__hero-actions .btn__primary {
-  width: 100%;
-  max-width: 320px;
-  margin: 0 auto;
+  align-self: center;
 }
 
 /* Ghost variant */
