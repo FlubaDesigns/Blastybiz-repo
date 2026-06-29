@@ -153,6 +153,9 @@ body.home-page .header__badge-bar { display: flex; }
   border-radius: 20px;
 }
 
+/* Hide old nav bar on pages using the new site header */
+body.has-site-header nav { display: none; }
+
 /* Auth state — JS adds/removes body.logged-in */
 #sh-logout-btn  { display: none; }
 #sh-create-link { display: none; }
