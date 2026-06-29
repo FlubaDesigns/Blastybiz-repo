@@ -18,8 +18,6 @@
 :root {
   --bg:         #000000;   /* page background — change this one value */
 
-  --hero-img:   url('img/hero-blast-new.png');
-
   --h1-color:   #ffffff;
   --h2-color:   #ffffff;
   --h3-color:   #ffffff;
@@ -334,17 +332,8 @@ main.home                { width: 100%; }
 /* Image column — hidden on mobile, shows on desktop */
 .home__hero-img-col { display: none; }
 @media (min-width: 600px) {
-  .home__hero-img-col {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding-top: 15px;
-    background-image: var(--hero-img);
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    min-height: 300px;
-  }
+  .home__hero-img-col { display: flex; justify-content: center; align-items: center; padding-top: 15px; }
+  .home__hero-img-col img { width: 100%; height: auto; display: block; }
 }
 
 
