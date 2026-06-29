@@ -9,6 +9,8 @@
   --green:      #00c853;
   --green-hover: #00e676;
   --green-rgb:  0, 200, 83;
+  --green2:     #00B04A;
+  --dark:       #070D07;
   --light:      #EEF7EE;
   --silver:     #7AB87A;
   --muted:      #587058;
@@ -268,6 +270,31 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 .layout__split-wide{ display: grid; grid-template-columns: 1.5fr 1fr;         gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 .layout__split-2-1 { display: grid; grid-template-columns: 2fr 1fr;           gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 .layout__split-1-2 { display: grid; grid-template-columns: 1fr 2fr;           gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
+
+
+/* ── BUTTONS ───────────────────────────────────────────────── */
+
+.btn__primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--green);
+  color: var(--dark);
+  font-size: 16px;
+  font-weight: 700;
+  padding: 16px 36px;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.2s;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+}
+.btn__primary:hover {
+  background: var(--green2);
+  transform: translateY(-1px);
+}
 
 
 /* ── HOME ──────────────────────────────────────────────────── */
