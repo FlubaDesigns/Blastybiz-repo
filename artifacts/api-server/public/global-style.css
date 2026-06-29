@@ -220,6 +220,12 @@ body.home-page .header__badge-bar { display: flex; }
 /* Hide old nav bar on pages using the new site header */
 body.has-site-header nav:not(.header__nav):not(.header__mobile-menu) { display: none; }
 
+/* Sticky footer — tablet/desktop only */
+@media (min-width: 600px) {
+  body.has-site-header      { display: flex; flex-direction: column; min-height: 100vh; }
+  body.has-site-header .main { flex: 1; }
+}
+
 /* Auth state — JS adds/removes body.logged-in */
 #header__nav-logout  { display: none; }
 #header__nav-create { display: none; }
