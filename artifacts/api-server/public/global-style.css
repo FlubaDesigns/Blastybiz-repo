@@ -6,9 +6,11 @@
 
 /* ── DESIGN TOKENS ─────────────────────────────────────────── */
 :root {
-  --green:     #00c853;
+  --green:      #00c853;
   --green-hover: #00e676;
-  --green-rgb: 0, 200, 83;
+  --green-rgb:  0, 200, 83;
+  --gap-md:     12px;
+  --gap-lg:     16px;
 }
 
 
@@ -240,6 +242,16 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
   .header__nav-row      { padding: 10px 60px; }
   .header__hamburger    { display: none; }
 }
+
+
+/* ── LAYOUT ────────────────────────────────────────────────── */
+
+.split     { display: grid; grid-template-columns: 1fr 1fr;           gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
+.split-3   { display: grid; grid-template-columns: 1fr 1fr 1fr;       gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
+.split-4   { display: grid; grid-template-columns: repeat(4, 1fr);    gap: var(--gap-md); margin-bottom: var(--gap-lg); }
+.split-wide{ display: grid; grid-template-columns: 1.5fr 1fr;         gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
+.split-2-1 { display: grid; grid-template-columns: 2fr 1fr;           gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
+.split-1-2 { display: grid; grid-template-columns: 1fr 2fr;           gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 
 
 /* ── HOME ──────────────────────────────────────────────────── */
