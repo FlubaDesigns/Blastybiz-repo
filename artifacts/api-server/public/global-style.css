@@ -6,7 +6,8 @@
 
 /* ── HELPERS ───────────────────────────────────────────────── */
 
-.center { text-align: center; margin-left: auto; margin-right: auto; }
+.center   { text-align: center; margin-left: auto; margin-right: auto; }
+.img-fill  { width: 100%; height: auto; display: block; object-fit: contain; }
 
 
 /* ── DESIGN TOKENS ─────────────────────────────────────────── */
