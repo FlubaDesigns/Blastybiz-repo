@@ -104,8 +104,8 @@ h2           { margin: 0.3rem 0; }
 }
 
 .header__logo-icon {
-  height: 100px;
-  width: 100px;
+  height: 56px;
+  width: 56px;
   flex-shrink: 0;
   object-fit: contain;
   object-position: left center;
@@ -223,15 +223,15 @@ body.home-page .header__badge-bar { display: flex; }
 body.has-site-header nav:not(.header__nav):not(.header__mobile-menu) { display: none; }
 
 /* Clear fixed site header + sticky footer
-   Mobile  (≤767px): header icon 70px + 0px nav padding  = 70px header
-   Desktop (≥768px): header icon 100px + 20px nav padding = 120px header */
-body.has-site-header .main  { padding-top: 72px; }
+   Mobile  (≤767px): icon 46px + 8px nav padding  = ~54px header
+   Desktop (≥768px): icon 56px + 20px nav padding = ~76px header */
+body.has-site-header .main  { padding-top: 58px; }
 @media (min-width: 600px) {
   body.has-site-header      { display: flex; flex-direction: column; min-height: 100vh; }
-  body.has-site-header .main { flex: 1; padding-top: 72px; }
+  body.has-site-header .main { flex: 1; padding-top: 58px; }
 }
 @media (min-width: 768px) {
-  body.has-site-header .main { padding-top: 124px; }
+  body.has-site-header .main { padding-top: 80px; }
 }
 
 /* Auth state — JS adds/removes body.logged-in */
@@ -295,10 +295,10 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 
 /* ── HEADER — Mobile (≤767px) ───────────────────────────── */
 @media (max-width: 767px) {
-  .header__nav-row       { padding: 0 12px; }
-  .header__logo-icon     { height: 70px; width: 70px; }
-  .header__logo-wordmark { height: 16px; }
-  .header__logo-tagline  { height: 9px; }
+  .header__nav-row       { padding: 4px 12px; }
+  .header__logo-icon     { height: 46px; width: 46px; }
+  .header__logo-wordmark { height: 14px; }
+  .header__logo-tagline  { height: 8px; }
   .header__nav-link,
   .header__nav-cta       { display: none; }
   .header__hamburger     { display: flex; }
