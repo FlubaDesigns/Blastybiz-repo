@@ -38,9 +38,10 @@
   --border:     #1E2E1E;
   --gap-md:     12px;
   --gap-lg:     16px;
-  --gutter:     clamp(12px, 4%, 60px);
+  --gutter:     1rem;
   --v-gutter:   8%;
 }
+@media (min-width: 600px) { :root { --gutter: 3rem; } }
 
 html, body { background-color: var(--bg); overflow-x: hidden; }
 main.home  { max-width: 100vw; overflow-x: hidden; }
