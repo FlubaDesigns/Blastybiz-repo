@@ -429,7 +429,7 @@ main.home                { width: 100%; }
 }
 
 .home__hero {
-  padding: 0 var(--gutter) 40px;
+  padding: 0 0 40px;
   position: relative;
   overflow: hidden;
 }
