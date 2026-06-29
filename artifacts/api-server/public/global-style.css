@@ -443,10 +443,10 @@ main.home                { width: 100%; }
 
 
 .problem__list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 20px; }
-.problem__list li { display: flex; align-items: center; gap: 12px; }
+.problem__list li { display: flex; align-items: flex-start; gap: 12px; }
 .problem__list--grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 @media (max-width: 599px) { .problem__list--grid { grid-template-columns: 1fr; } }
-.problem__list-icon { font-size: 24px; flex-shrink: 0; }
+.problem__list-icon { font-size: 24px; flex-shrink: 0; padding-top: 2px; }
 
 
 /* ── HOW IT WORKS ──────────────────────────────────────────── */
