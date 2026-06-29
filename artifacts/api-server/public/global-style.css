@@ -349,7 +349,7 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 }
 
 /* Hero text column — left grid cell, no styles yet */
-.home__hero-text {}
+.home__hero-text { min-width: 0; }
 
 /* Hero subheadline */
 .home__hero-sub {
@@ -402,6 +402,7 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
   gap: 12px;
   margin-top: 48px;
   width: 100%;
+  min-width: 0;
 }
 @media (min-width: 600px) {
   .home__hero-stats { grid-template-columns: repeat(3, 1fr); }
