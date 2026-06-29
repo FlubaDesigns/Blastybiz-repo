@@ -315,15 +315,8 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 /* ── LAYOUT ────────────────────────────────────────────────── */
 
 main.home                { width: 100%; }
-.home .main-inner        { padding-left: var(--gutter); padding-right: var(--gutter); padding-top: 10px; width: 100%; }
-.home .main-inner section{ padding: 0; max-width: none; margin: 0; }
 @media (max-width: 599px) {
   .home .main-inner      { padding-top: 5px; }
-}
-
-.home .row               { width: 100%; padding: 0; margin-bottom: 0.5rem; }
-@media (min-width: 600px) {
-  .home .row             { margin-bottom: 1.5rem; }
 }
 .home .layout__split     { display: grid; grid-template-columns: 1fr;               gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 @media (min-width: 600px) {
@@ -644,55 +637,57 @@ main.home                { width: 100%; }
 }
 
 
-/* ── PUBLIC PAGES — SHARED (About · Contact · Legal) ────────── */
+/* ── PUBLIC PAGES — UNIVERSAL (all has-site-header pages) ───── */
 
 /* Outer wrapper */
 .about.main, .contact.main, .legal.main  { width: 100%; max-width: 100vw; overflow-x: hidden; }
 
-/* Inner container — legal overrides padding below */
-.about .main-inner, .contact .main-inner { padding-left: var(--gutter); padding-right: var(--gutter); padding-top: 10px; width: 100%; box-sizing: border-box; }
-.about .main-inner section, .contact .main-inner section { padding: 0; max-width: none; margin: 0; }
+/* Inner container — applies to home, about, contact, legal */
+body.has-site-header .main-inner         { padding-left: var(--gutter); padding-right: var(--gutter); padding-top: 10px; width: 100%; box-sizing: border-box; }
+body.has-site-header .main-inner section { padding: 0; max-width: none; margin: 0; }
 
 /* Reveal animation */
-.about .reveal, .contact .reveal         { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
-.about .reveal.visible, .contact .reveal.visible { opacity: 1; transform: translateY(0); }
+body.has-site-header .reveal             { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+body.has-site-header .reveal.visible     { opacity: 1; transform: translateY(0); }
 
 /* Section / aside spacing — no <hr> needed */
 .about section.reveal, .contact section.reveal,
 .about aside.reveal,   .contact aside.reveal    { margin-top: 2.5rem; }
 .about hr.divider, .contact hr.divider          { display: none; }
 
-/* Rows */
-.about .row, .contact .row, .legal .row  { width: 100%; padding: 0; margin-bottom: 0.5rem; }
+/* Rows — universal */
+body.has-site-header .row                { width: 100%; padding: 0; margin-bottom: 0.5rem; }
 @media (min-width: 600px) {
-  .about .row, .contact .row, .legal .row { margin-bottom: 1.5rem; }
+  body.has-site-header .row             { margin-bottom: 1.5rem; }
 }
 
-/* Images */
-.about img, .contact img                 { max-width: 100%; height: auto; }
+/* Images inside page body */
+body.has-site-header .main img           { max-width: 100%; height: auto; }
 
-/* Page hero — shared structure and padding */
+/* Page hero */
 .about .page-hero, .contact .page-hero   { position: relative; padding: 2rem 0 1rem; overflow: hidden; }
-.about .page-hero .row, .contact .page-hero .row, .legal .page-hero .row { position: relative; z-index: 1; }
+body.has-site-header .page-hero .row     { position: relative; z-index: 1; }
 
 /* Hero glow blob */
 .about__hero-glow, .contact__hero-glow  { position: absolute; top: -40px; left: -5%; width: 70%; height: 320px; background: radial-gradient(ellipse at 20% 40%, rgba(0,200,83,0.18) 0%, transparent 65%); pointer-events: none; z-index: 0; }
 
 /* Hero headline */
-.about .page-hero h1, .contact .page-hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(52px, 14vw, 96px); line-height: 1; margin: 0 0 0.3em; color: var(--light); }
+.about .page-hero h1, .contact .page-hero h1 { font-size: clamp(52px, 14vw, 96px); line-height: 1; margin: 0 0 0.3em; }
 .about .page-hero h1 span, .contact .page-hero h1 span { color: var(--green-lime); display: block; }
 .about .page-hero p,  .contact .page-hero p  { font-size: 1.05rem; color: var(--silver); max-width: 540px; }
 
 /* Accent label */
 .about__label, .contact__label           { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--green-lime); font-weight: 600; margin: 0 0 0.4rem; }
 
-/* Typography */
-.about h1, .contact h1                   { font-family: 'Bebas Neue', sans-serif; margin: 0 0 0.6em; line-height: 1.15; color: var(--h1-color); }
-.about h2, .contact h2                   { font-family: 'Bebas Neue', sans-serif; font-size: clamp(32px, 8vw, 52px); line-height: 1.2; font-weight: 300; color: var(--h2-color); margin: 0 0 0.6rem; }
-.about h2 span, .contact h2 span         { color: var(--green-lime); }
-.about h3, .contact h3                   { margin: 0 0 0.25em; line-height: 1.25; color: var(--h3-color); font-size: 18px; font-weight: 600; }
-.about h3 span, .contact h3 span         { color: var(--green-lime); }
-.about h4, .contact h4                   { margin: 0.85em 0 0.45em; line-height: 1.3; color: var(--h4-color); }
+/* ── TYPOGRAPHY — universal across all public pages ─────────── */
+body.has-site-header h1  { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 72px); line-height: 1.1; margin: 0 0 0.6em; color: var(--light); }
+body.has-site-header h2  { font-family: 'Bebas Neue', sans-serif; font-size: clamp(28px, 6vw, 52px); line-height: 1.2; font-weight: 400; margin: 0 0 0.6rem; color: var(--h2-color); }
+body.has-site-header h2 span { color: var(--green-lime); }
+body.has-site-header h3  { font-family: 'DM Sans', sans-serif; font-size: 18px; font-weight: 600; line-height: 1.25; margin: 0 0 0.25em; color: var(--h3-color); }
+body.has-site-header h3 span { color: var(--green-lime); }
+body.has-site-header h4  { font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; line-height: 1.3; margin: 0.85em 0 0.45em; color: var(--h4-color); }
+
+/* p stays page-scoped — all:revert is too aggressive to apply universally */
 .about p, .contact p                     { all: revert; color: var(--light); }
 
 
