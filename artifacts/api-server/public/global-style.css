@@ -444,8 +444,9 @@ main.home                { width: 100%; }
 
 .problem__list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 20px; }
 .problem__list li { display: flex; align-items: baseline; gap: 12px; }
-.problem__list--grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.problem__list--grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-left: 1rem; }
 @media (max-width: 599px) { .problem__list--grid { grid-template-columns: 1fr; } }
+@media (min-width: 600px) { .problem__list--grid { margin-left: 3rem; } }
 .problem__list-icon { font-size: 24px; flex-shrink: 0; }
 
 
