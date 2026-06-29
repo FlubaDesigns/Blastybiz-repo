@@ -639,10 +639,10 @@ main.home                { width: 100%; }
 
 /* ── PUBLIC PAGES — UNIVERSAL (all has-site-header pages) ───── */
 
-/* Outer wrapper */
-.about.main, .contact.main, .legal.main  { width: 100%; max-width: 100vw; overflow-x: hidden; }
+/* Outer wrapper — universal */
+body.has-site-header .main               { width: 100%; max-width: 100vw; overflow-x: hidden; }
 
-/* Inner container — applies to home, about, contact, legal */
+/* Inner container */
 body.has-site-header .main-inner         { padding-left: var(--gutter); padding-right: var(--gutter); padding-top: 10px; width: 100%; box-sizing: border-box; }
 body.has-site-header .main-inner section { padding: 0; max-width: none; margin: 0; }
 
@@ -650,12 +650,12 @@ body.has-site-header .main-inner section { padding: 0; max-width: none; margin: 
 body.has-site-header .reveal             { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
 body.has-site-header .reveal.visible     { opacity: 1; transform: translateY(0); }
 
-/* Section / aside spacing — no <hr> needed */
-.about section.reveal, .contact section.reveal,
-.about aside.reveal,   .contact aside.reveal    { margin-top: 2.5rem; }
-.about hr.divider, .contact hr.divider          { display: none; }
+/* Section / aside spacing + hr */
+body.has-site-header section.reveal,
+body.has-site-header aside.reveal        { margin-top: 2.5rem; }
+body.has-site-header hr.divider          { display: none; }
 
-/* Rows — universal */
+/* Rows */
 body.has-site-header .row                { width: 100%; padding: 0; margin-bottom: 0.5rem; }
 @media (min-width: 600px) {
   body.has-site-header .row             { margin-bottom: 1.5rem; }
@@ -664,19 +664,19 @@ body.has-site-header .row                { width: 100%; padding: 0; margin-botto
 /* Images inside page body */
 body.has-site-header .main img           { max-width: 100%; height: auto; }
 
-/* Page hero */
-.about .page-hero, .contact .page-hero   { position: relative; padding: 2rem 0 1rem; overflow: hidden; }
+/* Page hero — base; legal overrides padding below */
+body.has-site-header .page-hero          { position: relative; padding: 2rem 0 1rem; overflow: hidden; }
 body.has-site-header .page-hero .row     { position: relative; z-index: 1; }
 
-/* Hero glow blob */
+/* Hero glow blob — dimensions differ per page, keep scoped */
 .about__hero-glow, .contact__hero-glow  { position: absolute; top: -40px; left: -5%; width: 70%; height: 320px; background: radial-gradient(ellipse at 20% 40%, rgba(0,200,83,0.18) 0%, transparent 65%); pointer-events: none; z-index: 0; }
 
-/* Hero headline */
-.about .page-hero h1, .contact .page-hero h1 { font-size: clamp(52px, 14vw, 96px); line-height: 1; margin: 0 0 0.3em; }
-.about .page-hero h1 span, .contact .page-hero h1 span { color: var(--green-lime); display: block; }
-.about .page-hero p,  .contact .page-hero p  { font-size: 1.05rem; color: var(--silver); max-width: 540px; }
+/* Page hero headline — legal overrides font-size below */
+body.has-site-header .page-hero h1       { font-size: clamp(52px, 14vw, 96px); line-height: 1; margin: 0 0 0.3em; }
+body.has-site-header .page-hero h1 span  { color: var(--green-lime); display: block; }
+body.has-site-header .page-hero p        { font-size: 1.05rem; color: var(--silver); max-width: 540px; }
 
-/* Accent label */
+/* Accent label — HTML class names differ, comma-group is as far as we can go */
 .about__label, .contact__label           { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--green-lime); font-weight: 600; margin: 0 0 0.4rem; }
 
 /* ── TYPOGRAPHY — universal across all public pages ─────────── */
