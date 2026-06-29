@@ -38,7 +38,7 @@
   --border:     #1E2E1E;
   --gap-md:     12px;
   --gap-lg:     16px;
-  --gutter:     10%;
+  --gutter:     clamp(12px, 4%, 60px);
   --v-gutter:   8%;
 }
 
