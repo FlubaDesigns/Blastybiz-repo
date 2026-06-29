@@ -20,6 +20,8 @@
   --light:      #EEF7EE;
   --silver:     #7AB87A;
   --muted:      #587058;
+  --card:       #0D160D;
+  --border:     #1E2E1E;
   --gap-md:     12px;
   --gap-lg:     16px;
 }
@@ -389,6 +391,42 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
   padding: 0 24px 40px;
   position: relative;
   overflow: hidden;
+}
+
+
+/* ── HERO STATS ────────────────────────────────────────────── */
+
+.home__hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 48px;
+  width: 100%;
+}
+.home__hero-stat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 12px;
+  text-align: center;
+}
+.home__hero-stat-big {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 40px;
+  color: var(--green);
+  line-height: 1;
+}
+.home__hero-stat-unit {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+}
+.home__hero-stat-lbl {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: 4px;
 }
 
 
