@@ -747,3 +747,42 @@ main.home                { width: 100%; }
 .contact .contact-card strong { display: block; font-size: 14px; font-weight: 600; color: var(--light); margin-bottom: 2px; }
 .contact .contact-card em { display: block; font-size: 13px; color: var(--green); font-style: normal; margin-bottom: 6px; }
 .contact .contact-card p  { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 0; }
+
+
+/* ── LEGAL PAGES (Privacy & Terms) ─────────────────────────── */
+
+/* Outer wrapper */
+.legal.main               { width: 100%; max-width: 100vw; overflow-x: hidden; }
+.legal .main-inner        { padding-left: var(--gutter); padding-right: var(--gutter); padding-top: 10px; width: 100%; box-sizing: border-box; }
+
+/* Hero */
+.legal .page-hero         { position: relative; padding: 2rem 0 1rem; overflow: hidden; }
+.legal__hero-glow         { position: absolute; top: -40px; left: -5%; width: 70%; height: 280px; background: radial-gradient(ellipse at 20% 40%, rgba(0,200,83,0.15) 0%, transparent 65%); pointer-events: none; z-index: 0; }
+.legal .page-hero .row    { position: relative; z-index: 1; }
+.legal .page-hero h1      { font-family: 'Bebas Neue', sans-serif; font-size: clamp(44px, 10vw, 80px); line-height: 1; margin: 0 0 0.3em; color: var(--light); }
+.legal .page-hero p       { font-size: 0.9rem; color: var(--muted); }
+
+/* Rows */
+.legal .row               { width: 100%; padding: 0; margin-bottom: 0.5rem; }
+
+/* Article — constrained readable width */
+.legal article            { max-width: 680px; margin: 2rem 0 3rem; }
+.legal article section    { padding: 1.5rem 0; border-bottom: 1px solid var(--border); }
+.legal article section:last-child { border-bottom: none; }
+
+/* Typography */
+.legal article h2         { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--light); margin: 0 0 0.75rem; letter-spacing: 0.5px; }
+.legal article p          { font-size: 14px; color: var(--silver); line-height: 1.75; margin: 0 0 0.75rem; }
+.legal article p:last-child { margin-bottom: 0; }
+.legal article strong     { color: var(--light); }
+.legal article a          { color: var(--green); text-decoration: none; }
+.legal article a:hover    { color: var(--green-hover); text-decoration: underline; }
+.legal article ul         { list-style: disc; padding-left: 1.4rem; margin: 0.5rem 0 0.75rem; display: flex; flex-direction: column; gap: 6px; }
+.legal article ul li      { font-size: 14px; color: var(--silver); line-height: 1.6; }
+
+/* Pricing table (Terms page) */
+.legal article table      { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 14px; }
+.legal article th         { text-align: left; padding: 10px 12px; background: var(--card); color: var(--green-lime); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+.legal article td         { padding: 10px 12px; color: var(--silver); border-bottom: 1px solid var(--border); vertical-align: top; }
+.legal article tr:last-child td { border-bottom: none; }
+.legal article tr:nth-child(even) td { background: var(--card); }
