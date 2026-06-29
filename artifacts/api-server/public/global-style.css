@@ -329,7 +329,12 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 }
 
 /* Hero text column — left grid cell, no styles yet */
-.home__hero-text {}
+.home__hero-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
 
 /* Hero subheadline */
 .home__hero-sub {
