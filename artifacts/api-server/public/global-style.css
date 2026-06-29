@@ -4,6 +4,11 @@
    ═══════════════════════════════════════════════════════════ */
 
 
+/* ── HELPERS ───────────────────────────────────────────────── */
+
+.center { text-align: center; margin-left: auto; margin-right: auto; }
+
+
 /* ── DESIGN TOKENS ─────────────────────────────────────────── */
 :root {
   --green:      #00c853;
@@ -329,12 +334,7 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 }
 
 /* Hero text column — left grid cell, no styles yet */
-.home__hero-text {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
+.home__hero-text {}
 
 /* Hero subheadline */
 .home__hero-sub {
