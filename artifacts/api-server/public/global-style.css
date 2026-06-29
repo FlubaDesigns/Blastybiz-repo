@@ -346,7 +346,7 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 .home__hero-sub strong { color: var(--light); font-weight: 600; }
 
 /* Hero headline */
-.home__hero h1 {
+/* .home__hero h1 {
   font-family: 'Bebas Neue', sans-serif;
   font-size: clamp(36px, 6vw, 62px);
   line-height: 0.95;
@@ -358,7 +358,7 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 .home__hero h1 span {
   color: var(--green);
   display: block;
-}
+} */
 
 /* Hero — full-width centered section */
 .home__hero-glow {
