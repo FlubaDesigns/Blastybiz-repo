@@ -317,6 +317,24 @@ getDoc(doc(db,'settings','pricing')).then(snap => {
 <script>
 fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){
   document.getElementById('site-header-inject').innerHTML=html;
+  function _setHeaderOffset(){
+    var h=document.querySelector('.header');
+    if(!h)return;
+    var px=h.offsetHeight+'px';
+    document.body.style.paddingTop=px;
+    document.documentElement.style.setProperty('--header-h',px);
+  }
+  window.toggleMenu=function(){
+    var m=document.getElementById('mobile-menu');
+    if(m)m.classList.toggle('open');
+  };
+  window.closeMenu=function(){
+    var m=document.getElementById('mobile-menu');
+    if(m)m.classList.remove('open');
+  };
+  _setHeaderOffset();
+  window.addEventListener('load',_setHeaderOffset);
+  window.addEventListener('resize',_setHeaderOffset);
   function playSound(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)();function ck(t,f){var b=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.03),ctx.sampleRate),D=b.getChannelData(0);for(var i=0;i<D.length;i++){var s=i/ctx.sampleRate;D[i]=(Math.random()*2-1)*Math.exp(-s/0.004)*1.2+Math.sin(2*Math.PI*f*s)*Math.exp(-s/0.005)*0.3;}var src=ctx.createBufferSource();src.buffer=b;var g=ctx.createGain();g.gain.setValueAtTime(1,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.03);src.connect(g);g.connect(ctx.destination);src.start(t);}ctx.resume().then(function(){var n=ctx.currentTime;ck(n+0.01,220);ck(n+0.30,160);}).catch(function(){});}catch(e){}}
   function runAnim(){var tl=document.getElementById('site-header-tagline');if(tl){tl.style.animation='none';void tl.offsetWidth;tl.style.animation='tagline-bolt 0.55s cubic-bezier(0.25,0.46,0.45,0.94) 0s both';}}
   runAnim();

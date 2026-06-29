@@ -1,3 +1,14 @@
+<style>
+.header__logo-icon     { height: 48px; width: 48px; flex-shrink: 0; display: block; object-fit: contain; }
+.header__logo-brand    { margin-left: 8px; }
+.header__logo-wordmark { height: 16px; width: auto; display: block; }
+.header__logo-tagline  { height: 9px;  width: auto; display: block; margin-top: 2px; }
+@media (min-width: 600px) {
+  .header__logo-icon     { height: 90px; width: 90px; }
+  .header__logo-wordmark { height: 22px; }
+  .header__logo-tagline  { height: 12px; }
+}
+</style>
 <header class="header">
   <div class="header__nav-row">
     <a class="header__logo" href="BlastyBiz-Home.html" aria-label="BlastyBiz — go to home">
@@ -31,26 +42,3 @@
   <button class="header__mobile-link" id="menu-logout-btn" onclick="if(typeof doSignOut==='function'){closeMenu();doSignOut()}">Log Out</button>
   <a class="header__mobile-link header__nav-cta" href="BlastyBiz-Login.html" onclick="closeMenu()">Try It Free</a>
 </nav>
-<script>
-function toggleMenu(){
-  var m=document.getElementById('mobile-menu');
-  if(m)m.classList.toggle('open');
-}
-function closeMenu(){
-  var m=document.getElementById('mobile-menu');
-  if(m)m.classList.remove('open');
-}
-function _setHeaderOffset(){
-  var h=document.querySelector('.header');
-  if(!h)return;
-  var px=h.offsetHeight+'px';
-  document.body.style.paddingTop=px;
-  document.documentElement.style.setProperty('--header-h',px);
-}
-if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded',_setHeaderOffset);
-}else{
-  _setHeaderOffset();
-}
-window.addEventListener('resize',_setHeaderOffset);
-</script>
