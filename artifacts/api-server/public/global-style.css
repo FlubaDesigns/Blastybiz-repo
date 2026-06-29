@@ -154,7 +154,7 @@ body.home-page .header__badge-bar { display: flex; }
 }
 
 /* Hide old nav bar on pages using the new site header */
-body.has-site-header nav { display: none; }
+body.has-site-header nav:not(.header__nav):not(.header__mobile-menu) { display: none; }
 
 /* Auth state — JS adds/removes body.logged-in */
 #sh-logout-btn  { display: none; }
