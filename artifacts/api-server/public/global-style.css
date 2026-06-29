@@ -644,48 +644,59 @@ main.home                { width: 100%; }
 }
 
 
-/* ── ABOUT PAGE ─────────────────────────────────────────────── */
-
-/* Reveal animation */
-.about .reveal          { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
-.about .reveal.visible  { opacity: 1; transform: translateY(0); }
+/* ── PUBLIC PAGES — SHARED (About · Contact · Legal) ────────── */
 
 /* Outer wrapper */
-.about.main             { width: 100%; max-width: 100vw; overflow-x: hidden; }
-.about .main-inner      { padding-left: var(--gutter); padding-right: var(--gutter); padding-top: 10px; width: 100%; box-sizing: border-box; }
-.about .main-inner section { padding: 0; max-width: none; margin: 0; }
+.about.main, .contact.main, .legal.main  { width: 100%; max-width: 100vw; overflow-x: hidden; }
 
-/* Sections — spaced out, no hr needed */
-.about section.reveal   { margin-top: 2.5rem; }
-.about aside.reveal     { margin-top: 2.5rem; }
-.about hr.divider       { display: none; }
+/* Inner container — legal overrides padding below */
+.about .main-inner, .contact .main-inner { padding-left: var(--gutter); padding-right: var(--gutter); padding-top: 10px; width: 100%; box-sizing: border-box; }
+.about .main-inner section, .contact .main-inner section { padding: 0; max-width: none; margin: 0; }
+
+/* Reveal animation */
+.about .reveal, .contact .reveal         { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.about .reveal.visible, .contact .reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* Section / aside spacing — no <hr> needed */
+.about section.reveal, .contact section.reveal,
+.about aside.reveal,   .contact aside.reveal    { margin-top: 2.5rem; }
+.about hr.divider, .contact hr.divider          { display: none; }
 
 /* Rows */
-.about .row             { width: 100%; padding: 0; margin-bottom: 0.5rem; }
-@media (min-width: 600px) { .about .row { margin-bottom: 1.5rem; } }
+.about .row, .contact .row, .legal .row  { width: 100%; padding: 0; margin-bottom: 0.5rem; }
+@media (min-width: 600px) {
+  .about .row, .contact .row, .legal .row { margin-bottom: 1.5rem; }
+}
 
 /* Images */
-.about img              { max-width: 100%; height: auto; }
+.about img, .contact img                 { max-width: 100%; height: auto; }
 
-/* Hero */
-.about .page-hero       { position: relative; padding: 2rem 0 1rem; overflow: hidden; }
-.about__hero-glow       { position: absolute; top: -40px; left: -5%; width: 70%; height: 320px; background: radial-gradient(ellipse at 20% 40%, rgba(0,200,83,0.18) 0%, transparent 65%); pointer-events: none; z-index: 0; }
-.about .page-hero .row  { position: relative; z-index: 1; }
-.about .page-hero h1    { font-family: 'Bebas Neue', sans-serif; font-size: clamp(52px, 14vw, 96px); line-height: 1; margin: 0 0 0.3em; color: var(--light); }
-.about .page-hero h1 span { color: var(--green-lime); display: block; }
-.about .page-hero p     { font-size: 1.05rem; color: var(--silver); max-width: 540px; }
+/* Page hero — shared structure and padding */
+.about .page-hero, .contact .page-hero   { position: relative; padding: 2rem 0 1rem; overflow: hidden; }
+.about .page-hero .row, .contact .page-hero .row, .legal .page-hero .row { position: relative; z-index: 1; }
 
-/* Accent labels */
-.about__label           { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--green-lime); font-weight: 600; margin: 0 0 0.4rem; }
+/* Hero glow blob */
+.about__hero-glow, .contact__hero-glow  { position: absolute; top: -40px; left: -5%; width: 70%; height: 320px; background: radial-gradient(ellipse at 20% 40%, rgba(0,200,83,0.18) 0%, transparent 65%); pointer-events: none; z-index: 0; }
+
+/* Hero headline */
+.about .page-hero h1, .contact .page-hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(52px, 14vw, 96px); line-height: 1; margin: 0 0 0.3em; color: var(--light); }
+.about .page-hero h1 span, .contact .page-hero h1 span { color: var(--green-lime); display: block; }
+.about .page-hero p,  .contact .page-hero p  { font-size: 1.05rem; color: var(--silver); max-width: 540px; }
+
+/* Accent label */
+.about__label, .contact__label           { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--green-lime); font-weight: 600; margin: 0 0 0.4rem; }
 
 /* Typography */
-.about h1               { font-family: 'Bebas Neue', sans-serif; margin: 0 0 0.6em; line-height: 1.15; color: var(--h1-color); }
-.about h2               { font-family: 'Bebas Neue', sans-serif; font-size: clamp(32px, 8vw, 52px); line-height: 1.2; font-weight: 300; color: var(--h2-color); margin: 0 0 0.6rem; }
-.about h2 span          { color: var(--green-lime); }
-.about h3               { margin: 0 0 0.25em; line-height: 1.25; color: var(--h3-color); font-size: 18px; font-weight: 600; }
-.about h4               { margin: 0.85em 0 0.45em; line-height: 1.3; color: var(--h4-color); }
-.about h3 span          { color: var(--green-lime); }
-.about p                { all: revert; color: var(--light); }
+.about h1, .contact h1                   { font-family: 'Bebas Neue', sans-serif; margin: 0 0 0.6em; line-height: 1.15; color: var(--h1-color); }
+.about h2, .contact h2                   { font-family: 'Bebas Neue', sans-serif; font-size: clamp(32px, 8vw, 52px); line-height: 1.2; font-weight: 300; color: var(--h2-color); margin: 0 0 0.6rem; }
+.about h2 span, .contact h2 span         { color: var(--green-lime); }
+.about h3, .contact h3                   { margin: 0 0 0.25em; line-height: 1.25; color: var(--h3-color); font-size: 18px; font-weight: 600; }
+.about h3 span, .contact h3 span         { color: var(--green-lime); }
+.about h4, .contact h4                   { margin: 0.85em 0 0.45em; line-height: 1.3; color: var(--h4-color); }
+.about p, .contact p                     { all: revert; color: var(--light); }
+
+
+/* ── ABOUT PAGE — unique ────────────────────────────────────── */
 
 /* Values list — card treatment */
 .about ul               { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px; }
@@ -703,46 +714,8 @@ main.home                { width: 100%; }
 .about__team-info p     { font-size: 14px; color: var(--silver); line-height: 1.6; margin: 0; }
 
 
-/* ── CONTACT PAGE ───────────────────────────────────────────── */
+/* ── CONTACT PAGE — unique ──────────────────────────────────── */
 
-/* Reveal animation */
-.contact .reveal          { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
-.contact .reveal.visible  { opacity: 1; transform: translateY(0); }
-
-/* Outer wrapper */
-.contact.main             { width: 100%; max-width: 100vw; overflow-x: hidden; }
-.contact .main-inner      { padding-left: var(--gutter); padding-right: var(--gutter); padding-top: 10px; width: 100%; box-sizing: border-box; }
-.contact .main-inner section { padding: 0; max-width: none; margin: 0; }
-
-/* Sections — spaced, no hr */
-.contact section.reveal   { margin-top: 2.5rem; }
-.contact aside.reveal     { margin-top: 2.5rem; }
-.contact hr.divider       { display: none; }
-
-/* Rows */
-.contact .row             { width: 100%; padding: 0; margin-bottom: 0.5rem; }
-@media (min-width: 600px) { .contact .row { margin-bottom: 1.5rem; } }
-
-/* Images */
-.contact img              { max-width: 100%; height: auto; }
-
-/* Hero */
-.contact .page-hero       { position: relative; padding: 2rem 0 1rem; overflow: hidden; }
-.contact__hero-glow       { position: absolute; top: -40px; left: -5%; width: 70%; height: 320px; background: radial-gradient(ellipse at 20% 40%, rgba(0,200,83,0.18) 0%, transparent 65%); pointer-events: none; z-index: 0; }
-.contact .page-hero .row  { position: relative; z-index: 1; }
-.contact .page-hero h1    { font-family: 'Bebas Neue', sans-serif; font-size: clamp(52px, 14vw, 96px); line-height: 1; margin: 0 0 0.3em; color: var(--light); }
-.contact .page-hero h1 span { color: var(--green-lime); display: block; }
-.contact .page-hero p     { font-size: 1.05rem; color: var(--silver); max-width: 540px; }
-
-/* Accent labels */
-.contact__label           { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--green-lime); font-weight: 600; margin: 0 0 0.4rem; }
-
-/* Typography */
-.contact h2               { font-family: 'Bebas Neue', sans-serif; font-size: clamp(32px, 8vw, 52px); line-height: 1.2; font-weight: 300; color: var(--h2-color); margin: 0 0 0.6rem; }
-.contact h2 span          { color: var(--green-lime); }
-.contact h3               { margin: 0 0 0.25em; line-height: 1.25; color: var(--h3-color); font-size: 18px; font-weight: 600; }
-.contact h3 span          { color: var(--green-lime); }
-.contact p                { all: revert; color: var(--light); }
 .contact address          { font-style: normal; }
 .contact address p        { color: var(--silver); }
 
@@ -757,28 +730,23 @@ main.home                { width: 100%; }
 .contact .contact-card p  { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 0; }
 
 
-/* ── LEGAL PAGES (Privacy & Terms) ─────────────────────────── */
+/* ── LEGAL PAGES — unique (Privacy & Terms) ─────────────────── */
 
-/* Outer wrapper */
-.legal.main               { width: 100%; max-width: 100vw; overflow-x: hidden; }
+/* Inner container override — needs min 16px on small screens */
 .legal .main-inner        { padding-left: max(16px, var(--gutter)); padding-right: max(16px, var(--gutter)); padding-top: 10px; width: 100%; box-sizing: border-box; }
 
-/* Hero */
+/* Hero overrides — larger top gap, smaller h1 */
 .legal .page-hero         { position: relative; padding: var(--section-v) 0 1.5rem; overflow: hidden; }
 .legal__hero-glow         { position: absolute; top: 0; left: -5%; width: 70%; height: 280px; background: radial-gradient(ellipse at 20% 40%, rgba(0,200,83,0.15) 0%, transparent 65%); pointer-events: none; z-index: 0; }
-.legal .page-hero .row    { position: relative; z-index: 1; }
 .legal .page-hero h1      { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 80px); line-height: 1; margin: 0 0 0.3em; color: var(--light); }
 .legal .page-hero p       { font-size: 0.9rem; color: var(--muted); }
-
-/* Rows */
-.legal .row               { width: 100%; padding: 0; margin-bottom: 0.5rem; }
 
 /* Article — constrained readable width */
 .legal article            { max-width: 680px; margin: 2rem 0 3rem; }
 .legal article section    { padding: 1.5rem 0; border-bottom: 1px solid var(--border); }
 .legal article section:last-child { border-bottom: none; }
 
-/* Typography */
+/* Article typography — overrides shared defaults */
 .legal article h2         { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--light); margin: 0 0 0.75rem; letter-spacing: 0.5px; }
 .legal article p          { font-size: 14px; color: var(--silver); line-height: 1.75; margin: 0 0 0.75rem; }
 .legal article p:last-child { margin-bottom: 0; }
