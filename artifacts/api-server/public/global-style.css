@@ -16,6 +16,8 @@
 
 /* ── DESIGN TOKENS ─────────────────────────────────────────── */
 :root {
+  --bg:         #000000;   /* page background — change this one value */
+
   --green:      #00c853;
   --green-hover: #00e676;
   --green-rgb:  0, 200, 83;
@@ -32,6 +34,8 @@
   --gutter:     10%;
   --v-gutter:   8%;
 }
+
+html, body { background-color: var(--bg); }
 
 
 /* ── TYPOGRAPHY ────────────────────────────────────────────── */
