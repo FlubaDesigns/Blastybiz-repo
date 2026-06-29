@@ -219,7 +219,7 @@ body.logged-in .header__mobile-menu #menu-login-link { display: none; }
 @media (max-width: 599px) {
   .header__nav-row      { padding: 0 12px; }
   .header__logo-icon    { height: 48px; width: 48px; }
-  .header__logo-wordmark { height: 28px; margin-left: 7px; }
+  .header__logo-wordmark { height: 18px; margin-left: 7px; }
   .header__nav-link,
   .header__nav-cta      { display: none; }
   .header__hamburger    { display: flex; }
