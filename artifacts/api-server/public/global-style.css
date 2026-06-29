@@ -530,7 +530,7 @@ main.home                { width: 100%; }
 }
 .hero-stat-big {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 40px;
+  font-size: 28px;
   color: var(--green);
   line-height: 1;
 }
