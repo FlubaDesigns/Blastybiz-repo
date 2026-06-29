@@ -429,6 +429,27 @@ main.home                { width: 100%; }
 .how__step-content p      { font-size: 14px; color: var(--muted); line-height: 1.6; }
 
 
+/* ── PRICING ───────────────────────────────────────────────── */
+
+.pricing__card         { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px 24px; position: relative; transition: border-color 0.2s; }
+.pricing__card--featured { border-color: var(--green); }
+.pricing__badge        { position: absolute; top: -12px; left: 24px; background: var(--green); color: var(--dark); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; }
+.pricing__tier         { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--light); margin-bottom: 4px; }
+.pricing__amount       { display: flex; align-items: baseline; gap: 4px; margin-bottom: 16px; }
+.pricing__num          { font-family: 'Bebas Neue', sans-serif; font-size: 52px; color: var(--green); line-height: 1; }
+.pricing__per          { font-size: 14px; color: var(--muted); }
+.pricing__features     { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+.pricing__features li  { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--silver); }
+.pricing__features li::before  { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; }
+.pricing__features li.off      { color: var(--muted); text-decoration: line-through; }
+.pricing__features li.off::before { content: '✗'; color: var(--muted); }
+.pricing__btn          { display: block; width: 100%; padding: 14px; border-radius: 10px; font-size: 15px; font-weight: 700; text-align: center; text-decoration: none; transition: all 0.2s; cursor: pointer; border: none; }
+.pricing__btn--primary { background: var(--green); color: var(--dark); }
+.pricing__btn--primary:hover { background: var(--green2); }
+.pricing__btn--outline { background: transparent; border: 1px solid var(--border); color: var(--light); }
+.pricing__btn--outline:hover { border-color: var(--green); color: var(--green); }
+
+
 /* ── HERO STATS ────────────────────────────────────────────── */
 
 .home__hero-stats {
