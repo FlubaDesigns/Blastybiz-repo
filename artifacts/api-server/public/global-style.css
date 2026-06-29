@@ -297,8 +297,8 @@ main.home                { width: 100%; }
 .home .layout__split-3   { display: grid; grid-template-columns: 1fr 1fr 1fr;       gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 .home .layout__split-4   { display: grid; grid-template-columns: repeat(4, 1fr);    gap: var(--gap-md); margin-bottom: var(--gap-lg); }
 .home .layout__split-wide{ display: grid; grid-template-columns: 1.5fr 1fr;         gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
-.home .layout__split-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
-.home .layout__split-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
+.home .layout__split-2-1 { display: grid; grid-template-columns: 2fr 1fr;           gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
+.home .layout__split-1-2 { display: grid; grid-template-columns: 1fr 2fr;           gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 
 @media (max-width: 599px) {
   .home .layout__split-3,
