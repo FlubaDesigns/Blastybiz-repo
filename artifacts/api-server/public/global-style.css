@@ -286,7 +286,7 @@ main.home                { width: 100%; }
   .home .main-inner      { padding-top: 5px; }
 }
 
-.home .row               { width: 100%; margin-bottom: 5px; }
+.home .row               { width: 100%; padding: 0; margin-bottom: 5px; }
 @media (min-width: 600px) {
   .home .row             { margin-bottom: 10px; }
 }
