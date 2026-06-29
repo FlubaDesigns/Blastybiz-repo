@@ -628,3 +628,14 @@ main.home                { width: 100%; }
   .cta__split     { grid-template-columns: 1fr; }
   .cta__img-wrap  { display: none; }
 }
+
+
+/* ── ABOUT PAGE ─────────────────────────────────────────────── */
+.about .main-inner        { padding-left: var(--gutter); padding-right: var(--gutter); padding-top: 10px; width: 100%; }
+.about .row               { width: 100%; padding: 0; margin-bottom: 0.5rem; }
+@media (min-width: 600px) { .about .row { margin-bottom: 1.5rem; } }
+.about h1 { color: var(--h1-color); }
+.about h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; line-height: 1.4; color: var(--h2-color); margin: 0 0 0.5rem; }
+.about h2 span { color: var(--green-lime); }
+.about h3 { color: var(--h3-color); }
+.about p  { color: var(--light); }
