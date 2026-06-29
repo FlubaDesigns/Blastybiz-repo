@@ -54,6 +54,12 @@ uri = "file://artifacts/api-server/public/img/people-login-new.png"
 type = "image"
 title = "friendly woman headset laptop smiling"
 
+[[generated]]
+id = "JPEnedWDiccfBoZERw9vA"
+uri = "file://artifacts/api-server/public/images/cta-phone.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "OlLytVLFMpzHayK0XXDkK"
 uri = "file://download/BlastyBiz_Site.zip"
