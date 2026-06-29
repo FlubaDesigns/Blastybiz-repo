@@ -43,6 +43,13 @@
 }
 
 html, body { background-color: var(--bg); overflow-x: hidden; }
+main.home  { max-width: 100vw; overflow-x: hidden; }
+
+/* Images never bust out of their containers */
+.home img  { max-width: 100%; height: auto; }
+
+/* Grid children always stay inside their tracks */
+.home [class*="layout__"] > * { min-width: 0; }
 
 
 /* ── TYPOGRAPHY ────────────────────────────────────────────── */
