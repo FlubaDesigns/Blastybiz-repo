@@ -351,14 +351,6 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 /* Hero text column — left grid cell, no styles yet */
 .home__hero-text { min-width: 0; }
 
-/* Hero subheadline */
-/* .home__hero-sub {
-  font-size: clamp(16px, 4vw, 20px);
-  color: var(--silver);
-  max-width: 480px;
-  animation: fadeUp 0.6s 0.2s ease both;
-}
-.home__hero-sub strong { color: var(--light); font-weight: 600; } */
 
 /* Hero headline */
 .home__hero h1 {
