@@ -916,7 +916,7 @@ exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
 // GET /googleOAuthCallback?code=...&state=...
 // Exchanges auth code for tokens, stores in platformConnections
 // ══════════════════════════════════════════
-exports.googleOAuthCallback = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, async (req, res) => {
+exports.googleOAuthCallback = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, async (req, res) => {
   const { code, state } = req.query;
   if (!code) { res.redirect(`${APP_BASE_URL}/BlastyBiz-Connect.html?error=google`); return; }
 
@@ -1023,7 +1023,7 @@ exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBO
 // Exchanges code for page token, fetches linked IG account,
 // stores both in platformConnections
 // ══════════════════════════════════════════
-exports.facebookOAuthCallback = onRequest({ invoker: 'public', secrets: ['FACEBOOK_APP_ID', 'FACEBOOK_APP_SECRET'] }, async (req, res) => {
+exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['FACEBOOK_APP_ID', 'FACEBOOK_APP_SECRET'] }, async (req, res) => {
   const { code, state } = req.query;
   if (!code) { res.redirect(`${APP_BASE_URL}/BlastyBiz-Connect.html?error=facebook`); return; }
 
@@ -1388,7 +1388,8 @@ exports.setOperatorSecret = onRequest({ invoker: 'public', cors: true }, async (
     'SQUARE_ACCESS_TOKEN','SQUARE_LOCATION_ID',
     'SQUARE_PRO_PLAN_ID','SQUARE_AGENCY_PLAN_ID','SQUARE_WEBHOOK_SIGNATURE_KEY',
     'GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET',
-    'FACEBOOK_APP_ID','FACEBOOK_APP_SECRET','RESEND_API_KEY'
+    'FACEBOOK_APP_ID','FACEBOOK_APP_SECRET',
+    'RESEND_API_KEY','YELP_API_KEY'
   ];
   if (!ALLOWED.includes(name)) return res.status(400).json({ error: 'Unknown secret name' });
 
