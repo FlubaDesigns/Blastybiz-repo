@@ -874,6 +874,7 @@ body.has-site-header h4  { font-family: 'DM Sans', sans-serif; font-size: 15px; 
 @media (min-width: 600px) { .img-col { display: flex; align-items: center; } }
 .about-values-img  { width: 100%; border-radius: 16px; object-fit: cover; aspect-ratio: 2/3; display: block; }
 .contact-support-img { width: 100%; border-radius: 16px; object-fit: cover; aspect-ratio: 4/3; display: block; }
+@media (min-width: 600px) { .contact-support-img { padding-top: 10px; } }
 
 /* Team card */
 .about__team-card       { display: flex; flex-direction: row; align-items: flex-start; gap: 20px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 0; }
