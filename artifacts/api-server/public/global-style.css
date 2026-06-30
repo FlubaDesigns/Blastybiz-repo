@@ -1182,8 +1182,12 @@ body.onboarding-page textarea     { resize: none; }
    No page scope — class names are distinctive enough.
    ─────────────────────────────────────────────────────────── */
 
-/* Card */
-.card                { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+/* Card / Card Base
+   .card-base = shared surface (no bottom margin) — use when stacking inside a layout grid.
+   .card      = .card-base + margin-bottom — use for standalone cards in a flow. */
+.card-base,
+.card                { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.card                { margin-bottom: 16px; }
 .card-title          { font-family: 'Bebas Neue', sans-serif; font-size: 21px; letter-spacing: 1.5px; color: var(--green); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
 .no-biz-state        { text-align: center; padding: 80px 20px; }
 #delete-confirm-btn:hover:not(:disabled) { opacity: 0.85; }
@@ -1192,8 +1196,14 @@ body.onboarding-page textarea     { resize: none; }
 .btn                 { border-radius: 10px; padding: 13px 16px; text-decoration: none; font-weight: 800; font-size: 14px; border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: var(--light); background: transparent; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
 .btn:hover           { border-color: var(--green); color: var(--green); }
 .btn:disabled        { opacity: .5; cursor: not-allowed; }
-.btn-primary         { background: var(--green); color: var(--dark); border-color: var(--green); }
-.btn-primary:hover   { color: var(--dark); background: #00b84c; }
+.btn-primary,
+.btn--primary        { background: var(--green); color: var(--dark); border-color: var(--green); }
+.btn-primary:hover,
+.btn--primary:hover  { color: var(--dark); background: #00b84c; }
+/* Canonical button modifiers — use .btn--* in new markup; old names kept as aliases */
+.btn--danger         { background: #dc2626; color: white; border-color: #dc2626; }
+.btn--danger:hover   { background: #b91c1c; border-color: #b91c1c; }
+.btn--block          { display: block; width: 100%; }
 .btn-row             { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
 
 /* Progress bar */
@@ -1396,6 +1406,19 @@ textarea.big             { min-height: 140px; }
 .spinner-lg              { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
 
 
+/* ── FORM CONTROL BASE ─────────────────────────────────────────
+   .form-control  = single-line text / select base shared across all pages.
+   .form-textarea = multi-line base.
+   Page-specific selectors override geometry/colour on top of these.
+   ─────────────────────────────────────────────────────────── */
+.form-control            { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--light); padding: 10px 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color .15s; box-sizing: border-box; }
+.form-control:focus      { border-color: var(--green); }
+.form-textarea           { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--light); padding: 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color .15s; resize: vertical; line-height: 1.6; box-sizing: border-box; }
+.form-textarea:focus     { border-color: var(--green); }
+.form-control::placeholder,
+.form-textarea::placeholder { color: var(--muted); }
+
+
 /* Page heading */
 .page-title              { font-family: 'Bebas Neue', sans-serif; font-size: 38px; letter-spacing: 2px; color: var(--light); margin-bottom: 6px; }
 .page-title span         { color: var(--green); }
@@ -1534,11 +1557,12 @@ body.connected-page .modal-choice-body { padding: 14px 20px; font-size: 14px; co
 .page-eyebrow            { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--silver); font-weight: 700; margin-bottom: 8px; }
 
 
-/* ── STATUS BADGE colour modifiers (shape defined above with .status-pill) ── */
-.badge-live              { background: rgba(0,200,83,0.12);    color: var(--green); }
-.badge-error             { background: rgba(255,68,68,0.12);   color: var(--danger); }
-.badge-manual            { background: rgba(122,184,122,0.1);  color: var(--silver); }
-.badge-none              { background: rgba(88,112,88,0.15);   color: var(--muted); }
+/* ── STATUS BADGE colour modifiers — .badge--* canonical aliases; old names kept as aliases ── */
+.badge-live,   .badge--live    { background: rgba(0,200,83,0.12);    color: var(--green); }
+.badge-error,  .badge--error   { background: rgba(255,68,68,0.12);   color: var(--danger); }
+.badge-manual, .badge--manual  { background: rgba(122,184,122,0.1);  color: var(--silver); }
+.badge-none,   .badge--muted   { background: rgba(88,112,88,0.15);   color: var(--muted); }
+.badge--warn                   { background: rgba(255,167,38,0.12);  color: var(--warn); }
 
 
 /* ── MODAL SHELL — bottom-sheet overlay used on Connect ─────── */
@@ -1995,10 +2019,15 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 .check-hint { display: block; color: var(--muted); font-size: 12px; margin-top: 1px; }
 .check-input { width: 20px; height: 20px; cursor: pointer; flex-shrink: 0; accent-color: var(--green); }
 
-/* ── Button variants ── */
-.btn-sm         { padding: 8px 14px; font-size: 12px; width: auto; border-radius: 8px; }
-.btn-outline    { background: transparent; border: 1px solid var(--border); color: var(--light); }
-.btn-outline:hover { border-color: var(--green); color: var(--green); }
+/* ── Button variants — .btn--* canonical aliases; old names kept until markup migrated ── */
+.btn-sm,
+.btn--small          { padding: 8px 14px; font-size: 12px; width: auto; border-radius: 8px; }
+.btn-outline,
+.btn--outline,
+.btn--ghost          { background: transparent; border: 1px solid var(--border); color: var(--light); }
+.btn-outline:hover,
+.btn--outline:hover,
+.btn--ghost:hover    { border-color: var(--green); color: var(--green); }
 .btn-green-out  { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--green); background: transparent; color: var(--green); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; margin-bottom: 12px; }
 .btn-save       { flex: 1; padding: 10px; border-radius: 9px; border: none; background: var(--green); color: var(--dark); font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; }
 .btn-cancel     { padding: 10px 14px; border-radius: 9px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; font-family: inherit; }
@@ -2014,7 +2043,8 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 .badge-ready    { background: #0A2A0A; color: var(--green); border: 1px solid var(--green); }
 .badge-posting  { background: #2A1A00; color: var(--warn); border: 1px solid var(--warn); }
 .badge-done     { background: #0A2A0A; color: var(--green); }
-.badge-xs       { font-size: 9px; }
+.badge-xs,
+.badge--small   { font-size: 9px; }
 
 /* ── Quick Platform accordion (JS-rendered) ── */
 .qp-row         { border-bottom: 1px solid var(--border); }
