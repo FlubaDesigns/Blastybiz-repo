@@ -868,7 +868,7 @@ body.has-site-header h4  { font-family: 'DM Sans', sans-serif; font-size: 15px; 
 
 /* Values split layout — image col hidden on mobile (≤599px), visible on tablet/desktop (≥600px) */
 .about-values-img-col { display: none; }
-@media (min-width: 600px) { .about-values-img-col { display: block; } }
+@media (min-width: 600px) { .about-values-img-col { display: flex; align-items: center; } }
 .about-values-img { width: 100%; border-radius: 16px; object-fit: cover; aspect-ratio: 2/3; display: block; }
 
 /* Team card */
