@@ -488,8 +488,11 @@ main.home                { width: 100%; }
 
 /* ── BUTTONS ───────────────────────────────────────────────── */
 
-
-/* Primary variant */
+/* ── MARKETING BUTTONS — Home page hero ONLY ──────────────────
+   Intentionally differ from the app button system (.btn / .btn--*):
+   larger sizing, marketing-specific spacing, display-context aware.
+   Do NOT use in app pages — use .btn.btn--primary there instead.
+   ──────────────────────────────────────────────────────────── */
 .btn__primary {
   background: var(--green);
   color: var(--dark);
@@ -498,6 +501,8 @@ main.home                { width: 100%; }
   padding: 16px 36px;
   margin-top: 10px;
   margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 .btn__primary:hover {
   background: var(--green2);
@@ -509,12 +514,13 @@ main.home                { width: 100%; }
   align-self: center;
 }
 
-/* Ghost variant */
+/* Ghost/scroll-link variant — "How it works" on hero */
 .btn__ghost {
   color: var(--silver);
   font-size: 14px;
   font-weight: 500;
   gap: 6px;
+  cursor: pointer;
   transition: color 0.2s;
 }
 .btn__ghost:hover { color: var(--light); }
@@ -1193,18 +1199,90 @@ body.onboarding-page textarea     { resize: none; }
 #delete-confirm-btn:hover:not(:disabled) { opacity: 0.85; }
 
 /* App buttons — outline ghost, green fill variant */
-.btn                 { border-radius: 10px; padding: 13px 16px; text-decoration: none; font-weight: 800; font-size: 14px; border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: var(--light); background: transparent; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+/* ═══════════════════════════════════════════════════════════
+   BUTTON SYSTEM — canonical
+   .btn base → .btn--* modifiers → size/layout helpers
+   Component aliases (dash-btn, btn-submit, etc.) stay near
+   their page sections; shared-base group below applies once
+   to every button class so font-family / border-radius /
+   cursor / transition are never duplicated.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── SHARED BASE — declared once for every button class ───── */
+.btn,
+.btn-submit, .btn-next, .btn-back,
+.btn-social,
+.btn-primary, .btn-secondary,
+.btn-proceed, .btn-create-page,
+.dash-btn, .dash-btn-outline, .dash-btn-ghost,
+.btn-connect, .btn-reconnect, .btn-disconnect,
+.btn-copy, .btn-instructions,
+.btn-cancel-modal,
+.btn-retry,
+.btn-save, .btn-cancel, .btn-camp-save, .btn-camp-cancel,
+.btn-rewrite, .btn-clear, .btn-more-qs, .btn-green-out,
+.btn-cat-resolve, .btn-coming-soon, .btn-upgrade-inline,
+.pir-save-btn, .pending-approve-btn, .pending-skip-btn,
+.btn-sched {
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 10px;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+/* ── FOCUS RING — keyboard accessibility ──────────────────── */
+.btn:focus-visible,
+.btn-submit:focus-visible, .btn-next:focus-visible,
+.btn-proceed:focus-visible, .btn-connect:focus-visible,
+.dash-btn:focus-visible, .dash-btn-outline:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+/* ── DISABLED ─────────────────────────────────────────────── */
+.btn:disabled,
+.btn-submit:disabled, .btn-next:disabled,
+.btn-connect:disabled,
+.btn-coming-soon { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+/* ── .btn — canonical app button ──────────────────────────── */
+.btn                 { padding: 13px 16px; font-weight: 800; font-size: 14px; border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: var(--light); background: transparent; }
 .btn:hover           { border-color: var(--green); color: var(--green); }
-.btn:disabled        { opacity: .5; cursor: not-allowed; }
-.btn-primary,
-.btn--primary        { background: var(--green); color: var(--dark); border-color: var(--green); }
-.btn-primary:hover,
-.btn--primary:hover  { color: var(--dark); background: #00b84c; }
-/* Canonical button modifiers — use .btn--* in new markup; old names kept as aliases */
-.btn--danger         { background: #dc2626; color: white; border-color: #dc2626; }
+
+/* ── MODIFIER: --primary (green fill + hover lift) ────────── */
+.btn--primary,
+.btn-primary         { background: var(--green); color: var(--dark); border-color: var(--green); }
+.btn--primary:hover,
+.btn-primary:hover   { background: var(--green2); color: var(--dark); transform: translateY(-1px); }
+
+/* ── MODIFIER: --ghost / --outline (transparent + border) ── */
+.btn--ghost,
+.btn--outline,
+.btn-outline         { background: transparent; border: 1px solid var(--border); color: var(--light); }
+.btn--ghost:hover,
+.btn--outline:hover,
+.btn-outline:hover   { border-color: var(--green); color: var(--green); }
+
+/* ── MODIFIER: --danger (red fill) ───────────────────────── */
+.btn--danger         { background: var(--danger); color: #fff; border-color: var(--danger); }
 .btn--danger:hover   { background: #b91c1c; border-color: #b91c1c; }
-.btn--block          { display: block; width: 100%; }
-.btn-row             { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+
+/* ── MODIFIER: --warn (amber outline) ────────────────────── */
+.btn--warn           { background: transparent; color: var(--warn); border: 1px solid var(--warn); }
+.btn--warn:hover     { background: rgba(255,167,38,0.1); }
+
+/* ── SIZE MODIFIERS ───────────────────────────────────────── */
+.btn--sm, .btn-sm, .btn--small { padding: 8px 14px; font-size: 12px; }
+.btn--xs                       { padding: 5px 10px; font-size: 11px; }
+.btn--lg, .btn-lg              { padding: 14px 32px; font-size: 15px; }
+
+/* ── LAYOUT MODIFIERS ─────────────────────────────────────── */
+.btn--block, .btn--full { display: flex; width: 100%; }
+
+/* ── LAYOUT HELPERS ───────────────────────────────────────── */
+.btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
 
 /* Progress bar */
 .progress-wrap       { height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; margin-top: 10px; }
@@ -1438,8 +1516,7 @@ textarea.big             { min-height: 140px; }
 .save-status.ok          { color: var(--green); }
 .save-status.err         { color: var(--danger); }
 
-/* Large button modifier */
-.btn-lg                  { padding: 14px 32px; font-size: 15px; }
+/* .btn-lg is now part of the canonical button system above */
 
 /* AI badge */
 .ai-badge                { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,200,83,.08); border: 1px solid rgba(0,200,83,.25); border-radius: 999px; padding: 5px 12px; font-size: 11px; color: var(--green); font-weight: 700; letter-spacing: .5px; margin-bottom: 24px; }
@@ -1489,8 +1566,8 @@ body.connected-page .section-label { font-size: 10px; letter-spacing: 2.5px; col
 
 /* CTA group — full-width stacked buttons */
 .cta-group               { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-body.connected-page .btn-primary   { display: block; width: 100%; padding: 15px 24px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: 'DM Sans', sans-serif; text-align: center; text-decoration: none; transition: background 0.2s; }
-body.connected-page .btn-secondary { display: block; width: 100%; padding: 13px 24px; background: transparent; color: var(--silver); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; text-align: center; text-decoration: none; transition: all 0.2s; }
+body.connected-page .btn-primary   { display: block; width: 100%; padding: 15px 24px; border: none; font-size: 15px; font-weight: 700; text-align: center; }
+body.connected-page .btn-secondary { display: block; width: 100%; padding: 13px 24px; background: transparent; color: var(--silver); border: 1px solid var(--border); font-size: 14px; font-weight: 600; text-align: center; }
 body.connected-page .btn-secondary:hover { border-color: var(--silver); color: var(--light); }
 /* ── Step accordion body ── */
 body.connected-page .step-body { padding: 14px 16px 16px; font-size: 13px; color: var(--muted); line-height: 1.6; border-top: 1px solid var(--border); }
@@ -1503,16 +1580,17 @@ body.connected-page .modal-choice-body { padding: 14px 20px; font-size: 14px; co
 .error-card              { background: rgba(255,68,68,0.06); border: 1px solid rgba(255,68,68,0.25); border-radius: 16px; padding: 20px 24px; margin-bottom: 24px; }
 .error-title             { font-size: 15px; font-weight: 700; color: var(--danger); margin-bottom: 6px; }
 .error-desc              { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
-.btn-retry               { display: inline-block; padding: 10px 20px; background: transparent; color: var(--danger); border: 1px solid var(--danger); border-radius: 10px; font-size: 13px; font-weight: 700; text-decoration: none; transition: all 0.2s; }
+.btn-retry               { display: inline-flex; align-items: center; padding: 10px 20px; background: transparent; color: var(--danger); border: 1px solid var(--danger); font-size: 13px; font-weight: 700; }
 .btn-retry:hover         { background: rgba(255,68,68,0.1); }
 
 
 /* ── FULL-WIDTH BLOCK BUTTONS — CTA rows at bottom of app pages ─
    .dash-btn = primary green; .dash-btn-outline = ghost; .dash-btn-ghost = card+green border
+   font-family / cursor / transition / border-radius inherited from shared base above
    ─────────────────────────────────────────────────────────── */
-.dash-btn            { display: block; width: 100%; padding: 15px; background: var(--green); color: var(--dark); border: none; border-radius: 12px; font-size: 16px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; text-align: center; text-decoration: none; transition: background 0.2s; margin-bottom: 12px; }
-.dash-btn:hover      { background: var(--green2); }
-.dash-btn-outline    { display: block; width: 100%; padding: 14px; background: transparent; color: var(--silver); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.2s; margin-bottom: 12px; }
+.dash-btn            { display: block; width: 100%; padding: 15px; background: var(--green); color: var(--dark); border: none; font-size: 16px; font-weight: 700; text-align: center; margin-bottom: 12px; }
+.dash-btn:hover      { background: var(--green2); transform: translateY(-1px); }
+.dash-btn-outline    { display: block; width: 100%; padding: 14px; background: transparent; color: var(--silver); border: 1px solid var(--border); font-size: 14px; font-weight: 600; text-align: center; margin-bottom: 12px; }
 .dash-btn-outline:hover { border-color: var(--silver); color: var(--light); }
 .dash-btn-ghost      { background: var(--card); color: var(--green); border: 1px solid var(--green); }
 .dash-btn-ghost:hover{ background: rgba(0,200,83,0.08); }
@@ -1595,8 +1673,8 @@ body.connect-page .section-label { color: var(--silver); margin: 0 0 10px; }
 .explainer-step-num      { width: 22px; height: 22px; border-radius: 50%; background: rgba(0,200,83,0.12); color: var(--green); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
 .explainer-note          { font-size: 12px; color: var(--muted); background: rgba(84,168,255,0.06); border: 1px solid rgba(84,168,255,0.15); border-radius: 8px; padding: 10px 12px; line-height: 1.5; }
 .explainer-note strong   { color: var(--blue); }
-.btn-proceed             { width: 100%; padding: 11px 18px; background: var(--green); color: var(--dark); border: none; border-radius: 10px; font-size: 14px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 12px; transition: background 0.2s; display: block; text-align: center; text-decoration: none; }
-.btn-proceed:hover       { background: #00b84c; }
+.btn-proceed             { width: 100%; padding: 11px 18px; background: var(--green); color: var(--dark); border: none; font-size: 14px; font-weight: 700; margin-top: 12px; display: block; text-align: center; }
+.btn-proceed:hover       { background: var(--green2); transform: translateY(-1px); }
 /* Facebook Page creation CTA (inherits .btn-proceed, adds letter-spacing) */
 .btn-create-page { letter-spacing: 0.3px; }
 
@@ -1622,7 +1700,7 @@ body.connect-page .section-label { color: var(--silver); margin: 0 0 10px; }
 .guide-step-body a:hover { text-decoration: underline; }
 .guide-step-body strong  { color: var(--warn); }
 .guide-note              { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 4px; }
-.btn-cancel-modal        { width: 100%; padding: 11px; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 10px; font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; }
+.btn-cancel-modal        { width: 100%; padding: 11px; background: transparent; color: var(--muted); border: 1px solid var(--border); font-size: 13px; font-weight: 600; }
 .btn-cancel-modal:hover  { color: var(--light); border-color: var(--silver); }
 
 /* Platform cards */
@@ -1635,12 +1713,11 @@ body.connect-page .section-label { color: var(--silver); margin: 0 0 10px; }
 .platform-mode           { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 2px; font-weight: 600; }
 .platform-status         { font-size: 12px; color: var(--muted); margin-top: 4px; }
 .platform-actions        { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; align-items: flex-end; }
-.btn-connect             { padding: 9px 18px; background: var(--green); color: var(--dark); border: none; border-radius: 10px; font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-.btn-connect:hover       { background: #00b84c; }
-.btn-connect:disabled    { opacity: 0.5; cursor: not-allowed; }
-.btn-reconnect           { padding: 9px 18px; background: transparent; color: var(--warn); border: 1px solid var(--warn); border-radius: 10px; font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.btn-connect             { padding: 9px 18px; background: var(--green); color: var(--dark); border: none; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.btn-connect:hover       { background: var(--green2); transform: translateY(-1px); }
+.btn-reconnect           { padding: 9px 18px; background: transparent; color: var(--warn); border: 1px solid var(--warn); font-size: 13px; font-weight: 700; white-space: nowrap; }
 .btn-reconnect:hover     { background: rgba(255,167,38,0.1); }
-.btn-disconnect          { padding: 6px 12px; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 8px; font-size: 11px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.btn-disconnect          { padding: 6px 12px; background: transparent; color: var(--muted); border: 1px solid var(--border); font-size: 11px; font-weight: 600; white-space: nowrap; }
 .btn-disconnect:hover    { border-color: var(--danger); color: var(--danger); }
 
 /* Manual (copy-ready) cards */
@@ -1693,9 +1770,9 @@ body.publishing-page .platform-msg    { font-size: 12px; color: var(--muted); ma
 .action-platform                      { font-size: 14px; font-weight: 600; color: var(--light); margin-bottom: 4px; }
 .action-desc                          { font-size: 12px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
 .action-btns                          { display: flex; gap: 8px; flex-wrap: wrap; }
-.btn-copy                             { padding: 8px 14px; background: var(--green); color: var(--dark); border: none; border-radius: 8px; font-size: 12px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; }
+.btn-copy                             { padding: 8px 14px; background: var(--green); color: var(--dark); border: none; font-size: 12px; font-weight: 700; }
 .btn-copy:hover                       { background: var(--green2); }
-.btn-instructions                     { padding: 8px 14px; background: transparent; color: var(--silver); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; }
+.btn-instructions                     { padding: 8px 14px; background: transparent; color: var(--silver); border: 1px solid var(--border); font-size: 12px; font-weight: 600; }
 .btn-instructions:hover               { border-color: var(--silver); }
 
 /* Stat card */
@@ -2019,24 +2096,20 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 .check-hint { display: block; color: var(--muted); font-size: 12px; margin-top: 1px; }
 .check-input { width: 20px; height: 20px; cursor: pointer; flex-shrink: 0; accent-color: var(--green); }
 
-/* ── Button variants — .btn--* canonical aliases; old names kept until markup migrated ── */
-.btn-sm,
-.btn--small          { padding: 8px 14px; font-size: 12px; width: auto; border-radius: 8px; }
-.btn-outline,
-.btn--outline,
-.btn--ghost          { background: transparent; border: 1px solid var(--border); color: var(--light); }
-.btn-outline:hover,
-.btn--outline:hover,
-.btn--ghost:hover    { border-color: var(--green); color: var(--green); }
-.btn-green-out  { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--green); background: transparent; color: var(--green); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; margin-bottom: 12px; }
-.btn-save       { flex: 1; padding: 10px; border-radius: 9px; border: none; background: var(--green); color: var(--dark); font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; }
-.btn-cancel     { padding: 10px 14px; border-radius: 9px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; font-family: inherit; }
-.btn-camp-save  { background: var(--green); color: var(--dark); border: none; border-radius: 9px; padding: 10px 18px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; white-space: nowrap; }
-.btn-camp-cancel { background: transparent; border: 1px solid var(--border); border-radius: 9px; padding: 10px 14px; color: var(--muted); font-size: 13px; cursor: pointer; font-family: inherit; }
-.btn-icon-close  { background: transparent; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; padding: 0 4px; }
+/* ── Button aliases — these selectors are in the shared-base group (canonical system above)
+   and inherit font-family / cursor / transition / border-radius: 10px from it.
+   Only the visual properties that differ from the base are declared here. ── */
+/* .btn-sm, .btn--small, .btn--xs, .btn--lg — defined in canonical system */
+/* .btn--outline, .btn--ghost, .btn--danger, .btn--warn — defined in canonical system */
+.btn-green-out  { padding: 9px 16px; border: 1px solid var(--green); background: transparent; color: var(--green); font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+.btn-save       { flex: 1; padding: 10px; border: none; background: var(--green); color: var(--dark); font-weight: 700; font-size: 13px; }
+.btn-cancel     { padding: 10px 14px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; }
+.btn-camp-save  { background: var(--green); color: var(--dark); border: none; padding: 10px 18px; font-weight: 700; font-size: 13px; white-space: nowrap; }
+.btn-camp-cancel { background: transparent; border: 1px solid var(--border); padding: 10px 14px; color: var(--muted); font-size: 13px; }
+.btn-icon-close  { background: transparent; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; padding: 0 4px; border-radius: 0; }
 .btn-rewrite    { background: rgba(0,200,83,.12); border: 1.5px solid var(--green); color: var(--green); font-weight: 700; margin-bottom: 10px; }
 .btn-clear      { background: transparent; border: 1.5px solid var(--border); color: var(--muted); }
-.btn-more-qs    { display: none; margin-top: 14px; width: 100%; background: rgba(0,200,83,.08); border: 1px solid rgba(0,200,83,.25); border-radius: 10px; padding: 11px 16px; color: var(--green); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.btn-more-qs    { display: none; margin-top: 14px; width: 100%; background: rgba(0,200,83,.08); border: 1px solid rgba(0,200,83,.25); padding: 11px 16px; color: var(--green); font-size: 13px; font-weight: 600; }
 
 /* ── Badge variants ── */
 .badge-idle     { background: var(--muted); color: var(--light); }
@@ -2103,8 +2176,8 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 .pending-post-card     { border: 1px solid rgba(255,180,0,.25); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
 .pending-post-date     { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
 .pending-post-actions  { display: flex; gap: 8px; margin-top: 10px; }
-.pending-approve-btn   { flex: 1; padding: 11px; border-radius: 9px; border: none; background: var(--green); color: var(--dark); font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; }
-.pending-skip-btn      { padding: 11px 14px; border-radius: 9px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; font-family: inherit; }
+.pending-approve-btn   { flex: 1; padding: 11px; border: none; background: var(--green); color: var(--dark); font-weight: 700; font-size: 13px; }
+.pending-skip-btn      { padding: 11px 14px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; }
 
 /* ── Profile insight rows (PIR) ── */
 .pir-empty    { font-size: 12px; color: var(--muted); padding: 8px 0; }
@@ -2114,7 +2187,7 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 .pir-question { font-size: 14px; font-weight: 600; color: var(--light); line-height: 1.4; }
 .pir-chevron  { font-size: 18px; color: var(--muted); flex-shrink: 0; padding-top: 2px; transition: transform .2s; }
 .pir-textarea { width: 100%; background: var(--dark); border: 1px solid var(--border); border-radius: 8px; color: var(--light); padding: 10px; font-family: inherit; font-size: 13px; resize: none; box-sizing: border-box; }
-.pir-save-btn { margin-top: 8px; padding: 9px 22px; border-radius: 8px; border: none; background: var(--green); color: var(--dark); font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; }
+.pir-save-btn { margin-top: 8px; padding: 9px 22px; border: none; background: var(--green); color: var(--dark); font-weight: 700; font-size: 13px; }
 .pir-body-wrap { padding-bottom: 12px; }
 
 /* ── Insight (answered) ── */
