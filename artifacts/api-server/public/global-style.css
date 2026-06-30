@@ -109,10 +109,11 @@
 .text-cap    { text-transform: capitalize; }
 
 /* ── BREADCRUMB — public info pages (About, Contact, Privacy, Terms) ── */
-.breadcrumb      { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-bottom: 20px; }
-.breadcrumb a    { color: var(--muted); text-decoration: none; }
-.breadcrumb a:hover { color: var(--green); }
-.breadcrumb span { opacity: 0.5; }
+.breadcrumb            { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); margin-bottom: 20px; letter-spacing: 0.02em; }
+.breadcrumb a          { color: var(--muted); text-decoration: none; transition: color 0.15s; }
+.breadcrumb a:hover    { color: var(--blue); }
+.breadcrumb .bc-sep    { opacity: 0.35; }
+.breadcrumb .bc-current { color: var(--blue); font-weight: 500; }
 
 
 
@@ -152,8 +153,15 @@
   --blue:       #54a8ff;   /* info / link */
   --panel:      #0a1a0a;   /* subtle surface, admin + app pages */
   --soft:       #0d160d;   /* alias of --card, listing-preview */
+
+  /* Header clearance — single source of truth.
+     All padding-top on .main AND sticky top values must use var(--main-offset).
+     Mobile default: header ~55px + 12px breathing = 67px */
+  --main-offset: 67px;
+  --badge-bar-h: 36px;     /* home-page only badge bar height */
 }
 @media (min-width: 600px)  { :root { --gutter: 3rem; --section-v: 80px; } }
+@media (min-width: 768px)  { :root { --main-offset: 90px; } }  /* desktop: header ~77px + 13px */
 @media (min-width: 1100px) { :root { --section-v: 100px; } }
 
 html, body { background-color: var(--bg); color: var(--light); overflow-x: hidden; }
@@ -188,7 +196,10 @@ h2           { margin: 0.3rem 0; }
 label          { display: block; font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--silver); margin-bottom: 7px; }
 input,
 textarea,
-select         { width: 100%; min-width: 160px; max-width: 560px; background: var(--dark); border: 1px solid var(--border); border-radius: 10px; padding: 13px 16px; color: var(--light); font-family: 'DM Sans', sans-serif; font-size: 15px; transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none; box-sizing: border-box; }
+select         { width: 100%; min-width: 0; background: var(--dark); border: 1px solid var(--border); border-radius: 10px; padding: 13px 16px; color: var(--light); font-family: 'DM Sans', sans-serif; font-size: 15px; transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none; box-sizing: border-box; }
+@media (min-width: 600px) {
+  input, textarea, select { max-width: 560px; min-width: 160px; }
+}
 input:focus,
 textarea:focus,
 select:focus   { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,200,83,0.1); }
@@ -349,17 +360,18 @@ body.home-page .header__badge-bar { display: flex; }
 /* Hide old nav bar on pages using the new site header */
 body.has-site-header nav:not(.header__nav):not(.header__mobile-menu) { display: none; }
 
-/* Clear fixed site header + sticky footer
-   Mobile  (≤767px): icon 46px + 8px nav padding  = ~54px header
-   Desktop (≥768px): icon 56px + 20px nav padding = ~76px header */
-body.has-site-header .main  { padding-top: 58px; }
+/* Clear fixed site header — uses var(--main-offset) defined in :root.
+   Changing the offset: update --main-offset in :root only. Everything below
+   (tabs, sticky elements) inherits automatically via the same variable. */
+body.has-site-header .main  { padding-top: var(--main-offset); }
 @media (min-width: 600px) {
   body.has-site-header      { display: flex; flex-direction: column; min-height: 100vh; }
-  body.has-site-header .main { flex: 1; padding-top: 58px; }
+  body.has-site-header .main { flex: 1; padding-top: var(--main-offset); }
 }
-@media (min-width: 768px) {
-  body.has-site-header .main { padding-top: 80px; }
-}
+/* Home page: JS _setHeaderOffset() already sets body.style.paddingTop to the
+   full header height (nav + badge bar). Zero out .main's own padding-top so
+   the two don't stack and create a double gap. */
+body.home-page .main { padding-top: 0 !important; }
 
 /* Auth state — JS adds/removes body.logged-in */
 #header__nav-logout  { display: none; }
@@ -1517,12 +1529,20 @@ body.app-page .main-inner { padding-top: 10px; padding-left: var(--gutter); padd
 
 /* ── CONTENT WIDTH UTILITIES ────────────────────────────────────
    Apply to main / .main-inner instead of per-page max-width styles.
+   max-width only at ≥600px so mobile is always full-width/stackable.
    ─────────────────────────────────────────────────────────── */
-.w-narrow            { max-width: 560px;  margin-left: auto; margin-right: auto; }
-.w-mid               { max-width: 600px;  margin-left: auto; margin-right: auto; }
-.w-form              { max-width: 700px;  margin-left: auto; margin-right: auto; }
-.w-wide              { max-width: 1100px; margin-left: auto; margin-right: auto; }
-.w-xl                { max-width: 1180px; margin-left: auto; margin-right: auto; }
+.w-narrow,
+.w-mid,
+.w-form,
+.w-wide,
+.w-xl                { width: 100%; margin-left: auto; margin-right: auto; }
+@media (min-width: 600px) {
+  .w-narrow          { max-width: 560px; }
+  .w-mid             { max-width: 600px; }
+  .w-form            { max-width: 700px; }
+  .w-wide            { max-width: 1100px; }
+  .w-xl              { max-width: 1180px; }
+}
 
 
 /* ── PAGE-LEVEL PATTERNS ─────────────────────────────────────────
@@ -2293,8 +2313,9 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 /* ═══ CREATE PAGE — SCOPED OVERRIDES (conflict prevention) ═══ */
 
 /* Tabs (conflict: listing-preview page also uses .tab/.tabs) */
-body.create-page .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--dark); position: sticky; top: 80px; z-index: 99; border-radius: 10px 10px 0 0; overflow: hidden; }
-@media (max-width: 599px) { body.create-page .tabs { top: 56px; } }
+/* Sticky top matches --main-offset so tabs lock flush under the header automatically.
+   No separate mobile override needed — the variable handles the breakpoint. */
+body.create-page .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--dark); position: sticky; top: var(--main-offset); z-index: 99; border-radius: 10px 10px 0 0; overflow: hidden; }
 body.create-page .tab  { flex: 1; padding: 14px 8px; text-align: center; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s; }
 body.create-page .tab.active { color: var(--green); border-bottom-color: var(--green); }
 
