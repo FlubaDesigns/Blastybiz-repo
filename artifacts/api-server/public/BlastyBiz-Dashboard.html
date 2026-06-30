@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="blastybiz-global.css?v=97" />
+<link rel="stylesheet" href="global-style.css?v=122" />
 <title>BlastyBiz — Command Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}</style>
@@ -31,7 +31,7 @@
 
   <div class="add-biz-card" onclick="addBusiness()">
     <div class="add-biz-icon">＋</div>
-    <div>
+    <div class="add-biz-info">
       <div class="add-biz-text">Add New Business</div>
       <div class="add-biz-sub">Set up another business profile</div>
     </div>
@@ -50,13 +50,11 @@
 
   <!-- BUSINESS SWITCHER BAR -->
   <div class="biz-bar">
-    <div class="biz-bar-left">
-      <div class="biz-bar-title">⚙ Control Panel</div>
-    </div>
+    <div class="biz-bar-title">⚙ Control Panel</div>
     <div class="biz-bar-right">
       <div class="biz-active" id="biz-active-btn" onclick="openSwitcher()">
         <div class="biz-avatar" id="active-avatar">🏪</div>
-        <div>
+        <div class="biz-info">
           <div class="biz-name" id="active-name"></div>
           <div class="biz-plan" id="active-plan"></div>
         </div>
@@ -98,14 +96,12 @@
     <div class="stat"><div class="stat-num">$0</div><div class="stat-label">AI Cost</div><div class="stat-note ok">This month</div></div>
   </div>
 
-  <div id="platforms">
-    <div class="card">
-      <div class="card-title">📡 Platform Status</div>
-      <div class="platform-list" id="platform-list">
-        <div class="loading-text">Loading…</div>
-      </div>
-      <a href="BlastyBiz-Connect.html" class="manage-link">⚙ Manage connections →</a>
+  <div class="card" id="platforms">
+    <div class="card-title">📡 Platform Status</div>
+    <div class="platform-list" id="platform-list">
+      <div class="loading-text">Loading…</div>
     </div>
+    <a href="BlastyBiz-Connect.html" class="manage-link">⚙ Manage connections →</a>
   </div>
 
   <div class="card" id="tasks">
