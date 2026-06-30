@@ -488,9 +488,8 @@ main.home                { width: 100%; }
 .btn-flex-130 { flex: 1; min-width: 130px; }
 .btn-flex-100 { flex: 1; min-width: 100px; }
 
-/* Spacing helpers */
+/* .section-mt — semantic alias for mt-16; kept so HTML needn't change */
 .section-mt   { margin-top: 16px; }
-.mt-20        { margin-top: 20px; }
 
 
 /* Image column — hidden on mobile, shows on desktop */
@@ -1926,9 +1925,8 @@ body.listing-preview-page .manual-note         { font-size: 12px; color: var(--m
 .approval-text  { font-size: 13px; color: var(--muted); }
 .approval-text strong { color: var(--light); }
 
-/* Modifier classes that pair with layout helpers on this page */
-/* .autosend-toggle-row spacing → mt-14 mb-16 utility classes in HTML */
-/* .manual-card-header spacing  → mb-10 utility class in HTML */
+/* autosend-toggle-row and manual-card-header spacing is handled
+   by component rules in this stylesheet — no per-element overrides needed */
 
 
 /* ══════════════════════════════════════════════════════════════
@@ -1949,18 +1947,12 @@ body.create-page .row { margin-bottom: 0; }  /* cancel body.has-site-header .row
 .w-72      { width: 72px; }
 .w-84      { width: 84px; }
 
-/* ── Form input margin (create page has bare inputs, no .field wrapper) ── */
-body.create-page input,
-body.create-page textarea,
-body.create-page select { margin-bottom: 16px; }
-body.create-page input.mb-0,
-body.create-page textarea.mb-0,
-body.create-page select.mb-0 { margin-bottom: 0; }
-body.create-page input.mb-4  { margin-bottom: 4px; }
-body.create-page input.mb-6  { margin-bottom: 6px; }
-body.create-page input.mb-8  { margin-bottom: 8px; }
-body.create-page input.mb-10 { margin-bottom: 10px; }
-body.create-page input.mb-12 { margin-bottom: 12px; }
+/* ── Form input margin (create page has bare inputs, no .field wrapper) ──
+   :not([class*="mb-"]) lets utility classes (.mb-0, .mb-4 …) win naturally;
+   no per-value override rules needed. */
+body.create-page input:not([class*="mb-"]),
+body.create-page textarea:not([class*="mb-"]),
+body.create-page select:not([class*="mb-"]) { margin-bottom: 16px; }
 body.create-page .input-date,
 body.create-page .input-campaign { margin-bottom: 0; }
 
