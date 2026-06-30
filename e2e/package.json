@@ -1,0 +1,14 @@
+{
+  "name": "blastybiz-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Playwright end-to-end tests for BlastyBiz (https://blastybiz-9523e.web.app)",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0"
+  }
+}
