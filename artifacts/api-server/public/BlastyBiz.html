@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=25" />
+<link rel="stylesheet" href="global-style.css?v=26" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}</style>
@@ -297,68 +297,78 @@
     <div id="profile-biz-cat" class="profile-cat-text">Set up your profile below</div>
   </div>
 
-  <div class="card">
-    <div class="card-title">🏪 Business Profile</div>
-    <p class="helper mb-16">Saved automatically. Used to pre-fill every listing.</p>
+  <div class="profile-biz-split">
 
-    <label>Business Name</label>
-    <input type="text" id="profile-name" placeholder="Your business name" oninput="saveProfile()" />
-
-    <label>Your Name</label>
-    <input type="text" id="profile-owner-name" placeholder="e.g. Maria Rodriguez" oninput="saveProfile()" />
-
-    <label>Your Role</label>
-    <select id="profile-owner-role" onchange="saveProfile()">
-      <option value="owner">Owner</option>
-      <option value="manager">Manager</option>
-      <option value="other">Other</option>
-    </select>
-
-    <label>Category</label>
-    <select id="profile-cat" onchange="saveProfile()">
-      <option value="">Select a category...</option>
-      <option>Restaurant / Food & Drink</option>
-      <option>Retail Shop</option>
-      <option>Beauty & Salon</option>
-      <option>Auto Services</option>
-      <option>Home Services</option>
-      <option>Health & Fitness</option>
-      <option>Professional Services</option>
-      <option>Church / Nonprofit</option>
-      <option>Entertainment</option>
-      <option>Other</option>
-    </select>
-
-    <label>Phone</label>
-    <input type="tel" id="profile-phone" placeholder="555-000-0000" oninput="formatPhone(this);saveProfile()" inputmode="tel" />
-
-    <label>Email</label>
-    <input type="email" id="profile-email" placeholder="hello@yourbusiness.com" oninput="saveProfile()" />
-
-    <label>Location</label>
-    <div class="loc-type-toggle">
-      <button class="loc-type-btn active" id="prof-loc-btn-physical" onclick="setProfileLocationType('physical')">🧱 Brick</button>
-      <button class="loc-type-btn" id="prof-loc-btn-online" onclick="setProfileLocationType('online')">🌐 Online</button>
-      <button class="loc-type-btn" id="prof-loc-btn-both" onclick="setProfileLocationType('both')">🌍 Both</button>
+    <div class="profile-biz-img-col">
+      <img src="img/storefront.jpg" alt="Local business storefront" class="profile-biz-img" />
     </div>
-    <div class="loc-fields" id="prof-loc-physical-fields">
-      <input type="text" id="profile-street" placeholder="Street address" oninput="saveProfile()" class="mb-8" />
-      <div class="addr-row">
-        <input type="text" id="profile-city"  placeholder="City"  oninput="saveProfile()" class="flex-1" />
-        <input type="text" id="profile-state" placeholder="State" oninput="saveProfile()" class="w-72" />
-        <input type="text" id="profile-zip"   placeholder="ZIP"   oninput="saveProfile()" class="w-84" />
+
+    <div class="profile-biz-form-col">
+    <div class="card">
+      <div class="card-title">🏪 Business Profile</div>
+      <p class="helper mb-16">Saved automatically. Used to pre-fill every listing.</p>
+
+      <label>Business Name</label>
+      <input type="text" id="profile-name" placeholder="Your business name" oninput="saveProfile()" />
+
+      <label>Your Name</label>
+      <input type="text" id="profile-owner-name" placeholder="e.g. Maria Rodriguez" oninput="saveProfile()" />
+
+      <label>Your Role</label>
+      <select id="profile-owner-role" onchange="saveProfile()">
+        <option value="owner">Owner</option>
+        <option value="manager">Manager</option>
+        <option value="other">Other</option>
+      </select>
+
+      <label>Category</label>
+      <select id="profile-cat" onchange="saveProfile()">
+        <option value="">Select a category...</option>
+        <option>Restaurant / Food & Drink</option>
+        <option>Retail Shop</option>
+        <option>Beauty & Salon</option>
+        <option>Auto Services</option>
+        <option>Home Services</option>
+        <option>Health & Fitness</option>
+        <option>Professional Services</option>
+        <option>Church / Nonprofit</option>
+        <option>Entertainment</option>
+        <option>Other</option>
+      </select>
+
+      <label>Phone</label>
+      <input type="tel" id="profile-phone" placeholder="555-000-0000" oninput="formatPhone(this);saveProfile()" inputmode="tel" />
+
+      <label>Email</label>
+      <input type="email" id="profile-email" placeholder="hello@yourbusiness.com" oninput="saveProfile()" />
+
+      <label>Location</label>
+      <div class="loc-type-toggle">
+        <button class="loc-type-btn active" id="prof-loc-btn-physical" onclick="setProfileLocationType('physical')">🧱 Brick</button>
+        <button class="loc-type-btn" id="prof-loc-btn-online" onclick="setProfileLocationType('online')">🌐 Online</button>
+        <button class="loc-type-btn" id="prof-loc-btn-both" onclick="setProfileLocationType('both')">🌍 Both</button>
       </div>
-    </div>
-    <div class="loc-fields hidden" id="prof-loc-online-fields">
-      <input type="text" id="profile-region" placeholder="Service area or region — e.g. Southwest Florida" oninput="saveProfile()" />
-    </div>
+      <div class="loc-fields" id="prof-loc-physical-fields">
+        <input type="text" id="profile-street" placeholder="Street address" oninput="saveProfile()" class="mb-8" />
+        <div class="addr-row">
+          <input type="text" id="profile-city"  placeholder="City"  oninput="saveProfile()" class="flex-1" />
+          <input type="text" id="profile-state" placeholder="State" oninput="saveProfile()" class="w-72" />
+          <input type="text" id="profile-zip"   placeholder="ZIP"   oninput="saveProfile()" class="w-84" />
+        </div>
+      </div>
+      <div class="loc-fields hidden" id="prof-loc-online-fields">
+        <input type="text" id="profile-region" placeholder="Service area or region — e.g. Southwest Florida" oninput="saveProfile()" />
+      </div>
 
-    <label>Website</label>
-    <input type="url" id="profile-website" placeholder="https://yourbusiness.com" oninput="saveProfile()" />
+      <label>Website</label>
+      <input type="url" id="profile-website" placeholder="https://yourbusiness.com" oninput="saveProfile()" />
 
-    <label>Hours</label>
-    <input type="text" id="profile-hours" placeholder="Mon–Sat 9am–8pm" oninput="saveProfile()" />
-  </div>
+      <label>Hours</label>
+      <input type="text" id="profile-hours" placeholder="Mon–Sat 9am–8pm" oninput="saveProfile()" />
+    </div>
+    </div><!-- /.profile-biz-form-col -->
+
+  </div><!-- /.profile-biz-split -->
 
   <div class="card">
     <div class="card-title">⚙️ Preferences</div>
