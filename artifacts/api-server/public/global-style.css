@@ -82,6 +82,21 @@
 .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .filters        { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
 .actions        { display: flex; flex-wrap: wrap; gap: 6px; }
+/* ── BARE COLOUR ALIASES (used in admin table cells without text- prefix) ── */
+.muted { color: var(--muted); }
+
+/* ── ADDITIONAL TEXT / DECORATION UTILITIES ──────────────────── */
+.text-warn   { color: var(--warn); }
+.no-underline { text-decoration: none; }
+.text-cap    { text-transform: capitalize; }
+
+/* ── BREADCRUMB — public info pages (About, Contact, Privacy, Terms) ── */
+.breadcrumb      { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+.breadcrumb a    { color: var(--muted); text-decoration: none; }
+.breadcrumb a:hover { color: var(--green); }
+.breadcrumb span { opacity: 0.5; }
+
+
 
 
 
@@ -1298,6 +1313,8 @@ body.onboarding-page textarea     { resize: none; }
 .biz-card.active     { border-color: var(--green); background: rgba(0,200,83,0.05); }
 .biz-card.active .biz-card-name::after { content: ' ✓'; color: var(--green); }
 .biz-card-avatar     { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; border: 1px solid var(--border); }
+.avatar-green-tint { background: rgba(0,200,83,0.12); color: var(--green); border-color: var(--green); }
+
 .biz-card-info       { flex: 1; min-width: 0; }
 .biz-card-name       { font-size: 15px; font-weight: 700; color: var(--light); }
 .biz-card-meta       { font-size: 11px; color: var(--muted); margin-top: 3px; }
@@ -1459,6 +1476,12 @@ body.connected-page .section-label { font-size: 10px; letter-spacing: 2.5px; col
 body.connected-page .btn-primary   { display: block; width: 100%; padding: 15px 24px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: 'DM Sans', sans-serif; text-align: center; text-decoration: none; transition: background 0.2s; }
 body.connected-page .btn-secondary { display: block; width: 100%; padding: 13px 24px; background: transparent; color: var(--silver); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; text-align: center; text-decoration: none; transition: all 0.2s; }
 body.connected-page .btn-secondary:hover { border-color: var(--silver); color: var(--light); }
+/* ── Step accordion body ── */
+body.connected-page .step-body { padding: 14px 16px 16px; font-size: 13px; color: var(--muted); line-height: 1.6; border-top: 1px solid var(--border); }
+
+/* ── Modal choice panels ── */
+body.connected-page .modal-choice-body { padding: 14px 20px; font-size: 14px; color: var(--light); line-height: 1.6; }
+
 
 /* Error state */
 .error-card              { background: rgba(255,68,68,0.06); border: 1px solid rgba(255,68,68,0.25); border-radius: 16px; padding: 20px 24px; margin-bottom: 24px; }
@@ -1556,6 +1579,9 @@ body.connect-page .section-label { color: var(--silver); margin: 0 0 10px; }
 .explainer-note strong   { color: var(--blue); }
 .btn-proceed             { width: 100%; padding: 11px 18px; background: var(--green); color: var(--dark); border: none; border-radius: 10px; font-size: 14px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 12px; transition: background 0.2s; display: block; text-align: center; text-decoration: none; }
 .btn-proceed:hover       { background: #00b84c; }
+/* Facebook Page creation CTA (inherits .btn-proceed, adds letter-spacing) */
+.btn-create-page { letter-spacing: 0.3px; }
+
 
 /* Facebook gate modal content */
 .modal-title             { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 1px; color: var(--light); margin-bottom: 6px; }
@@ -2085,6 +2111,19 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 .teach-inner { padding: 0 16px 16px; }
 .card-flush  { padding: 0; overflow: hidden; }
 
+
+/* ── Muted note with vertical padding (AI loading state text) ── */
+.note-muted-pad { font-size: 12px; color: var(--muted); padding: 12px 0; line-height: 1.5; }
+
+/* ── Profile insight accordion rows ── */
+.insight-row    { margin-bottom: 12px; }
+.insight-q      { font-size: 14px; font-weight: 600; color: var(--light); margin-bottom: 6px; line-height: 1.4; }
+.insight-input  { width: 100%; background: var(--dark); border: 1px solid var(--border); border-radius: 8px; color: var(--light); padding: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; resize: none; box-sizing: border-box; line-height: 1.5; }
+.insight-input:focus { border-color: var(--green); outline: none; }
+
+/* ── Uploading image (in thumb-wrap, slightly faded) ── */
+.thumb-uploading-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.55; }
+
 /* ═══ CREATE PAGE — SCOPED OVERRIDES (conflict prevention) ═══ */
 
 /* Tabs (conflict: listing-preview page also uses .tab/.tabs) */
@@ -2250,7 +2289,24 @@ body.admin-page tr:last-child td { border-bottom: none; }
   body.admin-page table                    { display: block; overflow-x: auto; white-space: nowrap; }
 }
 
+
+/* ── Per-page admin styles (from Admin-Subscriptions) ── */
+body.admin-page .demo-notice         { display: flex; align-items: flex-start; gap: 10px; background: rgba(255,167,38,0.07); border: 1px solid rgba(255,167,38,0.25); border-radius: 10px; padding: 12px 14px; font-size: 13px; color: var(--silver); line-height: 1.5; }
+body.admin-page .desc-text           { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
+body.admin-page .pricing-grid        { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+body.admin-page .pricing-field-label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--silver); font-weight: 700; display: block; margin-bottom: 6px; }
+body.admin-page .admin-num-input     { width: 100%; background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; color: var(--light); padding: 10px 12px; font-size: 16px; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color .15s; }
+body.admin-page .admin-num-input:focus { border-color: var(--green); }
+.btn-min-140                         { min-width: 140px; }
+body.admin-page .pricing-status      { display: inline-block; margin-left: 12px; font-size: 13px; font-weight: 500; min-height: 18px; vertical-align: middle; }
+body.admin-page .mono-faint          { font-family: 'Courier New', monospace; font-size: 11px; color: var(--muted); line-height: 1.8; display: block; margin-top: 6px; }
+
 /* ── Per-page admin styles (from Admin.html) ── */
+body.admin-page .del-btn             { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; transition: color .15s; }
+body.admin-page .del-btn:hover       { color: var(--danger); }
+body.admin-page .ai-note-text        { font-size: 12px; color: var(--muted); line-height: 1.5; padding: 8px 0; }
+body.admin-page .name-na             { color: var(--muted); font-style: italic; font-size: 13px; }
+
 .health-box   { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
 .health-main  { font-family: 'Bebas Neue', sans-serif; font-size: 42px; color: var(--green); line-height: 1; }
 .health-label { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
