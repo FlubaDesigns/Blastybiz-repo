@@ -50,8 +50,12 @@
 .text-center { text-align: center; }
 
 
-/* ── FLEX ROW UTILITIES ───────────────────────────────────────── */
-.row         { display: flex; align-items: center; gap: 8px; }
+/* ── ROW / FLEX UTILITIES ─────────────────────────────────────── */
+/* .row = section content wrapper (block). Use it to group a heading + body
+   copy before a content grid. This is the only job .row does.
+   For inline icon+text or input+button pairs, use .flex-row instead. */
+.row         { display: block; width: 100%; }
+.flex-row    { display: flex; align-items: center; gap: 8px; }
 /* .row-sb has NO gap (space-between only) — used on Home page heading/CTA pairs where gap is unwanted.
    .flex-between (~line 458) adds gap:12px — prefer it when items need spacing in addition to space-between. */
 .row-sb      { display: flex; align-items: center; justify-content: space-between; }
@@ -788,9 +792,8 @@ body.has-site-header section.reveal,
 body.has-site-header aside.reveal        { margin-top: 2.5rem; }
 body.has-site-header hr.divider          { display: none; }
 
-/* Rows — .row is a flex utility globally, but within site-header pages it
-   wraps section content (h2/h3/p blocks) so must stack as block, not flex. */
-body.has-site-header .row                { display: block; width: 100%; padding: 0; margin-bottom: 0.5rem; }
+/* Rows */
+body.has-site-header .row                { padding: 0; margin-bottom: 0.5rem; }
 @media (min-width: 600px) {
   body.has-site-header .row             { margin-bottom: 1.5rem; }
 }
@@ -2308,7 +2311,7 @@ body.operate-page .main-inner  { max-width: 860px; }
 
 /* .three-col aliases .split-3 / .layout__split-3; kept for BlastyBiz-Admin.html until migrated */
 .three-col  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
-body.admin-page .row { width: 100%; margin-bottom: var(--gap-lg); display: block; }
+body.admin-page .row { margin-bottom: var(--gap-lg); }
 
 /* ── Admin card ── */
 body.admin-page .card       { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
