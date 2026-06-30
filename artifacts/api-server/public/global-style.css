@@ -888,8 +888,6 @@ body.has-site-header h4  { font-family: 'DM Sans', sans-serif; font-size: 15px; 
 .contact address p        { color: var(--silver); }
 
 /* Contact cards grid */
-.contact .contact-grid    { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
-@media (min-width: 600px) { .contact .contact-grid { display: grid; grid-template-columns: 1fr 1fr; } }
 .contact .contact-card    { display: flex; align-items: flex-start; gap: 14px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-decoration: none; color: inherit; transition: border-color 0.2s; }
 .contact .contact-card:hover { border-color: var(--green); }
 .contact .contact-card > span { font-size: 26px; flex-shrink: 0; }
