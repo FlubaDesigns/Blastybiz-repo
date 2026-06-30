@@ -523,7 +523,9 @@ main.home                { width: 100%; }
 }
 
 /* Ghost/scroll-link variant — "How it works" on hero */
-.btn__ghost {
+/* .btn.btn__ghost has higher specificity to beat .btn's color: var(--light) */
+.btn__ghost,
+.btn.btn__ghost {
   color: var(--silver);
   font-size: 14px;
   font-weight: 500;
@@ -531,7 +533,8 @@ main.home                { width: 100%; }
   cursor: pointer;
   transition: color 0.2s;
 }
-.btn__ghost:hover { color: var(--light); }
+.btn__ghost:hover,
+.btn.btn__ghost:hover { color: var(--light); }
 
 
 /* ── HOME ──────────────────────────────────────────────────── */
@@ -542,6 +545,13 @@ main.home                { width: 100%; }
   align-items: center;
   gap: 12px;
   animation: fadeUp 0.6s 0.3s ease both;
+}
+@media (max-width: 767px) {
+  .hero-actions { width: 100%; }
+  .hero-actions .btn__primary,
+  .hero-actions .btn.btn__primary,
+  .hero-actions .btn__ghost,
+  .hero-actions .btn.btn__ghost { width: 100%; justify-content: center; box-sizing: border-box; }
 }
 
 .home {
