@@ -1201,13 +1201,15 @@ body.onboarding-page textarea     { resize: none; }
 .ok                  { color: var(--green); }
 .warn                { color: var(--warn); }
 
-/* Platform / activity / task row pattern */
+/* Platform / activity / task row pattern — .list and .list-item are aliases for admin context */
 .platform-list,
 .activity-list,
-.task-list           { display: flex; flex-direction: column; gap: 10px; }
+.task-list,
+.list                { display: flex; flex-direction: column; gap: 10px; }
 .platform-row,
 .activity-row,
-.task-row            { background: #081008; border: 1px solid var(--border); border-radius: 12px; padding: 13px; display: flex; align-items: center; gap: 12px; }
+.task-row,
+.list-item           { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 13px; display: flex; align-items: center; gap: 12px; }
 .platform-icon       { width: 40px; height: 40px; border-radius: 10px; background: var(--dark); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
 .row-main            { flex: 1; min-width: 0; }
 .row-title           { font-size: 14px; font-weight: 700; color: var(--light); }
@@ -1483,9 +1485,11 @@ body.connected-page .modal-choice-body { padding: 14px 20px; font-size: 14px; co
 .dash-btn-ghost:hover{ background: rgba(0,200,83,0.08); }
 
 
-/* ── STATUS PILL — same shape as .status-badge; platform row variant ─
-   Use .status-pill as base + pill-* colour modifier in JS-rendered rows.
+/* ── STATUS PILL / STATUS BADGE — same pill shape; two naming contexts ──
+   .status-badge: Connect page (static markup) + pill-* modifier family
+   .status-pill:  Publishing-Status page (JS-rendered rows) + badge-* modifier family
    ─────────────────────────────────────────────────────────── */
+.status-badge,
 .status-pill         { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
 .pill-live           { background: rgba(0,200,83,0.12);   color: var(--green); }
 .pill-manual         { background: rgba(255,167,38,0.12); color: var(--warn); }
@@ -1520,8 +1524,7 @@ body.connected-page .modal-choice-body { padding: 14px 20px; font-size: 14px; co
 .page-eyebrow            { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--silver); font-weight: 700; margin-bottom: 8px; }
 
 
-/* ── STATUS BADGES — reusable pill indicators ────────────────── */
-.status-badge            { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; }
+/* ── STATUS BADGE colour modifiers (shape defined above with .status-pill) ── */
 .badge-live              { background: rgba(0,200,83,0.12);    color: var(--green); }
 .badge-error             { background: rgba(255,68,68,0.12);   color: var(--danger); }
 .badge-manual            { background: rgba(122,184,122,0.1);  color: var(--silver); }
@@ -1740,6 +1743,7 @@ body.listing-preview-page .ok             { color: var(--green); }
 body.listing-preview-page .warn           { color: var(--warn); }
 
 /* Page-specific buttons (flat style, different from global .btn__primary BEM) */
+/* font-weight: 900 — intentional design choice for listing-preview; migrate to .btn--bold in full modifier system */
 body.listing-preview-page .btn            { border-radius: 10px; padding: 13px 16px; text-decoration: none; font-weight: 900; font-size: 14px; border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: var(--light); background: transparent; cursor: pointer; font-family: 'DM Sans', sans-serif; }
 body.listing-preview-page .btn:hover      { border-color: var(--green); color: var(--green); }
 body.listing-preview-page .btn-primary    { background: var(--green); color: var(--dark); border-color: var(--green); }
@@ -2207,9 +2211,7 @@ body.admin-page .stat-label    { font-size: 11px; letter-spacing: 1.2px; text-tr
 .stat-note.bad   { color: var(--danger); }
 .stat-note.blue  { color: #54A8FF; }
 
-/* ── Admin list rows ── */
-.list       { display: flex; flex-direction: column; gap: 10px; }
-.list-item  { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 13px; display: flex; align-items: center; gap: 12px; }
+/* ── Admin list rows — .list and .list-item consolidated into platform-row rule above ── */
 body.admin-page .icon { width: 40px; height: 40px; border-radius: 10px; background: var(--dark); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
 body.admin-page .row-title { font-weight: 800; }
 body.admin-page .row-sub   { line-height: 1.4; }
