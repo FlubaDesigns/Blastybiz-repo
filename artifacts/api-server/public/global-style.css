@@ -18,6 +18,7 @@
 /* ── SPACING UTILITIES ────────────────────────────────────────── */
 .mb-0  { margin-bottom: 0; }
 .mb-4  { margin-bottom: 4px; }
+.mb-5  { margin-bottom: 5px; }
 .mb-6  { margin-bottom: 6px; }
 .mb-8  { margin-bottom: 8px; }
 .mb-10 { margin-bottom: 10px; }
@@ -28,6 +29,7 @@
 .mb-24 { margin-bottom: 24px; }
 .mb-28 { margin-bottom: 28px; }
 .mt-2  { margin-top: 2px; }
+.mt-3  { margin-top: 3px; }
 .mt-4  { margin-top: 4px; }
 .mt-6  { margin-top: 6px; }
 .mt-8  { margin-top: 8px; }
@@ -1595,6 +1597,7 @@ body.connected-page .hero { text-align: center; }
 
 /* What happens next */
 .next-section            { margin-bottom: 28px; }
+/* margin-bottom: 14px overrides the global 6px; body-scope needed — utility class loses to .section-label at equal specificity */
 body.connected-page .section-label { font-size: 10px; letter-spacing: 2.5px; color: var(--silver); margin-bottom: 14px; }
 .step-list               { display: flex; flex-direction: column; gap: 10px; }
 .step-row                { display: flex; align-items: flex-start; gap: 14px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; }
@@ -1778,6 +1781,7 @@ body.connect-page .section-label { color: var(--silver); margin: 0 0 10px; }
    PUBLISHING STATUS PAGE  (body.publishing-page)
 ══════════════════════════════════════════════════════════════ */
 
+/* margin-bottom: 24px overrides the global 32px; body-scope needed — utility class loses to .page-sub at equal specificity */
 body.publishing-page .page-sub       { font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
 
 /* Progress card */
@@ -1847,11 +1851,11 @@ body.listing-preview-page .step-num       { width: 26px; height: 26px; border-ra
 body.listing-preview-page .step.active    { border-color: var(--green); }
 body.listing-preview-page .step.active .step-num { background: var(--green); color: var(--dark); }
 body.listing-preview-page .step-title     { font-size: 12px; font-weight: 900; color: var(--light); }
-body.listing-preview-page .step-sub       { font-size: 11px; color: var(--muted); margin-top: 3px; }
+body.listing-preview-page .step-sub       { font-size: 11px; color: var(--muted); }
 
 /* Business summary */
 body.listing-preview-page .summary-row    { background: var(--soft); border: 1px solid var(--border); border-radius: 12px; padding: 13px; }
-body.listing-preview-page .label          { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 900; margin-bottom: 5px; }
+body.listing-preview-page .label          { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 900; }
 body.listing-preview-page .value          { font-size: 14px; font-weight: 800; color: var(--light); line-height: 1.45; }
 
 /* Platform tabs */
@@ -2263,7 +2267,8 @@ body.create-page .tab.active { color: var(--green); border-bottom-color: var(--g
 body.create-page .section        { display: none; padding: 20px 0; }
 body.create-page .section.active { display: block; }
 
-/* Section label (muted on create page, green globally) */
+/* Section label (muted on create page, green globally).
+   margin-bottom: 12px + margin-top: 4px override the global 6px; body-scope needed — utility class loses to .section-label at equal specificity */
 body.create-page .section-label { color: var(--muted); margin-bottom: 12px; margin-top: 4px; }
 
 /* Badge (smaller padding than global) */
