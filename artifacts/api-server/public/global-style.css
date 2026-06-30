@@ -867,10 +867,10 @@ body.has-site-header h4  { font-family: 'DM Sans', sans-serif; font-size: 15px; 
 .about ul li strong     { color: var(--light); display: block; margin-bottom: 2px; }
 
 /* Values split layout — 2-col (values + office photo) on desktop, single col on mobile */
+.about-values-split { display: grid; grid-template-columns: 2fr 1fr; gap: 40px; align-items: center; }
+@media (max-width: 767px) { .about-values-split { grid-template-columns: 1fr; } }
 .about-values-img-col { display: none; }
-@media (min-width: 768px) {
-  .about-values-img-col { display: block; }
-}
+@media (min-width: 768px) { .about-values-img-col { display: block; } }
 .about-values-img { width: 100%; border-radius: 16px; object-fit: cover; aspect-ratio: 2/3; display: block; }
 
 /* Team card */
