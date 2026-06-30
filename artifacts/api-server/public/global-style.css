@@ -891,12 +891,22 @@ body.has-site-header h4  { font-family: 'DM Sans', sans-serif; font-size: 15px; 
 .contact address p        { color: var(--silver); }
 
 /* Contact cards grid */
-.contact .contact-card    { display: flex; align-items: flex-start; gap: 14px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-decoration: none; color: inherit; transition: border-color 0.2s; }
-.contact .contact-card:hover { border-color: var(--green); }
-.contact .contact-card > span { font-size: 26px; flex-shrink: 0; }
-.contact .contact-card strong { display: block; font-size: 14px; font-weight: 600; color: var(--light); margin-bottom: 2px; }
-.contact .contact-card em { display: block; font-size: 13px; color: var(--green); font-style: normal; margin-bottom: 6px; }
-.contact .contact-card p  { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 0; }
+.contact .contact-card         { background: var(--card); border: 1px solid var(--border); border-radius: 12px; color: inherit; transition: border-color 0.2s; cursor: pointer; }
+.contact .contact-card:hover   { border-color: var(--green); }
+.contact .contact-card.open    { border-color: var(--green); }
+.contact .contact-card__header { display: flex; align-items: flex-start; gap: 14px; padding: 18px; }
+.contact .contact-card__header > span:first-child { font-size: 26px; flex-shrink: 0; }
+.contact .contact-card strong  { display: block; font-size: 14px; font-weight: 600; color: var(--light); margin-bottom: 2px; }
+.contact .contact-card em      { display: block; font-size: 13px; color: var(--green); font-style: normal; margin-bottom: 6px; }
+.contact .contact-card p       { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 0; }
+.contact .contact-card__chevron { margin-left: auto; font-size: 18px; color: var(--muted); flex-shrink: 0; transition: transform 0.3s ease; line-height: 1; align-self: center; }
+.contact .contact-card.open .contact-card__chevron { transform: rotate(90deg); color: var(--green); }
+.contact .contact-card__form   { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
+.contact .contact-card.open .contact-card__form { max-height: 500px; }
+.contact .contact-card__form-inner { padding: 0 18px 18px; }
+.contact .contact-card__success { display: none; color: var(--green); font-size: 14px; font-weight: 600; padding-top: 10px; }
+.contact .contact-card.sent .contact-card__success { display: block; }
+.contact .contact-card.sent .contact-form { display: none; }
 
 
 /* ── LEGAL PAGES — unique (Privacy & Terms) ─────────────────── */
