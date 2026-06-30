@@ -692,7 +692,7 @@ async function _publishInstagramJob(job, conn) {
 // Function 5: createCheckoutSession
 // POST /createCheckoutSession
 // ══════════════════════════════════════════
-exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN', 'SQUARE_LOCATION_ID', 'SQUARE_PRO_PLAN_ID', 'SQUARE_AGENCY_PLAN_ID'] }, async (req, res) => {
+exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN', 'SQUARE_LOCATION_ID'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   let decoded;
@@ -715,8 +715,11 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
   const planNames  = { pro: 'BlastyBiz Pro',    agency: 'BlastyBiz Agency' };
   const planPrices = { pro: proMonthly, agency: agencyMonthly };
   if (!planPrices[plan]) return res.status(400).json({ error: 'Invalid plan' });
+  // Idempotency key uses a 1-hour window so retries within the hour reuse the same key
+  // (protects against double-clicks and slow-network retries without blocking legitimate re-purchases)
+  const idempotencyKey = `checkout-${uid}-${plan}-${Math.floor(Date.now() / 3600000)}`;
   const response = await getSquare().checkout.paymentLinks.create({
-    idempotencyKey: `checkout-${uid}-${plan}-${Date.now()}`,
+    idempotencyKey,
     quickPay: {
       name: planNames[plan],
       priceMoney: { amount: BigInt(Math.round(planPrices[plan] * 100)), currency: 'USD' },
@@ -728,6 +731,15 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
     },
     prePopulatedData: { buyerEmail: email },
   });
+  // Store uid + plan keyed by Square orderId so squareWebhook can reliably map payments back
+  // to users without depending on Square metadata fields (referenceId/catalogObjectId).
+  const orderId = response.paymentLink?.orderId;
+  if (orderId) {
+    await db.collection('pendingCheckouts').doc(orderId).set({
+      uid, plan,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
   res.json({ url: response.paymentLink.url });
 });
 
@@ -773,12 +785,13 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
     const orderId = payment.order_id || payment.orderId;
     if (!orderId) return res.json({ received: true });
     try {
-      const orderResp = await getSquare().orders.get({ orderId });
-      const uid = orderResp.order?.referenceId;
+      // Look up uid + plan from the pendingCheckouts record written by createCheckoutSession.
+      // This is reliable regardless of Square metadata fields (referenceId/catalogObjectId).
+      const pendingSnap = await db.collection('pendingCheckouts').doc(orderId).get();
+      if (!pendingSnap.exists) return res.json({ received: true });
+      const { uid, plan } = pendingSnap.data();
       if (!uid) return res.json({ received: true });
-      const lineItems = orderResp.order?.lineItems || [];
-      const planVarId = lineItems[0]?.catalogObjectId || '';
-      const plan = planVarId === process.env.SQUARE_AGENCY_PLAN_ID ? 'agency' : 'pro';
+      await db.collection('pendingCheckouts').doc(orderId).delete();
       await db.collection('users').doc(uid).set(
         { plan, planActive: true }, { merge: true }
       );
@@ -870,13 +883,19 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
 // OAuth 2.0 redirect URI = https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback
 // ══════════════════════════════════════════
 exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID'] }, async (req, res) => {
-  const { businessId, uid, returnTo } = req.query;
+  let decoded;
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).send('Unauthorized'); }
+  const uid = decoded.uid;
+  const { businessId, returnTo } = req.query;
   if (!businessId) { res.status(400).send('Missing businessId'); return; }
+  // Verify the business belongs to this user
+  const bizSnap = await db.collection('businesses').doc(businessId).get();
+  if (!bizSnap.exists || bizSnap.data().uid !== uid) { return res.status(403).send('Forbidden'); }
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId) { res.status(503).send('Google OAuth not configured. Set GOOGLE_CLIENT_ID secret.'); return; }
   const nonce = require('crypto').randomUUID();
   await db.collection('oauthNonces').doc(nonce).set({
-    uid: uid || '', businessId, returnTo: returnTo || '',
+    uid, businessId, returnTo: returnTo || '',
     expiresAt: new Date(Date.now() + 10 * 60 * 1000)
   });
   const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback';
@@ -972,13 +991,19 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
 //   instagram_basic, instagram_content_publish
 // ══════════════════════════════════════════
 exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBOOK_APP_ID'] }, async (req, res) => {
-  const { businessId, uid, returnTo } = req.query;
+  let decoded;
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).send('Unauthorized'); }
+  const uid = decoded.uid;
+  const { businessId, returnTo } = req.query;
   if (!businessId) { res.status(400).send('Missing businessId'); return; }
+  // Verify the business belongs to this user
+  const bizSnap = await db.collection('businesses').doc(businessId).get();
+  if (!bizSnap.exists || bizSnap.data().uid !== uid) { return res.status(403).send('Forbidden'); }
   const appId = process.env.FACEBOOK_APP_ID;
   if (!appId) { res.status(503).send('Facebook OAuth not configured. Set FACEBOOK_APP_ID secret.'); return; }
   const nonce = require('crypto').randomUUID();
   await db.collection('oauthNonces').doc(nonce).set({
-    uid: uid || '', businessId, returnTo: returnTo || '',
+    uid, businessId, returnTo: returnTo || '',
     expiresAt: new Date(Date.now() + 10 * 60 * 1000)
   });
   const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/facebookOAuthCallback';
@@ -1081,9 +1106,14 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', secrets: ['FACEBO
 exports.postToBing = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-  try { const dec = await verifyBearer(req); if (!dec) throw new Error(); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+  let decoded;
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
   const { jobId } = req.body;
   if (jobId) {
+    const jobSnap = await db.collection('publishJobs').doc(jobId).get();
+    if (!jobSnap.exists || jobSnap.data().uid !== decoded.uid) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
     await db.collection('publishJobs').doc(jobId).update({
       status: 'manual_required',
       customerVisibleMessage: 'Your Bing Places listing is ready — paste it at bingplaces.com.',
@@ -1102,9 +1132,14 @@ exports.postToBing = onRequest({ invoker: 'public' }, async (req, res) => {
 exports.postToAppleMaps = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-  try { const dec = await verifyBearer(req); if (!dec) throw new Error(); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+  let decoded;
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
   const { jobId } = req.body;
   if (jobId) {
+    const jobSnap = await db.collection('publishJobs').doc(jobId).get();
+    if (!jobSnap.exists || jobSnap.data().uid !== decoded.uid) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
     await db.collection('publishJobs').doc(jobId).update({
       status: 'manual_required',
       customerVisibleMessage: 'Your Apple Maps listing is ready — submit it at mapsconnect.apple.com.',
@@ -1187,7 +1222,7 @@ exports.dispatchPublishJob = onDocumentCreated(
       });
 
     } catch(e) {
-      console.error(`jobCreatedTrigger [${jobId}] failed:`, e.message);
+      console.error(`dispatchPublishJob [${jobId}] failed:`, e.message);
       await db.collection('publishJobs').doc(jobId).update({
         status: 'failed',
         adminError: e.message,

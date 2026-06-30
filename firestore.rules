@@ -74,7 +74,7 @@ service cloud.firestore {
         request.auth.uid == request.resource.data.uid;
     }
 
-    // Subscriptions — owner read only (written by Stripe webhook backend); admin can read any
+    // Subscriptions — owner read only (written by Square webhook backend); admin can read any
     match /subscriptions/{subId} {
       allow read: if request.auth != null && (request.auth.uid == subId || isAdmin());
       allow write: if false;
