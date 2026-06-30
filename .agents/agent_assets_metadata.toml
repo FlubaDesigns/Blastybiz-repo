@@ -101,3 +101,15 @@ id = "ZMHQTTZtSSPEbQ66Nw_bX"
 uri = "file://download/setOperatorSecret-reference.md"
 type = "text"
 title = "setOperatorSecret-reference.md — secret rotation guide"
+
+[[outputs]]
+id = "SL2mBC1lj1LZn2q9V9KB5"
+uri = "file://attached_assets/image_search/storefront_a.jpg"
+type = "image"
+title = "Option A — Plant shop owner hanging Open sign (warm, human)"
+
+[[outputs]]
+id = "Oc5-OQd7K1ZUAIy5r_8yn"
+uri = "file://attached_assets/image_search/storefront_b.jpg"
+type = "image"
+title = "Option B — Modern black brick storefront with green plants (dark, stylish)"
