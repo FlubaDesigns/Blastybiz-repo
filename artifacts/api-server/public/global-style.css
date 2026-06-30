@@ -788,8 +788,9 @@ body.has-site-header section.reveal,
 body.has-site-header aside.reveal        { margin-top: 2.5rem; }
 body.has-site-header hr.divider          { display: none; }
 
-/* Rows */
-body.has-site-header .row                { width: 100%; padding: 0; margin-bottom: 0.5rem; }
+/* Rows — .row is a flex utility globally, but within site-header pages it
+   wraps section content (h2/h3/p blocks) so must stack as block, not flex. */
+body.has-site-header .row                { display: block; width: 100%; padding: 0; margin-bottom: 0.5rem; }
 @media (min-width: 600px) {
   body.has-site-header .row             { margin-bottom: 1.5rem; }
 }
