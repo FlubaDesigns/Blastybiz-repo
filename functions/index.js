@@ -269,8 +269,12 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
     if (aiContext.customer)  lines.push(`Ideal Customer: ${aiContext.customer}`);
     if (aiContext.other)     lines.push(`Additional Context: ${aiContext.other}`);
     if (!lines.length) return '';
-    return '\nBUSINESS BACKGROUND (this is the owner\'s voice — read carefully and weave this authenticity into every platform\'s copy naturally):\n' + lines.join('\n');
+    return '\n📖 BRAND STORY — ALL CAMPAIGNS (the owner\'s voice — weave this authenticity naturally into every platform\'s copy):\n' + lines.join('\n');
   })();
+
+  const campaignContextBlock = listing.campaignContext
+    ? '\n🎯 THIS CAMPAIGN ONLY — HIGH PRIORITY (specific details for this post run — use these to make copy feel fresh and specific, not generic):\n' + listing.campaignContext
+    : '';
 
   const prompt = `You are a local business marketing expert. Adapt the following business listing for each platform listed. Return ONLY a valid JSON object — no markdown, no explanation, no backticks.
 
@@ -289,7 +293,7 @@ ${listing.adDetails ? `- Additional ad details: ${listing.adDetails}\n` : ''}- P
 - Hours: ${listing.hours || 'not provided'}
 - Images attached: ${listing.imageCount > 0 ? listing.imageCount + ' photo(s)' : 'none'}
 - Preferred tone: ${tone}
-${aiContextBlock}${(listing.bizInsights||[]).length ? '\n⚠️ OWNER-PROVIDED FACTS — MANDATORY. The owner answered these questions so their copy is never generic. You MUST reference these details directly and specifically in the copy. Do NOT write filler when real facts are available:\n' + listing.bizInsights.map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(listing.bizAnnouncements||[]).length ? '\n⚠️ ACTIVE PROMOTIONS — MUST APPEAR IN EVERY PLATFORM. Do not skip, bury, or paraphrase vaguely. Weave each one naturally but make sure it lands:\n' + listing.bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}
+${aiContextBlock}${campaignContextBlock}${(listing.bizInsights||[]).length ? '\n⚠️ CAMPAIGN-SPECIFIC AI FACTS — MANDATORY. These answers are specific to this campaign. Reference them directly — do NOT write generic filler:\n' + listing.bizInsights.map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(listing.bizAnnouncements||[]).length ? '\n⚠️ ACTIVE PROMOTIONS — MUST APPEAR IN EVERY PLATFORM. Do not skip, bury, or paraphrase vaguely. Weave each one naturally but make sure it lands:\n' + listing.bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}
 PLATFORMS TO ADAPT FOR:
 ${platformList.map(p => `- ${p.id}: ${p.name}${p.cat}${p.rules.maxChars ? ', max ' + p.rules.maxChars + ' chars' : ''}${p.rules.notes ? ', note: ' + p.rules.notes : ''}`).join('\n')}
 

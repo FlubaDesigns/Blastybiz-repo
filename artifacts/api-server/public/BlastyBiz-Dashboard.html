@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=24" />
+<link rel="stylesheet" href="global-style.css?v=25" />
 <title>BlastyBiz — Command Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}</style>
@@ -157,6 +157,31 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
+
+<!-- CAMPAIGN DETAIL SHEET -->
+<div class="biz-sheet-overlay" id="campaign-sheet-overlay" onclick="closeCampaignSheet()"></div>
+<div class="biz-sheet" id="campaign-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title" id="cs-title">Campaign</div>
+  <div class="sheet-sub" id="cs-sub"></div>
+
+  <div class="card mb-12">
+    <div class="card-title">🎯 Campaign Context <span class="tier-badge tier-badge--campaign">This Campaign</span></div>
+    <p class="cs-empty hidden" id="cs-context-empty">No campaign context recorded for this listing.</p>
+    <p class="helper" id="cs-context-text"></p>
+  </div>
+
+  <div class="card mb-12">
+    <div class="card-title">🧠 AI Insights <span class="tier-badge tier-badge--global">All Campaigns</span></div>
+    <div id="cs-insights-list" class="cs-empty">—</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📡 Platform Adaptations</div>
+    <div id="cs-platforms-list" class="cs-empty">—</div>
+  </div>
+</div>
+
 </div><!-- /.main-inner -->
 </div><!-- /.main -->
 
@@ -328,6 +353,11 @@ function closeSwitcher() {
   document.getElementById('biz-active-btn').classList.remove('open');
 }
 
+function closeCampaignSheet() {
+  document.getElementById('campaign-sheet').classList.remove('open');
+  document.getElementById('campaign-sheet-overlay').classList.remove('open');
+}
+
 // ══════════════════════════════════════════
 // TOAST
 // ══════════════════════════════════════════
@@ -351,6 +381,73 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 window.doSignOut = () => { localStorage.setItem('bb_auth','0'); signOut(auth).finally(()=>{ window.location.href='BlastyBiz-Login.html'; }); };
+
+window.openCampaignSheet = async function(draftId) {
+  if (!draftId) return;
+  const sheet   = document.getElementById('campaign-sheet');
+  const overlay = document.getElementById('campaign-sheet-overlay');
+  if (!sheet || !overlay) return;
+
+  document.getElementById('cs-title').textContent         = 'Loading…';
+  document.getElementById('cs-sub').textContent           = '';
+  document.getElementById('cs-context-text').textContent  = '';
+  document.getElementById('cs-context-empty').classList.add('hidden');
+  document.getElementById('cs-insights-list').textContent = '…';
+  document.getElementById('cs-platforms-list').textContent = '…';
+  sheet.classList.add('open');
+  overlay.classList.add('open');
+
+  try {
+    const snap = await getDoc(doc(db, 'listingDrafts', draftId));
+    if (!snap.exists()) {
+      document.getElementById('cs-title').textContent = 'Not found';
+      document.getElementById('cs-sub').textContent   = 'This listing could not be loaded.';
+      return;
+    }
+    const d = snap.data();
+
+    document.getElementById('cs-title').textContent = d.adName || d.offer || 'Campaign';
+    document.getElementById('cs-sub').textContent   = d.campaignName
+      ? 'Campaign: ' + d.campaignName
+      : (d.createdAt?.toDate ? timeAgo(d.createdAt.toDate()) : '');
+
+    const ctxText  = document.getElementById('cs-context-text');
+    const ctxEmpty = document.getElementById('cs-context-empty');
+    if (d.campaignContext) {
+      ctxText.textContent = d.campaignContext;
+      ctxText.classList.remove('hidden');
+      ctxEmpty.classList.add('hidden');
+    } else {
+      ctxText.classList.add('hidden');
+      ctxEmpty.classList.remove('hidden');
+    }
+
+    const insights = (d.bizInsights || []).filter(i => i.answer);
+    const insightsEl = document.getElementById('cs-insights-list');
+    insightsEl.innerHTML = insights.length
+      ? insights.map(i =>
+          '<div class="cs-insight-row">'
+          + '<span class="cs-insight-q">' + i.question + '</span>'
+          + '<span class="cs-insight-a">' + i.answer + '</span>'
+          + '</div>'
+        ).join('')
+      : '<span class="cs-empty">No AI insights recorded for this listing.</span>';
+
+    const platforms = Object.entries(d.adaptations || {});
+    const platsEl = document.getElementById('cs-platforms-list');
+    platsEl.innerHTML = platforms.length
+      ? platforms.map(([pid]) =>
+          '<div class="cost-line">'
+          + '<span>' + pid.replace(/_/g, ' ') + '</span>'
+          + '<span class="badge live">Adapted</span>'
+          + '</div>'
+        ).join('')
+      : '<span class="cs-empty">No platform adaptations saved.</span>';
+
+  } catch(e) {
+    document.getElementById('cs-sub').textContent = 'Error loading campaign.';
+  }
+};
 
 let currentUser = null;
 let allBusinesses = [];
@@ -554,7 +651,9 @@ onAuthStateChanged(auth, async (user) => {
           const title = j.platform ? `${j.platform.replace(/_/g,' ')} · ${j.offerTitle || 'Post'}` : (j.offerTitle || 'Post');
           const ts    = j.createdAt?.toDate ? timeAgo(j.createdAt.toDate()) : '';
           const badge = `<span class="badge ${statusBadge[j.status] || 'off'}">${statusLabel[j.status] || j.status}</span>`;
-          actRows += `<div class="activity-row"><div class="platform-icon">${icon}</div><div class="row-main"><div class="row-title text-cap">${title}</div><div class="row-sub">${ts}</div></div>${badge}</div>`;
+          const _clickable = j.draftId ? ' clickable' : '';
+          const _onclick   = j.draftId ? ` onclick="window.openCampaignSheet&&window.openCampaignSheet('${j.draftId}')"` : '';
+          actRows += `<div class="activity-row${_clickable}"${_onclick}><div class="platform-icon">${icon}</div><div class="row-main"><div class="row-title text-cap">${title}</div><div class="row-sub">${ts}</div></div>${badge}</div>`;
         });
       }
       const actEl = document.getElementById('activity-list');

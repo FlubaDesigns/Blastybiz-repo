@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=24" />
+<link rel="stylesheet" href="global-style.css?v=25" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}</style>
@@ -461,14 +461,30 @@
     <p id="platcats-note" class="platcats-note"></p>
   </div>
 
+  <!-- CAMPAIGN CONTEXT -->
+  <div class="card card-flush">
+    <div class="teach-btn">
+      <div class="row gap-10">
+        <span class="teach-icon">🎯</span>
+        <div>
+          <div class="teach-title">Campaign Context <span class="tier-badge tier-badge--campaign">This Campaign</span></div>
+          <div class="teach-sub">What's unique about this campaign — added on top of your evergreen brand story</div>
+        </div>
+      </div>
+    </div>
+    <div class="campaign-ctx-body">
+      <textarea id="campaign-context" class="form-textarea" rows="3" placeholder="e.g. Christmas window display — vintage Lionel layout running daily 10am–6pm through Jan 5. Great for families, photo ops welcome. 15% off all train sets through December."></textarea>
+    </div>
+  </div>
+
   <!-- TEACH AI ACCORDION -->
   <div class="card card-flush" id="teach-ai-card">
     <button onclick="toggleTeachAI()" id="teach-ai-header" class="teach-btn">
       <div class="row gap-10">
         <span class="teach-icon">🧠</span>
         <div>
-          <div class="teach-title">Teach AI to know you better</div>
-          <div class="teach-sub" id="teach-ai-sub">Answer a few questions — AI uses them in every post</div>
+          <div class="teach-title">Teach AI to know you better <span class="tier-badge tier-badge--global">All Campaigns</span></div>
+          <div class="teach-sub" id="teach-ai-sub">Business insights — AI uses these across all your campaigns</div>
         </div>
       </div>
       <span id="teach-ai-chevron" class="chevron">›</span>
@@ -1125,6 +1141,7 @@ async function regeneratePlatformCopy(pid) {
           campaignName: activeCampaignName || '',
           imageCount: (window._bbPhotoItems||[]).filter(p=>p.done).length,
           featuredPhotoUrl,
+          campaignContext: document.getElementById('campaign-context')?.value?.trim() || '',
           bizInsights: (bizInsights||[]).filter(i=>i.answer),
           bizAnnouncements: bizAnnouncements||[],
           aiContext: profile.aiContext || null,
@@ -1552,6 +1569,7 @@ Return this exact JSON structure:
           campaignName: activeCampaignName || '',
           imageCount: (window._bbPhotoItems||[]).filter(p=>p.done).length,
           featuredPhotoUrl: window._bbSelectedPhotoIndex !== null ? (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || '') : '',
+          campaignContext: document.getElementById('campaign-context')?.value?.trim() || '',
           bizInsights: bizInsights.filter(i=>i.answer),
           bizAnnouncements: bizAnnouncements,
           aiContext: profile.aiContext || null,
@@ -3032,6 +3050,7 @@ window._afterAdaptation = async function(adaptedPlatforms) {
       hours:        document.getElementById('biz-hours')?.value || '',
       adName:       document.getElementById('biz-ad-name')?.value || '',
       adDetails:    document.getElementById('biz-ad-details')?.value || '',
+      campaignContext: document.getElementById('campaign-context')?.value?.trim() || '',
       campaignId:   activeCampaignId || '',
       campaignName: activeCampaignName || '',
       status:       'draft',

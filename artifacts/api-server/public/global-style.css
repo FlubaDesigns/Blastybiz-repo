@@ -2252,6 +2252,17 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 .chevron     { font-size: 20px; color: var(--muted); flex-shrink: 0; margin-left: 10px; transition: transform .2s; }
 .teach-inner { padding: 0 16px 16px; }
 .card-flush  { padding: 0; overflow: hidden; }
+.tier-badge            { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: 0.4px; vertical-align: middle; margin-left: 8px; text-transform: uppercase; line-height: 1.6; }
+.tier-badge--global    { background: rgba(0,200,83,0.12); color: var(--green); }
+.tier-badge--campaign  { background: rgba(126,179,255,0.15); color: #7eb3ff; }
+.campaign-ctx-body     { padding: 0 16px 16px; }
+.activity-row.clickable       { cursor: pointer; }
+.activity-row.clickable:hover { border-color: var(--green); background: rgba(0,200,83,0.03); }
+.cs-insight-row               { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.cs-insight-row:last-child    { border-bottom: none; }
+.cs-insight-q                 { font-size: 12px; color: var(--muted); }
+.cs-insight-a                 { font-size: 13px; color: var(--light); font-weight: 500; }
+.cs-empty                     { font-size: 13px; color: var(--muted); font-style: italic; }
 
 
 /* ── Muted note with vertical padding (AI loading state text) ── */
