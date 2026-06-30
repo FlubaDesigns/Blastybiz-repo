@@ -70,13 +70,13 @@ title = "generated_image"
 id = "OlLytVLFMpzHayK0XXDkK"
 uri = "file://download/BlastyBiz_Site.zip"
 type = "unspecified"
-title = "BlastyBiz_Site.zip — v=13, Task #32 done"
+title = "BlastyBiz_Site.zip — About page updated"
 
 [[outputs]]
 id = "67fGmTkLMAbTADvgVIF6b"
 uri = "file://download/BlastyBiz_Audit.md"
 type = "text"
-title = "BlastyBiz_Audit.md — v=13 row added"
+title = "BlastyBiz_Audit.md — About values row added"
 
 [[outputs]]
 id = "OrxuqDZbFKPyGWS2Um6-L"
