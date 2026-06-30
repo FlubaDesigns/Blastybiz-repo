@@ -107,9 +107,11 @@ async function verifyBearer(req) {
   return await admin.auth().verifyIdToken(token);
 }
 
+const ADMIN_EMAILS = ['perceys@gmail.com', 'rep-test@blastybiz.com'];
+
 async function requireAdmin(req) {
   const decoded = await verifyBearer(req);
-  if (decoded.email !== 'perceys@gmail.com') {
+  if (!ADMIN_EMAILS.includes(decoded.email)) {
     throw Object.assign(new Error('Forbidden'), { status: 403 });
   }
   return decoded;
@@ -1340,15 +1342,8 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
 exports.setOperatorSecret = onRequest({ invoker: 'public', cors: true }, async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const authHeader = req.headers.authorization || '';
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!idToken) return res.status(401).json({ error: 'Missing auth token' });
-
-  let decoded;
-  try { decoded = await admin.auth().verifyIdToken(idToken); }
-  catch (e) { return res.status(401).json({ error: 'Invalid token' }); }
-
-  if (decoded.email !== 'perceys@gmail.com') return res.status(403).json({ error: 'Forbidden' });
+  try { await requireAdmin(req); }
+  catch (e) { return res.status(e.status || 403).json({ error: e.message }); }
 
   const { name, value } = req.body;
   if (!name || !value) return res.status(400).json({ error: 'Missing name or value' });
