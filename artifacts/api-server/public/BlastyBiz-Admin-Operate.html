@@ -6,113 +6,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>BlastyBiz — Operator Setup</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="blastybiz-admin.css">
-<style>
-/* ── LAYOUT ── */
-.main-inner{max-width:860px}
+<link rel="stylesheet" href="global-style.css?v=129">
 
-/* ── PROGRESS ── */
-.progress-block{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:28px;display:flex;align-items:center;gap:20px}
-.progress-bar-wrap{flex:1;background:var(--panel);border-radius:99px;height:10px;overflow:hidden}
-.progress-bar{height:10px;background:#00C853;border-radius:99px;transition:width .4s ease}
-.progress-label{font-size:13px;color:var(--muted);white-space:nowrap}
-.progress-title{font-weight:700;font-size:16px;color:var(--light);min-width:120px}
-
-/* ── SECTION ── */
-.section{margin-bottom:28px}
-.section-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.section-icon{font-size:20px}
-.section-title{font-size:18px;font-weight:700;color:var(--light)}
-.section-badge{font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:99px;background:#2A0A0A;color:#f87171;border:1px solid #dc2626}
-.section-badge.ok{background:#0A2A0A;color:var(--green);border-color:var(--green)}
-.section-badge.warn{background:#1a1200;color:#e6b84a;border:1px solid #7a5500}
-
-/* ── CARD (overrides admin.css base — adds overflow + spacing) ── */
-.card { overflow: hidden; margin-bottom: 10px; }
-.card-header{display:flex;align-items:center;gap:12px;padding:16px 18px;cursor:pointer;user-select:none}
-.card-header:hover{background:var(--panel)}
-.check-wrap{width:22px;height:22px;flex-shrink:0}
-.check-box{width:22px;height:22px;border:2px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;background:var(--card)}
-.check-box.done{background:#00C853;border-color:#00C853}
-.check-box.done::after{content:'✓';color:#fff;font-size:13px;font-weight:700}
-.card-title{font-size:15px;font-weight:600;color:var(--light);flex:1}
-.card-sub{font-size:12px;color:var(--muted);margin-top:1px}
-.chevron{font-size:12px;color:var(--silver);transition:transform .2s}
-.chevron.open{transform:rotate(180deg)}
-.card-body{padding:0 18px 18px;border-top:1px solid var(--border);display:none}
-.card-body.open{display:block}
-
-/* ── STEPS ── */
-.steps{margin-top:14px;display:flex;flex-direction:column;gap:10px}
-.step{display:flex;gap:12px;align-items:flex-start}
-.step-num{width:22px;height:22px;background:var(--panel);border-radius:6px;font-size:12px;font-weight:700;color:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
-.step-text{font-size:14px;color:var(--light);line-height:1.5}
-.step-text a{color:var(--green);text-decoration:none;font-weight:500}
-.step-text a:hover{text-decoration:underline}
-
-/* ── CODE BLOCK ── */
-.code-block{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-top:8px;display:flex;align-items:center;gap:10px}
-.code-text{font-family:'Courier New',monospace;font-size:12px;color:var(--light);flex:1;word-break:break-all}
-.copy-btn{font-size:11px;font-weight:600;color:var(--green);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap;transition:all .15s}
-.copy-btn:hover{background:var(--panel)}
-.copy-btn.copied{color:var(--dark);background:#00C853;border-color:#00C853}
-
-/* ── SECRET INPUT ── */
-.secret-row{display:flex;gap:8px;margin-top:12px;align-items:stretch}
-.secret-input{flex:1;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--light);background:var(--card);outline:none;transition:border-color .15s;min-width:0}
-.secret-input:focus{border-color:#00C853}
-.show-btn{padding:10px 13px;background:var(--panel);border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--silver);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
-.show-btn:hover{background:var(--card)}
-.save-btn{padding:10px 18px;background:#00C853;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s;flex-shrink:0}
-.save-btn:hover{background:#00b04a}
-.save-btn:disabled{background:var(--border);cursor:not-allowed}
-.save-status{font-size:12px;margin-top:6px;min-height:18px;font-weight:500}
-.save-status.ok{color:var(--green)}
-.save-status.err{color:#f87171}
-
-/* ── NOTE ── */
-.note{background:#1a1200;border:1px solid #7a5500;border-radius:8px;padding:10px 14px;font-size:13px;color:#e6b84a;margin-top:10px;line-height:1.5}
-.note strong{color:#e6b84a}
-.note-info{background:#07192a;border-color:#2563eb;color:#60a5fa}
-.note-info strong{color:#60a5fa}
-.note-success{background:#0A2A0A;border-color:var(--green);color:var(--green)}
-
-/* ── LINK BTN ── */
-.link-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--light);background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:7px 14px;text-decoration:none;margin-top:10px;transition:all .15s}
-.link-btn:hover{background:var(--card);border-color:var(--green)}
-.link-btn-primary{background:#00C853;color:var(--dark);border-color:#00C853}
-.link-btn-primary:hover{background:#00b04a;border-color:#00b04a}
-
-/* ── CF URL ── */
-.cf-url{font-family:'Courier New',monospace;font-size:12px;color:var(--light);background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:6px 10px;display:inline-block;margin-top:4px;word-break:break-all}
-
-/* ── REDEPLOY BANNER ── */
-#redeploy-banner{display:none;background:#1a1200;border:2px solid #7a5500;border-radius:14px;padding:20px 24px;margin-bottom:28px}
-#redeploy-banner.visible{display:block}
-.redeploy-title{font-size:15px;font-weight:700;color:#e6b84a;margin-bottom:8px}
-.redeploy-sub{font-size:13px;color:#e6b84a;margin-bottom:12px;line-height:1.5}
-
-/* ── EXTRACTED UTILITIES ── */
-.flex-1{flex:1}
-.mt-10{margin-top:10px}
-.mt-12{margin-top:12px}
-.op-page-header{margin-bottom:24px}
-.op-page-title{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:1px;color:var(--light)}
-.op-page-sub{font-size:14px;color:var(--muted);margin-top:4px}
-.op-field-label{font-size:13px;color:var(--silver);margin-top:14px;margin-bottom:2px;font-weight:600}
-.op-sub-text{font-size:13px;color:var(--muted);margin-top:4px;margin-bottom:10px}
-.op-cmd-label{font-size:12px;font-weight:600;color:var(--light);margin-bottom:4px;margin-top:10px}
-.op-cmd-label-12{font-size:12px;font-weight:600;color:var(--light);margin-bottom:4px;margin-top:12px}
-.op-cmd-label-hd{font-size:12px;font-weight:600;color:var(--light);margin-bottom:4px}
-.op-fn-group{font-size:12px;font-weight:600;color:var(--silver);margin-top:8px;margin-bottom:2px}
-.op-fn-list{font-size:13px;color:var(--muted);line-height:1.8}
-.check-hidden{visibility:hidden}
-.plan-sub-note{font-size:11px;color:var(--muted)}
-</style>
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
 </head>
-<body>
+<body class="admin-page operate-page">
 
 <header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Operator Setup</span></a><div class="top-actions"><a class="icon-btn hide-mobile" href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Logs.html">Logs</a><a class="icon-btn hide-mobile active" href="#">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header>
 
@@ -143,7 +42,7 @@
   <!-- ══════════════════════════════════════════
        BLASTYBIZ AS FIRST CLIENT
   ══════════════════════════════════════════ -->
-  <div class="section">
+  <div class="op-section">
     <div class="section-header">
       <span class="section-icon">🏢</span>
       <span class="section-title">BlastyBiz as First Client</span>
@@ -152,15 +51,15 @@
 
     <!-- Google Business Profile -->
     <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
+      <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-client-google" onclick="toggleCheck(event,'client-google')"></div>
         <div class="flex-1">
-          <div class="card-title">🔍 Google Business Profile</div>
-          <div class="card-sub">Auto-post — set this up before connecting Google OAuth below</div>
+          <div class="op-card-title">🔍 Google Business Profile</div>
+          <div class="op-card-sub">Auto-post — set this up before connecting Google OAuth below</div>
         </div>
-        <span class="chevron">▼</span>
+        <span class="op-chevron">▼</span>
       </div>
-      <div class="card-body">
+      <div class="op-card-body">
         <div class="steps">
           <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://business.google.com" target="_blank">business.google.com</a> and sign in with your Google account</div></div>
           <div class="step"><div class="step-num">2</div><div class="step-text">Click <strong>Add your business to Google</strong> → enter <strong>BlastyBiz</strong> as the business name</div></div>
@@ -174,15 +73,15 @@
 
     <!-- Facebook Page -->
     <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
+      <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-client-facebook" onclick="toggleCheck(event,'client-facebook')"></div>
         <div class="flex-1">
-          <div class="card-title">📘 Facebook Page</div>
-          <div class="card-sub">Auto-post — set this up before connecting Facebook OAuth below</div>
+          <div class="op-card-title">📘 Facebook Page</div>
+          <div class="op-card-sub">Auto-post — set this up before connecting Facebook OAuth below</div>
         </div>
-        <span class="chevron">▼</span>
+        <span class="op-chevron">▼</span>
       </div>
-      <div class="card-body">
+      <div class="op-card-body">
         <div class="steps">
           <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://www.facebook.com/pages/create" target="_blank">facebook.com/pages/create</a></div></div>
           <div class="step"><div class="step-num">2</div><div class="step-text">Choose <strong>Business or Brand</strong> → Page name: <strong>BlastyBiz</strong></div></div>
@@ -195,15 +94,15 @@
 
     <!-- Instagram -->
     <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
+      <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-client-instagram" onclick="toggleCheck(event,'client-instagram')"></div>
         <div class="flex-1">
-          <div class="card-title">📸 Instagram Business</div>
-          <div class="card-sub">Auto-post — requires the Facebook Page above to be linked first</div>
+          <div class="op-card-title">📸 Instagram Business</div>
+          <div class="op-card-sub">Auto-post — requires the Facebook Page above to be linked first</div>
         </div>
-        <span class="chevron">▼</span>
+        <span class="op-chevron">▼</span>
       </div>
-      <div class="card-body">
+      <div class="op-card-body">
         <div class="steps">
           <div class="step"><div class="step-num">1</div><div class="step-text">Create an Instagram account at <a href="https://www.instagram.com" target="_blank">instagram.com</a> — username: <strong>blastybiz</strong></div></div>
           <div class="step"><div class="step-num">2</div><div class="step-text">Go to <strong>Settings → Account → Switch to Professional Account</strong> → choose <strong>Business</strong></div></div>
@@ -215,15 +114,15 @@
 
     <!-- Yelp -->
     <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
+      <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-client-yelp" onclick="toggleCheck(event,'client-yelp')"></div>
         <div class="flex-1">
-          <div class="card-title">⭐ Yelp</div>
-          <div class="card-sub">Copy-paste — BlastyBiz generates the text, you paste it in</div>
+          <div class="op-card-title">⭐ Yelp</div>
+          <div class="op-card-sub">Copy-paste — BlastyBiz generates the text, you paste it in</div>
         </div>
-        <span class="chevron">▼</span>
+        <span class="op-chevron">▼</span>
       </div>
-      <div class="card-body">
+      <div class="op-card-body">
         <div class="steps">
           <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://biz.yelp.com" target="_blank">biz.yelp.com</a> and click <strong>Manage my free listing</strong></div></div>
           <div class="step"><div class="step-num">2</div><div class="step-text">Search for <strong>BlastyBiz</strong> — if it exists, claim it. If not, click <strong>Add your business</strong></div></div>
@@ -236,15 +135,15 @@
 
     <!-- Nextdoor -->
     <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
+      <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-client-nextdoor" onclick="toggleCheck(event,'client-nextdoor')"></div>
         <div class="flex-1">
-          <div class="card-title">🏘️ Nextdoor</div>
-          <div class="card-sub">Copy-paste — community-focused business page</div>
+          <div class="op-card-title">🏘️ Nextdoor</div>
+          <div class="op-card-sub">Copy-paste — community-focused business page</div>
         </div>
-        <span class="chevron">▼</span>
+        <span class="op-chevron">▼</span>
       </div>
-      <div class="card-body">
+      <div class="op-card-body">
         <div class="steps">
           <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://business.nextdoor.com" target="_blank">business.nextdoor.com</a> and click <strong>Get started for free</strong></div></div>
           <div class="step"><div class="step-num">2</div><div class="step-text">Business name: <strong>BlastyBiz</strong> · Category: <strong>Advertising & Marketing</strong></div></div>
@@ -257,15 +156,15 @@
 
     <!-- Apple Maps -->
     <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
+      <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-client-apple" onclick="toggleCheck(event,'client-apple')"></div>
         <div class="flex-1">
-          <div class="card-title">🗺️ Apple Maps</div>
-          <div class="card-sub">Copy-paste — via Apple Business Connect (free)</div>
+          <div class="op-card-title">🗺️ Apple Maps</div>
+          <div class="op-card-sub">Copy-paste — via Apple Business Connect (free)</div>
         </div>
-        <span class="chevron">▼</span>
+        <span class="op-chevron">▼</span>
       </div>
-      <div class="card-body">
+      <div class="op-card-body">
         <div class="steps">
           <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://businessconnect.apple.com" target="_blank">businessconnect.apple.com</a> — sign in with an Apple ID</div></div>
           <div class="step"><div class="step-num">2</div><div class="step-text">Click <strong>Add a place</strong> → search for BlastyBiz (probably won't exist yet, so add new)</div></div>
@@ -278,15 +177,15 @@
 
     <!-- Bing Places -->
     <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
+      <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-client-bing" onclick="toggleCheck(event,'client-bing')"></div>
         <div class="flex-1">
-          <div class="card-title">🔵 Bing Places</div>
-          <div class="card-sub">Copy-paste — Microsoft's business directory</div>
+          <div class="op-card-title">🔵 Bing Places</div>
+          <div class="op-card-sub">Copy-paste — Microsoft's business directory</div>
         </div>
-        <span class="chevron">▼</span>
+        <span class="op-chevron">▼</span>
       </div>
-      <div class="card-body">
+      <div class="op-card-body">
         <div class="steps">
           <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://www.bingplaces.com" target="_blank">bingplaces.com</a> and sign in with a Microsoft account</div></div>
           <div class="step"><div class="step-num">2</div><div class="step-text">Click <strong>Get started</strong> → search for BlastyBiz → if not found, click <strong>Create new business</strong></div></div>
@@ -299,15 +198,15 @@
 
     <!-- Thumbtack -->
     <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
+      <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-client-thumbtack" onclick="toggleCheck(event,'client-thumbtack')"></div>
         <div class="flex-1">
-          <div class="card-title">📌 Thumbtack</div>
-          <div class="card-sub">Copy-paste — local professional services marketplace</div>
+          <div class="op-card-title">📌 Thumbtack</div>
+          <div class="op-card-sub">Copy-paste — local professional services marketplace</div>
         </div>
-        <span class="chevron">▼</span>
+        <span class="op-chevron">▼</span>
       </div>
-      <div class="card-body">
+      <div class="op-card-body">
         <div class="steps">
           <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://www.thumbtack.com/pro" target="_blank">thumbtack.com/pro</a> and click <strong>Join as a pro</strong></div></div>
           <div class="step"><div class="step-num">2</div><div class="step-text">Select service type: <strong>Marketing Consultant</strong> or <strong>Social Media Manager</strong></div></div>
@@ -323,7 +222,7 @@
   <!-- ══════════════════════════════════════════
        GOOGLE
   ══════════════════════════════════════════ -->
-  <div class="section">
+  <div class="op-section">
     <div class="section-header">
       <span class="section-icon">🔍</span>
       <span class="section-title">Google Business Profile OAuth</span>
@@ -332,15 +231,15 @@
 
     <!-- Enable API -->
     <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
+      <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-google-api" onclick="toggleCheck(event,'google-api')"></div>
         <div class="flex-1">
-          <div class="card-title">Enable Google Business Profile API</div>
-          <div class="card-sub">In the blastybiz-9523e Google Cloud project</div>
+          <div class="op-card-title">Enable Google Business Profile API</div>
+          <div class="op-card-sub">In the blastybiz-9523e Google Cloud project</div>
         </div>
-        <span class="chevron">▼</span>
+        <span class="op-chevron">▼</span>
       </div>
-      <div class="card-body">
+      <div class="op-card-body">
         <div class="steps">
           <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://console.cloud.google.com/apis/library?project=blastybiz-9523e" target="_blank">Google Cloud Console → API Library</a> (make sure project <strong>blastybiz-9523e</strong> is selected in the top dropdown)</div></div>
           <div class="step"><div class="step-num">2</div><div class="step-text">Search for <strong>Business Profile Performance API</strong> → Enable</div></div>
@@ -352,15 +251,15 @@
 
     <!-- OAuth credentials -->
     <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
+      <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-google-creds" onclick="toggleCheck(event,'google-creds')"></div>
         <div class="flex-1">
-          <div class="card-title">Create OAuth 2.0 credentials and set secrets</div>
-          <div class="card-sub">Web application type · set the redirect URI to the Cloud Function</div>
+          <div class="op-card-title">Create OAuth 2.0 credentials and set secrets</div>
+          <div class="op-card-sub">Web application type · set the redirect URI to the Cloud Function</div>
         </div>
-        <span class="chevron">▼</span>
+        <span class="op-chevron">▼</span>
       </div>
-      <div class="card-body">
+      <div class="op-card-body">
         <div class="steps">
           <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://console.cloud.google.com/apis/credentials?project=blastybiz-9523e" target="_blank">Google Cloud Console → Credentials</a> → <strong>+ Create Credentials → OAuth client ID</strong></div></div>
           <div class="step"><div class="step-num">2</div><div class="step-text">Application type: <strong>Web application</strong> · Name: <strong>BlastyBiz</strong></div></div>
@@ -374,7 +273,7 @@
         <p class="op-field-label">Client ID</p>
         <div class="secret-row">
           <input type="text" id="inp-google-id" class="secret-input" placeholder="xxxxxxxxxx.apps.googleusercontent.com" autocomplete="off">
-          <button class="save-btn" onclick="saveSecret('GOOGLE_CLIENT_ID','inp-google-id','st-google-id',this)">Save</button>
+          <button class="op-save-btn" onclick="saveSecret('GOOGLE_CLIENT_ID','inp-google-id','st-google-id',this)">Save</button>
         </div>
         <div class="save-status" id="st-google-id"></div>
 
@@ -382,7 +281,7 @@
         <div class="secret-row">
           <input type="password" id="inp-google-secret" class="secret-input" placeholder="GOCSPX-…" autocomplete="off">
           <button class="show-btn" onclick="toggleShow('inp-google-secret',this)">Show</button>
-          <button class="save-btn" onclick="saveSecret('GOOGLE_CLIENT_SECRET','inp-google-secret','st-google-secret',this)">Save</button>
+          <button class="op-save-btn" onclick="saveSecret('GOOGLE_CLIENT_SECRET','inp-google-secret','st-google-secret',this)">Save</button>
         </div>
         <div class="save-status" id="st-google-secret"></div>
 
@@ -392,15 +291,15 @@
 
     <!-- Redeploy Google functions -->
     <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
+      <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-google-deploy" onclick="toggleCheck(event,'google-deploy')"></div>
         <div class="flex-1">
-          <div class="card-title">Redeploy Google OAuth functions</div>
-          <div class="card-sub">Picks up the real credentials — run after setting secrets</div>
+          <div class="op-card-title">Redeploy Google OAuth functions</div>
+          <div class="op-card-sub">Picks up the real credentials — run after setting secrets</div>
         </div>
-        <span class="chevron">▼</span>
+        <span class="op-chevron">▼</span>
       </div>
-      <div class="card-body">
+      <div class="op-card-body">
         <div class="code-block mt-10">
           <span class="code-text">npx firebase-tools deploy --only functions:initiateGoogleOAuth,functions:googleOAuthCallback</span>
           <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:initiateGoogleOAuth,functions:googleOAuthCallback')">Copy</button>
@@ -413,7 +312,7 @@
   <!-- ══════════════════════════════════════════
        FACEBOOK / META
   ══════════════════════════════════════════ -->
-  <div class="section">
+  <div class="op-section">
     <div class="section-header">
       <span class="section-icon">📘</span>
       <span class="section-title">Facebook & Instagram OAuth</span>
@@ -421,15 +320,15 @@
     </div>
     <!-- Create Meta App -->
     <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
+      <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-fb-app" onclick="toggleCheck(event,'fb-app')"></div>
         <div class="flex-1">
-          <div class="card-title">Create a Meta (Facebook) App and set secrets</div>
-          <div class="card-sub">Business type · enables Pages and Instagram permissions</div>
+          <div class="op-card-title">Create a Meta (Facebook) App and set secrets</div>
+          <div class="op-card-sub">Business type · enables Pages and Instagram permissions</div>
         </div>
-        <span class="chevron">▼</span>
+        <span class="op-chevron">▼</span>
       </div>
-      <div class="card-body">
+      <div class="op-card-body">
         <div class="steps">
           <div class="step"><div class="step-num">1</div><div class="step-text">Open <a href="https://developers.facebook.com/apps" target="_blank">Meta for Developers → My Apps</a> → <strong>Create App</strong></div></div>
           <div class="step"><div class="step-num">2</div><div class="step-text">Use case: <strong>Other</strong> → App type: <strong>Business</strong> · Name: <strong>BlastyBiz</strong></div></div>
@@ -444,7 +343,7 @@
         <p class="op-field-label">App ID</p>
         <div class="secret-row">
           <input type="text" id="inp-fb-id" class="secret-input" placeholder="123456789…" autocomplete="off">
-          <button class="save-btn" onclick="saveSecret('FACEBOOK_APP_ID','inp-fb-id','st-fb-id',this)">Save</button>
+          <button class="op-save-btn" onclick="saveSecret('FACEBOOK_APP_ID','inp-fb-id','st-fb-id',this)">Save</button>
         </div>
         <div class="save-status" id="st-fb-id"></div>
 
@@ -452,7 +351,7 @@
         <div class="secret-row">
           <input type="password" id="inp-fb-secret" class="secret-input" placeholder="…" autocomplete="off">
           <button class="show-btn" onclick="toggleShow('inp-fb-secret',this)">Show</button>
-          <button class="save-btn" onclick="saveSecret('FACEBOOK_APP_SECRET','inp-fb-secret','st-fb-secret',this)">Save</button>
+          <button class="op-save-btn" onclick="saveSecret('FACEBOOK_APP_SECRET','inp-fb-secret','st-fb-secret',this)">Save</button>
         </div>
         <div class="save-status" id="st-fb-secret"></div>
       </div>
@@ -460,15 +359,15 @@
 
     <!-- Permissions -->
     <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
+      <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-fb-perms" onclick="toggleCheck(event,'fb-perms')"></div>
         <div class="flex-1">
-          <div class="card-title">Request Pages and Instagram permissions</div>
-          <div class="card-sub">Required for posting — needs Meta App Review for production</div>
+          <div class="op-card-title">Request Pages and Instagram permissions</div>
+          <div class="op-card-sub">Required for posting — needs Meta App Review for production</div>
         </div>
-        <span class="chevron">▼</span>
+        <span class="op-chevron">▼</span>
       </div>
-      <div class="card-body">
+      <div class="op-card-body">
         <div class="steps">
           <div class="step"><div class="step-num">1</div><div class="step-text">In your Meta App → <strong>App Review → Permissions and Features</strong></div></div>
           <div class="step"><div class="step-num">2</div><div class="step-text">Request these permissions: <code>pages_manage_posts</code>, <code>pages_read_engagement</code>, <code>instagram_basic</code>, <code>instagram_content_publish</code></div></div>
@@ -481,15 +380,15 @@
 
     <!-- Redeploy Facebook functions -->
     <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
+      <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-fb-deploy" onclick="toggleCheck(event,'fb-deploy')"></div>
         <div class="flex-1">
-          <div class="card-title">Redeploy Facebook OAuth functions</div>
-          <div class="card-sub">Picks up the real credentials — run after setting secrets</div>
+          <div class="op-card-title">Redeploy Facebook OAuth functions</div>
+          <div class="op-card-sub">Picks up the real credentials — run after setting secrets</div>
         </div>
-        <span class="chevron">▼</span>
+        <span class="op-chevron">▼</span>
       </div>
-      <div class="card-body">
+      <div class="op-card-body">
         <div class="code-block mt-10">
           <span class="code-text">npx firebase-tools deploy --only functions:initiateFacebookOAuth,functions:facebookOAuthCallback</span>
           <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:initiateFacebookOAuth,functions:facebookOAuthCallback')">Copy</button>
@@ -502,7 +401,7 @@
   <!-- ══════════════════════════════════════════
        ONGOING
   ══════════════════════════════════════════ -->
-  <div class="section">
+  <div class="op-section">
     <div class="section-header">
       <span class="section-icon">🔧</span>
       <span class="section-title">Ongoing Operator Commands</span>
@@ -510,15 +409,15 @@
     </div>
 
     <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
+      <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box check-hidden"></div>
         <div class="flex-1">
-          <div class="card-title">Deploy commands cheat sheet</div>
-          <div class="card-sub">Run in Replit Shell whenever you make changes</div>
+          <div class="op-card-title">Deploy commands cheat sheet</div>
+          <div class="op-card-sub">Run in Replit Shell whenever you make changes</div>
         </div>
-        <span class="chevron">▼</span>
+        <span class="op-chevron">▼</span>
       </div>
-      <div class="card-body">
+      <div class="op-card-body">
         <p class="op-sub-text">Run these from the Replit Shell tab:</p>
 
         <p class="op-cmd-label">Deploy HTML pages (hosting)</p>
@@ -652,7 +551,7 @@ function updateBadge(badgeId, keys, checks) {
 
 function toggleCard(header) {
   const body = header.nextElementSibling;
-  const chevron = header.querySelector('.chevron');
+  const chevron = header.querySelector('.op-chevron');
   body.classList.toggle('open');
   chevron.classList.toggle('open');
 }

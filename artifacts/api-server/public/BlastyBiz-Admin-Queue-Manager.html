@@ -6,28 +6,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>BlastyBiz Admin — Queue Manager</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="blastybiz-admin.css">
-<style>
-.filters    { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
-.primary    { background: #2563eb; color: white; }
-.safe       { background: #16a34a; color: white; }
-.warn-btn   { background: #ca8a04; color: white; }
-.btn-danger { background: #dc2626; color: white; }
-.light      { background: var(--card); color: var(--light); border: 1px solid var(--border); }
-.badge.pending { background: #07192a; color: #60a5fa;  border: 1px solid #2563eb; }
-.badge.posting { background: #1a0a2a; color: #c084fc;  border: 1px solid #7c3aed; }
-.badge.success { background: #0A2A0A; color: #00C853;  border: 1px solid #00C853; }
-.badge.failed  { background: #2A0A0A; color: #f87171;  border: 1px solid #dc2626; }
-.badge.manual  { background: #2A1A00; color: #e6b84a;  border: 1px solid #7a5500; }
-.metric     { font-size: 30px; font-weight: bold; margin-top: 8px; color: var(--light); }
-.actions    { display: flex; flex-wrap: wrap; gap: 6px; }
-pre         { white-space: pre-wrap; background: var(--dark); color: var(--light); padding: 14px; border-radius: 12px; overflow: auto; font-size: 13px; border: 1px solid var(--border); }
-.empty-row  { text-align: center; padding: 20px; opacity: .6; }
-</style>
+<link rel="stylesheet" href="global-style.css?v=129">
+
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
 </head>
-<body>
+<body class="admin-page">
 <header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Queue Manager</span></a><div class="top-actions"><a class="icon-btn hide-mobile" href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile active" href="#">Queue</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Logs.html">Logs</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Operate.html">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header>
 <main><div class="main"><div class="main-inner">
 
