@@ -866,6 +866,13 @@ body.has-site-header h4  { font-family: 'DM Sans', sans-serif; font-size: 15px; 
 .about ul li div        { color: var(--light); line-height: 1.6; }
 .about ul li strong     { color: var(--light); display: block; margin-bottom: 2px; }
 
+/* Values split layout — 2-col (values + office photo) on desktop, single col on mobile */
+.about-values-img-col { display: none; }
+@media (min-width: 768px) {
+  .about-values-img-col { display: block; }
+}
+.about-values-img { width: 100%; border-radius: 16px; object-fit: cover; aspect-ratio: 2/3; display: block; }
+
 /* Team card */
 .about__team-card       { display: flex; flex-direction: row; align-items: flex-start; gap: 20px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 0; }
 .about__team-card img   { width: 100px; height: 100px; object-fit: cover; object-position: top; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; }
