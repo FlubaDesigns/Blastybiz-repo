@@ -70,13 +70,13 @@ title = "generated_image"
 id = "OlLytVLFMpzHayK0XXDkK"
 uri = "file://download/BlastyBiz_Site.zip"
 type = "unspecified"
-title = "BlastyBiz_Site.zip — v=8, text color fixed"
+title = "BlastyBiz_Site.zip — v=9, button + CTA fixed"
 
 [[outputs]]
 id = "67fGmTkLMAbTADvgVIF6b"
 uri = "file://download/BlastyBiz_Audit.md"
 type = "text"
-title = "BlastyBiz_Audit.md — black-on-black bug row added"
+title = "BlastyBiz_Audit.md — v=9 row added"
 
 [[outputs]]
 id = "OrxuqDZbFKPyGWS2Um6-L"

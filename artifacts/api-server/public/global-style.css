@@ -497,9 +497,13 @@ main.home                { width: 100%; }
    larger sizing, marketing-specific spacing, display-context aware.
    Do NOT use in app pages — use .btn.btn--primary there instead.
    ──────────────────────────────────────────────────────────── */
-.btn__primary {
+/* .btn.btn__primary has higher specificity to beat the .btn base (transparent bg)
+   when both classes appear on the same element — e.g. class="btn btn__primary" */
+.btn__primary,
+.btn.btn__primary {
   background: var(--green);
   color: var(--dark);
+  border-color: var(--green);
   font-size: 16px;
   font-weight: 700;
   padding: 16px 36px;
@@ -769,8 +773,13 @@ main.home                { width: 100%; }
 .hero-note        { font-size: 12px; color: var(--muted); margin-top: 16px; }
 
 @media (max-width: 767px) {
-  .cta__split     { grid-template-columns: 1fr; }
-  .cta__img-wrap  { display: none; }
+  .cta__split              { grid-template-columns: 1fr; }
+  .cta__img-wrap           { display: none; }
+  .cta__text               { text-align: center; }
+  .cta__text > p           { margin-bottom: 20px; }
+  .cta__text .btn__primary,
+  .cta__text .btn.btn__primary { display: block; width: 100%; padding: 16px 24px; box-sizing: border-box; }
+  .hero-note               { text-align: center; }
 }
 
 
