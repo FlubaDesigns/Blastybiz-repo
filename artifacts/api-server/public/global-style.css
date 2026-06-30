@@ -6,6 +6,7 @@
 
 /* ── HELPERS ───────────────────────────────────────────────── */
 
+.hidden      { display: none; }
 .center      { text-align: center; margin-left: auto; margin-right: auto; }
 .img-fill    { width: 100%; height: auto; display: block; object-fit: contain; }
 .text--green { color: var(--green); }
@@ -830,9 +831,9 @@ body.has-site-header h4  { font-family: 'DM Sans', sans-serif; font-size: 15px; 
 .or-text                     { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
 
 /* Toast */
-.toast                       { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--green); color: var(--dark); padding: 12px 24px; border-radius: 30px; font-weight: 700; font-size: 14px; opacity: 0; transition: all 0.3s; z-index: 999; white-space: nowrap; }
+.toast                       { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--green); color: var(--dark); padding: 12px 24px; border-radius: 30px; font-weight: 700; font-size: 14px; opacity: 0; pointer-events: none; transition: all 0.3s; z-index: 999; white-space: nowrap; }
 .toast.error-toast           { background: var(--danger); color: #fff; }
-.toast.show                  { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.show                  { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
 
 /* Email verify box */
 .email-verify-box            { background: #f0faf4; border: 1px solid #b2dfdb; border-radius: 10px; padding: 14px 18px; text-align: center; color: #2e7d32; font-size: 14px; line-height: 1.5; }
@@ -1285,6 +1286,8 @@ textarea.big             { min-height: 140px; }
 
 /* Text colour utilities */
 .text-danger             { color: var(--danger); }
+.text-light              { color: var(--light); }
+.link-blue               { color: var(--blue); font-weight: 600; }
 
 /* Page heading */
 .page-title              { font-family: 'Bebas Neue', sans-serif; font-size: 38px; letter-spacing: 2px; color: var(--light); margin-bottom: 6px; }
@@ -1366,3 +1369,119 @@ body.connected-page .btn-secondary:hover { border-color: var(--silver); color: v
 .error-desc              { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
 .btn-retry               { display: inline-block; padding: 10px 20px; background: transparent; color: var(--danger); border: 1px solid var(--danger); border-radius: 10px; font-size: 13px; font-weight: 700; text-decoration: none; transition: all 0.2s; }
 .btn-retry:hover         { background: rgba(255,68,68,0.1); }
+
+
+/* ── PLATFORM ICON COLOURS — used on Connect & Listing-Preview ──
+   Combine with a base sizing class (.platform-icon or similar).
+   ─────────────────────────────────────────────────────────── */
+.pi-google               { background: rgba(66,133,244,0.1);   color: #4285F4; }
+.pi-fb                   { background: rgba(24,119,242,0.1);   color: #1877F2; }
+.pi-ig                   { background: rgba(225,48,108,0.1);   color: #E1306C; }
+.pi-bing                 { background: rgba(0,128,157,0.1);    color: #00809D; }
+.pi-apple                { background: rgba(85,85,85,0.15);    color: #999; }
+.pi-nd                   { background: rgba(0,178,70,0.1);     color: #00B246; }
+.pi-cl                   { background: rgba(107,0,215,0.1);    color: #6B00D7; }
+.pi-fbm                  { background: rgba(0,130,251,0.1);    color: #0082FB; }
+
+
+/* ── PAGE EYEBROW — small all-caps label above headings ─────── */
+.page-eyebrow            { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--silver); font-weight: 700; margin-bottom: 8px; }
+
+
+/* ── STATUS BADGES — reusable pill indicators ────────────────── */
+.status-badge            { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; }
+.badge-live              { background: rgba(0,200,83,0.12);    color: var(--green); }
+.badge-error             { background: rgba(255,68,68,0.12);   color: var(--danger); }
+.badge-manual            { background: rgba(122,184,122,0.1);  color: var(--silver); }
+.badge-none              { background: rgba(88,112,88,0.15);   color: var(--muted); }
+
+
+/* ── MODAL SHELL — bottom-sheet overlay used on Connect ─────── */
+.modal-overlay           { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+.modal-overlay.open      { opacity: 1; pointer-events: all; }
+.modal-sheet             { background: #0D160D; border: 1px solid var(--border); border-radius: 22px 22px 0 0; width: 100%; max-width: 560px; padding: 28px 24px 36px; transform: translateY(40px); transition: transform 0.3s cubic-bezier(0.34,1.2,0.64,1); }
+.modal-overlay.open .modal-sheet { transform: translateY(0); }
+.modal-handle            { width: 36px; height: 4px; background: var(--border); border-radius: 4px; margin: 0 auto 22px; }
+
+
+/* ── DIVIDER WITH LABEL — horizontal rule with centred text ─── */
+.divider                 { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 24px 0 12px; display: flex; align-items: center; gap: 10px; }
+.divider::before,
+.divider::after          { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+
+/* ── CONNECT PAGE ────────────────────────────────────────────────
+   body.connect-page — platform OAuth + manual-copy connections.
+   ─────────────────────────────────────────────────────────── */
+body.connect-page        { padding-bottom: 40px; }
+body.connect-page .page-title  { font-size: 42px; line-height: 1; }
+body.connect-page .section-label { color: var(--silver); margin: 0 0 10px; }
+
+/* Explainer drawer */
+.explainer               { display: none; background: rgba(0,200,83,0.04); border: 1px solid rgba(0,200,83,0.18); border-radius: 14px; padding: 18px 20px; margin-top: -4px; margin-bottom: 12px; }
+.explainer.open          { display: block; }
+.explainer-title         { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--green); margin-bottom: 12px; }
+.explainer-steps         { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.explainer-step          { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.explainer-step-num      { width: 22px; height: 22px; border-radius: 50%; background: rgba(0,200,83,0.12); color: var(--green); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.explainer-note          { font-size: 12px; color: var(--muted); background: rgba(84,168,255,0.06); border: 1px solid rgba(84,168,255,0.15); border-radius: 8px; padding: 10px 12px; line-height: 1.5; }
+.explainer-note strong   { color: var(--blue); }
+.btn-proceed             { width: 100%; padding: 11px 18px; background: var(--green); color: var(--dark); border: none; border-radius: 10px; font-size: 14px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 12px; transition: background 0.2s; display: block; text-align: center; text-decoration: none; }
+.btn-proceed:hover       { background: #00b84c; }
+
+/* Facebook gate modal content */
+.modal-title             { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 1px; color: var(--light); margin-bottom: 6px; }
+.modal-sub               { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 22px; }
+.modal-choice-group      { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.modal-choice            { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; cursor: pointer; display: flex; align-items: flex-start; gap: 14px; transition: border-color 0.2s; }
+.modal-choice:hover      { border-color: var(--silver); }
+.modal-choice-icon       { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+.modal-choice-title      { font-size: 14px; font-weight: 700; color: var(--light); margin-bottom: 2px; }
+.modal-choice-desc       { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.modal-choice.yes        { border-color: rgba(0,200,83,0.3); }
+.modal-choice.yes:hover  { border-color: var(--green); }
+.no-page-guide           { display: none; }
+.no-page-guide.open      { display: block; }
+.guide-steps             { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.guide-step              { display: flex; gap: 12px; background: rgba(255,167,38,0.04); border: 1px solid rgba(255,167,38,0.15); border-radius: 12px; padding: 12px 14px; }
+.guide-step-num          { width: 26px; height: 26px; border-radius: 50%; background: rgba(255,167,38,0.15); color: var(--warn); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.guide-step-body         { font-size: 13px; color: var(--light); line-height: 1.5; }
+.guide-step-body a       { color: var(--warn); font-weight: 600; text-decoration: none; }
+.guide-step-body a:hover { text-decoration: underline; }
+.guide-step-body strong  { color: var(--warn); }
+.guide-note              { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 4px; }
+.btn-cancel-modal        { width: 100%; padding: 11px; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 10px; font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; }
+.btn-cancel-modal:hover  { color: var(--light); border-color: var(--silver); }
+
+/* Platform cards */
+.platform-card           { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; margin-bottom: 10px; display: flex; align-items: center; gap: 16px; transition: border-color 0.2s; }
+.platform-card.connected { border-color: rgba(0,200,83,0.3); }
+.platform-card.error     { border-color: rgba(255,68,68,0.3); }
+.platform-icon           { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-family: 'Bebas Neue', sans-serif; font-weight: 700; flex-shrink: 0; }
+.platform-info           { flex: 1; min-width: 0; }
+.platform-name           { font-size: 15px; font-weight: 700; color: var(--light); }
+.platform-mode           { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 2px; font-weight: 600; }
+.platform-status         { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.platform-actions        { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; align-items: flex-end; }
+.btn-connect             { padding: 9px 18px; background: var(--green); color: var(--dark); border: none; border-radius: 10px; font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.btn-connect:hover       { background: #00b84c; }
+.btn-connect:disabled    { opacity: 0.5; cursor: not-allowed; }
+.btn-reconnect           { padding: 9px 18px; background: transparent; color: var(--warn); border: 1px solid var(--warn); border-radius: 10px; font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.btn-reconnect:hover     { background: rgba(255,167,38,0.1); }
+.btn-disconnect          { padding: 6px 12px; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 8px; font-size: 11px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.btn-disconnect:hover    { border-color: var(--danger); color: var(--danger); }
+
+/* Manual (copy-ready) cards */
+.manual-card             { background: rgba(13,22,13,0.5); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; margin-bottom: 10px; display: flex; align-items: center; gap: 16px; }
+.manual-instructions     { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+.manual-link             { color: var(--silver); text-decoration: none; font-weight: 600; }
+.manual-link:hover       { color: var(--green); }
+
+/* Setup note (info box) */
+.setup-note              { background: rgba(84,168,255,0.06); border: 1px solid rgba(84,168,255,0.2); border-radius: 12px; padding: 16px; margin-top: 10px; margin-bottom: 20px; font-size: 13px; color: var(--blue); line-height: 1.6; }
+.setup-note strong       { display: block; margin-bottom: 4px; font-weight: 700; }
+
+/* Info card (bottom CTA) */
+.info-card               { background: rgba(0,200,83,0.05); border: 1px solid rgba(0,200,83,0.2); border-radius: 16px; padding: 20px; margin-top: 28px; }
+.info-card-title         { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; color: var(--green); margin-bottom: 8px; }
+.info-card p             { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
