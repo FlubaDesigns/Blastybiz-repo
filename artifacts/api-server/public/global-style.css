@@ -52,6 +52,8 @@
 
 /* ── FLEX ROW UTILITIES ───────────────────────────────────────── */
 .row         { display: flex; align-items: center; gap: 8px; }
+/* .row-sb has NO gap (space-between only) — used on Home page heading/CTA pairs where gap is unwanted.
+   .flex-between (~line 458) adds gap:12px — prefer it when items need spacing in addition to space-between. */
 .row-sb      { display: flex; align-items: center; justify-content: space-between; }
 .row-base-sb { display: flex; align-items: baseline; justify-content: space-between; }
 .shrink-0    { flex-shrink: 0; }
@@ -426,6 +428,13 @@ main.home                { width: 100%; }
 @media (max-width: 599px) {
   .main-inner            { padding-top: 5px; }
 }
+
+
+/* ── LAYOUT PRIMITIVES ───────────────────────────────────────────
+   Canonical grid utilities. Use .layout__split* in new markup.
+   Old aliases (.split / .split-3 / .split-4 / .two-col) are kept
+   until existing markup is migrated — values are tokenized to match.
+   ─────────────────────────────────────────────────────────── */
 .layout__split     { display: grid; grid-template-columns: 1fr;               gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 @media (min-width: 600px) {
   .layout__split   { grid-template-columns: 1fr 1fr; }
@@ -455,6 +464,7 @@ main.home                { width: 100%; }
 /* Flex helpers — replace one-off inline flex rules */
 .flex-row     { display: flex; align-items: center; gap: 12px; }
 .flex-col     { display: flex; flex-direction: column; gap: 10px; }
+/* .flex-between includes gap:12px; .row-sb does not — see note above on .row-sb */
 .flex-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .flex-wrap    { display: flex; flex-wrap: wrap; gap: 10px; }
 .flex-1       { flex: 1; min-width: 0; }
@@ -748,7 +758,7 @@ main.home                { width: 100%; }
 .cta__img         { width: 60%; max-width: 260px; height: auto; display: block; border-radius: 16px; }
 .hero-note        { font-size: 12px; color: var(--muted); margin-top: 16px; }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .cta__split     { grid-template-columns: 1fr; }
   .cta__img-wrap  { display: none; }
 }
@@ -1216,7 +1226,7 @@ body.onboarding-page textarea     { resize: none; }
 .row-sub             { font-size: 12px; color: var(--muted); margin-top: 3px; }
 
 /* Two-column grid */
-.two-col             { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.two-col             { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 
 /* Utility */
 .sub                 { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 650px; }
@@ -1347,7 +1357,7 @@ body.onboarding-page textarea     { resize: none; }
   .score-ring          { width: 100px; height: 100px; }
   .score-number        { font-size: 34px; }
 }
-@media (max-width: 850px) {
+@media (max-width: 900px) {
   .two-col             { grid-template-columns: 1fr; }
 }
 
@@ -1356,7 +1366,7 @@ body.onboarding-page textarea     { resize: none; }
    Add class="app-page" to <body> on any authenticated app page.
    ─────────────────────────────────────────────────────────── */
 body.app-page .main-inner { padding-top: 120px; padding-left: var(--gutter); padding-right: var(--gutter); }
-@media (max-width: 600px) {
+@media (max-width: 599px) {
   body.app-page .main-inner  { padding-top: 56px; padding-bottom: 20px; padding-left: var(--gutter); padding-right: var(--gutter); }
   body.app-page .page-title  { font-size: 30px; }
 }
@@ -2180,17 +2190,21 @@ body.admin-page .main-inner    { width: min(1220px, 100%); margin: 0 auto; paddi
 body.operate-page .main-inner  { max-width: 860px; }
 
 /* ── Admin layout primitives ── */
-.split      { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-.split-3    { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-.split-4    { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
-.split-wide { display: grid; grid-template-columns: 1.2fr .8fr; gap: 16px; margin-bottom: 16px; }
-.stack      { display: flex; flex-direction: column; gap: 12px; }
+/* .split/.split-3/.split-4 mirror .layout__split/.layout__split-3/.layout__split-4 (gaps tokenized to match).
+   .split-wide intentionally keeps 1.2fr .8fr ratio — narrower than .layout__split-wide's 1.5fr 1fr.
+   Migrate markup to canonical .layout__split* names when pages are updated. */
+.split      { display: grid; grid-template-columns: 1fr 1fr;            gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
+.split-3    { display: grid; grid-template-columns: 1fr 1fr 1fr;        gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
+.split-4    { display: grid; grid-template-columns: repeat(4, 1fr);     gap: var(--gap-md); margin-bottom: var(--gap-lg); }
+.split-wide { display: grid; grid-template-columns: 1.2fr .8fr;         gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
+.stack      { display: flex; flex-direction: column; gap: var(--gap-md); }
 .cluster    { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.form-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
-.form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--gap-lg); }
+.form-row   { display: grid; grid-template-columns: 1fr 1fr;            gap: var(--gap-md); margin-bottom: var(--gap-lg); }
 
-.three-col  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-body.admin-page .row { width: 100%; margin-bottom: 16px; display: block; }
+/* .three-col aliases .split-3 / .layout__split-3; kept for BlastyBiz-Admin.html until migrated */
+.three-col  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
+body.admin-page .row { width: 100%; margin-bottom: var(--gap-lg); display: block; }
 
 /* ── Admin card ── */
 body.admin-page .card       { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
