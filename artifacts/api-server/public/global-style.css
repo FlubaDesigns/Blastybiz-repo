@@ -2401,6 +2401,21 @@ body.admin-page .row { margin-bottom: var(--gap-lg); }
 
 /* ── Admin card ── */
 body.admin-page .card       { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+
+/* Failed Jobs — responsive table ↔ cards */
+.jobs-table-wrap            { display: block; overflow-x: auto; }
+.jobs-cards                 { display: none; flex-direction: column; gap: 10px; margin-top: 12px; }
+.job-card                   { background: var(--soft); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+.job-card-top               { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.job-card-biz               { font-weight: 700; font-size: 15px; color: var(--light); flex: 1; }
+.job-card-meta              { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.job-card-reason            { font-size: 13px; color: var(--silver); margin-bottom: 10px; line-height: 1.4; }
+.job-card-actions           { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.job-card-cb                { width: 18px; height: 18px; flex-shrink: 0; }
+@media (max-width: 767px) {
+  .jobs-table-wrap          { display: none; }
+  .jobs-cards               { display: flex; }
+}
 body.admin-page .card-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1.5px; color: var(--green); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
 
 /* ── Admin hero / display text ── */

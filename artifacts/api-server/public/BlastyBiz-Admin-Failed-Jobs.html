@@ -1,8 +1,8 @@
 <!DOCTYPE html><html lang="en"><head>
-  <link rel="icon" type="image/x-icon" href="favicon.ico"><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>BlastyBiz — Admin Failed Jobs</title><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/><link rel="stylesheet" href="global-style.css?v=33"><style>body{visibility:hidden}</style><script type="module" src="./admin-guard.js"></script></head><body class="admin-page"><header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Failed Jobs Queue</span></a><div class="top-actions"><a class="icon-btn hide-mobile " href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a><a class="icon-btn hide-mobile active" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Logs.html">Logs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Operate.html">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header><main><div class="main"><div class="main-inner">
-<section class="hero"><div class="card"><div class="eyebrow">Admin operating screen</div><h1 class="big-title">Failed Jobs <span>Queue</span></h1><p class="sub">This is where the admin fixes publishing, sync, AI, image, billing, and platform jobs that did not complete. Keep the language clear: what failed, why it failed, and what the admin should do next.</p><div class="btn-row"><button id="retry-selected-btn" class="btn btn-primary" onclick="retrySelected()">Retry Selected</button><button id="manual-followup-btn" class="btn" onclick="manualFollowupSelected()">Mark Manual Follow-up</button><button id="export-errors-btn" class="btn" onclick="exportErrors()">Export Errors</button></div></div><div class="card"><div class="card-title">⚠️ Queue Summary</div><div class="list"><div class="list-item"><div class="icon" id="hero-open-count">—</div><div class="row-main"><div class="row-title">Open failed jobs</div><div class="row-sub" id="hero-open-sub">Loading…</div></div><span class="badge error">Open</span></div><div class="list-item"><div class="icon">4</div><div class="row-main"><div class="row-title">Auto retries scheduled</div><div class="row-sub">Retry only safe jobs. Never double-post without a dedupe key.</div></div><span class="badge info">Queued</span></div></div></div></section>
+  <link rel="icon" type="image/x-icon" href="favicon.ico"><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>BlastyBiz — Admin Failed Jobs</title><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/><link rel="stylesheet" href="global-style.css?v=34"><style>body{visibility:hidden}</style><script type="module" src="./admin-guard.js"></script></head><body class="admin-page"><header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Failed Jobs Queue</span></a><div class="top-actions"><a class="icon-btn hide-mobile " href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a><a class="icon-btn hide-mobile active" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Logs.html">Logs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Operate.html">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header><main><div class="main"><div class="main-inner">
+<section class="hero"><div class="card"><div class="eyebrow">Admin operating screen</div><h1 class="big-title">Failed Jobs <span>Queue</span></h1><p class="sub">This is where the admin fixes publishing, sync, AI, image, billing, and platform jobs that did not complete. Keep the language clear: what failed, why it failed, and what the admin should do next.</p><div class="btn-row"><button id="retry-selected-btn" class="btn btn-primary" onclick="retrySelected()">Retry Selected</button><button id="manual-followup-btn" class="btn" onclick="manualFollowupSelected()">Mark Manual Follow-up</button><button id="close-selected-btn" class="btn" onclick="closeSelected()">Close Selected</button><button id="export-errors-btn" class="btn" onclick="exportErrors()">Export Errors</button></div></div><div class="card"><div class="card-title">⚠️ Queue Summary</div><div class="list"><div class="list-item"><div class="icon" id="hero-open-count">—</div><div class="row-main"><div class="row-title">Open failed jobs</div><div class="row-sub" id="hero-open-sub">Loading…</div></div><span class="badge error">Open</span></div><div class="list-item"><div class="icon">4</div><div class="row-main"><div class="row-title">Auto retries scheduled</div><div class="row-sub">Retry only safe jobs. Never double-post without a dedupe key.</div></div><span class="badge info">Queued</span></div></div></div></section>
 <section class="grid"><div class="stat"><div class="stat-num">3</div><div class="stat-label">Retryable</div><div class="stat-note money">System can retry</div></div><div class="stat"><div class="stat-num">2</div><div class="stat-label">Reconnect Needed</div><div class="stat-note warn">OAuth/customer action</div></div><div class="stat"><div class="stat-num">1</div><div class="stat-label">Validation</div><div class="stat-note bad">Fix field/category</div></div><div class="stat"><div class="stat-num">1</div><div class="stat-label">AI/Image</div><div class="stat-note blue">Regenerate or resize</div></div></section>
-<section class="card"><div class="card-title">⚠️ Failed Jobs</div><table><thead><tr><th class="th-cb"><input type="checkbox" id="select-all" onchange="toggleAll(this)" class="cb-styled"></th><th>Business</th><th>Job</th><th>Platform</th><th>Reason</th><th>Next Action</th><th>Status</th></tr></thead><tbody><tr id="jobs-loading-row"><td colspan="7" class="td-empty">Loading…</td></tr></tbody></table></section>
+<section class="card"><div class="card-title">⚠️ Failed Jobs</div><div class="jobs-table-wrap"><table><thead><tr><th class="th-cb"><input type="checkbox" id="select-all" onchange="toggleAll(this)" class="cb-styled"></th><th>Business</th><th>Job</th><th>Platform</th><th>Reason</th><th>Next Action</th><th>Status</th></tr></thead><tbody><tr id="jobs-loading-row"><td colspan="7" class="td-empty">Loading…</td></tr></tbody></table></div><div id="jobs-cards" class="jobs-cards"></div></section>
 <section class="two-col"><div class="card"><div class="card-title">🧠 Replit Logic</div><div class="list"><div class="list-item"><div class="icon">1</div><div class="row-main"><div class="row-title">Use job IDs and dedupe keys</div><div class="row-sub">Every publishing task needs a unique jobId and platformJobKey so retries do not duplicate posts.</div></div></div><div class="list-item"><div class="icon">2</div><div class="row-main"><div class="row-title">Store plain error summaries</div><div class="row-sub">Business owners should see simple messages. Admin can see raw details only when needed.</div></div></div></div></div><div class="card"><div class="card-title">✅ Admin Actions</div><div class="list"><div class="list-item"><div class="icon">↻</div><div class="row-main"><div class="row-title">Retry</div><div class="row-sub">Only for safe failures like timeout, rate limit, or temporary platform outage.</div></div></div><div class="list-item"><div class="icon">✎</div><div class="row-main"><div class="row-title">Fix and rerun</div><div class="row-sub">For validation, category, phone/address, or image errors.</div></div></div><div class="list-item"><div class="icon">👤</div><div class="row-main"><div class="row-title">Request customer action</div><div class="row-sub">For expired OAuth, missing permissions, or disconnected platform accounts.</div></div></div></div></div></section></div></div></main><nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Queue-Manager.html">📋<br>Queue</a><a class="active" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a><a class="" href="BlastyBiz-Admin-Operate.html">⚙️<br>Operate</a></nav><script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -71,6 +71,20 @@ window.retrySelected = async function() {
   }
 };
 
+window.closeSelected = async function() {
+  const ids = getSelectedIds();
+  if (!ids.length) { alert('Check at least one job to close.'); return; }
+  const btn = document.getElementById('close-selected-btn');
+  if (btn) btn.textContent = 'Closing…';
+  try {
+    await Promise.all(ids.map(id => jobAction(id, 'close')));
+    if (btn) btn.textContent = 'Close Selected';
+  } catch(e) {
+    alert('Close failed: ' + e.message);
+    if (btn) btn.textContent = 'Close Selected';
+  }
+};
+
 window.manualFollowupSelected = async function() {
   const ids = getSelectedIds();
   if (!ids.length) { alert('Select at least one job.'); return; }
@@ -126,28 +140,59 @@ onAuthStateChanged(auth, (user) => {
     // Resolve business names in one batch before rendering
     await resolveBizNames(jobs.map(j => j.businessId).filter(Boolean));
 
-    tbody.innerHTML = jobs.map(j => {
+    const tableRows = [];
+    const cardItems = [];
+
+    jobs.forEach(j => {
       const bizName = bizNameCache[j.businessId] || j.businessId || '—';
       const isRetryable = ['failed','retry_pending'].includes(j.status);
       const isReconnect = j.status === 'customer_reconnect_required';
-      const isManual = j.status === 'manual_required';
-      const acts = isReconnect
+      const isManual    = j.status === 'manual_required';
+      const statusLabel = isManual ? 'Manual' : isReconnect ? 'Reconnect' : 'Failed';
+      const reason      = j.adminError || j.customerVisibleMessage || '';
+      const jobMeta     = [j.jobType || 'Listing sync', j.platform].filter(Boolean).join(' · ');
+
+      const tableActs = isReconnect
         ? `<button class="light" onclick="jobAction('${j._id}','notify')">Notify Customer</button><button class="danger" onclick="jobAction('${j._id}','close')">Close</button>`
         : isRetryable
         ? `<button class="primary" onclick="jobAction('${j._id}','retry')">Retry</button><button class="danger" onclick="jobAction('${j._id}','close')">Close</button>`
         : isManual
         ? `<button class="safe" onclick="jobAction('${j._id}','complete')">Mark Complete</button>`
         : `<button class="danger" onclick="jobAction('${j._id}','close')">Close</button>`;
-      return `<tr data-job-id="${j._id}">
+
+      tableRows.push(`<tr data-job-id="${j._id}">
         <td><input type="checkbox" class="job-select cb-styled" value="${j._id}"></td>
         <td>${bizName}</td>
         <td>${j.jobType || 'Listing sync'}</td>
         <td>${j.platform || '—'}</td>
-        <td class="muted">${j.adminError || j.customerVisibleMessage || '—'}</td>
-        <td class="actions">${acts}</td>
-        <td><span class="badge needs">${j.status === 'manual_required' ? 'Manual' : j.status === 'customer_reconnect_required' ? 'Reconnect' : 'Failed'}</span></td>
-      </tr>`;
-    }).join('');
+        <td class="muted">${reason || '—'}</td>
+        <td class="actions">${tableActs}</td>
+        <td><span class="badge needs">${statusLabel}</span></td>
+      </tr>`);
+
+      const cardActs = isReconnect
+        ? `<button class="light" onclick="jobAction('${j._id}','notify')">Notify</button><button class="danger" onclick="jobAction('${j._id}','close')">Close</button>`
+        : isRetryable
+        ? `<button class="primary" onclick="jobAction('${j._id}','retry')">Retry</button><button class="danger" onclick="jobAction('${j._id}','close')">Close</button>`
+        : isManual
+        ? `<button class="safe" onclick="jobAction('${j._id}','complete')">Mark Done</button>`
+        : `<button class="danger" onclick="jobAction('${j._id}','close')">Close</button>`;
+
+      cardItems.push(`<div class="job-card">
+        <div class="job-card-top">
+          <input type="checkbox" class="job-select job-card-cb cb-styled" value="${j._id}">
+          <span class="job-card-biz">${bizName}</span>
+          <span class="badge needs">${statusLabel}</span>
+        </div>
+        <div class="job-card-meta">${jobMeta}</div>
+        ${reason ? `<div class="job-card-reason">${reason}</div>` : ''}
+        <div class="job-card-actions">${cardActs}</div>
+      </div>`);
+    });
+
+    tbody.innerHTML = tableRows.join('');
+    const cardsEl = document.getElementById('jobs-cards');
+    if (cardsEl) cardsEl.innerHTML = cardItems.join('');
 
     const retryable = jobs.filter(j => ['failed','retry_pending'].includes(j.status)).length;
     const reconnect = jobs.filter(j => j.status === 'customer_reconnect_required').length;
