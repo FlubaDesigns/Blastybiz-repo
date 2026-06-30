@@ -107,7 +107,7 @@ async function verifyBearer(req) {
   return await admin.auth().verifyIdToken(token);
 }
 
-const ADMIN_EMAILS = ['perceys@gmail.com', 'rep-test@blastybiz.com'];
+const ADMIN_EMAILS = ['perceys@gmail.com'];
 
 async function requireAdmin(req) {
   const decoded = await verifyBearer(req);
