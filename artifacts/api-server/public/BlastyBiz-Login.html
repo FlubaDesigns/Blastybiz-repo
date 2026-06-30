@@ -2,257 +2,205 @@
 <html lang="en">
 <head>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="stylesheet" href="blastybiz-global.css?v=94" />
-<title>BlastyBiz — Sign In</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<!-- styles → blastybiz-global.css -->
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="global-style.css?v=120" />
+  <title>BlastyBiz — Sign In</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 </head>
-<body class="login-page">
+<body class="login-page has-site-header">
 
 <div id="header__inject"></div>
 
-<div class="main">
-<canvas id="canvas"></canvas>
-<img class="mobile-login-img" src="img/people-login-new.png" alt="BlastyBiz" />
-<div class="main-inner">
+<main class="login-page main">
+  <div class="main-inner">
+    <div class="row">
+      <div class="layout__split-2-1">
 
-  <!-- AUTH LOADING SPINNER (shown until Firebase resolves) -->
-  <div id="auth-loading">
-    <div class="ring"></div>
-  </div>
+        <!-- FORM PANEL -->
+        <div class="login-form-col">
 
-  <!-- AUTH CARD (hidden until Firebase confirms no session) -->
-  <div id="auth-card-wrap">
-  <div class="auth-card">
-
-    <!-- TABS -->
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tab-signin" onclick="switchTab('signin')">Sign In</button>
-      <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Create Account</button>
-    </div>
-
-    <!-- ── SIGN IN FORM ── -->
-    <div class="auth-form active" id="form-signin">
-
-      <div class="field">
-        <label>Email</label>
-        <input type="email" id="si-email" placeholder="you@yourbusiness.com" oninput="clearErr('si-email')" />
-        <div class="field-error" id="si-email-err">Please enter a valid email</div>
-      </div>
-
-      <div class="field">
-        <label>Password</label>
-        <div class="pw-wrap">
-          <input type="password" id="si-password" placeholder="Your password" oninput="clearErr('si-password')" />
-          <button class="pw-toggle" onclick="togglePw('si-password', this)" type="button">👁️</button>
-        </div>
-        <div class="field-error" id="si-password-err">Password is required</div>
-      </div>
-
-      <div class="forgot">
-        <a href="#" onclick="showReset(); return false;">Forgot password?</a>
-      </div>
-
-      <button class="btn-submit" id="btn-signin" onclick="handleSignIn()" disabled>
-        <div class="spinner"></div>
-        <span class="btn-text">Sign In →</span>
-      </button>
-
-      <div class="or-divider">
-        <div class="or-line"></div>
-        <div class="or-text">OR</div>
-        <div class="or-line"></div>
-      </div>
-
-      <div class="social-btns">
-        <button class="btn-social" onclick="handleGoogle()">
-          <span class="btn-social-icon">🔍</span>
-          Continue with Google
-        </button>
-        <button class="btn-social" onclick="handleFacebook()">
-          <span class="btn-social-icon">📘</span>
-          Continue with Facebook
-        </button>
-      </div>
-
-    </div>
-
-    <!-- ── SIGN UP FORM ── -->
-    <div class="auth-form" id="form-signup">
-
-      <div class="field">
-        <div class="email-verify-box">
-          ✅ All accounts start <strong>free on Starter</strong> — upgrade to Pro or Agency anytime from your dashboard.
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Full Name</label>
-        <input type="text" id="su-name" placeholder="Your name" oninput="clearErr('su-name')" />
-        <div class="field-error" id="su-name-err">Name is required</div>
-      </div>
-
-      <div class="field">
-        <label>Email</label>
-        <input type="email" id="su-email" placeholder="you@yourbusiness.com" oninput="clearErr('su-email')" />
-        <div class="field-error" id="su-email-err">Please enter a valid email</div>
-      </div>
-
-      <div class="field">
-        <label>Password</label>
-        <div class="pw-wrap">
-          <input type="password" id="su-password" placeholder="Create a password" oninput="checkStrength(this.value)" />
-          <button class="pw-toggle" onclick="togglePw('su-password', this)" type="button">👁️</button>
-        </div>
-        <div class="strength-wrap" id="strength-wrap">
-          <div class="strength-track">
-            <div class="strength-fill" id="strength-fill"></div>
+          <div id="auth-loading">
+            <div class="ring"></div>
           </div>
-          <div class="strength-label" id="strength-label">Too short</div>
+
+          <div id="auth-card-wrap">
+            <div class="auth-card">
+
+              <!-- TABS -->
+              <div class="auth-tabs">
+                <button class="auth-tab active" id="tab-signin" onclick="switchTab('signin')">Sign In</button>
+                <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Create Account</button>
+              </div>
+
+              <!-- SIGN IN FORM -->
+              <div class="auth-form active" id="form-signin">
+
+                <div class="field">
+                  <label>Email</label>
+                  <input type="email" id="si-email" placeholder="you@yourbusiness.com" oninput="clearErr('si-email')" />
+                  <div class="field-error" id="si-email-err">Please enter a valid email</div>
+                </div>
+
+                <div class="field">
+                  <label>Password</label>
+                  <div class="pw-wrap">
+                    <input type="password" id="si-password" placeholder="Your password" oninput="clearErr('si-password')" />
+                    <button class="pw-toggle" onclick="togglePw('si-password', this)" type="button">👁️</button>
+                  </div>
+                  <div class="field-error" id="si-password-err">Password is required</div>
+                </div>
+
+                <div class="forgot">
+                  <a href="#" onclick="showReset(); return false;">Forgot password?</a>
+                </div>
+
+                <button class="btn-submit" id="btn-signin" onclick="handleSignIn()" disabled>
+                  <div class="spinner"></div>
+                  <span class="btn-text">Sign In →</span>
+                </button>
+
+                <div class="or-divider">
+                  <div class="or-line"></div>
+                  <div class="or-text">OR</div>
+                  <div class="or-line"></div>
+                </div>
+
+                <div class="social-btns">
+                  <button class="btn-social" onclick="handleGoogle()">
+                    <span class="btn-social-icon">🔍</span>
+                    Continue with Google
+                  </button>
+                  <button class="btn-social" onclick="handleFacebook()">
+                    <span class="btn-social-icon">📘</span>
+                    Continue with Facebook
+                  </button>
+                </div>
+
+              </div>
+
+              <!-- SIGN UP FORM -->
+              <div class="auth-form" id="form-signup">
+
+                <div class="field">
+                  <div class="email-verify-box">
+                    ✅ All accounts start <strong>free on Starter</strong> — upgrade to Pro or Agency anytime from your dashboard.
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label>Full Name</label>
+                  <input type="text" id="su-name" placeholder="Your name" oninput="clearErr('su-name')" />
+                  <div class="field-error" id="su-name-err">Name is required</div>
+                </div>
+
+                <div class="field">
+                  <label>Email</label>
+                  <input type="email" id="su-email" placeholder="you@yourbusiness.com" oninput="clearErr('su-email')" />
+                  <div class="field-error" id="su-email-err">Please enter a valid email</div>
+                </div>
+
+                <div class="field">
+                  <label>Password</label>
+                  <div class="pw-wrap">
+                    <input type="password" id="su-password" placeholder="Create a password" oninput="checkStrength(this.value)" />
+                    <button class="pw-toggle" onclick="togglePw('su-password', this)" type="button">👁️</button>
+                  </div>
+                  <div class="strength-wrap" id="strength-wrap">
+                    <div class="strength-track">
+                      <div class="strength-fill" id="strength-fill"></div>
+                    </div>
+                    <div class="strength-label" id="strength-label">Too short</div>
+                  </div>
+                  <div class="field-error" id="su-password-err">Password must be at least 8 characters</div>
+                </div>
+
+                <div class="field">
+                  <label>Re-enter Password</label>
+                  <div class="pw-wrap">
+                    <input type="password" id="su-password2" placeholder="Confirm your password" oninput="clearErr('su-password2')" />
+                    <button class="pw-toggle" onclick="togglePw('su-password2', this)" type="button">👁️</button>
+                  </div>
+                  <div class="field-error" id="su-password2-err">Passwords don't match</div>
+                </div>
+
+                <button class="btn-submit" id="btn-signup" onclick="handleSignUp()" disabled>
+                  <div class="spinner"></div>
+                  <span class="btn-text">Create Account →</span>
+                </button>
+
+                <div class="or-divider">
+                  <div class="or-line"></div>
+                  <div class="or-text">OR</div>
+                  <div class="or-line"></div>
+                </div>
+
+                <div class="social-btns">
+                  <button class="btn-social" onclick="handleGoogle()">
+                    <span class="btn-social-icon">🔍</span>
+                    Continue with Google
+                  </button>
+                  <button class="btn-social" onclick="handleFacebook()">
+                    <span class="btn-social-icon">📘</span>
+                    Continue with Facebook
+                  </button>
+                </div>
+
+                <div class="terms-note">
+                  By creating an account you agree to our
+                  <a href="BlastyBiz-Terms.html">Terms of Service</a> and <a href="BlastyBiz-Privacy.html">Privacy Policy</a>
+                </div>
+
+              </div>
+
+              <!-- RESET PASSWORD -->
+              <div class="reset-view" id="reset-view">
+                <button class="reset-back" onclick="hideReset()">← Back to Sign In</button>
+                <h2>Reset Password</h2>
+                <p>Enter your email and we'll send you a reset link.</p>
+
+                <div class="field">
+                  <label>Email</label>
+                  <input type="email" id="reset-email" placeholder="you@yourbusiness.com" />
+                </div>
+
+                <button class="btn-submit" onclick="handleReset()">
+                  <div class="spinner"></div>
+                  <span class="btn-text">Send Reset Link →</span>
+                </button>
+              </div>
+
+            </div><!-- /auth-card -->
+
+            <div class="back-home">
+              <a href="BlastyBiz-Home.html">← Back to BlastyBiz.com</a>
+            </div>
+
+          </div><!-- /auth-card-wrap -->
+
+        </div><!-- /login-form-col -->
+
+        <!-- IMAGE PANEL — desktop only via .hero-img-col -->
+        <div class="hero-img-col login-img-col">
+          <img src="img/people-login-new.png" alt="Business owner smiling" />
+          <div class="login-img-overlay">
+            <strong class="login-panel-logo">Blasty<span>Biz</span></strong>
+            <p class="login-panel-tag">Post Once. Reach Everywhere.</p>
+            <blockquote class="login-panel-quote">"I used to spend my whole Sunday posting. Now it takes 5 minutes." — Maria R., Pizzeria Owner</blockquote>
+          </div>
         </div>
-        <div class="field-error" id="su-password-err">Password must be at least 8 characters</div>
-      </div>
 
-      <div class="field">
-        <label>Re-enter Password</label>
-        <div class="pw-wrap">
-          <input type="password" id="su-password2" placeholder="Confirm your password" oninput="clearErr('su-password2')" />
-          <button class="pw-toggle" onclick="togglePw('su-password2', this)" type="button">👁️</button>
-        </div>
-        <div class="field-error" id="su-password2-err">Passwords don't match</div>
-      </div>
+      </div><!-- /layout__split-2-1 -->
+    </div><!-- /row -->
+  </div><!-- /main-inner -->
+</main>
 
-      <button class="btn-submit" id="btn-signup" onclick="handleSignUp()" disabled>
-        <div class="spinner"></div>
-        <span class="btn-text">Create Account →</span>
-      </button>
-
-      <div class="or-divider">
-        <div class="or-line"></div>
-        <div class="or-text">OR</div>
-        <div class="or-line"></div>
-      </div>
-
-      <div class="social-btns">
-        <button class="btn-social" onclick="handleGoogle()">
-          <span class="btn-social-icon">🔍</span>
-          Continue with Google
-        </button>
-        <button class="btn-social" onclick="handleFacebook()">
-          <span class="btn-social-icon">📘</span>
-          Continue with Facebook
-        </button>
-      </div>
-
-      <div class="terms-note">
-        By creating an account you agree to our
-        <a href="BlastyBiz-Terms.html">Terms of Service</a> and <a href="BlastyBiz-Privacy.html">Privacy Policy</a>
-      </div>
-
-    </div>
-
-    <!-- ── RESET PASSWORD ── -->
-    <div class="reset-view" id="reset-view">
-      <button class="reset-back" onclick="hideReset()">← Back to Sign In</button>
-      <h2>Reset Password</h2>
-      <p>Enter your email and we'll send you a reset link.</p>
-
-      <div class="field">
-        <label>Email</label>
-        <input type="email" id="reset-email" placeholder="you@yourbusiness.com" />
-      </div>
-
-      <button class="btn-submit" onclick="handleReset()">
-        <div class="spinner"></div>
-        <span class="btn-text">Send Reset Link →</span>
-      </button>
-    </div>
-
-  </div>
-  </div><!-- /auth-card-wrap -->
-
-  <!-- BACK TO HOME -->
-  <div class="back-home">
-    <a href="BlastyBiz-Home.html">← Back to BlastyBiz.com</a>
-  </div>
-
-</div>
-
-<!-- Image panel — order:2 in global CSS puts it on the right at 768px+ -->
-<div class="login-img-panel">
-  <img src="img/people-login-new.png" alt="Business owner smiling" />
-  <div class="login-img-overlay">
-    <strong class="login-panel-logo">Blasty<span>Biz</span></strong>
-    <p class="login-panel-tag">Post Once. Reach Everywhere.</p>
-    <blockquote class="login-panel-quote">"I used to spend my whole Sunday posting. Now it takes 5 minutes." — Maria R., Pizzeria Owner</blockquote>
-  </div>
-</div>
-
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
-</div><!-- /.main -->
+
 <div id="site-footer-inject"></div>
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 
 <script>
-// ══════════════════════════════════════════
-// PARTICLE CANVAS
-// ══════════════════════════════════════════
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-let particles = [];
-
-function resizeCanvas() {
-  canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-
-function createParticles() {
-  particles = [];
-  const count = Math.floor((canvas.width * canvas.height) / 20000);
-  for (let i = 0; i < count; i++) {
-    particles.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 1.2 + 0.3,
-      dx: (Math.random() - 0.5) * 0.25,
-      dy: (Math.random() - 0.5) * 0.25,
-      alpha: Math.random() * 0.3 + 0.05,
-    });
-  }
-}
-
-function animateParticles() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  particles.forEach(p => {
-    p.x += p.dx; p.y += p.dy;
-    if (p.x < 0) p.x = canvas.width;
-    if (p.x > canvas.width) p.x = 0;
-    if (p.y < 0) p.y = canvas.height;
-    if (p.y > canvas.height) p.y = 0;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(0,200,83,${p.alpha})`;
-    ctx.fill();
-  });
-  requestAnimationFrame(animateParticles);
-}
-
-resizeCanvas();
-createParticles();
-animateParticles();
-window.addEventListener('resize', () => { resizeCanvas(); createParticles(); });
-
-// ══════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════
-let selectedPlanId = 'pro';
-
-// ══════════════════════════════════════════
-// TAB SWITCH
-// ══════════════════════════════════════════
 function switchTab(tab) {
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
@@ -261,18 +209,6 @@ function switchTab(tab) {
   hideReset();
 }
 
-// ══════════════════════════════════════════
-// PLAN SELECT
-// ══════════════════════════════════════════
-function selectPlan(btn, plan) {
-  document.querySelectorAll('.plan-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  selectedPlanId = plan;
-}
-
-// ══════════════════════════════════════════
-// PASSWORD TOGGLE
-// ══════════════════════════════════════════
 function togglePw(inputId, btn) {
   const input = document.getElementById(inputId);
   const isHidden = input.type === 'password';
@@ -280,24 +216,18 @@ function togglePw(inputId, btn) {
   btn.textContent = isHidden ? '🙈' : '👁️';
 }
 
-// ══════════════════════════════════════════
-// PASSWORD STRENGTH
-// ══════════════════════════════════════════
 function checkStrength(val) {
   const wrap = document.getElementById('strength-wrap');
   const fill = document.getElementById('strength-fill');
   const lbl  = document.getElementById('strength-label');
-
   if (!val) { wrap.classList.remove('visible'); return; }
   wrap.classList.add('visible');
-
   let score = 0;
   if (val.length >= 8)  score++;
   if (val.length >= 12) score++;
   if (/[A-Z]/.test(val)) score++;
   if (/[0-9]/.test(val)) score++;
   if (/[^A-Za-z0-9]/.test(val)) score++;
-
   const levels = [
     { w: '20%', c: '#FF4444', t: 'Too weak' },
     { w: '40%', c: '#FF9800', t: 'Weak' },
@@ -305,7 +235,6 @@ function checkStrength(val) {
     { w: '80%', c: '#8BC34A', t: 'Good' },
     { w: '100%', c: '#00C853', t: 'Strong ✓' },
   ];
-
   const level = levels[Math.min(score, 4)];
   fill.style.width = level.w;
   fill.style.background = level.c;
@@ -313,9 +242,6 @@ function checkStrength(val) {
   lbl.style.color = level.c;
 }
 
-// ══════════════════════════════════════════
-// VALIDATION
-// ══════════════════════════════════════════
 function clearErr(inputId) {
   const input = document.getElementById(inputId);
   const err = document.getElementById(inputId + '-err');
@@ -335,40 +261,16 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-// ══════════════════════════════════════════
-// SIGN IN  (overridden by Firebase module below)
-// ══════════════════════════════════════════
-function handleSignIn() {}
-
-// ══════════════════════════════════════════
-// SIGN UP  (overridden by Firebase module below)
-// ══════════════════════════════════════════
-function handleSignUp() {}
-
-// ══════════════════════════════════════════
-// SOCIAL AUTH  (overridden by Firebase module below)
-// ══════════════════════════════════════════
-function handleGoogle() {}
-function handleFacebook() {}
-
-// ══════════════════════════════════════════
-// RESET PASSWORD
-// ══════════════════════════════════════════
 function showReset() {
   document.getElementById('form-signin').style.display = 'none';
   document.getElementById('reset-view').classList.add('visible');
 }
 
 function hideReset() {
-  document.getElementById('form-signin').style.display = 'block';
+  document.getElementById('form-signin').style.display = '';
   document.getElementById('reset-view').classList.remove('visible');
 }
 
-function handleReset() {}
-
-// ══════════════════════════════════════════
-// LOADING STATE
-// ══════════════════════════════════════════
 function setLoading(btnId, loading) {
   const btn = document.getElementById(btnId);
   if (!btn) return;
@@ -376,9 +278,6 @@ function setLoading(btnId, loading) {
   btn.disabled = loading;
 }
 
-// ══════════════════════════════════════════
-// TOAST
-// ══════════════════════════════════════════
 function showToast(msg, isError = false) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -387,7 +286,11 @@ function showToast(msg, isError = false) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-
+function handleSignIn() {}
+function handleSignUp() {}
+function handleGoogle() {}
+function handleFacebook() {}
+function handleReset() {}
 </script>
 
 <script type="module">
@@ -404,8 +307,6 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-// Module is loaded — unlock auth buttons (they start disabled to prevent
-// clicks before window.handleSignIn/handleSignUp are overridden below)
 ['btn-signin','btn-signup'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.disabled = false;
@@ -419,14 +320,11 @@ async function afterAuth(user) {
     const dashUrl = plan
       ? `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(plan)}`
       : 'BlastyBiz-Dashboard.html?from=login';
-
     if (userData.onboarded) {
       window.location.href = dashUrl;
     } else {
-      // Flag missing — check if they already have a business (existing customer)
       const bizSnap = await getDocs(query(collection(db, 'businesses'), where('uid', '==', user.uid)));
       if (!bizSnap.empty) {
-        // Has businesses but flag wasn't set — fix it silently and go to dashboard
         await setDoc(doc(db, 'users', user.uid), { onboarded: true }, { merge: true });
         window.location.href = dashUrl;
       } else {
@@ -438,10 +336,6 @@ async function afterAuth(user) {
   }
 }
 
-// Primary auth state listener — fires for:
-//   • page load when already signed in
-//   • returning from signInWithRedirect (mobile Google)
-//   • any other sign-in that changes auth state
 function showLoginForm() {
   document.getElementById('auth-loading').style.display = 'none';
   document.getElementById('auth-card-wrap').classList.add('ready');
@@ -460,8 +354,6 @@ onAuthStateChanged(auth, async (user) => {
   await afterAuth(user);
 });
 
-// On mobile redirect return: ensure Firestore user doc exists for new Google users.
-// afterAuth is handled by onAuthStateChanged above.
 getRedirectResult(auth).then(async (result) => {
   if (!result?.user) return;
   const snap = await getDoc(doc(db, 'users', result.user.uid));
@@ -484,101 +376,84 @@ window.handleSignIn = async function() {
   const email = document.getElementById('si-email').value.trim();
   const pass  = document.getElementById('si-password').value;
   let valid = true;
-  if (!window.isValidEmail(email)) valid = window.showErr('si-email');
-  if (!pass) valid = window.showErr('si-password');
+  if (!isValidEmail(email)) valid = showErr('si-email');
+  if (!pass) valid = showErr('si-password');
   if (!valid) return;
-  window.setLoading('btn-signin', true);
+  setLoading('btn-signin', true);
   try {
     const cred = await signInWithEmailAndPassword(auth, email, pass);
     await afterAuth(cred.user);
   } catch (e) {
-    window.setLoading('btn-signin', false);
+    setLoading('btn-signin', false);
     const msg = e.code === 'auth/invalid-credential' ? 'Wrong email or password' :
                 e.code === 'auth/too-many-requests'  ? 'Too many attempts — try again later' :
                 e.message;
-    window.showToast(msg, true);
+    showToast(msg, true);
   }
 };
 
 window.handleSignUp = async function() {
   const name  = document.getElementById('su-name').value.trim();
   const email = document.getElementById('su-email').value.trim();
-  const pass   = document.getElementById('su-password').value;
-  const pass2  = document.getElementById('su-password2').value;
+  const pass  = document.getElementById('su-password').value;
+  const pass2 = document.getElementById('su-password2').value;
   let valid = true;
-  if (!name)                        valid = window.showErr('su-name', 'Name is required');
-  if (!window.isValidEmail(email))  valid = window.showErr('su-email', 'Please enter a valid email');
-  if (pass.length < 8)              valid = window.showErr('su-password', 'Password must be at least 8 characters');
-  if (pass !== pass2)               valid = window.showErr('su-password2', 'Passwords don\'t match');
+  if (!name)               valid = showErr('su-name', 'Name is required');
+  if (!isValidEmail(email))valid = showErr('su-email', 'Please enter a valid email');
+  if (pass.length < 8)     valid = showErr('su-password', 'Password must be at least 8 characters');
+  if (pass !== pass2)      valid = showErr('su-password2', "Passwords don't match");
   if (!valid) return;
-  window.setLoading('btn-signup', true);
+  setLoading('btn-signup', true);
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     await setDoc(doc(db, 'users', cred.user.uid), {
-      ownerName: name,
-      email,
-      plan: 'starter',
-      onboarded: false,
-      createdAt: serverTimestamp()
+      ownerName: name, email, plan: 'starter', onboarded: false, createdAt: serverTimestamp()
     });
     window.location.href = 'BlastyBiz-Onboarding.html';
   } catch (e) {
-    window.setLoading('btn-signup', false);
+    setLoading('btn-signup', false);
     const msg = e.code === 'auth/email-already-in-use' ? 'Account already exists — sign in instead' : e.message;
-    window.showToast(msg, true);
+    showToast(msg, true);
   }
 };
 
 window.handleGoogle = async function() {
   const provider = new GoogleAuthProvider();
   const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  if (isMobile) {
-    await signInWithRedirect(auth, provider);
-    return;
-  }
+  if (isMobile) { await signInWithRedirect(auth, provider); return; }
   try {
     const cred = await signInWithPopup(auth, provider);
     const snap = await getDoc(doc(db, 'users', cred.user.uid));
     if (!snap.exists()) {
       await setDoc(doc(db, 'users', cred.user.uid), {
-        ownerName: cred.user.displayName || '',
-        email: cred.user.email,
-        plan: 'starter',
-        onboarded: false,
-        createdAt: serverTimestamp()
+        ownerName: cred.user.displayName || '', email: cred.user.email,
+        plan: 'starter', onboarded: false, createdAt: serverTimestamp()
       });
     }
     await afterAuth(cred.user);
   } catch (e) {
-    if (e.code !== 'auth/popup-closed-by-user') window.showToast('Google sign-in failed', true);
+    if (e.code !== 'auth/popup-closed-by-user') showToast('Google sign-in failed', true);
   }
 };
 
-window.handleFacebook = function() {
-  window.showToast('Facebook sign-in coming soon');
-};
+window.handleFacebook = function() { showToast('Facebook sign-in coming soon'); };
 
 window.handleReset = async function() {
   const email = document.getElementById('reset-email').value.trim();
-  if (!window.isValidEmail(email)) { window.showToast('Enter a valid email', true); return; }
+  if (!isValidEmail(email)) { showToast('Enter a valid email', true); return; }
   try {
     await sendPasswordResetEmail(auth, email);
-    window.showToast('Reset link sent! Check your inbox ✓');
-    setTimeout(window.hideReset, 2000);
+    showToast('Reset link sent! Check your inbox ✓');
+    setTimeout(hideReset, 2000);
   } catch (e) {
-    window.showToast('Could not send reset email', true);
+    showToast('Could not send reset email', true);
   }
 };
-
-const origSelectPlan = window.selectPlan;
-window.selectPlan = function(btn, plan) {
-  window._selectedPlanId = plan;
-  if (origSelectPlan) origSelectPlan(btn, plan);
-};
-window._selectedPlanId = 'starter';
 </script>
+
 <script>
 fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('header__inject').innerHTML=html;(function(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)();function ck(t,f){var b=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.03),ctx.sampleRate),D=b.getChannelData(0);for(var i=0;i<D.length;i++){var s=i/ctx.sampleRate;D[i]=(Math.random()*2-1)*Math.exp(-s/0.004)*1.2+Math.sin(2*Math.PI*f*s)*Math.exp(-s/0.005)*0.3;}var src=ctx.createBufferSource();src.buffer=b;var g=ctx.createGain();g.gain.setValueAtTime(1,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.03);src.connect(g);g.connect(ctx.destination);src.start(t);}var n=ctx.currentTime;ck(n+0.01,220);ck(n+0.30,160);}catch(e){}var tl=document.getElementById('header__logo-tagline');if(tl){tl.style.animation='tagline-bolt 0.55s cubic-bezier(0.25,0.46,0.45,0.94) 0s both';}})();});
 </script>
+
 </body>
 </html>
