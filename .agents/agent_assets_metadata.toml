@@ -70,13 +70,13 @@ title = "generated_image"
 id = "OlLytVLFMpzHayK0XXDkK"
 uri = "file://download/BlastyBiz_Site.zip"
 type = "unspecified"
-title = "BlastyBiz_Site.zip — 58 files, audit-complete build"
+title = "BlastyBiz_Site.zip — 58 files, audit-complete"
 
 [[outputs]]
 id = "67fGmTkLMAbTADvgVIF6b"
 uri = "file://download/BlastyBiz_Audit.md"
 type = "text"
-title = "BlastyBiz_Audit.md — all 4 passes complete"
+title = "BlastyBiz_Audit.md — all 4 passes logged"
 
 [[outputs]]
 id = "OrxuqDZbFKPyGWS2Um6-L"
@@ -88,4 +88,4 @@ title = "BlastyBiz_Full.zip — 194 KB, 92 files, no node_modules, no screenshot
 id = "ZMHQTTZtSSPEbQ66Nw_bX"
 uri = "file://download/setOperatorSecret-reference.md"
 type = "text"
-title = "setOperatorSecret-reference.md — how to set production secrets"
+title = "setOperatorSecret-reference.md — secret rotation guide"
