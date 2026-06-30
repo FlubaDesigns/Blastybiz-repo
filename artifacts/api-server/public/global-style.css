@@ -409,13 +409,13 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 
 /* ── HEADER — Mobile (≤767px) ───────────────────────────── */
 @media (max-width: 767px) {
-  .header__nav-row       { padding: 4px 12px; }
+  .header__nav-row       { padding: 4px 16px; }
   .header__logo-icon     { height: 46px; width: 46px; }
   .header__logo-wordmark { height: 14px; }
   .header__logo-tagline  { height: 8px; }
   .header__nav-link,
   .header__nav-cta       { display: none; }
-  .header__hamburger     { display: flex; }
+  .header__hamburger     { display: flex; margin-right: 0; padding: 8px; }
   .header__badge-bar     { display: none !important; }
 }
 
