@@ -392,6 +392,7 @@ async function regenDraft(direction) {
       bizInsights:      currentDraftData.bizInsights      || [],
       bizAnnouncements: currentDraftData.bizAnnouncements || [],
       aiContext:        currentDraftData.aiContext     || null,
+      libraryDocs:      window._libraryDocs            || [],
     };
     const platform = { id: activeDraftKey, ...(PLATFORM_META[activeDraftKey] || { name: activeDraftKey, type: 'manual' }) };
     const body = JSON.stringify({

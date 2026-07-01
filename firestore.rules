@@ -42,6 +42,13 @@ service cloud.firestore {
         (request.auth.uid == resource.data.uid ||
          request.auth.uid == businessId ||
          isAdmin());
+
+      // Business Library documents subcollection — owner only
+      match /documents/{docId} {
+        allow read, write, delete: if request.auth != null &&
+          (request.auth.uid == get(/databases/$(database)/documents/businesses/$(businessId)).data.uid ||
+           request.auth.uid == businessId);
+      }
     }
 
     // Listing drafts — owner only; admin can read any

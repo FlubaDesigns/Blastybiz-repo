@@ -1155,6 +1155,7 @@ async function regeneratePlatformCopy(pid) {
           bizInsights: (bizInsights||[]).filter(i=>i.answer),
           bizAnnouncements: bizAnnouncements||[],
           aiContext: profile.aiContext || null,
+          libraryDocs: window._libraryDocs || [],
         },
         platforms: [{ id: platform.id, name: platform.name, type: platform.type, enabled: true }],
         tone,
@@ -1583,6 +1584,7 @@ Return this exact JSON structure:
           bizInsights: bizInsights.filter(i=>i.answer),
           bizAnnouncements: bizAnnouncements,
           aiContext: profile.aiContext || null,
+          libraryDocs: window._libraryDocs || [],
         },
         platforms: enabledPlatforms,
         tone,
@@ -2809,6 +2811,12 @@ onAuthStateChanged(auth, async (user) => {
       if (window._bbSetProfile) window._bbSetProfile(p);
       if (window.loadInsights)      window.loadInsights(biz.bizInsights || []);
       if (window.loadAnnouncements) window.loadAnnouncements(biz.bizAnnouncements || []);
+
+      // Load Business Library docs for AI context (Pro/Agency only — no-op for starter)
+      try {
+        const docsSnap = await getDocs(query(collection(db, 'businesses', activeBizId, 'documents'), orderBy('uploadedAt', 'desc')));
+        window._libraryDocs = docsSnap.docs.map(d => ({ name: d.data().name, extractedText: d.data().extractedText || '' }));
+      } catch(_) { window._libraryDocs = []; }
 
       // ?edit=1 from Dashboard "Edit Business Info" button — jump straight to Profile tab
       if (new URLSearchParams(window.location.search).get('edit') === '1') {

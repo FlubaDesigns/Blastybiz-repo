@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}</style>
 <script type="module" src="./auth-guard.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body class="app-page">
 
@@ -64,6 +65,21 @@
     <button class="btn btn-primary btn-lg" id="btn-save" onclick="saveContext()" disabled>Save Story</button>
     <span class="save-status" id="save-status"></span>
   </div>
+
+  <!-- Business Library — Pro/Agency only -->
+  <div id="doc-library-section" style="display:none">
+    <div class="card" style="margin-top:24px">
+      <div class="section-label">📎 Business Library</div>
+      <div class="section-hint">Upload documents the AI reads every time it writes for you — menus, service sheets, sales pieces. Supports .txt and .pdf files.</div>
+      <div id="doc-list" style="margin-top:12px"></div>
+      <label class="btn btn-secondary" style="cursor:pointer;margin-top:16px;display:inline-block">
+        + Add Document
+        <input type="file" id="doc-file-input" accept=".txt,.pdf" style="display:none" onchange="handleDocUpload(event)" />
+      </label>
+      <div id="doc-upload-status" style="font-size:13px;color:var(--muted);margin-top:8px;min-height:18px"></div>
+    </div>
+  </div>
+
 </div><!-- /.main-inner -->
 </main>
 
@@ -99,10 +115,11 @@ FIELDS.forEach(f => {
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, addDoc, deleteDoc, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 let currentUser = null;
 let activeBizId = null;
+let activeBizPlan = 'starter';
 
 const FIELDS = [
   { id: 'ctx-story',     key: 'story' },
@@ -121,6 +138,7 @@ auth.authStateReady().then(() => {
       const userSnap = await getDoc(doc(db, 'users', user.uid));
       const userData = userSnap.exists() ? userSnap.data() : {};
       activeBizId = userData.activeBusiness || null;
+      activeBizPlan = userData.plan || 'starter';
 
       if (!activeBizId) {
         const bizQ = await getDocs(query(collection(db, 'businesses'), where('uid', '==', user.uid)));
@@ -149,11 +167,101 @@ auth.authStateReady().then(() => {
         });
         document.getElementById('btn-save').disabled = false;
       }
+
+      if (activeBizPlan === 'pro' || activeBizPlan === 'agency') {
+        document.getElementById('doc-library-section').style.display = 'block';
+        loadLibraryDocs();
+      }
     } catch(e) {
       console.error('Load error:', e);
     }
   });
 });
+
+// ── Document Library ──────────────────────────────────────
+async function loadLibraryDocs() {
+  if (!activeBizId) return;
+  const list = document.getElementById('doc-list');
+  try {
+    const snap = await getDocs(query(collection(db, 'businesses', activeBizId, 'documents'), orderBy('uploadedAt', 'desc')));
+    if (snap.empty) { list.innerHTML = '<p style="font-size:13px;color:var(--muted);margin:0">No documents yet.</p>'; return; }
+    list.innerHTML = snap.docs.map(d => {
+      const data = d.data();
+      const chars = (data.extractedText || '').length;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--light)">${escHtml(data.name)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${chars.toLocaleString()} characters extracted</div>
+        </div>
+        <button onclick="deleteLibraryDoc('${d.id}')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px">Remove</button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<p style="font-size:13px;color:var(--muted);margin:0">Could not load documents.</p>';
+  }
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+window.handleDocUpload = async function(evt) {
+  const file = evt.target.files[0];
+  evt.target.value = '';
+  if (!file) return;
+  const status = document.getElementById('doc-upload-status');
+  const maxBytes = 500 * 1024; // 500 KB
+  if (file.size > maxBytes) { status.textContent = '❌ File too large (max 500 KB)'; return; }
+  status.textContent = '⏳ Extracting text…';
+  let extractedText = '';
+  try {
+    if (file.name.toLowerCase().endsWith('.txt')) {
+      extractedText = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = e => res(e.target.result);
+        r.onerror = rej;
+        r.readAsText(file);
+      });
+    } else if (file.name.toLowerCase().endsWith('.pdf')) {
+      const pdfLib = window.pdfjsLib;
+      if (!pdfLib) { status.textContent = '❌ PDF support unavailable — try a .txt file'; return; }
+      pdfLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const arrayBuf = await file.arrayBuffer();
+      const pdf = await pdfLib.getDocument({ data: arrayBuf }).promise;
+      const pages = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        pages.push(content.items.map(item => item.str).join(' '));
+      }
+      extractedText = pages.join('\n');
+    } else {
+      status.textContent = '❌ Only .txt and .pdf files are supported';
+      return;
+    }
+    extractedText = extractedText.trim();
+    if (!extractedText) { status.textContent = '❌ No text found in this file'; return; }
+    if (extractedText.length > 20000) extractedText = extractedText.slice(0, 20000) + '\n[truncated]';
+    status.textContent = '💾 Saving…';
+    await addDoc(collection(db, 'businesses', activeBizId, 'documents'), {
+      name: file.name, extractedText, uploadedAt: new Date(), bytes: file.size
+    });
+    status.textContent = '✅ Document saved to Business Library';
+    loadLibraryDocs();
+  } catch(e) {
+    status.textContent = '❌ Upload failed — ' + e.message;
+  }
+};
+
+window.deleteLibraryDoc = async function(docId) {
+  if (!confirm('Remove this document from your Business Library?')) return;
+  try {
+    await deleteDoc(doc(db, 'businesses', activeBizId, 'documents', docId));
+    loadLibraryDocs();
+    showToast('Document removed');
+  } catch(e) {
+    showToast('Remove failed — try again');
+  }
+};
+// ────────────────────────────────────────────────────────
 
 window.saveContext = async function() {
   if (!activeBizId) { showToast('No active business found'); return; }
