@@ -220,6 +220,39 @@
   </div>
 
   <!-- ══════════════════════════════════════════
+       GOOGLE OAUTH VERIFICATION
+  ══════════════════════════════════════════ -->
+  <div class="op-section">
+    <div class="section-header">
+      <span class="section-icon">🔍</span>
+      <span class="section-title">Google OAuth Consent Screen Verification</span>
+      <span class="section-badge warn">Required for public users</span>
+    </div>
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-google-verify" onclick="toggleCheck(event,'google-verify')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">Submit BlastyBiz for Google OAuth Verification</div>
+          <div class="op-card-sub">Unverified apps show a red "This app isn't verified" warning to users when connecting Google Business Profile. Verification removes it.</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-step-label">What to do</p>
+        <ol class="op-list">
+          <li>Go to <span class="cf-url">console.cloud.google.com → APIs &amp; Services → OAuth consent screen</span></li>
+          <li>Make sure App name, support email, homepage URL (<strong>blastybiz.com</strong>), privacy policy URL, and terms URL are all filled in</li>
+          <li>Under <strong>Scopes</strong> confirm <strong>business.manage</strong> is listed</li>
+          <li>Click <strong>Prepare for verification</strong> → fill in the justification (e.g. "BlastyBiz posts business listings to Google Business Profile on behalf of the business owner")</li>
+          <li>Submit — Google review typically takes a few days to a few weeks</li>
+          <li>Once approved, the warning screen goes away for all users</li>
+        </ol>
+        <div class="op-note">⚠️ Until verified, users can still connect by clicking "Advanced → Go to BlastyBiz anyway" but most will not trust it.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
        META APP REVIEW
   ══════════════════════════════════════════ -->
   <div class="op-section">
