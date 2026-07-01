@@ -113,3 +113,9 @@ id = "Oc5-OQd7K1ZUAIy5r_8yn"
 uri = "file://attached_assets/image_search/storefront_b.jpg"
 type = "image"
 title = "Option B — Modern black brick storefront with green plants (dark, stylish)"
+
+[[outputs]]
+id = "c5x9gUCr34S7Rk4d7NBFu"
+uri = "file://download/BlastyBiz-Logo-120x120.png"
+type = "image"
+title = "BlastyBiz-Logo-120x120.png"
