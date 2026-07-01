@@ -220,6 +220,38 @@
   </div>
 
   <!-- ══════════════════════════════════════════
+       META APP REVIEW
+  ══════════════════════════════════════════ -->
+  <div class="op-section">
+    <div class="section-header">
+      <span class="section-icon">📋</span>
+      <span class="section-title">Meta App Review</span>
+      <span class="section-badge warn">Required for public users</span>
+    </div>
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-meta-review" onclick="toggleCheck(event,'meta-review')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">Submit BlastyBiz for Meta App Review</div>
+          <div class="op-card-sub">Facebook &amp; Instagram OAuth currently works for test accounts only (Development mode). App Review unlocks it for all users.</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-step-label">What to do</p>
+        <ol class="op-list">
+          <li>Go to <span class="cf-url">developers.facebook.com → BlastyBiz app → App Review → Requests</span></li>
+          <li>Add the permissions your app uses: <strong>pages_manage_posts</strong>, <strong>pages_read_engagement</strong>, <strong>instagram_basic</strong>, <strong>instagram_content_publish</strong></li>
+          <li>Record a short screencast showing the OAuth connect flow and a post being sent</li>
+          <li>Submit — Meta review typically takes 5–7 business days</li>
+          <li>Once approved, go to <span class="cf-url">App Settings → Basic → App Mode</span> and switch from Development to <strong>Live</strong></li>
+        </ol>
+        <div class="op-note">⚠️ Until this is done, only Facebook test accounts you've manually added can connect Facebook or Instagram through BlastyBiz.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
        ONGOING
   ══════════════════════════════════════════ -->
   <div class="op-section">
