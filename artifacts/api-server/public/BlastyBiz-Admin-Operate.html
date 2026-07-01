@@ -250,6 +250,23 @@
         <div class="op-note">⚠️ Until verified, users can still connect by clicking "Advanced → Go to BlastyBiz anyway" but most will not trust it.</div>
       </div>
     </div>
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-google-logo" onclick="toggleCheck(event,'google-logo')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">Create and upload BlastyBiz logo (120×120px)</div>
+          <div class="op-card-sub">Google requires a square logo to display on the OAuth consent screen. Upload it in Branding before submitting for verification.</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <ol class="op-list">
+          <li>Create a 120×120px square logo (JPG, PNG, or BMP, max 1MB)</li>
+          <li>Go to <span class="cf-url">console.cloud.google.com → APIs &amp; Services → OAuth consent screen → Branding</span></li>
+          <li>Upload under <strong>App logo</strong> and save</li>
+        </ol>
+      </div>
+    </div>
   </div>
 
   <!-- ══════════════════════════════════════════
