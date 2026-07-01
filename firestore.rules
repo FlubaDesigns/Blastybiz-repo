@@ -141,6 +141,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Email templates — admin read/write only; Cloud Functions use Admin SDK (bypasses rules)
+    match /emailTemplates/{docId} {
+      allow read, write: if isAdmin();
+    }
+
     // OAuth nonces — written/deleted by Cloud Functions (admin SDK, bypasses rules)
     // Explicitly blocked from direct client access
     match /oauthNonces/{nonceId} {

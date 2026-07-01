@@ -1298,32 +1298,59 @@ exports.userCreatedTrigger = onDocumentCreated(
   { document: 'users/{uid}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
   async (event) => {
     const data = event.data.data();
-    const { email, ownerName } = data || {};
+    const { email, ownerName, businessName } = data || {};
     if (!email) return;
-    await sendResendEmail({
-      to: email,
-      subject: 'Welcome to BlastyBiz 🚀',
-      html: `
-        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 20px;color:#1a1a1a">
-          <h1 style="font-family:'Arial Black',sans-serif;color:#0d1a0d;font-size:28px;margin-bottom:4px">Welcome to BlastyBiz</h1>
-          <p style="color:#00C853;font-weight:700;margin-bottom:24px;font-size:13px;letter-spacing:2px">LOCK. LOAD. BLAST.</p>
-          <p style="color:#4a4a4a;line-height:1.6">Hi ${ownerName || 'there'}, you're in.</p>
-          <p style="color:#4a4a4a;line-height:1.6">
-            You're set up to blast your business across every platform. Here's how to get going:
-          </p>
-          <ol style="color:#4a4a4a;line-height:2.2;padding-left:20px">
-            <li>Connect your platforms (Google, Facebook, Instagram)</li>
-            <li>Fill out your business profile</li>
-            <li>Create your first listing — AI adapts it for every platform</li>
-            <li>Approve and blast</li>
-          </ol>
-          <a href="${APP_BASE_URL}/BlastyBiz-Dashboard.html"
-             style="display:inline-block;background:#00C853;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin:20px 0">
-            Go to Dashboard →
-          </a>
-          <p style="color:#888;font-size:12px;margin-top:24px">BlastyBiz · <a href="${APP_BASE_URL}" style="color:#888">blastybiz.com</a></p>
-        </div>`,
-    });
+
+    // Merge tag values
+    const mergeData = {
+      name: ownerName || 'there',
+      businessName: businessName || (ownerName ? ownerName + '\'s Business' : 'your business'),
+      dashboardUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html',
+      upgradeUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html#upgrade',
+      appUrl: APP_BASE_URL,
+    };
+    function applyTags(str) {
+      return str.replace(/\{\{(\w+)\}\}/g, (_, k) => mergeData[k] || '');
+    }
+
+    // Fetch active welcome template from Firestore
+    let subject = 'Welcome to BlastyBiz, ' + mergeData.name + '! 🚀';
+    let html = null;
+    try {
+      const db = admin.firestore();
+      const snap = await db.collection('emailTemplates')
+        .where('type', '==', 'welcome')
+        .where('active', '==', true)
+        .limit(1)
+        .get();
+      if (!snap.empty) {
+        const tmpl = snap.docs[0].data();
+        subject = applyTags(tmpl.subject || subject);
+        html = applyTags(tmpl.html || '');
+      }
+    } catch(e) {
+      console.error('[userCreatedTrigger] Template fetch failed:', e.message);
+    }
+
+    // Fallback HTML if no template in Firestore yet
+    if (!html) {
+      html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff">
+        <div style="background:#0d1a0d;padding:28px 32px">
+          <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
+          <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+        </div>
+        <div style="padding:32px">
+          <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re in, ${mergeData.name}.</h1>
+          <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">Welcome to BlastyBiz — fill out your profile once and the AI writes for every platform automatically.</p>
+          <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#0d1a0d;color:#00C853;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:800;font-size:14px">Go to Dashboard &#8594;</a>
+        </div>
+        <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+          <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="${mergeData.appUrl}" style="color:#999">blastybiz.com</a></p>
+        </div>
+      </div>`;
+    }
+
+    await sendResendEmail({ to: email, subject, html });
   }
 );
 

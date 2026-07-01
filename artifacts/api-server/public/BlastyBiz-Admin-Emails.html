@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BlastyBiz — Email Templates</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="global-style.css?v=33">
+<style>body{visibility:hidden}</style>
+<script type="module" src="./admin-guard.js"></script>
+</head>
+<body class="admin-page">
+
+<header>
+  <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Email Templates</span></a>
+  <div class="top-actions">
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin.html">Dashboard</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Users.html">Users</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Subscriptions.html">Money</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Logs.html">Logs</a>
+    <a class="icon-btn hide-mobile active" href="#">✉️ Emails</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Operate.html">⚙️ Operate</a>
+    <a class="icon-btn" href="BlastyBiz-Login.html">👤</a>
+  </div>
+</header>
+
+<main><div class="main"><div class="main-inner">
+
+  <div style="margin-bottom:24px">
+    <div class="eyebrow">Admin · Communications</div>
+    <h1 style="font-size:26px;font-weight:800;color:#111;margin:4px 0 6px">Email Templates</h1>
+    <p style="font-size:14px;color:#555;margin:0">Edit, preview, and version-control every automated email BlastyBiz sends. Changes take effect on the next send.</p>
+  </div>
+
+  <!-- Email type tabs -->
+  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+    <button id="tab-welcome" onclick="switchType('welcome')" style="background:#111;color:#fff;border:1px solid #111;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">✉️ Welcome</button>
+    <button style="background:#fff;color:#aaa;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;cursor:not-allowed;opacity:0.5" disabled title="Coming soon">Trial Expiry</button>
+    <button style="background:#fff;color:#aaa;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;cursor:not-allowed;opacity:0.5" disabled title="Coming soon">Past Due</button>
+    <button style="background:#fff;color:#aaa;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;cursor:not-allowed;opacity:0.5" disabled title="Coming soon">Job Failed</button>
+  </div>
+
+  <!-- Editor card -->
+  <div class="card" style="background:#fff;border:1px solid #e8e8e8;color:#111;padding:20px;margin-bottom:20px">
+
+    <!-- Version row -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+      <label style="font-size:13px;font-weight:600;color:#444;white-space:nowrap">Version:</label>
+      <select id="version-select" onchange="onVersionChange()" style="border:1px solid #ddd;border-radius:7px;padding:7px 12px;font-size:14px;background:#fafafa;color:#111;flex:1;min-width:180px"></select>
+      <span id="active-badge" style="display:none;background:#d4edda;color:#155724;border:1px solid #c3e6cb;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;white-space:nowrap">✓ Active</span>
+      <button id="btn-set-active" onclick="setThisVersionActive()" style="display:none;background:#fff;border:1px solid #ddd;border-radius:7px;padding:7px 14px;font-size:13px;cursor:pointer;color:#555;white-space:nowrap">Set as Active</button>
+    </div>
+
+    <!-- Subject -->
+    <div style="margin-bottom:16px">
+      <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px">Subject Line</label>
+      <input id="subject-input" type="text" placeholder="Email subject…" oninput="markDirty()" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:10px 14px;font-size:15px;background:#fafafa;color:#111;box-sizing:border-box"/>
+    </div>
+
+    <!-- Merge tags -->
+    <div style="margin-bottom:16px;padding:12px 14px;background:#f8f8f8;border:1px solid #eee;border-radius:8px">
+      <div style="font-size:12px;font-weight:700;color:#666;margin-bottom:8px;letter-spacing:0.5px">MERGE TAGS — click to copy</div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px">
+        <code onclick="copyTag('{{name}}')" title="Recipient's first name" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{name}}</code>
+        <code onclick="copyTag('{{businessName}}')" title="Their business name" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{businessName}}</code>
+        <code onclick="copyTag('{{dashboardUrl}}')" title="Link to their dashboard" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{dashboardUrl}}</code>
+        <code onclick="copyTag('{{upgradeUrl}}')" title="Link to upgrade page" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{upgradeUrl}}</code>
+        <code onclick="copyTag('{{appUrl}}')" title="App base URL" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{appUrl}}</code>
+        <span id="copy-confirm" style="font-size:12px;color:#00873a;align-self:center;display:none">Copied!</span>
+      </div>
+    </div>
+
+    <!-- HTML editor -->
+    <div style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label style="font-size:13px;font-weight:600;color:#444">HTML Body</label>
+        <button onclick="togglePreview()" style="background:#fff;border:1px solid #ddd;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;color:#555" id="preview-toggle-btn">👁 Preview</button>
+      </div>
+      <textarea id="html-editor" oninput="markDirty();updatePreview()" rows="20" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:12px 14px;font-size:13px;font-family:monospace;background:#fafafa;color:#111;line-height:1.6;resize:vertical;box-sizing:border-box"></textarea>
+    </div>
+
+    <!-- Preview frame -->
+    <div id="preview-wrap" style="display:none;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#666;margin-bottom:8px;letter-spacing:0.5px">PREVIEW — using sample data (Alex Johnson · Sunrise Café)</div>
+      <iframe id="preview-frame" style="width:100%;height:520px;border:1px solid #ddd;border-radius:8px;background:#f5f5f5"></iframe>
+    </div>
+
+    <!-- Action buttons -->
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding-top:4px">
+      <button id="btn-save" onclick="saveTemplate()" style="background:#111;color:#fff;border:none;border-radius:8px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer">Save Changes</button>
+      <button onclick="saveAsNewVersion()" style="background:#fff;color:#111;border:1px solid #ccc;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer">Save as New Version</button>
+      <button onclick="sendTest()" style="background:#fff;color:#111;border:1px solid #ccc;border-radius:8px;padding:11px 20px;font-size:14px;cursor:pointer">📨 Send Test to Dave</button>
+      <span id="save-status" style="font-size:13px;color:#555;margin-left:4px"></span>
+    </div>
+  </div>
+
+  <!-- Version history -->
+  <div class="card" style="background:#fff;border:1px solid #e8e8e8;color:#111;padding:20px">
+    <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:14px">Version History</div>
+    <div id="version-history"></div>
+  </div>
+
+</div></div></main>
+
+<nav class="mobile-nav">
+  <a href="BlastyBiz-Admin.html">🏠<br>Admin</a>
+  <a href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Failed</a>
+  <a class="active" href="#">✉️<br>Emails</a>
+  <a href="BlastyBiz-Admin-Operate.html">⚙️<br>Operate</a>
+</nav>
+
+<script type="module">
+import { auth, db } from './firebase-init-v2.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { collection, query, where, orderBy, getDocs, addDoc, updateDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const ADMIN_EMAILS = ['perceys@gmail.com', 'rep-test@blastybiz.com'];
+
+let currentType = 'welcome';
+let versions = [];
+let selectedVersionId = null;
+let isDirty = false;
+
+const SEED = {
+  welcome: {
+    subject: 'Welcome to BlastyBiz, {{name}}! 🚀',
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:32px 32px 24px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:26px;color:#00C853;letter-spacing:-0.5px">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:36px 32px 28px">
+    <h1 style="font-size:24px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re in, {{name}}.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">Welcome to BlastyBiz — and welcome to the end of copy-paste marketing. <strong>{{businessName}}</strong> is set up and ready to blast.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">Fill out your business profile once. The AI writes tailored copy for Google, Facebook, Instagram, Yelp, and 8 more platforms — automatically. No more spending hours rewriting the same message for every channel.</p>
+    <a href="{{dashboardUrl}}" style="display:inline-block;background:#0d1a0d;color:#00C853;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px;margin-bottom:32px">Complete Your Profile &#8594;</a>
+    <div style="background:#f0fff4;border-left:4px solid #00C853;border-radius:0 8px 8px 0;padding:20px 24px;margin-bottom:24px">
+      <div style="font-size:12px;font-weight:800;color:#00873a;letter-spacing:2px;margin-bottom:8px">&#9889; UPGRADE TO PRO &#8212; $19/mo</div>
+      <p style="font-size:15px;color:#1a1a1a;font-weight:700;margin:0 0 10px">Save 10+ hours a month. Get found on more platforms. Make more money.</p>
+      <ul style="color:#444;font-size:14px;line-height:2.1;padding-left:18px;margin:0 0 16px">
+        <li>Blast to all <strong>12 platforms</strong> simultaneously</li>
+        <li><strong>Business Library</strong> &#8212; upload your menu or service sheet, the AI reads it every time it writes for you</li>
+        <li>Priority posting queue &#8212; your jobs go first</li>
+        <li>More customers, less work &#8212; that&#39;s the deal</li>
+      </ul>
+      <a href="{{upgradeUrl}}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:800;font-size:14px">See Pro Plans &#8594;</a>
+    </div>
+    <p style="font-size:14px;color:#666;line-height:1.6">Questions? Reply to this email &#8212; real people read it. We want <strong>{{businessName}}</strong> to grow.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:20px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0;line-height:1.7">&#169; BlastyBiz &#183; Local business marketing, automated.<br><a href="{{appUrl}}" style="color:#999">blastybiz.com</a> &#183; You received this because you created an account.</p>
+  </div>
+</div>`
+  }
+};
+
+const SAMPLE = {
+  name: 'Alex Johnson',
+  businessName: 'Sunrise Café',
+  dashboardUrl: 'https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html',
+  upgradeUrl: 'https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html#upgrade',
+  appUrl: 'https://blastybiz-9523e.web.app'
+};
+
+function applyMergeTags(str, data) {
+  return str.replace(/\{\{(\w+)\}\}/g, (_, k) => data[k] || '');
+}
+
+let previewVisible = false;
+window.togglePreview = function() {
+  previewVisible = !previewVisible;
+  document.getElementById('preview-wrap').style.display = previewVisible ? 'block' : 'none';
+  document.getElementById('preview-toggle-btn').textContent = previewVisible ? '✕ Hide Preview' : '👁 Preview';
+  if (previewVisible) updatePreview();
+};
+
+function updatePreview() {
+  if (!previewVisible) return;
+  const html = document.getElementById('html-editor').value;
+  const rendered = applyMergeTags(html, SAMPLE);
+  document.getElementById('preview-frame').srcdoc =
+    '<!DOCTYPE html><html><body style="margin:20px;background:#f0f0f0">' + rendered + '</body></html>';
+}
+window.updatePreview = updatePreview;
+
+window.markDirty = function() { isDirty = true; };
+
+window.copyTag = function(tag) {
+  navigator.clipboard.writeText(tag).catch(() => {});
+  const c = document.getElementById('copy-confirm');
+  c.style.display = 'inline';
+  setTimeout(() => { c.style.display = 'none'; }, 1500);
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+  if (!ADMIN_EMAILS.includes(user.email)) {
+    document.body.style.visibility = 'visible';
+    document.body.innerHTML = '<p style="padding:40px;color:red">Access denied.</p>';
+    return;
+  }
+  document.body.style.visibility = 'visible';
+  await loadTemplates();
+});
+
+async function loadTemplates() {
+  try {
+    const snap = await getDocs(query(
+      collection(db, 'emailTemplates'),
+      where('type', '==', currentType),
+      orderBy('version', 'desc')
+    ));
+
+    if (snap.empty) {
+      await seedTemplate(currentType);
+      await loadTemplates();
+      return;
+    }
+
+    versions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    populateVersionSelect();
+    const active = versions.find(v => v.active) || versions[0];
+    loadVersion(active.id);
+    renderHistory();
+  } catch(e) {
+    showStatus('❌ ' + e.message);
+  }
+}
+
+async function seedTemplate(type) {
+  const seed = SEED[type];
+  if (!seed) return;
+  await addDoc(collection(db, 'emailTemplates'), {
+    type,
+    subject: seed.subject,
+    html: seed.html,
+    version: 1,
+    active: true,
+    label: 'v1 — Initial',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+}
+
+function populateVersionSelect() {
+  const sel = document.getElementById('version-select');
+  sel.innerHTML = versions.map(v =>
+    `<option value="${v.id}">${v.label || ('v' + v.version)}${v.active ? ' ✓ Active' : ''}</option>`
+  ).join('');
+  if (selectedVersionId) sel.value = selectedVersionId;
+}
+
+function loadVersion(id) {
+  selectedVersionId = id;
+  const v = versions.find(v => v.id === id);
+  if (!v) return;
+  document.getElementById('version-select').value = id;
+  document.getElementById('subject-input').value = v.subject || '';
+  document.getElementById('html-editor').value = v.html || '';
+  const badge = document.getElementById('active-badge');
+  const setBtn = document.getElementById('btn-set-active');
+  if (v.active) {
+    badge.style.display = 'inline';
+    setBtn.style.display = 'none';
+  } else {
+    badge.style.display = 'none';
+    setBtn.style.display = 'inline';
+  }
+  isDirty = false;
+  updatePreview();
+}
+
+window.onVersionChange = function() {
+  const id = document.getElementById('version-select').value;
+  loadVersion(id);
+};
+
+function renderHistory() {
+  const container = document.getElementById('version-history');
+  if (!versions.length) { container.innerHTML = '<p style="color:#888;font-size:13px">No versions yet.</p>'; return; }
+  container.innerHTML = versions.map(v => {
+    const date = v.createdAt?.toDate ? v.createdAt.toDate().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+    const activePill = v.active
+      ? '<span style="background:#d4edda;color:#155724;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;margin-left:8px">Active</span>'
+      : '';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0">
+      <div>
+        <span style="font-size:14px;font-weight:600;color:#111">${v.label || ('v' + v.version)}</span>${activePill}
+        <div style="font-size:12px;color:#888;margin-top:2px">${date}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="loadVersion('${v.id}')" style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;color:#333">Edit</button>
+        ${!v.active ? `<button onclick="setVersionActive('${v.id}')" style="background:#fff;border:1px solid #c3e6cb;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;color:#155724">Set Active</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.saveTemplate = async function() {
+  const subject = document.getElementById('subject-input').value.trim();
+  const html = document.getElementById('html-editor').value.trim();
+  if (!subject || !html) { showStatus('❌ Subject and HTML are required'); return; }
+  showStatus('💾 Saving…');
+  try {
+    await updateDoc(doc(db, 'emailTemplates', selectedVersionId), {
+      subject, html, updatedAt: serverTimestamp()
+    });
+    const v = versions.find(v => v.id === selectedVersionId);
+    if (v) { v.subject = subject; v.html = html; }
+    isDirty = false;
+    showStatus('✅ Saved');
+  } catch(e) {
+    showStatus('❌ ' + e.message);
+  }
+};
+
+window.saveAsNewVersion = async function() {
+  const subject = document.getElementById('subject-input').value.trim();
+  const html = document.getElementById('html-editor').value.trim();
+  if (!subject || !html) { showStatus('❌ Subject and HTML are required'); return; }
+  showStatus('💾 Creating new version…');
+  try {
+    const maxVer = Math.max(...versions.map(v => v.version || 1));
+    const newVer = maxVer + 1;
+    const label = 'v' + newVer + ' — ' + new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    for (const v of versions) {
+      if (v.active) await updateDoc(doc(db, 'emailTemplates', v.id), { active: false });
+    }
+    const ref = await addDoc(collection(db, 'emailTemplates'), {
+      type: currentType, subject, html,
+      version: newVer, active: true, label,
+      createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+    });
+    isDirty = false;
+    showStatus('✅ Version ' + newVer + ' saved and set active');
+    selectedVersionId = ref.id;
+    await loadTemplates();
+  } catch(e) {
+    showStatus('❌ ' + e.message);
+  }
+};
+
+window.setVersionActive = async function(id) {
+  showStatus('Activating…');
+  try {
+    for (const v of versions) {
+      await updateDoc(doc(db, 'emailTemplates', v.id), { active: v.id === id });
+    }
+    showStatus('✅ Active version updated');
+    await loadTemplates();
+  } catch(e) {
+    showStatus('❌ ' + e.message);
+  }
+};
+
+window.setThisVersionActive = function() {
+  setVersionActive(selectedVersionId);
+};
+
+window.sendTest = async function() {
+  const subject = document.getElementById('subject-input').value.trim();
+  const html = document.getElementById('html-editor').value.trim();
+  if (!subject || !html) { showStatus('❌ Fill in subject and HTML first'); return; }
+  showStatus('📨 Sending test…');
+  try {
+    const resp = await fetch('/api/admin/send-test-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject, html, to: 'perceys@gmail.com' })
+    });
+    const data = await resp.json();
+    showStatus(resp.ok ? '✅ Test sent to perceys@gmail.com' : '❌ ' + (data.error || 'Send failed'));
+  } catch(e) {
+    showStatus('❌ ' + e.message);
+  }
+};
+
+window.switchType = function(type) {
+  currentType = type;
+  document.querySelectorAll('[id^="tab-"]').forEach(b => {
+    b.style.background = '#fff';
+    b.style.color = '#555';
+    b.style.border = '1px solid #ddd';
+  });
+  const tab = document.getElementById('tab-' + type);
+  if (tab) { tab.style.background = '#111'; tab.style.color = '#fff'; tab.style.border = '1px solid #111'; }
+  selectedVersionId = null;
+  versions = [];
+  loadTemplates();
+};
+
+function showStatus(msg) {
+  const el = document.getElementById('save-status');
+  el.textContent = msg;
+  if (msg.startsWith('✅')) setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 3000);
+}
+</script>
+</body>
+</html>
