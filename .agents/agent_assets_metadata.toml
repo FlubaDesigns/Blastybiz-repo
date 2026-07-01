@@ -119,3 +119,9 @@ id = "c5x9gUCr34S7Rk4d7NBFu"
 uri = "file://download/BlastyBiz-Logo-120x120.png"
 type = "image"
 title = "BlastyBiz-Logo-120x120.png"
+
+[[outputs]]
+id = "cG4H6-722fTyvygQi694y"
+uri = "file://download/BlastyBiz-Logo-120x120.jpg"
+type = "image"
+title = "BlastyBiz-Logo-120x120.jpg"
