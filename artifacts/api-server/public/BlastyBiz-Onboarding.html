@@ -677,7 +677,7 @@ function _buildCatContext() {
 }
 
 function _buildPlatformCatLists(locType) {
-  const skipForOnline = ['applemaps'];
+  const skipForOnline = ['applemaps', 'angi'];
   const lists = {};
   Object.entries(PLATFORM_CATS).forEach(([pid, p]) => {
     if (locType === 'online' && skipForOnline.includes(pid)) return;
