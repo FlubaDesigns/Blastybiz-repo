@@ -220,43 +220,6 @@
   </div>
 
   <!-- ══════════════════════════════════════════
-       GOOGLE CREDENTIALS
-  ══════════════════════════════════════════ -->
-  <div class="op-section">
-    <div class="section-header">
-      <span class="section-icon">🔍</span>
-      <span class="section-title">Google Business Profile Credentials</span>
-      <span class="section-badge warn" id="badge-google-creds">Credentials needed</span>
-    </div>
-    <div class="card">
-      <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-google-creds" onclick="toggleCheck(event,'google-creds')"></div>
-        <div class="flex-1">
-          <div class="op-card-title">Set Google OAuth Client ID and Secret</div>
-          <div class="op-card-sub">Find these in Google Cloud Console → APIs & Services → Credentials → Web client</div>
-        </div>
-        <span class="op-chevron">▼</span>
-      </div>
-      <div class="op-card-body">
-        <div class="cf-url" style="margin-bottom:14px">console.cloud.google.com → APIs &amp; Services → Credentials → tap the Web client</div>
-        <p class="op-field-label">Client ID</p>
-        <div class="secret-row">
-          <input type="text" id="inp-google-id" class="secret-input" placeholder="xxxxxxxxxx.apps.googleusercontent.com" autocomplete="off">
-          <button class="op-save-btn" onclick="saveSecret('GOOGLE_CLIENT_ID','inp-google-id','st-google-id',this)">Save</button>
-        </div>
-        <div class="save-status" id="st-google-id"></div>
-        <p class="op-field-label">Client Secret</p>
-        <div class="secret-row">
-          <input type="password" id="inp-google-secret" class="secret-input" placeholder="GOCSPX-…" autocomplete="off">
-          <button class="show-btn" onclick="toggleShow('inp-google-secret',this)">Show</button>
-          <button class="op-save-btn" onclick="saveSecret('GOOGLE_CLIENT_SECRET','inp-google-secret','st-google-secret',this)">Save</button>
-        </div>
-        <div class="save-status" id="st-google-secret"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
        ONGOING
   ══════════════════════════════════════════ -->
   <div class="op-section">
