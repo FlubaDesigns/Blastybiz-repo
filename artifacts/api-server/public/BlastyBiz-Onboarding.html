@@ -140,6 +140,7 @@
           <button class="loc-type-btn" id="lbt-online" onclick="setOnboardingLoc('online')">🌐 Online Only</button>
           <button class="loc-type-btn" id="lbt-both" onclick="setOnboardingLoc('both')">🌍 Both</button>
         </div>
+        <div id="online-only-note" style="display:none;margin-top:8px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--muted);">🌐 Online-only businesses are matched to <strong style="color:var(--light);">10 of 12 platforms</strong> — Apple Maps and Angi require a physical location.</div>
       </div>
 
       <div id="s-addr-fields">
@@ -636,6 +637,8 @@ window.setOnboardingLoc = function(type) {
   const addrFields   = document.getElementById('s-addr-fields');
   const regionField  = document.getElementById('s-region-field');
   const hoursSection = document.getElementById('hours-section');
+  const onlineNote = document.getElementById('online-only-note');
+  if (onlineNote) onlineNote.style.display = (type === 'online') ? 'block' : 'none';
   if (type === 'online') {
     if (addrFields)   addrFields.style.display   = 'none';
     if (regionField)  regionField.style.display  = 'none';
