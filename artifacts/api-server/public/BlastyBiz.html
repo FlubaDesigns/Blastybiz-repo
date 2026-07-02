@@ -7,7 +7,25 @@
 <link rel="stylesheet" href="global-style.css?v=33" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-<style>body{visibility:hidden}</style>
+<style>body{visibility:hidden}
+.scope-btn{background:var(--dark,#1a1a1a);border:1px solid var(--border,#333);border-radius:8px;padding:6px 14px;color:var(--muted,#888);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;}
+.scope-btn.active{background:var(--green,#39ff14);border-color:var(--green,#39ff14);color:#000;}
+.toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.gap-8{gap:8px;}
+.ph-row{border-bottom:1px solid var(--border,#333);padding:10px 0;cursor:pointer;}
+.ph-row:last-child{border-bottom:none;}
+.ph-row-head{display:flex;align-items:center;gap:10px;}
+.ph-icon{font-size:18px;flex-shrink:0;}
+.ph-meta{flex:1;min-width:0;}
+.ph-name{font-size:13px;font-weight:600;color:var(--light,#fff);}
+.ph-preview{font-size:12px;color:var(--muted,#888);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+.ph-date{font-size:11px;color:var(--muted,#888);flex-shrink:0;}
+.ph-detail{margin-top:10px;padding:10px;background:rgba(255,255,255,.04);border-radius:8px;}
+.ph-entry{margin-bottom:10px;}
+.ph-entry:last-child{margin-bottom:0;}
+.ph-entry-date{font-size:11px;color:var(--muted,#888);margin-bottom:4px;}
+.ph-entry-copy{font-size:12px;color:var(--light,#fff);line-height:1.5;white-space:pre-wrap;word-break:break-word;}
+</style>
 <script type="module" src="./auth-guard.js"></script>
 </head>
 <body class="has-site-header create-page">
@@ -81,57 +99,57 @@
 
     <label>Ad name</label>
     <input type="text" id="biz-ad-name" placeholder="e.g. 50% off chocolate · Free consultation · Holiday special"
-      oninput="saveDraft()" class="mb-16" />
+      oninput="saveDraft();debounceCampaignSave()" class="mb-16" />
 
     <label>What's the offer?</label>
     <div class="char-wrap">
-      <textarea id="biz-offer" placeholder="e.g. 20% off all haircuts this Saturday only · Grand reopening next week · New menu just dropped — come try it..." oninput="countChars(this, 'offer-count', 500);" class="min-h-90"></textarea>
+      <textarea id="biz-offer" placeholder="e.g. 20% off all haircuts this Saturday only · Grand reopening next week · New menu just dropped — come try it..." oninput="countChars(this, 'offer-count', 500);debounceCampaignSave()" class="min-h-90"></textarea>
       <span class="char-count" id="offer-count">0 / 500</span>
     </div>
 
     <label class="mt-16">Tell us more <span class="optional">(optional)</span></label>
     <textarea id="biz-ad-details"
       placeholder="Add any details specific to this ad — flavors available, restrictions, what's included, dates, quantities, how to redeem, anything relevant..."
-      oninput="saveDraft()" class="textarea-rich mb-16"></textarea>
+      oninput="saveDraft();debounceCampaignSave()" class="textarea-rich mb-16"></textarea>
 
     <label>Price <span class="optional">(optional)</span></label>
-    <input type="text" id="biz-price" placeholder="e.g. $25 · Free · Starting at $99" oninput="saveDraft()" class="max-w-260" />
+    <input type="text" id="biz-price" placeholder="e.g. $25 · Free · Starting at $99" oninput="saveDraft();debounceCampaignSave()" class="max-w-260" />
   </div>
 
-  <!-- ── ANNOUNCEMENTS ── -->
-  <div class="card" id="enrichment-card">
+  <!-- ── ADD INFO — factoid panel ── -->
+  <div class="card" id="add-info-card">
     <div class="row-sb mb-6">
-      <div class="card-title mb-0">📣 Add an Announcement</div>
+      <div class="card-title mb-0">➕ Add Info</div>
       <span class="optional-tag">Optional</span>
     </div>
-    <p class="helper-sm">Time-sensitive events, sales, or news. AI weaves these into every platform automatically.</p>
-
-    <button onclick="openAnnounceDialog()" class="btn-green-out">
-      + Add Announcement
+    <p class="helper-sm">Feed the AI extra facts about this campaign or your business. These appear in every AI generation.</p>
+    <button onclick="toggleAddInfoPanel()" class="btn-green-out" id="add-info-toggle-btn">
+      + Add Info
     </button>
-    <div id="announce-list" class="min-h-0">
-    </div>
-
-    <!-- ANNOUNCEMENT DIALOG (inline, hidden) -->
-    <div id="announce-dialog" class="announce-dialog hidden">
-      <p class="dialog-label">What's the announcement?</p>
-      <textarea id="announce-text" rows="2" placeholder="e.g. Half-off all services June 28th · Grand reopening July 1 · New menu items available now"
-        class="textarea-naked"></textarea>
-      <div class="row mt-8">
-        <input type="date" id="announce-date" class="input-date" />
-        <span class="date-hint">optional end date</span>
+    <div id="add-info-panel" class="hidden">
+      <div class="toggle-row mt-10">
+        <button onclick="setFactoidScope('campaign')" id="scope-btn-campaign" class="scope-btn active">📁 Campaign</button>
+        <button onclick="setFactoidScope('global')" id="scope-btn-global" class="scope-btn">🌐 Global (all campaigns)</button>
       </div>
-      <div class="row mt-10">
-        <button onclick="saveAnnouncement()" class="btn-save">Save</button>
-        <button onclick="document.getElementById('announce-dialog').classList.add('hidden')"
-          class="btn-cancel">Cancel</button>
+      <textarea id="add-info-text" rows="3" class="textarea-naked mt-8"
+        placeholder="e.g. Our chocolate lab Biscuit greets every customer · We use zero artificial ingredients · Parking is free behind the building · Owner trained under a James Beard Award winner…"></textarea>
+      <div class="row mt-10 gap-8">
+        <button onclick="submitFactoid()" class="btn-save">Submit</button>
+        <button onclick="toggleAddInfoPanel()" class="btn-cancel">Done</button>
       </div>
+      <div id="add-info-confirm" class="hidden" style="color:var(--green);font-size:13px;font-weight:600;margin-top:6px;">✓ Saved.</div>
     </div>
-
     <!-- hidden enrichment stubs so existing JS doesn't break -->
     <div id="enrichment-questions" class="hidden"></div>
     <span id="enrichment-badge" class="hidden"></span>
     <button id="enrichment-more-btn" class="hidden"></button>
+  </div>
+
+  <!-- ── PLATFORM HISTORY — per campaign ── -->
+  <div class="card hidden" id="platform-history-card">
+    <div class="card-title">📊 Platform History</div>
+    <p class="helper-sm">AI runs for this campaign, per platform.</p>
+    <div id="platform-history-list"></div>
   </div>
 
   <!-- IMAGE UPLOAD -->
@@ -483,7 +501,7 @@
       </div>
     </div>
     <div class="campaign-ctx-body">
-      <textarea id="campaign-context" class="form-textarea" rows="3" placeholder="e.g. Christmas window display — vintage Lionel layout running daily 10am–6pm through Jan 5. Great for families, photo ops welcome. 15% off all train sets through December."></textarea>
+      <textarea id="campaign-context" class="form-textarea" rows="3" placeholder="e.g. Christmas window display — vintage Lionel layout running daily 10am–6pm through Jan 5. Great for families, photo ops welcome. 15% off all train sets through December." oninput="debounceCampaignSave()"></textarea>
     </div>
   </div>
 
@@ -1153,7 +1171,8 @@ async function regeneratePlatformCopy(pid) {
           featuredPhotoUrl,
           campaignContext: document.getElementById('campaign-context')?.value?.trim() || '',
           bizInsights: (bizInsights||[]).filter(i=>i.answer),
-          bizAnnouncements: bizAnnouncements||[],
+          globalFactoids: window._globalFactoids || [],
+          campaignFactoids: (campaigns.find(c=>c.id===activeCampaignId)||{}).factoids || [],
           aiContext: profile.aiContext || null,
           libraryDocs: window._libraryDocs || [],
         },
@@ -1538,7 +1557,7 @@ ${adDetails ? `- Additional details: ${adDetails}` : ''}- Price/Range: ${price |
 - Images attached: ${(window._bbPhotoItems||[]).filter(p=>p.done).length > 0 ? (window._bbPhotoItems||[]).filter(p=>p.done).length + ' photo(s)' + (window._bbSelectedPhotoIndex !== null ? ' — featured: ' + (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || 'selected') : '') : 'none'}
 - Preferred tone: ${tone}
 ${includeName || includeRole ? `- Owner/contact to mention in copy: ${[includeName ? profile.ownerName : null, includeRole ? (profile.ownerRole === 'manager' ? 'Manager' : profile.ownerRole === 'other' ? profile.ownerRole : 'Owner') : null].filter(Boolean).join(', ')}` : ''}
-${bizInsights.filter(i=>i.answer).length ? '\n⚠️ OWNER-PROVIDED FACTS — MANDATORY. The owner answered these questions so their copy is never generic. You MUST reference these details directly and specifically in the copy. Do NOT write filler when real facts are available:\n' + bizInsights.filter(i=>i.answer).map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${bizAnnouncements.length ? '\n⚠️ ACTIVE PROMOTIONS — MUST APPEAR IN EVERY PLATFORM. Do not skip, bury, or paraphrase vaguely. Weave each one naturally but make sure it lands:\n' + bizAnnouncements.map(a=>`- ${a.text}${a.endDate?' (active until '+a.endDate+')':''}`).join('\n') : ''}
+${bizInsights.filter(i=>i.answer).length ? '\n⚠️ OWNER-PROVIDED FACTS — MANDATORY. The owner answered these questions so their copy is never generic. You MUST reference these details directly and specifically in the copy. Do NOT write filler when real facts are available:\n' + bizInsights.filter(i=>i.answer).map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(window._globalFactoids||[]).length ? '\n⚠️ GLOBAL BUSINESS FACTS — Always true about this business. Reference naturally where relevant:\n' + (window._globalFactoids||[]).map(f=>`- ${f.text}`).join('\n') : ''}${((campaigns.find(c=>c.id===activeCampaignId)||{}).factoids||[]).length ? '\n⚠️ CAMPAIGN-SPECIFIC FACTS — Specific to this campaign. Work these in:\n' + ((campaigns.find(c=>c.id===activeCampaignId)||{}).factoids||[]).map(f=>`- ${f.text}`).join('\n') : ''}
 PLATFORMS TO ADAPT FOR:
 ${platformList.map(p => `- ${p.id}: ${p.name} (${p.type === 'api' ? 'auto-post' : 'copy-paste'})${p.rules.maxChars ? ', max ' + p.rules.maxChars + ' chars' : ''}${p.rules.notes ? ', note: ' + p.rules.notes : ''}`).join('\n')}
 
@@ -1582,7 +1601,8 @@ Return this exact JSON structure:
           featuredPhotoUrl: window._bbSelectedPhotoIndex !== null ? (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || '') : '',
           campaignContext: document.getElementById('campaign-context')?.value?.trim() || '',
           bizInsights: bizInsights.filter(i=>i.answer),
-          bizAnnouncements: bizAnnouncements,
+          globalFactoids: window._globalFactoids || [],
+          campaignFactoids: (campaigns.find(c=>c.id===activeCampaignId)||{}).factoids || [],
           aiContext: profile.aiContext || null,
           libraryDocs: window._libraryDocs || [],
         },
@@ -1620,6 +1640,30 @@ Return this exact JSON structure:
       : '';
 
     showCopyInAccordions(adaptations, featuredPhotoUrl);
+
+    // Write platformHistory to active campaign
+    if (activeCampaignId && window._bbSaveCampaigns) {
+      try {
+        const cam = campaigns.find(c => c.id === activeCampaignId);
+        if (cam) {
+          if (!cam.platformHistory) cam.platformHistory = {};
+          const ranAt = new Date().toISOString();
+          platforms.filter(p => p.enabled && p.adaptedContent).forEach(p => {
+            if (!cam.platformHistory[p.id]) cam.platformHistory[p.id] = [];
+            cam.platformHistory[p.id].push({
+              copy: p.adaptedContent.replace(/<br\/?>/gi, '\n'),
+              ranAt,
+            });
+          });
+          cam.lastUsedAt = ranAt;
+          await window._bbSaveCampaigns(campaigns);
+          renderPlatformHistory();
+        }
+      } catch(e) {
+        console.warn('platformHistory save failed:', e);
+      }
+    }
+
     showToast('✅ ' + enabledPlatforms.length + ' platform' + (enabledPlatforms.length > 1 ? 's' : '') + ' ready!');
 
   } catch (err) {
@@ -2124,10 +2168,10 @@ async function _dismissPendingPost(id) {
 }
 
 // ══════════════════════════════════════════
-// AI ENRICHMENT — bizInsights + bizAnnouncements
+// AI ENRICHMENT — bizInsights + factoids
 // ══════════════════════════════════════════
 var bizInsights      = [];   // [{question, answer, askedAt, answeredAt}]
-var bizAnnouncements = [];   // [{text, endDate, createdAt, id}]
+var factoidScope     = 'campaign'; // 'campaign' | 'global'
 
 function loadInsights(insights) {
   bizInsights = insights || [];
@@ -2222,53 +2266,54 @@ function saveProfileInsightAnswer(idx, answer) {
   showToast('✓ Saved — AI will use this in every post');
 }
 
-function loadAnnouncements(ann) {
-  const today = new Date().toISOString().split('T')[0];
-  bizAnnouncements = (ann || []).filter(a => !a.endDate || a.endDate >= today);
-  renderAnnouncements();
-}
-
-function renderAnnouncements() {
-  const el = document.getElementById('announce-list');
-  if (!el) return;
-  if (!bizAnnouncements.length) {
-    el.innerHTML = '<span class="note-muted">No announcements yet.</span>';
-    return;
+// ══════════════════════════════════════════
+// ADD INFO — factoid panel
+// ══════════════════════════════════════════
+function toggleAddInfoPanel() {
+  const panel = document.getElementById('add-info-panel');
+  if (!panel) return;
+  const isHidden = panel.classList.contains('hidden');
+  if (isHidden) {
+    if (!activeCampaignId) { showToast('Select a campaign first'); return; }
+    panel.classList.remove('hidden');
+    document.getElementById('add-info-confirm').classList.add('hidden');
+    document.getElementById('add-info-text').value = '';
+    document.getElementById('add-info-text').focus();
+    setFactoidScope('campaign');
+  } else {
+    panel.classList.add('hidden');
   }
-  const today = new Date().toISOString().split('T')[0];
-  el.innerHTML = bizAnnouncements.map((a, i) => {
-    const isUpcoming = a.endDate && a.endDate >= today;
-    const snippet = a.text.length > 42 ? a.text.slice(0,42)+'…' : a.text;
-    const dateLabel = a.endDate ? ' · ends ' + a.endDate : '';
-    return `<span class="announce-chip${isUpcoming?' upcoming':''}" title="${escHtml(a.text)}">
-      ${isUpcoming?'📅 ':'📣 '}${escHtml(snippet)}${dateLabel}
-      <span class="remove-x" onclick="removeAnnouncement(${i})">✕</span>
-    </span>`;
-  }).join('');
 }
 
-function openAnnounceDialog() {
-  document.getElementById('announce-text').value = '';
-  document.getElementById('announce-date').value = '';
-  document.getElementById('announce-dialog').classList.remove('hidden');
-  document.getElementById('announce-text').focus();
+function setFactoidScope(scope) {
+  factoidScope = scope;
+  document.getElementById('scope-btn-campaign').classList.toggle('active', scope === 'campaign');
+  document.getElementById('scope-btn-global').classList.toggle('active', scope === 'global');
 }
 
-function saveAnnouncement() {
-  const text = (document.getElementById('announce-text').value || '').trim();
-  if (!text) { showToast('Add the announcement text first'); return; }
-  const endDate = document.getElementById('announce-date').value || null;
-  bizAnnouncements.push({ text, endDate, createdAt: new Date().toISOString(), id: Date.now() });
-  document.getElementById('announce-dialog').classList.add('hidden');
-  renderAnnouncements();
-  if (window._saveAnnouncementsToFirestore) window._saveAnnouncementsToFirestore(bizAnnouncements);
-  showToast('📣 Announcement saved — AI will use it in every post until ' + (endDate || 'removed'));
-}
-
-function removeAnnouncement(idx) {
-  bizAnnouncements.splice(idx, 1);
-  renderAnnouncements();
-  if (window._saveAnnouncementsToFirestore) window._saveAnnouncementsToFirestore(bizAnnouncements);
+async function submitFactoid() {
+  const text = (document.getElementById('add-info-text').value || '').trim();
+  if (!text) { showToast('Add some text first'); return; }
+  const entry = { text, addedAt: new Date().toISOString() };
+  try {
+    if (factoidScope === 'global') {
+      window._globalFactoids = window._globalFactoids || [];
+      window._globalFactoids.push(entry);
+      if (window._saveGlobalFactoidsToFirestore) await window._saveGlobalFactoidsToFirestore(window._globalFactoids);
+    } else {
+      const cam = campaigns.find(c => c.id === activeCampaignId);
+      if (!cam) { showToast('No active campaign'); return; }
+      if (!cam.factoids) cam.factoids = [];
+      cam.factoids.push(entry);
+      if (window._bbSaveCampaigns) await window._bbSaveCampaigns(campaigns);
+    }
+    document.getElementById('add-info-text').value = '';
+    const confirm = document.getElementById('add-info-confirm');
+    if (confirm) { confirm.classList.remove('hidden'); setTimeout(() => confirm.classList.add('hidden'), 2000); }
+    showToast('✓ Saved — AI will use this');
+  } catch(e) {
+    showToast('❌ Save failed: ' + (e.message || 'unknown'));
+  }
 }
 
 function renderEnrichmentQuestions() {
@@ -2529,12 +2574,25 @@ function renderCampaignChips() {
 function selectCampaign(id, name) {
   activeCampaignId   = id;
   activeCampaignName = name;
-  renderCampaignChips();
-  saveDraft();
-  _syncSchedCampaign(id, name);
-  // Load this campaign's photos
-  const cam = campaigns.find(c => c.id === id);
-  const savedPhotos = cam && cam.photos ? cam.photos : [];
+
+  const cam = campaigns.find(c => c.id === id) || {};
+
+  // Populate campaign form fields — empty string for missing fields
+  const offerEl = document.getElementById('biz-offer');
+  if (offerEl) { offerEl.value = cam.offer || ''; }
+  const offerCount = document.getElementById('offer-count');
+  if (offerCount) offerCount.textContent = (cam.offer || '').length + ' / 500';
+  const adNameEl = document.getElementById('biz-ad-name');
+  if (adNameEl) adNameEl.value = cam.adName || '';
+  const adDetailsEl = document.getElementById('biz-ad-details');
+  if (adDetailsEl) adDetailsEl.value = cam.adDetails || '';
+  const priceEl = document.getElementById('biz-price');
+  if (priceEl) priceEl.value = cam.price || '';
+  const ctxEl = document.getElementById('campaign-context');
+  if (ctxEl) ctxEl.value = cam.campaignStory || '';
+
+  // Load campaign photos
+  const savedPhotos = cam.photos || [];
   window._bbPhotoItems = savedPhotos.map(p =>
     typeof p === 'string'
       ? { url: p, path: null, localUrl: p, done: true, progress: 100 }
@@ -2543,6 +2601,11 @@ function selectCampaign(id, name) {
   window._bbSelectedPhotoIndex = null;
   if (window.renderAllPhotos) window.renderAllPhotos();
   updatePhotoCapLabel();
+
+  renderCampaignChips();
+  renderPlatformHistory();
+  _syncSchedCampaign(id, name);
+  checkAdaptBtn();
 }
 
 function openNewCampaign() {
@@ -2562,14 +2625,27 @@ async function saveNewCampaign() {
   if (!name) { input.focus(); return; }
 
   const id = 'c_' + Date.now();
-  const newCampaign = { id, name };
+  const now = new Date().toISOString();
+  const newCampaign = {
+    id,
+    name,
+    createdAt:       now,
+    lastUsedAt:      '',
+    photos:          [],
+    offer:           '',
+    adName:          '',
+    adDetails:       '',
+    price:           '',
+    campaignStory:   '',
+    factoids:        [],
+    platformHistory: {},
+  };
   campaigns.push(newCampaign);
-  campaigns.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+  _sortCampaigns();
 
   activeCampaignId   = id;
   activeCampaignName = name;
 
-  // _bbSaveCampaigns is set by the module script (has access to db + activeBizId)
   if (window._bbSaveCampaigns) {
     try { await window._bbSaveCampaigns(campaigns); }
     catch(e) { console.error('Campaign save error:', e); }
@@ -2577,9 +2653,82 @@ async function saveNewCampaign() {
 
   document.getElementById('new-campaign-row').classList.add('hidden');
   renderCampaignChips();
-  saveDraft();
   _syncSchedCampaign(id, name);
   showToast('Campaign "' + name + '" created');
+}
+
+function _sortCampaigns() {
+  campaigns.sort((a, b) => {
+    const ta = a.lastUsedAt || a.createdAt || '';
+    const tb = b.lastUsedAt || b.createdAt || '';
+    return tb.localeCompare(ta);
+  });
+}
+
+// ── Debounced campaign Firestore persistence ─────────────────────────────────
+var _campaignSaveTimer = null;
+function debounceCampaignSave() {
+  clearTimeout(_campaignSaveTimer);
+  _campaignSaveTimer = setTimeout(async () => {
+    if (!activeCampaignId || !window._bbSaveCampaigns) return;
+    const cam = campaigns.find(c => c.id === activeCampaignId);
+    if (!cam) return;
+    cam.offer         = document.getElementById('biz-offer')?.value        || '';
+    cam.adName        = document.getElementById('biz-ad-name')?.value      || '';
+    cam.adDetails     = document.getElementById('biz-ad-details')?.value   || '';
+    cam.price         = document.getElementById('biz-price')?.value        || '';
+    cam.campaignStory = document.getElementById('campaign-context')?.value || '';
+    cam.lastUsedAt    = new Date().toISOString();
+    try {
+      await window._bbSaveCampaigns(campaigns);
+    } catch(e) {
+      console.warn('Campaign auto-save failed:', e);
+    }
+  }, 1500);
+}
+
+// ── Platform history panel ────────────────────────────────────────────────────
+function renderPlatformHistory() {
+  const card = document.getElementById('platform-history-card');
+  const list = document.getElementById('platform-history-list');
+  if (!card || !list) return;
+
+  const cam = campaigns.find(c => c.id === activeCampaignId);
+  if (!cam) { card.classList.add('hidden'); return; }
+
+  card.classList.remove('hidden');
+  const history = cam.platformHistory || {};
+
+  list.innerHTML = PLATFORMS.map(p => {
+    const entries = (history[p.id] || []).slice().reverse();
+    const latest  = entries[0];
+    const hasHist = entries.length > 0;
+    const dateStr = latest ? new Date(latest.ranAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+    const raw     = latest ? (latest.copy || '').replace(/<br\/?>/gi, ' ') : '';
+    const preview = raw.length > 80 ? raw.slice(0, 80) + '…' : raw;
+
+    return `<div class="ph-row" onclick="togglePlatformHistory('${p.id}')">
+      <div class="ph-row-head">
+        <span class="ph-icon">${p.icon}</span>
+        <div class="ph-meta">
+          <div class="ph-name">${escHtml(p.name)}</div>
+          <div class="ph-preview">${hasHist ? escHtml(preview) : '<span style="color:var(--muted)">Not yet used</span>'}</div>
+        </div>
+        ${hasHist ? `<span class="ph-date">${dateStr}</span>` : ''}
+      </div>
+      <div class="ph-detail hidden" id="ph-detail-${p.id}">
+        ${entries.map(e => `<div class="ph-entry">
+          <div class="ph-entry-date">${new Date(e.ranAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+          <div class="ph-entry-copy">${escHtml((e.copy||'').replace(/<br\/?>/gi,'\n'))}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePlatformHistory(pid) {
+  const detail = document.getElementById('ph-detail-' + pid);
+  if (detail) detail.classList.toggle('hidden');
 }
 
 function saveDraft() {
@@ -2711,10 +2860,10 @@ window._saveInsightToFirestore = async function(insights) {
   catch(e) { console.error('saveInsights:', e); }
 };
 
-window._saveAnnouncementsToFirestore = async function(ann) {
+window._saveGlobalFactoidsToFirestore = async function(factoids) {
   if (!activeBizId) return;
-  try { await setDoc(doc(db, 'businesses', activeBizId), { bizAnnouncements: ann }, { merge: true }); }
-  catch(e) { console.error('saveAnnouncements:', e); }
+  try { await setDoc(doc(db, 'businesses', activeBizId), { globalFactoids: factoids }, { merge: true }); }
+  catch(e) { console.error('saveGlobalFactoids:', e); }
 };
 
 </script>
@@ -2810,7 +2959,7 @@ onAuthStateChanged(auth, async (user) => {
       };
       if (window._bbSetProfile) window._bbSetProfile(p);
       if (window.loadInsights)      window.loadInsights(biz.bizInsights || []);
-      if (window.loadAnnouncements) window.loadAnnouncements(biz.bizAnnouncements || []);
+      window._globalFactoids = biz.globalFactoids || [];
 
       // Load Business Library docs for AI context (Pro/Agency only — no-op for starter)
       try {
@@ -2830,7 +2979,8 @@ onAuthStateChanged(auth, async (user) => {
 
 
       // Load campaigns first — photos live on the campaign
-      campaigns = (biz.campaigns || []).sort((a,b) => (a.name||'').localeCompare(b.name||''));
+      campaigns = biz.campaigns || [];
+      _sortCampaigns();
       renderCampaignChips();
 
       // Load photos from first/active campaign (or fall back to legacy biz.photos)

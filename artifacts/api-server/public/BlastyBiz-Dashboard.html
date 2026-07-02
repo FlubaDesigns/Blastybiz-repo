@@ -65,76 +65,53 @@
     </div>
   </div>
 
-  <div class="dash-hero">
-    <div>
-      <p class="sub" id="dashboard-sub">Showing data for <strong id="dashboard-biz-name"></strong>.</p>
-      <div class="btn-row">
-        <a class="btn btn-primary" href="BlastyBiz.html">⚡ Create New Listing</a>
-        <button class="btn" onclick="editActiveBusiness()">✏️ Edit Business Info</button>
-        <a class="btn" href="BlastyBiz-Connect.html">🔗 Connect Platforms</a>
-        <a class="btn" href="BlastyBiz-BizContext.html">📖 Business Story</a>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">📍 Visibility Score</div>
-      <div class="score-wrap">
-        <div class="score-ring" id="score-ring"><div class="score-number" id="visibility-score">—</div></div>
-        <div class="score-meta">
-          <h3 id="score-label">—</h3>
-          <p id="score-desc"></p>
-          <div class="mini-label">Completion</div>
-          <div class="progress-wrap"><div class="progress-bar" id="score-bar" style="width:0%"></div></div>
-        </div>
-      </div>
+  <p class="sub" style="margin-bottom:16px;">Showing data for <strong id="dashboard-biz-name"></strong></p>
+
+  <!-- ── Campaigns — primary content ── -->
+  <div class="card">
+    <div class="card-title">📁 Campaigns</div>
+    <a class="btn btn-primary" href="BlastyBiz.html" style="display:inline-block;margin-bottom:12px;">⚡ Create New Listing</a>
+    <div id="dashboard-campaign-list"><div class="loading-text">Loading…</div></div>
+  </div>
+
+  <!-- ── Tools ── -->
+  <div class="card">
+    <div class="card-title">⚙️ Tools</div>
+    <div class="btn-row">
+      <button class="btn" onclick="editActiveBusiness()">✏️ Edit Business Info</button>
+      <a class="btn" href="BlastyBiz-Connect.html">🔗 Connect Platforms</a>
+      <a class="btn" href="BlastyBiz-BizContext.html">📖 Business Story</a>
     </div>
   </div>
 
-  <div class="grid">
-    <div class="stat"><div class="stat-num" id="stat-platforms">—</div><div class="stat-label">Platforms Ready</div><div class="stat-note" id="stat-platforms-note">loading…</div></div>
-    <div class="stat"><div class="stat-num" id="stat-posts">—</div><div class="stat-label">Posts This Month</div><div class="stat-note" id="stat-posts-note"> </div></div>
-    <div class="stat"><div class="stat-num" id="stat-review">—</div><div class="stat-label">Needs Review</div><div class="stat-note warn" id="stat-review-note"> </div></div>
-    <div class="stat"><div class="stat-num">$0</div><div class="stat-label">AI Cost</div><div class="stat-note ok">This month</div></div>
-  </div>
-
-  <div class="card" id="platforms">
-    <div class="card-title">📡 Platform Status</div>
-    <div class="platform-list" id="platform-list">
-      <div class="loading-text">Loading…</div>
+  <!-- ── Account & Danger Zone ── -->
+  <div class="card">
+    <div class="card-title">💼 Account</div>
+    <div class="cost-line"><span>Plan</span><strong id="snapshot-plan-label">—</strong></div>
+    <div class="cost-line"><span>AI requests used</span><strong id="ai-usage-display">—</strong></div>
+    <div class="btn-row" style="margin-top:8px;">
+      <a class="btn" id="billing-btn" href="#" onclick="handleBilling(event)">View Billing</a>
+      <a class="btn" href="BlastyBiz-Admin.html">Admin</a>
     </div>
-    <a href="BlastyBiz-Connect.html" class="manage-link">⚙ Manage connections →</a>
-  </div>
-
-  <div class="card" id="tasks">
-    <div class="card-title">✅ Next Best Actions</div>
-    <div class="task-list" id="task-list">
-      <div class="loading-text">Loading…</div>
+    <div class="danger-zone" style="margin-top:16px;border-top:1px solid var(--border,#333);padding-top:16px;">
+      <button onclick="openDeleteModal()" class="delete-account-btn">Delete account</button>
     </div>
   </div>
 
-  <div class="dash-stack">
-    <div class="card">
-      <div class="card-title">📋 Recent Activity</div>
-      <div class="activity-list" id="activity-list">
-        <div class="loading-text">Loading…</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">💵 Operating Snapshot</div>
-      <div class="cost-line"><span>Plan</span><strong id="snapshot-plan-label">—</strong></div>
-      <div class="cost-line"><span>Active business</span><strong id="snapshot-biz"></strong></div>
-      <div class="cost-line"><span>AI requests used</span><strong id="ai-usage-display">—</strong></div>
-      <div class="cost-line"><span>Estimated AI cost</span><strong id="ai-cost-display" class="ok">—</strong></div>
-      <div class="cost-line"><span>Failed jobs</span><strong id="snapshot-failed" class="warn">—</strong></div>
-      <div class="cost-line"><span>Renewal</span><strong id="snapshot-renewal">—</strong></div>
-      <div class="btn-row">
-        <a class="btn" id="billing-btn" href="#" onclick="handleBilling(event)">View Billing</a>
-        <a class="btn" href="BlastyBiz-Admin.html">Admin</a>
-      </div>
-      <div class="danger-zone">
-        <button onclick="openDeleteModal()" class="delete-account-btn">Delete account</button>
-      </div>
-    </div>
+  <!-- hidden stubs for legacy JS references -->
+  <div style="display:none">
+    <span id="snapshot-biz"></span>
+    <span id="ai-cost-display"></span>
+    <span id="snapshot-failed"></span>
+    <span id="snapshot-renewal"></span>
+    <div id="platform-list"></div>
+    <div id="task-list"></div>
+    <div id="activity-list"></div>
+    <div id="stat-platforms"></div><div id="stat-platforms-note"></div>
+    <div id="stat-posts"></div><div id="stat-posts-note"></div>
+    <div id="stat-review"></div><div id="stat-review-note"></div>
+    <div id="visibility-score"></div><div id="score-label"></div>
+    <div id="score-desc"></div><div id="score-bar"></div><div id="score-ring"></div>
   </div>
 
 <!-- DELETE ACCOUNT MODAL -->
@@ -237,11 +214,51 @@ function renderNoBusinessState() {
 // ══════════════════════════════════════════
 function renderSwitcherBar() {
   if (!BUSINESSES.length) return;
+  if (BUSINESSES.length === 1) {
+    const btn = document.getElementById('biz-active-btn');
+    if (btn) btn.style.display = 'none';
+    return;
+  }
   const biz = BUSINESSES.find(b => b.id === activeBizId) || BUSINESSES[0];
   document.getElementById('active-avatar').textContent = biz.avatar;
   document.getElementById('active-name').textContent = biz.name;
   document.getElementById('active-plan').textContent = `Agency · ${BUSINESSES.length} businesses`;
   document.getElementById('biz-count').textContent = `${BUSINESSES.findIndex(b => b.id === activeBizId) + 1} of ${BUSINESSES.length}`;
+}
+
+function renderDashboardCampaigns(campaigns) {
+  const el = document.getElementById('dashboard-campaign-list');
+  if (!el) return;
+  if (!campaigns || !campaigns.length) {
+    el.innerHTML = '<div class="activity-empty">No campaigns yet — create your first one above.</div>';
+    return;
+  }
+  const sorted = [...campaigns].sort((a, b) => {
+    const ta = a.lastUsedAt || a.createdAt || '';
+    const tb = b.lastUsedAt || b.createdAt || '';
+    return tb.localeCompare(ta);
+  });
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+  el.innerHTML = sorted.map(c => {
+    const history  = c.platformHistory || {};
+    const allRuns  = Object.values(history).flat().sort((a,b)=>(b.ranAt||'').localeCompare(a.ranAt||''));
+    const latest   = allRuns[0];
+    const preview  = latest ? (latest.copy||'').replace(/<br\/?>/gi,' ').replace(/\n/g,' ').slice(0,80) + '…' : '';
+    const lastUsed = fmtDate(c.lastUsedAt);
+    const created  = fmtDate(c.createdAt);
+    return `<div style="padding:12px 0;border-bottom:1px solid var(--border,#333);">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <div style="font-size:14px;font-weight:600;color:var(--light,#fff);">${escHtml(c.name || '(unnamed)')}</div>
+        <a href="BlastyBiz.html" class="badge off" style="text-decoration:none;white-space:nowrap;font-size:11px;">Open →</a>
+      </div>
+      <div style="font-size:11px;color:var(--muted,#888);margin-top:3px;">Created ${created} · Last used ${lastUsed}</div>
+      ${preview ? `<div style="font-size:11px;color:var(--muted,#888);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(preview)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function escHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ══════════════════════════════════════════
@@ -550,6 +567,9 @@ onAuthStateChanged(auth, async (user) => {
       const snapBiz = document.getElementById('snapshot-biz');
       if (nameEl) nameEl.textContent = bizName;
       if (snapBiz) snapBiz.textContent = bizName;
+
+      // Render campaign list
+      renderDashboardCampaigns(biz.campaigns || []);
 
       const google    = googleSnap.exists()    ? googleSnap.data()    : null;
       const facebook  = facebookSnap.exists()  ? facebookSnap.data()  : null;
