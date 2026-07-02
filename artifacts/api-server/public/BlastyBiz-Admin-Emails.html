@@ -554,9 +554,12 @@ window.sendTest = async function() {
   if (!subject || !html) { showStatus('❌ Fill in subject and HTML first'); return; }
   showStatus('📨 Sending test…');
   try {
-    const resp = await fetch('/api/admin/send-test-email', {
+    const user = auth.currentUser;
+    if (!user) { showStatus('❌ Not signed in'); return; }
+    const token = await user.getIdToken();
+    const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/sendTestEmail', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ subject, html, to: 'perceys@gmail.com' })
     });
     const data = await resp.json();

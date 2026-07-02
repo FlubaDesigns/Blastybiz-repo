@@ -1,11 +1,11 @@
 # BlastyBiz — Full Site Audit
-**Last updated: July 2, 2026 (Session 19 — Full email system audit: 3 undeployed CFs found and deployed, upgrade-nudge window bug fixed)**
+**Last updated: July 2, 2026 (Session 19 — Full email system audit + Express route elimination: all /api/ calls removed from HTML, contactForm CF added, sendTestEmail upgraded, 3 ghost CFs deleted)**
 **Firebase Project:** blastybiz-9523e
 **Live URL:** https://blastybiz-9523e.web.app
 
 ---
 
-## Deployed Cloud Functions (37 total — all v2, us-central1)
+## Deployed Cloud Functions (38 total — all v2, us-central1)
 
 | # | Function | Type | Purpose |
 |---|---|---|---|
@@ -46,10 +46,9 @@
 | 35 | `jobCompletedTrigger` | Firestore trigger | publishJobs/{jobId} status → 'success' → sends "listing is live" email via Resend |
 | 36 | `scheduledUpgradeNudge` | Scheduled (daily 10am ET) | Queries starter users created 7–8 days ago; sends upgrade nudge email via Resend |
 | 37 | `scheduledWeeklyDigest` | Scheduled (Monday 8am ET) | Queries all paid users (planActive=true); sends weekly recap (job count + platforms) via Resend |
+| 38 | `contactForm` | HTTP (public) | Contact page form handler — validates recipient, sends message via Resend with reply_to set to visitor's email |
 
-**Deleted (no longer in index.js or Firebase):** `postToGoogle`, `postToFacebook`, `postToInstagram` — removed Jun 20, 2026; posting to those platforms is handled internally by `dispatchPublishJob`.
-
-**Stale ghost functions (still in Firebase, no longer in code, trigger type = https, no active behavior):** `jobCreatedTrigger`, `onJobCreated`, `onPublishJobCreated` — leftover from type-change history. Harmless; can be deleted via `firebase functions:delete` if desired.
+**Deleted (no longer in index.js or Firebase):** `postToGoogle`, `postToFacebook`, `postToInstagram` — removed Jun 20, 2026; posting to those platforms is handled internally by `dispatchPublishJob`. `jobCreatedTrigger`, `onJobCreated`, `onPublishJobCreated` — ghost HTTPS functions deleted Jul 2, 2026.
 
 ---
 
@@ -185,6 +184,7 @@
 | Jun 27, 2026 | `functions/index.js` — all redirect/email URLs | **🟡 MEDIUM: All web-app redirect URLs were hardcoded to the Firebase default domain.** Square checkout `redirectUrl`, both OAuth post-connect redirects (Google + Facebook), OAuth error fallbacks, and email CTA links all hardcoded `https://blastybiz-9523e.web.app/...`. Adding a custom domain would silently break checkout return, OAuth callbacks, and email links. Fix: added `const APP_BASE_URL = process.env.APP_BASE_URL \|\| 'https://blastybiz-9523e.web.app'` constant at the top of `functions/index.js`. All 10 hardcoded web-app URLs replaced with `${APP_BASE_URL}/...`. Cloud Function callback URIs (CF-to-CF, registered with OAuth providers) intentionally left hardcoded — those must match what's registered with Google/Facebook. To switch domains: set `APP_BASE_URL` env var and redeploy. |
 | Jun 27, 2026 | `firestore.rules` + `functions/index.js` — `squareWebhook` | **📝 Structural comments added (Sweep 4 flagged risks).** (1) `firestore.rules` users update rule: added `⚠️ MAINTAINED DENYLIST` comment warning that any new billing/entitlement field added to users docs must also be added to the denylist or it becomes client-writable by default. (2) `squareWebhook`: added `⚠️ SYNC RISK` comment noting that users, subscriptions, and businesses are all updated in one block — future billing mirrors must be added here to stay in sync. |
 | Jul 2, 2026 | `functions/index.js` — `jobCompletedTrigger`, `scheduledUpgradeNudge`, `scheduledWeeklyDigest` | **🔴 CRITICAL (Session 19 audit): Three email Cloud Functions never deployed — all 3 confirmed absent from Firebase.** `jobCompletedTrigger` (Firestore trigger: publishJob status→'success'), `scheduledUpgradeNudge` (daily 10am ET), and `scheduledWeeklyDigest` (Monday 8am ET) were in the code but missing from `firebase functions:list`. Zero "listing is live" emails, zero 7-day upgrade nudges, and zero weekly digests had ever fired. Root cause for `jobCompletedTrigger`: a previous session had registered it as an HTTPS function — Firebase blocks changing trigger types in-place with "Changing from an HTTPS function to a background triggered function is not allowed." Fix: deleted the stale HTTPS version via `firebase functions:delete jobCompletedTrigger --force`, then deployed all three together. All three confirmed live in `functions:list` with correct trigger types (Firestore updated / scheduled / scheduled). |
+| Jul 2, 2026 | `BlastyBiz-Contact.html`, `BlastyBiz-Admin-Emails.html`, `BlastyBiz-Admin-Operate.html` | **🔴 CRITICAL (Session 19 audit, pass 2): All Firebase-hosted pages were calling the Express server for email/contact — broken in production.** Two pages called `/api/` routes on the Replit Express server from Firebase Hosting: `BlastyBiz-Contact.html` called `/api/contact` (contact form), `BlastyBiz-Admin-Emails.html` called `/api/admin/send-test-email` (template test send). Firebase Hosting has no `/api` rewrite — both calls 404 in production. Express is dev-only and must never be called from Firebase-hosted pages. Fix: (1) Created `contactForm` CF (public, validates recipient allowlist, sends via Resend with reply_to = visitor email). (2) Upgraded `sendTestEmail` CF to accept `subject` + `html` + `to` — applies SAMPLE merge tags and sends the actual template. (3) Updated Contact page to call CF URL. (4) Updated Admin Emails page to call CF with Firebase auth token. (5) Updated Admin Operate to pass required `subject`/`html` to `sendTestEmail`. (6) Removed all Express route handlers (`contact.ts`, `email.ts`) from `routes/index.ts` — no Express routes remain. (7) Deleted 3 stale ghost HTTPS functions (`jobCreatedTrigger`, `onJobCreated`, `onPublishJobCreated`) from Firebase. Zero `/api/` fetch calls remain anywhere in `public/`. |
 | Jul 2, 2026 | `functions/index.js` — `scheduledUpgradeNudge` | **🔴 CRITICAL (Session 19 audit): Upgrade nudge 1-hour query window — only ~4% of eligible users would ever receive it.** The scheduled function (daily 10am ET) queried starter users with `createdAt` between `sevenDaysAgo - 1 hour` and `sevenDaysAgo`. Only users who signed up in the exact 1-hour window ending at 10am ET seven days prior were caught — everyone else was permanently missed. Fix: expanded to a 24-hour window by changing `windowStart.setHours(windowStart.getHours() - 1)` → `windowStart.setDate(windowStart.getDate() - 1)`, giving the range `8 days ago → 7 days ago`. Since the CF fires once per day, each user lands in this window exactly once — no double-send risk. Deployed with the 3 missing functions above. |
 
 ---

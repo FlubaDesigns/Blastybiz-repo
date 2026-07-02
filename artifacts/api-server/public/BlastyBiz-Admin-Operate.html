@@ -574,7 +574,11 @@ async function smRequest(url, method, body) {
       const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/sendTestEmail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ to })
+        body: JSON.stringify({
+          to,
+          subject: '✅ BlastyBiz Resend Connection Test',
+          html: '<div style="font-family:sans-serif;padding:24px;color:#111"><h2>Resend OK</h2><p>This confirms email delivery from <strong>info@blastybiz.com</strong> is working.</p></div>'
+        })
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'Send failed');

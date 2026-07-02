@@ -2090,8 +2090,53 @@ exports.sendTestEmail = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: 'Forbidden' }); }
-  const { to } = req.body;
-  if (!to) return res.status(400).json({ error: 'to address required' });
+  const { to, subject: rawSubject, html: rawHtml } = req.body;
+  if (!to || !rawSubject || !rawHtml) return res.status(400).json({ error: 'to, subject, and html are required' });
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey || apiKey === 'placeholder') return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
+
+  const SAMPLE = {
+    name: 'Alex Johnson',
+    businessName: 'Sunrise Café',
+    planName: 'Pro',
+    platform: 'Google Business',
+    jobCount: '5',
+    platformList: 'Google Business, Facebook, Instagram',
+    dashboardUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html',
+    upgradeUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html#upgrade',
+    appUrl: APP_BASE_URL,
+  };
+  function applyTags(str) {
+    return str.replace(/\{\{(\w+)\}\}/g, (_, k) => SAMPLE[k] ?? '');
+  }
+  const finalSubject = '[TEST] ' + applyTags(rawSubject);
+  const finalHtml    = applyTags(rawHtml);
+
+  try {
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: 'BlastyBiz <info@blastybiz.com>', to: [to], subject: finalSubject, html: finalHtml }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) return res.status(500).json({ error: data.message || 'Resend error', detail: data });
+    return res.json({ ok: true, id: data.id, to });
+  } catch(e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+// ══════════════════════════════════════════
+// contactForm — public CF replacing Express /api/contact route
+// Accepts to, name, email, message from the Contact page
+// ══════════════════════════════════════════
+exports.contactForm = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  const ALLOWED_TO = new Set(['support@blastybiz.com', 'info@blastybiz.com', 'sales@blastybiz.com', 'billing@blastybiz.com']);
+  const { to, name, email, message } = req.body || {};
+  if (!ALLOWED_TO.has(to)) return res.status(400).json({ error: 'Invalid recipient' });
+  if (!name?.trim() || !email?.trim() || !message?.trim()) return res.status(400).json({ error: 'Missing fields' });
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey || apiKey === 'placeholder') return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
   try {
@@ -2101,18 +2146,14 @@ exports.sendTestEmail = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY
       body: JSON.stringify({
         from: 'BlastyBiz <info@blastybiz.com>',
         to: [to],
-        subject: '✅ BlastyBiz Email Test',
-        html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#070D07;color:#EEF7EE;border-radius:12px">
-          <h1 style="font-size:28px;color:#00C853;margin:0 0 8px">BlastyBiz</h1>
-          <p style="font-size:16px;color:#7AB87A;margin:0 0 24px">Lock. Load. Blast.</p>
-          <p style="font-size:15px;line-height:1.6;color:#EEF7EE">This is a test email confirming that your Resend integration is working correctly. Emails from BlastyBiz will send from <strong>info@blastybiz.com</strong>.</p>
-          <p style="font-size:13px;color:#587058;margin-top:24px">Sent from BlastyBiz Admin · Powered by Fluba Designs LLC</p>
-        </div>`
+        reply_to: email.trim(),
+        subject: `New message from ${name.trim()}`,
+        html: `<p><strong>Name:</strong> ${name.trim()}<br><strong>Email:</strong> ${email.trim()}</p><p><strong>Message:</strong><br>${message.trim().replace(/\n/g, '<br>')}</p>`,
       }),
     });
     const data = await resp.json();
-    if (!resp.ok) return res.status(500).json({ error: data.message || 'Resend error', detail: data });
-    return res.json({ ok: true, id: data.id, to });
+    if (!resp.ok) return res.status(500).json({ error: data.message || 'Resend error' });
+    return res.json({ success: true, id: data.id });
   } catch(e) {
     return res.status(500).json({ error: e.message });
   }
