@@ -8,6 +8,10 @@ const ADMIN_EMAILS = new Set(["perceys@gmail.com", "rep-test@blastybiz.com"]);
 const SAMPLE = {
   name: "Alex Johnson",
   businessName: "Sunrise Café",
+  planName: "Pro",
+  platform: "Google Business",
+  jobCount: "5",
+  platformList: "Google Business, Facebook, Instagram",
   dashboardUrl: "https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html",
   upgradeUrl: "https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html#upgrade",
   appUrl: "https://blastybiz-9523e.web.app",
@@ -41,7 +45,7 @@ router.post("/admin/send-test-email", async (req, res) => {
     const response = await connectors.proxy("resend", "/emails", {
       method: "POST",
       body: JSON.stringify({
-        from: "BlastyBiz <noreply@blastybiz.com>",
+        from: "BlastyBiz <info@blastybiz.com>",
         to: [to],
         subject: "[TEST] " + renderedSubject,
         html: renderedHtml,

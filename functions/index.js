@@ -1648,7 +1648,6 @@ exports.userCreatedTrigger = onDocumentCreated(
     let subject = 'Welcome to BlastyBiz, ' + mergeData.name + '! 🚀';
     let html = null;
     try {
-      const db = admin.firestore();
       const snap = await db.collection('emailTemplates')
         .where('type', '==', 'welcome')
         .where('active', '==', true)
