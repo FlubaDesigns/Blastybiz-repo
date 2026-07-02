@@ -2043,8 +2043,11 @@ body.create-page .char-count.over { color: #ff6b35; }
 .chip-green    { padding: 7px 16px; border-radius: 20px; border: 1px solid rgba(0,200,83,.4); background: rgba(0,200,83,.08); color: var(--green); font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s; }
 .chip-new      { padding: 8px 16px; border-radius: 20px; border: 1px dashed var(--border); background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; font-family: inherit; transition: all .15s; }
 .chip-new:hover { border-color: var(--green); color: var(--green); }
-.chip-campaign { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--silver); font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all .15s; }
+.chip-campaign { display: inline-flex; align-items: center; gap: 5px; padding: 8px 10px 8px 14px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--silver); font-size: 13px; font-weight: 500; font-family: inherit; transition: all .15s; }
 .chip-campaign.active { border-color: var(--green); background: rgba(0,200,83,.12); color: var(--green); font-weight: 700; }
+.chip-label { cursor: pointer; }
+.chip-del { cursor: pointer; font-size: 10px; line-height: 1; padding: 2px 4px; border-radius: 50%; opacity: 0.4; transition: opacity .15s, background .15s, color .15s; }
+.chip-del:hover { opacity: 1; background: rgba(255,80,80,.15); color: #ff5050; }
 
 /* ── Empty state ── */
 .empty      { text-align: center; padding: 40px 20px; color: var(--muted); }

@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=39" />
+<link rel="stylesheet" href="global-style.css?v=40" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -95,6 +95,8 @@
     </div>
   </div>
 
+  <div id="campaign-content" class="hidden">
+
   <div class="card">
     <div class="card-title">🚀 Your Ad</div>
 
@@ -172,6 +174,8 @@
     Continue to Platforms →
   </button>
   <div class="bottom-safe"></div>
+  </div><!-- /campaign-content -->
+
   </div><!-- /create-step-1 -->
 
   <!-- ── STEP 2: PLATFORM SELECT + AI ── -->
@@ -2554,10 +2558,13 @@ function renderCampaignChips() {
   if (!container) return;
   let html = '';
   campaigns.forEach(c => {
-    const active = c.id === activeCampaignId;
-    html += `<button onclick="selectCampaign('${c.id}','${c.name.replace(/'/g,"\\'")}',this)"
-      class="chip-campaign${active ? ' active' : ''}"
-      data-cid="${c.id}">${c.name}</button>`;
+    const active   = c.id === activeCampaignId;
+    const escId    = c.id.replace(/'/g,"\\'");
+    const escName  = c.name.replace(/'/g,"\\'");
+    html += `<span class="chip-campaign${active ? ' active' : ''}" data-cid="${c.id}">` +
+      `<span class="chip-label" onclick="selectCampaign('${escId}','${escName}')">${c.name}</span>` +
+      `<span class="chip-del" onclick="deleteCampaign('${escId}','${escName}');event.stopPropagation()" title="Delete">✕</span>` +
+      `</span>`;
   });
   html += `<button onclick="openNewCampaign()" class="chip-new">＋ New Campaign</button>`;
   container.innerHTML = html;
@@ -2578,6 +2585,7 @@ function renderCampaignChips() {
 function selectCampaign(id, name) {
   activeCampaignId   = id;
   activeCampaignName = name;
+  document.getElementById('campaign-content')?.classList.remove('hidden');
 
   const cam = campaigns.find(c => c.id === id) || {};
 
@@ -2656,9 +2664,26 @@ async function saveNewCampaign() {
   }
 
   document.getElementById('new-campaign-row').classList.add('hidden');
+  document.getElementById('campaign-content')?.classList.remove('hidden');
   renderCampaignChips();
   _syncSchedCampaign(id, name);
   showToast('Campaign "' + name + '" created');
+}
+
+async function deleteCampaign(id, name) {
+  if (!confirm('Delete campaign "' + name + '"?\nThis cannot be undone.')) return;
+  campaigns = campaigns.filter(c => c.id !== id);
+  if (activeCampaignId === id) {
+    activeCampaignId   = '';
+    activeCampaignName = '';
+    document.getElementById('campaign-content')?.classList.add('hidden');
+  }
+  renderCampaignChips();
+  if (window._bbSaveCampaigns) {
+    try { await window._bbSaveCampaigns(campaigns); }
+    catch(e) { console.warn('Delete campaign failed:', e); }
+  }
+  showToast('Campaign deleted');
 }
 
 function _sortCampaigns() {
@@ -3003,27 +3028,11 @@ onAuthStateChanged(auth, async (user) => {
       }
 
 
-      // Load campaigns first — photos live on the campaign
+      // Load campaigns — user must click a chip to load campaign content
       campaigns = biz.campaigns || [];
       _sortCampaigns();
       renderCampaignChips();
-
-      // Auto-select the first campaign so fields populate on load (not just on click)
-      const firstCam = campaigns[0];
-      if (firstCam) {
-        selectCampaign(firstCam.id, firstCam.name);
-      } else {
-        // Legacy fallback: no campaigns yet — load photos from biz doc
-        const legacyPhotos = biz.photos || [];
-        window._bbPhotoItems = legacyPhotos.map(p =>
-          typeof p === 'string'
-            ? { url: p, path: null, localUrl: p, done: true, progress: 100 }
-            : { ...p, localUrl: p.url, done: true, progress: 100 }
-        );
-        window._bbSelectedPhotoIndex = null;
-        if (window.renderAllPhotos) window.renderAllPhotos();
-        if (window.updatePhotoCapLabel) window.updatePhotoCapLabel();
-      }
+      // campaign-content stays hidden until user selects or creates a campaign
     }
   } catch(e) {
     console.error('Profile load error:', e);
