@@ -1507,6 +1507,7 @@ window.renderAllPhotos = function() {
 // RUN ADAPTATION — Real AI Call
 // ══════════════════════════════════════════
 async function runAdaptation() {
+  updateCampaignMemory(); // ensure campaign object reflects current DOM before prompt is built
   // Profile is the dossier — always primary source for business identity fields
   const name      = profile.name     || '';
   const category  = profile.category || '';
@@ -1648,11 +1649,13 @@ Return this exact JSON structure:
         if (cam) {
           if (!cam.platformHistory) cam.platformHistory = {};
           const ranAt = new Date().toISOString();
+          const currentSchedule = profile.postingSchedule || null;
           platforms.filter(p => p.enabled && p.adaptedContent).forEach(p => {
             if (!cam.platformHistory[p.id]) cam.platformHistory[p.id] = [];
             cam.platformHistory[p.id].push({
               copy: p.adaptedContent.replace(/<br\/?>/gi, '\n'),
               ranAt,
+              schedule: currentSchedule,
             });
           });
           cam.lastUsedAt = ranAt;
@@ -2665,20 +2668,28 @@ function _sortCampaigns() {
   });
 }
 
+// ── Immediate in-memory campaign sync (no Firestore) ─────────────────────────
+function updateCampaignMemory() {
+  if (!activeCampaignId) return;
+  const cam = campaigns.find(c => c.id === activeCampaignId);
+  if (!cam) return;
+  cam.offer         = document.getElementById('biz-offer')?.value        || '';
+  cam.adName        = document.getElementById('biz-ad-name')?.value      || '';
+  cam.adDetails     = document.getElementById('biz-ad-details')?.value   || '';
+  cam.price         = document.getElementById('biz-price')?.value        || '';
+  cam.campaignStory = document.getElementById('campaign-context')?.value || '';
+}
+
 // ── Debounced campaign Firestore persistence ─────────────────────────────────
 var _campaignSaveTimer = null;
 function debounceCampaignSave() {
+  updateCampaignMemory(); // immediate in-memory sync on every keystroke
   clearTimeout(_campaignSaveTimer);
   _campaignSaveTimer = setTimeout(async () => {
     if (!activeCampaignId || !window._bbSaveCampaigns) return;
     const cam = campaigns.find(c => c.id === activeCampaignId);
     if (!cam) return;
-    cam.offer         = document.getElementById('biz-offer')?.value        || '';
-    cam.adName        = document.getElementById('biz-ad-name')?.value      || '';
-    cam.adDetails     = document.getElementById('biz-ad-details')?.value   || '';
-    cam.price         = document.getElementById('biz-price')?.value        || '';
-    cam.campaignStory = document.getElementById('campaign-context')?.value || '';
-    cam.lastUsedAt    = new Date().toISOString();
+    cam.lastUsedAt = new Date().toISOString();
     try {
       await window._bbSaveCampaigns(campaigns);
     } catch(e) {
@@ -2718,7 +2729,7 @@ function renderPlatformHistory() {
       </div>
       <div class="ph-detail hidden" id="ph-detail-${p.id}">
         ${entries.map(e => `<div class="ph-entry">
-          <div class="ph-entry-date">${new Date(e.ranAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+          <div class="ph-entry-date">${new Date(e.ranAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'})}${e.schedule && e.schedule.frequency ? ' · ' + escHtml(e.schedule.frequency) : ''}</div>
           <div class="ph-entry-copy">${escHtml((e.copy||'').replace(/<br\/?>/gi,'\n'))}</div>
         </div>`).join('')}
       </div>
@@ -2732,6 +2743,7 @@ function togglePlatformHistory(pid) {
 }
 
 function saveDraft() {
+  updateCampaignMemory(); // keep campaign in-memory object current on every edit
   draft = {
     name:           document.getElementById('biz-name')?.value,
     category:       document.getElementById('biz-category')?.value,
