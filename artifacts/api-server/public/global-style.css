@@ -525,20 +525,29 @@ main.home                { width: 100%; }
    when both classes appear on the same element — e.g. class="btn btn__primary" */
 .btn__primary,
 .btn.btn__primary {
-  background: var(--green);
+  background: linear-gradient(135deg, var(--green) 0%, var(--green-lime) 100%);
   color: var(--dark);
-  border-color: var(--green);
+  border-color: transparent;
   font-size: 16px;
   font-weight: 700;
   padding: 16px 36px;
   margin-top: 10px;
   margin-bottom: 10px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s;
+  box-shadow: 0 4px 20px rgba(var(--green-rgb),0.4);
+  letter-spacing: 0.03em;
 }
-.btn__primary:hover {
-  background: var(--green2);
-  transform: translateY(-1px);
+.btn__primary:hover,
+.btn.btn__primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(var(--green-rgb),0.55);
+  filter: brightness(1.07);
+}
+.btn__primary:active,
+.btn.btn__primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(var(--green-rgb),0.3);
 }
 
 /* Hero-specific: primary button constrained and centred */
@@ -685,11 +694,13 @@ main.home                { width: 100%; }
 .pricing__features li::before  { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; }
 .pricing__features li.off      { color: var(--muted); text-decoration: line-through; }
 .pricing__features li.off::before { content: '✗'; color: var(--muted); }
-.pricing__btn          { display: block; width: 100%; padding: 14px; border-radius: 10px; font-size: 15px; font-weight: 700; text-align: center; text-decoration: none; transition: all 0.2s; cursor: pointer; border: none; }
-.pricing__btn--primary { background: var(--green); color: var(--dark); }
-.pricing__btn--primary:hover { background: var(--green2); }
-.pricing__btn--outline { background: transparent; border: 1px solid var(--border); color: var(--light); }
-.pricing__btn--outline:hover { border-color: var(--green); color: var(--green); }
+.pricing__btn          { display: block; width: 100%; padding: 16px; border-radius: 12px; font-size: 15px; font-weight: 700; text-align: center; text-decoration: none; transition: all 0.25s; cursor: pointer; border: none; letter-spacing: 0.03em; }
+.pricing__btn--primary { background: linear-gradient(135deg, var(--green) 0%, var(--green-lime) 100%); color: var(--dark); box-shadow: 0 4px 20px rgba(var(--green-rgb),0.4); }
+.pricing__btn--primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(var(--green-rgb),0.55); filter: brightness(1.07); }
+.pricing__btn--primary:active { transform: translateY(0); box-shadow: 0 2px 10px rgba(var(--green-rgb),0.3); }
+.pricing__btn--outline { background: rgba(var(--green-rgb),0.07); border: 2px solid var(--green); color: var(--green); }
+.pricing__btn--outline:hover { background: rgba(var(--green-rgb),0.14); box-shadow: 0 4px 18px rgba(var(--green-rgb),0.22); transform: translateY(-1px); }
+.pricing__btn--outline:active { transform: translateY(0); }
 
 
 /* ── HERO STATS ────────────────────────────────────────────── */
@@ -982,15 +993,15 @@ body.has-site-header h4  { font-family: 'DM Sans', sans-serif; font-size: 15px; 
 
 /* Primary CTA button (green) + shimmer — .btn-next is an alias */
 .btn-submit,
-.btn-next                    { width: 100%; padding: 15px; background: var(--green); color: var(--dark); border: none; border-radius: 12px; font-size: 16px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; position: relative; overflow: hidden; margin-bottom: 16px; }
+.btn-next                    { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--green) 0%, var(--green-lime) 100%); color: var(--dark); border: none; border-radius: 12px; font-size: 16px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.25s; display: flex; align-items: center; justify-content: center; gap: 8px; position: relative; overflow: hidden; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(var(--green-rgb),0.4); letter-spacing: 0.03em; }
 .btn-submit::after,
-.btn-next::after             { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%); transform: translateX(-100%); transition: transform 0.4s; }
+.btn-next::after             { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%); transform: translateX(-100%); transition: transform 0.45s; }
 .btn-submit:hover::after,
 .btn-next:hover::after       { transform: translateX(100%); }
 .btn-submit:hover,
-.btn-next:hover              { background: var(--green2); transform: translateY(-1px); }
+.btn-next:hover              { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(var(--green-rgb),0.55); filter: brightness(1.07); }
 .btn-submit:active,
-.btn-next:active             { transform: translateY(0); }
+.btn-next:active             { transform: translateY(0); box-shadow: 0 2px 10px rgba(var(--green-rgb),0.3); }
 .btn-submit:disabled,
 .btn-next:disabled           { opacity: 0.5; cursor: not-allowed; transform: none; }
 .btn-submit.loading,
