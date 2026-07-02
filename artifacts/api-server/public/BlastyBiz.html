@@ -578,7 +578,7 @@ const PLATFORM_RULES = {
 window.PLATFORMS = PLATFORMS; // expose for module script
 let platforms = PLATFORMS.map(p => ({...p})); // populated from Firestore after auth
 let history   = [];                           // populated from Firestore after auth
-let profile   = {};                           // populated from Firestore after auth
+let profile   = (function(){ try { return JSON.parse(localStorage.getItem('bb_profile') || '{}'); } catch(e) { return {}; } })(); // seeded from cache; Firestore overwrites
 let draft     = {};                           // form state only — draftId tracked separately
 let locationType        = 'physical';         // 'physical' | 'online' — create form
 let campaigns           = [];                 // [{id, name, photos:[]}] loaded from Firestore
@@ -2823,6 +2823,7 @@ function clearAll() {
   profile = {};
   draft = {};
   window._currentDraftId = null;
+  try { localStorage.removeItem('bb_profile'); } catch(e) {}
   init();
   showToast('🗑️ Data cleared');
   document.dispatchEvent(new CustomEvent('bb:clearAll'));
@@ -2856,6 +2857,17 @@ window._bbSetHistory = function(items) {
 };
 window._bbSetProfile = function(p) {
   profile = p;
+  // Cache to localStorage so the profile loads instantly on next visit
+  try {
+    localStorage.setItem('bb_profile', JSON.stringify({
+      name: p.name, ownerName: p.ownerName, ownerRole: p.ownerRole,
+      category: p.category, phone: p.phone, email: p.email,
+      street: p.street, city: p.city, state: p.state, zip: p.zip,
+      region: p.region, locationType: p.locationType, website: p.website,
+      hours: p.hours, tone: p.tone, platformCats: p.platformCats || {},
+      postingSchedule: p.postingSchedule || null, aiContext: p.aiContext || null
+    }));
+  } catch(e) {}
   loadProfile();
 };
 
