@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="global-style.css?v=36" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+<script src="blastybiz-menu.js"></script>
 </head>
 <body class="has-site-header home-page">
 <div id="header__inject"></div>
@@ -312,14 +313,7 @@ fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){
     document.body.style.paddingTop=px;
     document.documentElement.style.setProperty('--header-h',px);
   }
-  window.toggleMenu=function(){
-    var m=document.getElementById('header__mobile-menu');
-    if(m)m.classList.toggle('open');
-  };
-  window.closeMenu=function(){
-    var m=document.getElementById('header__mobile-menu');
-    if(m)m.classList.remove('open');
-  };
+
   _setHeaderOffset();
   window.addEventListener('load',_setHeaderOffset);
   window.addEventListener('resize',_setHeaderOffset);
