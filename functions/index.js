@@ -938,7 +938,7 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
     const sub = event.data?.object?.subscription;
     if (sub) {
       const status = (sub.status || '').toUpperCase();
-      const isCanceled = status === 'CANCELED' || status === 'DEACTIVATED' || status === 'PAUSED';
+      const isCanceled = status === 'CANCELED' || status === 'DEACTIVATED';
       if (isCanceled) {
         const customerId = sub.customer_id || sub.customerId;
         if (customerId) {
@@ -947,6 +947,10 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
               .where('squareCustomerId', '==', customerId).limit(1).get();
             if (!snap.empty) {
               const uid = snap.docs[0].data().uid;
+              // Read current plan BEFORE downgrading so we can reference it in the cancellation email
+              const priorUserSnap = await db.collection('users').doc(uid).get();
+              const priorPlan = priorUserSnap.data()?.plan || 'pro';
+              const priorPlanName = priorPlan === 'agency' ? 'Agency' : 'Pro';
               await db.collection('users').doc(uid).set(
                 { plan: 'starter', planActive: false }, { merge: true }
               );
@@ -971,6 +975,7 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
                   const mergeData = {
                     name: ownerName || 'there',
                     businessName,
+                    planName: priorPlanName,
                     upgradeUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html#upgrade',
                     dashboardUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html',
                     appUrl: APP_BASE_URL,
@@ -998,7 +1003,7 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
   </div>
   <div style="padding:32px">
     <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You're on the free plan now, ${mergeData.name}.</h1>
-    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">Your BlastyBiz Pro subscription for <strong>${mergeData.businessName}</strong> has ended. We've moved you to the free plan — your account and all your data are still here.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">Your BlastyBiz ${mergeData.planName} subscription for <strong>${mergeData.businessName}</strong> has ended. We've moved you to the free plan — your account and all your data are still here.</p>
     <div style="background:#f7f7f7;border-radius:8px;padding:20px 24px;margin-bottom:24px">
       <div style="font-size:12px;font-weight:800;color:#888;letter-spacing:2px;margin-bottom:10px">WHAT YOU'VE LOST ACCESS TO</div>
       <ul style="color:#555;font-size:14px;line-height:2;padding-left:18px;margin:0">
@@ -1007,7 +1012,7 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
         <li>Priority queue &amp; posting history</li>
       </ul>
     </div>
-    <a href="${mergeData.upgradeUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px">Come Back to Pro &#8594;</a>
+    <a href="${mergeData.upgradeUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px">Come Back to ${mergeData.planName} &#8594;</a>
     <p style="font-size:13px;color:#888;margin-top:20px;line-height:1.6">Changed your mind? Upgrade anytime — everything picks up right where you left off.</p>
   </div>
   <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
@@ -2139,6 +2144,12 @@ exports.contactForm = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY']
   if (!name?.trim() || !email?.trim() || !message?.trim()) return res.status(400).json({ error: 'Missing fields' });
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey || apiKey === 'placeholder') return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  const safeName    = escHtml(name.trim());
+  const safeEmail   = escHtml(email.trim());
+  const safeMessage = escHtml(message.trim()).replace(/\n/g, '<br>');
   try {
     const resp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -2147,8 +2158,8 @@ exports.contactForm = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY']
         from: 'BlastyBiz <info@blastybiz.com>',
         to: [to],
         reply_to: email.trim(),
-        subject: `New message from ${name.trim()}`,
-        html: `<p><strong>Name:</strong> ${name.trim()}<br><strong>Email:</strong> ${email.trim()}</p><p><strong>Message:</strong><br>${message.trim().replace(/\n/g, '<br>')}</p>`,
+        subject: `New message from ${safeName}`,
+        html: `<p><strong>Name:</strong> ${safeName}<br><strong>Email:</strong> ${safeEmail}</p><p><strong>Message:</strong><br>${safeMessage}</p>`,
       }),
     });
     const data = await resp.json();
