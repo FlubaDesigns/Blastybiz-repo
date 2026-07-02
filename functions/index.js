@@ -1628,19 +1628,41 @@ exports.jobCompletedTrigger = onDocumentUpdated(
 // ══════════════════════════════════════════
 // Function 19: userCreatedTrigger
 // Firestore trigger — users/{uid} created
-// Sends welcome email via Resend
+// Welcome email moved to businessCreatedTrigger so businessName is available.
 // ══════════════════════════════════════════
 exports.userCreatedTrigger = onDocumentCreated(
-  { document: 'users/{uid}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
+  { document: 'users/{uid}', region: 'us-central1' },
+  async () => { /* no-op — welcome email fires from businessCreatedTrigger after onboarding */ }
+);
+
+// ══════════════════════════════════════════
+// Function 19b: businessCreatedTrigger
+// Firestore trigger — businesses/{bizId} created (end of onboarding step 6)
+// Sends welcome email + admin alert once businessName is known
+// ══════════════════════════════════════════
+exports.businessCreatedTrigger = onDocumentCreated(
+  { document: 'businesses/{bizId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
   async (event) => {
-    const data = event.data.data();
-    const { email, ownerName, businessName } = data || {};
+    const biz = event.data.data();
+    const uid = biz.uid;
+    if (!uid) return;
+
+    // Get auth email from users doc (the form email field is the business contact, not auth email)
+    let email, ownerName;
+    try {
+      const userSnap = await db.collection('users').doc(uid).get();
+      if (!userSnap.exists) return;
+      const userData = userSnap.data();
+      email = userData.email;
+      ownerName = biz.ownerName || userData.ownerName || userData.displayName || '';
+    } catch(e) { console.warn('[businessCreatedTrigger] users read failed:', e.message); return; }
     if (!email) return;
 
-    // Merge tag values
+    const businessName = biz.businessName || (ownerName ? ownerName + '\'s Business' : 'your business');
+
     const mergeData = {
       name: ownerName || 'there',
-      businessName: businessName || (ownerName ? ownerName + '\'s Business' : 'your business'),
+      businessName,
       dashboardUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html',
       upgradeUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html#upgrade',
       appUrl: APP_BASE_URL,
@@ -1649,7 +1671,6 @@ exports.userCreatedTrigger = onDocumentCreated(
       return str.replace(/\{\{(\w+)\}\}/g, (_, k) => mergeData[k] || '');
     }
 
-    // Fetch active welcome template from Firestore
     let subject = 'Welcome to BlastyBiz, ' + mergeData.name + '! 🚀';
     let html = null;
     try {
@@ -1663,46 +1684,43 @@ exports.userCreatedTrigger = onDocumentCreated(
         subject = applyTags(tmpl.subject || subject);
         html = applyTags(tmpl.html || '');
       }
-    } catch(e) {
-      console.error('[userCreatedTrigger] Template fetch failed:', e.message);
-    }
+    } catch(e) { console.error('[businessCreatedTrigger] template fetch failed:', e.message); }
 
-    // Fallback HTML if no template in Firestore yet
     if (!html) {
-      html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff">
-        <div style="background:#0d1a0d;padding:28px 32px">
-          <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
-          <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
-        </div>
-        <div style="padding:32px">
-          <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re in, ${mergeData.name}.</h1>
-          <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">Welcome to BlastyBiz — fill out your profile once and the AI writes for every platform automatically.</p>
-          <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#0d1a0d;color:#00C853;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:800;font-size:14px">Go to Dashboard &#8594;</a>
-        </div>
-        <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
-          <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="${mergeData.appUrl}" style="color:#999">blastybiz.com</a></p>
-        </div>
-      </div>`;
+      html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:28px 32px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:32px">
+    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re in, ${mergeData.name}. Let&#39;s blast.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px"><strong>${mergeData.businessName}</strong> is set up and ready. Fill out your profile once — BlastyBiz writes the copy for every platform automatically.</p>
+    <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px">Go to Dashboard &#8594;</a>
+  </div>
+  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="${mergeData.appUrl}" style="color:#999">blastybiz.com</a></p>
+  </div>
+</div>`;
     }
 
     await sendResendEmail({ to: email, subject, html });
 
-    // Internal admin alert — new free signup
+    // Internal admin alert — new signup completed onboarding
     try {
       await sendResendEmail({
         to: 'info@blastybiz.com',
         subject: `[BlastyBiz] New signup: ${mergeData.name} (${email})`,
         html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#111">
-  <h2 style="margin:0 0 12px;font-size:18px">&#128226; New free signup</h2>
+  <h2 style="margin:0 0 12px;font-size:18px">&#128226; New signup — onboarding complete</h2>
   <table style="width:100%;border-collapse:collapse;font-size:14px">
     <tr><td style="padding:6px 0;color:#888;width:140px">Name</td><td style="padding:6px 0;font-weight:600">${mergeData.name}</td></tr>
     <tr><td style="padding:6px 0;color:#888">Email</td><td style="padding:6px 0">${email}</td></tr>
-    <tr><td style="padding:6px 0;color:#888">Business</td><td style="padding:6px 0">${mergeData.businessName}</td></tr>
+    <tr><td style="padding:6px 0;color:#888">Business</td><td style="padding:6px 0">${businessName}</td></tr>
     <tr><td style="padding:6px 0;color:#888">Time</td><td style="padding:6px 0">${new Date().toUTCString()}</td></tr>
   </table>
 </div>`,
       });
-    } catch(e) { console.warn('[userCreatedTrigger] admin alert failed:', e.message); }
+    } catch(e) { console.warn('[businessCreatedTrigger] admin alert failed:', e.message); }
   }
 );
 
