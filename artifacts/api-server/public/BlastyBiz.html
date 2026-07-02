@@ -2662,9 +2662,9 @@ async function saveNewCampaign() {
 
 function _sortCampaigns() {
   campaigns.sort((a, b) => {
-    const ta = a.lastUsedAt || a.createdAt || '';
-    const tb = b.lastUsedAt || b.createdAt || '';
-    return tb.localeCompare(ta);
+    const ta = new Date(a.lastUsedAt || a.createdAt || 0).getTime();
+    const tb = new Date(b.lastUsedAt || b.createdAt || 0).getTime();
+    return tb - ta;
   });
 }
 
