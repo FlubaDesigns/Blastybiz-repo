@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Agency Plan — $99/Month — BlastyBiz</title>
+  <meta name="description" content="BlastyBiz Agency is $99 a month. Manage up to 10 businesses under one login. AI-adapted listings, auto-posting to 12+ platforms, and a full client dashboard."/>
+  <meta name="robots" content="index, follow"/>
+  <meta property="og:title" content="Agency Plan — $99/Month — BlastyBiz"/>
+  <meta property="og:description" content="Manage up to 10 businesses under one login. AI-adapted listings and auto-posting across 12+ platforms. $99/month."/>
+  <meta property="og:type" content="website"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="global-style.css?v=33"/>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "BlastyBiz Agency Plan",
+    "description": "Manage up to 10 businesses under one login. AI-adapted marketing listings across 12+ platforms for marketing agencies and multi-location businesses.",
+    "brand": { "@type": "Brand", "name": "BlastyBiz" },
+    "offers": {
+      "@type": "Offer",
+      "price": "99",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock",
+      "url": "https://blastybiz-9523e.web.app/BlastyBiz-Plan-Agency.html"
+    }
+  }
+  </script>
+</head>
+<body class="has-site-header">
+<div id="header__inject"></div>
+<div class="plan-agency main"><div class="main-inner">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="BlastyBiz-Home.html">Home</a>
+  <span class="bc-sep">›</span>
+  <a href="BlastyBiz-Home.html#pricing">Pricing</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Agency Plan</span>
+</nav>
+
+<header class="page-hero">
+  <div class="row">
+    <div class="pricing__tier">Agency</div>
+    <h1>You're Not Posting For <span>One Business.</span></h1>
+    <p>You're managing listings for multiple clients or locations. BlastyBiz Agency gives you one login, one dashboard, and AI-adapted copy for all of them — done in the time it used to take for just one.</p>
+    <div class="pricing__amount">
+      <div class="pricing__num">$99</div>
+      <div class="pricing__per">/ month</div>
+    </div>
+  </div>
+</header>
+
+<section class="reveal">
+  <div class="row">
+    <h2>Built For <span>Agencies</span></h2>
+    <ul class="pricing__features">
+      <li>Up to 10 businesses under one login</li>
+      <li>All 12+ platforms for every client</li>
+      <li>AI-adapted copy — separate voice and format per business, automatically</li>
+      <li>Auto-posting — listings go live across all clients without copy-pasting</li>
+      <li>Unlimited listings across all businesses</li>
+      <li>Client dashboard — see all businesses at a glance</li>
+      <li>Saved profile per business — set it up once per client</li>
+      <li>Full post history per business</li>
+      <li>Priority support</li>
+    </ul>
+  </div>
+</section>
+
+<section class="reveal">
+  <div class="row">
+    <h2>The <span>Math</span></h2>
+    <p>If you're billing clients for marketing, you're covering this plan with a fraction of one client relationship. BlastyBiz handles the posting — you keep the margin.</p>
+  </div>
+</section>
+
+<section class="reveal">
+  <div class="row">
+    <a href="BlastyBiz-Login.html?plan=agency" class="pricing__btn pricing__btn--primary">Get Started — $99/month →</a>
+    <p class="plan-sub-note">You'll create your account on the next screen.</p>
+  </div>
+</section>
+
+<section class="reveal">
+  <div class="row">
+    <a href="BlastyBiz-Plan-Pro.html" class="pricing__btn pricing__btn--outline">Just need it for yourself? Pro is $19/month →</a>
+  </div>
+</section>
+
+</div></div>
+
+<div id="site-footer-inject"></div>
+<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+const app = initializeApp({ apiKey:"AIzaSyDJbLFQLVbMFE8LG22mN4JVmSBHOlimFUs",authDomain:"blastybiz-9523e.firebaseapp.com",projectId:"blastybiz-9523e" });
+const auth = getAuth(app);
+function setAuthUI(loggedIn) {
+  ['header__nav-login','header__mobile-login'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'none':''; });
+  ['header__nav-logout','header__mobile-logout'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'':'none'; });
+}
+setAuthUI(localStorage.getItem('bb_auth')==='1');
+onAuthStateChanged(auth, user => { document.body.classList.toggle('logged-in',!!user); localStorage.setItem('bb_auth',user?'1':'0'); setAuthUI(!!user); });
+window.doSignOut = () => { localStorage.setItem('bb_auth','0'); signOut(auth).finally(()=>{ window.location.href='BlastyBiz-Login.html'; }); };
+</script>
+<script>
+fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('header__inject').innerHTML=html;(function(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)();function ck(t,f){var b=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.03),ctx.sampleRate),D=b.getChannelData(0);for(var i=0;i<D.length;i++){var s=i/ctx.sampleRate;D[i]=(Math.random()*2-1)*Math.exp(-s/0.004)*1.2+Math.sin(2*Math.PI*f*s)*Math.exp(-s/0.005)*0.3;}var src=ctx.createBufferSource();src.buffer=b;var g=ctx.createGain();g.gain.setValueAtTime(1,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.03);src.connect(g);g.connect(ctx.destination);src.start(t);}var n=ctx.currentTime;ck(n+0.01,220);ck(n+0.30,160);}catch(e){}var tl=document.getElementById('header__logo-tagline');if(tl){tl.style.animation='tagline-bolt 0.55s cubic-bezier(0.25,0.46,0.45,0.94) 0s both';}})();});
+</script>
+</body>
+</html>
