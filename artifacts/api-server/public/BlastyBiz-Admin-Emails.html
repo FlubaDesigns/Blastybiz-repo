@@ -136,17 +136,26 @@ const SEED = {
     <h1 style="font-size:24px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re in, {{name}}.</h1>
     <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">Welcome to BlastyBiz — and welcome to the end of copy-paste marketing. <strong>{{businessName}}</strong> is set up and ready to blast.</p>
     <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">Fill out your business profile once. The AI writes tailored copy for Google, Facebook, Instagram, Yelp, and 8 more platforms — automatically. No more spending hours rewriting the same message for every channel.</p>
-    <a href="{{dashboardUrl}}" style="display:inline-block;background:#0d1a0d;color:#00C853;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px;margin-bottom:32px">Complete Your Profile &#8594;</a>
+    <!-- Two CTA buttons -->
+    <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:32px">
+      <tr>
+        <td style="padding-right:12px">
+          <a href="{{dashboardUrl}}" style="display:inline-block;background:#0d1a0d;color:#00C853;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px;white-space:nowrap">Try It Free &#8594;</a>
+        </td>
+        <td>
+          <a href="{{upgradeUrl}}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px;white-space:nowrap">Go Pro &#8594;</a>
+        </td>
+      </tr>
+    </table>
     <div style="background:#f0fff4;border-left:4px solid #00C853;border-radius:0 8px 8px 0;padding:20px 24px;margin-bottom:24px">
-      <div style="font-size:12px;font-weight:800;color:#00873a;letter-spacing:2px;margin-bottom:8px">&#9889; UPGRADE TO PRO &#8212; $19/mo</div>
+      <div style="font-size:12px;font-weight:800;color:#00873a;letter-spacing:2px;margin-bottom:8px">&#9889; WHY GO PRO? &#8212; $19/mo</div>
       <p style="font-size:15px;color:#1a1a1a;font-weight:700;margin:0 0 10px">Save 10+ hours a month. Get found on more platforms. Make more money.</p>
-      <ul style="color:#444;font-size:14px;line-height:2.1;padding-left:18px;margin:0 0 16px">
+      <ul style="color:#444;font-size:14px;line-height:2.1;padding-left:18px;margin:0 0 8px">
         <li>Blast to all <strong>12 platforms</strong> simultaneously</li>
-        <li><strong>Business Library</strong> &#8212; upload your menu or service sheet, the AI reads it every time it writes for you</li>
+        <li><strong>Business Library</strong> &#8212; upload your menu or service sheet, AI reads it every time it writes for you</li>
         <li>Priority posting queue &#8212; your jobs go first</li>
         <li>More customers, less work &#8212; that&#39;s the deal</li>
       </ul>
-      <a href="{{upgradeUrl}}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:800;font-size:14px">See Pro Plans &#8594;</a>
     </div>
     <p style="font-size:14px;color:#666;line-height:1.6">Questions? Reply to this email &#8212; real people read it. We want <strong>{{businessName}}</strong> to grow.</p>
   </div>
