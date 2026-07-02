@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="stylesheet" href="global-style.css?v=37" />
+  <link rel="stylesheet" href="global-style.css?v=38" />
   <title>BlastyBiz — Sign In</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="blastybiz-menu.js"></script>
@@ -84,8 +84,20 @@
               <div class="auth-form" id="form-signup">
 
                 <div class="field">
-                  <div class="email-verify-box">
-                    ✅ All accounts start <strong>free on Starter</strong> — upgrade to Pro or Agency anytime from your dashboard.
+                  <label class="section-label" style="margin-bottom:10px">Choose your plan</label>
+                  <div class="plan-picker" id="plan-picker">
+                    <button type="button" class="plan-pick-btn" data-plan="starter" onclick="selectPlan('starter')">
+                      <span class="plan-pick-name">Starter</span>
+                      <span class="plan-pick-price">Free</span>
+                    </button>
+                    <button type="button" class="plan-pick-btn" data-plan="pro" onclick="selectPlan('pro')">
+                      <span class="plan-pick-name">Pro</span>
+                      <span class="plan-pick-price">$19/mo</span>
+                    </button>
+                    <button type="button" class="plan-pick-btn" data-plan="agency" onclick="selectPlan('agency')">
+                      <span class="plan-pick-name">Agency</span>
+                      <span class="plan-pick-price">$99/mo</span>
+                    </button>
                   </div>
                 </div>
 
@@ -313,14 +325,32 @@ import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs
   if (el) el.disabled = false;
 });
 
+window.selectPlan = function(plan) {
+  document.querySelectorAll('.plan-pick-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.plan === plan)
+  );
+  localStorage.setItem('bb_selected_plan', plan);
+};
+
+(function initPlanPicker() {
+  const urlPlan = new URLSearchParams(window.location.search).get('plan');
+  const saved   = localStorage.getItem('bb_selected_plan');
+  const valid   = ['starter','pro','agency'];
+  const pick    = valid.includes(urlPlan) ? urlPlan
+                : valid.includes(saved)   ? saved
+                : 'starter';
+  selectPlan(pick);
+})();
+
 async function afterAuth(user) {
   try {
-    const snap = await getDoc(doc(db, 'users', user.uid));
-    const plan = new URLSearchParams(window.location.search).get('plan');
+    const snap     = await getDoc(doc(db, 'users', user.uid));
     const userData = snap.exists() ? snap.data() : {};
-    const dashUrl = plan
-      ? `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(plan)}`
+    const picked   = localStorage.getItem('bb_selected_plan');
+    const dashUrl  = picked && picked !== 'starter'
+      ? `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(picked)}`
       : 'BlastyBiz-Dashboard.html?from=login';
+    localStorage.removeItem('bb_selected_plan');
     if (userData.onboarded) {
       window.location.href = dashUrl;
     } else {
@@ -359,10 +389,11 @@ getRedirectResult(auth).then(async (result) => {
   if (!result?.user) return;
   const snap = await getDoc(doc(db, 'users', result.user.uid));
   if (!snap.exists()) {
+    const chosenPlan = localStorage.getItem('bb_selected_plan') || 'starter';
     await setDoc(doc(db, 'users', result.user.uid), {
       ownerName: result.user.displayName || '',
       email: result.user.email,
-      plan: 'starter',
+      plan: chosenPlan,
       onboarded: false,
       createdAt: serverTimestamp()
     });
@@ -406,9 +437,10 @@ window.handleSignUp = async function() {
   if (!valid) return;
   setLoading('btn-signup', true);
   try {
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    const cred        = await createUserWithEmailAndPassword(auth, email, pass);
+    const chosenPlan  = localStorage.getItem('bb_selected_plan') || 'starter';
     await setDoc(doc(db, 'users', cred.user.uid), {
-      ownerName: name, email, plan: 'starter', onboarded: false, createdAt: serverTimestamp()
+      ownerName: name, email, plan: chosenPlan, onboarded: false, createdAt: serverTimestamp()
     });
     window.location.href = 'BlastyBiz-Onboarding.html';
   } catch (e) {
@@ -423,12 +455,13 @@ window.handleGoogle = async function() {
   const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   if (isMobile) { await signInWithRedirect(auth, provider); return; }
   try {
-    const cred = await signInWithPopup(auth, provider);
-    const snap = await getDoc(doc(db, 'users', cred.user.uid));
+    const cred       = await signInWithPopup(auth, provider);
+    const snap       = await getDoc(doc(db, 'users', cred.user.uid));
     if (!snap.exists()) {
+      const chosenPlan = localStorage.getItem('bb_selected_plan') || 'starter';
       await setDoc(doc(db, 'users', cred.user.uid), {
         ownerName: cred.user.displayName || '', email: cred.user.email,
-        plan: 'starter', onboarded: false, createdAt: serverTimestamp()
+        plan: chosenPlan, onboarded: false, createdAt: serverTimestamp()
       });
     }
     await afterAuth(cred.user);
