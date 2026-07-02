@@ -1367,7 +1367,15 @@ body.onboarding-page textarea     { resize: none; }
 .btn--lg, .btn-lg              { padding: 14px 32px; font-size: 15px; }
 
 /* ── LAYOUT MODIFIERS ─────────────────────────────────────── */
-.btn--block, .btn--full { display: flex; width: 100%; }
+.btn--block, .btn--full { display: flex; width: 100%; justify-content: center; }
+
+/* Responsive: full-width + centered on mobile, shrinks to fit on desktop */
+.btn--adaptive          { display: flex; width: 100%; justify-content: center; }
+@media (min-width: 768px) {
+  .btn--adaptive        { display: inline-flex; width: fit-content; }
+}
+/* Never stretches — use inside flex rows / side-by-side groups */
+.btn--inline            { display: inline-flex !important; width: auto !important; margin-left: 0 !important; margin-right: 0 !important; }
 
 /* ── LAYOUT HELPERS ───────────────────────────────────────── */
 .btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
