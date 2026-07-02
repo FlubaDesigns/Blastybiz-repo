@@ -1007,7 +1007,7 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
     <div style="background:#f7f7f7;border-radius:8px;padding:20px 24px;margin-bottom:24px">
       <div style="font-size:12px;font-weight:800;color:#888;letter-spacing:2px;margin-bottom:10px">WHAT YOU'VE LOST ACCESS TO</div>
       <ul style="color:#555;font-size:14px;line-height:2;padding-left:18px;margin:0">
-        <li>Auto-posting to all 12 platforms</li>
+        <li>Auto-posting to every major platform</li>
         <li>Business Library AI context</li>
         <li>Priority queue &amp; posting history</li>
       </ul>
@@ -2645,7 +2645,7 @@ exports.scheduledUpgradeNudge = onSchedule(
     <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">BlastyBiz Pro does all of that in one click. Here's what you're leaving on the table:</p>
     <div style="background:#f0fff4;border-left:4px solid #00C853;border-radius:0 8px 8px 0;padding:20px 24px;margin-bottom:24px">
       <ul style="color:#444;font-size:14px;line-height:2.1;padding-left:18px;margin:0">
-        <li>AI-written copy adapted for all 12 platforms automatically</li>
+        <li>AI-written copy adapted for every major platform automatically</li>
         <li>Auto-posting — no login, no paste, no repeat</li>
         <li>Business Library — upload once, AI uses it every time</li>
         <li>Campaign history and copy archive</li>
