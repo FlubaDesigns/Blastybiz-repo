@@ -775,7 +775,7 @@ exports.createPortalSession = onRequest({ invoker: 'public' }, async (req, res) 
 // Verifies Square HMAC signature, handles payment.completed,
 // subscription.created, and subscription.updated (cancellation) events.
 // ══════════════════════════════════════════
-exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_WEBHOOK_SIGNATURE_KEY'] }, async (req, res) => {
+exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_WEBHOOK_SIGNATURE_KEY', 'RESEND_API_KEY'] }, async (req, res) => {
   const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
   const notificationUrl = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/squareWebhook';
   const body = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body);
@@ -819,6 +819,68 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
       const bizSnaps = await db.collection('businesses').where('uid', '==', uid).get();
       for (const biz of bizSnaps.docs) {
         await biz.ref.update({ currentPlan: plan, subscriptionStatus: 'active' });
+      }
+
+      // Send paid-welcome email (Pro or Agency)
+      try {
+        const userSnap = await db.collection('users').doc(uid).get();
+        const userData = userSnap.data() || {};
+        const toEmail = userData.email;
+        const ownerName = userData.ownerName || userData.displayName || '';
+        const businessName = (bizSnaps.docs[0]?.data()?.businessName) || (ownerName ? ownerName + '\'s Business' : 'your business');
+        const planName = plan === 'agency' ? 'Agency' : 'Pro';
+
+        if (toEmail) {
+          const mergeData = {
+            name: ownerName || 'there',
+            businessName,
+            planName,
+            dashboardUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html',
+            appUrl: APP_BASE_URL,
+          };
+          function applyPaidTags(str) {
+            return str.replace(/\{\{(\w+)\}\}/g, (_, k) => mergeData[k] || '');
+          }
+
+          let paidSubject = 'Welcome aboard, ' + mergeData.name + ' — you\'re now BlastyBiz ' + planName + '! 🎉';
+          let paidHtml = null;
+          try {
+            const tmplSnap = await db.collection('emailTemplates')
+              .where('type', '==', 'paid-welcome')
+              .where('active', '==', true)
+              .limit(1)
+              .get();
+            if (!tmplSnap.empty) {
+              const tmpl = tmplSnap.docs[0].data();
+              paidSubject = applyPaidTags(tmpl.subject || paidSubject);
+              paidHtml = applyPaidTags(tmpl.html || '');
+            }
+          } catch(e) {
+            console.error('[squareWebhook] paid-welcome template fetch failed:', e.message);
+          }
+
+          // Fallback HTML
+          if (!paidHtml) {
+            paidHtml = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+              <div style="background:#0d1a0d;padding:28px 32px">
+                <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz ${planName}</div>
+                <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+              </div>
+              <div style="padding:32px">
+                <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Welcome aboard, ${mergeData.name}. You&#39;re ${planName}. &#127881;</h1>
+                <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">Your payment went through and <strong>${mergeData.businessName}</strong> is now on BlastyBiz ${planName}. Everything unlocked. Let&#39;s get blasting.</p>
+                <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Go to Dashboard &#8594;</a>
+              </div>
+              <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+                <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="${mergeData.appUrl}" style="color:#999">blastybiz.com</a></p>
+              </div>
+            </div>`;
+          }
+
+          await sendResendEmail({ to: toEmail, subject: paidSubject, html: paidHtml });
+        }
+      } catch(e) {
+        console.error('[squareWebhook] paid-welcome email failed:', e.message);
       }
     } catch (e) {
       console.error('squareWebhook order lookup error:', e.message);

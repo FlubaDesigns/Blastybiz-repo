@@ -38,6 +38,7 @@
   <!-- Email type tabs -->
   <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
     <button id="tab-welcome" onclick="switchType('welcome')" style="background:#111;color:#fff;border:1px solid #111;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">✉️ Welcome</button>
+    <button id="tab-paid-welcome" onclick="switchType('paid-welcome')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">🎉 Pro/Agency Welcome</button>
     <button style="background:#fff;color:#aaa;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;cursor:not-allowed;opacity:0.5" disabled title="Coming soon">Trial Expiry</button>
     <button style="background:#fff;color:#aaa;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;cursor:not-allowed;opacity:0.5" disabled title="Coming soon">Past Due</button>
     <button style="background:#fff;color:#aaa;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;cursor:not-allowed;opacity:0.5" disabled title="Coming soon">Job Failed</button>
@@ -69,6 +70,7 @@
         <code onclick="copyTag('{{dashboardUrl}}')" title="Link to their dashboard" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{dashboardUrl}}</code>
         <code onclick="copyTag('{{upgradeUrl}}')" title="Link to upgrade page" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{upgradeUrl}}</code>
         <code onclick="copyTag('{{appUrl}}')" title="App base URL" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{appUrl}}</code>
+        <code onclick="copyTag('{{planName}}')" title="Pro or Agency (paid-welcome only)" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{planName}}</code>
         <span id="copy-confirm" style="font-size:12px;color:#00873a;align-self:center;display:none">Copied!</span>
       </div>
     </div>
@@ -125,6 +127,34 @@ let selectedVersionId = null;
 let isDirty = false;
 
 const SEED = {
+  'paid-welcome': {
+    subject: 'Welcome aboard, {{name}} — you\'re now BlastyBiz {{planName}}! 🎉',
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:32px 32px 24px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:26px;color:#00C853;letter-spacing:-0.5px">BlastyBiz {{planName}}</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:36px 32px 28px">
+    <h1 style="font-size:24px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Welcome aboard, {{name}}. You&#39;re {{planName}}. &#127881;</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">Your payment went through and <strong>{{businessName}}</strong> is now on BlastyBiz {{planName}}. Every feature is unlocked. Let&#39;s get blasting.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">This is where things get real. One form, AI-written copy, blasted across every platform — automatically. No more copy-pasting. No more hours lost. Just more customers finding {{businessName}}.</p>
+    <a href="{{dashboardUrl}}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px;margin-bottom:32px">Go to Your Dashboard &#8594;</a>
+    <div style="background:#f0fff4;border-left:4px solid #00C853;border-radius:0 8px 8px 0;padding:20px 24px;margin-bottom:24px">
+      <div style="font-size:12px;font-weight:800;color:#00873a;letter-spacing:2px;margin-bottom:10px">&#9889; WHAT&#39;S UNLOCKED FOR YOU</div>
+      <ul style="color:#444;font-size:14px;line-height:2.1;padding-left:18px;margin:0">
+        <li>Blast to all <strong>12 platforms</strong> with one click</li>
+        <li><strong>Business Library</strong> &#8212; upload your menu or service sheet, AI reads it every time</li>
+        <li>Priority posting queue &#8212; your jobs go first</li>
+        <li>Full campaign history and copy library</li>
+      </ul>
+    </div>
+    <p style="font-size:14px;color:#666;line-height:1.6">Questions? Reply to this email &#8212; real people read it. We&#39;re rooting for <strong>{{businessName}}</strong>.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:20px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0;line-height:1.7">&#169; BlastyBiz &#183; Local business marketing, automated.<br><a href="{{appUrl}}" style="color:#999">blastybiz.com</a> &#183; You received this because you upgraded your account.</p>
+  </div>
+</div>`
+  },
   welcome: {
     subject: 'Welcome to BlastyBiz, {{name}}! 🚀',
     html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
@@ -169,6 +199,7 @@ const SEED = {
 const SAMPLE = {
   name: 'Alex Johnson',
   businessName: 'Sunrise Café',
+  planName: 'Pro',
   dashboardUrl: 'https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html',
   upgradeUrl: 'https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html#upgrade',
   appUrl: 'https://blastybiz-9523e.web.app'
