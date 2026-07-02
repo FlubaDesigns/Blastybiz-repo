@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=41" />
+<link rel="stylesheet" href="global-style.css?v=42" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -769,7 +769,7 @@ function renderQuickSelect() {
               ✅ Accept
             </button>
           </div>
-          <div id="qp-copy-text-${p.id}" class="qp-copy-text-box">${escHtml(existingCopy)}</div>
+          <div id="qp-copy-text-${p.id}" class="qp-copy-text-box">${escHtml(p.adaptedContent || '')}</div>
           <div id="qp-copy-img-${p.id}" class="qp-copy-img-note"></div>
           <!-- Per-platform photo picker — populated by showCopyInAccordions() -->
           <div id="qp-photos-${p.id}" class="qp-photos-section">
@@ -1356,6 +1356,7 @@ function checkAdaptBtn() {
 
 function goToStep2() {
   saveDraft();
+  renderQuickSelect();
   document.getElementById('create-step-1').classList.add('hidden');
   document.getElementById('create-step-2').classList.remove('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
