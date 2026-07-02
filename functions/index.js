@@ -882,6 +882,31 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
       } catch(e) {
         console.error('[squareWebhook] paid-welcome email failed:', e.message);
       }
+
+      // Internal admin alert — new paying customer
+      try {
+        const paidUserSnap = await db.collection('users').doc(uid).get();
+        const paidUserData = paidUserSnap.data() || {};
+        const paidEmail = paidUserData.email || uid;
+        const paidName = paidUserData.ownerName || paidUserData.displayName || 'Unknown';
+        const paidBizSnap = await db.collection('businesses').where('uid', '==', uid).limit(1).get();
+        const paidBiz = paidBizSnap.docs[0]?.data()?.businessName || '—';
+        await sendResendEmail({
+          to: 'info@blastybiz.com',
+          subject: `[BlastyBiz] 💰 New paying customer: ${paidName} (${plan})`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#111">
+  <h2 style="margin:0 0 12px;font-size:18px">&#128176; New paying customer!</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <tr><td style="padding:6px 0;color:#888;width:140px">Plan</td><td style="padding:6px 0;font-weight:700;color:#00873a;text-transform:uppercase">${plan}</td></tr>
+    <tr><td style="padding:6px 0;color:#888">Name</td><td style="padding:6px 0;font-weight:600">${paidName}</td></tr>
+    <tr><td style="padding:6px 0;color:#888">Email</td><td style="padding:6px 0">${paidEmail}</td></tr>
+    <tr><td style="padding:6px 0;color:#888">Business</td><td style="padding:6px 0">${paidBiz}</td></tr>
+    <tr><td style="padding:6px 0;color:#888">Payment ID</td><td style="padding:6px 0;font-size:12px;color:#888">${payment.id || '—'}</td></tr>
+    <tr><td style="padding:6px 0;color:#888">Time</td><td style="padding:6px 0">${new Date().toUTCString()}</td></tr>
+  </table>
+</div>`,
+        });
+      } catch(e) { console.warn('[squareWebhook] admin new-paying alert failed:', e.message); }
     } catch (e) {
       console.error('squareWebhook order lookup error:', e.message);
     }
@@ -934,12 +959,144 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
               for (const biz of bizSnaps.docs) {
                 await biz.ref.update({ currentPlan: 'starter', subscriptionStatus: 'canceled' });
               }
+
+              // Send cancellation confirmation email
+              try {
+                const userSnap = await db.collection('users').doc(uid).get();
+                const userData = userSnap.data() || {};
+                const toEmail = userData.email;
+                const ownerName = userData.ownerName || userData.displayName || '';
+                const businessName = (bizSnaps.docs[0]?.data()?.businessName) || (ownerName ? ownerName + '\'s Business' : 'your business');
+                if (toEmail) {
+                  const mergeData = {
+                    name: ownerName || 'there',
+                    businessName,
+                    upgradeUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html#upgrade',
+                    dashboardUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html',
+                    appUrl: APP_BASE_URL,
+                  };
+                  function applyCancelTags(str) {
+                    return str.replace(/\{\{(\w+)\}\}/g, (_, k) => mergeData[k] || '');
+                  }
+                  let cancelSubject = `Your BlastyBiz subscription has ended, ${mergeData.name}`;
+                  let cancelHtml = null;
+                  try {
+                    const tmplSnap = await db.collection('emailTemplates')
+                      .where('type', '==', 'cancellation').where('active', '==', true).limit(1).get();
+                    if (!tmplSnap.empty) {
+                      const tmpl = tmplSnap.docs[0].data();
+                      cancelSubject = applyCancelTags(tmpl.subject || cancelSubject);
+                      cancelHtml = applyCancelTags(tmpl.html || '');
+                    }
+                  } catch(e) { console.error('[squareWebhook] cancellation template fetch failed:', e.message); }
+
+                  if (!cancelHtml) {
+                    cancelHtml = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:28px 32px 22px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:32px">
+    <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You're on the free plan now, ${mergeData.name}.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">Your BlastyBiz Pro subscription for <strong>${mergeData.businessName}</strong> has ended. We've moved you to the free plan — your account and all your data are still here.</p>
+    <div style="background:#f7f7f7;border-radius:8px;padding:20px 24px;margin-bottom:24px">
+      <div style="font-size:12px;font-weight:800;color:#888;letter-spacing:2px;margin-bottom:10px">WHAT YOU'VE LOST ACCESS TO</div>
+      <ul style="color:#555;font-size:14px;line-height:2;padding-left:18px;margin:0">
+        <li>Auto-posting to all 12 platforms</li>
+        <li>Business Library AI context</li>
+        <li>Priority queue &amp; posting history</li>
+      </ul>
+    </div>
+    <a href="${mergeData.upgradeUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px">Come Back to Pro &#8594;</a>
+    <p style="font-size:13px;color:#888;margin-top:20px;line-height:1.6">Changed your mind? Upgrade anytime — everything picks up right where you left off.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="${mergeData.appUrl}" style="color:#999">blastybiz.com</a></p>
+  </div>
+</div>`;
+                  }
+                  await sendResendEmail({ to: toEmail, subject: cancelSubject, html: cancelHtml });
+                }
+              } catch(e) { console.error('[squareWebhook] cancellation email failed:', e.message); }
             }
           } catch (e) {
             console.error('squareWebhook subscription.updated error:', e.message);
           }
         }
       }
+    }
+  }
+
+  // Payment failed — notify the customer so they can update their payment method
+  if (event.type === 'payment.failed') {
+    const payment = event.data?.object?.payment;
+    if (payment) {
+      try {
+        const customerId = payment.customer_id || payment.customerId;
+        let uid, ownerName, businessName, toEmail;
+        if (customerId) {
+          const snap = await db.collection('subscriptions').where('squareCustomerId', '==', customerId).limit(1).get();
+          if (!snap.empty) uid = snap.docs[0].data().uid;
+        }
+        if (!uid && (payment.order_id || payment.orderId)) {
+          const pendingSnap = await db.collection('pendingCheckouts').doc(payment.order_id || payment.orderId).get();
+          if (pendingSnap.exists) uid = pendingSnap.data().uid;
+        }
+        if (uid) {
+          const userSnap = await db.collection('users').doc(uid).get();
+          const userData = userSnap.data() || {};
+          toEmail = userData.email;
+          ownerName = userData.ownerName || userData.displayName || '';
+          const bizSnap = await db.collection('businesses').where('uid', '==', uid).limit(1).get();
+          businessName = bizSnap.docs[0]?.data()?.businessName || (ownerName ? ownerName + '\'s Business' : 'your business');
+        }
+        if (toEmail) {
+          const mergeData = {
+            name: ownerName || 'there',
+            businessName: businessName || 'your business',
+            dashboardUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html',
+            upgradeUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html#upgrade',
+            appUrl: APP_BASE_URL,
+          };
+          function applyPaymentFailedTags(str) {
+            return str.replace(/\{\{(\w+)\}\}/g, (_, k) => mergeData[k] || '');
+          }
+          let pfSubject = `Action needed, ${mergeData.name} — your BlastyBiz payment didn't go through`;
+          let pfHtml = null;
+          try {
+            const tmplSnap = await db.collection('emailTemplates')
+              .where('type', '==', 'payment-failed').where('active', '==', true).limit(1).get();
+            if (!tmplSnap.empty) {
+              const tmpl = tmplSnap.docs[0].data();
+              pfSubject = applyPaymentFailedTags(tmpl.subject || pfSubject);
+              pfHtml = applyPaymentFailedTags(tmpl.html || '');
+            }
+          } catch(e) { console.error('[squareWebhook] payment-failed template fetch failed:', e.message); }
+
+          if (!pfHtml) {
+            pfHtml = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:28px 32px 22px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:32px">
+    <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Hi ${mergeData.name} — your payment didn't go through.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">We weren't able to process your BlastyBiz subscription payment for <strong>${mergeData.businessName}</strong>. This can happen when a card expires or a bank blocks a recurring charge.</p>
+    <div style="background:#fff3cd;border-left:4px solid #ffc107;border-radius:0 8px 8px 0;padding:16px 20px;margin-bottom:24px">
+      <div style="font-size:13px;font-weight:700;color:#856404;margin-bottom:4px">&#9888; Your account may be paused</div>
+      <div style="font-size:14px;color:#6b5300">Update your payment method to keep your Pro features active and avoid interruption.</div>
+    </div>
+    <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px">Update Payment Method &#8594;</a>
+    <p style="font-size:13px;color:#888;margin-top:20px;line-height:1.6">Questions? Reply to this email — a real person reads every reply. We want to keep <strong>${mergeData.businessName}</strong> on BlastyBiz Pro.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="${mergeData.appUrl}" style="color:#999">blastybiz.com</a></p>
+  </div>
+</div>`;
+          }
+          await sendResendEmail({ to: toEmail, subject: pfSubject, html: pfHtml });
+        }
+      } catch(e) { console.error('[squareWebhook] payment.failed handler error:', e.message); }
     }
   }
 
@@ -1318,36 +1475,148 @@ exports.jobFailedTrigger = onDocumentUpdated(
 
     const uid = after.uid;
     if (!uid) return;
-    let email, ownerName;
+    let toEmail, ownerName, businessName;
     try {
       const userSnap = await db.collection('users').doc(uid).get();
       if (!userSnap.exists) return;
-      ({ email, ownerName } = userSnap.data());
-    } catch(e) { console.warn('jobFailedTrigger: users read failed:', e.message); return; }
-    if (!email) return;
+      const userData = userSnap.data();
+      toEmail = userData.email;
+      ownerName = userData.ownerName || userData.displayName || '';
+    } catch(e) { console.warn('[jobFailedTrigger] users read failed:', e.message); return; }
+    if (!toEmail) return;
 
-    const platformName = (after.platform || 'platform').replace(/_/g, ' ');
-    await sendResendEmail({
-      to: email,
-      subject: `Action needed: Your ${platformName} post failed`,
-      html: `
-        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 20px;color:#1a1a1a">
-          <h2 style="color:#0d1a0d;margin-bottom:8px">Your post needs attention</h2>
-          <p style="color:#4a4a4a;line-height:1.6">Hi ${ownerName || 'there'},</p>
-          <p style="color:#4a4a4a;line-height:1.6">
-            Your listing for <strong style="text-transform:capitalize">${platformName}</strong>
-            encountered an issue and couldn't be published automatically.
-          </p>
-          <div style="background:#fff8e1;border-left:4px solid #ffc107;padding:12px 16px;margin:20px 0;border-radius:4px">
-            <strong>Error:</strong> ${after.adminError || after.customerVisibleMessage || 'Unknown error'}
-          </div>
-          <a href="${APP_BASE_URL}/BlastyBiz-Publishing-Status.html"
-             style="display:inline-block;background:#00C853;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin:16px 0">
-            View Publishing Status →
-          </a>
-          <p style="color:#888;font-size:12px;margin-top:24px">BlastyBiz · <a href="${APP_BASE_URL}" style="color:#888">blastybiz.com</a></p>
-        </div>`,
-    });
+    try {
+      const bizSnap = await db.collection('businesses').where('uid', '==', uid).limit(1).get();
+      businessName = bizSnap.docs[0]?.data()?.businessName || '';
+    } catch(e) { /* non-fatal */ }
+
+    const platformRaw = (after.platform || 'your platform').replace(/_/g, ' ');
+    const platformDisplay = platformRaw.replace(/\b\w/g, c => c.toUpperCase());
+
+    const mergeData = {
+      name: ownerName || 'there',
+      businessName: businessName || (ownerName ? ownerName + '\'s Business' : 'your business'),
+      platform: platformDisplay,
+      dashboardUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html',
+      appUrl: APP_BASE_URL,
+    };
+    function applyFailedTags(str) {
+      return str.replace(/\{\{(\w+)\}\}/g, (_, k) => mergeData[k] || '');
+    }
+
+    let subject = `Heads up, ${mergeData.name} — your ${platformDisplay} post needs attention`;
+    let html = null;
+    try {
+      const tmplSnap = await db.collection('emailTemplates')
+        .where('type', '==', 'job-failed').where('active', '==', true).limit(1).get();
+      if (!tmplSnap.empty) {
+        const tmpl = tmplSnap.docs[0].data();
+        subject = applyFailedTags(tmpl.subject || subject);
+        html = applyFailedTags(tmpl.html || '');
+      }
+    } catch(e) { console.error('[jobFailedTrigger] template fetch failed:', e.message); }
+
+    if (!html) {
+      html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:28px 32px 22px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:32px">
+    <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Heads up, ${mergeData.name} — your ${platformDisplay} post hit a snag.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">We tried to publish <strong>${mergeData.businessName}</strong>'s content to <strong>${platformDisplay}</strong> automatically, but ran into an issue.</p>
+    <div style="background:#fff3cd;border-left:4px solid #ffc107;border-radius:0 8px 8px 0;padding:16px 20px;margin-bottom:24px">
+      <div style="font-size:13px;font-weight:700;color:#856404;margin-bottom:4px">What happened</div>
+      <div style="font-size:14px;color:#6b5300">${after.customerVisibleMessage || 'Your post could not be published automatically.'}</div>
+    </div>
+    <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px">Go to Dashboard &#8594;</a>
+    <p style="font-size:13px;color:#888;margin-top:20px;line-height:1.6">Your AI-written copy is saved — nothing is lost. You can post it manually or reply to this email if you need help.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="${mergeData.appUrl}" style="color:#999">blastybiz.com</a></p>
+  </div>
+</div>`;
+    }
+
+    await sendResendEmail({ to: toEmail, subject, html });
+  }
+);
+
+// ══════════════════════════════════════════
+// Function 18b: jobCompletedTrigger
+// Firestore trigger — publishJobs/{jobId} updated
+// Sends "your listing is live" email when status → 'success'
+// ══════════════════════════════════════════
+exports.jobCompletedTrigger = onDocumentUpdated(
+  { document: 'publishJobs/{jobId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
+  async (event) => {
+    const before = event.data.before.data();
+    const after  = event.data.after.data();
+    if (before.status === after.status || after.status !== 'success') return;
+
+    const uid = after.uid;
+    if (!uid) return;
+    let toEmail, ownerName, businessName;
+    try {
+      const userSnap = await db.collection('users').doc(uid).get();
+      if (!userSnap.exists) return;
+      const userData = userSnap.data();
+      toEmail = userData.email;
+      ownerName = userData.ownerName || userData.displayName || '';
+    } catch(e) { console.warn('[jobCompletedTrigger] users read failed:', e.message); return; }
+    if (!toEmail) return;
+
+    try {
+      const bizSnap = await db.collection('businesses').where('uid', '==', uid).limit(1).get();
+      businessName = bizSnap.docs[0]?.data()?.businessName || '';
+    } catch(e) { /* non-fatal */ }
+
+    const platformRaw = (after.platform || 'your platform').replace(/_/g, ' ');
+    const platformDisplay = platformRaw.replace(/\b\w/g, c => c.toUpperCase());
+
+    const mergeData = {
+      name: ownerName || 'there',
+      businessName: businessName || (ownerName ? ownerName + '\'s Business' : 'your business'),
+      platform: platformDisplay,
+      dashboardUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html',
+      appUrl: APP_BASE_URL,
+    };
+    function applyCompletedTags(str) {
+      return str.replace(/\{\{(\w+)\}\}/g, (_, k) => mergeData[k] || '');
+    }
+
+    let subject = `Your listing is live on ${platformDisplay}, ${mergeData.name}! 🚀`;
+    let html = null;
+    try {
+      const tmplSnap = await db.collection('emailTemplates')
+        .where('type', '==', 'job-completed').where('active', '==', true).limit(1).get();
+      if (!tmplSnap.empty) {
+        const tmpl = tmplSnap.docs[0].data();
+        subject = applyCompletedTags(tmpl.subject || subject);
+        html = applyCompletedTags(tmpl.html || '');
+      }
+    } catch(e) { console.error('[jobCompletedTrigger] template fetch failed:', e.message); }
+
+    if (!html) {
+      html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:28px 32px 22px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:32px">
+    <div style="display:inline-block;background:#e8f5e9;border-radius:100px;padding:8px 18px;font-size:13px;font-weight:700;color:#00873a;margin-bottom:20px">&#10003; Posted successfully</div>
+    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">${mergeData.businessName} is live on ${platformDisplay}. &#128640;</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">Hey ${mergeData.name} — BlastyBiz just published your listing to <strong>${platformDisplay}</strong>. It's out there right now, working for you.</p>
+    <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px;margin-bottom:24px">View Your Dashboard &#8594;</a>
+    <p style="font-size:14px;color:#666;line-height:1.6;margin:0">Keep the momentum going — blast to another platform or schedule your next post from the dashboard.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="${mergeData.appUrl}" style="color:#999">blastybiz.com</a></p>
+  </div>
+</div>`;
+    }
+
+    await sendResendEmail({ to: toEmail, subject, html });
   }
 );
 
@@ -1413,6 +1682,23 @@ exports.userCreatedTrigger = onDocumentCreated(
     }
 
     await sendResendEmail({ to: email, subject, html });
+
+    // Internal admin alert — new free signup
+    try {
+      await sendResendEmail({
+        to: 'info@blastybiz.com',
+        subject: `[BlastyBiz] New signup: ${mergeData.name} (${email})`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#111">
+  <h2 style="margin:0 0 12px;font-size:18px">&#128226; New free signup</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <tr><td style="padding:6px 0;color:#888;width:140px">Name</td><td style="padding:6px 0;font-weight:600">${mergeData.name}</td></tr>
+    <tr><td style="padding:6px 0;color:#888">Email</td><td style="padding:6px 0">${email}</td></tr>
+    <tr><td style="padding:6px 0;color:#888">Business</td><td style="padding:6px 0">${mergeData.businessName}</td></tr>
+    <tr><td style="padding:6px 0;color:#888">Time</td><td style="padding:6px 0">${new Date().toUTCString()}</td></tr>
+  </table>
+</div>`,
+      });
+    } catch(e) { console.warn('[userCreatedTrigger] admin alert failed:', e.message); }
   }
 );
 
@@ -2216,6 +2502,220 @@ exports.scheduledYelpCategoryRefresh = onSchedule(
     } catch (e) {
       console.error('[scheduledYelpCategoryRefresh]', e.message);
     }
+  }
+);
+
+// ══════════════════════════════════════════
+// scheduledUpgradeNudge
+// Runs daily at 10am ET — finds free users who signed up exactly 7 days ago
+// and haven't upgraded yet; sends a friendly "here's what you're missing" email.
+// ══════════════════════════════════════════
+exports.scheduledUpgradeNudge = onSchedule(
+  { schedule: 'every day 10:00', timeZone: 'America/New_York', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
+  async () => {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    // Query window: created between 7d 1h ago and 7d ago (1-hour window to avoid double-sends)
+    const windowStart = new Date(sevenDaysAgo);
+    windowStart.setHours(windowStart.getHours() - 1);
+
+    let tmplSubject = null;
+    let tmplHtml = null;
+    try {
+      const tmplSnap = await db.collection('emailTemplates')
+        .where('type', '==', 'upgrade-nudge').where('active', '==', true).limit(1).get();
+      if (!tmplSnap.empty) {
+        tmplSubject = tmplSnap.docs[0].data().subject;
+        tmplHtml = tmplSnap.docs[0].data().html;
+      }
+    } catch(e) { console.error('[scheduledUpgradeNudge] template fetch failed:', e.message); }
+
+    const usersSnap = await db.collection('users')
+      .where('plan', '==', 'starter')
+      .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(windowStart))
+      .where('createdAt', '<=', admin.firestore.Timestamp.fromDate(sevenDaysAgo))
+      .get();
+
+    let sent = 0;
+    for (const userDoc of usersSnap.docs) {
+      const userData = userDoc.data();
+      if (!userData.email) continue;
+      const ownerName = userData.ownerName || userData.displayName || '';
+      let businessName = '';
+      try {
+        const bizSnap = await db.collection('businesses').where('uid', '==', userDoc.id).limit(1).get();
+        businessName = bizSnap.docs[0]?.data()?.businessName || '';
+      } catch(e) { /* non-fatal */ }
+
+      const mergeData = {
+        name: ownerName || 'there',
+        businessName: businessName || (ownerName ? ownerName + '\'s Business' : 'your business'),
+        upgradeUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html#upgrade',
+        dashboardUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html',
+        appUrl: APP_BASE_URL,
+      };
+      function applyNudgeTags(str) {
+        return str.replace(/\{\{(\w+)\}\}/g, (_, k) => mergeData[k] || '');
+      }
+
+      const subject = tmplSubject
+        ? applyNudgeTags(tmplSubject)
+        : `${mergeData.name}, BlastyBiz is ready to blast for ${mergeData.businessName} 👀`;
+      const html = tmplHtml
+        ? applyNudgeTags(tmplHtml)
+        : `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:28px 32px 22px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:32px">
+    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Hey ${mergeData.name} — it's been a week. Let's talk.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">You signed up 7 days ago, and <strong>${mergeData.businessName}</strong> is still on the free plan. That means you're doing the copy, the posting, the formatting — all of it by hand, for every platform, every time.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">BlastyBiz Pro does all of that in one click. Here's what you're leaving on the table:</p>
+    <div style="background:#f0fff4;border-left:4px solid #00C853;border-radius:0 8px 8px 0;padding:20px 24px;margin-bottom:24px">
+      <ul style="color:#444;font-size:14px;line-height:2.1;padding-left:18px;margin:0">
+        <li>AI-written copy adapted for all 12 platforms automatically</li>
+        <li>Auto-posting — no login, no paste, no repeat</li>
+        <li>Business Library — upload once, AI uses it every time</li>
+        <li>Campaign history and copy archive</li>
+      </ul>
+    </div>
+    <a href="${mergeData.upgradeUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Go Pro — Unlock Everything &#8594;</a>
+    <p style="font-size:13px;color:#888;margin-top:20px;line-height:1.6">Questions before you upgrade? Reply to this email — we're real people who want to see ${mergeData.businessName} succeed.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="${mergeData.appUrl}" style="color:#999">blastybiz.com</a> &#183; You received this because you signed up 7 days ago.</p>
+  </div>
+</div>`;
+
+      try {
+        await sendResendEmail({ to: userData.email, subject, html });
+        sent++;
+      } catch(e) { console.error(`[scheduledUpgradeNudge] failed for ${userData.email}:`, e.message); }
+    }
+    console.log(`[scheduledUpgradeNudge] sent ${sent} nudge emails`);
+  }
+);
+
+// ══════════════════════════════════════════
+// scheduledWeeklyDigest
+// Runs every Monday at 8am ET — sends each paid user a recap of
+// their published jobs from the past 7 days.
+// ══════════════════════════════════════════
+exports.scheduledWeeklyDigest = onSchedule(
+  { schedule: 'every monday 08:00', timeZone: 'America/New_York', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
+  async () => {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    let tmplSubject = null;
+    let tmplHtml = null;
+    try {
+      const tmplSnap = await db.collection('emailTemplates')
+        .where('type', '==', 'weekly-digest').where('active', '==', true).limit(1).get();
+      if (!tmplSnap.empty) {
+        tmplSubject = tmplSnap.docs[0].data().subject;
+        tmplHtml = tmplSnap.docs[0].data().html;
+      }
+    } catch(e) { console.error('[scheduledWeeklyDigest] template fetch failed:', e.message); }
+
+    // Get all paid users (pro or agency)
+    const usersSnap = await db.collection('users')
+      .where('planActive', '==', true)
+      .get();
+
+    let sent = 0;
+    for (const userDoc of usersSnap.docs) {
+      const userData = userDoc.data();
+      if (!userData.email) continue;
+      const uid = userDoc.id;
+      const ownerName = userData.ownerName || userData.displayName || '';
+
+      let businessName = '';
+      let bizId = null;
+      try {
+        const bizSnap = await db.collection('businesses').where('uid', '==', uid).limit(1).get();
+        if (!bizSnap.empty) {
+          businessName = bizSnap.docs[0].data().businessName || '';
+          bizId = bizSnap.docs[0].id;
+        }
+      } catch(e) { /* non-fatal */ }
+
+      // Get this week's successful jobs
+      let successJobs = [];
+      try {
+        const jobsSnap = await db.collection('publishJobs')
+          .where('uid', '==', uid)
+          .where('status', '==', 'success')
+          .where('publishedAt', '>=', admin.firestore.Timestamp.fromDate(sevenDaysAgo))
+          .get();
+        successJobs = jobsSnap.docs.map(d => d.data());
+      } catch(e) { /* non-fatal */ }
+
+      // Only send if there were jobs this week
+      if (successJobs.length === 0) continue;
+
+      const platformList = [...new Set(successJobs.map(j =>
+        (j.platform || 'platform').replace(/\b\w/g, c => c.toUpperCase())
+      ))].join(', ');
+      const jobCount = successJobs.length.toString();
+
+      const mergeData = {
+        name: ownerName || 'there',
+        businessName: businessName || (ownerName ? ownerName + '\'s Business' : 'your business'),
+        jobCount,
+        platformList,
+        dashboardUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html',
+        appUrl: APP_BASE_URL,
+      };
+      function applyDigestTags(str) {
+        return str.replace(/\{\{(\w+)\}\}/g, (_, k) => mergeData[k] || '');
+      }
+
+      // Build platform rows for fallback HTML
+      const platformRows = successJobs.map(j => {
+        const plat = (j.platform || 'platform').replace(/\b\w/g, c => c.toUpperCase());
+        return `<tr>
+          <td style="padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:14px;color:#333">${plat}</td>
+          <td style="padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:14px;color:#00873a;text-align:right">&#10003; Published</td>
+        </tr>`;
+      }).join('');
+
+      const subject = tmplSubject
+        ? applyDigestTags(tmplSubject)
+        : `${mergeData.businessName}'s BlastyBiz recap — ${jobCount} post${jobCount === '1' ? '' : 's'} this week 📊`;
+      const html = tmplHtml
+        ? applyDigestTags(tmplHtml)
+        : `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:28px 32px 22px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:32px">
+    <div style="font-size:12px;font-weight:700;color:#888;letter-spacing:2px;margin-bottom:8px">WEEKLY RECAP</div>
+    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 8px">${mergeData.businessName}</h1>
+    <p style="font-size:15px;color:#555;margin:0 0 24px">Here's what BlastyBiz published for you this week, ${mergeData.name}.</p>
+    <div style="background:#f0fff4;border-radius:8px;padding:16px 20px;margin-bottom:24px;text-align:center">
+      <div style="font-size:40px;font-weight:800;color:#00873a;line-height:1">${jobCount}</div>
+      <div style="font-size:13px;color:#555;margin-top:4px">post${jobCount === '1' ? '' : 's'} published across ${platformList}</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:24px">${platformRows}</table>
+    <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px">View Full History &#8594;</a>
+    <p style="font-size:13px;color:#888;margin-top:20px;line-height:1.6">Keep the momentum going — blast to more platforms from your dashboard.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="${mergeData.appUrl}" style="color:#999">blastybiz.com</a> &#183; Sent every Monday to Pro &amp; Agency subscribers.</p>
+  </div>
+</div>`;
+
+      try {
+        await sendResendEmail({ to: userData.email, subject, html });
+        sent++;
+      } catch(e) { console.error(`[scheduledWeeklyDigest] failed for ${userData.email}:`, e.message); }
+    }
+    console.log(`[scheduledWeeklyDigest] sent ${sent} digest emails`);
   }
 );
 
