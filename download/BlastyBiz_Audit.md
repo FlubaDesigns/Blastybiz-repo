@@ -1,11 +1,11 @@
-# BlastyBiz — Fulwl Site Audit
-**Last updated: June 30, 2026 (Session 18 — Button system consolidation: shared-base group, modifiers, visual polish, aliases)**
+# BlastyBiz — Full Site Audit
+**Last updated: July 2, 2026 (Session 19 — Full email system audit: 3 undeployed CFs found and deployed, upgrade-nudge window bug fixed)**
 **Firebase Project:** blastybiz-9523e
 **Live URL:** https://blastybiz-9523e.web.app
 
 ---
 
-## Deployed Cloud Functions (34 total — all v2, us-central1)
+## Deployed Cloud Functions (37 total — all v2, us-central1)
 
 | # | Function | Type | Purpose |
 |---|---|---|---|
@@ -43,8 +43,13 @@
 | 32 | `refreshYelpCategories` | HTTP | Fetches latest Yelp category taxonomy; caches in Firestore platformCategoryCache; verifyBearer() |
 | 33 | `scheduledPostingCheck` | Scheduled (hourly) | Queries businesses with enabled schedules; generates AI content (claude-sonnet-4-5-20250929); creates publishJobs or pendingPosts; trackAiUsage |
 | 34 | `scheduledYelpCategoryRefresh` | Scheduled (weekly) | Refreshes Yelp category cache via refreshYelpCategories |
+| 35 | `jobCompletedTrigger` | Firestore trigger | publishJobs/{jobId} status → 'success' → sends "listing is live" email via Resend |
+| 36 | `scheduledUpgradeNudge` | Scheduled (daily 10am ET) | Queries starter users created 7–8 days ago; sends upgrade nudge email via Resend |
+| 37 | `scheduledWeeklyDigest` | Scheduled (Monday 8am ET) | Queries all paid users (planActive=true); sends weekly recap (job count + platforms) via Resend |
 
 **Deleted (no longer in index.js or Firebase):** `postToGoogle`, `postToFacebook`, `postToInstagram` — removed Jun 20, 2026; posting to those platforms is handled internally by `dispatchPublishJob`.
+
+**Stale ghost functions (still in Firebase, no longer in code, trigger type = https, no active behavior):** `jobCreatedTrigger`, `onJobCreated`, `onPublishJobCreated` — leftover from type-change history. Harmless; can be deleted via `firebase functions:delete` if desired.
 
 ---
 
@@ -115,6 +120,11 @@
 - Publish job creation and status tracking; Publishing Status page shows empty state (not mock data)
 - Resend welcome email on new user signup (`userCreatedTrigger`)
 - Resend failure alert email when publish job status → failed (`jobFailedTrigger`)
+- Resend "listing is live" email when publishJob status → 'success' (`jobCompletedTrigger`)
+- Resend 7-day upgrade nudge for starter users (daily 10am ET, 24-hour window) (`scheduledUpgradeNudge`)
+- Resend weekly digest for paid users every Monday 8am ET (`scheduledWeeklyDigest`)
+- Internal admin alerts to info@blastybiz.com on every new free signup and every new paying customer
+- 8-tab email template editor in Admin Emails page — all templates Firestore-driven with hardcoded HTML fallback
 - Account deletion: wipes all Firestore docs, deletes Auth user; Square subscription cancelled
 - Admin: 14 endpoints behind `requireAdmin()` — list/retry/mark jobs, list businesses/connections/logs, subscription summary, pricing update, test email, refresh categories
 - Admin Failed Jobs: per-row checkboxes; Retry and Manual Follow-up wired to CFs; Export CSV
@@ -174,6 +184,8 @@
 | Jun 27, 2026 | `BlastyBiz-Login.html` | **🟡 LOW (Sweep 4 catch): Sign-up plan picker was clickable but ignored — misleading UX.** After the Sweep 3 fix, `handleSignUp` always writes `'starter'` regardless of which plan button is clicked. Starter/Pro/Agency buttons still visually highlighted on click, implying the choice mattered. Replaced the entire plan-picker grid with a plain info banner: "All accounts start free on Starter — upgrade to Pro or Agency anytime from your dashboard." Confirmed live — plan-btn buttons no longer present. |
 | Jun 27, 2026 | `functions/index.js` — all redirect/email URLs | **🟡 MEDIUM: All web-app redirect URLs were hardcoded to the Firebase default domain.** Square checkout `redirectUrl`, both OAuth post-connect redirects (Google + Facebook), OAuth error fallbacks, and email CTA links all hardcoded `https://blastybiz-9523e.web.app/...`. Adding a custom domain would silently break checkout return, OAuth callbacks, and email links. Fix: added `const APP_BASE_URL = process.env.APP_BASE_URL \|\| 'https://blastybiz-9523e.web.app'` constant at the top of `functions/index.js`. All 10 hardcoded web-app URLs replaced with `${APP_BASE_URL}/...`. Cloud Function callback URIs (CF-to-CF, registered with OAuth providers) intentionally left hardcoded — those must match what's registered with Google/Facebook. To switch domains: set `APP_BASE_URL` env var and redeploy. |
 | Jun 27, 2026 | `firestore.rules` + `functions/index.js` — `squareWebhook` | **📝 Structural comments added (Sweep 4 flagged risks).** (1) `firestore.rules` users update rule: added `⚠️ MAINTAINED DENYLIST` comment warning that any new billing/entitlement field added to users docs must also be added to the denylist or it becomes client-writable by default. (2) `squareWebhook`: added `⚠️ SYNC RISK` comment noting that users, subscriptions, and businesses are all updated in one block — future billing mirrors must be added here to stay in sync. |
+| Jul 2, 2026 | `functions/index.js` — `jobCompletedTrigger`, `scheduledUpgradeNudge`, `scheduledWeeklyDigest` | **🔴 CRITICAL (Session 19 audit): Three email Cloud Functions never deployed — all 3 confirmed absent from Firebase.** `jobCompletedTrigger` (Firestore trigger: publishJob status→'success'), `scheduledUpgradeNudge` (daily 10am ET), and `scheduledWeeklyDigest` (Monday 8am ET) were in the code but missing from `firebase functions:list`. Zero "listing is live" emails, zero 7-day upgrade nudges, and zero weekly digests had ever fired. Root cause for `jobCompletedTrigger`: a previous session had registered it as an HTTPS function — Firebase blocks changing trigger types in-place with "Changing from an HTTPS function to a background triggered function is not allowed." Fix: deleted the stale HTTPS version via `firebase functions:delete jobCompletedTrigger --force`, then deployed all three together. All three confirmed live in `functions:list` with correct trigger types (Firestore updated / scheduled / scheduled). |
+| Jul 2, 2026 | `functions/index.js` — `scheduledUpgradeNudge` | **🔴 CRITICAL (Session 19 audit): Upgrade nudge 1-hour query window — only ~4% of eligible users would ever receive it.** The scheduled function (daily 10am ET) queried starter users with `createdAt` between `sevenDaysAgo - 1 hour` and `sevenDaysAgo`. Only users who signed up in the exact 1-hour window ending at 10am ET seven days prior were caught — everyone else was permanently missed. Fix: expanded to a 24-hour window by changing `windowStart.setHours(windowStart.getHours() - 1)` → `windowStart.setDate(windowStart.getDate() - 1)`, giving the range `8 days ago → 7 days ago`. Since the CF fires once per day, each user lands in this window exactly once — no double-send risk. Deployed with the 3 missing functions above. |
 
 ---
 
@@ -211,6 +223,7 @@ All 5 Square secrets now set in Firebase Secret Manager and `secrets: [...]` arr
 | Dashboard | ~~Blast Score (83%) static~~ ✅ Fixed Jun 19 | Score now computed from `successJobs.length`. Ring CSS updated dynamically. |
 | Dashboard | ~~Task list hardcoded~~ ✅ Fixed Jun 19 | Task list now built from real platform connection status. |
 | Dashboard | AI usage display | Now reads `aiActionsUsed` + `aiActionsResetAt` from users doc. |
+| Admin → Emails → "Send Test" | Only works from Replit preview | Calls Express `/api/admin/send-test-email`. No `/api` rewrite in `firebase.json` — 404 from the live Firebase domain. Works correctly from Replit preview (where Express runs). Not fixed: Dave is the only admin and uses Replit preview. |
 | Admin → Platform Health | All content | Static — no live Firestore queries |
 | Admin → Subscriptions | Money Snapshot ($1,842 MRR) | Static placeholder — "Demo data" banner present; real data needs Square webhook populating Firestore |
 | Onboarding | Platform connect step | Redirects to Connect page rather than triggering OAuth inline |

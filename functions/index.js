@@ -2515,9 +2515,10 @@ exports.scheduledUpgradeNudge = onSchedule(
     const now = new Date();
     const sevenDaysAgo = new Date(now);
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    // Query window: created between 7d 1h ago and 7d ago (1-hour window to avoid double-sends)
+    // Query window: created between 8d ago and 7d ago (24-hour window).
+    // Runs daily at 10am ET — each user lands in this window exactly once, no double-send risk.
     const windowStart = new Date(sevenDaysAgo);
-    windowStart.setHours(windowStart.getHours() - 1);
+    windowStart.setDate(windowStart.getDate() - 1);
 
     let tmplSubject = null;
     let tmplHtml = null;
