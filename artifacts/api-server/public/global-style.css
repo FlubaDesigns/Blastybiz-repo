@@ -901,7 +901,7 @@ body.has-site-header h4  { font-family: 'DM Sans', sans-serif; font-size: 15px; 
 
 /* Team card */
 .about__team-card       { display: flex; flex-direction: row; align-items: flex-start; gap: 20px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 0; }
-.about__team-card img   { width: 100px; height: 100px; object-fit: cover; object-position: top; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; }
+.about__team-card img   { width: 100px; height: 100px; object-fit: cover; object-position: top; border-radius: 50%; border: 3px solid var(--green); box-shadow: 0 0 0 3px rgba(0,200,83,0.18); flex-shrink: 0; }
 .about__team-info       { display: flex; flex-direction: column; }
 .about__team-info h3    { font-size: 18px; font-weight: 600; color: var(--light); margin: 0 0 2px; }
 .about__team-info em    { font-size: 13px; color: var(--green); letter-spacing: 0.3px; font-style: normal; display: block; margin-bottom: 10px; }
