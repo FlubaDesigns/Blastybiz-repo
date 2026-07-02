@@ -389,11 +389,10 @@ getRedirectResult(auth).then(async (result) => {
   if (!result?.user) return;
   const snap = await getDoc(doc(db, 'users', result.user.uid));
   if (!snap.exists()) {
-    const chosenPlan = localStorage.getItem('bb_selected_plan') || 'starter';
     await setDoc(doc(db, 'users', result.user.uid), {
       ownerName: result.user.displayName || '',
       email: result.user.email,
-      plan: chosenPlan,
+      plan: 'starter',
       onboarded: false,
       createdAt: serverTimestamp()
     });
@@ -437,10 +436,9 @@ window.handleSignUp = async function() {
   if (!valid) return;
   setLoading('btn-signup', true);
   try {
-    const cred        = await createUserWithEmailAndPassword(auth, email, pass);
-    const chosenPlan  = localStorage.getItem('bb_selected_plan') || 'starter';
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
     await setDoc(doc(db, 'users', cred.user.uid), {
-      ownerName: name, email, plan: chosenPlan, onboarded: false, createdAt: serverTimestamp()
+      ownerName: name, email, plan: 'starter', onboarded: false, createdAt: serverTimestamp()
     });
     window.location.href = 'BlastyBiz-Onboarding.html';
   } catch (e) {
@@ -455,13 +453,12 @@ window.handleGoogle = async function() {
   const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   if (isMobile) { await signInWithRedirect(auth, provider); return; }
   try {
-    const cred       = await signInWithPopup(auth, provider);
-    const snap       = await getDoc(doc(db, 'users', cred.user.uid));
+    const cred = await signInWithPopup(auth, provider);
+    const snap = await getDoc(doc(db, 'users', cred.user.uid));
     if (!snap.exists()) {
-      const chosenPlan = localStorage.getItem('bb_selected_plan') || 'starter';
       await setDoc(doc(db, 'users', cred.user.uid), {
         ownerName: cred.user.displayName || '', email: cred.user.email,
-        plan: chosenPlan, onboarded: false, createdAt: serverTimestamp()
+        plan: 'starter', onboarded: false, createdAt: serverTimestamp()
       });
     }
     await afterAuth(cred.user);

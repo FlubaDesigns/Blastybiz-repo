@@ -964,7 +964,7 @@ window.nextStep = async function() {
     const data = window._buildProfileData();
     try {
       if (currentUser) {
-        await updateDoc(doc(db, 'users', currentUser.uid), data);
+        await setDoc(doc(db, 'users', currentUser.uid), { ...data, plan: 'starter' }, { merge: true });
         const bizRef = doc(db, 'businesses', currentUser.uid);
         await setDoc(bizRef, { ...data, uid: currentUser.uid, createdAt: serverTimestamp() }, { merge: true });
       }
