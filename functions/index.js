@@ -68,23 +68,57 @@ const AI_COSTS = {
   'claude-haiku-4-5':           { input: 0.80, output: 4.00 },
   'claude-sonnet-4-5-20250929': { input: 3.00, output: 15.00 },
 };
-async function trackAiUsage(uid, fnName, model, usage) {
-  if (!usage) return;
+async function trackAiUsage(uid, fnName, model, usage, opts = {}) {
+  const { failureType = null, timing = null, context = null } = opts;
+  if (!usage && !failureType) return;
   try {
     const rates = AI_COSTS[model] || { input: 3.00, output: 15.00 };
-    const costUsd = ((usage.input_tokens || 0) * rates.input + (usage.output_tokens || 0) * rates.output) / 1_000_000;
+    const costUsd = usage
+      ? ((usage.input_tokens || 0) * rates.input + (usage.output_tokens || 0) * rates.output) / 1_000_000
+      : 0;
     await db.collection('aiUsageLogs').add({
       uid:          uid || 'system',
       fn:           fnName,
       model,
-      inputTokens:  usage.input_tokens  || 0,
-      outputTokens: usage.output_tokens || 0,
+      inputTokens:  usage?.input_tokens  || 0,
+      outputTokens: usage?.output_tokens || 0,
       costUsd,
+      failureType:  failureType || null,
+      aiElapsedMs:  timing?.aiElapsedMs  || null,
+      fnElapsedMs:  timing?.fnElapsedMs  || null,
+      businessId:   context?.businessId  || null,
+      campaignId:   context?.campaignId  || null,
+      scheduleId:   context?.scheduleId  || null,
       ts: admin.firestore.FieldValue.serverTimestamp(),
     });
   } catch (e) {
     console.warn('[trackAiUsage] failed:', e.message);
   }
+}
+
+// ── fetchWithTimeout — wraps fetch() with a 25s AbortController timeout ──────
+// Throws AbortError on timeout; all other errors pass through unchanged.
+// ⚠ REQUIRED OPS STEP: Create a Firestore TTL policy on the aiRequestDedup
+//   collection using the `expiresAt` field (30 min) in Firebase Console →
+//   Firestore → TTL policies so dedup docs auto-expire without manual cleanup.
+async function fetchWithTimeout(url, options, timeoutMs = 25000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ── classifyAiError — maps caught errors to structured failureType strings ────
+function classifyAiError(e) {
+  if (e.name === 'AbortError')                               return 'anthropic_timeout';
+  if (e.name === 'SyntaxError')                              return 'json_parse';
+  if (e._isHttpError)                                        return 'anthropic_http';
+  if (/network|fetch/i.test(e.message))                      return 'network_error';
+  if (/firebase|firestore/i.test(e.message))                 return 'firebase_error';
+  return 'unknown';
 }
 
 const CORS_HEADERS = {
@@ -303,8 +337,9 @@ Rules:
 
 Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
 
+  const aiStartMs = Date.now();
   try {
-    const aiResp = await fetch('https://api.anthropic.com/v1/messages', {
+    const aiResp = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -313,13 +348,23 @@ Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
       },
       body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 300, messages: [{ role: 'user', content: prompt }] }),
     });
-    if (!aiResp.ok) throw new Error(`Anthropic ${aiResp.status}: ${await aiResp.text()}`);
+    if (!aiResp.ok) {
+      const err = new Error(`Anthropic ${aiResp.status}: ${await aiResp.text()}`);
+      err._isHttpError = true;
+      throw err;
+    }
     const aiJson = await aiResp.json();
     const parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
-    trackAiUsage(decoded.uid, 'followUpQuestions', 'claude-haiku-4-5', aiJson.usage);
+    const aiElapsedMs = Date.now() - aiStartMs;
+    trackAiUsage(decoded.uid, 'followUpQuestions', 'claude-haiku-4-5', aiJson.usage, {
+      timing: { aiElapsedMs },
+    });
     res.json({ questions: parsed.questions || [] });
   } catch(e) {
-    console.error('generateEnrichmentQuestions error:', e.message);
+    const failureType = classifyAiError(e);
+    if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] generateEnrichmentQuestions timed out after 25s — uid:', decoded.uid);
+    trackAiUsage(decoded.uid, 'followUpQuestions', 'claude-haiku-4-5', null, { failureType });
+    console.error('generateEnrichmentQuestions error [' + failureType + ']:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
@@ -327,6 +372,7 @@ Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
 exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  const fnStartMs = Date.now();
 
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
@@ -373,9 +419,21 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
     ? '\n🎯 THIS CAMPAIGN ONLY — HIGH PRIORITY (specific details for this post run — use these to make copy feel fresh and specific, not generic):\n' + listing.campaignContext
     : '';
 
-  const libraryDocsBlock = (listing.libraryDocs || []).length
-    ? '\n📂 BUSINESS LIBRARY DOCUMENTS — Read these carefully. They contain real menus, services, prices, and offerings from this business. Reference specific details naturally in the copy:\n' +
-      listing.libraryDocs.map(d => `[${d.name}]:\n${d.extractedText}`).join('\n\n')
+  const MAX_LIBRARY_DOC_CHARS   = 3000;
+  const MAX_LIBRARY_TOTAL_CHARS = 12000;
+  let libraryTotalChars = 0;
+  const trimmedLibraryDocs = (listing.libraryDocs || []).reduce((acc, d) => {
+    if (libraryTotalChars >= MAX_LIBRARY_TOTAL_CHARS) return acc;
+    const text      = (d.extractedText || '').slice(0, MAX_LIBRARY_DOC_CHARS);
+    const remaining = MAX_LIBRARY_TOTAL_CHARS - libraryTotalChars;
+    const safeText  = text.slice(0, remaining);
+    libraryTotalChars += safeText.length;
+    acc.push({ name: d.name, extractedText: safeText });
+    return acc;
+  }, []);
+  const libraryDocsBlock = trimmedLibraryDocs.length
+    ? '\n📂 BUSINESS LIBRARY DOCUMENTS — Read these carefully. Reference specific details naturally:\n' +
+      trimmedLibraryDocs.map(d => `[${d.name}]:\n${d.extractedText}`).join('\n\n')
     : '';
 
   const prompt = `You are a local business marketing expert. Adapt the following business listing for each platform listed. Return ONLY a valid JSON object — no markdown, no explanation, no backticks.
@@ -406,9 +464,19 @@ Return this exact JSON structure:
   }
 }`;
 
+  // ── Idempotency — return cached result for duplicate requestId within 30 min ──
+  const requestId = listing.requestId;
+  if (requestId) {
+    try {
+      const dedupSnap = await db.collection('aiRequestDedup').doc(`${decoded.uid}_${requestId}`).get();
+      if (dedupSnap.exists) return res.json(dedupSnap.data().result);
+    } catch(e) { console.warn('[adaptListing] dedup read failed:', e.message); }
+  }
+
   let parsed;
+  const aiStartMs = Date.now();
   try {
-    const aiResp = await fetch('https://api.anthropic.com/v1/messages', {
+    const aiResp = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -417,12 +485,24 @@ Return this exact JSON structure:
       },
       body: JSON.stringify({ model: 'claude-sonnet-4-5-20250929', max_tokens: 1500, messages: [{ role: 'user', content: prompt }] })
     });
-    if (!aiResp.ok) { const t = await aiResp.text(); throw new Error(`Anthropic ${aiResp.status}: ${t.slice(0,200)}`); }
+    if (!aiResp.ok) {
+      const t = await aiResp.text();
+      const err = new Error(`Anthropic ${aiResp.status}: ${t.slice(0,200)}`);
+      err._isHttpError = true;
+      throw err;
+    }
     const aiJson = await aiResp.json();
     parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
-    trackAiUsage(decoded.uid, 'adaptListing', 'claude-sonnet-4-5-20250929', aiJson.usage);
+    const aiElapsedMs = Date.now() - aiStartMs;
+    trackAiUsage(decoded.uid, 'adaptListing', 'claude-sonnet-4-5-20250929', aiJson.usage, {
+      timing:  { aiElapsedMs, fnElapsedMs: Date.now() - fnStartMs },
+      context: { businessId: listing.businessId || null, campaignId: listing.campaignId || null },
+    });
   } catch(e) {
-    console.error('adaptListing AI error:', e.message);
+    const failureType = classifyAiError(e);
+    if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] adaptListing timed out after 25s — uid:', decoded.uid);
+    trackAiUsage(decoded.uid, 'adaptListing', 'claude-sonnet-4-5-20250929', null, { failureType });
+    console.error('adaptListing AI error [' + failureType + ']:', e.message);
     return res.status(500).json({ error: 'AI adaptation failed: ' + e.message });
   }
 
@@ -440,6 +520,18 @@ Return this exact JSON structure:
   } catch(fsErr) {
     console.warn('adaptListing: Firestore update failed (IAM?), usage not tracked:', fsErr.message);
   }
+
+  if (requestId) {
+    try {
+      await db.collection('aiRequestDedup').doc(`${decoded.uid}_${requestId}`).set({
+        result: parsed,
+        uid: decoded.uid,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 30 * 60 * 1000),
+      });
+    } catch(e) { console.warn('[adaptListing] dedup write failed:', e.message); }
+  }
+
   res.json(parsed);
 });
 
@@ -450,6 +542,7 @@ Return this exact JSON structure:
 exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  const fnStartMs = Date.now();
 
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
@@ -471,7 +564,7 @@ exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_
 
   const now = new Date();
 
-  const { businessName, ownerName, city, state, description, specialNotes, followUpAnswers, platformCatLists, locationType } = req.body;
+  const { businessName, ownerName, city, state, description, specialNotes, followUpAnswers, platformCatLists, locationType, requestId: rcRequestId } = req.body;
 
   const platformContext = {
     fbmarket:   'Facebook Marketplace — consumer marketplace for buying/selling goods and booking local services',
@@ -535,19 +628,38 @@ ${returnInstructions}
 
 ${platformBlocks}`;
 
+  if (rcRequestId) {
+    try {
+      const dedupSnap = await db.collection('aiRequestDedup').doc(`${decoded.uid}_${rcRequestId}`).get();
+      if (dedupSnap.exists) return res.json(dedupSnap.data().result);
+    } catch(e) { console.warn('[resolveCategories] dedup read failed:', e.message); }
+  }
+
   let parsed;
+  const aiStartMs = Date.now();
   try {
-    const aiResp = await fetch('https://api.anthropic.com/v1/messages', {
+    const aiResp = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({ model: 'claude-sonnet-4-5-20250929', max_tokens: 500, messages: [{ role: 'user', content: prompt }] })
     });
-    if (!aiResp.ok) { const t = await aiResp.text(); throw new Error(`Anthropic ${aiResp.status}: ${t.slice(0,200)}`); }
+    if (!aiResp.ok) {
+      const t = await aiResp.text();
+      const err = new Error(`Anthropic ${aiResp.status}: ${t.slice(0,200)}`);
+      err._isHttpError = true;
+      throw err;
+    }
     const aiJson = await aiResp.json();
     parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
-    trackAiUsage(decoded.uid, 'resolveCategories', 'claude-sonnet-4-5-20250929', aiJson.usage);
+    const aiElapsedMs = Date.now() - aiStartMs;
+    trackAiUsage(decoded.uid, 'resolveCategories', 'claude-sonnet-4-5-20250929', aiJson.usage, {
+      timing: { aiElapsedMs, fnElapsedMs: Date.now() - fnStartMs },
+    });
   } catch(e) {
-    console.error('resolveCategories AI error:', e.message);
+    const failureType = classifyAiError(e);
+    if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] resolveCategories timed out after 25s — uid:', decoded.uid);
+    trackAiUsage(decoded.uid, 'resolveCategories', 'claude-sonnet-4-5-20250929', null, { failureType });
+    console.error('resolveCategories AI error [' + failureType + ']:', e.message);
     return res.status(500).json({ error: 'AI category resolution failed: ' + e.message });
   }
 
@@ -565,6 +677,18 @@ ${platformBlocks}`;
   } catch(fsErr) {
     console.warn('resolveCategories: Firestore update failed (IAM?), usage not tracked:', fsErr.message);
   }
+
+  if (rcRequestId) {
+    try {
+      await db.collection('aiRequestDedup').doc(`${decoded.uid}_${rcRequestId}`).set({
+        result: parsed,
+        uid: decoded.uid,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 30 * 60 * 1000),
+      });
+    } catch(e) { console.warn('[resolveCategories] dedup write failed:', e.message); }
+  }
+
   res.json(parsed);
 });
 
@@ -2143,8 +2267,9 @@ exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_A
     console.warn('suggestPlatforms: Firestore read failed (IAM?), proceeding with starter defaults:', fsErr.message);
   }
 
-  const { name, category, description, locationType, website } = req.body;
+  const { name, category, description, locationType, website, requestId: spRequestId } = req.body;
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const fnStartMs = Date.now();
 
   const prompt = `You are a local business marketing expert. Based on the business info below, decide which platforms this business should target.
 
@@ -2201,19 +2326,48 @@ Return ONLY valid JSON, no markdown, no explanation:
   }
 }`;
 
+  if (spRequestId) {
+    try {
+      const dedupSnap = await db.collection('aiRequestDedup').doc(`${decoded.uid}_${spRequestId}`).get();
+      if (dedupSnap.exists) return res.json(dedupSnap.data().result);
+    } catch(e) { console.warn('[suggestPlatforms] dedup read failed:', e.message); }
+  }
+
+  const aiStartMs = Date.now();
   try {
-    const aiResp = await fetch('https://api.anthropic.com/v1/messages', {
+    const aiResp = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({ model: 'claude-sonnet-4-5-20250929', max_tokens: 600, messages: [{ role: 'user', content: prompt }] })
     });
-    if (!aiResp.ok) { const t = await aiResp.text(); throw new Error(`Anthropic ${aiResp.status}: ${t.slice(0,200)}`); }
+    if (!aiResp.ok) {
+      const t = await aiResp.text();
+      const err = new Error(`Anthropic ${aiResp.status}: ${t.slice(0,200)}`);
+      err._isHttpError = true;
+      throw err;
+    }
     const aiJson = await aiResp.json();
     const parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
-    trackAiUsage(decoded.uid, 'suggestPlatforms', 'claude-sonnet-4-5-20250929', aiJson.usage);
+    const aiElapsedMs = Date.now() - aiStartMs;
+    trackAiUsage(decoded.uid, 'suggestPlatforms', 'claude-sonnet-4-5-20250929', aiJson.usage, {
+      timing: { aiElapsedMs, fnElapsedMs: Date.now() - fnStartMs },
+    });
+    if (spRequestId) {
+      try {
+        await db.collection('aiRequestDedup').doc(`${decoded.uid}_${spRequestId}`).set({
+          result: parsed,
+          uid: decoded.uid,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 30 * 60 * 1000),
+        });
+      } catch(e) { console.warn('[suggestPlatforms] dedup write failed:', e.message); }
+    }
     res.json(parsed);
   } catch(e) {
-    console.error('suggestPlatforms error:', e.message);
+    const failureType = classifyAiError(e);
+    if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] suggestPlatforms timed out after 25s — uid:', decoded.uid);
+    trackAiUsage(decoded.uid, 'suggestPlatforms', 'claude-sonnet-4-5-20250929', null, { failureType });
+    console.error('suggestPlatforms error [' + failureType + ']:', e.message);
     res.status(500).json({ error: 'AI suggestion failed: ' + e.message });
   }
 });
@@ -2570,19 +2724,39 @@ ${platformList.map(buildPlatformBlock).join('\n')}
 
 Return ONLY valid JSON: { "adaptations": { "PLATFORM_ID": "text" } }`;
 
-  const aiResp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({ model: 'claude-sonnet-4-5-20250929', max_tokens: 2000, messages: [{ role: 'user', content: prompt }] }),
+  const aiStartMs = Date.now();
+  let aiJson, parsed;
+  try {
+    const aiResp = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({ model: 'claude-sonnet-4-5-20250929', max_tokens: 2000, messages: [{ role: 'user', content: prompt }] }),
+    });
+    if (!aiResp.ok) {
+      const err = new Error(`Anthropic ${aiResp.status}: ${await aiResp.text()}`);
+      err._isHttpError = true;
+      throw err;
+    }
+    aiJson = await aiResp.json();
+    parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
+  } catch(e) {
+    const failureType = classifyAiError(e);
+    if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] generateScheduledPost timed out after 25s — bizId:', bizId);
+    trackAiUsage('system', 'generateScheduledPost', 'claude-sonnet-4-5-20250929', null, {
+      failureType,
+      context: { businessId: bizId || null, scheduleId: bizId || null, campaignId: activeCampaignId || null },
+    });
+    throw e;
+  }
+  const aiElapsedMs = Date.now() - aiStartMs;
+  trackAiUsage('system', 'generateScheduledPost', 'claude-sonnet-4-5-20250929', aiJson.usage, {
+    timing:  { aiElapsedMs },
+    context: { businessId: bizId || null, scheduleId: bizId || null, campaignId: activeCampaignId || null },
   });
-  if (!aiResp.ok) throw new Error(`Anthropic ${aiResp.status}: ${await aiResp.text()}`);
-  const aiJson  = await aiResp.json();
-  const parsed  = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
-  trackAiUsage('system', 'generateScheduledPost', 'claude-sonnet-4-5-20250929', aiJson.usage);
   const adapted = parsed.adaptations || {};
 
   // If owner wants to review before posting — save draft to pendingPosts and stop
