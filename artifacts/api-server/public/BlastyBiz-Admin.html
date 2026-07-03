@@ -182,7 +182,7 @@ onAuthStateChanged(auth, async (user) => {
     highlightPlan(plan);
   };
   const userSnap = await getDoc(doc(db, 'users', user.uid));
-  if (userSnap.exists()) highlightPlan(userSnap.data().plan || 'starter');
+  highlightPlan(userSnap.exists() ? (userSnap.data().plan || 'starter') : 'starter');
 
   // Delete a business doc and all related records — admin only
   window._adminDeleteBiz = async function(docId, name) {
