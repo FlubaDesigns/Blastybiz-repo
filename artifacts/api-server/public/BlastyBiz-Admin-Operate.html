@@ -303,6 +303,38 @@
   </div>
 
   <!-- ══════════════════════════════════════════
+       FIREBASE CONSOLE SETUP
+  ══════════════════════════════════════════ -->
+  <div class="op-section">
+    <div class="section-header">
+      <span class="section-icon">🔥</span>
+      <span class="section-title">Firebase Console Setup</span>
+      <span class="section-badge warn">Required before real users</span>
+    </div>
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-firestore-ttl" onclick="toggleCheck(event,'firestore-ttl')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">Set Firestore TTL policy on <code>aiRequestDedup</code></div>
+          <div class="op-card-sub">Without this, dedup docs from the AI idempotency system accumulate forever and inflate Firestore storage costs.</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-step-label">What to do</p>
+        <ol class="op-list">
+          <li>Go to <span class="cf-url">console.firebase.google.com → blastybiz-9523e → Firestore Database → TTL policies</span></li>
+          <li>Click <strong>Add TTL policy</strong></li>
+          <li>Collection group: <strong>aiRequestDedup</strong></li>
+          <li>Timestamp field: <strong>expiresAt</strong></li>
+          <li>Save — Firestore will automatically delete documents once their <code>expiresAt</code> timestamp is in the past (30 min after creation)</li>
+        </ol>
+        <div class="op-note">⚠️ Each AI Adapt button tap writes one dedup doc. Without the TTL, every request is kept forever. This collection is otherwise invisible and low-cost, but it will grow continuously.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
        ONGOING
   ══════════════════════════════════════════ -->
   <div class="op-section">
