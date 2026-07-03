@@ -818,7 +818,6 @@ function showCopyInAccordions(adaptations, featuredPhotoUrl) {
 
   const campaignPhotos = (window._bbPhotoItems || []).filter(i => i.done && i.url);
 
-  let expandedFirst = false;
   platforms.forEach(p => {
     if (!p.enabled) return;
     const adapted = adaptations[p.id];
@@ -852,14 +851,11 @@ function showCopyInAccordions(adaptations, featuredPhotoUrl) {
       renderPlatformPhotoStrip(p.id, campaignPhotos, imgSupport.max);
     }
 
-    // Expand the first enabled platform; rest stay collapsed but populated
-    if (!expandedFirst) {
-      const body    = document.getElementById('qp-body-' + p.id);
-      const chevron = document.getElementById('qp-chevron-' + p.id);
-      if (body)    body.style.display = 'block';
-      if (chevron) chevron.style.transform = 'rotate(90deg)';
-      expandedFirst = true;
-    }
+    // Expand every enabled platform that received copy
+    const body    = document.getElementById('qp-body-' + p.id);
+    const chevron = document.getElementById('qp-chevron-' + p.id);
+    if (body)    body.style.display = 'block';
+    if (chevron) chevron.style.transform = 'rotate(90deg)';
   });
 }
 
