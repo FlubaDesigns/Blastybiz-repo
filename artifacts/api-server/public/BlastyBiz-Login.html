@@ -314,8 +314,6 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   sendPasswordResetEmail
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -372,10 +370,7 @@ function showLoginForm() {
   document.getElementById('auth-card-wrap').classList.add('ready');
 }
 
-let afterAuthCalled = false;
 onAuthStateChanged(auth, async (user) => {
-  if (afterAuthCalled) return;
-  afterAuthCalled = true;
   if (!user) {
     localStorage.setItem('bb_auth', '0');
     showLoginForm();
@@ -383,26 +378,6 @@ onAuthStateChanged(auth, async (user) => {
   }
   localStorage.setItem('bb_auth', '1');
   await afterAuth(user);
-});
-
-getRedirectResult(auth).then(async (result) => {
-  if (!result?.user) return;
-  afterAuthCalled = true;
-  const snap = await getDoc(doc(db, 'users', result.user.uid));
-  if (!snap.exists()) {
-    await setDoc(doc(db, 'users', result.user.uid), {
-      ownerName: result.user.displayName || '',
-      email: result.user.email,
-      plan: 'starter',
-      onboarded: false,
-      createdAt: serverTimestamp()
-    });
-  }
-  await afterAuth(result.user);
-}).catch(e => {
-  if (e.code && e.code !== 'auth/popup-closed-by-user') {
-    window.showToast('Google sign-in failed', true);
-  }
 });
 
 window.handleSignIn = async function() {
@@ -452,8 +427,6 @@ window.handleSignUp = async function() {
 
 window.handleGoogle = async function() {
   const provider = new GoogleAuthProvider();
-  const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  if (isMobile) { await signInWithRedirect(auth, provider); return; }
   try {
     const cred = await signInWithPopup(auth, provider);
     const snap = await getDoc(doc(db, 'users', cred.user.uid));
@@ -465,7 +438,9 @@ window.handleGoogle = async function() {
     }
     await afterAuth(cred.user);
   } catch (e) {
-    if (e.code !== 'auth/popup-closed-by-user') showToast('Google sign-in failed', true);
+    if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+      showToast('Google sign-in failed: ' + (e.code || e.message), true);
+    }
   }
 };
 
