@@ -195,14 +195,16 @@
         Mention my name
         <span id="copy-name-preview" class="check-hint"></span>
       </span>
-      <input type="checkbox" id="copy-include-name" class="check-input" />
+      <input type="checkbox" id="copy-include-name" class="check-input"
+        onchange="if(this.checked) document.getElementById('copy-include-role').checked=false;" />
     </label>
     <label class="check-row">
       <span class="check-text">
         Mention my role
         <span id="copy-role-preview" class="check-hint"></span>
       </span>
-      <input type="checkbox" id="copy-include-role" class="check-input" />
+      <input type="checkbox" id="copy-include-role" class="check-input"
+        onchange="if(this.checked) document.getElementById('copy-include-name').checked=false;" />
     </label>
   </div>
 
