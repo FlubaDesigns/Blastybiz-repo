@@ -1225,7 +1225,7 @@ body.onboarding-page textarea     { resize: none; }
 .sstat-lbl               { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
 
 /* Wizard footer */
-.wiz-footer              { padding: 10px 24px env(safe-area-inset-bottom, 8px); flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+.wiz-footer              { padding: 10px 24px max(env(safe-area-inset-bottom, 0px), 24px); flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
 
 /* Platform category rows */
 .pcat-row                { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
@@ -1264,6 +1264,34 @@ body.onboarding-page textarea     { resize: none; }
 
 @media (max-width: 767px) {
   .wizard                { padding-top: 56px; }
+  .wiz-header            { padding: 10px 16px 0; }
+  .progress-track        { margin: 10px 16px 0; }
+  .step-dots             { padding: 8px 0 0; }
+  .slide                 { padding: 14px 16px 10px; }
+  .slide-icon            { font-size: 36px; margin-bottom: 10px; }
+  .slide-title           { font-size: 30px; }
+  .slide-sub             { font-size: 13px; margin-bottom: 14px; }
+  .loc-type-btn          { font-size: 12px; padding: 8px 4px; }
+  .day-btn               { font-size: 10px; padding: 7px 1px; border-radius: 6px; }
+  .days-grid             { gap: 4px; }
+  .tone-btn              { padding: 12px 8px; }
+  .tone-btn .tone-icon   { font-size: 18px; }
+  .tone-btn .tone-name   { font-size: 12px; }
+  .tone-btn .tone-desc   { font-size: 11px; }
+  .welcome-logo          { font-size: 42px; }
+  .welcome-tagline       { font-size: 14px; margin-bottom: 20px; }
+  .welcome-features      { max-width: 100%; }
+  .wiz-footer            { padding: 8px 16px max(env(safe-area-inset-bottom, 0px), 24px); }
+}
+
+@media (max-width: 359px) {
+  .wizard                { padding-top: 48px; }
+  .slide-icon            { font-size: 28px; margin-bottom: 8px; }
+  .slide-title           { font-size: 26px; }
+  .slide-sub             { margin-bottom: 10px; }
+  .days-grid             { gap: 3px; }
+  .day-btn               { font-size: 9px; padding: 6px 0; }
+  .loc-type-btn          { font-size: 11px; }
 }
 
 
