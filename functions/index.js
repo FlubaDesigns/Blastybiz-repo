@@ -262,6 +262,22 @@ const PLATFORM_DOCS = {
     dos:['Include primary service keywords naturally','Mention your city or region for local search relevance','State specialty, experience, or credentials','Write for an audience that searched specifically for your service type'],
     donts:['No promotional superlatives','No URLs or phone numbers in description','No emoji','No all-caps','No competitor names'],
     images:{recommended:true, notes:'Cover photo and additional photos supported. JPG/PNG, max 5MB.'}
+  },
+  linkedin: {
+    name:'LinkedIn', purpose:'Professional network — business owners, decision-makers, and potential clients who engage with industry content',
+    maxChars:3000, format:'Post body. Supports text, emoji, and line breaks. No separate title. First 2-3 lines show before "see more" — make them count.',
+    tone:'Professional but personal — share a perspective, insight, or story. Write like a founder, not a press release.',
+    dos:['Lead with a hook or insight in the first line — readers skim before clicking "see more"','Tell a story or share a specific observation about your business or industry','Use short paragraphs — 1-2 sentences max per line','End with a question or soft CTA to drive comments','1-3 hashtags at the end — relevant and specific'],
+    donts:['No walls of text — LinkedIn skimmers will scroll past','No generic openers like "We are excited to announce" or "Check us out"','No more than 3 hashtags','Do not write consumer ad copy — the audience is professionals and peers','Avoid pure self-promotion without value — give before you ask'],
+    images:{recommended:true, notes:'Single image or document carousel. Native video also performs well. 1200×627px for link posts. Square 1080×1080px for feed images. JPG/PNG.'}
+  },
+  x: {
+    name:'X (Twitter)', purpose:'Real-time social feed — followers and discoverers scrolling a fast-moving timeline',
+    maxChars:280, format:'Single tweet. Plain text. Emoji supported. Links count as ~23 characters. No title field.',
+    tone:'Short, direct, punchy — every word earns its place. Hook in the first 5 words.',
+    dos:['Lead with the most interesting thing — no warm-up sentences','Use 1-2 hashtags max and only if they are highly relevant','Keep it to 1-2 short sentences when possible','End with a clear action (link, reply, quote tweet) if applicable','Emoji used sparingly to reinforce — not decorate'],
+    donts:['No long-winded setups — get to the point immediately','No more than 2 hashtags','Do not try to fit a paragraph into 280 characters — trim ruthlessly','No all-caps','No generic promotional language — it blends into noise on X'],
+    images:{recommended:true, notes:'Single image or up to 4 images. 16:9 landscape preferred (1200×675px). GIF supported. Images increase engagement significantly on X.'}
   }
 };
 
@@ -573,7 +589,9 @@ exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_
     thumbtack:  'Thumbtack — platform for hiring local professionals and skilled tradespeople for specific jobs',
     angi:       'Angi (formerly Angie\'s List) — home services and contractor marketplace; focused on residential repair, remodeling, and maintenance',
     alignable:  'Alignable — B2B local business networking; categories describe the business\'s industry to other local business owners',
-    applemaps:  'Apple Maps — physical location discovery; pick the place type that best describes where customers go'
+    applemaps:  'Apple Maps — physical location discovery; pick the place type that best describes where customers go',
+    linkedin:   'LinkedIn — professional network; categories describe the business industry to business owners and decision-makers',
+    x:          'X (Twitter) — real-time social platform; categories or topics that match the business industry and audience'
   };
 
   const platformBlocks = Object.entries(platformCatLists).map(([id, cats]) => {
@@ -2353,6 +2371,8 @@ PLATFORMS TO EVALUATE:
 - thumbtack: Thumbtack service marketplace (copy-paste only)
 - angi: Angi home services marketplace (copy-paste only)
 - applemaps: Apple Maps Connect (copy-paste submission only)
+- linkedin: LinkedIn (copy-paste only)
+- x: X / Twitter (copy-paste only)
 
 DECISION RULES:
 - google: almost always yes; no only for purely online businesses with zero local presence
@@ -2367,6 +2387,8 @@ DECISION RULES:
 - thumbtack: yes for services where customers search and compare (cleaners, tutors, photographers, handyman, movers, DJ, etc.); no for retail or restaurants
 - angi: yes ONLY for home services (plumbers, electricians, HVAC, roofers, painters, landscapers, handyman, pest control); no for everything else
 - applemaps: yes for any physical location or service-area business; no for online-only
+- linkedin: yes for B2B services, professional services (legal, accounting, consulting, marketing, SaaS, agencies), and businesses targeting other business owners; no for purely hyperlocal consumer services (plumbers, restaurants, nail salons) where no professional audience exists
+- x: yes for businesses with timely content, promotions, events, or a strong brand voice; yes for B2C brands, tech, SaaS, food, entertainment, retail; optional for local services; no for very small hyperlocal-only businesses with no social content strategy
 
 Return ONLY valid JSON, no markdown, no explanation:
 {
@@ -2382,7 +2404,9 @@ Return ONLY valid JSON, no markdown, no explanation:
     "alignable":  { "enabled": false, "reason": "max 7 words why" },
     "thumbtack":  { "enabled": false, "reason": "max 7 words why" },
     "angi":       { "enabled": false, "reason": "max 7 words why" },
-    "applemaps":  { "enabled": true,  "reason": "max 7 words why" }
+    "applemaps":  { "enabled": true,  "reason": "max 7 words why" },
+    "linkedin":   { "enabled": false, "reason": "max 7 words why" },
+    "x":          { "enabled": false, "reason": "max 7 words why" }
   }
 }`;
 
@@ -2661,6 +2685,8 @@ const SCHED_PLATFORMS = [
   { id: 'thumbtack', name: 'Thumbtack',          type: 'manual' },
   { id: 'angi',      name: 'Angi',               type: 'manual' },
   { id: 'applemaps', name: 'Apple Maps Connect', type: 'manual' },
+  { id: 'linkedin',  name: 'LinkedIn',           type: 'manual' },
+  { id: 'x',        name: 'X (Twitter)',         type: 'manual' },
 ];
 
 function _computeNextRunAt(sched, fromDate) {

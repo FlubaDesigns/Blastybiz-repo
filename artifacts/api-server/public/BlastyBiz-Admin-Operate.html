@@ -356,6 +356,66 @@
   </div>
 
   <!-- ══════════════════════════════════════════
+       PLANNED PLATFORM APIS
+  ══════════════════════════════════════════ -->
+  <div class="op-section">
+    <div class="section-header">
+      <span class="section-icon">🔗</span>
+      <span class="section-title">Planned Platform APIs</span>
+      <span class="section-badge pending">To Build</span>
+    </div>
+
+    <!-- LinkedIn API -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-linkedin-api" onclick="toggleCheck(event,'linkedin-api')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">💼 LinkedIn Posts API</div>
+          <div class="op-card-sub">Upgrade LinkedIn from copy-paste to auto-post</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-sub-text">LinkedIn has a full Posts API and allows third-party apps to post on behalf of business pages. Implementation steps:</p>
+        <ul class="op-list">
+          <li><strong>Create a LinkedIn App</strong> — go to <a href="https://www.linkedin.com/developers/apps" target="_blank">linkedin.com/developers/apps</a>, create an app, and request the <code>w_member_social</code> and <code>r_basicprofile</code> OAuth scopes.</li>
+          <li><strong>Get LinkedIn Page Access</strong> — request the <code>w_organization_social</code> scope for posting to Company Pages (not just personal profiles). This requires a company page to be linked to your app.</li>
+          <li><strong>Add OAuth Connect flow</strong> — follow the same pattern used for Google/Facebook in <code>artifacts/api-server/public/connect.html</code>. LinkedIn uses standard OAuth 2.0 with auth code + token exchange.</li>
+          <li><strong>Store tokens in Firestore</strong> — save <code>accessToken</code>, <code>refreshToken</code>, <code>expiresAt</code>, and <code>linkedinOrgId</code> (the company page URN) in the user's <code>platformConnections/linkedin</code> doc.</li>
+          <li><strong>Add Cloud Function: <code>postToLinkedIn</code></strong> — call the LinkedIn Posts API endpoint <code>POST https://api.linkedin.com/v2/ugcPosts</code> with the org URN and the AI-generated content. LinkedIn tokens expire in 60 days — implement token refresh.</li>
+          <li><strong>Switch platform type to <code>api</code></strong> — update the <code>linkedin</code> entry in <code>BlastyBiz.html</code> platforms array and <code>SCHED_PLATFORMS</code> in <code>functions/index.js</code>.</li>
+        </ul>
+        <p class="op-note">Note: LinkedIn's API does not require an app review process like Meta — you can go live once your app is approved (usually same day). Token lifespan is 60 days; plan for refresh logic.</p>
+      </div>
+    </div>
+
+    <!-- X (Twitter) API -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-x-api" onclick="toggleCheck(event,'x-api')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">✖️ X (Twitter) Posts API</div>
+          <div class="op-card-sub">Upgrade X from copy-paste to auto-post — requires per-user developer accounts</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-sub-text">X has a working Posts API but the auth model is different — each business user must have their own X Developer account. Steps:</p>
+        <ul class="op-list">
+          <li><strong>Understand the constraint</strong> — X does not allow a single app to post to unlimited third-party accounts without each user having a developer account or going through the Elevated API tier. Free tier: 1,500 posts/month per app. This is fine for BlastyBiz at current scale.</li>
+          <li><strong>Create an X Developer App</strong> — go to <a href="https://developer.x.com/en/portal/dashboard" target="_blank">developer.x.com</a>, create a project + app, and enable OAuth 2.0 with PKCE. Request <code>tweet.write</code> and <code>users.read</code> scopes.</li>
+          <li><strong>Add OAuth Connect flow</strong> — add X to <code>connect.html</code> with the same OAuth pattern. X uses OAuth 2.0 with PKCE (no client secret needed on the redirect). Store the auth code server-side and exchange for tokens via your Express API.</li>
+          <li><strong>Store tokens in Firestore</strong> — save <code>accessToken</code>, <code>refreshToken</code>, <code>expiresAt</code>, and <code>xUserId</code> in the user's <code>platformConnections/x</code> doc.</li>
+          <li><strong>Add Cloud Function: <code>postToX</code></strong> — call <code>POST https://api.twitter.com/2/tweets</code> with the Bearer token and the AI-generated text (max 280 chars). Tokens expire in 2 hours — implement refresh using the refresh token.</li>
+          <li><strong>Switch platform type to <code>api</code></strong> — update the <code>x</code> entry in <code>BlastyBiz.html</code> platforms array and <code>SCHED_PLATFORMS</code> in <code>functions/index.js</code>.</li>
+        </ul>
+        <p class="op-note">Note: Keep the copy-paste fallback available. If a user does not connect X, the card still generates a 280-char post they can paste manually. X API access at the Basic tier ($100/mo) removes the 1,500-post cap if needed at scale.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════
        ONGOING
   ══════════════════════════════════════════ -->
   <div class="op-section">
