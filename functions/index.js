@@ -1729,7 +1729,19 @@ exports.jobCompletedTrigger = onDocumentUpdated(
 // ══════════════════════════════════════════
 exports.userCreatedTrigger = onDocumentCreated(
   { document: 'users/{uid}', region: 'us-central1' },
-  async () => { /* no-op — welcome email fires from businessCreatedTrigger after onboarding */ }
+  async (event) => {
+    const uid = event.params.uid;
+    const userData = event.data.data();
+    try {
+      await db.collection('setupNudges').doc(uid).set({
+        uid,
+        email: userData.email || null,
+        sendAfter: admin.firestore.Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000),
+        sent: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch(e) { console.error('[userCreatedTrigger] setupNudges write failed:', e.message); }
+  }
 );
 
 // ══════════════════════════════════════════
@@ -2708,12 +2720,17 @@ exports.scheduledUpgradeNudge = onSchedule(
     for (const userDoc of usersSnap.docs) {
       const userData = userDoc.data();
       if (!userData.email) continue;
+      if (userData.emailUnsubscribed) continue;
+      const uid = userDoc.id;
       const ownerName = userData.ownerName || userData.displayName || '';
       let businessName = '';
       try {
-        const bizSnap = await db.collection('businesses').where('uid', '==', userDoc.id).limit(1).get();
+        const bizSnap = await db.collection('businesses').where('uid', '==', uid).limit(1).get();
         businessName = bizSnap.docs[0]?.data()?.businessName || '';
       } catch(e) { /* non-fatal */ }
+
+      const token = Buffer.from(uid, 'utf8').toString('base64');
+      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?token=${encodeURIComponent(token)}`;
 
       const mergeData = {
         name: ownerName || 'there',
@@ -2721,6 +2738,7 @@ exports.scheduledUpgradeNudge = onSchedule(
         upgradeUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html#upgrade',
         dashboardUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html',
         appUrl: APP_BASE_URL,
+        unsubscribeUrl: unsubUrl,
       };
       function applyNudgeTags(str) {
         return str.replace(/\{\{(\w+)\}\}/g, (_, k) => mergeData[k] || '');
@@ -2752,7 +2770,7 @@ exports.scheduledUpgradeNudge = onSchedule(
     <p style="font-size:13px;color:#888;margin-top:20px;line-height:1.6">Questions before you upgrade? Reply to this email — we're real people who want to see ${mergeData.businessName} succeed.</p>
   </div>
   <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
-    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="${mergeData.appUrl}" style="color:#999">blastybiz.com</a> &#183; You received this because you signed up 7 days ago.</p>
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz, a Fluba Designs LLC brand. &bull; <a href="${unsubUrl}" style="color:#999">Unsubscribe</a></p>
   </div>
 </div>`;
 
@@ -2797,6 +2815,7 @@ exports.scheduledWeeklyDigest = onSchedule(
     for (const userDoc of usersSnap.docs) {
       const userData = userDoc.data();
       if (!userData.email) continue;
+      if (userData.emailUnsubscribed) continue;
       const uid = userDoc.id;
       const ownerName = userData.ownerName || userData.displayName || '';
 
@@ -2829,6 +2848,9 @@ exports.scheduledWeeklyDigest = onSchedule(
       ))].join(', ');
       const jobCount = successJobs.length.toString();
 
+      const token = Buffer.from(uid, 'utf8').toString('base64');
+      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?token=${encodeURIComponent(token)}`;
+
       const mergeData = {
         name: ownerName || 'there',
         businessName: businessName || (ownerName ? ownerName + '\'s Business' : 'your business'),
@@ -2836,6 +2858,7 @@ exports.scheduledWeeklyDigest = onSchedule(
         platformList,
         dashboardUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html',
         appUrl: APP_BASE_URL,
+        unsubscribeUrl: unsubUrl,
       };
       function applyDigestTags(str) {
         return str.replace(/\{\{(\w+)\}\}/g, (_, k) => mergeData[k] || '');
@@ -2873,7 +2896,7 @@ exports.scheduledWeeklyDigest = onSchedule(
     <p style="font-size:13px;color:#888;margin-top:20px;line-height:1.6">Keep the momentum going — blast to more platforms from your dashboard.</p>
   </div>
   <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
-    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="${mergeData.appUrl}" style="color:#999">blastybiz.com</a> &#183; Sent every Monday to Pro &amp; Agency subscribers.</p>
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz, a Fluba Designs LLC brand. &bull; Sent every Monday to Pro &amp; Agency subscribers. &bull; <a href="${unsubUrl}" style="color:#999">Unsubscribe</a></p>
   </div>
 </div>`;
 
@@ -2886,3 +2909,144 @@ exports.scheduledWeeklyDigest = onSchedule(
   }
 );
 
+// ══════════════════════════════════════════
+// unsubscribeEmail
+// GET /unsubscribeEmail?token=<base64-uid>
+// Sets emailUnsubscribed: true on the users doc
+// ══════════════════════════════════════════
+exports.unsubscribeEmail = onRequest({ invoker: 'public', region: 'us-central1' }, async (req, res) => {
+  const token = req.query.token;
+  if (!token) return res.status(400).send('<p>Missing unsubscribe token.</p>');
+
+  let uid;
+  try {
+    uid = Buffer.from(decodeURIComponent(token), 'base64').toString('utf8');
+    if (!uid) throw new Error('Empty uid');
+  } catch(e) {
+    return res.status(400).send('<p>Invalid unsubscribe link. Please contact support.</p>');
+  }
+
+  try {
+    const userSnap = await db.collection('users').doc(uid).get();
+    if (!userSnap.exists) return res.status(404).send('<p>Account not found.</p>');
+    await db.collection('users').doc(uid).update({ emailUnsubscribed: true });
+    return res.status(200).send('<p>You have been unsubscribed. You will no longer receive marketing emails from BlastyBiz.</p>');
+  } catch(e) {
+    console.error('[unsubscribeEmail] error:', e.message);
+    return res.status(500).send('<p>Something went wrong. Please try again or contact support.</p>');
+  }
+});
+
+// ══════════════════════════════════════════
+// scheduledSetupNudge
+// Runs daily at 9am ET — finds users who signed up 24h+ ago
+// but never completed onboarding (no business doc); sends a nudge email.
+// ══════════════════════════════════════════
+exports.scheduledSetupNudge = onSchedule(
+  { schedule: 'every day 09:00', timeZone: 'America/New_York', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
+  async () => {
+    // Query setupNudges docs that are unsent and past their sendAfter time
+    let nudgesSnap;
+    try {
+      nudgesSnap = await db.collection('setupNudges')
+        .where('sent', '==', false)
+        .where('sendAfter', '<=', admin.firestore.Timestamp.now())
+        .get();
+    } catch(e) {
+      // Composite index may not be deployed yet — fallback: query sendAfter only, filter sent in code
+      console.warn('[scheduledSetupNudge] composite query failed, using fallback:', e.message);
+      nudgesSnap = await db.collection('setupNudges')
+        .where('sendAfter', '<=', admin.firestore.Timestamp.now())
+        .get();
+    }
+
+    let sent = 0;
+    for (const nudgeDoc of nudgesSnap.docs) {
+      const nudgeData = nudgeDoc.data();
+      // Fallback filter if composite index wasn't available
+      if (nudgeData.sent === true) continue;
+
+      const uid = nudgeData.uid;
+      if (!uid) { await nudgeDoc.ref.delete(); continue; }
+
+      // 1. Direct doc lookup — business ID === uid by convention
+      const directBiz = await db.collection('businesses').doc(uid).get();
+      if (directBiz.exists) {
+        await db.collection('setupNudges').doc(uid).delete();
+        continue;
+      }
+
+      // 2. Fallback query — uid field in case doc was created with a different ID
+      const bizQuery = await db.collection('businesses').where('uid', '==', uid).limit(1).get();
+      if (!bizQuery.empty) {
+        await db.collection('setupNudges').doc(uid).delete();
+        continue;
+      }
+
+      // 3. No business found — user abandoned onboarding. Check user doc.
+      let userDoc;
+      try {
+        userDoc = await db.collection('users').doc(uid).get();
+      } catch(e) { console.error('[scheduledSetupNudge] users read failed:', e.message); continue; }
+
+      if (!userDoc.exists) { await db.collection('setupNudges').doc(uid).delete(); continue; }
+      const userData = userDoc.data();
+
+      if (!userData.email) { await db.collection('setupNudges').doc(uid).delete(); continue; }
+      if (userData.emailUnsubscribed) { await db.collection('setupNudges').doc(uid).delete(); continue; }
+
+      const ownerName = userData.ownerName || userData.displayName || '';
+      const token = Buffer.from(uid, 'utf8').toString('base64');
+      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?token=${encodeURIComponent(token)}`;
+
+      let tmplSubject = null;
+      let tmplHtml = null;
+      try {
+        const tmplSnap = await db.collection('emailTemplates')
+          .where('type', '==', 'setup-nudge').where('active', '==', true).limit(1).get();
+        if (!tmplSnap.empty) {
+          tmplSubject = tmplSnap.docs[0].data().subject;
+          tmplHtml = tmplSnap.docs[0].data().html;
+        }
+      } catch(e) { console.warn('[scheduledSetupNudge] template fetch failed:', e.message); }
+
+      const mergeData = {
+        name: ownerName || 'there',
+        onboardingUrl: APP_BASE_URL + '/BlastyBiz-Onboarding.html',
+        appUrl: APP_BASE_URL,
+        unsubscribeUrl: unsubUrl,
+      };
+      function applyNudgeTags(str) {
+        return str.replace(/\{\{(\w+)\}\}/g, (_, k) => mergeData[k] || '');
+      }
+
+      const subject = tmplSubject
+        ? applyNudgeTags(tmplSubject)
+        : `${mergeData.name}, finish setting up your BlastyBiz profile`;
+      const html = tmplHtml
+        ? applyNudgeTags(tmplHtml)
+        : `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:28px 32px 22px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:32px">
+    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Hey ${mergeData.name} — your profile is almost ready.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">You created your BlastyBiz account yesterday but haven't finished setting up your business profile yet. It only takes a few minutes — and once it's done, BlastyBiz writes the copy for every platform automatically.</p>
+    <a href="${mergeData.onboardingUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Finish Setup &#8594;</a>
+    <p style="font-size:13px;color:#888;margin-top:20px;line-height:1.6">Questions? Reply to this email — a real person reads every reply.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz, a Fluba Designs LLC brand. &bull; <a href="${unsubUrl}" style="color:#999">Unsubscribe</a></p>
+  </div>
+</div>`;
+
+      try {
+        await sendResendEmail({ to: userData.email, subject, html });
+        await db.collection('setupNudges').doc(uid).update({ sent: true });
+        sent++;
+      } catch(e) { console.error(`[scheduledSetupNudge] failed for ${userData.email}:`, e.message); }
+    }
+    console.log(`[scheduledSetupNudge] sent ${sent} setup nudge emails`);
+  }
+);
