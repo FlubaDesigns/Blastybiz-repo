@@ -61,14 +61,27 @@
   </section>
 
   <section>
+    <h2>Google API Data</h2>
+    <p>When you connect Google Business Profile, BlastyBiz requests the <strong><code>business.manage</code></strong> OAuth scope. This scope is used solely to create posts on Google Business Profile locations that you own or manage.</p>
+    <ul>
+      <li>BlastyBiz reads your Google Business Profile location list so you can select which location to post to.</li>
+      <li>BlastyBiz creates posts on your behalf using AI-adapted content you have reviewed and approved.</li>
+      <li>Your Google OAuth access token and refresh token are stored encrypted in our database. They are never sold, shared with third parties, or used for any purpose other than posting to your Google Business Profile.</li>
+      <li>No Google account data (name, email, contacts, Drive, Gmail, or any other Google service) is accessed or stored.</li>
+      <li>You can revoke BlastyBiz's access at any time at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>. Disconnecting from within BlastyBiz also removes your stored tokens immediately.</li>
+    </ul>
+    <p>BlastyBiz's use of Google API data complies with the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+  </section>
+
+  <section>
     <h2>Third-Party Services</h2>
     <p>We use the following third-party services to operate BlastyBiz:</p>
     <ul>
       <li><strong>Firebase / Google Cloud</strong> — Authentication, database, file storage, and hosting. Data is stored in the United States (us-east1).</li>
       <li><strong>Anthropic</strong> — AI content adaptation via the Claude API.</li>
       <li><strong>Square</strong> — Payment processing and subscription management.</li>
-      <li><strong>Google Business Profile API</strong> — Auto-posting to Google (when authorized).</li>
-      <li><strong>Meta Graph API</strong> — Auto-posting to Facebook and Instagram (when authorized).</li>
+      <li><strong>Google Business Profile API</strong> — Auto-posting to Google Business Profile (when authorized by you). See Google API Data section above.</li>
+      <li><strong>Meta Graph API</strong> — Auto-posting to Facebook and Instagram (when authorized by you).</li>
     </ul>
     <p>Each service operates under its own privacy policy. We share only the minimum data required for each to function.</p>
   </section>
