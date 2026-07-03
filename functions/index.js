@@ -283,6 +283,14 @@ const PLATFORM_DOCS = {
     dos:['Lead with the most interesting thing — no warm-up sentences','Use 1-2 hashtags max and only if they are highly relevant','Keep it to 1-2 short sentences when possible','End with a clear action (link, reply, quote tweet) if applicable','Emoji used sparingly to reinforce — not decorate'],
     donts:['No long-winded setups — get to the point immediately','No more than 2 hashtags','Do not try to fit a paragraph into 280 characters — trim ruthlessly','No all-caps','No generic promotional language — it blends into noise on X'],
     images:{recommended:true, notes:'Single image or up to 4 images. 16:9 landscape preferred (1200×675px). GIF supported. Images increase engagement significantly on X.'}
+  },
+  pinterest: {
+    name:'Pinterest', purpose:'Visual discovery platform — users actively browsing for ideas, inspiration, and services across home, food, beauty, fashion, and lifestyle categories',
+    maxChars:500, format:'Pin description + separate title (up to 100 chars). Description supports the image with context and keywords. Plain text — no markdown.',
+    tone:'Inspiring, aspirational, and helpful — write like you\'re sharing a great idea, not running an ad',
+    dos:['Weave in 2-4 natural keywords in the first sentence — Pinterest is a search engine','Write a specific, descriptive title that tells exactly what the pin is about','Describe what the viewer will get, learn, see, or experience','Include a soft CTA (visit us, save this, try it today)','2-3 targeted hashtags at the end — specific beats generic'],
+    donts:['No hashtag stuffing — 2-3 max, highly relevant only','No aggressive sales language — inspire first, sell second','Do not write a generic caption — specificity drives saves and clicks','No all-caps','Do not skip the title — it appears in search results and is your first impression'],
+    images:{required:true, notes:'Image is everything on Pinterest. Vertical 2:3 ratio strongly preferred (e.g. 1000×1500px). Bright, high-quality, well-composed images dramatically outperform dark or cluttered ones. JPG or PNG.'}
   }
 };
 

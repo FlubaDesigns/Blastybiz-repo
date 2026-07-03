@@ -561,6 +561,7 @@ const PLATFORMS = [
   { id: 'applemaps',  name: 'Apple Maps Connect',   icon: '🗺️', color: '#555555', type: 'manual', enabled: false, status: 'idle', note: 'AI formats your Apple Maps business info' },
   { id: 'linkedin',   name: 'LinkedIn',             icon: '💼', color: '#0A66C2', type: 'manual', enabled: false, status: 'idle', note: 'AI writes your LinkedIn post — you copy & paste it in' },
   { id: 'x',          name: 'X (Twitter)',           icon: '✖️', color: '#000000', type: 'manual', enabled: false, status: 'idle', note: 'AI writes your X post — you copy & paste it in' },
+  { id: 'pinterest',  name: 'Pinterest',             icon: '🖼️', color: '#E60023', type: 'manual', enabled: false, status: 'idle', note: 'AI writes your pin description — you create the pin on Pinterest' },
 ];
 
 // ══════════════════════════════════════════
@@ -581,6 +582,7 @@ const PLATFORM_RULES = {
   applemaps:  { maxChars: 500,  notes: 'Factual, complete, hours and category accurate' },
   linkedin:   { maxChars: 3000, notes: 'Professional, insight-driven, personal voice, 1-3 hashtags max' },
   x:          { maxChars: 280,  notes: 'Short, punchy, hook first, 1-2 hashtags max' },
+  pinterest:  { maxChars: 500,  notes: 'Keyword-rich, inspiring tone, vertical image required, 2-3 hashtags max' },
 };
 window.PLATFORMS = PLATFORMS; // expose for module script
 let platforms = PLATFORMS.map(p => ({...p})); // populated from Firestore after auth
