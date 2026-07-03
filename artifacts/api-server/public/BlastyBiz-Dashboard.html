@@ -51,18 +51,20 @@
 
   <!-- BUSINESS SWITCHER BAR -->
   <div class="biz-bar">
-    <div class="biz-bar-title">⚙ Control Panel</div>
-    <div class="biz-bar-right">
-      <div class="biz-active" id="biz-active-btn" onclick="openSwitcher()">
-        <div class="biz-avatar" id="active-avatar">🏪</div>
-        <div class="biz-info">
-          <div class="biz-name" id="active-name"></div>
-          <div class="biz-plan" id="active-plan"></div>
-        </div>
-        <div class="biz-chevron">▾</div>
-      </div>
-      <div class="biz-count" id="biz-count"></div>
+    <div class="biz-bar-header">
+      <div class="biz-bar-title">⚙ Control Panel</div>
       <button class="add-biz-btn" onclick="addBusiness()" title="Add business">＋</button>
+    </div>
+    <div class="biz-cards" id="biz-cards-inline">
+      <!-- populated by JS -->
+    </div>
+    <!-- kept for legacy JS refs -->
+    <div style="display:none">
+      <div id="biz-active-btn"></div>
+      <div id="active-avatar"></div>
+      <div id="active-name"></div>
+      <div id="active-plan"></div>
+      <div id="biz-count"></div>
     </div>
   </div>
 
@@ -211,20 +213,28 @@ function renderNoBusinessState() {
 }
 
 // ══════════════════════════════════════════
-// RENDER SWITCHER BAR
+// RENDER SWITCHER BAR — inline cards, always visible
 // ══════════════════════════════════════════
 function renderSwitcherBar() {
-  if (!BUSINESSES.length) return;
-  if (BUSINESSES.length === 1) {
-    const btn = document.getElementById('biz-active-btn');
-    if (btn) btn.style.display = 'none';
-    return;
-  }
-  const biz = BUSINESSES.find(b => b.id === activeBizId) || BUSINESSES[0];
-  document.getElementById('active-avatar').textContent = biz.avatar;
-  document.getElementById('active-name').textContent = biz.name;
-  document.getElementById('active-plan').textContent = `Agency · ${BUSINESSES.length} businesses`;
-  document.getElementById('biz-count').textContent = `${BUSINESSES.findIndex(b => b.id === activeBizId) + 1} of ${BUSINESSES.length}`;
+  const container = document.getElementById('biz-cards-inline');
+  if (!container) return;
+  container.innerHTML = '';
+  BUSINESSES.forEach(biz => {
+    const card = document.createElement('div');
+    card.className = 'biz-card' + (biz.id === activeBizId ? ' active' : '');
+    card.onclick = () => switchBusiness(biz.id);
+    card.innerHTML = `
+      <div class="biz-card-avatar avatar-green-tint">${biz.avatar}</div>
+      <div class="biz-card-info">
+        <div class="biz-card-name">${biz.name}</div>
+        <div class="biz-card-meta">${biz.platforms} platforms · Score ${biz.score}</div>
+      </div>
+      <div class="biz-card-status">
+        <div class="biz-score">${biz.score}</div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
 }
 
 function renderDashboardCampaigns(campaigns) {

@@ -1496,7 +1496,8 @@ body.onboarding-page textarea     { resize: none; }
    ─────────────────────────────────────────────────────────── */
 
 /* Business switcher bar — title + right group, space-between */
-.biz-bar             { background: rgba(13,22,13,0.95); border-bottom: 1px solid var(--border); padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; backdrop-filter: blur(8px); }
+.biz-bar             { background: rgba(13,22,13,0.95); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; flex-direction: column; gap: 12px; backdrop-filter: blur(8px); }
+.biz-bar-header      { display: flex; align-items: center; justify-content: space-between; }
 .biz-bar-title       { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--green); flex-shrink: 0; }
 .biz-bar-right       { display: flex; align-items: center; gap: 10px; }
 .biz-active          { display: flex; align-items: center; gap: 10px; cursor: pointer; background: var(--dark); border: 1px solid var(--green); border-radius: 10px; padding: 10px 14px; transition: all 0.2s; }
