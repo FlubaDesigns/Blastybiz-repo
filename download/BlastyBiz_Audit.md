@@ -395,6 +395,7 @@ The Operator Setup page (`BlastyBiz-Admin-Operate.html`) has step-by-step instru
 ### P0 — Required before real users
 - All 11 secrets above need real values set via Operate page
 - Resend domain (blastybiz.com) verified in Resend account
+- **Firebase Console → Firestore → TTL policies → add policy on `aiRequestDedup` collection, field `expiresAt`, 30 minutes** — without this, dedup docs from the AI idempotency system accumulate forever
 
 ### P1 — Future sprints
 1. ~~`aiActionsUsed` monthly reset~~ ✅ Fixed & deployed Jun 19 — 30-day rolling window via `aiActionsResetAt` in `adaptListing`/`resolveCategories`
