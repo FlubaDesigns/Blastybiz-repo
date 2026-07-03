@@ -70,7 +70,7 @@ const PLATFORM_META = {
 
 auth.authStateReady().then(() => {
   onAuthStateChanged(auth, async (user) => {
-    if (!user) { window.location.href = 'BlastyBiz-Login.html'; return}
+    if (!user) return; // auth-guard.js handles redirect after 3s grace period
 
     const content = document.getElementById('page-content');
 

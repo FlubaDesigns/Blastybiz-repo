@@ -171,7 +171,7 @@ import { collection, query, where, orderBy, limit, onSnapshot, getDoc, doc } fro
 
 auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
-  if (!user) { window.location.href = 'BlastyBiz-Login.html'; return}
+  if (!user) return; // auth-guard.js handles redirect
 
   try {
     const userSnap = await getDoc(doc(db, 'users', user.uid));

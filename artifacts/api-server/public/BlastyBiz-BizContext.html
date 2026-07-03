@@ -153,7 +153,7 @@ const FIELDS = [
 
 auth.authStateReady().then(() => {
   onAuthStateChanged(auth, async (user) => {
-    if (!user) { window.location.href = 'BlastyBiz-Login.html'; return; }
+    if (!user) return; // auth-guard.js handles redirect
     currentUser = user;
 
     try {
