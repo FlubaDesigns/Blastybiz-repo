@@ -353,6 +353,27 @@
         <div class="op-note">⚠️ Each AI Adapt button tap writes one dedup doc. Without the TTL, every request is kept forever. This collection is otherwise invisible and low-cost, but it will grow continuously.</div>
       </div>
     </div>
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-contact-ratelimit-ttl" onclick="toggleCheck(event,'contact-ratelimit-ttl')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">Set Firestore TTL policy on <code>contactRateLimit</code></div>
+          <div class="op-card-sub">Rate-limit docs for the contact form accumulate indefinitely without a TTL. Each doc is tiny but grows continuously.</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-step-label">What to do</p>
+        <ol class="op-list">
+          <li>Go to <span class="cf-url">console.firebase.google.com → blastybiz-9523e → Firestore Database → TTL policies</span></li>
+          <li>Click <strong>Add TTL policy</strong></li>
+          <li>Collection group: <strong>contactRateLimit</strong></li>
+          <li>Timestamp field: <strong>windowStart</strong></li>
+          <li>Save — Firestore will automatically delete docs once <code>windowStart</code> is old enough (effective ~24h cleanup window)</li>
+        </ol>
+        <div class="op-note">ℹ️ One doc is written per unique IP address per hour window. The TTL prevents indefinite accumulation of hashed IP rate-limit records.</div>
+      </div>
+    </div>
   </div>
 
   <!-- ══════════════════════════════════════════
