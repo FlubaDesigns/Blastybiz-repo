@@ -151,6 +151,11 @@ async function requireAdmin(req) {
   return decoded;
 }
 
+// HMAC-signed unsubscribe tokens — prevents forging by base64-encoding a uid
+function makeUnsubSig(uid, secret) {
+  return crypto.createHmac('sha256', secret).update(uid).digest('hex');
+}
+
 // ── AI usage limits (actions per month by plan) ──────────────────────────────
 const AI_LIMITS = { starter: 10, pro: 100, agency: 500 };
 
@@ -2507,6 +2512,32 @@ exports.contactForm = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY']
   const { to, name, email, message } = req.body || {};
   if (!ALLOWED_TO.has(to)) return res.status(400).json({ error: 'Invalid recipient' });
   if (!name?.trim() || !email?.trim() || !message?.trim()) return res.status(400).json({ error: 'Missing fields' });
+  if (name.trim().length > 200) return res.status(400).json({ error: 'Name too long' });
+  if (email.trim().length > 200) return res.status(400).json({ error: 'Email too long' });
+  if (message.trim().length > 3000) return res.status(400).json({ error: 'Message too long (3000 chars max)' });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return res.status(400).json({ error: 'Invalid email address' });
+
+  // Rate limit: 5 submissions per IP per hour (stored in Firestore via Admin SDK)
+  try {
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'unknown';
+    const ipKey = crypto.createHash('sha256').update(ip).digest('hex').slice(0, 16);
+    const rlRef = db.collection('contactRateLimit').doc(ipKey);
+    const rlSnap = await rlRef.get();
+    const now = Date.now();
+    const windowMs = 60 * 60 * 1000;
+    if (rlSnap.exists) {
+      const { count, windowStart } = rlSnap.data();
+      if (now - windowStart < windowMs) {
+        if (count >= 5) return res.status(429).json({ error: 'Too many messages. Please try again in an hour.' });
+        await rlRef.update({ count: admin.firestore.FieldValue.increment(1) });
+      } else {
+        await rlRef.set({ count: 1, windowStart: now });
+      }
+    } else {
+      await rlRef.set({ count: 1, windowStart: now });
+    }
+  } catch(e) { /* rate-limit check non-fatal — proceed if Firestore unavailable */ }
+
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey || apiKey === 'placeholder') return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
   function escHtml(str) {
@@ -2989,8 +3020,7 @@ exports.scheduledUpgradeNudge = onSchedule(
         businessName = bizSnap.docs[0]?.data()?.businessName || '';
       } catch(e) { /* non-fatal */ }
 
-      const token = Buffer.from(uid, 'utf8').toString('base64');
-      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?token=${encodeURIComponent(token)}`;
+      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, process.env.RESEND_API_KEY)}`;
 
       const mergeData = {
         name: ownerName || 'there',
@@ -3108,8 +3138,7 @@ exports.scheduledWeeklyDigest = onSchedule(
       ))].join(', ');
       const jobCount = successJobs.length.toString();
 
-      const token = Buffer.from(uid, 'utf8').toString('base64');
-      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?token=${encodeURIComponent(token)}`;
+      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, process.env.RESEND_API_KEY)}`;
 
       const mergeData = {
         name: ownerName || 'there',
@@ -3171,20 +3200,24 @@ exports.scheduledWeeklyDigest = onSchedule(
 
 // ══════════════════════════════════════════
 // unsubscribeEmail
-// GET /unsubscribeEmail?token=<base64-uid>
+// GET /unsubscribeEmail?uid=<uid>&sig=<hmac-hex>
+// HMAC-signed — sig = HMAC-SHA256(uid, RESEND_API_KEY); prevents uid-guessing attacks
 // Sets emailUnsubscribed: true on the users doc
 // ══════════════════════════════════════════
-exports.unsubscribeEmail = onRequest({ invoker: 'public', region: 'us-central1' }, async (req, res) => {
-  const token = req.query.token;
-  if (!token) return res.status(400).send('<p>Missing unsubscribe token.</p>');
+exports.unsubscribeEmail = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
+  const uid = req.query.uid;
+  const sig = req.query.sig;
+  if (!uid || !sig) return res.status(400).send('<p>Missing unsubscribe parameters.</p>');
 
-  let uid;
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return res.status(500).send('<p>Configuration error.</p>');
+
+  const expected = makeUnsubSig(uid, apiKey);
+  let sigValid = false;
   try {
-    uid = Buffer.from(decodeURIComponent(token), 'base64').toString('utf8');
-    if (!uid) throw new Error('Empty uid');
-  } catch(e) {
-    return res.status(400).send('<p>Invalid unsubscribe link. Please contact support.</p>');
-  }
+    sigValid = crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex'));
+  } catch(e) { /* invalid hex — sigValid stays false */ }
+  if (!sigValid) return res.status(400).send('<p>Invalid unsubscribe link. Please contact support.</p>');
 
   try {
     const userSnap = await db.collection('users').doc(uid).get();
@@ -3256,8 +3289,7 @@ exports.scheduledSetupNudge = onSchedule(
       if (userData.emailUnsubscribed) { await db.collection('setupNudges').doc(uid).delete(); continue; }
 
       const ownerName = userData.ownerName || userData.displayName || '';
-      const token = Buffer.from(uid, 'utf8').toString('base64');
-      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?token=${encodeURIComponent(token)}`;
+      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, process.env.RESEND_API_KEY)}`;
 
       let tmplSubject = null;
       let tmplHtml = null;
