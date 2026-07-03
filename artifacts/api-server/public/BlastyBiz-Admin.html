@@ -30,6 +30,19 @@
 </header>
 
 <main><div class="main"><div class="main-inner">
+
+  <!-- ── PLAN SWITCHER ── -->
+  <section class="card" id="plan-switcher" style="margin-bottom:20px;border-left:4px solid #00C853;">
+    <div class="card-title" style="margin-bottom:6px;">🧪 My Plan Override</div>
+    <p style="font-size:13px;color:#666;margin:0 0 14px;">Switch your account between tiers for testing. A real Square payment event will overwrite this.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <button id="plan-btn-starter" onclick="window.setPlan('starter')" class="btn">Starter</button>
+      <button id="plan-btn-pro"     onclick="window.setPlan('pro')"     class="btn">Pro</button>
+      <button id="plan-btn-agency"  onclick="window.setPlan('agency')"  class="btn">Agency</button>
+      <span id="plan-current" style="font-size:13px;color:#888;margin-left:6px;"></span>
+    </div>
+  </section>
+
   <section class="hero">
     <div class="card">
       <div class="eyebrow">Owner/admin dashboard</div>
@@ -144,12 +157,32 @@
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { collection, query, where, orderBy, limit, onSnapshot, deleteDoc, getDocs, doc, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { collection, query, where, orderBy, limit, onSnapshot, deleteDoc, getDocs, getDoc, setDoc, doc, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) return;
   const el = id => document.getElementById(id);
   const PRICES = { pro: 19, agency: 99 };
+
+  // ── Plan switcher ──
+  function highlightPlan(plan) {
+    ['starter','pro','agency'].forEach(p => {
+      const btn = el('plan-btn-' + p);
+      if (!btn) return;
+      btn.style.background   = p === plan ? '#00C853' : '';
+      btn.style.color        = p === plan ? '#000'    : '';
+      btn.style.borderColor  = p === plan ? '#00C853' : '';
+      btn.style.fontWeight   = p === plan ? '700'     : '';
+    });
+    const cur = el('plan-current');
+    if (cur) cur.textContent = 'Current: ' + plan.charAt(0).toUpperCase() + plan.slice(1);
+  }
+  window.setPlan = async function(plan) {
+    await setDoc(doc(db, 'users', user.uid), { plan }, { merge: true });
+    highlightPlan(plan);
+  };
+  const userSnap = await getDoc(doc(db, 'users', user.uid));
+  if (userSnap.exists()) highlightPlan(userSnap.data().plan || 'starter');
 
   // Delete a business doc and all related records — admin only
   window._adminDeleteBiz = async function(docId, name) {

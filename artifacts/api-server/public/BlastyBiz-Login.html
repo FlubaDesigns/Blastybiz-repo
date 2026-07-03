@@ -387,6 +387,7 @@ onAuthStateChanged(auth, async (user) => {
 
 getRedirectResult(auth).then(async (result) => {
   if (!result?.user) return;
+  afterAuthCalled = true;
   const snap = await getDoc(doc(db, 'users', result.user.uid));
   if (!snap.exists()) {
     await setDoc(doc(db, 'users', result.user.uid), {
@@ -397,6 +398,7 @@ getRedirectResult(auth).then(async (result) => {
       createdAt: serverTimestamp()
     });
   }
+  await afterAuth(result.user);
 }).catch(e => {
   if (e.code && e.code !== 'auth/popup-closed-by-user') {
     window.showToast('Google sign-in failed', true);
