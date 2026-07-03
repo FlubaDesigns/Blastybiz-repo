@@ -832,10 +832,34 @@ exports.uploadImage = onRequest({ invoker: 'public' }, async (req, res) => {
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
 
   const { imageData, fileName, mimeType } = req.body;
+  if (!imageData || !fileName || !mimeType) return res.status(400).json({ error: 'Missing fields' });
+
+  const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+  if (!ALLOWED_MIME.has(mimeType)) return res.status(400).json({ error: 'Invalid file type' });
+
+  let rawBytes;
+  try { rawBytes = Buffer.from(imageData, 'base64'); } catch(e) {
+    return res.status(400).json({ error: 'Invalid image data' });
+  }
+  if (!rawBytes || rawBytes.byteLength === 0) return res.status(400).json({ error: 'Empty image' });
+
+  const MAX_SIZE = 5 * 1024 * 1024;
+  if (rawBytes.byteLength > MAX_SIZE) return res.status(400).json({ error: 'File too large (max 5MB)' });
+
+  // Validate binary signature — don't trust the caller-supplied mimeType alone
+  const isJpeg = rawBytes[0] === 0xFF && rawBytes[1] === 0xD8;
+  const isPng  = rawBytes[0] === 0x89 && rawBytes[1] === 0x50 && rawBytes[2] === 0x4E && rawBytes[3] === 0x47;
+  const isWebp = rawBytes.slice(0, 4).toString('binary') === 'RIFF' && rawBytes.slice(8, 12).toString('binary') === 'WEBP';
+  const isGif  = rawBytes.slice(0, 6).toString('ascii').startsWith('GIF8');
+  if (!isJpeg && !isPng && !isWebp && !isGif) return res.status(400).json({ error: 'File is not a valid image' });
+
+  // Sanitize fileName — strip path separators and limit length
+  const safeFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100);
+
   const uid = decoded.uid;
   const bucket = admin.storage().bucket();
-  const file = bucket.file(`users/${uid}/images/${Date.now()}_${fileName}`);
-  await file.save(Buffer.from(imageData, 'base64'), { contentType: mimeType });
+  const file = bucket.file(`users/${uid}/images/${Date.now()}_${safeFileName}`);
+  await file.save(rawBytes, { contentType: mimeType });
   const [url] = await file.getSignedUrl({ action: 'read', expires: '03-01-2500' });
   res.json({ url });
 });
@@ -968,6 +992,8 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
     await db.collection('pendingCheckouts').doc(orderId).set({
       uid, plan,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      // TTL field — Firestore TTL policy on pendingCheckouts/expiresAt cleans up abandoned checkouts after 48h
+      expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 48 * 60 * 60 * 1000),
     });
   }
   res.json({ url: response.paymentLink.url });
@@ -1987,20 +2013,54 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
       }
     }
 
-    // Collect all docs to delete
-    const [bizSnap, draftsSnap, jobsSnap, connsSnap] = await Promise.all([
-      db.collection('businesses').where('uid', '==', uid).get(),
-      db.collection('listingDrafts').where('uid', '==', uid).get(),
-      db.collection('publishJobs').where('uid', '==', uid).get(),
-      db.collection('platformConnections').where('uid', '==', uid).get(),
-    ]);
+    // Collect all top-level collections to delete
+    const [bizSnap, draftsSnap, jobsSnap, connsSnap, librarySnap, activitySnap, pendingSnap] =
+      await Promise.all([
+        db.collection('businesses').where('uid', '==', uid).get(),
+        db.collection('listingDrafts').where('uid', '==', uid).get(),
+        db.collection('publishJobs').where('uid', '==', uid).get(),
+        db.collection('platformConnections').where('uid', '==', uid).get(),
+        db.collection('copyLibrary').where('uid', '==', uid).get(),
+        db.collection('activityLogs').where('uid', '==', uid).get(),
+        db.collection('pendingPosts').where('uid', '==', uid).get(),
+      ]);
 
-    const batch = db.batch();
-    batch.delete(db.collection('users').doc(uid));
-    batch.delete(db.collection('subscriptions').doc(uid));
-    [...bizSnap.docs, ...draftsSnap.docs, ...jobsSnap.docs, ...connsSnap.docs]
-      .forEach(d => batch.delete(d.ref));
-    await batch.commit();
+    // Collect business library subcollection docs
+    const libDocRefs = [];
+    for (const bizDoc of bizSnap.docs) {
+      const libSnap = await db.collection('businesses').doc(bizDoc.id).collection('documents').get();
+      libSnap.docs.forEach(d => libDocRefs.push(d.ref));
+    }
+
+    // Assemble all refs (aiUsageLogs intentionally excluded — billing records must be retained)
+    const allRefs = [
+      db.collection('users').doc(uid),
+      db.collection('subscriptions').doc(uid),
+      ...bizSnap.docs.map(d => d.ref),
+      ...draftsSnap.docs.map(d => d.ref),
+      ...jobsSnap.docs.map(d => d.ref),
+      ...connsSnap.docs.map(d => d.ref),
+      ...librarySnap.docs.map(d => d.ref),
+      ...activitySnap.docs.map(d => d.ref),
+      ...pendingSnap.docs.map(d => d.ref),
+      ...libDocRefs,
+    ];
+
+    // Batch delete in chunks of 450 (Firestore hard limit is 500 per batch)
+    const CHUNK = 450;
+    for (let i = 0; i < allRefs.length; i += CHUNK) {
+      const batch = db.batch();
+      allRefs.slice(i, i + CHUNK).forEach(ref => batch.delete(ref));
+      await batch.commit();
+    }
+
+    // Delete Storage files — wrapped so account deletion doesn't fail if Storage throws
+    try {
+      const storageBucket = admin.storage().bucket();
+      await storageBucket.deleteFiles({ prefix: `users/${uid}/images/` });
+    } catch(e) {
+      console.error('[deleteAccount] Storage cleanup failed:', e.message);
+    }
 
     // Delete Firebase Auth user last
     await admin.auth().deleteUser(uid);

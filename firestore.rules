@@ -4,10 +4,8 @@ service cloud.firestore {
 
     // Admin helper — full read access across all collections
     function isAdmin() {
-      return request.auth != null && (
-        request.auth.token.email == 'perceys@gmail.com' ||
-        request.auth.token.email == 'rep-test@blastybiz.com'
-      );
+      return request.auth != null &&
+        request.auth.token.email == 'perceys@gmail.com';
     }
 
     // Users can only read/write their own user doc; admin can read any.
@@ -20,9 +18,11 @@ service cloud.firestore {
       //     (e.g. squareCustomerId, subscriptionId, usageCounters) you MUST add it here too,
       //     or it will be client-writable by default.
       allow update: if request.auth != null && request.auth.uid == userId
-        && !('plan'       in request.resource.data.diff(resource.data).affectedKeys())
-        && !('planActive' in request.resource.data.diff(resource.data).affectedKeys())
-        && !('aiUsage'    in request.resource.data.diff(resource.data).affectedKeys());
+        && !('plan'           in request.resource.data.diff(resource.data).affectedKeys())
+        && !('planActive'     in request.resource.data.diff(resource.data).affectedKeys())
+        && !('aiUsage'        in request.resource.data.diff(resource.data).affectedKeys())
+        && !('aiActionsUsed'  in request.resource.data.diff(resource.data).affectedKeys())
+        && !('aiActionsResetAt' in request.resource.data.diff(resource.data).affectedKeys());
     }
 
     // Businesses — owner only; admin can read or delete any.
@@ -61,24 +61,28 @@ service cloud.firestore {
         request.auth.uid == request.resource.data.uid;
     }
 
-    // Publish jobs — owner only (create + read; backend updates status); admin can read or write any
+    // Publish jobs — read by owner or admin; writes only by admin (browser tools) or backend
+    // Regular users must NOT update job status — that would let them falsify publish results.
     match /publishJobs/{jobId} {
       allow read: if request.auth != null &&
         (request.auth.uid == resource.data.uid || isAdmin());
-      allow write: if request.auth != null &&
-        (request.auth.uid == resource.data.uid || isAdmin());
-      allow create: if request.auth != null &&
-        request.auth.uid == request.resource.data.uid;
+      allow write: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
-    // Platform connections — owner only; admin can read any
+    // Platform connections — owner read; admin read/write; owner may only set status→disconnected
+    // All other field changes (tokens, locationId, etc.) must go through Cloud Functions (Admin SDK).
     match /platformConnections/{connId} {
       allow read: if request.auth != null &&
         (request.auth.uid == resource.data.uid || isAdmin());
-      allow write: if request.auth != null &&
-        request.auth.uid == resource.data.uid;
+      allow write: if isAdmin();
       allow create: if request.auth != null &&
         request.auth.uid == request.resource.data.uid;
+      // Owners may disconnect their own connection but cannot write any other field
+      allow update: if request.auth != null &&
+        request.auth.uid == resource.data.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+        request.resource.data.status == 'disconnected';
     }
 
     // Subscriptions — owner read only (written by Square webhook backend); admin can read any

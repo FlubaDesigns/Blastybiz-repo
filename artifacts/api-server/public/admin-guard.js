@@ -1,7 +1,7 @@
 import { auth } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-const ADMIN_EMAILS = ['perceys@gmail.com', 'rep-test@blastybiz.com'];
+const ADMIN_EMAILS = ['perceys@gmail.com'];
 
 const _safetyTimer = setTimeout(() => {
   document.body.style.visibility = 'visible';

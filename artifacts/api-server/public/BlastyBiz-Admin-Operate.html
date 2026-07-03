@@ -313,6 +313,27 @@
     </div>
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-pending-checkouts-ttl" onclick="toggleCheck(event,'pending-checkouts-ttl')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">Set Firestore TTL policy on <code>pendingCheckouts</code></div>
+          <div class="op-card-sub">Abandoned checkout sessions accumulate forever without this. Each one is tiny but grows continuously.</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-step-label">What to do</p>
+        <ol class="op-list">
+          <li>Go to <span class="cf-url">console.firebase.google.com → blastybiz-9523e → Firestore Database → TTL policies</span></li>
+          <li>Click <strong>Add TTL policy</strong></li>
+          <li>Collection group: <strong>pendingCheckouts</strong></li>
+          <li>Timestamp field: <strong>expiresAt</strong></li>
+          <li>Save — Firestore will automatically delete docs 48 hours after checkout creation if payment was never completed</li>
+        </ol>
+        <div class="op-note">ℹ️ Completed checkouts are deleted immediately by the Square webhook handler. This TTL only catches abandoned sessions where the user started checkout but never paid.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-firestore-ttl" onclick="toggleCheck(event,'firestore-ttl')"></div>
         <div class="flex-1">
           <div class="op-card-title">Set Firestore TTL policy on <code>aiRequestDedup</code></div>
