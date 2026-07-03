@@ -190,22 +190,26 @@
   <!-- ABOUT YOU IN COPY -->
   <div class="card about-you-card hidden" id="about-you-card">
     <div class="card-title mb-12">🪪 About You in Copy</div>
-    <label class="check-row mb-12">
-      <span class="check-text">
+    <div class="yn-row mb-12">
+      <span class="yn-label">
         Mention my name
         <span id="copy-name-preview" class="check-hint"></span>
       </span>
-      <input type="checkbox" id="copy-include-name" class="check-input"
-        onchange="if(this.checked) document.getElementById('copy-include-role').checked=false;" />
-    </label>
-    <label class="check-row">
-      <span class="check-text">
+      <div class="yn-btns">
+        <button class="yn-btn yn-yes" id="yn-name-yes" onclick="setYN('name','yes')">Yes</button>
+        <button class="yn-btn yn-no yn-active" id="yn-name-no" onclick="setYN('name','no')">No</button>
+      </div>
+    </div>
+    <div class="yn-row">
+      <span class="yn-label">
         Mention my role
         <span id="copy-role-preview" class="check-hint"></span>
       </span>
-      <input type="checkbox" id="copy-include-role" class="check-input"
-        onchange="if(this.checked) document.getElementById('copy-include-name').checked=false;" />
-    </label>
+      <div class="yn-btns">
+        <button class="yn-btn yn-yes" id="yn-role-yes" onclick="setYN('role','yes')">Yes</button>
+        <button class="yn-btn yn-no yn-active" id="yn-role-no" onclick="setYN('role','no')">No</button>
+      </div>
+    </div>
   </div>
 
   <div class="ai-loading" id="ai-loading">
