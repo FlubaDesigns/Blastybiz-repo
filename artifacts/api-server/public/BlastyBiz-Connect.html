@@ -216,8 +216,16 @@ function showToast(msg, isError) {
 // ── Google explainer toggle ──
 window.openGoogleExplainer = function() {
   document.getElementById('explainer-google').classList.add('open')};
-window.proceedGoogleConnect = function() {
-  if (_googleConnectUrl) window.location.href = _googleConnectUrl};
+window.proceedGoogleConnect = async function() {
+  if (!_googleConnectUrl || !window._bbGetToken) return;
+  try {
+    const token = await window._bbGetToken();
+    const r = await fetch(_googleConnectUrl, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await r.json();
+    if (data.url) { window.location.href = data.url; }
+    else { showToast('Could not start Google connection. Try again.', true); }
+  } catch(e) { showToast('Could not start Google connection. Try again.', true); }
+};
 
 // ── Facebook gate ──
 window.openFbGate = function() {
@@ -226,8 +234,16 @@ window.openFbGate = function() {
   document.getElementById('fb-gate-modal').classList.add('open')};
 window.closeFbGate = function() {
   document.getElementById('fb-gate-modal').classList.remove('open')};
-window.fbGateYes = function() {
-  if (_fbConnectUrl) window.location.href = _fbConnectUrl};
+window.fbGateYes = async function() {
+  if (!_fbConnectUrl || !window._bbGetToken) return;
+  try {
+    const token = await window._bbGetToken();
+    const r = await fetch(_fbConnectUrl, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await r.json();
+    if (data.url) { window.location.href = data.url; }
+    else { showToast('Could not start Facebook connection. Try again.', true); }
+  } catch(e) { showToast('Could not start Facebook connection. Try again.', true); }
+};
 window.fbGateNo = function() {
   document.getElementById('fb-gate-step1').style.display = 'none';
   document.getElementById('fb-gate-step2').classList.add('open')};
@@ -329,6 +345,8 @@ onAuthStateChanged(auth, async (user) => {
   if (!hasOAuthCreds) {
     document.getElementById('setup-note').classList.remove('hidden');
     document.querySelectorAll('.btn-connect').forEach(b => b.disabled = true)}
+
+  window._bbGetToken = () => user.getIdToken();
 
   window._disconnectPlatform = async function(platformId) {
     const conn = connMap[platformId];

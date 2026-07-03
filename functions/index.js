@@ -1386,16 +1386,18 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
 // OAuth 2.0 redirect URI = https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback
 // ══════════════════════════════════════════
 exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID'] }, async (req, res) => {
+  setCors(res);
+  res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).send('Unauthorized'); }
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
   const uid = decoded.uid;
   const { businessId, returnTo } = req.query;
-  if (!businessId) { res.status(400).send('Missing businessId'); return; }
-  // Verify the business belongs to this user
+  if (!businessId) { res.status(400).json({ error: 'Missing businessId' }); return; }
   const bizSnap = await db.collection('businesses').doc(businessId).get();
-  if (!bizSnap.exists || bizSnap.data().uid !== uid) { return res.status(403).send('Forbidden'); }
+  if (!bizSnap.exists || bizSnap.data().uid !== uid) { return res.status(403).json({ error: 'Forbidden' }); }
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  if (!clientId) { res.status(503).send('Google OAuth not configured. Set GOOGLE_CLIENT_ID secret.'); return; }
+  if (!clientId) { res.status(503).json({ error: 'Google OAuth not configured' }); return; }
   const nonce = require('crypto').randomUUID();
   await db.collection('oauthNonces').doc(nonce).set({
     uid, businessId, returnTo: returnTo || '',
@@ -1403,15 +1405,15 @@ exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
   });
   const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback';
   const scope = 'https://www.googleapis.com/auth/business.manage';
-  res.redirect(
+  const url =
     `https://accounts.google.com/o/oauth2/v2/auth` +
     `?client_id=${encodeURIComponent(clientId)}` +
     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
     `&response_type=code` +
     `&scope=${encodeURIComponent(scope)}` +
     `&access_type=offline&prompt=consent` +
-    `&state=${encodeURIComponent(nonce)}`
-  );
+    `&state=${encodeURIComponent(nonce)}`;
+  res.json({ url });
 });
 
 // ══════════════════════════════════════════
@@ -1494,16 +1496,18 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', region: 'us-central
 //   instagram_basic, instagram_content_publish
 // ══════════════════════════════════════════
 exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBOOK_APP_ID'] }, async (req, res) => {
+  setCors(res);
+  res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).send('Unauthorized'); }
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
   const uid = decoded.uid;
   const { businessId, returnTo } = req.query;
-  if (!businessId) { res.status(400).send('Missing businessId'); return; }
-  // Verify the business belongs to this user
+  if (!businessId) { res.status(400).json({ error: 'Missing businessId' }); return; }
   const bizSnap = await db.collection('businesses').doc(businessId).get();
-  if (!bizSnap.exists || bizSnap.data().uid !== uid) { return res.status(403).send('Forbidden'); }
+  if (!bizSnap.exists || bizSnap.data().uid !== uid) { return res.status(403).json({ error: 'Forbidden' }); }
   const appId = process.env.FACEBOOK_APP_ID;
-  if (!appId) { res.status(503).send('Facebook OAuth not configured. Set FACEBOOK_APP_ID secret.'); return; }
+  if (!appId) { res.status(503).json({ error: 'Facebook OAuth not configured' }); return; }
   const nonce = require('crypto').randomUUID();
   await db.collection('oauthNonces').doc(nonce).set({
     uid, businessId, returnTo: returnTo || '',
@@ -1511,13 +1515,13 @@ exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBO
   });
   const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/facebookOAuthCallback';
   const scope = 'pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish';
-  res.redirect(
+  const url =
     `https://www.facebook.com/v18.0/dialog/oauth` +
     `?client_id=${encodeURIComponent(appId)}` +
     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
     `&scope=${encodeURIComponent(scope)}` +
-    `&state=${encodeURIComponent(nonce)}`
-  );
+    `&state=${encodeURIComponent(nonce)}`;
+  res.json({ url });
 });
 
 // ══════════════════════════════════════════
