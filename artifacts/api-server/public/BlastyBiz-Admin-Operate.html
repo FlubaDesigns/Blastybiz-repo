@@ -227,7 +227,7 @@
     <div class="section-header">
       <span class="section-icon">🔍</span>
       <span class="section-title">Google OAuth Consent Screen Verification</span>
-      <span class="section-badge warn">Required for public users</span>
+      <span class="section-badge info">Submitted — In Review</span>
     </div>
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
@@ -277,7 +277,7 @@
     <div class="section-header">
       <span class="section-icon">📋</span>
       <span class="section-title">Meta App Review</span>
-      <span class="section-badge warn">Required for public users</span>
+      <span class="section-badge info">Submitted — In Review</span>
     </div>
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
@@ -553,8 +553,10 @@ function renderChecks() {
   const checkable = ['client-google','client-facebook','client-instagram',
                      'client-yelp','client-nextdoor','client-apple',
                      'client-bing','client-thumbtack',
-                     'google-api','google-creds','google-deploy',
-                     'fb-app','fb-perms','fb-deploy'];
+                     'google-verify','google-logo',
+                     'meta-review',
+                     'pending-checkouts-ttl','firestore-ttl','contact-ratelimit-ttl',
+                     'linkedin-api','x-api'];
   checkable.forEach(key => {
     const box = document.getElementById('chk-' + key);
     if (!box) return;
@@ -567,14 +569,10 @@ function renderChecks() {
   document.getElementById('prog-bar').style.width = (done/total*100) + '%';
   document.getElementById('prog-label').textContent = `${done} / ${total} done`;
 
-  const googleKeys = ['google-api','google-creds','google-deploy'];
-  const fbKeys = ['fb-app','fb-perms','fb-deploy'];
   const clientKeys = ['client-google','client-facebook','client-instagram',
                       'client-yelp','client-nextdoor','client-apple',
                       'client-bing','client-thumbtack'];
   updateBadge('badge-client', clientKeys, checks);
-  updateBadge('badge-google', googleKeys, checks);
-  updateBadge('badge-facebook', fbKeys, checks);
 
 }
 
