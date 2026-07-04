@@ -305,11 +305,26 @@ function renderPlatform(platformId, conn, bizId, uid) {
     const detail = platformId === 'google'
       ? (conn.accountId ? 'Account: ' + conn.accountId : 'Connected')
       : (conn.pageName ? 'Page: ' + conn.pageName : 'Connected');
-    statusEl.textContent = detail + ' · Posts go here when you approve';
-    actionsEl.innerHTML = `
-      <span class="status-badge badge-live">Connected</span>
-      <button class="btn-disconnect" onclick="disconnectPlatform('${platformId}')">Disconnect</button>
-    `} else if (conn.status === 'expired' || conn.status === 'error') {
+    let expiryWarnMs = null;
+    if (conn.expiresAt) {
+      const expMs = conn.expiresAt.toDate ? conn.expiresAt.toDate().getTime() : (conn.expiresAt.seconds || 0) * 1000;
+      const remainingMs = expMs - Date.now();
+      if (remainingMs > 0 && remainingMs <= 7 * 86400000) expiryWarnMs = remainingMs}
+    if (expiryWarnMs !== null) {
+      const daysLeft = Math.ceil(expiryWarnMs / 86400000);
+      const daysLabel = daysLeft <= 1 ? 'less than 1 day' : daysLeft + ' days';
+      cardEl.classList.remove('error');
+      statusEl.textContent = detail + ' · Expiring in ' + daysLabel + ' — reconnect now to avoid interruption';
+      actionsEl.innerHTML = `
+        <span class="status-badge badge--warn">Expiring soon — ${daysLeft <= 1 ? '<1d' : daysLeft + 'd'} left</span>
+        <button class="btn-reconnect" onclick="reconnectPlatform('${platformId}')">Reconnect</button>
+      `} else {
+      statusEl.textContent = detail + ' · Posts go here when you approve';
+      actionsEl.innerHTML = `
+        <span class="status-badge badge-live">Connected</span>
+        <button class="btn-disconnect" onclick="disconnectPlatform('${platformId}')">Disconnect</button>
+      `}
+  } else if (conn.status === 'expired' || conn.status === 'error') {
     cardEl.classList.add('error');
     statusEl.textContent = 'Token expired — reconnect to resume auto-posting.';
     actionsEl.innerHTML = `
