@@ -188,24 +188,20 @@ onAuthStateChanged(auth, async (user) => {
   window._adminDeleteBiz = async function(docId, name, ownerUid) {
     if (!confirm('Delete "' + (name || docId) + '" and all related records? This cannot be undone.')) return;
     try {
-      // Cascade: delete all child records keyed to this business
-      const relatedCollections = [
-        ['listingDrafts',      'businessId'],
-        ['publishJobs',        'businessId'],
-        ['platformConnections','businessId'],
-        ['pendingPosts',       'businessId'],
-        ['copyLibrary',        'businessId'],
-        ['activityLogs',       'businessId'],
-      ];
-      for (const [col, field] of relatedCollections) {
+      // Cascade: delete all subcollection records for this business
+      if (ownerUid) {
+        const bizSubcollections = ['listingDrafts', 'publishJobs', 'platformConnections', 'pendingPosts', 'campaigns'];
+        for (const sub of bizSubcollections) {
+          const snap = await getDocs(collection(db, 'users', ownerUid, 'businesses', docId, sub));
+          for (const d of snap.docs) await deleteDoc(d.ref);
+        }
+        await deleteDoc(doc(db, 'users', ownerUid, 'businesses', docId));
+      }
+      // Also clean up flat collections that may still have old records (migration safety)
+      const flatCollections = [['copyLibrary', 'businessId'], ['activityLogs', 'businessId']];
+      for (const [col, field] of flatCollections) {
         const snap = await getDocs(query(collection(db, col), where(field, '==', docId)));
         for (const d of snap.docs) await deleteDoc(d.ref);
-      }
-      // Delete campaigns sub-collection
-      if (ownerUid) {
-        const campSnap = await getDocs(collection(db, 'users', ownerUid, 'businesses', docId, 'campaigns'));
-        for (const d of campSnap.docs) await deleteDoc(d.ref);
-        await deleteDoc(doc(db, 'users', ownerUid, 'businesses', docId));
       }
     } catch(e) {
       alert('Delete failed: ' + e.message);
@@ -300,7 +296,7 @@ onAuthStateChanged(auth, async (user) => {
   );
 
   // Failed jobs snapshot
-  onSnapshot(query(collection(db, 'publishJobs'), where('status','in',['failed','manual_required']), orderBy('updatedAt','desc'), limit(50)), (snap) => {
+  onSnapshot(query(collectionGroup(db, 'publishJobs'), where('status','in',['failed','manual_required']), orderBy('updatedAt','desc'), limit(50)), (snap) => {
     const failed = snap.docs.filter(d => d.data().status === 'failed');
     const manual = snap.docs.filter(d => d.data().status === 'manual_required');
     if (el('stat-failed')) el('stat-failed').textContent = failed.length;
@@ -319,7 +315,7 @@ onAuthStateChanged(auth, async (user) => {
   });
 
   // Successful posts count
-  onSnapshot(query(collection(db, 'publishJobs'), where('status','==','success'), limit(500)), (snap) => {
+  onSnapshot(query(collectionGroup(db, 'publishJobs'), where('status','==','success'), limit(500)), (snap) => {
     if (el('stat-posts')) el('stat-posts').textContent = snap.size;
   });
 });

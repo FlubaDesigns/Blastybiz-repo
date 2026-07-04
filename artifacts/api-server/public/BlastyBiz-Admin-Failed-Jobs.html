@@ -7,7 +7,7 @@
 <section class="two-col"><div class="card"><div class="card-title">🧠 Replit Logic</div><div class="list"><div class="list-item"><div class="icon">1</div><div class="row-main"><div class="row-title">Use job IDs and dedupe keys</div><div class="row-sub">Every publishing task needs a unique jobId and platformJobKey so retries do not duplicate posts.</div></div></div><div class="list-item"><div class="icon">2</div><div class="row-main"><div class="row-title">Store plain error summaries</div><div class="row-sub">Business owners should see simple messages. Admin can see raw details only when needed.</div></div></div></div></div><div class="card"><div class="card-title">✅ Admin Actions</div><div class="list"><div class="list-item"><div class="icon">↻</div><div class="row-main"><div class="row-title">Retry</div><div class="row-sub">Only for safe failures like timeout, rate limit, or temporary platform outage.</div></div></div><div class="list-item"><div class="icon">✎</div><div class="row-main"><div class="row-title">Fix and rerun</div><div class="row-sub">For validation, category, phone/address, or image errors.</div></div></div><div class="list-item"><div class="icon">👤</div><div class="row-main"><div class="row-title">Request customer action</div><div class="row-sub">For expired OAuth, missing permissions, or disconnected platform accounts.</div></div></div></div></div></section></div></div></main><nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Queue-Manager.html">📋<br>Queue</a><a class="active" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a><a class="" href="BlastyBiz-Admin-Operate.html">⚙️<br>Operate</a></nav><script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { collection, query, where, orderBy, limit, onSnapshot, doc, updateDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { collection, collectionGroup, query, where, orderBy, limit, onSnapshot, doc, updateDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 let currentUser = null;
 let loadedJobs = [];
@@ -29,7 +29,10 @@ async function resolveBizNames(jobs) {
 }
 
 async function jobAction(jobId, action) {
-  const ref = doc(db, 'publishJobs', jobId);
+  const job = loadedJobs.find(j => j._id === jobId) || {};
+  const ref = job.uid && job.businessId
+    ? doc(db, 'users', job.uid, 'businesses', job.businessId, 'publishJobs', jobId)
+    : doc(db, 'publishJobs', jobId); // fallback for legacy flat docs
   const now = new Date();
   const updates = {
     retry:    { status: 'retry_pending', attempts: 0, updatedAt: now },
@@ -50,14 +53,14 @@ window.toggleAll = function(cb) {
   document.querySelectorAll('.job-select').forEach(box => { box.checked = cb.checked; });
 };
 
-async function callAdminCF(endpoint, jobId) {
+async function callAdminCF(endpoint, jobId, uid, businessId) {
   const token = await currentUser.getIdToken();
   const r = await fetch(
     `https://us-central1-blastybiz-9523e.cloudfunctions.net/${endpoint}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ jobId }),
+      body: JSON.stringify({ jobId, uid, businessId }),
     }
   );
   if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || String(r.status));
@@ -69,7 +72,10 @@ window.retrySelected = async function() {
   const btn = document.getElementById('retry-selected-btn');
   if (btn) btn.textContent = 'Retrying…';
   try {
-    await Promise.all(ids.map(id => callAdminCF('adminRetryJob', id)));
+    await Promise.all(ids.map(id => {
+      const job = loadedJobs.find(j => j._id === id) || {};
+      return callAdminCF('adminRetryJob', id, job.uid, job.businessId);
+    }));
     if (btn) btn.textContent = 'Retry Selected';
   } catch(e) {
     alert('Retry failed: ' + e.message);
@@ -97,7 +103,10 @@ window.manualFollowupSelected = async function() {
   const btn = document.getElementById('manual-followup-btn');
   if (btn) btn.textContent = 'Marking…';
   try {
-    await Promise.all(ids.map(id => callAdminCF('adminMarkManualFollowup', id)));
+    await Promise.all(ids.map(id => {
+      const job = loadedJobs.find(j => j._id === id) || {};
+      return callAdminCF('adminMarkManualFollowup', id, job.uid, job.businessId);
+    }));
     if (btn) btn.textContent = 'Mark Manual Follow-up';
   } catch(e) {
     alert('Action failed: ' + e.message);
@@ -129,7 +138,7 @@ onAuthStateChanged(auth, (user) => {
   if (!user) return;
   currentUser = user;
   const statuses = ['failed', 'manual_required', 'customer_reconnect_required', 'retry_pending'];
-  const q = query(collection(db, 'publishJobs'), where('status', 'in', statuses), orderBy('updatedAt', 'desc'), limit(50));
+  const q = query(collectionGroup(db, 'publishJobs'), where('status', 'in', statuses), orderBy('updatedAt', 'desc'), limit(50));
   onSnapshot(q, async (snap) => {
     const tbody = document.querySelector('table tbody');
     if (!tbody) return;

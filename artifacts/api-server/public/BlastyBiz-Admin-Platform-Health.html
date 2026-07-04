@@ -160,21 +160,23 @@ function renderBroken() {
       <td>${statusBadge}</td>
       <td style="white-space:nowrap">${fmtDate(c.expiresAt)}</td>
       <td class="${daysClass}">${daysText}</td>
-      <td><button class="nudge-btn" data-id="${c.id}" title="Send reconnect email to business owner">Send Nudge</button></td>
+      <td><button class="nudge-btn" data-uid="${c.uid || ''}" data-bizid="${c.businessId || ''}" data-platform="${c.platform || ''}" title="Send reconnect email to business owner">Send Nudge</button></td>
     </tr>`;
   }).join('');
 
   // Attach nudge handlers
   tbody.querySelectorAll('.nudge-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const connId = btn.dataset.id;
+      const connUid      = btn.dataset.uid;
+      const connBizId    = btn.dataset.bizid;
+      const connPlatform = btn.dataset.platform;
       btn.disabled = true;
       btn.textContent = 'Sending…';
       try {
         const r = await fetch(`${CF}/adminSendReconnectNudge`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
-          body: JSON.stringify({ connectionId: connId }),
+          body: JSON.stringify({ uid: connUid, bizId: connBizId, platform: connPlatform }),
         });
         const data = await r.json();
         if (r.ok) {

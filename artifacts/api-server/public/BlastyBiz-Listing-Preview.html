@@ -512,7 +512,7 @@ onAuthStateChanged(auth, async (user) => {
   let draftData = null;
   if (draftIdParam) {
     window.draftDocId = draftIdParam;
-    const snap = await getDoc(doc(db, 'listingDrafts', draftIdParam));
+    const snap = await getDoc(doc(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts', draftIdParam));
     if (snap.exists()) draftData = snap.data();
   }
 
@@ -531,7 +531,7 @@ onAuthStateChanged(auth, async (user) => {
   window._saveSchedule = async function(sched) {
     const draftId = window.draftDocId;
     if (!draftId) return;
-    await updateDoc(doc(db, 'listingDrafts', draftId), {
+    await updateDoc(doc(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts', draftId), {
       schedule: sched,
       updatedAt: serverTimestamp(),
     });
@@ -556,7 +556,7 @@ onAuthStateChanged(auth, async (user) => {
     const adaptations = {};
     Object.entries(window.drafts).forEach(([pid, d]) => { adaptations[pid] = d.text; });
     if (window.draftDocId) {
-      await updateDoc(doc(db, 'listingDrafts', window.draftDocId), { adaptations, updatedAt: serverTimestamp() });
+      await updateDoc(doc(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts', window.draftDocId), { adaptations, updatedAt: serverTimestamp() });
     }
   };
 
@@ -566,7 +566,7 @@ onAuthStateChanged(auth, async (user) => {
     try {
       let draftId = window.draftDocId;
       if (!draftId) {
-        const newRef = doc(collection(db, 'listingDrafts'));
+        const newRef = doc(collection(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts'));
         const adaptations = {};
         Object.entries(window.drafts).forEach(([pid, d]) => { adaptations[pid] = d.text; });
         await setDoc(newRef, {

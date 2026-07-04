@@ -365,10 +365,10 @@ onAuthStateChanged(auth, async (user) => {
   const userData = userSnap.exists() ? userSnap.data() : {};
   const bizId = userData.activeBusiness || user.uid;
 
-  const q = query(collection(db, 'platformConnections'), where('businessId', '==', bizId));
+  const q = query(collection(db, 'users', user.uid, 'businesses', bizId, 'platformConnections'));
   const snap = await getDocs(q);
   const connMap = {};
-  snap.docs.forEach(d => { connMap[d.data().platform] = { ...d.data(), _id: d.id }});
+  snap.docs.forEach(d => { connMap[d.id] = { ...d.data(), _id: d.id }});
 
   ['google', 'facebook', 'instagram'].forEach(pid => {
     renderPlatform(pid, connMap[pid] || null, bizId, user.uid)});
@@ -384,13 +384,13 @@ onAuthStateChanged(auth, async (user) => {
     const conn = connMap[platformId];
     if (!conn) return;
     if (!confirm('Disconnect ' + platformId + '? Auto-posting will stop until you reconnect.')) return;
-    await updateDoc(doc(db, 'platformConnections', conn._id), { status: 'disconnected' });
+    await updateDoc(doc(db, 'users', user.uid, 'businesses', bizId, 'platformConnections', platformId), { status: 'disconnected' });
     connMap[platformId] = { ...conn, status: 'disconnected' };
     renderPlatform(platformId, connMap[platformId], bizId, user.uid);
     if (platformId === 'facebook') {
       const igConn = connMap['instagram'];
       if (igConn) {
-        await updateDoc(doc(db, 'platformConnections', igConn._id), { status: 'disconnected' });
+        await updateDoc(doc(db, 'users', user.uid, 'businesses', bizId, 'platformConnections', 'instagram'), { status: 'disconnected' });
         connMap['instagram'] = { ...igConn, status: 'disconnected' };
         renderPlatform('instagram', connMap['instagram'], bizId, user.uid)}
     }

@@ -421,7 +421,7 @@ window.openCampaignSheet = async function(draftId) {
   overlay.classList.add('open');
 
   try {
-    const snap = await getDoc(doc(db, 'listingDrafts', draftId));
+    const snap = await getDoc(doc(db, 'users', currentUser.uid, 'businesses', window.activeBizId || currentUser.uid, 'listingDrafts', draftId));
     if (!snap.exists()) {
       document.getElementById('cs-title').textContent = 'Not found';
       document.getElementById('cs-sub').textContent   = 'This listing could not be loaded.';
@@ -554,9 +554,9 @@ onAuthStateChanged(auth, async (user) => {
     try {
       const [bizSnap, googleSnap, facebookSnap, instagramSnap] = await Promise.all([
         getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId)),
-        getDoc(doc(db, 'platformConnections', `${bizId}_google`)),
-        getDoc(doc(db, 'platformConnections', `${bizId}_facebook`)),
-        getDoc(doc(db, 'platformConnections', `${bizId}_instagram`)),
+        getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'platformConnections', 'google')),
+        getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'platformConnections', 'facebook')),
+        getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'platformConnections', 'instagram')),
       ]);
 
       const biz = bizSnap.exists() ? bizSnap.data() : {};
@@ -618,9 +618,7 @@ onAuthStateChanged(auth, async (user) => {
       if (statPN) statPN.textContent = `${apiConnected} auto · ${MANUAL_PLATFORMS.length} manual`;
 
       const jobsQ = query(
-        collection(db, 'publishJobs'),
-        where('businessId', '==', bizId),
-        where('uid', '==', user.uid),
+        collection(db, 'users', currentUser.uid, 'businesses', bizId, 'publishJobs'),
         orderBy('createdAt', 'desc'),
         limit(20)
       );

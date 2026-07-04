@@ -65,6 +65,10 @@ const db = admin.firestore();
 // ── Subcollection path helpers ─────────────────────────────────────────────────
 function userBizRef(uid, bizId) { return db.collection('users').doc(uid).collection('businesses').doc(bizId); }
 function userBizCol(uid) { return db.collection('users').doc(uid).collection('businesses'); }
+function userBizDraftsRef(uid, bizId) { return userBizRef(uid, bizId).collection('listingDrafts'); }
+function userBizJobsRef(uid, bizId)   { return userBizRef(uid, bizId).collection('publishJobs'); }
+function userBizPostsRef(uid, bizId)  { return userBizRef(uid, bizId).collection('pendingPosts'); }
+function userBizConnsRef(uid, bizId)  { return userBizRef(uid, bizId).collection('platformConnections'); }
 
 // ── AI cost tracking ──────────────────────────────────────────────────────────
 // Prices per million tokens (update if Anthropic changes rates)
@@ -757,10 +761,11 @@ exports.approvePendingPost = onRequest({ invoker: 'public' }, async (req, res) =
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
 
-  const { pendingPostId } = req.body;
+  const { pendingPostId, bizId: pendingBizId } = req.body;
   if (!pendingPostId) return res.status(400).json({ error: 'pendingPostId required' });
+  if (!pendingBizId) return res.status(400).json({ error: 'bizId required' });
 
-  const postRef = db.collection('pendingPosts').doc(pendingPostId);
+  const postRef = userBizPostsRef(decoded.uid, pendingBizId).doc(pendingPostId);
   const postSnap = await postRef.get();
   if (!postSnap.exists) return res.status(404).json({ error: 'Not found' });
 
@@ -783,7 +788,7 @@ exports.approvePendingPost = onRequest({ invoker: 'public' }, async (req, res) =
     const content = (adaptations || {})[p.id];
     if (!content) continue;
     const isManual = p.type === 'manual' || isStarter;
-    const jobRef = db.collection('publishJobs').doc();
+    const jobRef = userBizJobsRef(decoded.uid, bizId).doc();
     batch.set(jobRef, {
       jobId: jobRef.id, businessId: bizId, uid: decoded.uid,
       platform: p.id, platformName: p.name || p.id,
@@ -820,7 +825,7 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
 
   // Ownership verification — both draftId and businessId must belong to the caller
   const [draftSnap, bizSnap] = await Promise.all([
-    db.collection('listingDrafts').doc(draftId).get(),
+    userBizDraftsRef(uid, businessId).doc(draftId).get(),
     userBizRef(uid, businessId).get()
   ]);
   if (!draftSnap.exists || draftSnap.data().uid !== uid) {
@@ -840,12 +845,12 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
 
   const batch = db.batch();
 
-  batch.update(db.collection('listingDrafts').doc(draftId), {
+  batch.update(userBizDraftsRef(uid, businessId).doc(draftId), {
     status: 'approved', approvedAt: admin.firestore.FieldValue.serverTimestamp()
   });
 
   platforms.forEach(platform => {
-    const jobRef = db.collection('publishJobs').doc();
+    const jobRef = userBizJobsRef(uid, businessId).doc();
     const isNativelyManual = ['manual_assisted', 'unsupported'].includes(platform.capabilityLevel);
     const isManual = isNativelyManual || isStarter;
     const starterBlocked = isStarter && !isNativelyManual;
@@ -951,7 +956,7 @@ async function _publishGoogleJob(job, conn) {
   } catch(e) {
     if (e.response?.status === 401 && conn.refreshToken) {
       const newToken = await _googleRefreshToken(conn.refreshToken);
-      await db.collection('platformConnections').doc(`${job.businessId}_google`).update({
+      await userBizConnsRef(job.uid, job.businessId).doc('google').update({
         accessToken: newToken, updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
       const r = await tryPost(newToken);
@@ -1506,7 +1511,7 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', region: 'us-central
       }
     } catch(e) { /* accounts/locations can be resolved on first use */ }
 
-    await db.collection('platformConnections').doc(`${businessId}_google`).set({
+    await userBizConnsRef(uid, businessId).doc('google').set({
       businessId, uid, platform: 'google', status: 'connected',
       accessToken: access_token, refreshToken: refresh_token || '',
       accountId, locationId,
@@ -1634,13 +1639,13 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-centr
     let existingIgDoc = null;
     if (!igUserId) {
       try {
-        const igSnap = await db.collection('platformConnections').doc(`${businessId}_instagram`).get();
+        const igSnap = await userBizConnsRef(uid, businessId).doc('instagram').get();
         if (igSnap.exists) existingIgDoc = igSnap.data();
       } catch(e) { /* ignore — absence is fine */ }
     }
 
     const batch = db.batch();
-    batch.set(db.collection('platformConnections').doc(`${businessId}_facebook`), {
+    batch.set(userBizConnsRef(uid, businessId).doc('facebook'), {
       businessId, uid, platform: 'facebook', status: 'connected',
       accessToken: pageToken, pageId: page?.id || '',
       pageName: page?.name || '',
@@ -1651,7 +1656,7 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-centr
 
     if (igUserId) {
       // Fresh igUserId from the API — write the full Instagram doc.
-      batch.set(db.collection('platformConnections').doc(`${businessId}_instagram`), {
+      batch.set(userBizConnsRef(uid, businessId).doc('instagram'), {
         businessId, uid, platform: 'instagram', status: 'connected',
         accessToken: pageToken, igUserId, pageId: page?.id || '',
         expiresAt,
@@ -1661,7 +1666,7 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-centr
       // No igUserId returned this time, but a paired Instagram doc exists
       // (possibly expired). Refresh its token and reset to connected so it
       // doesn't remain stale after the Facebook reconnect.
-      batch.set(db.collection('platformConnections').doc(`${businessId}_instagram`), {
+      batch.set(userBizConnsRef(uid, businessId).doc('instagram'), {
         accessToken: pageToken, status: 'connected',
         expiresAt,
         connectedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -1686,13 +1691,13 @@ exports.postToBing = onRequest({ invoker: 'public' }, async (req, res) => {
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
-  const { jobId } = req.body;
-  if (jobId) {
-    const jobSnap = await db.collection('publishJobs').doc(jobId).get();
+  const { jobId, businessId: bingBizId } = req.body;
+  if (jobId && bingBizId) {
+    const jobSnap = await userBizJobsRef(decoded.uid, bingBizId).doc(jobId).get();
     if (!jobSnap.exists || jobSnap.data().uid !== decoded.uid) {
       return res.status(403).json({ error: 'Forbidden' });
     }
-    await db.collection('publishJobs').doc(jobId).update({
+    await userBizJobsRef(decoded.uid, bingBizId).doc(jobId).update({
       status: 'manual_required',
       customerVisibleMessage: 'Your Bing Places listing is ready — paste it at bingplaces.com.',
       manualUrl: 'https://www.bingplaces.com',
@@ -1712,13 +1717,13 @@ exports.postToAppleMaps = onRequest({ invoker: 'public' }, async (req, res) => {
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
-  const { jobId } = req.body;
-  if (jobId) {
-    const jobSnap = await db.collection('publishJobs').doc(jobId).get();
+  const { jobId, businessId: appleBizId } = req.body;
+  if (jobId && appleBizId) {
+    const jobSnap = await userBizJobsRef(decoded.uid, appleBizId).doc(jobId).get();
     if (!jobSnap.exists || jobSnap.data().uid !== decoded.uid) {
       return res.status(403).json({ error: 'Forbidden' });
     }
-    await db.collection('publishJobs').doc(jobId).update({
+    await userBizJobsRef(decoded.uid, appleBizId).doc(jobId).update({
       status: 'manual_required',
       customerVisibleMessage: 'Your Apple Maps listing is ready — submit it at mapsconnect.apple.com.',
       manualUrl: 'https://mapsconnect.apple.com',
@@ -1734,27 +1739,26 @@ exports.postToAppleMaps = onRequest({ invoker: 'public' }, async (req, res) => {
 // Dispatches pending auto-post jobs to the right platform helper
 // ══════════════════════════════════════════
 exports.dispatchPublishJob = onDocumentCreated(
-  { document: 'publishJobs/{jobId}', region: 'us-central1', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
+  { document: 'users/{userId}/businesses/{bizId}/publishJobs/{jobId}', region: 'us-central1', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
   async (event) => {
-    const job   = event.data.data();
-    const jobId = event.params.jobId;
+    const job    = event.data.data();
+    const jobRef = event.data.ref;
 
     // Only process jobs that need auto-posting
     if (job.status !== 'pending') return;
     if (job.planGated) return; // starter plan — user sees copy-paste content instead
 
     // Idempotency guard: claim the job by moving to 'processing'
-    await db.collection('publishJobs').doc(jobId).update({
+    await jobRef.update({
       status: 'processing',
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
     try {
-      const connSnap = await db.collection('platformConnections')
-        .doc(`${job.businessId}_${job.platform}`).get();
+      const connSnap = await userBizConnsRef(job.uid, job.businessId).doc(job.platform).get();
 
       if (!connSnap.exists || connSnap.data().status !== 'connected') {
-        await db.collection('publishJobs').doc(jobId).update({
+        await jobRef.update({
           status: 'failed',
           adminError: `No connected ${job.platform} account for business ${job.businessId}`,
           customerVisibleMessage: `Your ${job.platform} account isn't connected. Go to Connect Platforms to link it.`,
@@ -1771,7 +1775,7 @@ exports.dispatchPublishJob = onDocumentCreated(
         case 'facebook':  result = await _publishFacebookJob(job, conn);  break;
         case 'instagram': result = await _publishInstagramJob(job, conn); break;
         default:
-          await db.collection('publishJobs').doc(jobId).update({
+          await jobRef.update({
             status: 'manual_required',
             adminError: `No automated publisher for platform: ${job.platform}`,
             customerVisibleMessage: `Your AI-written copy for ${job.platform} is ready — this platform requires manual posting. Copy your text from the listing preview and paste it directly.`,
@@ -1782,7 +1786,7 @@ exports.dispatchPublishJob = onDocumentCreated(
 
       // Instagram may return a manual fallback when no image is present
       if (result?.manualFallback) {
-        await db.collection('publishJobs').doc(jobId).update({
+        await jobRef.update({
           status: 'manual_required',
           customerVisibleMessage: result.message || 'Please post this manually.',
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -1790,7 +1794,7 @@ exports.dispatchPublishJob = onDocumentCreated(
         return;
       }
 
-      await db.collection('publishJobs').doc(jobId).update({
+      await jobRef.update({
         status: 'success',
         apiResponse: result,
         customerLabel: 'Published',
@@ -1800,8 +1804,8 @@ exports.dispatchPublishJob = onDocumentCreated(
       });
 
     } catch(e) {
-      console.error(`dispatchPublishJob [${jobId}] failed:`, e.message);
-      await db.collection('publishJobs').doc(jobId).update({
+      console.error(`dispatchPublishJob [${event.params.jobId}] failed:`, e.message);
+      await jobRef.update({
         status: 'failed',
         adminError: e.message,
         customerVisibleMessage: `There was a problem posting to ${job.platform}. Our team will follow up.`,
@@ -1817,7 +1821,7 @@ exports.dispatchPublishJob = onDocumentCreated(
 // Sends failure email via Resend when status → 'failed'
 // ══════════════════════════════════════════
 exports.jobFailedTrigger = onDocumentUpdated(
-  { document: 'publishJobs/{jobId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
+  { document: 'users/{userId}/businesses/{bizId}/publishJobs/{jobId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
   async (event) => {
     const before = event.data.before.data();
     const after  = event.data.after.data();
@@ -1898,7 +1902,7 @@ exports.jobFailedTrigger = onDocumentUpdated(
 // Sends "your listing is live" email when status → 'success'
 // ══════════════════════════════════════════
 exports.jobCompletedTrigger = onDocumentUpdated(
-  { document: 'publishJobs/{jobId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
+  { document: 'users/{userId}/businesses/{bizId}/publishJobs/{jobId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
   async (event) => {
     const before = event.data.before.data();
     const after  = event.data.after.data();
@@ -2112,22 +2116,29 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
     }
 
     // Collect all top-level collections to delete
-    const [bizSnap, draftsSnap, jobsSnap, connsSnap, librarySnap, activitySnap, pendingSnap] =
+    const [bizSnap, librarySnap, activitySnap] =
       await Promise.all([
         userBizCol(uid).get(),
-        db.collection('listingDrafts').where('uid', '==', uid).get(),
-        db.collection('publishJobs').where('uid', '==', uid).get(),
-        db.collection('platformConnections').where('uid', '==', uid).get(),
         db.collection('copyLibrary').where('uid', '==', uid).get(),
         db.collection('activityLogs').where('uid', '==', uid).get(),
-        db.collection('pendingPosts').where('uid', '==', uid).get(),
       ]);
 
-    // Collect business library subcollection docs
-    const libDocRefs = [];
+    // Walk each business and collect all subcollection docs to delete
+    const bizSubRefs = [];
     for (const bizDoc of bizSnap.docs) {
-      const libSnap = await userBizCol(uid).doc(bizDoc.id).collection('documents').get();
-      libSnap.docs.forEach(d => libDocRefs.push(d.ref));
+      const bizId = bizDoc.id;
+      const [draftsSnap, jobsSnap, connsSnap, pendingSnap, libSnap] = await Promise.all([
+        userBizDraftsRef(uid, bizId).get(),
+        userBizJobsRef(uid, bizId).get(),
+        userBizConnsRef(uid, bizId).get(),
+        userBizPostsRef(uid, bizId).get(),
+        userBizRef(uid, bizId).collection('documents').get(),
+      ]);
+      draftsSnap.docs.forEach(d => bizSubRefs.push(d.ref));
+      jobsSnap.docs.forEach(d => bizSubRefs.push(d.ref));
+      connsSnap.docs.forEach(d => bizSubRefs.push(d.ref));
+      pendingSnap.docs.forEach(d => bizSubRefs.push(d.ref));
+      libSnap.docs.forEach(d => bizSubRefs.push(d.ref));
     }
 
     // Assemble all refs (aiUsageLogs intentionally excluded — billing records must be retained)
@@ -2135,13 +2146,9 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
       db.collection('users').doc(uid),
       db.collection('subscriptions').doc(uid),
       ...bizSnap.docs.map(d => d.ref),
-      ...draftsSnap.docs.map(d => d.ref),
-      ...jobsSnap.docs.map(d => d.ref),
-      ...connsSnap.docs.map(d => d.ref),
+      ...bizSubRefs,
       ...librarySnap.docs.map(d => d.ref),
       ...activitySnap.docs.map(d => d.ref),
-      ...pendingSnap.docs.map(d => d.ref),
-      ...libDocRefs,
     ];
 
     // Batch delete in chunks of 450 (Firestore hard limit is 500 per batch)
@@ -2236,32 +2243,37 @@ exports.adminListPublishJobs = onRequest({ invoker: 'public' }, async (req, res)
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
   const { status, limit: lim = '100' } = req.query;
-  const col = db.collection('publishJobs');
-  const q = status
-    ? col.where('status', '==', status).orderBy('createdAt', 'desc').limit(Number(lim))
-    : col.orderBy('createdAt', 'desc').limit(Number(lim));
-  const snap = await q.get();
-  res.json({ jobs: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
+  let snap;
+  if (status) {
+    snap = await db.collectionGroup('publishJobs').where('status', '==', status).get();
+  } else {
+    snap = await db.collectionGroup('publishJobs').get();
+  }
+  const jobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  jobs.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+  res.json({ jobs: jobs.slice(0, Number(lim)) });
 });
 
 exports.adminListFailedJobs = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
-  const snap = await db.collection('publishJobs')
-    .where('status', 'in', ['failed', 'manual_required', 'manual_followup'])
-    .orderBy('createdAt', 'desc').limit(100).get();
-  res.json({ jobs: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
+  const snap = await db.collectionGroup('publishJobs')
+    .where('status', 'in', ['failed', 'manual_required', 'manual_followup']).get();
+  const jobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  jobs.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+  res.json({ jobs: jobs.slice(0, 100) });
 });
 
 exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
-  const { jobId } = req.body;
+  const { jobId, uid: jobUid, businessId: jobBizId } = req.body;
   if (!jobId) return res.status(400).json({ error: 'jobId required' });
+  if (!jobUid || !jobBizId) return res.status(400).json({ error: 'uid and businessId required' });
 
-  const jobRef = db.collection('publishJobs').doc(jobId);
+  const jobRef = userBizJobsRef(jobUid, jobBizId).doc(jobId);
   const jobSnap = await jobRef.get();
   if (!jobSnap.exists) return res.status(404).json({ error: 'Job not found' });
   const job = { ...jobSnap.data(), id: jobId };
@@ -2275,8 +2287,7 @@ exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_
   });
 
   try {
-    const connSnap = await db.collection('platformConnections')
-      .doc(`${job.businessId}_${job.platform}`).get();
+    const connSnap = await userBizConnsRef(job.uid, job.businessId).doc(job.platform).get();
     if (!connSnap.exists || connSnap.data().status !== 'connected') {
       await jobRef.update({
         status: 'failed',
@@ -2325,9 +2336,10 @@ exports.adminMarkManualFollowup = onRequest({ invoker: 'public' }, async (req, r
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
-  const { jobId } = req.body;
+  const { jobId, uid: jobUid, businessId: jobBizId } = req.body;
   if (!jobId) return res.status(400).json({ error: 'jobId required' });
-  await db.collection('publishJobs').doc(jobId).update({
+  if (!jobUid || !jobBizId) return res.status(400).json({ error: 'uid and businessId required' });
+  await userBizJobsRef(jobUid, jobBizId).doc(jobId).update({
     status: 'manual_followup',
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   });
@@ -2346,8 +2358,10 @@ exports.adminListPlatformConnections = onRequest({ invoker: 'public' }, async (r
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
-  const snap = await db.collection('platformConnections').orderBy('connectedAt', 'desc').limit(200).get();
-  res.json({ connections: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
+  const snap = await db.collectionGroup('platformConnections').get();
+  const conns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  conns.sort((a, b) => (b.connectedAt?.toMillis?.() || 0) - (a.connectedAt?.toMillis?.() || 0));
+  res.json({ connections: conns.slice(0, 200) });
 });
 
 // Returns connection-health summary + list of broken/expiring connections joined with business names
@@ -2356,7 +2370,7 @@ exports.adminPlatformHealth = onRequest({ invoker: 'public' }, async (req, res) 
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
 
-  const snap = await db.collection('platformConnections').get();
+  const snap = await db.collectionGroup('platformConnections').get();
   const counts = { connected: 0, expired: 0, disconnected: 0, other: 0 };
   const broken = [];
 
@@ -2407,10 +2421,10 @@ exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESE
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
 
-  const { connectionId } = req.body;
-  if (!connectionId) return res.status(400).json({ error: 'connectionId required' });
+  const { uid: nudgeUid, bizId: nudgeBizId, platform: nudgePlatform } = req.body;
+  if (!nudgeUid || !nudgeBizId || !nudgePlatform) return res.status(400).json({ error: 'uid, bizId, and platform required' });
 
-  const connSnap = await db.collection('platformConnections').doc(connectionId).get();
+  const connSnap = await userBizConnsRef(nudgeUid, nudgeBizId).doc(nudgePlatform).get();
   if (!connSnap.exists) return res.status(404).json({ error: 'Connection not found' });
   const conn = connSnap.data();
   if (!conn.uid) return res.status(400).json({ error: 'Connection has no uid' });
@@ -2456,7 +2470,7 @@ exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESE
 
   await sendResendEmail({ to: userData.email, subject, html });
 
-  await db.collection('platformConnections').doc(connectionId).update({
+  await userBizConnsRef(nudgeUid, nudgeBizId).doc(nudgePlatform).update({
     lastNudgeSentAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
@@ -3045,10 +3059,10 @@ async function _runScheduledPost(bizId, biz) {
   // Look up active campaign's most recent ad details from listingDrafts
   let campaignContext = '';
   const activeCampaignId = sched.activeCampaignId || '';
+  const schedUid = biz.uid || '';
   if (activeCampaignId) {
     try {
-      const draftQ = await db.collection('listingDrafts')
-        .where('businessId', '==', bizId)
+      const draftQ = await userBizDraftsRef(schedUid, bizId)
         .where('campaignId', '==', activeCampaignId)
         .orderBy('createdAt', 'desc')
         .limit(1)
@@ -3078,9 +3092,8 @@ async function _runScheduledPost(bizId, biz) {
   ].filter(Boolean).join('\n');
 
   // Look up which platforms are connected for this business
-  const connSnap = await db.collection('platformConnections')
-    .where('businessId', '==', bizId).where('status', '==', 'connected').get();
-  const connectedIds = new Set(connSnap.docs.map(d => d.data().platform));
+  const connSnap = await userBizConnsRef(schedUid, bizId).where('status', '==', 'connected').get();
+  const connectedIds = new Set(connSnap.docs.map(d => d.data().platform || d.id));
 
   const activePlatforms = SCHED_PLATFORMS.filter(p =>
     connectedIds.has(p.id) || p.type === 'manual'
@@ -3149,9 +3162,9 @@ Return ONLY valid JSON: { "adaptations": { "PLATFORM_ID": "text" } }`;
 
   // If owner wants to review before posting — save draft to pendingPosts and stop
   if (sched.requireApproval) {
-    await db.collection('pendingPosts').add({
+    await userBizPostsRef(schedUid, bizId).add({
       bizId,
-      uid: biz.uid || '',
+      uid: schedUid,
       status: 'pending',
       adaptations: adapted,
       platforms: activePlatforms,
@@ -3163,7 +3176,7 @@ Return ONLY valid JSON: { "adaptations": { "PLATFORM_ID": "text" } }`;
   }
 
   // Get user plan to determine manual vs auto-post
-  const uid = biz.uid || '';
+  const uid = schedUid;
   let plan = 'starter';
   if (uid) {
     try {
@@ -3178,7 +3191,7 @@ Return ONLY valid JSON: { "adaptations": { "PLATFORM_ID": "text" } }`;
     const content = adapted[p.id];
     if (!content) continue;
     const isManual = p.type === 'manual' || isStarter;
-    const jobRef = db.collection('publishJobs').doc();
+    const jobRef = userBizJobsRef(uid, bizId).doc();
     batch.set(jobRef, {
       jobId: jobRef.id, businessId: bizId, uid,
       platform: p.id,
@@ -3393,12 +3406,15 @@ exports.scheduledWeeklyDigest = onSchedule(
       // Get this week's successful jobs
       let successJobs = [];
       try {
-        const jobsSnap = await db.collection('publishJobs')
+        const jobsSnap = await db.collectionGroup('publishJobs')
           .where('uid', '==', uid)
           .where('status', '==', 'success')
-          .where('publishedAt', '>=', admin.firestore.Timestamp.fromDate(sevenDaysAgo))
           .get();
-        successJobs = jobsSnap.docs.map(d => d.data());
+        const sevenDaysAgoMs = sevenDaysAgo.getTime();
+        successJobs = jobsSnap.docs.map(d => d.data()).filter(j => {
+          const pub = j.publishedAt?.toDate?.() || null;
+          return pub && pub.getTime() >= sevenDaysAgoMs;
+        });
       } catch(e) { /* non-fatal */ }
 
       // Only send if there were jobs this week
@@ -3635,7 +3651,7 @@ exports.checkPlatformTokenExpiry = onSchedule(
       }
     } catch(e) { console.error('[checkPlatformTokenExpiry] template fetch failed:', e.message); }
 
-    const snap = await db.collection('platformConnections')
+    const snap = await db.collectionGroup('platformConnections')
       .where('status', '==', 'connected')
       .get();
 
@@ -3652,6 +3668,9 @@ exports.checkPlatformTokenExpiry = onSchedule(
       const cutoff    = isFbOrIg ? cutoffFb : cutoffShort;
 
       if (expiresAt > cutoff) { skipped++; continue; } // still fresh
+
+      // Navigate to the paired Instagram doc in the same biz subcollection
+      const igRef = docSnap.ref.parent.parent.collection('platformConnections').doc('instagram');
 
       // Facebook connections: attempt proactive token exchange (extends another ~60 days)
       if (conn.platform === 'facebook' && conn.accessToken) {
@@ -3673,11 +3692,9 @@ exports.checkPlatformTokenExpiry = onSchedule(
             expiresAt:   newExpiresAt,
             updatedAt:   admin.firestore.FieldValue.serverTimestamp(),
           });
-          console.log(`[checkPlatformTokenExpiry] Refreshed Facebook token for ${docSnap.id}`);
+          console.log(`[checkPlatformTokenExpiry] Refreshed Facebook token for biz ${conn.businessId}`);
 
           // Mirror to the Instagram doc if it exists (same page token)
-          const igDocId = `${conn.businessId}_instagram`;
-          const igRef   = db.collection('platformConnections').doc(igDocId);
           const igSnap  = await igRef.get();
           if (igSnap.exists && igSnap.data().status === 'connected') {
             await igRef.update({
@@ -3685,26 +3702,24 @@ exports.checkPlatformTokenExpiry = onSchedule(
               expiresAt:   newExpiresAt,
               updatedAt:   admin.firestore.FieldValue.serverTimestamp(),
             });
-            console.log(`[checkPlatformTokenExpiry] Mirrored refreshed token to ${igDocId}`);
+            console.log(`[checkPlatformTokenExpiry] Mirrored refreshed token to instagram for biz ${conn.businessId}`);
           }
 
           refreshed++;
           continue;
         } catch (e) {
-          console.warn(`[checkPlatformTokenExpiry] Facebook refresh failed for ${docSnap.id}:`,
+          console.warn(`[checkPlatformTokenExpiry] Facebook refresh failed for biz ${conn.businessId}:`,
             e.response?.data || e.message);
           // Also mark the paired Instagram doc expired — it shares the same dead token.
           // Do this before falling through so the FB doc handler below marks both consistently.
           try {
-            const igDocId = `${conn.businessId}_instagram`;
-            const igRef   = db.collection('platformConnections').doc(igDocId);
             const igSnap  = await igRef.get();
             if (igSnap.exists && igSnap.data().status === 'connected') {
               await igRef.update({
                 status:    'expired',
                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
               });
-              console.log(`[checkPlatformTokenExpiry] Marked expired (paired with failed FB): ${igDocId}`);
+              console.log(`[checkPlatformTokenExpiry] Marked expired (paired with failed FB) instagram for biz ${conn.businessId}`);
             }
           } catch (igErr) {
             console.error(`[checkPlatformTokenExpiry] Failed to mark IG expired for business ${conn.businessId}:`, igErr.message);

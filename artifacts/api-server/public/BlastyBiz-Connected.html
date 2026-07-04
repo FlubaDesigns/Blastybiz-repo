@@ -111,11 +111,11 @@ auth.authStateReady().then(() => {
       const userSnap = await getDoc(doc(db, 'users', user.uid));
       if (userSnap.exists()) bizId = userSnap.data().activeBusiness || user.uid;
 
-      const connSnap = await getDoc(doc(db, 'platformConnections', `${bizId}_${platform}`));
+      const connSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', bizId, 'platformConnections', platform));
       if (connSnap.exists()) connData = connSnap.data();
 
       if (platform === 'facebook') {
-        const igSnap = await getDoc(doc(db, 'platformConnections', `${bizId}_instagram`));
+        const igSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', bizId, 'platformConnections', 'instagram'));
         if (igSnap.exists() && igSnap.data().status === 'connected') igData = igSnap.data()}
     } catch(e) { /* connection data optional — still show success */ }
 

@@ -190,14 +190,11 @@ onAuthStateChanged(auth, async (user) => {
     let q;
     if (draftId) {
       q = query(
-        collection(db, 'publishJobs'),
-        where('draftId', '==', draftId),
-        where('uid', '==', user.uid)
+        collection(db, 'users', user.uid, 'businesses', bizId, 'publishJobs'),
+        where('draftId', '==', draftId)
       )} else {
       q = query(
-        collection(db, 'publishJobs'),
-        where('businessId', '==', bizId),
-        where('uid', '==', user.uid),
+        collection(db, 'users', user.uid, 'businesses', bizId, 'publishJobs'),
         orderBy('createdAt', 'desc'),
         limit(20)
       )}

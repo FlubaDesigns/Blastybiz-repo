@@ -126,7 +126,7 @@
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { collection, query, orderBy, limit, onSnapshot, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { collection, collectionGroup, query, orderBy, limit, onSnapshot, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 function timeAgo(ts) {
   if (!ts) return '—';
@@ -140,8 +140,9 @@ function timeAgo(ts) {
   return Math.floor(hrs / 24) + 'd ago';
 }
 
+const jobRefMap = {};
 async function jobAction(jobId, action) {
-  const ref = doc(db, 'publishJobs', jobId);
+  const ref = jobRefMap[jobId] || doc(db, 'publishJobs', jobId); // fallback for legacy flat docs
   const now = new Date();
   const updates = {
     retry:    { status: 'retry_pending', updatedAt: now },
@@ -157,13 +158,14 @@ window.jobAction = jobAction;
 
 onAuthStateChanged(auth, (user) => {
   if (!user) return;
-  const q = query(collection(db, 'publishJobs'), orderBy('updatedAt', 'desc'), limit(50));
+  const q = query(collectionGroup(db, 'publishJobs'), orderBy('updatedAt', 'desc'), limit(50));
   onSnapshot(q, (snap) => {
     if (snap.empty) {
       document.querySelector('tbody').innerHTML = '<tr><td colspan="7" class="empty-row">No jobs yet.</td></tr>';
       return;
     }
     let queued = 0, posting = 0, attention = 0, completed = 0;
+    snap.docs.forEach(d => { jobRefMap[d.id] = d.ref; });
     const rows = snap.docs.map(d => {
       const j = d.data();
       const id = d.id;

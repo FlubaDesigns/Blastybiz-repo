@@ -2179,7 +2179,7 @@ async function _approvePendingPost(id) {
     const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/approvePendingPost', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': 'Bearer ' + token } : {}) },
-      body: JSON.stringify({ pendingPostId: id }),
+      body: JSON.stringify({ pendingPostId: id, bizId: activeBizId }),
     });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     showToast('✅ Approved — posts are going out now!');
@@ -3015,9 +3015,10 @@ window._bbSetProfile = function(p) {
 };
 
 window._bbFirestoreDismissPending = async function(id) {
-  if (!activeBizId) return;
+  const uid = window._bbCurrentUid;
+  if (!uid || !activeBizId) return;
   try {
-    await setDoc(doc(db, 'pendingPosts', id), { status: 'dismissed' }, { merge: true });
+    await setDoc(doc(db, 'users', uid, 'businesses', activeBizId, 'pendingPosts', id), { status: 'dismissed' }, { merge: true });
     showToast('Draft dismissed');
   } catch(e) { console.error('dismissPending:', e); }
 };
@@ -3208,7 +3209,8 @@ onAuthStateChanged(auth, async (user) => {
   if (!user) return; // auth-guard.js handles redirect
   currentUser = user;
   window._bbUid = currentUser.uid;
-  window._bbGetToken = () => currentUser.getIdToken();
+  window._bbGetToken  = () => currentUser.getIdToken();
+  window._bbCurrentUid = currentUser.uid;
 
   const userSnap = await getDoc(doc(db, 'users', user.uid));
   const userData = userSnap.exists() ? userSnap.data() : {};
@@ -3419,8 +3421,7 @@ onAuthStateChanged(auth, async (user) => {
   try {
     const { onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
     const pendingQ = query(
-      collection(db, 'pendingPosts'),
-      where('bizId', '==', activeBizId),
+      collection(db, 'users', user.uid, 'businesses', activeBizId, 'pendingPosts'),
       where('status', '==', 'pending'),
       orderBy('createdAt', 'desc'),
       limit(10)
@@ -3434,12 +3435,11 @@ onAuthStateChanged(auth, async (user) => {
   // Load platform connection state from Firestore
   try {
     const connsSnap = await getDocs(query(
-      collection(db, 'platformConnections'),
-      where('businessId', '==', activeBizId)
+      collection(db, 'users', user.uid, 'businesses', activeBizId, 'platformConnections')
     ));
     if (!connsSnap.empty) {
       const connMap = {};
-      connsSnap.forEach(d => { connMap[d.data().platform || d.data().platformId] = d.data(); });
+      connsSnap.forEach(d => { connMap[d.data().platform || d.id] = d.data(); });
       const updatedPlatforms = PLATFORMS.map(p => {
         const conn = connMap[p.id];
         return conn ? { ...p, enabled: !!conn.enabled, status: conn.status || 'idle' } : p;
@@ -3453,8 +3453,7 @@ onAuthStateChanged(auth, async (user) => {
   // Load recent publish history from Firestore
   try {
     const histSnap = await getDocs(query(
-      collection(db, 'publishJobs'),
-      where('uid', '==', user.uid),
+      collection(db, 'users', user.uid, 'businesses', activeBizId, 'publishJobs'),
       orderBy('createdAt', 'desc'),
       limit(30)
     ));
@@ -3505,7 +3504,7 @@ window._afterAdaptation = async function(adaptedPlatforms) {
       updatedAt:    serverTimestamp(),
     };
 
-    const ref = await addDoc(collection(db, 'listingDrafts'), draftData);
+    const ref = await addDoc(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'listingDrafts'), draftData);
     window._currentDraftId = ref.id;
     return ref.id;
   } catch(e) {
@@ -3521,7 +3520,7 @@ document.addEventListener('bb:savePlatforms', async (e) => {
     if (!plats.length) return;
     const batch = writeBatch(db);
     plats.forEach(p => {
-      const ref = doc(db, 'platformConnections', activeBizId + '_' + p.id);
+      const ref = doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'platformConnections', p.id);
       batch.set(ref, {
         uid: currentUser.uid,
         businessId: activeBizId,
@@ -3560,7 +3559,7 @@ document.addEventListener('bb:addHistory', async (e) => {
 document.addEventListener('bb:clearAll', async () => {
   if (!currentUser || !activeBizId) return;
   try {
-    const connsSnap = await getDocs(query(collection(db, 'platformConnections'), where('businessId', '==', activeBizId)));
+    const connsSnap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'platformConnections'));
     const batch = writeBatch(db);
     connsSnap.forEach(d => batch.delete(d.ref));
     await batch.commit();
