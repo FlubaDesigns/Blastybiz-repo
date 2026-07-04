@@ -1511,10 +1511,14 @@ body.onboarding-page textarea     { resize: none; }
    biz-bar with justify-content: space-between.
    ─────────────────────────────────────────────────────────── */
 
-/* Business switcher bar — title + right group, space-between */
-.biz-bar             { background: rgba(13,22,13,0.95); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; flex-direction: column; gap: 12px; backdrop-filter: blur(8px); }
+/* Business switcher bar — single compact row */
+.biz-bar             { background: rgba(13,22,13,0.95); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; flex-direction: row; align-items: center; gap: 12px; flex-wrap: wrap; backdrop-filter: blur(8px); }
 .biz-bar-header      { display: flex; align-items: center; justify-content: space-between; }
-.biz-bar-title       { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--green); flex-shrink: 0; }
+.biz-bar-title       { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--green); flex-shrink: 0; }
+.biz-select-row      { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+#biz-select          { flex: 1; min-width: 0; background: var(--dark); border: 1px solid var(--border); border-radius: 8px; color: var(--light); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 7px 10px; cursor: pointer; outline: none; transition: border-color 0.2s; }
+#biz-select:focus    { border-color: var(--green); }
+#biz-select option   { background: #0d160d; color: var(--light); }
 .biz-bar-right       { display: flex; align-items: center; gap: 10px; }
 .biz-active          { display: flex; align-items: center; gap: 10px; cursor: pointer; background: var(--dark); border: 1px solid var(--green); border-radius: 10px; padding: 10px 14px; transition: all 0.2s; }
 .biz-active:hover    { background: #0A1A0A; }
@@ -1561,14 +1565,13 @@ body.onboarding-page textarea     { resize: none; }
 .add-biz-text        { font-size: 14px; font-weight: 600; color: var(--silver); }
 .add-biz-sub         { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-/* Agency limit bar */
-.agency-bar          { background: #0A1A0A; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-top: 12px; display: flex; align-items: center; gap: 10px; }
-.agency-label        { font-size: 12px; color: var(--muted); flex: 1; }
-.agency-label strong { color: var(--silver); display: block; font-size: 13px; margin-bottom: 2px; }
-.agency-pips         { display: flex; gap: 4px; }
-.pip                 { width: 12px; height: 12px; border-radius: 3px; background: var(--border); }
+/* Agency limit bar — compact inline strip in biz-bar */
+.agency-bar          { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.agency-usage-text   { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.agency-pips         { display: flex; gap: 3px; }
+.pip                 { width: 10px; height: 10px; border-radius: 2px; background: var(--border); }
 .pip.used            { background: var(--green); }
-.pip.active-pip      { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.pip.active-pip      { background: var(--green); box-shadow: 0 0 5px var(--green); }
 
 /* Dashboard layout */
 .dash-hero           { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 16px; }
@@ -1589,8 +1592,9 @@ body.onboarding-page textarea     { resize: none; }
   body.logged-in .toast{ bottom: 80px; }
   .dash-hero           { grid-template-columns: 1fr; }
   .grid                { grid-template-columns: repeat(2,1fr); }
-  .biz-bar             { flex-direction: column; align-items: stretch; gap: 10px; }
-  .biz-bar-right       { width: 100%; }
+  .biz-bar             { gap: 8px; }
+  .biz-select-row      { flex: 1; width: 100%; }
+  .agency-bar          { width: 100%; }
   .score-wrap          { align-items: flex-start; }
   .score-ring          { width: 100px; height: 100px; }
   .score-number        { font-size: 34px; }
