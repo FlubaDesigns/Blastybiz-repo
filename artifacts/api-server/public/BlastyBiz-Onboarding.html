@@ -964,9 +964,17 @@ window.nextStep = async function() {
     const data = window._buildProfileData();
     try {
       if (currentUser) {
-        await setDoc(doc(db, 'users', currentUser.uid), { ...data, plan: 'starter' }, { merge: true });
-        const bizRef = doc(db, 'businesses', currentUser.uid);
+        const isNewBiz = new URLSearchParams(window.location.search).get('new') === '1';
+        // First-time onboarding uses UID as doc ID; adding a new business gets a fresh auto-ID
+        const bizRef = isNewBiz
+          ? doc(collection(db, 'businesses'))
+          : doc(db, 'businesses', currentUser.uid);
         await setDoc(bizRef, { ...data, uid: currentUser.uid, createdAt: serverTimestamp() }, { merge: true });
+        // Point the user's activeBusiness at the newly created/updated doc
+        await setDoc(doc(db, 'users', currentUser.uid), {
+          onboarded: true,
+          activeBusiness: bizRef.id,
+        }, { merge: true });
       }
     } catch(e) {
       console.error('Save failed:', e);
