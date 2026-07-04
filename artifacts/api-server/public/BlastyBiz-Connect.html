@@ -248,6 +248,23 @@ window.fbGateNo = function() {
   document.getElementById('fb-gate-step1').style.display = 'none';
   document.getElementById('fb-gate-step2').classList.add('open')};
 
+window.reconnectPlatform = async function(platformId) {
+  const url = platformId === 'google' ? _googleConnectUrl : _fbConnectUrl;
+  if (!url || !window._bbGetToken) {
+    showToast('Please wait and try again.', true);
+    return;
+  }
+  try {
+    const token = await window._bbGetToken();
+    const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await r.json();
+    if (data.url) { window.location.href = data.url; }
+    else { showToast('Could not reconnect. Try again.', true); }
+  } catch(e) {
+    showToast('Could not reconnect. Try again.', true);
+  }
+};
+
 // Close modal on backdrop click
 document.getElementById('fb-gate-modal')?.addEventListener('click', function(e) {
   if (e.target === this) closeFbGate()});
@@ -297,7 +314,7 @@ function renderPlatform(platformId, conn, bizId, uid) {
     statusEl.textContent = 'Token expired — reconnect to resume auto-posting.';
     actionsEl.innerHTML = `
       <span class="status-badge badge-error">Expired</span>
-      <button class="btn-reconnect" onclick="window.location.href='${connectUrl}'">Reconnect</button>
+      <button class="btn-reconnect" onclick="reconnectPlatform('${platformId}')">Reconnect</button>
     `}
 }
 
