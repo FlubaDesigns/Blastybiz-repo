@@ -68,15 +68,39 @@ async function copyDoc(srcRef, destRef, label) {
 
 // ─── Step 1: migrate flat businesses/{bizId} ────────────────────────────────
 
+const CAMPAIGN_SUB_COLLECTIONS = ['facts', 'documents', 'images', 'copy', 'advertising'];
+const BIZ_SUB_COLLECTIONS = [
+  'documents', 'facts', 'images', 'copy', 'advertising',
+  'pendingPosts', 'listingDrafts', 'publishJobs', 'platformConnections',
+];
+
+async function migrateCampaigns(srcBizRef, destBizRef) {
+  const snap = await srcBizRef.collection('campaigns').get();
+  if (snap.empty) return 0;
+  let count = 0;
+  for (const camp of snap.docs) {
+    const dest = destBizRef.collection('campaigns').doc(camp.id);
+    const existing = await dest.get();
+    if (!existing.exists) {
+      if (!DRY) await dest.set(camp.data());
+      console.log(`    ${DRY ? '[DRY]' : '[COPIED]'} campaigns/${camp.id}`);
+      count++;
+    } else {
+      console.log(`    [SKIP campaigns/${camp.id}] already exists`);
+    }
+    // Always recurse into campaign sub-collections regardless of parent copy status
+    for (const sub of CAMPAIGN_SUB_COLLECTIONS) {
+      const n = await copySubCollection(camp.ref, dest, sub);
+      if (n) console.log(`      → ${n} campaigns/${camp.id}/${sub} docs copied`);
+    }
+  }
+  return count;
+}
+
 async function migrateBusinesses() {
   console.log('\n=== Step 1: businesses/{bizId} → users/{uid}/businesses/{bizId} ===');
   const snap = await db.collection('businesses').get();
   if (snap.empty) { console.log('  No flat businesses docs found.'); return; }
-
-  const SUB_COLLECTIONS = [
-    'documents', 'campaigns', 'facts', 'images', 'copy', 'advertising',
-    'pendingPosts', 'listingDrafts', 'publishJobs', 'platformConnections',
-  ];
 
   let migrated = 0, skipped = 0, errors = 0;
   for (const biz of snap.docs) {
@@ -89,18 +113,20 @@ async function migrateBusinesses() {
     }
     const destRef = db.doc(`users/${uid}/businesses/${biz.id}`);
     const copied  = await copyDoc(biz.ref, destRef, `businesses/${biz.id} → users/${uid}/businesses/${biz.id}`);
-    if (copied) {
-      for (const sub of SUB_COLLECTIONS) {
-        const n = await copySubCollection(biz.ref, destRef, sub);
-        if (n) console.log(`    → ${n} ${sub} docs copied`);
-      }
-      migrated++;
-      if (DELETE && !DRY) {
-        await biz.ref.delete();
-        console.log(`  [DELETED] businesses/${biz.id}`);
-      }
-    } else {
-      skipped++;
+    if (copied) migrated++; else skipped++;
+
+    // Always migrate all sub-collections regardless of whether parent was newly copied —
+    // ensures idempotent reruns complete any partially-migrated business.
+    for (const sub of BIZ_SUB_COLLECTIONS) {
+      const n = await copySubCollection(biz.ref, destRef, sub);
+      if (n) console.log(`    → ${n} ${sub} docs copied`);
+    }
+    const campCount = await migrateCampaigns(biz.ref, destRef);
+    if (campCount) console.log(`    → ${campCount} campaign docs copied (with descendants)`);
+
+    if (DELETE && !DRY) {
+      await biz.ref.delete();
+      console.log(`  [DELETED] businesses/${biz.id}`);
     }
   }
   console.log(`  Done: migrated=${migrated}  skipped=${skipped}  errors=${errors}`);
