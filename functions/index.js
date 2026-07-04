@@ -1569,14 +1569,27 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-centr
         redirect_uri: redirectUri, code
       }
     });
-    const { access_token } = tokenResp.data;
+    const { access_token: shortLivedToken } = tokenResp.data;
+
+    // Exchange for a long-lived user token (~60 days) so page tokens are also long-lived
+    const longLivedResp = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
+      params: {
+        grant_type: 'fb_exchange_token',
+        client_id: process.env.FACEBOOK_APP_ID,
+        client_secret: process.env.FACEBOOK_APP_SECRET,
+        fb_exchange_token: shortLivedToken
+      }
+    });
+    const longLivedToken = longLivedResp.data.access_token;
+    const expiresIn = longLivedResp.data.expires_in || (60 * 24 * 3600); // fallback: 60 days
+    const expiresAt = new Date(Date.now() + expiresIn * 1000);
 
     const pagesResp = await axios.get('https://graph.facebook.com/v18.0/me/accounts', {
-      params: { access_token }
+      params: { access_token: longLivedToken }
     });
     const pages = pagesResp.data.data || [];
     const page = pages[0];
-    const pageToken = page?.access_token || access_token;
+    const pageToken = page?.access_token || longLivedToken;
 
     let igUserId = '';
     if (page?.id) {
@@ -1594,6 +1607,7 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-centr
       accessToken: pageToken, pageId: page?.id || '',
       pageName: page?.name || '',
       allPages: pages.map(p => ({ id: p.id, name: p.name })),
+      expiresAt,
       connectedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
@@ -1601,6 +1615,7 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-centr
       batch.set(db.collection('platformConnections').doc(`${businessId}_instagram`), {
         businessId, uid, platform: 'instagram', status: 'connected',
         accessToken: pageToken, igUserId, pageId: page?.id || '',
+        expiresAt,
         connectedAt: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
     }
@@ -3363,9 +3378,14 @@ exports.scheduledSetupNudge = onSchedule(
 // All others are marked 'expired' so the Connect page shows the Reconnect UI.
 // ══════════════════════════════════════════
 exports.checkPlatformTokenExpiry = onSchedule(
-  { schedule: 'every 30 minutes', region: 'us-central1', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'RESEND_API_KEY'] },
+  {
+    schedule: 'every 30 minutes',
+    region: 'us-central1',
+    secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'RESEND_API_KEY', 'FACEBOOK_APP_ID', 'FACEBOOK_APP_SECRET'],
+  },
   async () => {
-    const cutoff = new Date(Date.now() + 5 * 60 * 1000); // now + 5 min
+    const cutoffShort = new Date(Date.now() + 5 * 60 * 1000);       // now + 5 min  (Google etc.)
+    const cutoffFb    = new Date(Date.now() + 7 * 24 * 3600 * 1000); // now + 7 days (Facebook/Instagram)
 
     // Load the platform-expired email template once for the whole run
     let tmplSubject = null, tmplHtml = null;
@@ -3387,11 +3407,78 @@ exports.checkPlatformTokenExpiry = onSchedule(
     for (const docSnap of snap.docs) {
       const conn = docSnap.data();
 
-      // Skip docs with no expiresAt (e.g. Facebook/Instagram — 60-day tokens, separate task)
+      // Skip docs with no expiresAt (pre-existing connections before this feature)
       if (!conn.expiresAt) { skipped++; continue; }
 
       const expiresAt = conn.expiresAt.toDate ? conn.expiresAt.toDate() : new Date(conn.expiresAt);
+      const isFbOrIg  = conn.platform === 'facebook' || conn.platform === 'instagram';
+      const cutoff    = isFbOrIg ? cutoffFb : cutoffShort;
+
       if (expiresAt > cutoff) { skipped++; continue; } // still fresh
+
+      // Facebook connections: attempt proactive token exchange (extends another ~60 days)
+      if (conn.platform === 'facebook' && conn.accessToken) {
+        try {
+          const resp = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
+            params: {
+              grant_type:       'fb_exchange_token',
+              client_id:        process.env.FACEBOOK_APP_ID,
+              client_secret:    process.env.FACEBOOK_APP_SECRET,
+              fb_exchange_token: conn.accessToken,
+            },
+          });
+          const { access_token, expires_in } = resp.data;
+          const newExpiresAt = new Date(Date.now() + (expires_in || 60 * 24 * 3600) * 1000);
+
+          // Update the Facebook doc
+          await docSnap.ref.update({
+            accessToken: access_token,
+            expiresAt:   newExpiresAt,
+            updatedAt:   admin.firestore.FieldValue.serverTimestamp(),
+          });
+          console.log(`[checkPlatformTokenExpiry] Refreshed Facebook token for ${docSnap.id}`);
+
+          // Mirror to the Instagram doc if it exists (same page token)
+          const igDocId = `${conn.businessId}_instagram`;
+          const igRef   = db.collection('platformConnections').doc(igDocId);
+          const igSnap  = await igRef.get();
+          if (igSnap.exists && igSnap.data().status === 'connected') {
+            await igRef.update({
+              accessToken: access_token,
+              expiresAt:   newExpiresAt,
+              updatedAt:   admin.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log(`[checkPlatformTokenExpiry] Mirrored refreshed token to ${igDocId}`);
+          }
+
+          refreshed++;
+          continue;
+        } catch (e) {
+          console.warn(`[checkPlatformTokenExpiry] Facebook refresh failed for ${docSnap.id}:`,
+            e.response?.data || e.message);
+          // Also mark the paired Instagram doc expired — it shares the same dead token.
+          // Do this before falling through so the FB doc handler below marks both consistently.
+          try {
+            const igDocId = `${conn.businessId}_instagram`;
+            const igRef   = db.collection('platformConnections').doc(igDocId);
+            const igSnap  = await igRef.get();
+            if (igSnap.exists && igSnap.data().status === 'connected') {
+              await igRef.update({
+                status:    'expired',
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              });
+              console.log(`[checkPlatformTokenExpiry] Marked expired (paired with failed FB): ${igDocId}`);
+            }
+          } catch (igErr) {
+            console.error(`[checkPlatformTokenExpiry] Failed to mark IG expired for business ${conn.businessId}:`, igErr.message);
+          }
+          // Fall through — mark FB expired below
+        }
+      }
+
+      // Instagram docs are always handled via their paired Facebook doc (refresh on success,
+      // expire on failure). Skip independent Instagram expiry processing to avoid double-writes.
+      if (conn.platform === 'instagram') { skipped++; continue; }
 
       // Google connections: attempt proactive token refresh
       if (conn.platform === 'google' && conn.refreshToken) {
