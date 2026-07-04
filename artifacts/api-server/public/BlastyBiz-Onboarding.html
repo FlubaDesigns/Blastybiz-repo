@@ -409,6 +409,14 @@
     <button class="btn-back hidden" id="btn-back" onclick="prevStep()">
       ← Back
     </button>
+    <div style="text-align:center;margin-top:6px;min-height:20px">
+      <span id="draft-status" style="font-size:12px;color:#4caf50;opacity:0;transition:opacity 0.4s"></span>
+    </div>
+    <div style="text-align:center;margin-top:4px">
+      <button id="btn-delete-draft" onclick="window._deleteDraft()" style="display:none;background:none;border:none;color:#e57373;font-size:12px;cursor:pointer;padding:4px 8px;text-decoration:underline">
+        × Discard this business
+      </button>
+    </div>
   </div>
 
 </div><!-- /wizard -->
@@ -852,10 +860,9 @@ init();
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs, arrayUnion, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // ── Load live Yelp categories from Firestore cache ──────────────────────────
-// Runs immediately; resolveCats() only fires on button click so timing is fine.
 (async () => {
   try {
     const snap = await getDoc(doc(db, 'platformCategoryCache', 'yelp'));
@@ -872,57 +879,191 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, whe
 
 let currentUser = null;
 
+// ══════════════════════════════════════════
+// AUTO-SAVE (localStorage draft)
+// ══════════════════════════════════════════
+const _isNew = () => new URLSearchParams(window.location.search).get('new') === '1';
+const _draftKey = () => currentUser ? `bb_draft_${_isNew() ? 'new_' : ''}${currentUser.uid}` : null;
+let _saveTimer = null;
+
+function _showDraftStatus(msg) {
+  const el = document.getElementById('draft-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(el._fadeTimer);
+  el._fadeTimer = setTimeout(() => { el.style.opacity = '0'; }, 2200);
+}
+
+function _doSave() {
+  const key = _draftKey();
+  if (!key) return;
+  const name = document.getElementById('s-name')?.value?.trim();
+  if (!name || name.length < 2) return;
+
+  const draft = {
+    step: window.currentStep || 1,
+    fields: {
+      name:      document.getElementById('s-name')?.value || '',
+      owner:     document.getElementById('s-owner')?.value || '',
+      ownerRole: document.getElementById('s-owner-role')?.value || 'owner',
+      phone:     document.getElementById('s-phone')?.value || '',
+      email:     document.getElementById('s-email')?.value || '',
+      biztype:   document.getElementById('s-biztype')?.value || '',
+      address:   document.getElementById('s-address')?.value || '',
+      city:      document.getElementById('s-city')?.value || '',
+      state:     document.getElementById('s-state')?.value || '',
+      region:    document.getElementById('s-region')?.value || '',
+      website:   document.getElementById('s-website')?.value || '',
+      open:      document.getElementById('s-open')?.value || '09:00',
+      close:     document.getElementById('s-close')?.value || '17:00',
+    },
+    selectedCategory: window.selectedCategory || '',
+    resolvedCats:     window.resolvedCats || {},
+    selectedDays:     window.selectedDays || [],
+    selectedTone:     window.selectedTone || 'friendly',
+    locationType:     window._onboardingLocType || 'physical',
+  };
+
+  try {
+    localStorage.setItem(key, JSON.stringify(draft));
+    _showDraftStatus('Draft saved ✓');
+    const delBtn = document.getElementById('btn-delete-draft');
+    if (delBtn) delBtn.style.display = 'block';
+  } catch(e) { /* storage full or private mode — silent */ }
+}
+
+function _scheduleAutoSave() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(_doSave, 700);
+}
+
+function _restoreDraft() {
+  const key = _draftKey();
+  if (!key) return;
+  let draft;
+  try { draft = JSON.parse(localStorage.getItem(key)); } catch(e) {}
+  if (!draft) return;
+
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined && val !== '') el.value = val; };
+  const f = draft.fields || {};
+  set('s-name',       f.name);
+  set('s-owner',      f.owner);
+  set('s-owner-role', f.ownerRole);
+  set('s-phone',      f.phone);
+  set('s-email',      f.email);
+  set('s-biztype',    f.biztype);
+  set('s-address',    f.address);
+  set('s-city',       f.city);
+  set('s-state',      f.state);
+  set('s-region',     f.region);
+  set('s-website',    f.website);
+  set('s-open',       f.open);
+  set('s-close',      f.close);
+
+  if (draft.selectedCategory) window.selectedCategory = draft.selectedCategory;
+  if (draft.resolvedCats)     window.resolvedCats     = draft.resolvedCats;
+  if (draft.selectedDays)     window.selectedDays     = draft.selectedDays;
+  if (draft.selectedTone)     window.selectedTone     = draft.selectedTone;
+  if (draft.locationType)     window._onboardingLocType = draft.locationType;
+
+  if (f.name && f.name.length >= 2) {
+    const delBtn = document.getElementById('btn-delete-draft');
+    if (delBtn) delBtn.style.display = 'block';
+  }
+
+  if (draft.step && draft.step > 1 && typeof goToStep === 'function') {
+    setTimeout(() => {
+      goToStep(draft.step);
+      _showDraftStatus('Draft restored ✓');
+    }, 200);
+  }
+}
+
+function _clearDraft() {
+  const key = _draftKey();
+  if (key) localStorage.removeItem(key);
+}
+
+window._deleteDraft = async function() {
+  if (!confirm('Discard this business and start over?\n\nThis will erase everything entered so far.')) return;
+
+  _clearDraft();
+
+  // Reset all fields
+  ['s-name','s-owner','s-phone','s-email','s-biztype','s-address','s-city','s-state','s-region','s-website'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const roleEl = document.getElementById('s-owner-role');
+  if (roleEl) roleEl.value = 'owner';
+  const openEl = document.getElementById('s-open');
+  if (openEl) openEl.value = '09:00';
+  const closeEl = document.getElementById('s-close');
+  if (closeEl) closeEl.value = '17:00';
+
+  window.selectedCategory   = '';
+  window.resolvedCats       = {};
+  window.selectedDays       = ['Mon','Tue','Wed','Thu','Fri','Sat'];
+  window.selectedTone       = 'friendly';
+  window._onboardingLocType = 'physical';
+
+  const delBtn = document.getElementById('btn-delete-draft');
+  if (delBtn) delBtn.style.display = 'none';
+
+  if (typeof goToStep === 'function') goToStep(1);
+};
+
+// Wire auto-save to every input and change event on the wizard
+document.querySelector('.wizard')?.addEventListener('input',  _scheduleAutoSave);
+document.querySelector('.wizard')?.addEventListener('change', _scheduleAutoSave);
+
+// ══════════════════════════════════════════
+// AUTH + LOAD
+// ══════════════════════════════════════════
 auth.authStateReady().then(() => {
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
-      setTimeout(() => {
-        if (!auth.currentUser) {
-          window.location.href = 'BlastyBiz-Login.html';
-        }
-      }, 1500);
+      setTimeout(() => { if (!auth.currentUser) window.location.href = 'BlastyBiz-Login.html'; }, 1500);
       return;
     }
     currentUser = user;
     window._blastyUser = user;
 
-    // If user already has businesses and didn't explicitly click "Add New",
-    // send them to the dashboard (business picker will auto-open there)
-    const isAddingNew = new URLSearchParams(window.location.search).get('new') === '1';
+    // If user already has completed businesses and didn't click "Add New", send to dashboard
+    const isAddingNew = _isNew();
     if (!isAddingNew) {
       try {
         const bizSnap = await getDocs(query(collection(db, 'businesses'), where('uid', '==', user.uid)));
-        if (!bizSnap.empty) {
+        if (bizSnap.docs.some(d => d.data().onboarded === true)) {
           window.location.href = 'BlastyBiz-Dashboard.html?from=login';
           return;
         }
-      } catch(e) { /* non-fatal — let them continue */ }
+      } catch(e) { /* non-fatal */ }
     }
 
-    // Pre-fill Step 1 fields from the user's account
+    // Pre-fill Step 1 from user account, then restore any saved draft
     try {
       const snap = await getDoc(doc(db, 'users', user.uid));
       const data = snap.exists() ? snap.data() : {};
-
       const ownerField = document.getElementById('s-owner');
-      const emailField  = document.getElementById('s-email');
+      const emailField = document.getElementById('s-email');
+      if (ownerField && !ownerField.value) ownerField.value = data.ownerName || user.displayName || '';
+      if (emailField && !emailField.value) emailField.value = data.email || user.email || '';
+    } catch(e) { /* non-fatal */ }
 
-      if (ownerField && !ownerField.value) {
-        ownerField.value = data.ownerName || user.displayName || '';
-      }
-      if (emailField && !emailField.value) {
-        emailField.value = data.email || user.email || '';
-      }
+    // Restore draft (overrides pre-fill if draft has values)
+    _restoreDraft();
 
-      // Re-run validation for whichever step is currently active
-      if (typeof checkStep === 'function' && typeof currentStep !== 'undefined') {
-        checkStep(currentStep);
-      }
-    } catch (e) {
-      // Non-fatal — user can still fill fields manually
+    if (typeof checkStep === 'function' && typeof currentStep !== 'undefined') {
+      checkStep(currentStep);
     }
   });
 });
 
+// ══════════════════════════════════════════
+// PROFILE DATA + FINAL SAVE
+// ══════════════════════════════════════════
 window._buildProfileData = function() {
   const openTime  = document.getElementById('s-open')?.value  || '09:00';
   const closeTime = document.getElementById('s-close')?.value || '17:00';
@@ -932,7 +1073,7 @@ window._buildProfileData = function() {
     : 'Hours not set';
   return {
     businessName: document.getElementById('s-name')?.value || '',
-    ownerName:    document.getElementById('s-owner')?.value      || '',
+    ownerName:    document.getElementById('s-owner')?.value || '',
     ownerRole:    document.getElementById('s-owner-role')?.value || 'owner',
     phone:        document.getElementById('s-phone')?.value || '',
     category:     window.selectedCategory || '',
@@ -964,19 +1105,17 @@ window.nextStep = async function() {
     const data = window._buildProfileData();
     try {
       if (currentUser) {
-        const isNewBiz = new URLSearchParams(window.location.search).get('new') === '1';
-        // First-time onboarding uses UID as doc ID; adding a new business gets a fresh auto-ID
-        const bizRef = isNewBiz
+        // First-time onboarding: doc ID = user UID. Adding new business: auto-generated ID.
+        const bizRef = _isNew()
           ? doc(collection(db, 'businesses'))
           : doc(db, 'businesses', currentUser.uid);
         await setDoc(bizRef, { ...data, uid: currentUser.uid, createdAt: serverTimestamp() }, { merge: true });
-        // Point the user's activeBusiness at the newly created/updated doc
-        // businessIds array tracks all businesses owned — used for plan limit enforcement
         await setDoc(doc(db, 'users', currentUser.uid), {
           onboarded: true,
           activeBusiness: bizRef.id,
           businessIds: arrayUnion(bizRef.id),
         }, { merge: true });
+        _clearDraft();
       }
     } catch(e) {
       console.error('Save failed:', e);
