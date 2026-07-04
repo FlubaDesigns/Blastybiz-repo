@@ -506,8 +506,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   try {
-    const q = query(collection(db, 'businesses'), where('uid', '==', user.uid));
-    const snap = await getDocs(q);
+    const snap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
 
     if (!snap.empty) {
       allBusinesses = snap.docs.map(d => ({
@@ -554,7 +553,7 @@ onAuthStateChanged(auth, async (user) => {
   async function loadBusinessContextFirestore(bizId) {
     try {
       const [bizSnap, googleSnap, facebookSnap, instagramSnap] = await Promise.all([
-        getDoc(doc(db, 'businesses', bizId)),
+        getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId)),
         getDoc(doc(db, 'platformConnections', `${bizId}_google`)),
         getDoc(doc(db, 'platformConnections', `${bizId}_facebook`)),
         getDoc(doc(db, 'platformConnections', `${bizId}_instagram`)),
@@ -568,7 +567,7 @@ onAuthStateChanged(auth, async (user) => {
       if (snapBiz) snapBiz.textContent = bizName;
 
       // Render campaign list — read from sub-collection (new hierarchical model)
-      const campSnap = await getDocs(collection(db, 'businesses', bizId, 'campaigns'));
+      const campSnap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', bizId, 'campaigns'));
       const bizCampaigns = campSnap.docs
         .map(d => ({ ...d.data(), id: d.id }))
         .sort((a, b) => new Date(b.lastUsedAt || b.createdAt || 0) - new Date(a.lastUsedAt || a.createdAt || 0));

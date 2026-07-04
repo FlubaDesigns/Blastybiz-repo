@@ -1069,7 +1069,7 @@ auth.authStateReady().then(() => {
     const isAddingNew = _isNew();
     if (!isAddingNew) {
       try {
-        const bizSnap = await getDocs(query(collection(db, 'businesses'), where('uid', '==', user.uid)));
+        const bizSnap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
         if (bizSnap.docs.some(d => d.data().onboarded === true)) {
           window.location.href = 'BlastyBiz-Dashboard.html?from=login';
           return;

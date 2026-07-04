@@ -163,7 +163,7 @@ auth.authStateReady().then(() => {
       activeBizPlan = userData.plan || 'starter';
 
       if (!activeBizId) {
-        const bizQ = await getDocs(query(collection(db, 'businesses'), where('uid', '==', user.uid)));
+        const bizQ = await getDocs(collection(db, 'users', user.uid, 'businesses'));
         if (!bizQ.empty) activeBizId = bizQ.docs[0].id;
       }
 
@@ -177,7 +177,7 @@ auth.authStateReady().then(() => {
         return;
       }
 
-      const bizSnap = await getDoc(doc(db, 'businesses', activeBizId));
+      const bizSnap = await getDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId));
       if (bizSnap.exists()) {
         const ctx = bizSnap.data().aiContext || {};
         FIELDS.forEach(f => {
@@ -207,7 +207,7 @@ async function loadLibraryDocs() {
   if (!activeBizId) return;
   const list = document.getElementById('doc-list');
   try {
-    const snap = await getDocs(query(collection(db, 'businesses', activeBizId, 'documents'), orderBy('uploadedAt', 'desc')));
+    const snap = await getDocs(query(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'documents'), orderBy('uploadedAt', 'desc')));
     if (snap.empty) { list.innerHTML = '<p style="font-size:13px;color:var(--muted);margin:0">No documents yet.</p>'; return; }
     list.innerHTML = snap.docs.map(d => {
       const data = d.data();
@@ -278,12 +278,12 @@ window.handleDocUpload = async function(evt, replaceDocId, replaceDocName) {
     if (extractedText.length > 20000) extractedText = extractedText.slice(0, 20000) + '\n[truncated]';
     status.textContent = '💾 Saving…';
     if (replaceDocId) {
-      await updateDoc(doc(db, 'businesses', activeBizId, 'documents', replaceDocId), {
+      await updateDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'documents', replaceDocId), {
         name: file.name, extractedText, uploadedAt: new Date(), bytes: file.size
       });
       status.textContent = `✅ "${replaceDocName}" replaced with "${file.name}"`;
     } else {
-      await addDoc(collection(db, 'businesses', activeBizId, 'documents'), {
+      await addDoc(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'documents'), {
         name: file.name, extractedText, uploadedAt: new Date(), bytes: file.size
       });
       status.textContent = '✅ Document saved to Business Library';
@@ -309,7 +309,7 @@ window.closeDocModal = function() {
 window.deleteLibraryDoc = async function(docId) {
   if (!confirm('Remove this document from your Business Library?')) return;
   try {
-    await deleteDoc(doc(db, 'businesses', activeBizId, 'documents', docId));
+    await deleteDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'documents', docId));
     loadLibraryDocs();
     showToast('Document removed');
   } catch(e) {
@@ -333,7 +333,7 @@ window.saveContext = async function() {
   });
 
   try {
-    await setDoc(doc(db, 'businesses', activeBizId), { aiContext }, { merge: true });
+    await setDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), { aiContext }, { merge: true });
     btn.textContent = 'Save Story';
     status.textContent = '✓ Saved — AI will use this next time';
     status.className = 'save-status ok';

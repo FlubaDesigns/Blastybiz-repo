@@ -2955,14 +2955,14 @@ window._bbFirestoreDismissPending = async function(id) {
 };
 
 window._saveInsightToFirestore = async function(insights) {
-  if (!activeBizId) return;
-  try { await setDoc(doc(db, 'businesses', activeBizId), { bizInsights: insights }, { merge: true }); }
+  if (!activeBizId || !window._bbUid) return;
+  try { await setDoc(doc(db, 'users', window._bbUid, 'businesses', activeBizId), { bizInsights: insights }, { merge: true }); }
   catch(e) { console.error('saveInsights:', e); }
 };
 
 window._saveGlobalFactoidsToFirestore = async function(factoids) {
-  if (!activeBizId) return;
-  try { await setDoc(doc(db, 'businesses', activeBizId), { globalFactoids: factoids }, { merge: true }); }
+  if (!activeBizId || !window._bbUid) return;
+  try { await setDoc(doc(db, 'users', window._bbUid, 'businesses', activeBizId), { globalFactoids: factoids }, { merge: true }); }
   catch(e) { console.error('saveGlobalFactoids:', e); }
 };
 
@@ -2991,7 +2991,7 @@ window._bbSaveCampaigns = async function(cams) {
   if (!cams.length) return;
   const batch = writeBatch(db);
   cams.forEach(cam => {
-    const ref = doc(db, 'businesses', activeBizId, 'campaigns', cam.id);
+    const ref = doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', cam.id);
     batch.set(ref, { ...cam, uid: currentUser.uid, bizId: activeBizId }, { merge: true });
   });
   await batch.commit();
@@ -2999,7 +2999,7 @@ window._bbSaveCampaigns = async function(cams) {
 
 window._bbDeleteCampaign = async function(campId) {
   if (!activeBizId) return;
-  await deleteDoc(doc(db, 'businesses', activeBizId, 'campaigns', campId));
+  await deleteDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', campId));
 };
 
 // Copy Library — Firestore helpers exposed to regular script
@@ -3033,6 +3033,7 @@ auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
   if (!user) return; // auth-guard.js handles redirect
   currentUser = user;
+  window._bbUid = currentUser.uid;
   window._bbGetToken = () => currentUser.getIdToken();
 
   const userSnap = await getDoc(doc(db, 'users', user.uid));
@@ -3043,7 +3044,7 @@ onAuthStateChanged(auth, async (user) => {
   renderPlatforms();
 
   try {
-    const bizSnap = await getDoc(doc(db, 'businesses', activeBizId));
+    const bizSnap = await getDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId));
     if (bizSnap.exists()) {
       const biz = bizSnap.data();
       const p = {
@@ -3074,7 +3075,7 @@ onAuthStateChanged(auth, async (user) => {
 
       // Load Business Library docs for AI context (Pro/Agency only — no-op for starter)
       try {
-        const docsSnap = await getDocs(query(collection(db, 'businesses', activeBizId, 'documents'), orderBy('uploadedAt', 'desc')));
+        const docsSnap = await getDocs(query(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'documents'), orderBy('uploadedAt', 'desc')));
         window._libraryDocs = docsSnap.docs.map(d => ({ name: d.data().name, extractedText: d.data().extractedText || '' }));
       } catch(_) { window._libraryDocs = []; }
 
@@ -3090,7 +3091,7 @@ onAuthStateChanged(auth, async (user) => {
 
 
       // Load campaigns from sub-collection (hierarchical model)
-      const campColSnap = await getDocs(collection(db, 'businesses', activeBizId, 'campaigns'));
+      const campColSnap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns'));
       campaigns = campColSnap.docs.map(d => ({ ...d.data(), id: d.id }));
       _sortCampaigns();
       renderCampaignChips();
@@ -3174,7 +3175,7 @@ onAuthStateChanged(auth, async (user) => {
                 : c
             );
             campaigns = updatedCams;
-            await updateDoc(doc(db, 'businesses', activeBizId), { campaigns: updatedCams });
+            await updateDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), { campaigns: updatedCams });
           }
         } catch(e) { console.error('Photo save error:', e); }
       }
@@ -3190,7 +3191,7 @@ onAuthStateChanged(auth, async (user) => {
     if (window.renderAllPhotos) window.renderAllPhotos();
     try {
       const featuredUrl = alreadySelected ? null : (item.url || item.localUrl);
-      await updateDoc(doc(db, 'businesses', activeBizId), { featuredPhoto: featuredUrl || '' });
+      await updateDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), { featuredPhoto: featuredUrl || '' });
       window.showToast && window.showToast(alreadySelected ? 'Photo deselected' : '⭐ Featured photo set');
     } catch(e) { console.error('featuredPhoto save error:', e); }
   };
@@ -3217,7 +3218,7 @@ onAuthStateChanged(auth, async (user) => {
             : c
         );
         campaigns = updatedCams;
-        await updateDoc(doc(db, 'businesses', activeBizId), { campaigns: updatedCams });
+        await updateDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), { campaigns: updatedCams });
       }
     } catch(e) { console.error('Photo delete error:', e); }
   };
@@ -3381,7 +3382,7 @@ window.saveProfile = async function() {
   origSaveProfile && origSaveProfile();
   if (!currentUser || !activeBizId) return;
   try {
-    await setDoc(doc(db, 'businesses', activeBizId), {
+    await setDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), {
       // Never overwrite saved fields with blank — only write a field if it has a value
       ...(profile.name      ? { businessName: profile.name }      : {}),
       ...(profile.ownerName ? { ownerName:   profile.ownerName } : {}),
@@ -3409,7 +3410,7 @@ window.saveProfile = async function() {
 window._savePlatformCatsToFirestore = async function(cats) {
   if (!currentUser || !activeBizId) return;
   try {
-    await setDoc(doc(db, 'businesses', activeBizId), {
+    await setDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), {
       platformCats: cats,
       updatedAt:    serverTimestamp(),
     }, { merge: true });
@@ -3438,7 +3439,7 @@ window._saveScheduleToFirestore = async function(sched) {
     } else {
       payload.nextRunAt = null;
     }
-    await setDoc(doc(db, 'businesses', activeBizId), {
+    await setDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), {
       postingSchedule: payload,
     }, { merge: true });
   } catch(e) {

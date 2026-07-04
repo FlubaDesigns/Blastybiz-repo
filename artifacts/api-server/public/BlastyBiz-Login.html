@@ -371,7 +371,7 @@ async function afterAuth(user) {
     if (userData.onboarded) {
       window.location.href = dashUrl;
     } else {
-      const bizSnap = await getDocs(query(collection(db, 'businesses'), where('uid', '==', user.uid)));
+      const bizSnap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
       if (!bizSnap.empty) {
         await setDoc(doc(db, 'users', user.uid), { onboarded: true }, { merge: true });
         window.location.href = dashUrl;

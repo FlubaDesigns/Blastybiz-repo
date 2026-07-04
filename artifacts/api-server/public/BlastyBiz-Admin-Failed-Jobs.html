@@ -13,13 +13,18 @@ let currentUser = null;
 let loadedJobs = [];
 const bizNameCache = {};
 
-async function resolveBizNames(ids) {
-  const missing = [...new Set(ids)].filter(id => id && !(id in bizNameCache));
-  await Promise.all(missing.map(async id => {
+async function resolveBizNames(jobs) {
+  const missing = jobs.filter(j => j.businessId && !(j.businessId in bizNameCache));
+  await Promise.all(missing.map(async j => {
+    const { uid, businessId } = j;
     try {
-      const snap = await getDoc(doc(db, 'businesses', id));
-      bizNameCache[id] = snap.exists() ? (snap.data().bizName || snap.data().name || id) : id;
-    } catch { bizNameCache[id] = id; }
+      if (uid && businessId) {
+        const snap = await getDoc(doc(db, 'users', uid, 'businesses', businessId));
+        bizNameCache[businessId] = snap.exists() ? (snap.data().businessName || snap.data().bizName || snap.data().name || businessId) : businessId;
+      } else {
+        bizNameCache[businessId] = businessId;
+      }
+    } catch { bizNameCache[businessId] = businessId; }
   }));
 }
 
@@ -139,7 +144,7 @@ onAuthStateChanged(auth, (user) => {
     loadedJobs = jobs;
 
     // Resolve business names in one batch before rendering
-    await resolveBizNames(jobs.map(j => j.businessId).filter(Boolean));
+    await resolveBizNames(jobs);
 
     const tableRows = [];
     const cardItems = [];

@@ -62,6 +62,10 @@ function getSquare() {
 admin.initializeApp();
 const db = admin.firestore();
 
+// ── Subcollection path helpers ─────────────────────────────────────────────────
+function userBizRef(uid, bizId) { return db.collection('users').doc(uid).collection('businesses').doc(bizId); }
+function userBizCol(uid) { return db.collection('users').doc(uid).collection('businesses'); }
+
 // ── AI cost tracking ──────────────────────────────────────────────────────────
 // Prices per million tokens (update if Anthropic changes rates)
 const AI_COSTS = {
@@ -817,12 +821,12 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
   // Ownership verification — both draftId and businessId must belong to the caller
   const [draftSnap, bizSnap] = await Promise.all([
     db.collection('listingDrafts').doc(draftId).get(),
-    db.collection('businesses').doc(businessId).get()
+    userBizRef(uid, businessId).get()
   ]);
   if (!draftSnap.exists || draftSnap.data().uid !== uid) {
     return res.status(403).json({ error: 'Forbidden: draft does not belong to you' });
   }
-  if (!bizSnap.exists || bizSnap.data().uid !== uid) {
+  if (!bizSnap.exists) {
     return res.status(403).json({ error: 'Forbidden: business does not belong to you' });
   }
 
@@ -1102,7 +1106,7 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
       // Atomic batch: users/{uid}.plan + all businesses/{bizId}.currentPlan in one commit.
       // If any write fails the whole batch rolls back — no more half-written plan state.
       // subscriptions is written separately; it's an audit record, not an entitlement gate.
-      const bizSnaps = await db.collection('businesses').where('uid', '==', uid).get();
+      const bizSnaps = await userBizCol(uid).get();
       const syncBatch = db.batch();
       syncBatch.set(
         db.collection('users').doc(uid),
@@ -1190,7 +1194,7 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
         const paidUserData = paidUserSnap.data() || {};
         const paidEmail = paidUserData.email || uid;
         const paidName = paidUserData.ownerName || paidUserData.displayName || 'Unknown';
-        const paidBizSnap = await db.collection('businesses').where('uid', '==', uid).limit(1).get();
+        const paidBizSnap = await userBizCol(uid).limit(1).get();
         const paidBiz = paidBizSnap.docs[0]?.data()?.businessName || '—';
         await sendResendEmail({
           to: 'info@blastybiz.com',
@@ -1260,7 +1264,7 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
               });
               // Mirror cancellation onto businesses docs
-              const bizSnaps = await db.collection('businesses').where('uid', '==', uid).get();
+              const bizSnaps = await userBizCol(uid).get();
               for (const biz of bizSnaps.docs) {
                 await biz.ref.update({ currentPlan: 'starter', subscriptionStatus: 'canceled' });
               }
@@ -1353,7 +1357,7 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
           const userData = userSnap.data() || {};
           toEmail = userData.email;
           ownerName = userData.ownerName || userData.displayName || '';
-          const bizSnap = await db.collection('businesses').where('uid', '==', uid).limit(1).get();
+          const bizSnap = await userBizCol(uid).limit(1).get();
           businessName = bizSnap.docs[0]?.data()?.businessName || (ownerName ? ownerName + '\'s Business' : 'your business');
         }
         if (toEmail) {
@@ -1425,8 +1429,8 @@ exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
   const uid = decoded.uid;
   const { businessId, returnTo } = req.query;
   if (!businessId) { res.status(400).json({ error: 'Missing businessId' }); return; }
-  const bizSnap = await db.collection('businesses').doc(businessId).get();
-  if (!bizSnap.exists || bizSnap.data().uid !== uid) { return res.status(403).json({ error: 'Forbidden' }); }
+  const bizSnap = await userBizRef(uid, businessId).get();
+  if (!bizSnap.exists) { return res.status(403).json({ error: 'Forbidden' }); }
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId) { res.status(503).json({ error: 'Google OAuth not configured' }); return; }
   const nonce = require('crypto').randomUUID();
@@ -1535,8 +1539,8 @@ exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBO
   const uid = decoded.uid;
   const { businessId, returnTo } = req.query;
   if (!businessId) { res.status(400).json({ error: 'Missing businessId' }); return; }
-  const bizSnap = await db.collection('businesses').doc(businessId).get();
-  if (!bizSnap.exists || bizSnap.data().uid !== uid) { return res.status(403).json({ error: 'Forbidden' }); }
+  const bizSnap = await userBizRef(uid, businessId).get();
+  if (!bizSnap.exists) { return res.status(403).json({ error: 'Forbidden' }); }
   const appId = process.env.FACEBOOK_APP_ID;
   if (!appId) { res.status(503).json({ error: 'Facebook OAuth not configured' }); return; }
   const nonce = require('crypto').randomUUID();
@@ -1832,7 +1836,7 @@ exports.jobFailedTrigger = onDocumentUpdated(
     if (!toEmail) return;
 
     try {
-      const bizSnap = await db.collection('businesses').where('uid', '==', uid).limit(1).get();
+      const bizSnap = await userBizCol(uid).limit(1).get();
       businessName = bizSnap.docs[0]?.data()?.businessName || '';
     } catch(e) { /* non-fatal */ }
 
@@ -1913,7 +1917,7 @@ exports.jobCompletedTrigger = onDocumentUpdated(
     if (!toEmail) return;
 
     try {
-      const bizSnap = await db.collection('businesses').where('uid', '==', uid).limit(1).get();
+      const bizSnap = await userBizCol(uid).limit(1).get();
       businessName = bizSnap.docs[0]?.data()?.businessName || '';
     } catch(e) { /* non-fatal */ }
 
@@ -1994,10 +1998,10 @@ exports.userCreatedTrigger = onDocumentCreated(
 // Sends welcome email + admin alert once businessName is known
 // ══════════════════════════════════════════
 exports.businessCreatedTrigger = onDocumentCreated(
-  { document: 'businesses/{bizId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
+  { document: 'users/{uid}/businesses/{bizId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
   async (event) => {
     const biz = event.data.data();
-    const uid = biz.uid;
+    const uid = event.params.uid;
     if (!uid) return;
 
     // Get auth email from users doc (the form email field is the business contact, not auth email)
@@ -2110,7 +2114,7 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
     // Collect all top-level collections to delete
     const [bizSnap, draftsSnap, jobsSnap, connsSnap, librarySnap, activitySnap, pendingSnap] =
       await Promise.all([
-        db.collection('businesses').where('uid', '==', uid).get(),
+        userBizCol(uid).get(),
         db.collection('listingDrafts').where('uid', '==', uid).get(),
         db.collection('publishJobs').where('uid', '==', uid).get(),
         db.collection('platformConnections').where('uid', '==', uid).get(),
@@ -2122,7 +2126,7 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
     // Collect business library subcollection docs
     const libDocRefs = [];
     for (const bizDoc of bizSnap.docs) {
-      const libSnap = await db.collection('businesses').doc(bizDoc.id).collection('documents').get();
+      const libSnap = await userBizCol(uid).doc(bizDoc.id).collection('documents').get();
       libSnap.docs.forEach(d => libDocRefs.push(d.ref));
     }
 
@@ -2334,7 +2338,7 @@ exports.adminListBusinesses = onRequest({ invoker: 'public' }, async (req, res) 
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
-  const snap = await db.collection('businesses').orderBy('createdAt', 'desc').limit(200).get();
+  const snap = await db.collectionGroup('businesses').orderBy('createdAt', 'desc').limit(200).get();
   res.json({ businesses: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
 });
 
@@ -2369,10 +2373,11 @@ exports.adminPlatformHealth = onRequest({ invoker: 'public' }, async (req, res) 
   // Join broken connections with business names
   const bizIds = [...new Set(broken.map(c => c.businessId).filter(Boolean))];
   const bizMap = {};
-  await Promise.all(bizIds.map(async id => {
+  await Promise.all(broken.map(async c => {
+    if (!c.businessId || !c.uid) return;
     try {
-      const s = await db.collection('businesses').doc(id).get();
-      if (s.exists) bizMap[id] = s.data().businessName || id;
+      const s = await userBizRef(c.uid, c.businessId).get();
+      if (s.exists) bizMap[c.businessId] = s.data().businessName || c.businessId;
     } catch(e) { /* non-fatal */ }
   }));
 
@@ -2417,9 +2422,9 @@ exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESE
   if (userData.emailUnsubscribed) return res.status(400).json({ error: 'User is unsubscribed' });
 
   let businessName = '';
-  if (conn.businessId) {
+  if (conn.businessId && conn.uid) {
     try {
-      const bizSnap = await db.collection('businesses').doc(conn.businessId).get();
+      const bizSnap = await userBizRef(conn.uid, conn.businessId).get();
       businessName = bizSnap.data()?.businessName || '';
     } catch(e) { /* non-fatal */ }
   }
@@ -2483,18 +2488,15 @@ exports.createBusiness = onRequest({ invoker: 'public' }, async (req, res) => {
     const plan = userData.plan || 'starter';
     const cap = BIZ_LIMITS[plan] || 1;
     if (isNew) {
-      const bizSnap = await db.collection('businesses')
-        .where('uid', '==', uid)
-        .where('onboarded', '==', true)
-        .get();
+      const bizSnap = await userBizCol(uid).where('onboarded', '==', true).get();
       if (bizSnap.size >= cap) {
         return res.status(403).json({ error: 'Business limit reached', plan, cap, used: bizSnap.size });
       }
     }
     // New business: auto-generated ID. Editing existing: use the user's activeBusiness doc.
     const bizRef = isNew
-      ? db.collection('businesses').doc()
-      : db.collection('businesses').doc(userData.activeBusiness || uid);
+      ? userBizCol(uid).doc()
+      : userBizRef(uid, userData.activeBusiness || uid);
     // Strip any client-side timestamp fields — CF sets authoritative timestamps.
     const { updatedAt: _d1, createdAt: _d2, ...cleanData } = profileData;
     const batch = db.batch();
@@ -3202,7 +3204,7 @@ exports.scheduledPostingCheck = onSchedule(
   { schedule: 'every 1 hours', region: 'us-central1', secrets: ['ANTHROPIC_API_KEY'] },
   async () => {
     const now = new Date();
-    const snap = await db.collection('businesses')
+    const snap = await db.collectionGroup('businesses')
       .where('postingSchedule.enabled', '==', true)
       .get();
 
@@ -3285,7 +3287,7 @@ exports.scheduledUpgradeNudge = onSchedule(
       const ownerName = userData.ownerName || userData.displayName || '';
       let businessName = '';
       try {
-        const bizSnap = await db.collection('businesses').where('uid', '==', uid).limit(1).get();
+        const bizSnap = await userBizCol(uid).limit(1).get();
         businessName = bizSnap.docs[0]?.data()?.businessName || '';
       } catch(e) { /* non-fatal */ }
 
@@ -3381,7 +3383,7 @@ exports.scheduledWeeklyDigest = onSchedule(
       let businessName = '';
       let bizId = null;
       try {
-        const bizSnap = await db.collection('businesses').where('uid', '==', uid).limit(1).get();
+        const bizSnap = await userBizCol(uid).limit(1).get();
         if (!bizSnap.empty) {
           businessName = bizSnap.docs[0].data().businessName || '';
           bizId = bizSnap.docs[0].id;
@@ -3531,15 +3533,8 @@ exports.scheduledSetupNudge = onSchedule(
       const uid = nudgeData.uid;
       if (!uid) { await nudgeDoc.ref.delete(); continue; }
 
-      // 1. Direct doc lookup — business ID === uid by convention
-      const directBiz = await db.collection('businesses').doc(uid).get();
-      if (directBiz.exists) {
-        await db.collection('setupNudges').doc(uid).delete();
-        continue;
-      }
-
-      // 2. Fallback query — uid field in case doc was created with a different ID
-      const bizQuery = await db.collection('businesses').where('uid', '==', uid).limit(1).get();
+      // Check if user already has a business in the subcollection
+      const bizQuery = await userBizCol(uid).limit(1).get();
       if (!bizQuery.empty) {
         await db.collection('setupNudges').doc(uid).delete();
         continue;
@@ -3773,7 +3768,7 @@ exports.checkPlatformTokenExpiry = onSchedule(
         const ownerName = userData.ownerName || userData.displayName || '';
         let businessName = '';
         try {
-          const bizSnap = await db.collection('businesses').doc(conn.businessId).get();
+          const bizSnap = await userBizRef(conn.uid, conn.businessId).get();
           businessName = bizSnap.data()?.businessName || '';
         } catch(e) { /* non-fatal */ }
 

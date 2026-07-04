@@ -157,7 +157,7 @@
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { collection, query, where, orderBy, limit, onSnapshot, deleteDoc, getDocs, getDoc, setDoc, doc, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { collection, collectionGroup, query, where, orderBy, limit, onSnapshot, deleteDoc, getDocs, getDoc, setDoc, doc, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) return;
@@ -185,7 +185,7 @@ onAuthStateChanged(auth, async (user) => {
   highlightPlan(userSnap.exists() ? (userSnap.data().plan || 'starter') : 'starter');
 
   // Delete a business doc and all related records — admin only
-  window._adminDeleteBiz = async function(docId, name) {
+  window._adminDeleteBiz = async function(docId, name, ownerUid) {
     if (!confirm('Delete "' + (name || docId) + '" and all related records? This cannot be undone.')) return;
     try {
       // Cascade: delete all child records keyed to this business
@@ -201,18 +201,19 @@ onAuthStateChanged(auth, async (user) => {
         const snap = await getDocs(query(collection(db, col), where(field, '==', docId)));
         for (const d of snap.docs) await deleteDoc(d.ref);
       }
-      // Delete campaigns sub-collection (must delete each doc individually from client)
-      const campSnap = await getDocs(collection(db, 'businesses', docId, 'campaigns'));
-      for (const d of campSnap.docs) await deleteDoc(d.ref);
-      // Also delete the businesses doc itself
-      await deleteDoc(doc(db, 'businesses', docId));
+      // Delete campaigns sub-collection
+      if (ownerUid) {
+        const campSnap = await getDocs(collection(db, 'users', ownerUid, 'businesses', docId, 'campaigns'));
+        for (const d of campSnap.docs) await deleteDoc(d.ref);
+        await deleteDoc(doc(db, 'users', ownerUid, 'businesses', docId));
+      }
     } catch(e) {
       alert('Delete failed: ' + e.message);
     }
   };
 
   // Businesses snapshot
-  onSnapshot(query(collection(db, 'businesses'), limit(200)), (snap) => {
+  onSnapshot(query(collectionGroup(db, 'businesses'), limit(200)), (snap) => {
     const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     const active = all.filter(b => b.subscriptionStatus === 'active').length;
     const trial  = all.filter(b => b.subscriptionStatus === 'trial').length;
@@ -258,7 +259,7 @@ onAuthStateChanged(auth, async (user) => {
               : s === 'trial'    ? 'Trial — needs upgrade'
               : s === 'canceled' ? 'Canceled' : '—';
             const name = b.businessName || ('<span class="name-na">No name · ' + b.id.slice(0,8) + '</span>');
-            const delBtn = '<button onclick="_adminDeleteBiz(\'' + b.id + '\',\'' + (b.businessName||'').replace(/'/g,"\\'") + '\')" class="del-btn" title="Delete">🗑</button>';
+            const delBtn = '<button onclick="_adminDeleteBiz(\'' + b.id + '\',\'' + (b.businessName||'').replace(/'/g,"\\'") + '\',\'' + (b.uid||'') + '\')" class="del-btn" title="Delete">🗑</button>';
             return '<tr><td>' + name + '</td><td>' + (b.currentPlan||'Free') + '</td><td><span class="badge ' + (bc[s]||'live') + '">' + s + '</span></td><td class="muted">' + issue + '</td><td>' + delBtn + '</td></tr>';
           }).join('')
         : '<tr><td colspan="5" class="td-empty">All accounts healthy.</td></tr>';

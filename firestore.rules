@@ -30,47 +30,40 @@ service cloud.firestore {
         && !('aiUsage'        in request.resource.data.diff(resource.data).affectedKeys())
         && !('aiActionsUsed'  in request.resource.data.diff(resource.data).affectedKeys())
         && !('aiActionsResetAt' in request.resource.data.diff(resource.data).affectedKeys());
-    }
 
-    // Businesses — owner only; admin can read or delete any.
-    // Owner check: uid field on the doc OR the doc ID (activeBizId defaults to user.uid).
-    // ⚠️  MAINTAINED DENYLIST — billing fields written by Square webhook must be listed here.
-    //     If you add squareOrderId, trialEndsAt, etc. to business docs, add them below too.
-    match /businesses/{businessId} {
-      allow read: if request.auth != null &&
-        (request.auth.uid == resource.data.uid ||
-         request.auth.uid == businessId ||
-         isAdmin());
-      allow create: if request.auth != null &&
-        (request.auth.uid == request.resource.data.uid ||
-         request.auth.uid == businessId);
-      allow update: if request.auth != null &&
-        (request.auth.uid == resource.data.uid ||
-         request.auth.uid == businessId)
-        && !('currentPlan'          in request.resource.data.diff(resource.data).affectedKeys())
-        && !('subscriptionStatus'   in request.resource.data.diff(resource.data).affectedKeys())
-        && !('squareCustomerId'     in request.resource.data.diff(resource.data).affectedKeys())
-        && !('squareSubscriptionId' in request.resource.data.diff(resource.data).affectedKeys());
-      allow delete: if request.auth != null &&
-        (request.auth.uid == resource.data.uid ||
-         request.auth.uid == businessId ||
-         isAdmin());
-
-      // Business Library documents subcollection — owner only
-      match /documents/{docId} {
-        allow read, write, delete: if request.auth != null &&
-          (request.auth.uid == get(/databases/$(database)/documents/businesses/$(businessId)).data.uid ||
-           request.auth.uid == businessId);
-      }
-
-      // Campaigns subcollection — owner read/write (uid field on each doc), admin full access
-      match /campaigns/{campId} {
+      // Businesses — nested under users/{uid}/businesses/{bizId}
+      // Owner check: uid field matches the parent user doc path segment.
+      // ⚠️  MAINTAINED DENYLIST — billing fields written by Square webhook must be listed here.
+      //     If you add squareOrderId, trialEndsAt, etc. to business docs, add them below too.
+      match /businesses/{bizId} {
         allow read: if request.auth != null &&
-          (request.auth.uid == resource.data.uid || isAdmin());
+          (request.auth.uid == userId || isAdmin());
         allow create: if request.auth != null &&
-          request.auth.uid == request.resource.data.uid;
-        allow update, delete: if request.auth != null &&
-          (request.auth.uid == resource.data.uid || isAdmin());
+          request.auth.uid == userId;
+        allow update: if request.auth != null &&
+          request.auth.uid == userId
+          && !('currentPlan'          in request.resource.data.diff(resource.data).affectedKeys())
+          && !('subscriptionStatus'   in request.resource.data.diff(resource.data).affectedKeys())
+          && !('squareCustomerId'     in request.resource.data.diff(resource.data).affectedKeys())
+          && !('squareSubscriptionId' in request.resource.data.diff(resource.data).affectedKeys());
+        allow delete: if request.auth != null &&
+          (request.auth.uid == userId || isAdmin());
+
+        // Business Library documents subcollection — owner only
+        match /documents/{docId} {
+          allow read, write, delete: if request.auth != null &&
+            request.auth.uid == userId;
+        }
+
+        // Campaigns subcollection — owner read/write (uid field on each doc), admin full access
+        match /campaigns/{campId} {
+          allow read: if request.auth != null &&
+            (request.auth.uid == userId || isAdmin());
+          allow create: if request.auth != null &&
+            request.auth.uid == userId;
+          allow update, delete: if request.auth != null &&
+            (request.auth.uid == userId || isAdmin());
+        }
       }
     }
 
