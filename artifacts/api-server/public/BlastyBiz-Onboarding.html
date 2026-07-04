@@ -1169,6 +1169,9 @@ window.nextStep = async function() {
       }
     } catch(e) {
       console.error('Save failed:', e);
+      if (btn) { btn.disabled = false; btn.textContent = 'Complete Setup'; }
+      alert('Save failed \u2014 please try again. (' + (e.message || 'network error') + ')');
+      return;
     }
     window.location.href = 'BlastyBiz-Dashboard.html';
     return;

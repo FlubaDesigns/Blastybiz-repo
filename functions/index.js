@@ -2479,7 +2479,8 @@ exports.createBusiness = onRequest({ invoker: 'public' }, async (req, res) => {
   const BIZ_LIMITS = { starter: 1, pro: 3, agency: 10 };
   try {
     const userSnap = await db.collection('users').doc(uid).get();
-    const plan = (userSnap.exists ? userSnap.data().plan : null) || 'starter';
+    const userData = userSnap.exists ? userSnap.data() : {};
+    const plan = userData.plan || 'starter';
     const cap = BIZ_LIMITS[plan] || 1;
     if (isNew) {
       const bizSnap = await db.collection('businesses')
@@ -2490,10 +2491,10 @@ exports.createBusiness = onRequest({ invoker: 'public' }, async (req, res) => {
         return res.status(403).json({ error: 'Business limit reached', plan, cap, used: bizSnap.size });
       }
     }
-    // First-time onboarding: doc ID = uid. Adding a second/third business: auto-generated ID.
+    // New business: auto-generated ID. Editing existing: use the user's activeBusiness doc.
     const bizRef = isNew
       ? db.collection('businesses').doc()
-      : db.collection('businesses').doc(uid);
+      : db.collection('businesses').doc(userData.activeBusiness || uid);
     // Strip any client-side timestamp fields — CF sets authoritative timestamps.
     const { updatedAt: _d1, createdAt: _d2, ...cleanData } = profileData;
     const batch = db.batch();
