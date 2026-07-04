@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=45" />
+<link rel="stylesheet" href="global-style.css?v=46" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -110,11 +110,6 @@
       <span class="char-count" id="offer-count">0 / 500</span>
     </div>
 
-    <label class="mt-16">Tell us more <span class="optional">(optional)</span></label>
-    <textarea id="biz-ad-details"
-      placeholder="Add any details specific to this ad — flavors available, restrictions, what's included, dates, quantities, how to redeem, anything relevant..."
-      oninput="saveDraft();debounceCampaignSave()" class="textarea-rich mb-16"></textarea>
-
     <label>Price <span class="optional">(optional)</span></label>
     <input type="text" id="biz-price" placeholder="e.g. $25 · Free · Starting at $99" oninput="saveDraft();debounceCampaignSave()" class="max-w-260" />
 
@@ -127,25 +122,26 @@
   </div>
 
   <!-- ── ADD INFO — factoid panel ── -->
-  <div class="card" id="add-info-card">
-    <div class="row-sb mb-6">
-      <div class="card-title mb-0">➕ Add Info</div>
-      <span class="optional-tag">Optional</span>
-    </div>
-    <p class="helper-sm">Feed the AI extra facts about this campaign or your business. These appear in every AI generation.</p>
-    <button onclick="toggleAddInfoPanel()" class="btn-green-out" id="add-info-toggle-btn">
-      + Add Info
+  <div class="card card-flush" id="add-info-card">
+    <button onclick="toggleAddInfoPanel()" id="add-info-toggle-btn" class="teach-btn">
+      <div class="row gap-10">
+        <span class="teach-icon">📌</span>
+        <div>
+          <div class="teach-title">Extra Facts for AI <span id="add-info-scope-badge" class="tier-badge tier-badge--campaign">This Campaign</span></div>
+          <div class="teach-sub">Permanent facts the AI works into every generation — specific to this campaign or across all campaigns</div>
+        </div>
+      </div>
+      <span id="add-info-chevron" class="chevron">›</span>
     </button>
-    <div id="add-info-panel" class="hidden">
+    <div id="add-info-panel" class="teach-inner hidden">
       <div class="toggle-row mt-10">
-        <button onclick="setFactoidScope('campaign')" id="scope-btn-campaign" class="scope-btn active">📁 Campaign</button>
-        <button onclick="setFactoidScope('global')" id="scope-btn-global" class="scope-btn">🌐 Global (all campaigns)</button>
+        <button onclick="setFactoidScope('campaign')" id="scope-btn-campaign" class="scope-btn active">📁 This Campaign</button>
+        <button onclick="setFactoidScope('global')" id="scope-btn-global" class="scope-btn">🌐 All Campaigns</button>
       </div>
       <textarea id="add-info-text" rows="3" class="textarea-naked mt-8"
         placeholder="e.g. Our chocolate lab Biscuit greets every customer · We use zero artificial ingredients · Parking is free behind the building · Owner trained under a James Beard Award winner…"></textarea>
       <div class="row mt-10 gap-8">
-        <button onclick="submitFactoid()" class="btn-save">Submit</button>
-        <button onclick="toggleAddInfoPanel()" class="btn-cancel">Done</button>
+        <button onclick="submitFactoid()" class="btn-save">Save Fact</button>
       </div>
       <div id="add-info-confirm" class="hidden" style="color:var(--green);font-size:13px;font-weight:600;margin-top:6px;">✓ Saved.</div>
     </div>
@@ -1167,7 +1163,6 @@ async function regeneratePlatformCopy(pid) {
   const price       = document.getElementById('biz-price')?.value?.trim() || '';
   const tone        = profile.tone || 'friendly';
   const adName      = document.getElementById('biz-ad-name')?.value?.trim() || '';
-  const adDetails   = document.getElementById('biz-ad-details')?.value?.trim() || '';
   const includeName = document.getElementById('copy-include-name')?.checked && profile.ownerName;
   const includeRole = document.getElementById('copy-include-role')?.checked && profile.ownerRole;
   const featuredPhotoUrl = (window._bbSelectedPhotoIndex !== null && window._bbPhotoItems)
@@ -1184,7 +1179,7 @@ async function regeneratePlatformCopy(pid) {
       headers: authHeaders,
       body: JSON.stringify({
         listing: { name, category, offer, price, phone, address, region, locationType: effLocType,
-          website, hours, ownerName: profile.ownerName || '', adName, adDetails,
+          website, hours, ownerName: profile.ownerName || '', adName,
           campaignName: activeCampaignName || '',
           imageCount: (window._bbPhotoItems||[]).filter(p=>p.done).length,
           featuredPhotoUrl,
@@ -1541,7 +1536,6 @@ async function runAdaptation() {
   const price     = document.getElementById('biz-price').value.trim();
   const tone      = profile.tone || 'friendly';
   const adName      = document.getElementById('biz-ad-name')?.value?.trim() || '';
-  const adDetails   = document.getElementById('biz-ad-details')?.value?.trim() || '';
   const includeName = document.getElementById('copy-include-name')?.checked && profile.ownerName;
   const includeRole = document.getElementById('copy-include-role')?.checked && profile.ownerRole;
 
@@ -1570,7 +1564,7 @@ BUSINESS INFO:
 - Campaign: ${activeCampaignName || 'Uncategorized'}
 - Ad: ${adName || offer}
 - Description: ${offer}
-${adDetails ? `- Additional details: ${adDetails}` : ''}- Price/Range: ${price || 'not specified'}
+- Price/Range: ${price || 'not specified'}
 - Phone: ${phone || 'not provided'}
 - Location type: ${effLocType === 'online' ? 'Online only' + (region ? ' — serves: ' + region : '') : effLocType === 'both' ? 'Brick & online' + (address ? ' — ' + address : '') + (region ? ' — also serves: ' + region : '') : 'Physical location — ' + (address || 'not provided')}
 - Website: ${website || 'none'}
@@ -1616,7 +1610,7 @@ Return this exact JSON structure:
       body: JSON.stringify({
         listing: { name, category, offer, price, phone, address, region, locationType: effLocType, website, hours,
           ownerName: profile.ownerName || '',
-          adName, adDetails,
+          adName,
           campaignName: activeCampaignName || '',
           imageCount: (window._bbPhotoItems||[]).filter(p=>p.done).length,
           featuredPhotoUrl: window._bbSelectedPhotoIndex !== null ? (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || '') : '',
@@ -2303,18 +2297,24 @@ function toggleAddInfoPanel() {
     if (!activeCampaignId) { showToast('Select a campaign first'); return; }
     panel.classList.remove('hidden');
     document.getElementById('add-info-confirm').classList.add('hidden');
-    document.getElementById('add-info-text').value = '';
     document.getElementById('add-info-text').focus();
     setFactoidScope('campaign');
   } else {
     panel.classList.add('hidden');
   }
+  const chev = document.getElementById('add-info-chevron');
+  if (chev) chev.style.transform = panel.classList.contains('hidden') ? '' : 'rotate(90deg)';
 }
 
 function setFactoidScope(scope) {
   factoidScope = scope;
   document.getElementById('scope-btn-campaign').classList.toggle('active', scope === 'campaign');
   document.getElementById('scope-btn-global').classList.toggle('active', scope === 'global');
+  const badge = document.getElementById('add-info-scope-badge');
+  if (badge) {
+    badge.textContent = scope === 'global' ? 'All Campaigns' : 'This Campaign';
+    badge.className = scope === 'global' ? 'tier-badge tier-badge--global' : 'tier-badge tier-badge--campaign';
+  }
 }
 
 function refreshPhotoGridForScope() {
@@ -2659,8 +2659,6 @@ function selectCampaign(id, name) {
   if (offerCount) offerCount.textContent = (cam.offer || '').length + ' / 500';
   const adNameEl = document.getElementById('biz-ad-name');
   if (adNameEl) adNameEl.value = cam.adName || '';
-  const adDetailsEl = document.getElementById('biz-ad-details');
-  if (adDetailsEl) adDetailsEl.value = cam.adDetails || '';
   const priceEl = document.getElementById('biz-price');
   if (priceEl) priceEl.value = cam.price || '';
   const ctxEl = document.getElementById('campaign-context');
@@ -2747,7 +2745,6 @@ async function saveNewCampaign() {
     photos:          [],
     offer:           '',
     adName:          '',
-    adDetails:       '',
     price:           '',
     campaignStory:   '',
     factoids:        [],
@@ -2802,7 +2799,6 @@ function updateCampaignMemory() {
   if (!cam) return;
   cam.offer         = document.getElementById('biz-offer')?.value        || '';
   cam.adName        = document.getElementById('biz-ad-name')?.value      || '';
-  cam.adDetails     = document.getElementById('biz-ad-details')?.value   || '';
   cam.price         = document.getElementById('biz-price')?.value        || '';
   cam.campaignStory = document.getElementById('campaign-context')?.value || '';
 }
@@ -2821,7 +2817,7 @@ function _showAdDraftStatus(msg) {
 
 function _updateAdDiscardBtn() {
   const cam = campaigns.find(c => c.id === activeCampaignId);
-  const hasContent = cam && (cam.offer || cam.adName || cam.adDetails || cam.price);
+  const hasContent = cam && (cam.offer || cam.adName || cam.price);
   const btn = document.getElementById('btn-discard-ad');
   if (btn) btn.style.display = hasContent ? 'inline' : 'none';
 }
@@ -2846,7 +2842,7 @@ function debounceCampaignSave() {
 
 async function discardAdDraft() {
   if (!confirm('Discard this ad and clear all fields?\n\nThe campaign stays but the offer, details, and price will be erased.')) return;
-  ['biz-offer','biz-ad-name','biz-ad-details','biz-price'].forEach(id => {
+  ['biz-offer','biz-ad-name','biz-price'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const offerCount = document.getElementById('offer-count');
@@ -2920,7 +2916,6 @@ function saveDraft() {
     website:        document.getElementById('biz-website')?.value,
     hours:          document.getElementById('biz-hours')?.value,
     adName:         document.getElementById('biz-ad-name')?.value || '',
-    adDetails:      document.getElementById('biz-ad-details')?.value || '',
     campaignId:     activeCampaignId || '',
     campaignName:   activeCampaignName || '',
   };
@@ -2951,7 +2946,6 @@ function loadDraft() {
   document.getElementById('biz-hours').value    = draft.hours    || '';
   if (draft.locationType) setLocationType(draft.locationType);
   if (draft.adName)    document.getElementById('biz-ad-name').value    = draft.adName;
-  if (draft.adDetails) document.getElementById('biz-ad-details').value = draft.adDetails;
   if (draft.campaignId) { activeCampaignId = draft.campaignId; activeCampaignName = draft.campaignName || ''; renderCampaignChips(); }
   if (draft.offer) {
     const span = document.getElementById('offer-count');
@@ -3515,7 +3509,6 @@ window._afterAdaptation = async function(adaptedPlatforms) {
       website:      document.getElementById('biz-website')?.value || '',
       hours:        document.getElementById('biz-hours')?.value || '',
       adName:       document.getElementById('biz-ad-name')?.value || '',
-      adDetails:    document.getElementById('biz-ad-details')?.value || '',
       campaignContext: document.getElementById('campaign-context')?.value?.trim() || '',
       campaignId:   activeCampaignId || '',
       campaignName: activeCampaignName || '',
