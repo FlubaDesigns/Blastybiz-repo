@@ -2647,6 +2647,7 @@ function renderCampaignChips() {
 function selectCampaign(id, name) {
   activeCampaignId   = id;
   activeCampaignName = name;
+  showTab('create');
   document.getElementById('campaign-content')?.classList.remove('hidden');
 
   const cam = campaigns.find(c => c.id === id) || {};
