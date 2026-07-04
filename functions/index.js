@@ -1618,6 +1618,17 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-centr
       } catch(e) { /* no IG account linked */ }
     }
 
+    // If the Graph API didn't return an igUserId this time, check whether a paired
+    // Instagram doc already exists (e.g. status: 'expired'). If so we still need
+    // to refresh its token so it doesn't stay stale after a Facebook reconnect.
+    let existingIgDoc = null;
+    if (!igUserId) {
+      try {
+        const igSnap = await db.collection('platformConnections').doc(`${businessId}_instagram`).get();
+        if (igSnap.exists) existingIgDoc = igSnap.data();
+      } catch(e) { /* ignore — absence is fine */ }
+    }
+
     const batch = db.batch();
     batch.set(db.collection('platformConnections').doc(`${businessId}_facebook`), {
       businessId, uid, platform: 'facebook', status: 'connected',
@@ -1629,9 +1640,19 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-centr
     }, { merge: true });
 
     if (igUserId) {
+      // Fresh igUserId from the API — write the full Instagram doc.
       batch.set(db.collection('platformConnections').doc(`${businessId}_instagram`), {
         businessId, uid, platform: 'instagram', status: 'connected',
         accessToken: pageToken, igUserId, pageId: page?.id || '',
+        expiresAt,
+        connectedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    } else if (existingIgDoc) {
+      // No igUserId returned this time, but a paired Instagram doc exists
+      // (possibly expired). Refresh its token and reset to connected so it
+      // doesn't remain stale after the Facebook reconnect.
+      batch.set(db.collection('platformConnections').doc(`${businessId}_instagram`), {
+        accessToken: pageToken, status: 'connected',
         expiresAt,
         connectedAt: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
