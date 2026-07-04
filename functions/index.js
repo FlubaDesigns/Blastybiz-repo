@@ -3355,3 +3355,74 @@ exports.scheduledSetupNudge = onSchedule(
   }
 );
 
+// ══════════════════════════════════════════
+// Scheduled: checkPlatformTokenExpiry
+// Runs every 30 minutes. Scans all connected platformConnections where
+// expiresAt is in the past or within the next 5 minutes. For Google
+// connections with a refreshToken, proactively refreshes the access token.
+// All others are marked 'expired' so the Connect page shows the Reconnect UI.
+// ══════════════════════════════════════════
+exports.checkPlatformTokenExpiry = onSchedule(
+  { schedule: 'every 30 minutes', region: 'us-central1', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
+  async () => {
+    const cutoff = new Date(Date.now() + 5 * 60 * 1000); // now + 5 min
+
+    const snap = await db.collection('platformConnections')
+      .where('status', '==', 'connected')
+      .get();
+
+    let refreshed = 0, expired = 0, skipped = 0;
+
+    for (const docSnap of snap.docs) {
+      const conn = docSnap.data();
+
+      // Skip docs with no expiresAt (e.g. Facebook/Instagram — 60-day tokens, separate task)
+      if (!conn.expiresAt) { skipped++; continue; }
+
+      const expiresAt = conn.expiresAt.toDate ? conn.expiresAt.toDate() : new Date(conn.expiresAt);
+      if (expiresAt > cutoff) { skipped++; continue; } // still fresh
+
+      // Google connections: attempt proactive token refresh
+      if (conn.platform === 'google' && conn.refreshToken) {
+        try {
+          const resp = await axios.post('https://oauth2.googleapis.com/token', null, {
+            params: {
+              client_id:     process.env.GOOGLE_CLIENT_ID,
+              client_secret: process.env.GOOGLE_CLIENT_SECRET,
+              refresh_token: conn.refreshToken,
+              grant_type:    'refresh_token',
+            },
+          });
+          const { access_token, expires_in } = resp.data;
+          await docSnap.ref.update({
+            accessToken: access_token,
+            expiresAt:   new Date(Date.now() + (expires_in || 3600) * 1000),
+            updatedAt:   admin.firestore.FieldValue.serverTimestamp(),
+          });
+          console.log(`[checkPlatformTokenExpiry] Refreshed Google token for ${docSnap.id}`);
+          refreshed++;
+          continue;
+        } catch (e) {
+          console.warn(`[checkPlatformTokenExpiry] Google refresh failed for ${docSnap.id}:`,
+            e.response?.data || e.message);
+          // Fall through — mark expired below
+        }
+      }
+
+      // Cannot refresh — mark expired so the UI shows the Reconnect button
+      try {
+        await docSnap.ref.update({
+          status:    'expired',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        console.log(`[checkPlatformTokenExpiry] Marked expired: ${docSnap.id} (platform: ${conn.platform})`);
+        expired++;
+      } catch (e) {
+        console.error(`[checkPlatformTokenExpiry] Failed to mark expired for ${docSnap.id}:`, e.message);
+      }
+    }
+
+    console.log(`[checkPlatformTokenExpiry] Done — refreshed: ${refreshed}, expired: ${expired}, skipped: ${skipped}`);
+  }
+);
+
