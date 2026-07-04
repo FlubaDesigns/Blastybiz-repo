@@ -220,9 +220,11 @@ function renderSwitcherBar() {
   const container = document.getElementById('biz-cards-inline');
   if (!container) return;
   container.innerHTML = '';
-  BUSINESSES.forEach(biz => {
+  const currentBizId = window.activeBizId ?? activeBizId;
+  const currentBizList = window.BUSINESSES || BUSINESSES;
+  currentBizList.forEach(biz => {
     const card = document.createElement('div');
-    card.className = 'biz-card' + (biz.id === activeBizId ? ' active' : '');
+    card.className = 'biz-card' + (biz.id === currentBizId ? ' active' : '');
     card.onclick = () => switchBusiness(biz.id);
     card.innerHTML = `
       <div class="biz-card-avatar avatar-green-tint">${biz.avatar}</div>
@@ -278,10 +280,13 @@ function escHtml(str) {
 // ══════════════════════════════════════════
 function renderSheet() {
   const container = document.getElementById('biz-cards');
+  if (!container) return;
   container.innerHTML = '';
-  BUSINESSES.forEach(biz => {
+  const currentBizId = window.activeBizId ?? activeBizId;
+  const currentBizList = window.BUSINESSES || BUSINESSES;
+  currentBizList.forEach(biz => {
     const card = document.createElement('div');
-    card.className = 'biz-card' + (biz.id === activeBizId ? ' active' : '');
+    card.className = 'biz-card' + (biz.id === currentBizId ? ' active' : '');
     card.onclick = () => switchBusiness(biz.id);
     card.innerHTML = `
       <div class="biz-card-avatar avatar-green-tint">${biz.avatar}</div>
