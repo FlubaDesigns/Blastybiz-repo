@@ -142,7 +142,8 @@ function timeAgo(ts) {
 
 const jobRefMap = {};
 async function jobAction(jobId, action) {
-  const ref = jobRefMap[jobId] || doc(db, 'publishJobs', jobId); // fallback for legacy flat docs
+  const ref = jobRefMap[jobId];
+  if (!ref) { console.warn('jobAction: no ref for', jobId); return; }
   const now = new Date();
   const updates = {
     retry:    { status: 'retry_pending', updatedAt: now },

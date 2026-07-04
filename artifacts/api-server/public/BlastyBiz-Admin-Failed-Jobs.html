@@ -30,9 +30,8 @@ async function resolveBizNames(jobs) {
 
 async function jobAction(jobId, action) {
   const job = loadedJobs.find(j => j._id === jobId) || {};
-  const ref = job.uid && job.businessId
-    ? doc(db, 'users', job.uid, 'businesses', job.businessId, 'publishJobs', jobId)
-    : doc(db, 'publishJobs', jobId); // fallback for legacy flat docs
+  if (!job.uid || !job.businessId) { console.warn('jobAction: missing uid/businessId for', jobId); return; }
+  const ref = doc(db, 'users', job.uid, 'businesses', job.businessId, 'publishJobs', jobId);
   const now = new Date();
   const updates = {
     retry:    { status: 'retry_pending', attempts: 0, updatedAt: now },
