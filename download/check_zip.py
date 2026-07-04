@@ -7,10 +7,12 @@ Checks that BlastyBiz_Site.zip:
   - Contains exactly the right source files
   - Has no files newer than the zip (i.e. zip is current)
   - Does NOT contain: download/, node_modules/, or other large dirs
+  - SHA-256 checksum matches BlastyBiz_Site.zip.sha256 (if present)
 """
-import zipfile, pathlib, time, sys
+import hashlib, zipfile, pathlib, time, sys
 
 ZIP_PATH   = pathlib.Path('download/BlastyBiz_Site.zip')
+SHA_PATH   = pathlib.Path('download/BlastyBiz_Site.zip.sha256')
 INCLUDE_DIRS  = ['artifacts/api-server/public', 'functions']
 INCLUDE_FILES = ['firestore.rules', 'firebase.json', 'firestore.indexes.json']
 EXCLUDE_PARTS = {'node_modules', 'download', '.git', '__pycache__', '.DS_Store'}
@@ -37,6 +39,20 @@ if not ZIP_PATH.exists():
 zip_mtime = ZIP_PATH.stat().st_mtime
 print(f'📦  {ZIP_PATH}  ({ZIP_PATH.stat().st_size:,} bytes)')
 print(f'🕐  Built: {time.ctime(zip_mtime)}')
+
+# Verify SHA-256 checksum
+if SHA_PATH.exists():
+    stored_line = SHA_PATH.read_text().strip()
+    stored_hash = stored_line.split()[0] if stored_line else ''
+    actual_hash = hashlib.sha256(ZIP_PATH.read_bytes()).hexdigest()
+    if stored_hash == actual_hash:
+        print(f'🔒  SHA-256: {actual_hash}  ✓')
+    else:
+        errors.append(f'SHA-256 MISMATCH — stored: {stored_hash[:16]}…  actual: {actual_hash[:16]}…')
+        print(f'❌  SHA-256 mismatch!')
+else:
+    warnings.append(f'No checksum file found at {SHA_PATH} — run build_zip.py to generate one')
+
 print()
 
 sources = source_files()
