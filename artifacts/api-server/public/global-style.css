@@ -1228,10 +1228,18 @@ body.onboarding-page textarea     { resize: none; }
 .wiz-footer              { padding: 10px 24px max(env(safe-area-inset-bottom, 0px), 24px); flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
 
 /* Platform category rows */
-.pcat-row                { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.pcat-row                { padding: 10px 0; border-bottom: 1px solid var(--border); }
 .pcat-row:last-child     { border-bottom: none; }
+.pcat-row:not(.pcat-multi) { display: flex; align-items: center; gap: 10px; }
+.pcat-header             { display: flex; align-items: center; gap: 10px; }
+.pcat-multi .pcat-header { margin-bottom: 8px; }
 .pcat-icon               { font-size: 20px; flex-shrink: 0; }
 .pcat-name               { font-size: 13px; font-weight: 600; color: var(--light); flex: 1; }
+.pcat-limit-badge        { font-size: 10px; font-weight: 600; color: var(--silver); background: rgba(255,255,255,0.08); border-radius: 20px; padding: 2px 8px; flex-shrink: 0; }
+.pcat-slots              { display: flex; flex-wrap: wrap; gap: 8px; }
+.pcat-row:not(.pcat-multi) .pcat-slots { margin-left: auto; }
+.pcat-slot               { display: flex; flex-direction: column; gap: 3px; }
+.pcat-slot-label         { font-size: 10px; font-weight: 600; color: var(--silver); text-transform: uppercase; letter-spacing: 0.04em; padding-left: 2px; }
 .pcat-select             { background: var(--dark); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; color: var(--silver); font-size: 12px; font-family: 'DM Sans', sans-serif; width: 160px; flex-shrink: 0; -webkit-appearance: none; transition: border-color 0.2s; margin-bottom: 0; }
 .pcat-select:focus       { border-color: var(--green); outline: none; }
 .pcat-select.ai-picked   { border-color: var(--silver); color: var(--light); }

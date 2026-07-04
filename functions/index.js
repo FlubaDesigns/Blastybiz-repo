@@ -621,9 +621,15 @@ exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_
     x:          'X (Twitter) — real-time social platform; categories or topics that match the business industry and audience'
   };
 
+  const PLATFORM_MAX_CATS = { fbmarket: 1, craigslist: 1, yelp: 3, thumbtack: 5, angi: 5, alignable: 1, applemaps: 5, linkedin: 1, x: 1 };
+
   const platformBlocks = Object.entries(platformCatLists).map(([id, cats]) => {
     const ctx = platformContext[id] || id;
-    return `PLATFORM: ${id}\nPURPOSE: ${ctx}\nCATEGORIES (pick EXACTLY one, copy the string character-for-character):\n${cats.join(' | ')}`;
+    const max = PLATFORM_MAX_CATS[id] || 1;
+    const catInstr = max === 1
+      ? 'CATEGORIES (pick EXACTLY 1 — return a JSON string):'
+      : `CATEGORIES (pick 1 to ${max}, most relevant first — return a JSON array of strings):`;
+    return `PLATFORM: ${id}\nPURPOSE: ${ctx}\n${catInstr}\n${cats.join(' | ')}`;
   }).join('\n\n');
 
   const locationLabel = locationType === 'online' ? 'Online only (no physical storefront)' :
@@ -649,24 +655,24 @@ exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_
   const returnInstructions = isSecondPass
     ? `You now have full context including the user's answers. You MUST return final category picks — do NOT ask more questions.
 Return ONLY valid JSON, no markdown fences, no explanation:
-{ "categories": { "platformId": "exact category string" } }`
+{ "categories": { "singleCatPlatformId": "exact string", "multiCatPlatformId": ["cat1","cat2"] } }`
     : `If you have enough context to confidently pick categories for ALL platforms, return ONLY:
-{ "categories": { "platformId": "exact category string" } }
+{ "categories": { "singleCatPlatformId": "exact string", "multiCatPlatformId": ["cat1","cat2"] } }
 
 If the description is too vague to confidently classify the business, return ONLY:
 { "followUpQuestions": ["short question 1", "short question 2"] }
 (1–3 short questions, plain English, no markdown)`;
 
-  const prompt = `You are a local business categorization expert. Your task is to pick the single best-matching category for a local business on each marketing platform listed below.
+  const prompt = `You are a local business categorization expert. Your task is to pick the best-matching categories for a local business on each marketing platform listed below.
 
 BUSINESS CONTEXT:
 ${contextLines}${followUpBlock}
 
 INSTRUCTIONS:
 1. Read the PURPOSE of each platform carefully — it tells you what kind of businesses and customers use it.
-2. Think about which category a customer or the platform itself would use to classify this business.
-3. Pick ONE category per platform from the provided list.
-4. CRITICAL: Copy the category string EXACTLY as it appears — same capitalization, same punctuation, same spacing. Do not paraphrase, abbreviate, or modify it in any way.
+2. Think about which categories a customer or the platform itself would use to classify this business.
+3. For platforms that say "pick EXACTLY 1", return a single JSON string. For platforms that say "pick 1 to N", return a JSON array with the most relevant categories first (do not pad — only include genuinely relevant ones).
+4. CRITICAL: Copy every category string EXACTLY as it appears — same capitalization, same punctuation, same spacing. Do not paraphrase, abbreviate, or modify.
 5. If no category is a perfect match, pick the closest one. Never invent a new category.
 
 ${returnInstructions}

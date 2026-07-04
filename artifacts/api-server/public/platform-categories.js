@@ -1,5 +1,6 @@
 window.PLATFORM_CATS = {
   fbmarket: {
+    maxCats: 1,
     name: 'FB Marketplace',
     icon: '🛒',
     cats: [
@@ -11,6 +12,7 @@ window.PLATFORM_CATS = {
   },
 
   craigslist: {
+    maxCats: 1,
     name: 'Craigslist',
     icon: '📌',
     cats: [
@@ -33,6 +35,7 @@ window.PLATFORM_CATS = {
   },
 
   yelp: {
+    maxCats: 3,
     name: 'Yelp',
     icon: '⭐',
     cats: [
@@ -105,6 +108,7 @@ window.PLATFORM_CATS = {
   },
 
   thumbtack: {
+    maxCats: 5,
     name: 'Thumbtack',
     icon: '📍',
     cats: [
@@ -176,6 +180,7 @@ window.PLATFORM_CATS = {
   },
 
   angi: {
+    maxCats: 5,
     name: 'Angi',
     icon: '🔧',
     cats: [
@@ -241,6 +246,7 @@ window.PLATFORM_CATS = {
   },
 
   alignable: {
+    maxCats: 1,
     name: 'Alignable',
     icon: '🤝',
     cats: [
@@ -267,6 +273,7 @@ window.PLATFORM_CATS = {
   },
 
   applemaps: {
+    maxCats: 5,
     name: 'Apple Maps',
     icon: '🗺️',
     cats: [

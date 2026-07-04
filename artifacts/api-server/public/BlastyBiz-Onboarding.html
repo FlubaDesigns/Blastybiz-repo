@@ -698,42 +698,77 @@ function _buildPlatformCatLists(locType) {
   return lists;
 }
 
+function _guessBestCat(cats, contextName, contextDesc) {
+  const descLower = ((contextName || '') + ' ' + (contextDesc || '')).toLowerCase();
+  const words = descLower.split(/\s+/);
+  let best = cats[0]; let bestScore = 0;
+  cats.forEach(cat => {
+    const catWords = cat.toLowerCase().split(/[\s&\/]+/);
+    let score = 0;
+    words.forEach(w => { catWords.forEach(cw => { if (cw.includes(w) || w.includes(cw)) score += (cw === w ? 3 : 1); }); });
+    if (score > bestScore) { bestScore = score; best = cat; }
+  });
+  return best;
+}
+
+function _matchCat(cats, aiVal) {
+  if (!aiVal) return null;
+  return cats.find(c => c === aiVal) || cats.find(c => c.toLowerCase() === aiVal.toLowerCase()) || null;
+}
+
 function _renderCategorySelects(aiCats, contextDesc, contextName) {
   const list = document.getElementById('platform-cat-list');
   list.innerHTML = '';
+
   Object.entries(PLATFORM_CATS).forEach(([pid, p]) => {
-    let bestCat = p.cats[0];
-    if (aiCats && aiCats[pid]) {
-      const aiVal = aiCats[pid];
-      const exactMatch = p.cats.find(c => c === aiVal);
-      const caseMatch  = p.cats.find(c => c.toLowerCase() === aiVal.toLowerCase());
-      bestCat = exactMatch || caseMatch || bestCat;
-    } else {
-      const descLower = ((contextName || '') + ' ' + (contextDesc || '')).toLowerCase();
-      const words = descLower.split(/\s+/);
-      let bestScore = 0;
-      p.cats.forEach(cat => {
-        const catWords = cat.toLowerCase().split(/[\s&\/]+/);
-        let score = 0;
-        words.forEach(w => { catWords.forEach(cw => { if (cw.includes(w) || w.includes(cw)) score += (cw === w ? 3 : 1); }); });
-        if (score > bestScore) { bestScore = score; bestCat = cat; }
-      });
-    }
-    resolvedCats[pid] = bestCat;
+    const maxCats = p.maxCats || 1;
+    const aiRaw   = aiCats?.[pid];
+    const aiArr   = Array.isArray(aiRaw) ? aiRaw : (aiRaw ? [aiRaw] : []);
+    const guessPrimary = _guessBestCat(p.cats, contextName, contextDesc);
+
     const row = document.createElement('div');
-    row.className = 'pcat-row';
-    const sel = document.createElement('select');
-    sel.className = 'pcat-select ai-picked';
-    sel.id = 'pcat-' + pid;
-    p.cats.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c; opt.textContent = c;
-      if (c === bestCat) opt.selected = true;
-      sel.appendChild(opt);
-    });
-    sel.onchange = () => { resolvedCats[pid] = sel.value; };
-    row.innerHTML = `<span class="pcat-icon">${p.icon}</span><span class="pcat-name">${p.name}</span>`;
-    row.appendChild(sel);
+    row.className = 'pcat-row' + (maxCats > 1 ? ' pcat-multi' : '');
+
+    const header = document.createElement('div');
+    header.className = 'pcat-header';
+    header.innerHTML = `<span class="pcat-icon">${p.icon}</span><span class="pcat-name">${p.name}</span>` +
+      (maxCats > 1 ? `<span class="pcat-limit-badge">up to ${maxCats}</span>` : '');
+    row.appendChild(header);
+
+    const slotsWrap = document.createElement('div');
+    slotsWrap.className = 'pcat-slots';
+
+    if (maxCats === 1) {
+      const bestCat = _matchCat(p.cats, aiArr[0]) || guessPrimary;
+      resolvedCats[pid] = bestCat;
+      const sel = document.createElement('select');
+      sel.className = 'pcat-select ai-picked'; sel.id = 'pcat-' + pid;
+      p.cats.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; if (c === bestCat) o.selected = true; sel.appendChild(o); });
+      sel.onchange = () => { resolvedCats[pid] = sel.value; };
+      slotsWrap.appendChild(sel);
+    } else {
+      resolvedCats[pid] = [];
+      for (let i = 0; i < maxCats; i++) {
+        const slotWrap = document.createElement('div');
+        slotWrap.className = 'pcat-slot';
+        const lbl = document.createElement('span');
+        lbl.className = 'pcat-slot-label';
+        lbl.textContent = i === 0 ? 'Primary' : '#' + (i + 1);
+        const sel = document.createElement('select');
+        sel.className = 'pcat-select' + (i === 0 ? ' ai-picked' : '');
+        sel.id = `pcat-${pid}-${i}`;
+        if (i > 0) { const skip = document.createElement('option'); skip.value = ''; skip.textContent = '— skip —'; sel.appendChild(skip); }
+        const picked = _matchCat(p.cats, aiArr[i]) || (i === 0 ? guessPrimary : null);
+        p.cats.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; if (c === picked) o.selected = true; sel.appendChild(o); });
+        resolvedCats[pid][i] = sel.value;
+        const idx = i;
+        sel.onchange = () => { resolvedCats[pid][idx] = sel.value; };
+        slotWrap.appendChild(lbl); slotWrap.appendChild(sel);
+        slotsWrap.appendChild(slotWrap);
+      }
+    }
+
+    row.appendChild(slotsWrap);
     list.appendChild(row);
   });
 }
