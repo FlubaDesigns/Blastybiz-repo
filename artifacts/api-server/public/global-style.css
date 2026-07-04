@@ -1470,6 +1470,7 @@ body.onboarding-page textarea     { resize: none; }
 
 /* Delete confirm modal */
 #delete-overlay      { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
+#upgrade-overlay     { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
 .delete-modal        { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px; max-width: 440px; width: 90%; margin: auto; }
 .delete-modal h3     { color: var(--light); margin-bottom: 8px; font-size: 18px; }
 .delete-modal p      { color: var(--silver); font-size: 13px; line-height: 1.6; margin-bottom: 16px; }

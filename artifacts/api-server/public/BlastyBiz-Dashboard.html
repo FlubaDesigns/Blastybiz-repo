@@ -138,6 +138,29 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<!-- UPGRADE PLAN MODAL -->
+<div id="upgrade-overlay" onclick="closeUpgradeModal()">
+  <div class="delete-modal" onclick="event.stopPropagation()" style="max-width:480px">
+    <h3>📈 Upgrade Your Plan</h3>
+    <p id="upgrade-modal-msg">You've reached the business limit for your current plan. Upgrade to add more.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--light);margin-bottom:2px">Pro</div>
+        <div style="font-size:13px;color:var(--silver);margin-bottom:14px">3 businesses</div>
+        <button onclick="closeUpgradeModal();startCheckout('pro')" style="width:100%;background:#00C853;color:#0d1a0d;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">Upgrade to Pro</button>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--light);margin-bottom:2px">Agency</div>
+        <div style="font-size:13px;color:var(--silver);margin-bottom:14px">10 businesses</div>
+        <button onclick="closeUpgradeModal();startCheckout('agency')" style="width:100%;background:#00C853;color:#0d1a0d;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">Upgrade to Agency</button>
+      </div>
+    </div>
+    <div style="text-align:center">
+      <button onclick="closeUpgradeModal()" class="delete-cancel" style="max-width:160px">Not now</button>
+    </div>
+  </div>
+</div>
+
 <!-- CAMPAIGN DETAIL SHEET -->
 <div class="biz-sheet-overlay" id="campaign-sheet-overlay" onclick="closeCampaignSheet()"></div>
 <div class="biz-sheet" id="campaign-sheet">
@@ -355,17 +378,22 @@ function editActiveBusiness() {
 // ADD BUSINESS
 // ══════════════════════════════════════════
 function addBusiness() {
+  // module version of window.addBusiness overrides this after auth loads
   window.location.href = 'BlastyBiz-Onboarding.html?new=1';
 }
-function addBusiness_unused_() {
-  closeSwitcher();
-  if (BUSINESSES.length >= getBizLimit()) {
-    showToast('Business limit reached for your plan — upgrade to add more');
-    return;
-  }
-  // Firebase: create new businesses/{newId} document with uid = currentUser.uid
-  // Then route to onboarding for the new business
-  window.location.href = 'BlastyBiz-Onboarding.html';
+
+// ══════════════════════════════════════════
+// UPGRADE MODAL
+// ══════════════════════════════════════════
+function openUpgradeModal(msg) {
+  const el = document.getElementById('upgrade-modal-msg');
+  if (el && msg) el.textContent = msg;
+  const overlay = document.getElementById('upgrade-overlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+function closeUpgradeModal() {
+  const overlay = document.getElementById('upgrade-overlay');
+  if (overlay) overlay.style.display = 'none';
 }
 
 // ══════════════════════════════════════════
@@ -560,9 +588,15 @@ onAuthStateChanged(auth, async (user) => {
   window.addBusiness = async function() {
     closeSwitcher();
     const planLimit = getBizLimit();
-    const planNames = { starter: 'Starter (1 business)', pro: 'Pro (3 businesses)', agency: 'Agency (10 businesses)' };
-    if (window.BUSINESSES.length >= planLimit) {
-      showToast('Business limit reached for ' + (planNames[userPlan] || 'your plan') + ' — upgrade to add more');
+    const planLabels = { starter: 'Starter', pro: 'Pro', agency: 'Agency' };
+    const bizLimits  = { starter: 1, pro: 3, agency: 10 };
+    if ((window.BUSINESSES || []).length >= planLimit) {
+      const used = (window.BUSINESSES || []).length;
+      const label = planLabels[userPlan] || userPlan;
+      openUpgradeModal(
+        `You've used all ${used} of ${planLimit} business slot${planLimit !== 1 ? 's' : ''} on the ${label} plan. ` +
+        `Upgrade to add more.`
+      );
       return;
     }
     window.location.href = 'BlastyBiz-Onboarding.html?new=1';
