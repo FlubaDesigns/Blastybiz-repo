@@ -117,7 +117,7 @@ async function migrateListingDrafts() {
   for (const d of snap.docs) {
     const data = d.data();
     const uid   = data.uid;
-    const bizId = data.businessId;
+    const bizId = data.businessId || data.bizId;
     if (!uid || !bizId) {
       console.warn(`  [WARN] listingDrafts/${d.id} missing uid/businessId — skipping`);
       errors++;
@@ -144,7 +144,7 @@ async function migratePublishJobs() {
   for (const d of snap.docs) {
     const data = d.data();
     const uid   = data.uid;
-    const bizId = data.businessId;
+    const bizId = data.businessId || data.bizId;
     if (!uid || !bizId) {
       console.warn(`  [WARN] publishJobs/${d.id} missing uid/businessId — skipping`);
       errors++;
@@ -171,7 +171,7 @@ async function migratePendingPosts() {
   for (const d of snap.docs) {
     const data = d.data();
     const uid   = data.uid;
-    const bizId = data.businessId;
+    const bizId = data.businessId || data.bizId;  // legacy docs used bizId, newer use businessId
     if (!uid || !bizId) {
       console.warn(`  [WARN] pendingPosts/${d.id} missing uid/businessId — skipping`);
       errors++;
@@ -199,7 +199,7 @@ async function migratePlatformConnections() {
   for (const d of snap.docs) {
     const data     = d.data();
     const uid      = data.uid;
-    const bizId    = data.businessId;
+    const bizId    = data.businessId || data.bizId;
     const platform = data.platform;
     if (!uid || !bizId || !platform) {
       console.warn(`  [WARN] platformConnections/${d.id} missing uid/businessId/platform — skipping`);
