@@ -1,5 +1,5 @@
 - [BlastyBiz architecture](blastybiz-arch.md) — Firebase + Cloud Functions build; NO Replit-hosted frontend, NO Vite/React artifacts, ever.
-- [BlastyBiz Firestore rules](blastybiz-firestore-rules.md) — businesses rule checks `uid` field on doc, not doc ID.
+- [BlastyBiz Firestore rules](blastybiz-firestore-rules.md) — businesses now nested under users/{uid}/businesses/{bizId}; ownership via path segment (request.auth.uid == userId), NOT uid field.
 - [BlastyBiz API wiring](blastybiz-api-wiring.md) — Express routes, Firestore collections, and client-side event pattern.
 - [BlastyBiz CF deploy gotchas](blastybiz-cf-deploy.md) — timeout vs Cloud Build, HTTPS→trigger type conflict, square npm name, lock file sync, secrets: declarations.
 - [BlastyBiz admin access](blastybiz-admin-access.md) — bootstrap admin is info@blastybiz.com; extra admins managed via config/admins Firestore + adminGetAdminEmails/adminUpdateAdminEmails CFs.
