@@ -2332,22 +2332,16 @@ function refreshPhotoGridForScope() {
     if (hint) hint.textContent = 'Campaign photos are linked to the active campaign. Select a campaign above first.';
     if (activeCampaignId && window._bbLoadCampaignImages) {
       window._bbLoadCampaignImages(activeCampaignId).then(images => {
-        if (images.length > 0) {
-          window._bbPhotoItems = images.map(img => ({
-            url: img.url, path: img.path || null, localUrl: img.url,
-            done: true, progress: 100, id: img.id, scope: 'campaign'
-          }));
-        } else {
-          const cam = campaigns.find(c => c.id === activeCampaignId) || {};
-          window._bbPhotoItems = (cam.photos || []).map(p =>
-            typeof p === 'string'
-              ? { url: p, path: null, localUrl: p, done: true, progress: 100, scope: 'campaign' }
-              : { ...p, localUrl: p.url, done: true, progress: 100, scope: 'campaign' }
-          );
-        }
+        window._bbPhotoItems = images.map(img => ({
+          url: img.url, path: img.path || null, localUrl: img.url,
+          done: true, progress: 100, id: img.id, scope: 'campaign'
+        }));
         if (window.renderAllPhotos) window.renderAllPhotos();
         updatePhotoCapLabel();
-      }).catch(() => {});
+      }).catch(() => {
+        window._bbPhotoItems = [];
+        if (window.renderAllPhotos) window.renderAllPhotos();
+      });
     } else {
       window._bbPhotoItems = [];
       if (window.renderAllPhotos) window.renderAllPhotos();
@@ -2375,7 +2369,6 @@ async function submitFactoid() {
     if (factoidScope === 'global') {
       if (!window._bbSaveGlobalFact) { showToast('Not ready — try again'); return; }
       const id = await window._bbSaveGlobalFact(entry);
-      window._globalFactoids = window._globalFactoids || [];
       window._globalFactoids.push({ ...entry, id });
     } else {
       if (!activeCampaignId) { showToast('Select a campaign first'); return; }
@@ -2383,8 +2376,6 @@ async function submitFactoid() {
       const cam = campaigns.find(c => c.id === activeCampaignId);
       if (!cam) { showToast('No active campaign'); return; }
       const id = await window._bbSaveCampaignFact(activeCampaignId, entry);
-      if (!cam.factoids) cam.factoids = [];
-      cam.factoids.push({ ...entry, id });
     }
     document.getElementById('add-info-text').value = '';
     const confirm = document.getElementById('add-info-confirm');
@@ -2674,50 +2665,30 @@ function selectCampaign(id, name) {
   const ctxEl = document.getElementById('campaign-context');
   if (ctxEl) ctxEl.value = cam.campaignStory || '';
 
-  // Load campaign images — subcollection first, cam.photos array fallback
+  // Load campaign images from subcollection
   if (window._bbLoadCampaignImages) {
     window._bbLoadCampaignImages(id).then(images => {
-      if (images.length > 0) {
-        window._bbPhotoItems = images.map(img => ({
-          url: img.url, path: img.path || null, localUrl: img.url,
-          done: true, progress: 100, id: img.id, scope: 'campaign'
-        }));
-      } else {
-        const c = campaigns.find(c => c.id === id) || {};
-        window._bbPhotoItems = (c.photos || []).map(p =>
-          typeof p === 'string'
-            ? { url: p, path: null, localUrl: p, done: true, progress: 100, scope: 'campaign' }
-            : { ...p, localUrl: p.url, done: true, progress: 100, scope: 'campaign' }
-        );
-      }
+      window._bbPhotoItems = images.map(img => ({
+        url: img.url, path: img.path || null, localUrl: img.url,
+        done: true, progress: 100, id: img.id, scope: 'campaign'
+      }));
       window._bbSelectedPhotoIndex = null;
       if (window.renderAllPhotos) window.renderAllPhotos();
       updatePhotoCapLabel();
     }).catch(() => {
-      const c = campaigns.find(c => c.id === id) || {};
-      window._bbPhotoItems = (c.photos || []).map(p =>
-        typeof p === 'string'
-          ? { url: p, path: null, localUrl: p, done: true, progress: 100 }
-          : { ...p, localUrl: p.url, done: true, progress: 100 }
-      );
+      window._bbPhotoItems = [];
       if (window.renderAllPhotos) window.renderAllPhotos();
     });
   } else {
-    const savedPhotos = cam.photos || [];
-    window._bbPhotoItems = savedPhotos.map(p =>
-      typeof p === 'string'
-        ? { url: p, path: null, localUrl: p, done: true, progress: 100 }
-        : { ...p, localUrl: p.url, done: true, progress: 100 }
-    );
+    window._bbPhotoItems = [];
     window._bbSelectedPhotoIndex = null;
     if (window.renderAllPhotos) window.renderAllPhotos();
     updatePhotoCapLabel();
   }
 
-  // Load campaign factoids — subcollection first, cam.factoids fallback
+  // Load campaign factoids from subcollection
   if (window._bbLoadCampaignFactoids) {
     window._bbLoadCampaignFactoids(id).then(facts => {
-      if (facts.length === 0) return; // keep array fallback already in cam.factoids
       const c = campaigns.find(c => c.id === id);
       if (c) c.factoids = facts;
     }).catch(() => {});
@@ -3275,16 +3246,12 @@ onAuthStateChanged(auth, async (user) => {
       if (window._bbSetProfile) window._bbSetProfile(p);
       if (window.loadInsights)      window.loadInsights(biz.bizInsights || []);
 
-      // Two-tier globalFactoids load: subcollection first, array field fallback
+      // Load global factoids from subcollection
       try {
         const factsSnap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'facts'));
-        if (!factsSnap.empty) {
-          window._globalFactoids = factsSnap.docs.map(d => ({ ...d.data(), id: d.id }));
-        } else {
-          window._globalFactoids = biz.globalFactoids || [];
-        }
+        window._globalFactoids = factsSnap.docs.map(d => ({ ...d.data(), id: d.id }));
       } catch(_) {
-        window._globalFactoids = biz.globalFactoids || [];
+        window._globalFactoids = [];
       }
 
       // Load global images subcollection
@@ -3403,12 +3370,6 @@ onAuthStateChanged(auth, async (user) => {
           } else if (cid) {
             const id = await window._bbSaveCampaignImage(cid, { url: dlUrl, path: storagePath });
             item.id = id;
-            // Keep cam.photos array in sync as a local fallback cache
-            const cam = campaigns.find(c => c.id === cid);
-            if (cam) {
-              if (!cam.photos) cam.photos = [];
-              cam.photos.push({ url: dlUrl, path: storagePath });
-            }
           }
         } catch(e) { console.error('Photo save error:', e); }
       }
@@ -3449,9 +3410,6 @@ onAuthStateChanged(auth, async (user) => {
         const cid = activeCampaignId;
         if (cid && window._bbDeleteCampaignImage) {
           await window._bbDeleteCampaignImage(cid, item);
-          // Keep cam.photos array in sync
-          const cam = campaigns.find(c => c.id === cid);
-          if (cam && item.url) cam.photos = (cam.photos || []).filter(p => p.url !== item.url);
         }
       }
     } catch(e) { console.error('Photo delete error:', e); }
