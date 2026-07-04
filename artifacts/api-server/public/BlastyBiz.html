@@ -163,7 +163,7 @@
     </div>
     <p class="text-base text-muted mb-12" id="photo-scope-hint">Campaign photos are linked to the active campaign. Select a campaign above first.</p>
     <div id="photo-upload-area" class="image-upload-area" onclick="document.getElementById('img-input').click()">
-      <input type="file" id="img-input" accept="image/*" multiple onchange="handleImages(event)" />
+      <input type="file" id="img-input" accept="image/*" multiple onchange="handleImages(event)" onclick="event.stopPropagation()" />
       <div class="upload-icon">📸</div>
       <div class="upload-text" id="photo-upload-text">Tap to add photos<br/><span>from your camera roll</span></div>
     </div>
@@ -3372,6 +3372,8 @@ onAuthStateChanged(auth, async (user) => {
       },
       async () => {
         const dlUrl = await getDownloadURL(task.snapshot.ref);
+        // Revoke the local blob URL now that we have the permanent download URL
+        if (localUrl && localUrl.startsWith('blob:')) URL.revokeObjectURL(localUrl);
         item.url = dlUrl;
         item.localUrl = dlUrl;
         item.done = true;
