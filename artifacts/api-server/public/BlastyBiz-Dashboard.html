@@ -547,19 +547,7 @@ onAuthStateChanged(auth, async (user) => {
     showToast(`Switched to ${biz?.name || bizId}`);
   };
 
-  window.addBusiness = async function() {
-    const planLimit = getBizLimit();
-    const planLabels = { starter: 'Starter', pro: 'Pro', agency: 'Agency' };
-    const bizLimits  = { starter: 1, pro: 3, agency: 10 };
-    if ((window.BUSINESSES || []).length >= planLimit) {
-      const used = (window.BUSINESSES || []).length;
-      const label = planLabels[userPlan] || userPlan;
-      openUpgradeModal(
-        `You've used all ${used} of ${planLimit} business slot${planLimit !== 1 ? 's' : ''} on the ${label} plan. ` +
-        `Upgrade to add more.`
-      );
-      return;
-    }
+  window.addBusiness = function() {
     window.location.href = 'BlastyBiz-Onboarding.html?new=1';
   };
 
