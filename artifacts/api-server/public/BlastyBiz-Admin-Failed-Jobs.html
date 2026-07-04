@@ -13,25 +13,37 @@ let currentUser = null;
 let loadedJobs = [];
 const bizNameCache = {};
 
+// Extract uid and businessId from a Firestore ref path:
+// users/{uid}/businesses/{bizId}/publishJobs/{jobId}
+function uidBizFromRef(ref) {
+  if (!ref) return { uid: null, bizId: null };
+  const segs = ref.path.split('/');
+  // segs: ['users', uid, 'businesses', bizId, 'publishJobs', jobId]
+  return { uid: segs[1] || null, bizId: segs[3] || null };
+}
+
 async function resolveBizNames(jobs) {
   const missing = jobs.filter(j => j.businessId && !(j.businessId in bizNameCache));
   await Promise.all(missing.map(async j => {
-    const { uid, businessId } = j;
+    // Prefer fields; fall back to extracting from ref path
+    const uid = j.uid || uidBizFromRef(j._ref).uid;
+    const businessId = j.businessId || uidBizFromRef(j._ref).bizId;
     try {
       if (uid && businessId) {
         const snap = await getDoc(doc(db, 'users', uid, 'businesses', businessId));
         bizNameCache[businessId] = snap.exists() ? (snap.data().businessName || snap.data().bizName || snap.data().name || businessId) : businessId;
       } else {
-        bizNameCache[businessId] = businessId;
+        bizNameCache[businessId || j._id] = businessId || j._id;
       }
-    } catch { bizNameCache[businessId] = businessId; }
+    } catch { bizNameCache[businessId || j._id] = businessId || j._id; }
   }));
 }
 
 async function jobAction(jobId, action) {
   const job = loadedJobs.find(j => j._id === jobId) || {};
-  if (!job.uid || !job.businessId) { console.warn('jobAction: missing uid/businessId for', jobId); return; }
-  const ref = doc(db, 'users', job.uid, 'businesses', job.businessId, 'publishJobs', jobId);
+  // Use the stored Firestore ref directly — no need to reconstruct from uid/businessId fields
+  const ref = job._ref;
+  if (!ref) { console.warn('jobAction: no ref for job', jobId); return; }
   const now = new Date();
   const updates = {
     retry:    { status: 'retry_pending', attempts: 0, updatedAt: now },
@@ -65,6 +77,15 @@ async function callAdminCF(endpoint, jobId, uid, businessId) {
   if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || String(r.status));
 }
 
+function uidBizForJob(job) {
+  // Prefer fields on the doc; fall back to extracting from the stored Firestore ref path
+  const fromRef = uidBizFromRef(job._ref);
+  return {
+    uid: job.uid || fromRef.uid,
+    businessId: job.businessId || fromRef.bizId,
+  };
+}
+
 window.retrySelected = async function() {
   const ids = getSelectedIds();
   if (!ids.length) { alert('Select at least one job to retry.'); return; }
@@ -73,7 +94,8 @@ window.retrySelected = async function() {
   try {
     await Promise.all(ids.map(id => {
       const job = loadedJobs.find(j => j._id === id) || {};
-      return callAdminCF('adminRetryJob', id, job.uid, job.businessId);
+      const { uid, businessId } = uidBizForJob(job);
+      return callAdminCF('adminRetryJob', id, uid, businessId);
     }));
     if (btn) btn.textContent = 'Retry Selected';
   } catch(e) {
@@ -104,7 +126,8 @@ window.manualFollowupSelected = async function() {
   try {
     await Promise.all(ids.map(id => {
       const job = loadedJobs.find(j => j._id === id) || {};
-      return callAdminCF('adminMarkManualFollowup', id, job.uid, job.businessId);
+      const { uid, businessId } = uidBizForJob(job);
+      return callAdminCF('adminMarkManualFollowup', id, uid, businessId);
     }));
     if (btn) btn.textContent = 'Mark Manual Follow-up';
   } catch(e) {
@@ -148,7 +171,7 @@ onAuthStateChanged(auth, (user) => {
       if (heroOpen) heroOpen.textContent = '0';
       return;
     }
-    const jobs = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
+    const jobs = snap.docs.map(d => ({ ...d.data(), _id: d.id, _ref: d.ref }));
     loadedJobs = jobs;
 
     // Resolve business names in one batch before rendering
