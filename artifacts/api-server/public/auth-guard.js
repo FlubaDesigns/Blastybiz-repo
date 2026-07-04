@@ -21,9 +21,10 @@ auth.authStateReady()
         clearTimeout(_safetyTimer);
         window.location.href = 'BlastyBiz-Login.html';
       } else {
-        // No user — wait for any in-flight OAuth redirect or token refresh before evicting
+        // No user — wait for any in-flight OAuth redirect or token refresh before evicting.
+        // Cancel the safety timer now: we must not reveal protected content during the wait.
+        clearTimeout(_safetyTimer);
         setTimeout(() => {
-          clearTimeout(_safetyTimer);
           const current = auth.currentUser;
           if (current && current.emailVerified) {
             document.body.style.visibility = 'visible';

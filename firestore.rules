@@ -2,10 +2,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Admin helper — full read access across all collections
+    // Admin helper — full read access across all collections.
+    // info@blastybiz.com is the permanent bootstrap admin (cannot be removed via UI).
+    // Additional admins are stored in config/admins and managed from Admin-Operate.html.
     function isAdmin() {
-      return request.auth != null &&
-        request.auth.token.email == 'perceys@gmail.com';
+      return request.auth != null && (
+        request.auth.token.email == 'info@blastybiz.com' ||
+        (exists(/databases/$(database)/documents/config/admins) &&
+         request.auth.token.email in get(/databases/$(database)/documents/config/admins).data.emails)
+      );
     }
 
     // Users can only read/write their own user doc; admin can read any.
@@ -172,6 +177,11 @@ service cloud.firestore {
 
     // Email templates — admin read/write only; Cloud Functions use Admin SDK (bypasses rules)
     match /emailTemplates/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Admin config (admin email list, feature flags, etc.) — admin only
+    match /config/{doc} {
       allow read, write: if isAdmin();
     }
 

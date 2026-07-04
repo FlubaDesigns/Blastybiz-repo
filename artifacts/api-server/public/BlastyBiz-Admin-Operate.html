@@ -516,14 +516,42 @@
         </p>
         <p class="op-fn-group">Account</p>
         <p class="op-fn-list">
-          deleteAccount · uploadImage
+          createBusiness · deleteAccount · uploadImage
         </p>
         <p class="op-fn-group">Admin</p>
         <p class="op-fn-list">
-          adminListActivityLogs · adminListBusinesses · adminListFailedJobs · adminListPlatformConnections ·
-          adminListPublishJobs · adminMarkManualFollowup · adminRetryJob · adminSubscriptionSummary ·
-          adminUpdatePricing · refreshYelpCategories · sendTestEmail · setOperatorSecret
+          adminGetAdminEmails · adminListActivityLogs · adminListBusinesses · adminListFailedJobs ·
+          adminListPlatformConnections · adminListPublishJobs · adminMarkManualFollowup · adminRetryJob ·
+          adminSubscriptionSummary · adminUpdateAdminEmails · adminUpdatePricing · refreshYelpCategories ·
+          sendTestEmail · setOperatorSecret
         </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Access management -->
+  <div class="op-section">
+    <div class="op-card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <span>Admin Access</span>
+        <span class="op-chevron">▶</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-cmd-label-hd">Admin email addresses</p>
+        <p style="font-size:13px;color:#555;margin:0 0 12px;">
+          These accounts can access all Admin pages and Cloud Function admin endpoints.
+          <strong>info@blastybiz.com</strong> is the permanent bootstrap admin and cannot be removed.
+        </p>
+        <div id="admin-email-list" style="margin-bottom:12px;"></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="new-admin-email" type="email" placeholder="new@example.com"
+            style="flex:1;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+          <button onclick="addAdminEmail()"
+            style="padding:8px 14px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">
+            Add
+          </button>
+        </div>
+        <p id="admin-email-status" style="font-size:12px;color:#6b7280;margin:8px 0 0;"></p>
       </div>
     </div>
   </div>
@@ -785,6 +813,91 @@ window.saveSecret = async function(name, inputId, statusId, btn) {
     btn.textContent = 'Save';
   }
 };
+
+// ── Admin email management ────────────────────────────────────────────────────
+const CF_BASE = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
+let _adminEmailsCache = { bootstrap: [], extra: [] };
+
+async function _cfGet(path) {
+  const token = await firebase.auth().currentUser.getIdToken();
+  const r = await fetch(CF_BASE + path, { headers: { 'Authorization': 'Bearer ' + token } });
+  return r.json();
+}
+async function _cfPost(path, body) {
+  const token = await firebase.auth().currentUser.getIdToken();
+  const r = await fetch(CF_BASE + path, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return r.json();
+}
+
+function renderAdminEmails() {
+  const { bootstrap, extra } = _adminEmailsCache;
+  const el = document.getElementById('admin-email-list');
+  if (!el) return;
+  const rows = [
+    ...bootstrap.map(e => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0f0f0;">
+      <span style="flex:1;font-size:13px;">${e}</span>
+      <span style="font-size:11px;color:#9ca3af;padding:2px 6px;background:#f3f4f6;border-radius:10px;">permanent</span>
+    </div>`),
+    ...extra.map(e => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0f0f0;">
+      <span style="flex:1;font-size:13px;">${e}</span>
+      <button onclick="removeAdminEmail('${e}')"
+        style="font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;padding:2px 6px;">✕ Remove</button>
+    </div>`),
+  ];
+  el.innerHTML = rows.length ? rows.join('') : '<p style="font-size:13px;color:#9ca3af;">No extra admins yet.</p>';
+}
+
+async function loadAdminEmails() {
+  const statusEl = document.getElementById('admin-email-status');
+  try {
+    const data = await _cfGet('/adminGetAdminEmails');
+    _adminEmailsCache = { bootstrap: data.bootstrap || [], extra: data.extra || [] };
+    renderAdminEmails();
+    statusEl.textContent = '';
+  } catch(e) {
+    statusEl.textContent = '✗ Failed to load: ' + e.message;
+  }
+}
+
+async function addAdminEmail() {
+  const input = document.getElementById('new-admin-email');
+  const statusEl = document.getElementById('admin-email-status');
+  const email = (input.value || '').trim().toLowerCase();
+  if (!email || !email.includes('@')) { statusEl.textContent = 'Enter a valid email.'; return; }
+  if (_adminEmailsCache.bootstrap.includes(email) || _adminEmailsCache.extra.includes(email)) {
+    statusEl.textContent = 'Already in the list.'; return;
+  }
+  statusEl.textContent = 'Saving…';
+  const newList = [..._adminEmailsCache.extra, email];
+  try {
+    await _cfPost('/adminUpdateAdminEmails', { emails: newList });
+    _adminEmailsCache.extra = newList;
+    input.value = '';
+    renderAdminEmails();
+    statusEl.textContent = '✓ Added';
+  } catch(e) { statusEl.textContent = '✗ ' + e.message; }
+}
+
+async function removeAdminEmail(email) {
+  const statusEl = document.getElementById('admin-email-status');
+  statusEl.textContent = 'Removing…';
+  const newList = _adminEmailsCache.extra.filter(e => e !== email);
+  try {
+    await _cfPost('/adminUpdateAdminEmails', { emails: newList });
+    _adminEmailsCache.extra = newList;
+    renderAdminEmails();
+    statusEl.textContent = '✓ Removed';
+  } catch(e) { statusEl.textContent = '✗ ' + e.message; }
+}
+
+// Load admin emails once Firebase auth is ready
+firebase.auth().onAuthStateChanged(user => {
+  if (user) loadAdminEmails();
+});
 </script>
 <nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Queue-Manager.html">📋<br>Queue</a><a class="" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a><a class="active" href="#">⚙️<br>Operate</a></nav>
 </body>

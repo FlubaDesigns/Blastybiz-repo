@@ -141,11 +141,25 @@ async function verifyBearer(req) {
   return await admin.auth().verifyIdToken(token);
 }
 
-const ADMIN_EMAILS = ['perceys@gmail.com'];
+// Bootstrap admin — always has access regardless of Firestore config.
+// Additional admins are managed via config/admins in Firestore (Admin-Operate.html).
+const BOOTSTRAP_ADMIN_EMAILS = ['info@blastybiz.com'];
+
+async function getAdminEmails() {
+  try {
+    const snap = await db.collection('config').doc('admins').get();
+    if (snap.exists) {
+      const extra = snap.data().emails || [];
+      return [...new Set([...BOOTSTRAP_ADMIN_EMAILS, ...extra])];
+    }
+  } catch(e) { /* fall through to bootstrap list */ }
+  return BOOTSTRAP_ADMIN_EMAILS;
+}
 
 async function requireAdmin(req) {
   const decoded = await verifyBearer(req);
-  if (!ADMIN_EMAILS.includes(decoded.email)) {
+  const adminEmails = await getAdminEmails();
+  if (!adminEmails.includes(decoded.email)) {
     throw Object.assign(new Error('Forbidden'), { status: 403 });
   }
   return decoded;
@@ -1079,9 +1093,20 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
       const { uid, plan } = pendingSnap.data();
       if (!uid) return res.json({ received: true });
       await db.collection('pendingCheckouts').doc(orderId).delete();
-      await db.collection('users').doc(uid).set(
-        { plan, planActive: true }, { merge: true }
+      // Atomic batch: users/{uid}.plan + all businesses/{bizId}.currentPlan in one commit.
+      // If any write fails the whole batch rolls back — no more half-written plan state.
+      // subscriptions is written separately; it's an audit record, not an entitlement gate.
+      const bizSnaps = await db.collection('businesses').where('uid', '==', uid).get();
+      const syncBatch = db.batch();
+      syncBatch.set(
+        db.collection('users').doc(uid),
+        { plan, planActive: true },
+        { merge: true }
       );
+      bizSnaps.docs.forEach(biz => {
+        syncBatch.update(biz.ref, { currentPlan: plan, subscriptionStatus: 'active' });
+      });
+      await syncBatch.commit();
       await db.collection('subscriptions').doc(uid).set({
         uid,
         squareCustomerId: payment.customer_id || '',
@@ -1090,14 +1115,6 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
         status: 'active',
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       }, { merge: true });
-      // Mirror plan onto businesses docs so Admin pages read the correct plan.
-      // ⚠️  SYNC RISK — users, subscriptions, and businesses are all updated here in sequence.
-      //     If you add another collection that mirrors billing state, add it in this same block
-      //     so all three stay in sync. Never update billing state from any other Cloud Function.
-      const bizSnaps = await db.collection('businesses').where('uid', '==', uid).get();
-      for (const biz of bizSnaps.docs) {
-        await biz.ref.update({ currentPlan: plan, subscriptionStatus: 'active' });
-      }
 
       // Send paid-welcome email (Pro or Agency)
       try {
@@ -2412,6 +2429,91 @@ exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESE
   });
 
   res.json({ success: true, sentTo: userData.email });
+});
+
+// ── createBusiness — server-enforced plan limits + atomic write ───────────────
+// Onboarding calls this instead of writing Firestore directly.
+// Returns { bizId } on success; 403 if the user has hit their plan cap.
+exports.createBusiness = onRequest({ invoker: 'public' }, async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+  let uid;
+  try {
+    const decoded = await verifyBearer(req);
+    uid = decoded.uid;
+  } catch(e) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const { profileData, isNew } = req.body || {};
+  if (!profileData || typeof profileData !== 'object') {
+    return res.status(400).json({ error: 'Missing profileData' });
+  }
+  const BIZ_LIMITS = { starter: 1, pro: 3, agency: 10 };
+  try {
+    const userSnap = await db.collection('users').doc(uid).get();
+    const plan = (userSnap.exists ? userSnap.data().plan : null) || 'starter';
+    const cap = BIZ_LIMITS[plan] || 1;
+    if (isNew) {
+      const bizSnap = await db.collection('businesses')
+        .where('uid', '==', uid)
+        .where('onboarded', '==', true)
+        .get();
+      if (bizSnap.size >= cap) {
+        return res.status(403).json({ error: 'Business limit reached', plan, cap, used: bizSnap.size });
+      }
+    }
+    // First-time onboarding: doc ID = uid. Adding a second/third business: auto-generated ID.
+    const bizRef = isNew
+      ? db.collection('businesses').doc()
+      : db.collection('businesses').doc(uid);
+    // Strip any client-side timestamp fields — CF sets authoritative timestamps.
+    const { updatedAt: _d1, createdAt: _d2, ...cleanData } = profileData;
+    const batch = db.batch();
+    batch.set(bizRef, {
+      ...cleanData,
+      uid,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    batch.set(db.collection('users').doc(uid), {
+      onboarded: true,
+      activeBusiness: bizRef.id,
+      businessIds: admin.firestore.FieldValue.arrayUnion(bizRef.id),
+    }, { merge: true });
+    await batch.commit();
+    return res.json({ success: true, bizId: bizRef.id });
+  } catch(e) {
+    console.error('[createBusiness]', e.message);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── adminGetAdminEmails / adminUpdateAdminEmails ───────────────────────────────
+// Allow authorized admins to manage the dynamic admin list stored in config/admins.
+// BOOTSTRAP_ADMIN_EMAILS (info@blastybiz.com) is always included and cannot be removed.
+exports.adminGetAdminEmails = onRequest({ invoker: 'public' }, async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+  const snap = await db.collection('config').doc('admins').get();
+  const extra = snap.exists ? (snap.data().emails || []) : [];
+  res.json({ bootstrap: BOOTSTRAP_ADMIN_EMAILS, extra });
+});
+
+exports.adminUpdateAdminEmails = onRequest({ invoker: 'public' }, async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+  const { emails } = req.body || {};
+  if (!Array.isArray(emails)) return res.status(400).json({ error: 'emails must be an array' });
+  const valid = emails.filter(e => typeof e === 'string' && e.includes('@'));
+  await db.collection('config').doc('admins').set({
+    emails: valid,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  res.json({ success: true, emails: valid });
 });
 
 exports.adminListActivityLogs = onRequest({ invoker: 'public' }, async (req, res) => {

@@ -753,6 +753,7 @@ onAuthStateChanged(auth, async (user) => {
 
       // ── Operating snapshot — real numbers ────────────────────────────────
       const aiUsed    = userData.aiActionsUsed || 0;
+      // Keep in sync with AI_LIMITS in functions/index.js
       const aiCap     = { starter: 10, pro: 100, agency: 500 }[userPlan] || 10;
       const aiCostEst = (aiUsed * 0.012).toFixed(2);
       const aiUsageEl = document.getElementById('ai-usage-display');

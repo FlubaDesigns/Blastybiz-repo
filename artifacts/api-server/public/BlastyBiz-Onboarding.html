@@ -1105,30 +1105,28 @@ window.nextStep = async function() {
     const data = window._buildProfileData();
     try {
       if (currentUser) {
-        // Plan-limit gate — only runs when adding a new business
-        if (_isNew()) {
-          const BIZ_LIMITS = { starter: 1, pro: 3, agency: 10 };
-          const userDoc  = await getDoc(doc(db, 'users', currentUser.uid));
-          const plan     = (userDoc.exists() ? userDoc.data().plan : null) || 'starter';
-          const cap      = BIZ_LIMITS[plan] || 1;
-          const bizSnap  = await getDocs(query(collection(db, 'businesses'), where('uid', '==', currentUser.uid), where('onboarded', '==', true)));
-          if (bizSnap.size >= cap) {
-            if (btn) { btn.disabled = false; btn.textContent = 'Complete Setup'; }
-            alert(`You\u2019ve reached the ${cap}-business limit for your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan.\n\nReturn to your Dashboard and upgrade your plan to add more businesses.`);
-            return;
+        // createBusiness CF: enforces plan limits server-side, writes users+business atomically.
+        const idToken = await currentUser.getIdToken();
+        const { updatedAt: _dropTs, ...profilePayload } = data;
+        const cfResp = await fetch(
+          'https://us-central1-blastybiz-9523e.cloudfunctions.net/createBusiness',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+            body: JSON.stringify({ profileData: profilePayload, isNew: _isNew() }),
           }
+        );
+        const cfResult = await cfResp.json();
+        if (!cfResp.ok) {
+          if (btn) { btn.disabled = false; btn.textContent = 'Complete Setup'; }
+          if (cfResp.status === 403) {
+            const planLabel = (cfResult.plan || 'starter');
+            alert(`You\u2019ve reached the ${cfResult.cap || 1}-business limit for your ${planLabel.charAt(0).toUpperCase() + planLabel.slice(1)} plan.\n\nReturn to your Dashboard and upgrade your plan to add more businesses.`);
+          } else {
+            alert('Save failed \u2014 please try again.');
+          }
+          return;
         }
-
-        // First-time onboarding: doc ID = user UID. Adding new business: auto-generated ID.
-        const bizRef = _isNew()
-          ? doc(collection(db, 'businesses'))
-          : doc(db, 'businesses', currentUser.uid);
-        await setDoc(bizRef, { ...data, uid: currentUser.uid, createdAt: serverTimestamp() }, { merge: true });
-        await setDoc(doc(db, 'users', currentUser.uid), {
-          onboarded: true,
-          activeBusiness: bizRef.id,
-          businessIds: arrayUnion(bizRef.id),
-        }, { merge: true });
         _clearDraft();
       }
     } catch(e) {
