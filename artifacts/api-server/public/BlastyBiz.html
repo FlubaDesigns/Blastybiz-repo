@@ -2665,19 +2665,32 @@ function selectCampaign(id, name) {
   const ctxEl = document.getElementById('campaign-context');
   if (ctxEl) ctxEl.value = cam.campaignStory || '';
 
-  // Load campaign images from subcollection
+  // Load campaign images from subcollection (fall back to cam.photos for old data)
   if (window._bbLoadCampaignImages) {
     window._bbLoadCampaignImages(id).then(images => {
-      window._bbPhotoItems = images.map(img => ({
-        url: img.url, path: img.path || null, localUrl: img.url,
-        done: true, progress: 100, id: img.id, scope: 'campaign'
-      }));
+      if (images.length > 0) {
+        window._bbPhotoItems = images.map(img => ({
+          url: img.url, path: img.path || null, localUrl: img.url,
+          done: true, progress: 100, id: img.id, scope: 'campaign'
+        }));
+      } else {
+        const cam = campaigns.find(c => c.id === id) || {};
+        window._bbPhotoItems = (cam.photos || []).map(p =>
+          typeof p === 'string'
+            ? { url: p, path: null, localUrl: p, done: true, progress: 100 }
+            : { ...p, localUrl: p.url, done: true, progress: 100 }
+        );
+      }
       window._bbSelectedPhotoIndex = null;
       if (window.renderAllPhotos) window.renderAllPhotos();
       updatePhotoCapLabel();
     }).catch(() => {
-      window._bbPhotoItems = [];
+      const cam = campaigns.find(c => c.id === id) || {};
+      window._bbPhotoItems = (cam.photos || []).map(p =>
+        ({ ...p, localUrl: p.url || p, done: true, progress: 100 })
+      );
       if (window.renderAllPhotos) window.renderAllPhotos();
+      updatePhotoCapLabel();
     });
   } else {
     window._bbPhotoItems = [];
@@ -2686,12 +2699,18 @@ function selectCampaign(id, name) {
     updatePhotoCapLabel();
   }
 
-  // Load campaign factoids from subcollection
+  // Load campaign factoids from subcollection (keep existing if subcollection empty)
   if (window._bbLoadCampaignFactoids) {
     window._bbLoadCampaignFactoids(id).then(facts => {
       const c = campaigns.find(c => c.id === id);
-      if (c) c.factoids = facts;
-    }).catch(() => {});
+      if (!c) return;
+      if (facts.length > 0) {
+        c.factoids = facts;
+      }
+      // If subcollection empty, c.factoids keeps its existing value from campaign doc field
+    }).catch(() => {
+      // Network error — keep existing c.factoids if any
+    });
   }
 
   renderCampaignChips();

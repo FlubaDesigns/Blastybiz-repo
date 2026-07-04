@@ -941,7 +941,6 @@ function _doSave() {
     fields: {
       name:      document.getElementById('s-name')?.value || '',
       owner:     document.getElementById('s-owner')?.value || '',
-      ownerRole: document.getElementById('s-owner-role')?.value || 'owner',
       phone:     document.getElementById('s-phone')?.value || '',
       email:     document.getElementById('s-email')?.value || '',
       biztype:   document.getElementById('s-biztype')?.value || '',
@@ -952,6 +951,8 @@ function _doSave() {
       website:   document.getElementById('s-website')?.value || '',
       open:      document.getElementById('s-open')?.value || '09:00',
       close:     document.getElementById('s-close')?.value || '17:00',
+      openWknd:  document.getElementById('s-open-wknd')?.value  || '10:00',
+      closeWknd: document.getElementById('s-close-wknd')?.value || '17:00',
     },
     selectedCategory: window.selectedCategory || '',
     resolvedCats:     window.resolvedCats || {},
@@ -984,7 +985,6 @@ function _restoreDraft() {
   const f = draft.fields || {};
   set('s-name',       f.name);
   set('s-owner',      f.owner);
-  set('s-owner-role', f.ownerRole);
   set('s-phone',      f.phone);
   set('s-email',      f.email);
   set('s-biztype',    f.biztype);
@@ -995,6 +995,11 @@ function _restoreDraft() {
   set('s-website',    f.website);
   set('s-open',       f.open);
   set('s-close',      f.close);
+  set('s-open-wknd',  f.openWknd);
+  set('s-close-wknd', f.closeWknd);
+  const hasWknd = (draft.selectedDays || []).some(d => d === 'Sat' || d === 'Sun');
+  const wkndRow = document.getElementById('weekend-hours-row');
+  if (wkndRow) wkndRow.style.display = hasWknd ? '' : 'none';
 
   if (draft.selectedCategory) window.selectedCategory = draft.selectedCategory;
   if (draft.resolvedCats)     window.resolvedCats     = draft.resolvedCats;
@@ -1030,12 +1035,16 @@ window._deleteDraft = async function() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  const roleEl = document.getElementById('s-owner-role');
-  if (roleEl) roleEl.value = 'owner';
   const openEl = document.getElementById('s-open');
   if (openEl) openEl.value = '09:00';
   const closeEl = document.getElementById('s-close');
   if (closeEl) closeEl.value = '17:00';
+  const openWkndEl  = document.getElementById('s-open-wknd');
+  const closeWkndEl = document.getElementById('s-close-wknd');
+  if (openWkndEl)  openWkndEl.value  = '10:00';
+  if (closeWkndEl) closeWkndEl.value = '17:00';
+  const wkndRowD = document.getElementById('weekend-hours-row');
+  if (wkndRowD) wkndRowD.style.display = 'none';
 
   window.selectedCategory   = '';
   window.resolvedCats       = {};
@@ -1109,7 +1118,6 @@ window._buildProfileData = function() {
   return {
     businessName: document.getElementById('s-name')?.value || '',
     ownerName:    document.getElementById('s-owner')?.value || '',
-    ownerRole:    document.getElementById('s-owner-role')?.value || 'owner',
     phone:        document.getElementById('s-phone')?.value || '',
     category:     window.selectedCategory || '',
     platformCats: window.resolvedCats || {},
