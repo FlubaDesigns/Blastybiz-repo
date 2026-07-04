@@ -2302,6 +2302,118 @@ exports.adminListPlatformConnections = onRequest({ invoker: 'public' }, async (r
   res.json({ connections: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
 });
 
+// Returns connection-health summary + list of broken/expiring connections joined with business names
+exports.adminPlatformHealth = onRequest({ invoker: 'public' }, async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+
+  const snap = await db.collection('platformConnections').get();
+  const counts = { connected: 0, expired: 0, disconnected: 0, other: 0 };
+  const broken = [];
+
+  snap.docs.forEach(d => {
+    const c = { id: d.id, ...d.data() };
+    const s = c.status || 'unknown';
+    if (s === 'connected') { counts.connected++; return; }
+    if (s === 'expired' || s === 'error') counts.expired++;
+    else if (s === 'disconnected') counts.disconnected++;
+    else counts.other++;
+    broken.push(c);
+  });
+
+  // Join broken connections with business names
+  const bizIds = [...new Set(broken.map(c => c.businessId).filter(Boolean))];
+  const bizMap = {};
+  await Promise.all(bizIds.map(async id => {
+    try {
+      const s = await db.collection('businesses').doc(id).get();
+      if (s.exists) bizMap[id] = s.data().businessName || id;
+    } catch(e) { /* non-fatal */ }
+  }));
+
+  const now = Date.now();
+  const result = broken.map(c => {
+    const expiresAt = c.expiresAt ? (c.expiresAt.toDate ? c.expiresAt.toDate() : new Date(c.expiresAt)) : null;
+    const daysSinceExpired = expiresAt ? Math.floor((now - expiresAt.getTime()) / 86400000) : null;
+    return {
+      id: c.id,
+      businessId: c.businessId || '',
+      businessName: (c.businessId && bizMap[c.businessId]) || '—',
+      uid: c.uid || '',
+      platform: c.platform || 'unknown',
+      status: c.status || 'unknown',
+      expiresAt: expiresAt ? expiresAt.toISOString() : null,
+      daysSinceExpired,
+      connectedAt: c.connectedAt ? (c.connectedAt.toDate ? c.connectedAt.toDate().toISOString() : new Date(c.connectedAt).toISOString()) : null,
+    };
+  }).sort((a, b) => (b.daysSinceExpired || 0) - (a.daysSinceExpired || 0));
+
+  res.json({ counts, broken: result });
+});
+
+// Sends a one-off reconnect nudge email to the business owner for a given connection
+exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+
+  const { connectionId } = req.body;
+  if (!connectionId) return res.status(400).json({ error: 'connectionId required' });
+
+  const connSnap = await db.collection('platformConnections').doc(connectionId).get();
+  if (!connSnap.exists) return res.status(404).json({ error: 'Connection not found' });
+  const conn = connSnap.data();
+  if (!conn.uid) return res.status(400).json({ error: 'Connection has no uid' });
+
+  const userSnap = await db.collection('users').doc(conn.uid).get();
+  if (!userSnap.exists) return res.status(404).json({ error: 'User not found' });
+  const userData = userSnap.data();
+  if (!userData.email) return res.status(400).json({ error: 'User has no email' });
+  if (userData.emailUnsubscribed) return res.status(400).json({ error: 'User is unsubscribed' });
+
+  let businessName = '';
+  if (conn.businessId) {
+    try {
+      const bizSnap = await db.collection('businesses').doc(conn.businessId).get();
+      businessName = bizSnap.data()?.businessName || '';
+    } catch(e) { /* non-fatal */ }
+  }
+
+  const ownerName = userData.ownerName || userData.displayName || 'there';
+  const platformDisplay = conn.platform === 'google' ? 'Google Business Profile'
+    : (conn.platform || 'Platform').charAt(0).toUpperCase() + (conn.platform || 'Platform').slice(1);
+  const connectUrl = `${APP_BASE_URL}/BlastyBiz-Connect.html`;
+  const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(conn.uid)}&sig=${makeUnsubSig(conn.uid, process.env.RESEND_API_KEY)}`;
+  const bizLabel = businessName || (ownerName !== 'there' ? ownerName + "'s Business" : 'your business');
+
+  const subject = `Action needed — your ${platformDisplay} connection expired`;
+  const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:28px 32px 22px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:32px">
+    <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Your ${platformDisplay} connection needs a quick reconnect, ${ownerName}.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">Your <strong>${platformDisplay}</strong> authorization for <strong>${bizLabel}</strong> has expired. Auto-posting to ${platformDisplay} is paused until you reconnect.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">It only takes a few seconds — just click the button below and authorize BlastyBiz again.</p>
+    <a href="${connectUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Reconnect ${platformDisplay} &#8594;</a>
+    <p style="font-size:13px;color:#888;margin-top:20px;line-height:1.6">Your content and campaigns are all still saved — nothing is lost.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz, a Fluba Designs LLC brand. &bull; <a href="${unsubUrl}" style="color:#999">Unsubscribe</a></p>
+  </div>
+</div>`;
+
+  await sendResendEmail({ to: userData.email, subject, html });
+
+  await db.collection('platformConnections').doc(connectionId).update({
+    lastNudgeSentAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  res.json({ success: true, sentTo: userData.email });
+});
+
 exports.adminListActivityLogs = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
