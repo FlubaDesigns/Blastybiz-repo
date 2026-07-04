@@ -7,7 +7,8 @@
   },
   "main": "index.js",
   "scripts": {
-    "deploy": "firebase deploy --only functions"
+    "deploy": "firebase deploy --only functions",
+    "test": "firebase emulators:exec --only firestore 'node test/deleteAccount.test.js' --project blastybiz-9523e"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.36.3",
