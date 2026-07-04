@@ -117,6 +117,13 @@
 
     <label>Price <span class="optional">(optional)</span></label>
     <input type="text" id="biz-price" placeholder="e.g. $25 · Free · Starting at $99" oninput="saveDraft();debounceCampaignSave()" class="max-w-260" />
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;min-height:22px">
+      <span id="ad-draft-status" style="font-size:12px;color:#4caf50;opacity:0;transition:opacity 0.4s"></span>
+      <button id="btn-discard-ad" onclick="discardAdDraft()" style="display:none;background:none;border:none;color:#e57373;font-size:12px;cursor:pointer;padding:0;text-decoration:underline">
+        × Discard this ad
+      </button>
+    </div>
   </div>
 
   <!-- ── ADD INFO — factoid panel ── -->
@@ -2622,6 +2629,7 @@ function selectCampaign(id, name) {
   renderCampaignChips();
   renderPlatformHistory();
   _syncSchedCampaign(id, name);
+  _updateAdDiscardBtn();
   checkAdaptBtn();
 }
 
@@ -2713,8 +2721,26 @@ function updateCampaignMemory() {
 
 // ── Debounced campaign Firestore persistence ─────────────────────────────────
 var _campaignSaveTimer = null;
+
+function _showAdDraftStatus(msg) {
+  const el = document.getElementById('ad-draft-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(el._fadeTimer);
+  el._fadeTimer = setTimeout(() => { el.style.opacity = '0'; }, 2200);
+}
+
+function _updateAdDiscardBtn() {
+  const cam = campaigns.find(c => c.id === activeCampaignId);
+  const hasContent = cam && (cam.offer || cam.adName || cam.adDetails || cam.price);
+  const btn = document.getElementById('btn-discard-ad');
+  if (btn) btn.style.display = hasContent ? 'inline' : 'none';
+}
+
 function debounceCampaignSave() {
   updateCampaignMemory(); // immediate in-memory sync on every keystroke
+  _updateAdDiscardBtn();
   clearTimeout(_campaignSaveTimer);
   _campaignSaveTimer = setTimeout(async () => {
     if (!activeCampaignId || !window._bbSaveCampaigns) return;
@@ -2723,10 +2749,29 @@ function debounceCampaignSave() {
     cam.lastUsedAt = new Date().toISOString();
     try {
       await window._bbSaveCampaigns(campaigns);
+      _showAdDraftStatus('Draft saved ✓');
     } catch(e) {
       console.warn('Campaign auto-save failed:', e);
     }
   }, 1500);
+}
+
+async function discardAdDraft() {
+  if (!confirm('Discard this ad and clear all fields?\n\nThe campaign stays but the offer, details, and price will be erased.')) return;
+  ['biz-offer','biz-ad-name','biz-ad-details','biz-price'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const offerCount = document.getElementById('offer-count');
+  if (offerCount) offerCount.textContent = '0 / 500';
+  updateCampaignMemory();
+  _updateAdDiscardBtn();
+  if (activeCampaignId && window._bbSaveCampaigns) {
+    try {
+      await window._bbSaveCampaigns(campaigns);
+      _showAdDraftStatus('Ad cleared');
+    } catch(e) { console.warn('Discard save failed:', e); }
+  }
+  checkAdaptBtn();
 }
 
 // ── Platform history panel ────────────────────────────────────────────────────
