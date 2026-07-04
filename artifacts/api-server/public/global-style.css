@@ -1529,8 +1529,12 @@ body.onboarding-page textarea     { resize: none; }
 .biz-chevron         { color: var(--muted); font-size: 12px; transition: transform 0.2s; flex-shrink: 0; }
 .biz-active.open .biz-chevron { transform: rotate(180deg); }
 .biz-count           { font-size: 11px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
-.add-biz-btn         { background: transparent; border: 1px dashed var(--border); border-radius: 10px; color: var(--muted); height: 40px; width: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; transition: all 0.2s; flex-shrink: 0; }
+.add-biz-btn         { background: transparent; border: 1px dashed var(--border); border-radius: 10px; color: var(--muted); height: 34px; width: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: all 0.2s; flex-shrink: 0; }
 .add-biz-btn:hover   { border-color: var(--green); color: var(--green); }
+.del-biz-btn         { background: transparent; border: 1px solid transparent; border-radius: 8px; color: var(--muted); height: 34px; width: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; transition: all 0.2s; flex-shrink: 0; }
+.del-biz-btn:hover   { border-color: #c0392b; color: #e74c3c; background: rgba(231,76,60,0.08); }
+.del-camp-btn        { background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 2px 4px; border-radius: 4px; transition: color 0.15s; line-height: 1; }
+.del-camp-btn:hover  { color: #e74c3c; }
 
 /* Business switcher sheet */
 .biz-sheet-overlay   { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.25s; }

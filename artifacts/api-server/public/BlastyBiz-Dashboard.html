@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=44" />
+<link rel="stylesheet" href="global-style.css?v=45" />
 <title>BlastyBiz — Command Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}</style>
@@ -26,6 +26,7 @@
         <!-- populated by JS -->
       </select>
       <button class="add-biz-btn" onclick="addBusiness()" title="Add business">＋</button>
+      <button class="del-biz-btn" onclick="window.deleteBusiness && window.deleteBusiness(document.getElementById('biz-select').value)" title="Delete selected business">🗑</button>
     </div>
     <div class="agency-bar">
       <span id="agency-usage-text" class="agency-usage-text"></span>
@@ -247,8 +248,11 @@ function renderDashboardCampaigns(campaigns) {
     const created  = fmtDate(c.createdAt);
     return `<div style="padding:12px 0;border-bottom:1px solid var(--border,#333);">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-        <div style="font-size:14px;font-weight:600;color:var(--light,#fff);">${escHtml(c.name || '(unnamed)')}</div>
-        <a href="BlastyBiz.html" class="badge off" style="text-decoration:none;white-space:nowrap;font-size:11px;">Open →</a>
+        <div style="font-size:14px;font-weight:600;color:var(--light,#fff);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(c.name || '(unnamed)')}</div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <a href="BlastyBiz.html" class="badge off" style="text-decoration:none;white-space:nowrap;font-size:11px;">Open →</a>
+          <button class="del-camp-btn" onclick="window.deleteCampaign && window.deleteCampaign('${c.id}')" title="Delete campaign">🗑</button>
+        </div>
       </div>
       <div style="font-size:11px;color:var(--muted,#888);margin-top:3px;">Created ${created} · Last used ${lastUsed}</div>
       ${preview ? `<div style="font-size:11px;color:var(--muted,#888);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(preview)}</div>` : ''}
@@ -391,7 +395,7 @@ function showToast(msg) {
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-  collection, query, where, getDocs, getDoc, setDoc, doc, serverTimestamp, orderBy, limit
+  collection, query, where, getDocs, getDoc, setDoc, deleteDoc, doc, serverTimestamp, orderBy, limit
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 window.doSignOut = () => { localStorage.setItem('bb_auth','0'); signOut(auth).finally(()=>{ window.location.href='BlastyBiz-Login.html'; }); };
@@ -550,6 +554,45 @@ onAuthStateChanged(auth, async (user) => {
 
   window.addBusiness = function() {
     window.location.href = 'BlastyBiz-Onboarding.html?new=1';
+  };
+
+  window.deleteCampaign = async function(campId) {
+    if (!currentUser || !window.activeBizId) return;
+    if (!confirm('Delete this campaign? This cannot be undone.')) return;
+    try {
+      await deleteDoc(doc(db, 'users', currentUser.uid, 'businesses', window.activeBizId, 'campaigns', campId));
+      await loadBusinessContextFirestore(window.activeBizId);
+      showToast('Campaign deleted.');
+    } catch(e) {
+      console.error('[deleteCampaign]', e);
+      showToast('Could not delete campaign.');
+    }
+  };
+
+  window.deleteBusiness = async function(bizId) {
+    if (!bizId || !currentUser) return;
+    const list = window.BUSINESSES || [];
+    const biz = list.find(b => b.id === bizId);
+    if (!biz) return;
+    if (list.length === 1) { showToast('You need at least one business.'); return; }
+    if (!confirm(`Delete "${biz.name}"? This cannot be undone.`)) return;
+    try {
+      await deleteDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId));
+      window.BUSINESSES = list.filter(b => b.id !== bizId);
+      BUSINESSES = window.BUSINESSES;
+      if (window.activeBizId === bizId) {
+        window.activeBizId = window.BUSINESSES[0].id;
+        activeBizId = window.activeBizId;
+        await setDoc(doc(db, 'users', currentUser.uid), { activeBusiness: window.activeBizId }, { merge: true });
+      }
+      renderSwitcherBar();
+      renderAgencyBar();
+      await loadBusinessContextFirestore(window.activeBizId);
+      showToast(`"${biz.name}" deleted.`);
+    } catch(e) {
+      console.error('[deleteBusiness]', e);
+      showToast('Could not delete business.');
+    }
   };
 
   async function loadBusinessContextFirestore(bizId) {
