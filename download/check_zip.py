@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 BlastyBiz Zip Validator
-Run: python3 download/check_zip.py
+Run from anywhere:
+  python3 download/check_zip.py      (from workspace root)
+  python3 check_zip.py               (from inside download/)
 
 Checks that BlastyBiz_Site.zip:
   - Contains exactly the right source files
@@ -10,21 +12,22 @@ Checks that BlastyBiz_Site.zip:
 """
 import zipfile, pathlib, time, sys
 
-ZIP_PATH   = pathlib.Path('download/BlastyBiz_Site.zip')
-INCLUDE_DIRS  = ['artifacts/api-server/public', 'functions']
-INCLUDE_FILES = ['firestore.rules', 'firebase.json', 'firestore.indexes.json']
+# Resolve workspace root relative to this script's location
+ROOT          = pathlib.Path(__file__).parent.parent
+ZIP_PATH      = ROOT / 'download' / 'BlastyBiz_Site.zip'
+INCLUDE_DIRS  = [ROOT / 'artifacts/api-server/public', ROOT / 'functions']
+INCLUDE_FILES = [ROOT / 'firestore.rules', ROOT / 'firebase.json', ROOT / 'firestore.indexes.json']
 EXCLUDE_PARTS = {'node_modules', 'download', '.git', '__pycache__', '.DS_Store'}
 
 def source_files():
     files = {}
     for d in INCLUDE_DIRS:
-        for f in sorted(pathlib.Path(d).rglob('*')):
+        for f in sorted(d.rglob('*')):
             if f.is_file() and not any(p in EXCLUDE_PARTS for p in f.parts):
-                files[str(f)] = f.stat().st_mtime
-    for name in INCLUDE_FILES:
-        p = pathlib.Path(name)
+                files[str(f.relative_to(ROOT))] = f.stat().st_mtime
+    for p in INCLUDE_FILES:
         if p.exists():
-            files[str(p)] = p.stat().st_mtime
+            files[str(p.relative_to(ROOT))] = p.stat().st_mtime
     return files
 
 errors   = []
@@ -35,7 +38,7 @@ if not ZIP_PATH.exists():
     sys.exit(1)
 
 zip_mtime = ZIP_PATH.stat().st_mtime
-print(f'📦  {ZIP_PATH}  ({ZIP_PATH.stat().st_size:,} bytes)')
+print(f'📦  {ZIP_PATH.relative_to(ROOT)}  ({ZIP_PATH.stat().st_size:,} bytes)')
 print(f'🕐  Built: {time.ctime(zip_mtime)}')
 print()
 

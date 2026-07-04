@@ -3363,9 +3363,20 @@ exports.scheduledSetupNudge = onSchedule(
 // All others are marked 'expired' so the Connect page shows the Reconnect UI.
 // ══════════════════════════════════════════
 exports.checkPlatformTokenExpiry = onSchedule(
-  { schedule: 'every 30 minutes', region: 'us-central1', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
+  { schedule: 'every 30 minutes', region: 'us-central1', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'RESEND_API_KEY'] },
   async () => {
     const cutoff = new Date(Date.now() + 5 * 60 * 1000); // now + 5 min
+
+    // Load the platform-expired email template once for the whole run
+    let tmplSubject = null, tmplHtml = null;
+    try {
+      const tmplSnap = await db.collection('emailTemplates')
+        .where('type', '==', 'platform-expired').where('active', '==', true).limit(1).get();
+      if (!tmplSnap.empty) {
+        tmplSubject = tmplSnap.docs[0].data().subject;
+        tmplHtml    = tmplSnap.docs[0].data().html;
+      }
+    } catch(e) { console.error('[checkPlatformTokenExpiry] template fetch failed:', e.message); }
 
     const snap = await db.collection('platformConnections')
       .where('status', '==', 'connected')
@@ -3405,7 +3416,7 @@ exports.checkPlatformTokenExpiry = onSchedule(
         } catch (e) {
           console.warn(`[checkPlatformTokenExpiry] Google refresh failed for ${docSnap.id}:`,
             e.response?.data || e.message);
-          // Fall through — mark expired below
+          // Fall through — mark expired and notify owner
         }
       }
 
@@ -3419,6 +3430,68 @@ exports.checkPlatformTokenExpiry = onSchedule(
         expired++;
       } catch (e) {
         console.error(`[checkPlatformTokenExpiry] Failed to mark expired for ${docSnap.id}:`, e.message);
+        continue;
+      }
+
+      // Send reconnect notification email to the business owner
+      if (!conn.uid) continue;
+      try {
+        const userSnap = await db.collection('users').doc(conn.uid).get();
+        if (!userSnap.exists) continue;
+        const userData = userSnap.data();
+        if (!userData.email || userData.emailUnsubscribed) continue;
+
+        const ownerName = userData.ownerName || userData.displayName || '';
+        let businessName = '';
+        try {
+          const bizSnap = await db.collection('businesses').doc(conn.businessId).get();
+          businessName = bizSnap.data()?.businessName || '';
+        } catch(e) { /* non-fatal */ }
+
+        const platformDisplay = conn.platform === 'google' ? 'Google Business Profile'
+          : conn.platform.charAt(0).toUpperCase() + conn.platform.slice(1);
+
+        const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(conn.uid)}&sig=${makeUnsubSig(conn.uid, process.env.RESEND_API_KEY)}`;
+        const connectUrl = `${APP_BASE_URL}/BlastyBiz-Connect.html`;
+
+        const mergeData = {
+          name:           ownerName || 'there',
+          businessName:   businessName || (ownerName ? ownerName + '\'s Business' : 'your business'),
+          platform:       platformDisplay,
+          connectUrl,
+          appUrl:         APP_BASE_URL,
+          unsubscribeUrl: unsubUrl,
+        };
+        function applyExpiredTags(str) {
+          return str.replace(/\{\{(\w+)\}\}/g, (_, k) => mergeData[k] || '');
+        }
+
+        const subject = tmplSubject
+          ? applyExpiredTags(tmplSubject)
+          : `Action needed — your ${platformDisplay} connection expired`;
+        const html = tmplHtml
+          ? applyExpiredTags(tmplHtml)
+          : `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:28px 32px 22px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:32px">
+    <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Your ${platformDisplay} connection needs a quick reconnect, ${mergeData.name}.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">Your <strong>${platformDisplay}</strong> authorization for <strong>${mergeData.businessName}</strong> has expired. Auto-posting to ${platformDisplay} is paused until you reconnect.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">It only takes a few seconds — just click the button below and authorize BlastyBiz again.</p>
+    <a href="${connectUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Reconnect ${platformDisplay} &#8594;</a>
+    <p style="font-size:13px;color:#888;margin-top:20px;line-height:1.6">Your content and campaigns are all still saved — nothing is lost.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz, a Fluba Designs LLC brand. &bull; <a href="${unsubUrl}" style="color:#999">Unsubscribe</a></p>
+  </div>
+</div>`;
+
+        await sendResendEmail({ to: userData.email, subject, html });
+        console.log(`[checkPlatformTokenExpiry] Sent expiry email to ${userData.email} for ${docSnap.id}`);
+      } catch(e) {
+        console.error(`[checkPlatformTokenExpiry] Email failed for ${docSnap.id}:`, e.message);
       }
     }
 
