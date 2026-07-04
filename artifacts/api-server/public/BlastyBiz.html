@@ -3589,8 +3589,11 @@ document.addEventListener('bb:clearAll', async () => {
 });
 
 const origSaveProfile = window.saveProfile;
-window.saveProfile = async function() {
-  origSaveProfile && origSaveProfile();
+let _saveProfileTimer = null;
+window.saveProfile = function() {
+  origSaveProfile && origSaveProfile(); // sync: updates in-memory profile + UI immediately
+  clearTimeout(_saveProfileTimer);
+  _saveProfileTimer = setTimeout(async () => {
   if (!currentUser || !activeBizId) return;
   try {
     await setDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), {
@@ -3616,6 +3619,7 @@ window.saveProfile = async function() {
   } catch(e) {
     console.error('saveProfile Firestore error:', e);
   }
+  }, 1000); // debounce: write to Firestore 1 s after last keystroke
 };
 
 window._savePlatformCatsToFirestore = async function(cats) {

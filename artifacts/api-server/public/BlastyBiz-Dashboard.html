@@ -530,6 +530,15 @@ onAuthStateChanged(auth, async (user) => {
     window.activeBizId = null;
   }
 
+  // Re-render Control Panel now that businesses are loaded from Firestore.
+  // init() syncs the non-module BUSINESSES variable from window.BUSINESSES and
+  // calls renderSwitcherBar() + renderAgencyBar(). loadBusinessContextFirestore()
+  // then fills in campaigns, platform status, activity feed, etc.
+  if (typeof init === 'function') init();
+  if (window.BUSINESSES && window.BUSINESSES.length && window.activeBizId) {
+    await loadBusinessContextFirestore(window.activeBizId);
+  }
+
   // Clean up login param from URL
   const urlParams2 = new URLSearchParams(window.location.search);
   if (urlParams2.get('from') === 'login') {
