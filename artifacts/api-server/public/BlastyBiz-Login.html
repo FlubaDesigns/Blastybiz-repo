@@ -6,6 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="global-style.css?v=43" />
   <title>BlastyBiz — Sign In</title>
+<style>
+.verify-view{display:none;padding:8px 0}
+.verify-view.visible{display:block}
+.verify-view h2{margin:0 0 10px;font-size:1.25rem}
+.verify-view p{color:#555;font-size:.95rem;margin:0 0 20px;line-height:1.5}
+.verify-view .btn-submit{width:100%;margin-bottom:10px}
+</style>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="blastybiz-menu.js"></script>
 </head>
@@ -183,6 +190,18 @@
                 </button>
               </div>
 
+              <!-- EMAIL VERIFICATION -->
+              <div class="verify-view" id="verify-view">
+                <div style="font-size:2.5rem;text-align:center;margin-bottom:12px">📧</div>
+                <h2>Check your inbox</h2>
+                <p>We sent a verification link to <strong id="verify-email"></strong>. Click it to activate your account, then come back here to sign in.</p>
+                <button class="btn-submit" onclick="resendVerification()" type="button">
+                  <div class="spinner"></div>
+                  <span class="btn-text">Resend Verification Email</span>
+                </button>
+                <button class="reset-back" onclick="backFromVerify()" type="button">← Back to Sign In</button>
+              </div>
+
             </div><!-- /auth-card -->
 
             <div class="back-home">
@@ -314,7 +333,8 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  sendEmailVerification
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -348,19 +368,21 @@ async function afterAuth(user) {
     const dashUrl  = picked && picked !== 'starter'
       ? `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(picked)}`
       : 'BlastyBiz-Dashboard.html?from=login';
-    localStorage.removeItem('bb_selected_plan');
     if (userData.onboarded) {
+      localStorage.removeItem('bb_selected_plan');
       window.location.href = dashUrl;
     } else {
       const bizSnap = await getDocs(query(collection(db, 'businesses'), where('uid', '==', user.uid)));
       if (!bizSnap.empty) {
         await setDoc(doc(db, 'users', user.uid), { onboarded: true }, { merge: true });
+        localStorage.removeItem('bb_selected_plan');
         window.location.href = dashUrl;
       } else {
         window.location.href = 'BlastyBiz-Onboarding.html';
       }
     }
   } catch (e) {
+    localStorage.setItem('bb_auth', '0');
     window.showToast('Error loading account: ' + (e.code || e.message), true);
   }
 }
@@ -370,10 +392,38 @@ function showLoginForm() {
   document.getElementById('auth-card-wrap').classList.add('ready');
 }
 
+function showVerifyView(email) {
+  document.getElementById('verify-email').textContent = email || '';
+  document.getElementById('verify-view').classList.add('visible');
+}
+window.showVerifyView = showVerifyView;
+
+window.resendVerification = async function() {
+  const user = auth.currentUser;
+  if (!user) return;
+  try {
+    await sendEmailVerification(user);
+    showToast('Verification email resent — check your inbox ✓');
+  } catch (e) {
+    showToast('Could not resend — try again in a moment.', true);
+  }
+};
+
+window.backFromVerify = async function() {
+  document.getElementById('verify-view').classList.remove('visible');
+  try { await auth.signOut(); } catch (_) {}
+};
+
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     localStorage.setItem('bb_auth', '0');
     showLoginForm();
+    return;
+  }
+  if (!user.emailVerified) {
+    localStorage.setItem('bb_auth', '0');
+    showLoginForm();
+    showVerifyView(user.email);
     return;
   }
   localStorage.setItem('bb_auth', '1');
@@ -390,6 +440,11 @@ window.handleSignIn = async function() {
   setLoading('btn-signin', true);
   try {
     const cred = await signInWithEmailAndPassword(auth, email, pass);
+    if (!cred.user.emailVerified) {
+      setLoading('btn-signin', false);
+      showVerifyView(cred.user.email);
+      return;
+    }
     await afterAuth(cred.user);
   } catch (e) {
     setLoading('btn-signin', false);
@@ -417,7 +472,10 @@ window.handleSignUp = async function() {
     await setDoc(doc(db, 'users', cred.user.uid), {
       ownerName: name, email, plan: 'starter', onboarded: false, createdAt: serverTimestamp()
     });
-    window.location.href = 'BlastyBiz-Onboarding.html';
+    await sendEmailVerification(cred.user);
+    setLoading('btn-signup', false);
+    showLoginForm();
+    showVerifyView(cred.user.email);
   } catch (e) {
     setLoading('btn-signup', false);
     const msg = e.code === 'auth/email-already-in-use' ? 'Account already exists — sign in instead' : e.message;
