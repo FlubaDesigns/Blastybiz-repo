@@ -600,6 +600,7 @@ let locationType        = 'physical';         // 'physical' | 'online' — creat
 let campaigns           = [];                 // [{id, name, photos:[]}] loaded from Firestore
 let activeCampaignId    = null;
 let activeCampaignName  = '';
+var ynState = { name: 'no', role: 'no' }; // About You in Copy pill state
 // Per-platform photo selection (session only — resets on reload)
 // { pid: Set of selected photo URLs }
 window._bbPlatformPhotoSel = {};
@@ -1163,8 +1164,8 @@ async function regeneratePlatformCopy(pid) {
   const price       = document.getElementById('biz-price')?.value?.trim() || '';
   const tone        = profile.tone || 'friendly';
   const adName      = document.getElementById('biz-ad-name')?.value?.trim() || '';
-  const includeName = document.getElementById('copy-include-name')?.checked && profile.ownerName;
-  const includeRole = document.getElementById('copy-include-role')?.checked && profile.ownerRole;
+  const includeName = ynState.name === 'yes' && profile.ownerName;
+  const includeRole = ynState.role === 'yes' && profile.ownerRole;
   const featuredPhotoUrl = (window._bbSelectedPhotoIndex !== null && window._bbPhotoItems)
     ? (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || '') : '';
 
@@ -1537,8 +1538,8 @@ async function runAdaptation() {
   const price     = document.getElementById('biz-price').value.trim();
   const tone      = profile.tone || 'friendly';
   const adName      = document.getElementById('biz-ad-name')?.value?.trim() || '';
-  const includeName = document.getElementById('copy-include-name')?.checked && profile.ownerName;
-  const includeRole = document.getElementById('copy-include-role')?.checked && profile.ownerRole;
+  const includeName = ynState.name === 'yes' && profile.ownerName;
+  const includeRole = ynState.role === 'yes' && profile.ownerRole;
 
   if (!offer) { showToast('Add your offer description first'); return; }
 
@@ -1918,6 +1919,14 @@ function loadProfile() {
   updateCopyPreview();
 }
 
+function setYN(field, val) {
+  ynState[field] = val;
+  const yes = document.getElementById('yn-' + field + '-yes');
+  const no  = document.getElementById('yn-' + field + '-no');
+  if (yes) { yes.classList.toggle('yn-active', val === 'yes'); }
+  if (no)  { no.classList.toggle('yn-active',  val === 'no');  }
+}
+
 function updateCopyPreview() {
   const namePreview = document.getElementById('copy-name-preview');
   const rolePreview = document.getElementById('copy-role-preview');
@@ -1925,16 +1934,16 @@ function updateCopyPreview() {
   if (!card) return;
   const hasName = !!profile.ownerName;
   const hasRole = !!profile.ownerRole;
-  // Show card only if at least a name is saved
-  if (card) { if (hasName) card.classList.remove('hidden'); else card.classList.add('hidden'); }
+  // Show card only if at least a name is saved in Profile
+  if (hasName) card.classList.remove('hidden'); else card.classList.add('hidden');
   if (namePreview) namePreview.textContent = profile.ownerName ? `→ "${profile.ownerName}" added to prompt` : 'No name saved yet — add it in Profile';
   if (rolePreview) {
     const roleLabel = profile.ownerRole === 'manager' ? 'Manager' : profile.ownerRole === 'other' ? 'Other' : 'Owner';
     rolePreview.textContent = hasRole ? `→ "${roleLabel}" added to prompt` : '';
   }
-  // Disable role checkbox if no name saved (role alone isn't useful)
-  const roleCb = document.getElementById('copy-include-role');
-  if (roleCb) roleCb.disabled = !hasName;
+  // Disable role Yes button if no name saved (role alone isn't useful)
+  const roleYes = document.getElementById('yn-role-yes');
+  if (roleYes) roleYes.disabled = !hasName;
 }
 
 // ══════════════════════════════════════════
