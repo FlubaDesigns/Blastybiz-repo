@@ -2116,10 +2116,9 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
     }
 
     // Collect all top-level collections to delete
-    const [bizSnap, librarySnap, activitySnap] =
+    const [bizSnap, activitySnap] =
       await Promise.all([
         userBizCol(uid).get(),
-        db.collection('copyLibrary').where('uid', '==', uid).get(),
         db.collection('activityLogs').where('uid', '==', uid).get(),
       ]);
 
@@ -2147,7 +2146,6 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
       db.collection('subscriptions').doc(uid),
       ...bizSnap.docs.map(d => d.ref),
       ...bizSubRefs,
-      ...librarySnap.docs.map(d => d.ref),
       ...activitySnap.docs.map(d => d.ref),
     ];
 
