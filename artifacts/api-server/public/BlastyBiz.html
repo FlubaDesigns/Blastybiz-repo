@@ -1454,14 +1454,15 @@ window.renderAllPhotos = function() {
     if (item.error) {
       wrap.innerHTML = `
         <div class="thumb-error-overlay">⚠️</div>
+        <div class="thumb-error-msg">${item.errorMsg || 'Upload failed'}</div>
         <button class="thumb-remove" onclick="window._bbDeletePhoto&&window._bbDeletePhoto(${i})">✕</button>`;
     } else if (!item.done) {
+      const label = item.compressing
+        ? `<div class="thumb-progress-pct" style="font-size:10px">⚙️</div><div style="font-size:9px;color:#ccc;margin-top:2px">Compressing…</div>`
+        : `<div class="thumb-progress-pct">${item.progress}%</div><div class="thumb-progress-bar"><div style="width:${item.progress}%;height:100%;background:var(--green);border-radius:2px;transition:width .2s;"></div></div>`;
       wrap.innerHTML = `
         <img src="${item.localUrl}" class="thumb-uploading-img" />
-        <div class="thumb-progress-overlay">
-          <div class="thumb-progress-pct">${item.progress}%</div>
-          <div class="thumb-progress-bar"><div style="width:${item.progress}%;height:100%;background:var(--green);border-radius:2px;transition:width .2s;"></div></div>
-        </div>`;
+        <div class="thumb-progress-overlay">${label}</div>`;
     } else {
       const isSelected = window._bbSelectedPhotoIndex === i;
       wrap.className = 'thumb-wrap selectable' + (isSelected ? ' selected' : '');
@@ -3318,7 +3319,7 @@ onAuthStateChanged(auth, async (user) => {
         resolve(result);
       };
       // Safety net: if canvas.toBlob() never fires (known mobile/HEIC bug), fall back to original file
-      const giveUp = setTimeout(() => done(file), 8000);
+      const giveUp = setTimeout(() => done(file), 25000);
       img.onload = () => {
         URL.revokeObjectURL(objUrl);
         let { width, height } = img;
@@ -3328,10 +3329,13 @@ onAuthStateChanged(auth, async (user) => {
         }
         const canvas = document.createElement('canvas');
         canvas.width = width; canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        // toBlob timeout: if it stalls (seen on iOS with large images), fall back after 5s
-        const blobTimeout = setTimeout(() => done(file), 5000);
-        canvas.toBlob(blob => { clearTimeout(blobTimeout); done(blob || file); }, 'image/jpeg', 0.85);
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'low'; // faster on mobile, quality is fine at 1200px
+        ctx.drawImage(img, 0, 0, width, height);
+        // toBlob timeout: fall back to original if stalled (seen on iOS/Android with large images)
+        const blobTimeout = setTimeout(() => done(file), 15000);
+        canvas.toBlob(blob => { clearTimeout(blobTimeout); done(blob || file); }, 'image/jpeg', 0.82);
       };
       img.onerror = () => { URL.revokeObjectURL(objUrl); done(file); };
       img.src = objUrl;
@@ -3352,12 +3356,23 @@ onAuthStateChanged(auth, async (user) => {
     const storagePath = scope === 'global'
       ? `photos/${currentUser.uid}/global/${uploadId}.jpg`
       : `photos/${currentUser.uid}/campaigns/${cid}/${uploadId}.jpg`;
-    const item = { url: null, path: storagePath, localUrl, done: false, progress: 0, uploadId, scope };
+    const item = { url: null, path: storagePath, localUrl, done: false, progress: 0, uploadId, scope, compressing: true };
     window._bbPhotoItems = window._bbPhotoItems || [];
     window._bbPhotoItems.push(item);
     if (window.renderAllPhotos) window.renderAllPhotos();
 
     const compressed = await compressImage(file);
+    item.compressing = false;
+
+    // Guard: if compression fell back to original and it's too large, reject clearly
+    if (compressed.size > 4.9 * 1024 * 1024) {
+      item.error = true;
+      item.errorMsg = 'Too large — try a smaller image';
+      if (window.renderAllPhotos) window.renderAllPhotos();
+      if (window.showToast) window.showToast('Image is too large to upload even after compression. Try a smaller photo.');
+      return;
+    }
+
     const fileRef = storageRef(storage, storagePath);
     const task = uploadBytesResumable(fileRef, compressed, { contentType: 'image/jpeg' });
     task.on('state_changed',
