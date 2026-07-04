@@ -1116,14 +1116,17 @@ window.nextStep = async function() {
             body: JSON.stringify({ profileData: profilePayload, isNew: _isNew() }),
           }
         );
-        const cfResult = await cfResp.json();
+        // Parse JSON defensively — IAM or network errors may return non-JSON bodies
+        let cfResult = {};
+        try { cfResult = await cfResp.json(); } catch(_) {}
         if (!cfResp.ok) {
           if (btn) { btn.disabled = false; btn.textContent = 'Complete Setup'; }
-          if (cfResp.status === 403) {
-            const planLabel = (cfResult.plan || 'starter');
+          if (cfResp.status === 403 && cfResult.plan) {
+            // Server confirmed plan limit — show the specific cap message
+            const planLabel = cfResult.plan;
             alert(`You\u2019ve reached the ${cfResult.cap || 1}-business limit for your ${planLabel.charAt(0).toUpperCase() + planLabel.slice(1)} plan.\n\nReturn to your Dashboard and upgrade your plan to add more businesses.`);
           } else {
-            alert('Save failed \u2014 please try again.');
+            alert('Save failed \u2014 please try again. (Error\u00a0' + cfResp.status + ')');
           }
           return;
         }
