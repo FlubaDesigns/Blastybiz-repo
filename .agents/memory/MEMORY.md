@@ -2,6 +2,7 @@
 - [BlastyBiz Firestore rules](blastybiz-firestore-rules.md) — businesses rule checks `uid` field on doc, not doc ID.
 - [BlastyBiz API wiring](blastybiz-api-wiring.md) — Express routes, Firestore collections, and client-side event pattern.
 - [BlastyBiz CF deploy gotchas](blastybiz-cf-deploy.md) — timeout vs Cloud Build, HTTPS→trigger type conflict, square npm name, lock file sync, secrets: declarations.
+- [BlastyBiz Firestore REST access](blastybiz-firestore-rest.md) — no ADC in Replit; use firebase-tools configstore token + googleapis.com/token refresh to call Firestore REST API directly.
 - [BlastyBiz emails](blastybiz-emails.md) — confirmed mailboxes: info/sales/support/billing/noreply @blastybiz.com. hello@ does NOT exist.
 - [BlastyBiz Meta App Review](blastybiz-meta-review.md) — test calls made 2026-07-01; check back 2026-07-02, then submit in App Review → Requests.
 - [BlastyBiz home-page clearance](blastybiz-home-clearance.md) — home page uses JS _setHeaderOffset() for body padding; CSS must NOT also add padding-top to .main on home-page or they double-stack.
