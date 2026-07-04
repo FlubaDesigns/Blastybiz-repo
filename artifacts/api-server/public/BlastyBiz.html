@@ -158,10 +158,14 @@
   <!-- IMAGE UPLOAD -->
   <div class="card">
     <div class="row-base-sb mb-4">
-      <div class="card-title mb-0">📷 Campaign Photos</div>
+      <div class="card-title mb-0">📷 Photos</div>
       <span id="photo-cap-label" class="text-xs text-muted"></span>
     </div>
-    <p class="text-base text-muted mb-12">Photos belong to this campaign. Select a campaign above first.</p>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button id="scope-photo-campaign" class="chip active" onclick="setPhotoScope('campaign')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:var(--accent);color:#fff;font-size:12px;cursor:pointer;font-weight:600">Campaign</button>
+      <button id="scope-photo-global" class="chip" onclick="setPhotoScope('global')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:transparent;color:var(--light);font-size:12px;cursor:pointer">Global</button>
+    </div>
+    <p class="text-base text-muted mb-12" id="photo-scope-hint">Campaign photos are linked to the active campaign. Select a campaign above first.</p>
     <div id="photo-upload-area" class="image-upload-area" onclick="document.getElementById('img-input').click()">
       <input type="file" id="img-input" accept="image/*" multiple onchange="handleImages(event)" />
       <div class="upload-icon">📸</div>
@@ -607,6 +611,8 @@ let platformReasons     = {};                 // AI-suggested reasons per platfo
 let profileLocationType = 'physical';         // 'physical' | 'online' — profile form
 window._bbPhotoItems = []; // [{url, path, localUrl, done, progress, error}]
 window._bbSelectedPhotoIndex = null; // index of featured/selected photo
+window._globalImages = [];           // global business images [{url,path,id,scope:'global'}]
+let photoScope = 'campaign';        // 'campaign' | 'global'
 
 // ══════════════════════════════════════════
 // INIT
@@ -2311,21 +2317,74 @@ function setFactoidScope(scope) {
   document.getElementById('scope-btn-global').classList.toggle('active', scope === 'global');
 }
 
+function refreshPhotoGridForScope() {
+  if (photoScope === 'global') {
+    window._bbPhotoItems = (window._globalImages || []).map(img => ({
+      url: img.url, path: img.path || null, localUrl: img.url,
+      done: true, progress: 100, id: img.id, scope: 'global'
+    }));
+    if (window.renderAllPhotos) window.renderAllPhotos();
+    updatePhotoCapLabel();
+    const hint = document.getElementById('photo-scope-hint');
+    if (hint) hint.textContent = 'Global photos are shared across all campaigns (logo, storefront, team photos, etc.).';
+  } else {
+    const hint = document.getElementById('photo-scope-hint');
+    if (hint) hint.textContent = 'Campaign photos are linked to the active campaign. Select a campaign above first.';
+    if (activeCampaignId && window._bbLoadCampaignImages) {
+      window._bbLoadCampaignImages(activeCampaignId).then(images => {
+        if (images.length > 0) {
+          window._bbPhotoItems = images.map(img => ({
+            url: img.url, path: img.path || null, localUrl: img.url,
+            done: true, progress: 100, id: img.id, scope: 'campaign'
+          }));
+        } else {
+          const cam = campaigns.find(c => c.id === activeCampaignId) || {};
+          window._bbPhotoItems = (cam.photos || []).map(p =>
+            typeof p === 'string'
+              ? { url: p, path: null, localUrl: p, done: true, progress: 100, scope: 'campaign' }
+              : { ...p, localUrl: p.url, done: true, progress: 100, scope: 'campaign' }
+          );
+        }
+        if (window.renderAllPhotos) window.renderAllPhotos();
+        updatePhotoCapLabel();
+      }).catch(() => {});
+    } else {
+      window._bbPhotoItems = [];
+      if (window.renderAllPhotos) window.renderAllPhotos();
+      updatePhotoCapLabel();
+    }
+  }
+}
+
+function setPhotoScope(scope) {
+  photoScope = scope;
+  document.getElementById('scope-photo-campaign')?.classList.toggle('active', scope === 'campaign');
+  document.getElementById('scope-photo-campaign')?.style && (document.getElementById('scope-photo-campaign').style.background = scope === 'campaign' ? 'var(--accent)' : 'transparent');
+  document.getElementById('scope-photo-campaign')?.style && (document.getElementById('scope-photo-campaign').style.color = scope === 'campaign' ? '#fff' : 'var(--light)');
+  document.getElementById('scope-photo-global')?.classList.toggle('active', scope === 'global');
+  document.getElementById('scope-photo-global')?.style && (document.getElementById('scope-photo-global').style.background = scope === 'global' ? 'var(--accent)' : 'transparent');
+  document.getElementById('scope-photo-global')?.style && (document.getElementById('scope-photo-global').style.color = scope === 'global' ? '#fff' : 'var(--light)');
+  refreshPhotoGridForScope();
+}
+
 async function submitFactoid() {
   const text = (document.getElementById('add-info-text').value || '').trim();
   if (!text) { showToast('Add some text first'); return; }
   const entry = { text, addedAt: new Date().toISOString() };
   try {
     if (factoidScope === 'global') {
+      if (!window._bbSaveGlobalFact) { showToast('Not ready — try again'); return; }
+      const id = await window._bbSaveGlobalFact(entry);
       window._globalFactoids = window._globalFactoids || [];
-      window._globalFactoids.push(entry);
-      if (window._saveGlobalFactoidsToFirestore) await window._saveGlobalFactoidsToFirestore(window._globalFactoids);
+      window._globalFactoids.push({ ...entry, id });
     } else {
+      if (!activeCampaignId) { showToast('Select a campaign first'); return; }
+      if (!window._bbSaveCampaignFact) { showToast('Not ready — try again'); return; }
       const cam = campaigns.find(c => c.id === activeCampaignId);
       if (!cam) { showToast('No active campaign'); return; }
+      const id = await window._bbSaveCampaignFact(activeCampaignId, entry);
       if (!cam.factoids) cam.factoids = [];
-      cam.factoids.push(entry);
-      if (window._bbSaveCampaigns) await window._bbSaveCampaigns(campaigns);
+      cam.factoids.push({ ...entry, id });
     }
     document.getElementById('add-info-text').value = '';
     const confirm = document.getElementById('add-info-confirm');
@@ -2615,16 +2674,54 @@ function selectCampaign(id, name) {
   const ctxEl = document.getElementById('campaign-context');
   if (ctxEl) ctxEl.value = cam.campaignStory || '';
 
-  // Load campaign photos
-  const savedPhotos = cam.photos || [];
-  window._bbPhotoItems = savedPhotos.map(p =>
-    typeof p === 'string'
-      ? { url: p, path: null, localUrl: p, done: true, progress: 100 }
-      : { ...p, localUrl: p.url, done: true, progress: 100 }
-  );
-  window._bbSelectedPhotoIndex = null;
-  if (window.renderAllPhotos) window.renderAllPhotos();
-  updatePhotoCapLabel();
+  // Load campaign images — subcollection first, cam.photos array fallback
+  if (window._bbLoadCampaignImages) {
+    window._bbLoadCampaignImages(id).then(images => {
+      if (images.length > 0) {
+        window._bbPhotoItems = images.map(img => ({
+          url: img.url, path: img.path || null, localUrl: img.url,
+          done: true, progress: 100, id: img.id, scope: 'campaign'
+        }));
+      } else {
+        const c = campaigns.find(c => c.id === id) || {};
+        window._bbPhotoItems = (c.photos || []).map(p =>
+          typeof p === 'string'
+            ? { url: p, path: null, localUrl: p, done: true, progress: 100, scope: 'campaign' }
+            : { ...p, localUrl: p.url, done: true, progress: 100, scope: 'campaign' }
+        );
+      }
+      window._bbSelectedPhotoIndex = null;
+      if (window.renderAllPhotos) window.renderAllPhotos();
+      updatePhotoCapLabel();
+    }).catch(() => {
+      const c = campaigns.find(c => c.id === id) || {};
+      window._bbPhotoItems = (c.photos || []).map(p =>
+        typeof p === 'string'
+          ? { url: p, path: null, localUrl: p, done: true, progress: 100 }
+          : { ...p, localUrl: p.url, done: true, progress: 100 }
+      );
+      if (window.renderAllPhotos) window.renderAllPhotos();
+    });
+  } else {
+    const savedPhotos = cam.photos || [];
+    window._bbPhotoItems = savedPhotos.map(p =>
+      typeof p === 'string'
+        ? { url: p, path: null, localUrl: p, done: true, progress: 100 }
+        : { ...p, localUrl: p.url, done: true, progress: 100 }
+    );
+    window._bbSelectedPhotoIndex = null;
+    if (window.renderAllPhotos) window.renderAllPhotos();
+    updatePhotoCapLabel();
+  }
+
+  // Load campaign factoids — subcollection first, cam.factoids fallback
+  if (window._bbLoadCampaignFactoids) {
+    window._bbLoadCampaignFactoids(id).then(facts => {
+      if (facts.length === 0) return; // keep array fallback already in cam.factoids
+      const c = campaigns.find(c => c.id === id);
+      if (c) c.factoids = facts;
+    }).catch(() => {});
+  }
 
   renderCampaignChips();
   renderPlatformHistory();
@@ -2954,17 +3051,8 @@ window._bbFirestoreDismissPending = async function(id) {
   } catch(e) { console.error('dismissPending:', e); }
 };
 
-window._saveInsightToFirestore = async function(insights) {
-  if (!activeBizId || !window._bbUid) return;
-  try { await setDoc(doc(db, 'users', window._bbUid, 'businesses', activeBizId), { bizInsights: insights }, { merge: true }); }
-  catch(e) { console.error('saveInsights:', e); }
-};
-
-window._saveGlobalFactoidsToFirestore = async function(factoids) {
-  if (!activeBizId || !window._bbUid) return;
-  try { await setDoc(doc(db, 'users', window._bbUid, 'businesses', activeBizId), { globalFactoids: factoids }, { merge: true }); }
-  catch(e) { console.error('saveGlobalFactoids:', e); }
-};
+// _saveInsightToFirestore and _saveGlobalFactoidsToFirestore are defined in the
+// module script below where activeBizId, db, and currentUser are in scope.
 
 </script>
 
@@ -3029,6 +3117,121 @@ window._bbDeleteLibraryItem = async function(docId) {
   await deleteDoc(doc(db, 'copyLibrary', docId));
 };
 
+// ── Global business facts (facts subcollection) ───────────────────────────────
+window._bbSaveGlobalFact = async function(fact) {
+  if (!activeBizId || !currentUser) return null;
+  const ref = await addDoc(
+    collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'facts'),
+    { ...fact, uid: currentUser.uid, bizId: activeBizId, createdAt: serverTimestamp() }
+  );
+  return ref.id;
+};
+
+window._bbDeleteGlobalFact = async function(factId) {
+  if (!activeBizId || !currentUser || !factId) return;
+  await deleteDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'facts', factId));
+};
+
+window._bbLoadGlobalFacts = async function() {
+  if (!activeBizId || !currentUser) return [];
+  const snap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'facts'));
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+};
+
+// ── Global business images (images subcollection) ─────────────────────────────
+window._bbSaveGlobalImage = async function(imageData) {
+  if (!activeBizId || !currentUser) return null;
+  const ref = await addDoc(
+    collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'images'),
+    { ...imageData, uid: currentUser.uid, bizId: activeBizId, scope: 'global', createdAt: serverTimestamp() }
+  );
+  return ref.id;
+};
+
+window._bbLoadGlobalImages = async function() {
+  if (!activeBizId || !currentUser) return [];
+  const snap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'images'));
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+};
+
+window._bbDeleteGlobalImage = async function(image) {
+  if (!activeBizId || !currentUser) return;
+  if (image.id) {
+    await deleteDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'images', image.id));
+  } else if (image.url) {
+    const q = query(
+      collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'images'),
+      where('url', '==', image.url)
+    );
+    const snap = await getDocs(q);
+    const batch = writeBatch(db);
+    snap.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+  }
+  window._globalImages = (window._globalImages || []).filter(i => i.url !== image.url);
+};
+
+// ── Campaign facts subcollection ──────────────────────────────────────────────
+window._bbLoadCampaignFactoids = async function(campId) {
+  if (!activeBizId || !currentUser || !campId) return [];
+  const snap = await getDocs(
+    collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', campId, 'facts')
+  );
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+};
+
+window._bbSaveCampaignFact = async function(campId, fact) {
+  if (!activeBizId || !currentUser || !campId) return null;
+  const ref = await addDoc(
+    collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', campId, 'facts'),
+    { ...fact, uid: currentUser.uid, bizId: activeBizId, campaignId: campId, createdAt: serverTimestamp() }
+  );
+  return ref.id;
+};
+
+// ── Campaign images subcollection ─────────────────────────────────────────────
+window._bbLoadCampaignImages = async function(campId) {
+  if (!activeBizId || !currentUser || !campId) return [];
+  const snap = await getDocs(
+    collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', campId, 'images')
+  );
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+};
+
+window._bbSaveCampaignImage = async function(campId, imageData) {
+  if (!activeBizId || !currentUser || !campId) return null;
+  const ref = await addDoc(
+    collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', campId, 'images'),
+    { ...imageData, uid: currentUser.uid, bizId: activeBizId, campaignId: campId, scope: 'campaign', createdAt: serverTimestamp() }
+  );
+  return ref.id;
+};
+
+window._bbDeleteCampaignImage = async function(campId, image) {
+  if (!activeBizId || !currentUser || !campId) return;
+  if (image.id) {
+    await deleteDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', campId, 'images', image.id));
+  } else if (image.url) {
+    const q = query(
+      collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', campId, 'images'),
+      where('url', '==', image.url)
+    );
+    const snap = await getDocs(q);
+    const batch = writeBatch(db);
+    snap.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+  }
+};
+
+// ── Insight + globalFactoids savers — must be module-scoped for activeBizId ──
+window._saveInsightToFirestore = async function(insights) {
+  if (!activeBizId || !currentUser) return;
+  try {
+    await setDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId),
+      { bizInsights: insights }, { merge: true });
+  } catch(e) { console.error('saveInsights:', e); }
+};
+
 auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
   if (!user) return; // auth-guard.js handles redirect
@@ -3071,7 +3274,24 @@ onAuthStateChanged(auth, async (user) => {
       };
       if (window._bbSetProfile) window._bbSetProfile(p);
       if (window.loadInsights)      window.loadInsights(biz.bizInsights || []);
-      window._globalFactoids = biz.globalFactoids || [];
+
+      // Two-tier globalFactoids load: subcollection first, array field fallback
+      try {
+        const factsSnap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'facts'));
+        if (!factsSnap.empty) {
+          window._globalFactoids = factsSnap.docs.map(d => ({ ...d.data(), id: d.id }));
+        } else {
+          window._globalFactoids = biz.globalFactoids || [];
+        }
+      } catch(_) {
+        window._globalFactoids = biz.globalFactoids || [];
+      }
+
+      // Load global images subcollection
+      try {
+        const imgSnap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'images'));
+        window._globalImages = imgSnap.docs.map(d => ({ ...d.data(), id: d.id }));
+      } catch(_) { window._globalImages = []; }
 
       // Load Business Library docs for AI context (Pro/Agency only — no-op for starter)
       try {
@@ -3135,12 +3355,21 @@ onAuthStateChanged(auth, async (user) => {
     });
   }
 
-  // ── Photo upload ──────────────────────────────────────────
+  // ── Photo upload (scope-aware: campaign subcollection or global images) ───────
   window._bbUploadPhoto = async function(file) {
+    const scope = photoScope || 'campaign';
+    // Guard: campaign upload requires an active campaign
+    if (scope === 'campaign' && !activeCampaignId) {
+      if (window.showToast) window.showToast('Select a campaign first before uploading campaign photos.');
+      return;
+    }
     const localUrl = URL.createObjectURL(file);
     const uploadId = Date.now() + '_' + Math.random().toString(36).slice(2,8);
-    const storagePath = `photos/${currentUser.uid}/${uploadId}.jpg`;
-    const item = { url: null, path: storagePath, localUrl, done: false, progress: 0, uploadId };
+    const cid = activeCampaignId; // capture before async
+    const storagePath = scope === 'global'
+      ? `photos/${currentUser.uid}/global/${uploadId}.jpg`
+      : `photos/${currentUser.uid}/campaigns/${cid}/${uploadId}.jpg`;
+    const item = { url: null, path: storagePath, localUrl, done: false, progress: 0, uploadId, scope };
     window._bbPhotoItems = window._bbPhotoItems || [];
     window._bbPhotoItems.push(item);
     if (window.renderAllPhotos) window.renderAllPhotos();
@@ -3165,17 +3394,21 @@ onAuthStateChanged(auth, async (user) => {
         item.done = true;
         item.progress = 100;
         if (window.renderAllPhotos) window.renderAllPhotos();
-        // Save photo to the active campaign, not the business doc
         try {
-          const cid = activeCampaignId;
-          if (cid) {
-            const updatedCams = campaigns.map(c =>
-              c.id === cid
-                ? { ...c, photos: [...(c.photos || []), { url: dlUrl, path: storagePath }] }
-                : c
-            );
-            campaigns = updatedCams;
-            await updateDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), { campaigns: updatedCams });
+          if (scope === 'global') {
+            const id = await window._bbSaveGlobalImage({ url: dlUrl, path: storagePath });
+            item.id = id;
+            window._globalImages = window._globalImages || [];
+            window._globalImages.push({ url: dlUrl, path: storagePath, id, scope: 'global' });
+          } else if (cid) {
+            const id = await window._bbSaveCampaignImage(cid, { url: dlUrl, path: storagePath });
+            item.id = id;
+            // Keep cam.photos array in sync as a local fallback cache
+            const cam = campaigns.find(c => c.id === cid);
+            if (cam) {
+              if (!cam.photos) cam.photos = [];
+              cam.photos.push({ url: dlUrl, path: storagePath });
+            }
           }
         } catch(e) { console.error('Photo save error:', e); }
       }
@@ -3209,16 +3442,17 @@ onAuthStateChanged(auth, async (user) => {
     if (window.renderAllPhotos) window.renderAllPhotos();
     try {
       if (item.path) await deleteObject(storageRef(storage, item.path));
-      // Remove from the campaign's photos array
-      const cid = activeCampaignId;
-      if (cid && item.url) {
-        const updatedCams = campaigns.map(c =>
-          c.id === cid
-            ? { ...c, photos: (c.photos || []).filter(p => p.url !== item.url) }
-            : c
-        );
-        campaigns = updatedCams;
-        await updateDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), { campaigns: updatedCams });
+      const itemScope = item.scope || photoScope || 'campaign';
+      if (itemScope === 'global') {
+        if (window._bbDeleteGlobalImage) await window._bbDeleteGlobalImage(item);
+      } else {
+        const cid = activeCampaignId;
+        if (cid && window._bbDeleteCampaignImage) {
+          await window._bbDeleteCampaignImage(cid, item);
+          // Keep cam.photos array in sync
+          const cam = campaigns.find(c => c.id === cid);
+          if (cam && item.url) cam.photos = (cam.photos || []).filter(p => p.url !== item.url);
+        }
       }
     } catch(e) { console.error('Photo delete error:', e); }
   };
