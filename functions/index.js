@@ -3835,4 +3835,3 @@ exports.checkPlatformTokenExpiry = onSchedule(
     console.log(`[checkPlatformTokenExpiry] Done — refreshed: ${refreshed}, expired: ${expired}, skipped: ${skipped}`);
   }
 );
-

@@ -82,13 +82,13 @@ title = "generated_image"
 id = "OlLytVLFMpzHayK0XXDkK"
 uri = "file://download/BlastyBiz_Site.zip"
 type = "unspecified"
-title = "BlastyBiz_Site.zip — SHA-256: 1bbb0704f5af4bef4376cf85961bf60e6a0d65a3b05a0d012356cd7ad6ca62d4"
+title = "BlastyBiz_Site.zip"
 
 [[outputs]]
 id = "67fGmTkLMAbTADvgVIF6b"
 uri = "file://download/BlastyBiz_Audit.md"
 type = "text"
-title = "BlastyBiz_Audit.md — updated"
+title = "BlastyBiz_Audit.md"
 
 [[outputs]]
 id = "OrxuqDZbFKPyGWS2Um6-L"

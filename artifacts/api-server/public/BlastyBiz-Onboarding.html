@@ -477,6 +477,7 @@ window.addEventListener('resize', () => { resizeCanvas(); createParticles(); });
 // ══════════════════════════════════════════
 const TOTAL_STEPS = 6;
 let currentStep = 0;
+window.currentStep = 0; // exposed for module scripts
 var selectedCategory = '';
 var selectedTone = 'friendly';
 var connectedPlatforms = [];
@@ -543,6 +544,7 @@ function goToStep(target) {
   setTimeout(() => current.classList.remove('active', 'exit'), 450);
 
   currentStep = target;
+  window.currentStep = currentStep; // expose to module scripts
 
   const next = document.getElementById('slide-' + currentStep);
   next.classList.add('active');

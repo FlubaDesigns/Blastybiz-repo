@@ -7,3 +7,4 @@
 - [BlastyBiz emails](blastybiz-emails.md) — confirmed mailboxes: info/sales/support/billing/noreply @blastybiz.com. hello@ does NOT exist.
 - [BlastyBiz Meta App Review](blastybiz-meta-review.md) — test calls made 2026-07-01; check back 2026-07-02, then submit in App Review → Requests.
 - [BlastyBiz home-page clearance](blastybiz-home-clearance.md) — home page uses JS _setHeaderOffset() for body padding; CSS must NOT also add padding-top to .main on home-page or they double-stack.
+- [BlastyBiz onboarding script scoping](blastybiz-onboarding-script-scoping.md) — let variables in plain <script> are NOT on window; module scripts must use window.X explicitly; Identity Toolkit Admin API trick for email verification.
