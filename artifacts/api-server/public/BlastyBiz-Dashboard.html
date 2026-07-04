@@ -507,6 +507,7 @@ onAuthStateChanged(auth, async (user) => {
   }
   const checkoutPlan = urlParams.get('checkout');
   if (checkoutPlan && ['pro', 'agency'].includes(checkoutPlan)) {
+    localStorage.removeItem('bb_selected_plan');
     window.history.replaceState({}, '', window.location.pathname);
     await startCheckout(checkoutPlan);
   }

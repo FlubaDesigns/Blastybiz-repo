@@ -369,13 +369,11 @@ async function afterAuth(user) {
       ? `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(picked)}`
       : 'BlastyBiz-Dashboard.html?from=login';
     if (userData.onboarded) {
-      localStorage.removeItem('bb_selected_plan');
       window.location.href = dashUrl;
     } else {
       const bizSnap = await getDocs(query(collection(db, 'businesses'), where('uid', '==', user.uid)));
       if (!bizSnap.empty) {
         await setDoc(doc(db, 'users', user.uid), { onboarded: true }, { merge: true });
-        localStorage.removeItem('bb_selected_plan');
         window.location.href = dashUrl;
       } else {
         window.location.href = 'BlastyBiz-Onboarding.html';
