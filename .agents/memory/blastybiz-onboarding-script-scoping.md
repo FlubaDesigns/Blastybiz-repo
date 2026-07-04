@@ -18,7 +18,7 @@ When a page has both a plain `<script>` and a `<script type="module">`, any `let
 
 To set `emailVerified: true` on a Firebase Auth user without ADC credentials:
 1. Get the firebase-tools refresh token: `require('firebase-tools/lib/auth').getAllAccounts()[0].tokens.refresh_token`
-2. Exchange for access token: POST to `https://oauth2.googleapis.com/token` with client_id=`563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com` and client_secret=`j9iVZfS8kkCEFUPaAeJV0sAi` (from `firebase-tools/lib/api.js` — verify against local version)
+2. Exchange for access token: POST to `https://oauth2.googleapis.com/token` — the clientId and clientSecret are defined in `firebase-tools/lib/api.js` (`clientId` and `clientSecret` exports); read them from the local file rather than hardcoding.
 3. Call: `POST https://identitytoolkit.googleapis.com/v1/projects/{projectId}/accounts:update` with body `{"localId":"...", "emailVerified":true}` and `Authorization: Bearer {token}`
 
 ## Testing agent block
