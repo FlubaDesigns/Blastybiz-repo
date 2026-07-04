@@ -560,33 +560,46 @@ onAuthStateChanged(auth, async (user) => {
   };
 
   async function loadBusinessContextFirestore(bizId) {
-    try {
-      const [bizSnap, googleSnap, facebookSnap, instagramSnap] = await Promise.all([
-        getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId)),
-        getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'platformConnections', 'google')),
-        getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'platformConnections', 'facebook')),
-        getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'platformConnections', 'instagram')),
-      ]);
+    if (!bizId || !currentUser) return;
 
+    // ── Section 1: Business name (independent — won't block campaigns) ────
+    try {
+      const bizSnap = await getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId));
       const biz = bizSnap.exists() ? bizSnap.data() : {};
       const bizName = biz.businessName || biz.name || '';
-      const nameEl = document.getElementById('dashboard-biz-name');
-      const snapBiz = document.getElementById('snapshot-biz');
-      if (nameEl) nameEl.textContent = bizName;
-      if (snapBiz) snapBiz.textContent = bizName;
+      if (bizName) {
+        const nameEl = document.getElementById('dashboard-biz-name');
+        const snapBiz = document.getElementById('snapshot-biz');
+        if (nameEl) nameEl.textContent = bizName;
+        if (snapBiz) snapBiz.textContent = bizName;
+      }
+    } catch(e1) { /* name stays as set by loadBusinessContext() stub */ }
 
-      // Render campaign list — read from sub-collection (new hierarchical model)
+    // ── Section 2: Campaigns (always resolves — never leaves "Loading…") ──
+    try {
       const campSnap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', bizId, 'campaigns'));
       const bizCampaigns = campSnap.docs
         .map(d => ({ ...d.data(), id: d.id }))
         .sort((a, b) => new Date(b.lastUsedAt || b.createdAt || 0) - new Date(a.lastUsedAt || a.createdAt || 0));
       renderDashboardCampaigns(bizCampaigns);
+    } catch(e2) {
+      const el = document.getElementById('dashboard-campaign-list');
+      if (el) el.innerHTML = '<div class="activity-empty">Unable to load campaigns.</div>';
+    }
 
+    // ── Section 3: Platform connections ───────────────────────────────────
+    let API_PLATFORMS = [];
+    try {
+      const [googleSnap, facebookSnap, instagramSnap] = await Promise.all([
+        getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'platformConnections', 'google')),
+        getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'platformConnections', 'facebook')),
+        getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'platformConnections', 'instagram')),
+      ]);
       const google    = googleSnap.exists()    ? googleSnap.data()    : null;
       const facebook  = facebookSnap.exists()  ? facebookSnap.data()  : null;
       const instagram = instagramSnap.exists() ? instagramSnap.data() : null;
 
-      const API_PLATFORMS = [
+      API_PLATFORMS = [
         { id: 'google',    icon: '🔍', label: 'Google Business Profile', conn: google,
           connectedSub: d => d.locationName ? `Connected · ${d.locationName}` : 'Connected · synced' },
         { id: 'facebook',  icon: '📘', label: 'Facebook Page',            conn: facebook,
@@ -609,9 +622,7 @@ onAuthStateChanged(auth, async (user) => {
         const isConn = p.conn && p.conn.status === 'connected';
         if (isConn) connectedCount++;
         const sub  = isConn ? p.connectedSub(p.conn) : 'Not connected — <a href="BlastyBiz-Connect.html" class="link-green">Connect</a>';
-        const badge = isConn
-          ? '<span class="badge live">Live</span>'
-          : '<span class="badge off">Off</span>';
+        const badge = isConn ? '<span class="badge live">Live</span>' : '<span class="badge off">Off</span>';
         rows += `<div class="platform-row"><div class="platform-icon">${p.icon}</div><div class="row-main"><div class="row-title">${p.label}</div><div class="row-sub">${sub}</div></div>${badge}</div>`;
       });
       MANUAL_PLATFORMS.forEach(p => {
@@ -625,7 +636,10 @@ onAuthStateChanged(auth, async (user) => {
       const statPN = document.getElementById('stat-platforms-note');
       if (statP) statP.textContent = connectedCount;
       if (statPN) statPN.textContent = `${apiConnected} auto · ${MANUAL_PLATFORMS.length} manual`;
+    } catch(e3) { /* platform list stays empty */ }
 
+    // ── Section 4: Publish jobs, activity feed, score, tasks, snapshot ────
+    try {
       const jobsQ = query(
         collection(db, 'users', currentUser.uid, 'businesses', bizId, 'publishJobs'),
         orderBy('createdAt', 'desc'),
@@ -688,7 +702,7 @@ onAuthStateChanged(auth, async (user) => {
       const actEl = document.getElementById('activity-list');
       if (actEl) actEl.innerHTML = actRows;
 
-      // ── Task list — driven by real connection status ──────────────────────
+      // ── Task list ─────────────────────────────────────────────────────
       const taskEl = document.getElementById('task-list');
       if (taskEl) {
         const apiMissing = API_PLATFORMS.filter(p => !p.conn || p.conn.status !== 'connected');
@@ -706,9 +720,8 @@ onAuthStateChanged(auth, async (user) => {
         taskEl.innerHTML = taskRows;
       }
 
-      // ── Operating snapshot — real numbers ────────────────────────────────
+      // ── Operating snapshot ────────────────────────────────────────────
       const aiUsed    = userData.aiActionsUsed || 0;
-      // Keep in sync with AI_LIMITS in functions/index.js
       const aiCap     = { starter: 10, pro: 100, agency: 500 }[userPlan] || 10;
       const aiCostEst = (aiUsed * 0.012).toFixed(2);
       const aiUsageEl = document.getElementById('ai-usage-display');
@@ -724,10 +737,7 @@ onAuthStateChanged(auth, async (user) => {
           ? resetAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
           : '—';
       }
-
-    } catch(e) {
-      console.error('loadBusinessContext error:', e);
-    }
+    } catch(e4) { /* activity / score / snapshot stay as-is */ }
   }
 
   function timeAgo(date) {
