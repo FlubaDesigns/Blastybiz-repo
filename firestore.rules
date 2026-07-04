@@ -57,6 +57,16 @@ service cloud.firestore {
           (request.auth.uid == get(/databases/$(database)/documents/businesses/$(businessId)).data.uid ||
            request.auth.uid == businessId);
       }
+
+      // Campaigns subcollection — owner read/write (uid field on each doc), admin full access
+      match /campaigns/{campId} {
+        allow read: if request.auth != null &&
+          (request.auth.uid == resource.data.uid || isAdmin());
+        allow create: if request.auth != null &&
+          request.auth.uid == request.resource.data.uid;
+        allow update, delete: if request.auth != null &&
+          (request.auth.uid == resource.data.uid || isAdmin());
+      }
     }
 
     // Listing drafts — owner only; admin can read any

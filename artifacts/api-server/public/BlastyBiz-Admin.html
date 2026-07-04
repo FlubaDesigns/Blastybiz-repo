@@ -201,6 +201,9 @@ onAuthStateChanged(auth, async (user) => {
         const snap = await getDocs(query(collection(db, col), where(field, '==', docId)));
         for (const d of snap.docs) await deleteDoc(d.ref);
       }
+      // Delete campaigns sub-collection (must delete each doc individually from client)
+      const campSnap = await getDocs(collection(db, 'businesses', docId, 'campaigns'));
+      for (const d of campSnap.docs) await deleteDoc(d.ref);
       // Also delete the businesses doc itself
       await deleteDoc(doc(db, 'businesses', docId));
     } catch(e) {

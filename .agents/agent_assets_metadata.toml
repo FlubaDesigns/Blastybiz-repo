@@ -82,13 +82,13 @@ title = "generated_image"
 id = "OlLytVLFMpzHayK0XXDkK"
 uri = "file://download/BlastyBiz_Site.zip"
 type = "unspecified"
-title = "BlastyBiz_Site.zip"
+title = "BlastyBiz_Site.zip — rebuilt Jul 4, 2026"
 
 [[outputs]]
 id = "67fGmTkLMAbTADvgVIF6b"
 uri = "file://download/BlastyBiz_Audit.md"
 type = "text"
-title = "BlastyBiz_Audit.md"
+title = "BlastyBiz_Audit.md — updated Jul 4, 2026"
 
 [[outputs]]
 id = "OrxuqDZbFKPyGWS2Um6-L"

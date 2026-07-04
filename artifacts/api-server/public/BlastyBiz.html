@@ -2684,9 +2684,9 @@ async function deleteCampaign(id, name) {
     document.getElementById('campaign-content')?.classList.add('hidden');
   }
   renderCampaignChips();
-  if (window._bbSaveCampaigns) {
-    try { await window._bbSaveCampaigns(campaigns); }
-    catch(e) { console.warn('Delete campaign failed:', e); }
+  if (window._bbDeleteCampaign) {
+    try { await window._bbDeleteCampaign(id); }
+    catch(e) { console.warn('Delete campaign doc failed:', e); }
   }
   showToast('Campaign deleted');
 }
@@ -2942,8 +2942,19 @@ let userPlan = 'starter';
 
 // Exposed to regular script — module owns db + activeBizId
 window._bbSaveCampaigns = async function(cams) {
-  if (!activeBizId) throw new Error('No active business');
-  await updateDoc(doc(db, 'businesses', activeBizId), { campaigns: cams });
+  if (!activeBizId || !currentUser) throw new Error('No active business');
+  if (!cams.length) return;
+  const batch = writeBatch(db);
+  cams.forEach(cam => {
+    const ref = doc(db, 'businesses', activeBizId, 'campaigns', cam.id);
+    batch.set(ref, { ...cam, uid: currentUser.uid, bizId: activeBizId }, { merge: true });
+  });
+  await batch.commit();
+};
+
+window._bbDeleteCampaign = async function(campId) {
+  if (!activeBizId) return;
+  await deleteDoc(doc(db, 'businesses', activeBizId, 'campaigns', campId));
 };
 
 // Copy Library — Firestore helpers exposed to regular script
@@ -3033,8 +3044,9 @@ onAuthStateChanged(auth, async (user) => {
       }
 
 
-      // Load campaigns — user must click a chip to load campaign content
-      campaigns = biz.campaigns || [];
+      // Load campaigns from sub-collection (hierarchical model)
+      const campColSnap = await getDocs(collection(db, 'businesses', activeBizId, 'campaigns'));
+      campaigns = campColSnap.docs.map(d => ({ ...d.data(), id: d.id }));
       _sortCampaigns();
       renderCampaignChips();
       // campaign-content stays hidden until user selects or creates a campaign

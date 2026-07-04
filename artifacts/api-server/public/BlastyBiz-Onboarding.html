@@ -852,7 +852,7 @@ init();
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // ── Load live Yelp categories from Firestore cache ──────────────────────────
 // Runs immediately; resolveCats() only fires on button click so timing is fine.
@@ -971,9 +971,11 @@ window.nextStep = async function() {
           : doc(db, 'businesses', currentUser.uid);
         await setDoc(bizRef, { ...data, uid: currentUser.uid, createdAt: serverTimestamp() }, { merge: true });
         // Point the user's activeBusiness at the newly created/updated doc
+        // businessIds array tracks all businesses owned — used for plan limit enforcement
         await setDoc(doc(db, 'users', currentUser.uid), {
           onboarded: true,
           activeBusiness: bizRef.id,
+          businessIds: arrayUnion(bizRef.id),
         }, { merge: true });
       }
     } catch(e) {
