@@ -156,8 +156,9 @@
 
   /* Header clearance — single source of truth.
      All padding-top on .main AND sticky top values must use var(--main-offset).
-     Mobile default: header ~55px + 12px breathing = 67px */
-  --main-offset: 67px;
+     Mobile default: nav-row 4px+46px+4px = 54px exactly. No breathing room built in —
+     content pages add their own section padding. JS overrides this on load anyway. */
+  --main-offset: 54px;
   --badge-bar-h: 36px;     /* home-page only badge bar height */
 }
 @media (min-width: 600px)  { :root { --gutter: 3rem; --section-v: 80px; } }
