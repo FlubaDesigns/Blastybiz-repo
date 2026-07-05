@@ -231,6 +231,27 @@
         <button class="yn-btn yn-no" id="yn-address-no" onclick="setYN('address','no')">No</button>
       </div>
     </div>
+    <div class="yn-row hidden" id="yn-phone-row">
+      <span class="yn-label">Include phone in copy</span>
+      <div class="yn-btns">
+        <button class="yn-btn yn-yes yn-active" id="yn-phone-yes" onclick="setYN('phone','yes')">Yes</button>
+        <button class="yn-btn yn-no" id="yn-phone-no" onclick="setYN('phone','no')">No</button>
+      </div>
+    </div>
+    <div class="yn-row hidden" id="yn-email-row">
+      <span class="yn-label">Include email in copy</span>
+      <div class="yn-btns">
+        <button class="yn-btn yn-yes yn-active" id="yn-email-yes" onclick="setYN('email','yes')">Yes</button>
+        <button class="yn-btn yn-no" id="yn-email-no" onclick="setYN('email','no')">No</button>
+      </div>
+    </div>
+    <div class="yn-row hidden" id="yn-website-row">
+      <span class="yn-label">Include website in copy</span>
+      <div class="yn-btns">
+        <button class="yn-btn yn-yes yn-active" id="yn-website-yes" onclick="setYN('website','yes')">Yes</button>
+        <button class="yn-btn yn-no" id="yn-website-no" onclick="setYN('website','no')">No</button>
+      </div>
+    </div>
   </div>
 
   <div class="ai-loading" id="ai-loading">
@@ -614,7 +635,7 @@ let locationType        = 'physical';         // 'physical' | 'online' — creat
 let campaigns           = [];                 // [{id, name, photos:[]}] loaded from Firestore
 let activeCampaignId    = null;
 let activeCampaignName  = '';
-var ynState = { name: 'no', role: 'no', address: 'yes' }; // About You in Copy pill state
+var ynState = { name: 'no', role: 'no', address: 'yes', phone: 'yes', email: 'yes', website: 'yes' }; // About You in Copy pill state
 // Per-platform photo selection (session only — resets on reload)
 // { pid: Set of selected photo URLs }
 window._bbPlatformPhotoSel = {};
@@ -1169,8 +1190,9 @@ async function regeneratePlatformCopy(pid) {
   // Build full dossier — same context as runAdaptation
   const name        = profile.name     || '';
   const category    = profile.category || '';
-  const phone       = profile.phone    || '';
-  const website     = profile.website  || '';
+  const phone       = ynState.phone   !== 'no' ? (profile.phone   || '') : '';
+  const email       = ynState.email   !== 'no' ? (profile.email   || '') : '';
+  const website     = ynState.website !== 'no' ? (profile.website || '') : '';
   const hours       = profile.hours    || '';
   const effLocType  = profile.locationType || 'physical';
   const address     = (effLocType === 'physical' || effLocType === 'both') && ynState.address !== 'no' ? (profile.address || '') : '';
@@ -1194,7 +1216,7 @@ async function regeneratePlatformCopy(pid) {
       method: 'POST',
       headers: authHeaders,
       body: JSON.stringify({
-        listing: { name, category, offer, price, phone, address, region, locationType: effLocType,
+        listing: { name, category, offer, price, phone, email, address, region, locationType: effLocType,
           website, hours, ownerName: profile.ownerName || '', adName,
           campaignName: activeCampaignName || '',
           imageCount: (window._bbPhotoItems||[]).filter(p=>p.done).length,
@@ -1559,8 +1581,9 @@ async function runAdaptation() {
   // Profile is the dossier — always primary source for business identity fields
   const name      = profile.name     || '';
   const category  = profile.category || '';
-  const phone     = profile.phone    || '';
-  const website   = profile.website  || '';
+  const phone     = ynState.phone   !== 'no' ? (profile.phone   || '') : '';
+  const email     = ynState.email   !== 'no' ? (profile.email   || '') : '';
+  const website   = ynState.website !== 'no' ? (profile.website || '') : '';
   const hours     = profile.hours    || '';
   const effLocType = profile.locationType || 'physical';
   const address   = (effLocType === 'physical' || effLocType === 'both') && ynState.address !== 'no' ? (profile.address || '') : '';
@@ -1599,6 +1622,7 @@ BUSINESS INFO:
 - Description: ${offer}
 - Price/Range: ${price || 'not specified'}
 - Phone: ${phone || 'not provided'}
+- Email: ${email || 'not provided'}
 - Location type: ${effLocType === 'online' ? 'Online only' + (region ? ' — serves: ' + region : '') : effLocType === 'both' ? 'Brick & online' + (address ? ' — ' + address : '') + (region ? ' — also serves: ' + region : '') : 'Physical location — ' + (address || 'not provided')}
 - Website: ${website || 'none'}
 - Hours: ${hours || 'not provided'}
@@ -1641,7 +1665,7 @@ Return this exact JSON structure:
       method: 'POST',
       headers: authHeaders,
       body: JSON.stringify({
-        listing: { name, category, offer, price, phone, address, region, locationType: effLocType, website, hours,
+        listing: { name, category, offer, price, phone, email, address, region, locationType: effLocType, website, hours,
           ownerName: profile.ownerName || '',
           adName,
           campaignName: activeCampaignName || '',
@@ -1982,6 +2006,13 @@ function updateCopyPreview() {
   // Show address row only for physical/both — online never uses address
   const addrRow = document.getElementById('yn-address-row');
   if (addrRow) { if (hasAddress) addrRow.classList.remove('hidden'); else addrRow.classList.add('hidden'); }
+  // Show phone/email/website rows only if the profile has those values
+  const phoneRow = document.getElementById('yn-phone-row');
+  if (phoneRow) { if (profile.phone) phoneRow.classList.remove('hidden'); else phoneRow.classList.add('hidden'); }
+  const emailRow = document.getElementById('yn-email-row');
+  if (emailRow) { if (profile.email) emailRow.classList.remove('hidden'); else emailRow.classList.add('hidden'); }
+  const websiteRow = document.getElementById('yn-website-row');
+  if (websiteRow) { if (profile.website) websiteRow.classList.remove('hidden'); else websiteRow.classList.add('hidden'); }
 }
 
 // ══════════════════════════════════════════
@@ -3085,7 +3116,9 @@ window._bbSetProfile = function(p) {
       hours: p.hours, tone: p.tone, platformCats: p.platformCats || {},
       postingSchedule: p.postingSchedule || null, aiContext: p.aiContext || null,
       ynMentionName: p.ynMentionName || 'no', ynMentionRole: p.ynMentionRole || 'no',
-      ynMentionAddress: p.ynMentionAddress || 'yes'
+      ynMentionAddress: p.ynMentionAddress || 'yes',
+      ynMentionPhone: p.ynMentionPhone || 'yes', ynMentionEmail: p.ynMentionEmail || 'yes',
+      ynMentionWebsite: p.ynMentionWebsite || 'yes'
     }));
   } catch(e) {}
   loadProfile();
@@ -3094,6 +3127,9 @@ window._bbSetProfile = function(p) {
     setYN('name', p.ynMentionName || 'no');
     setYN('role', p.ynMentionRole || 'no');
     setYN('address', p.ynMentionAddress || 'yes');
+    setYN('phone',   p.ynMentionPhone   || 'yes');
+    setYN('email',   p.ynMentionEmail   || 'yes');
+    setYN('website', p.ynMentionWebsite || 'yes');
   }
 };
 
@@ -3706,6 +3742,9 @@ window.saveProfile = function() {
       ynMentionName:    ynState.name,
       ynMentionRole:    ynState.role,
       ynMentionAddress: ynState.address,
+      ynMentionPhone:   ynState.phone,
+      ynMentionEmail:   ynState.email,
+      ynMentionWebsite: ynState.website,
       updatedAt:      serverTimestamp(),
     }, { merge: true });
   } catch(e) {
