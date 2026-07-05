@@ -34,13 +34,12 @@
   <!-- SLIDES -->
   <div class="slides" id="slides">
 
-    <!-- ── STEP 0: WELCOME ── -->
+    <!-- ── STEP 0: WELCOME (plan-specific, populated by JS after auth) ── -->
     <div class="slide active" id="slide-0">
       <div class="welcome-center">
-        <div class="welcome-logo">BlastyBiz</div>
-        <div class="welcome-tagline">Lock. Load. Blast.</div>
-
-        <div class="welcome-features">
+        <div class="welcome-logo" id="welcome-plan-name">BlastyBiz</div>
+        <div class="welcome-tagline" id="welcome-plan-price">Lock. Load. Blast.</div>
+        <div class="welcome-features" id="welcome-plan-feats">
           <div class="welcome-feat">
             <span class="feat-icon">⚡</span>
             <div class="feat-text">
@@ -515,8 +514,44 @@ function init() {
   buildDots();
   updateUI();
   const _stepParam = parseInt(new URLSearchParams(window.location.search).get('step') || '0', 10);
-  if (_stepParam > 0 && _stepParam <= TOTAL_STEPS) {
+  if (_isNew()) {
+    // Existing user adding another business — skip the welcome card, go straight to the form
+    setTimeout(() => goToStep(1), 50);
+  } else if (_stepParam > 0 && _stepParam <= TOTAL_STEPS) {
     setTimeout(() => goToStep(_stepParam), 100);
+  }
+}
+
+function _populateWelcomeSlide(userData) {
+  const plan     = (userData.plan || 'starter').toLowerCase();
+  const billing  = userData.billingPeriod || localStorage.getItem('bb_billing_period') || 'monthly';
+  const annual   = billing === 'annual';
+  const nameEl   = document.getElementById('welcome-plan-name');
+  const priceEl  = document.getElementById('welcome-plan-price');
+  const featsEl  = document.getElementById('welcome-plan-feats');
+  if (!nameEl || !featsEl) return;
+
+  if (plan === 'pro') {
+    nameEl.textContent  = "You're on Pro ✓";
+    priceEl.textContent = (annual ? '$199/yr' : '$19/mo') + ' · billed ' + (annual ? 'annually' : 'monthly');
+    featsEl.innerHTML   = `
+      <div class="welcome-feat"><span class="feat-icon">🤖</span><div class="feat-text"><strong>AI writes every listing</strong>Adapted perfectly for all 12 platforms, every time</div></div>
+      <div class="welcome-feat"><span class="feat-icon">📡</span><div class="feat-text"><strong>Auto-post to 3 platforms</strong>Google, Facebook &amp; Instagram — fully hands-free</div></div>
+      <div class="welcome-feat"><span class="feat-icon">🏪</span><div class="feat-text"><strong>Up to 3 businesses</strong>Add and manage multiple locations from one account</div></div>`;
+  } else if (plan === 'agency') {
+    nameEl.textContent  = "You're on Agency ✓";
+    priceEl.textContent = (annual ? '$999/yr' : '$99/mo') + ' · billed ' + (annual ? 'annually' : 'monthly');
+    featsEl.innerHTML   = `
+      <div class="welcome-feat"><span class="feat-icon">🤖</span><div class="feat-text"><strong>AI writes every listing</strong>Adapted perfectly for all 12 platforms, every time</div></div>
+      <div class="welcome-feat"><span class="feat-icon">📡</span><div class="feat-text"><strong>Auto-post to 3 platforms</strong>Google, Facebook &amp; Instagram — fully hands-free</div></div>
+      <div class="welcome-feat"><span class="feat-icon">🏢</span><div class="feat-text"><strong>Up to 10 businesses</strong>Full agency power — manage your entire client roster</div></div>`;
+  } else {
+    nameEl.textContent  = "You're on the free plan";
+    priceEl.textContent = '$0 · no card required';
+    featsEl.innerHTML   = `
+      <div class="welcome-feat"><span class="feat-icon">🤖</span><div class="feat-text"><strong>AI writes your listings</strong>One click — copy ready for all 12 platforms</div></div>
+      <div class="welcome-feat"><span class="feat-icon">📋</span><div class="feat-text"><strong>You copy, you paste</strong>We write it. No auto-posting on the free plan.</div></div>
+      <div class="welcome-feat"><span class="feat-icon">⚡</span><div class="feat-text"><strong>Takes 2 minutes</strong>Fill in your info once, we handle the rest</div></div>`;
   }
 }
 
@@ -1160,6 +1195,8 @@ auth.authStateReady().then(() => {
       const emailField = document.getElementById('s-email');
       if (ownerField && !ownerField.value) ownerField.value = data.ownerName || user.displayName || '';
       if (emailField && !emailField.value) emailField.value = data.email || user.email || '';
+      // Populate welcome slide with plan-specific content
+      _populateWelcomeSlide(data);
       // Fix 12: plan-aware listings stat on success screen
       const listingsEl = document.getElementById('ss-listings');
       if (listingsEl) {
