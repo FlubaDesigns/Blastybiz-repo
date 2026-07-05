@@ -2735,6 +2735,8 @@ function selectCampaign(id, name) {
 
 function openNewCampaign() {
   document.getElementById('new-campaign-row').classList.remove('hidden');
+  // Hide any currently-active campaign content so the form is the only thing showing
+  document.getElementById('campaign-content')?.classList.add('hidden');
   const input = document.getElementById('new-campaign-input');
   input.value = '';
   const story = document.getElementById('new-campaign-story');
@@ -2744,6 +2746,10 @@ function openNewCampaign() {
 
 function cancelNewCampaign() {
   document.getElementById('new-campaign-row').classList.add('hidden');
+  // Restore campaign content if one is still selected
+  if (activeCampaignId) {
+    document.getElementById('campaign-content')?.classList.remove('hidden');
+  }
 }
 
 async function saveNewCampaign() {
