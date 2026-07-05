@@ -623,18 +623,17 @@ onAuthStateChanged(auth, async (user) => {
   async function loadBusinessContextFirestore(bizId) {
     if (!bizId || !currentUser) return;
 
-    // ── Section 1: Business name (independent — won't block campaigns) ────
-    try {
-      const bizSnap = await getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId));
-      const biz = bizSnap.exists() ? bizSnap.data() : {};
-      const bizName = biz.businessName || biz.name || '';
-      if (bizName) {
-        const nameEl = document.getElementById('dashboard-biz-name');
-        const snapBiz = document.getElementById('snapshot-biz');
-        if (nameEl) nameEl.textContent = bizName;
-        if (snapBiz) snapBiz.textContent = bizName;
-      }
-    } catch(e1) { /* name stays as set by loadBusinessContext() stub */ }
+    // ── Section 1: Business name — set immediately from in-memory list (same
+    //    source as the dropdown) so there is no async race. ────────────────
+    {
+      const bizList = window.BUSINESSES || BUSINESSES;
+      const memBiz  = bizList.find(b => b.id === bizId);
+      const memName = memBiz ? (memBiz.businessName || memBiz.name || '') : '';
+      const nameEl  = document.getElementById('dashboard-biz-name');
+      const snapBiz = document.getElementById('snapshot-biz');
+      if (nameEl && memName) nameEl.textContent = memName;
+      if (snapBiz && memName) snapBiz.textContent = memName;
+    }
 
     // ── Section 2: Campaigns (always resolves — never leaves "Loading…") ──
     try {
@@ -813,9 +812,6 @@ onAuthStateChanged(auth, async (user) => {
     if (!bizId) return;
     await loadBusinessContextFirestore(bizId);
   };
-
-  init();
-  if (window.activeBizId) await loadBusinessContextFirestore(window.activeBizId);
 });
 });
 
