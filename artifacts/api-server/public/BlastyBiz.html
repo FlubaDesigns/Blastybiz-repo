@@ -85,12 +85,16 @@
       </button>
     </div>
     <div id="new-campaign-row" class="mt-4 hidden">
-      <div class="flex-row">
-        <input type="text" id="new-campaign-input" placeholder="Campaign name (e.g. Christmas, Summer Sale)"
+      <div class="flex-row mb-8">
+        <input type="text" id="new-campaign-input" placeholder="Campaign name (e.g. Christmas Sale, Grand Reopening)"
           class="input-campaign"
-          onkeydown="if(event.key==='Enter')saveNewCampaign()" />
-        <button onclick="saveNewCampaign()" class="btn-camp-save">Save</button>
-        <button onclick="cancelNewCampaign()" class="btn-camp-cancel">✕</button>
+          onkeydown="if(event.key==='Enter')document.getElementById('new-campaign-story').focus()" />
+      </div>
+      <textarea id="new-campaign-story" class="form-textarea mb-8" rows="3"
+        placeholder="What's this campaign about? (e.g. 20% off all services through Dec 31 · Celebrating our 10th anniversary · New summer menu launch) — the AI uses this every time it writes copy for this campaign."></textarea>
+      <div class="flex-row" style="gap:8px;">
+        <button onclick="saveNewCampaign()" class="btn-camp-save">Create Campaign</button>
+        <button onclick="cancelNewCampaign()" class="btn-camp-cancel">Cancel</button>
       </div>
     </div>
   </div>
@@ -2733,6 +2737,8 @@ function openNewCampaign() {
   document.getElementById('new-campaign-row').classList.remove('hidden');
   const input = document.getElementById('new-campaign-input');
   input.value = '';
+  const story = document.getElementById('new-campaign-story');
+  if (story) story.value = '';
   input.focus();
 }
 
@@ -2744,6 +2750,7 @@ async function saveNewCampaign() {
   const input = document.getElementById('new-campaign-input');
   const name  = input.value.trim();
   if (!name) { input.focus(); return; }
+  const story = (document.getElementById('new-campaign-story')?.value || '').trim();
 
   const id = 'c_' + Date.now();
   const now = new Date().toISOString();
@@ -2756,7 +2763,7 @@ async function saveNewCampaign() {
     offer:           '',
     adName:          '',
     price:           '',
-    campaignStory:   '',
+    campaignStory:   story,
     factoids:        [],
     platformHistory: {},
   };
@@ -2773,6 +2780,10 @@ async function saveNewCampaign() {
 
   document.getElementById('new-campaign-row').classList.add('hidden');
   document.getElementById('campaign-content')?.classList.remove('hidden');
+  // Pre-populate campaign-context textarea with the story entered at creation
+  const ctxEl = document.getElementById('campaign-context');
+  if (ctxEl) ctxEl.value = story;
+
   renderCampaignChips();
   _syncSchedCampaign(id, name);
   showToast('Campaign "' + name + '" created');
@@ -3308,7 +3319,18 @@ onAuthStateChanged(auth, async (user) => {
       campaigns = campColSnap.docs.map(d => ({ ...d.data(), id: d.id }));
       _sortCampaigns();
       renderCampaignChips();
-      // campaign-content stays hidden until user selects or creates a campaign
+
+      // URL param handling — ?newcampaign=1 auto-opens the create form
+      // ?cid=xxx auto-selects an existing campaign
+      const _qp = new URLSearchParams(window.location.search);
+      const _qpCid = _qp.get('cid');
+      if (_qpCid) {
+        const _qpCamp = campaigns.find(c => c.id === _qpCid);
+        if (_qpCamp) selectCampaign(_qpCamp.id, _qpCamp.name);
+      } else if (_qp.get('newcampaign') === '1') {
+        showTab('create');
+        openNewCampaign();
+      }
     }
   } catch(e) {
     console.error('Profile load error:', e);
