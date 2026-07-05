@@ -189,7 +189,10 @@
   <!-- PLATFORM QUICK SELECT -->
   <div class="card">
     <div class="card-title">📡 Send To</div>
-    <p class="helper">Select which platforms to target. AI will adapt your listing for each one.</p>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">
+      <p class="helper" style="margin:0;">Select which platforms to target. AI will adapt your listing for each one.</p>
+      <button id="select-all-btn" onclick="toggleSelectAll()" style="background:none;border:none;color:var(--green);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;padding:0 0 0 12px;text-decoration:underline;">Select All</button>
+    </div>
 
     <div id="quick-platform-list">
       <!-- populated by JS -->
@@ -804,6 +807,7 @@ function renderQuickSelect() {
     el.appendChild(row);
   });
   checkAdaptBtn();
+  _updateSelectAllBtn();
 }
 
 function togglePlatformAccordion(pid) {
@@ -1338,6 +1342,22 @@ async function suggestPlatformsAI() {
 // ══════════════════════════════════════════
 // TOGGLE PLATFORM
 // ══════════════════════════════════════════
+function toggleSelectAll() {
+  const allOn = platforms.every(p => p.enabled);
+  platforms = platforms.map(p => ({ ...p, enabled: !allOn }));
+  savePlatforms();
+  renderPlatforms();
+  renderQuickSelect();
+  checkAdaptBtn();
+}
+
+function _updateSelectAllBtn() {
+  const btn = document.getElementById('select-all-btn');
+  if (!btn) return;
+  const allOn = platforms.every(p => p.enabled);
+  btn.textContent = allOn ? 'Deselect All' : 'Select All';
+}
+
 function togglePlatform(id, val) {
   platforms = platforms.map(p => p.id === id ? {...p, enabled: val} : p);
   savePlatforms();
