@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=46" />
+<link rel="stylesheet" href="global-style.css?v=47" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -826,6 +826,8 @@ function renderQuickSelect() {
             <div class="qp-photos-label">📷 Photos for this post</div>
             <div id="qp-photo-strip-${p.id}" class="qp-photo-strip"></div>
           </div>
+          <!-- Share to platform — populated by showCopyInAccordions() -->
+          <div id="qp-share-${p.id}" class="qp-share-section" style="display:none"></div>
         </div>`;
 
       body.innerHTML = bodyInner;
@@ -857,9 +859,16 @@ function togglePlatformAccordion(pid) {
 
 // Platforms that support images in posts (not text-only)
 const PLATFORM_IMAGE_SUPPORT = {
-  google: { max: 1 }, facebook: { max: 10 }, instagram: { max: 10 },
-  nextdoor: { max: 10 }, craigslist: { max: 24 }
-  // yelp, alignable, thumbtack, angi, applemaps — no per-post image upload
+  google:    { max: 1  },
+  facebook:  { max: 10 },
+  instagram: { max: 10 },
+  nextdoor:  { max: 10 },
+  craigslist:{ max: 24 },
+  fbmarket:  { max: 24 },
+  linkedin:  { max: 9  },
+  x:         { max: 4  },
+  pinterest: { max: 1  },
+  // yelp, alignable, thumbtack, angi, applemaps, bing — no per-post image upload
 };
 
 function showCopyInAccordions(adaptations, featuredPhotoUrl) {
@@ -909,6 +918,26 @@ function showCopyInAccordions(adaptations, featuredPhotoUrl) {
       renderPlatformPhotoStrip(p.id, campaignPhotos, imgSupport.max);
     }
 
+    // Share-to-platform button — manual platforms only
+    if (p.type === 'manual') {
+      const shareSection = document.getElementById('qp-share-' + p.id);
+      if (shareSection) {
+        const hasImgs = !!(imgSupport && campaignPhotos.length > 0);
+        const imgLine = hasImgs
+          ? 'Select the photos above in the order you want them, then tap Share.'
+          : 'No campaign photos uploaded — shares your copy text only.';
+        shareSection.style.display = 'block';
+        shareSection.innerHTML = `
+          <button class="qp-share-btn" onclick="sharePlatformContent('${p.id}')">
+            📤 Share to ${escHtml(p.name)}
+          </button>
+          <div class="qp-share-note">
+            ${escHtml(imgLine)}<br>
+            <strong>Why this way?</strong> ${escHtml(p.name)} controls who can post to it directly — that's their policy, not ours. We hand you the copy and photos ready to go. You confirm in their app.
+          </div>`;
+      }
+    }
+
     // Expand every enabled platform that received copy
     const body    = document.getElementById('qp-body-' + p.id);
     const chevron = document.getElementById('qp-chevron-' + p.id);
@@ -935,14 +964,55 @@ function renderPlatformPhotoStrip(pid, photos, maxPhotos) {
     const thumb = document.createElement('div');
     thumb.className = 'qp-thumb' + (isSelected ? ' qp-thumb-sel' : '');
     thumb.onclick = () => togglePlatformPhoto(pid, photo.url, maxPhotos, photos);
+    const orderNum = isSelected ? ([...sel].indexOf(photo.url) + 1) : 0;
     thumb.innerHTML = `
       <img src="${escHtml(photo.url)}" class="thumb-cover" />
-      ${isSelected ? '<div class="thumb-selected-overlay">✓</div>' : ''}
+      ${isSelected ? `<div class="thumb-order-badge">${orderNum}</div>` : ''}
     `;
     strip.appendChild(thumb);
   });
 
   container.style.display = 'block';
+}
+
+async function sharePlatformContent(pid) {
+  const plat = platforms.find(p => p.id === pid);
+  const platformName = plat ? plat.name : pid;
+  const copyText = document.getElementById('qp-copy-text-' + pid)?.textContent?.trim() || '';
+  const sel = window._bbPlatformPhotoSel[pid] || new Set();
+  const selectedUrls = [...sel]; // preserves tap order
+
+  if (!navigator.share) {
+    showToast('Native sharing not available on this browser — use Copy instead');
+    return;
+  }
+
+  const shareData = { text: copyText };
+
+  if (selectedUrls.length > 0) {
+    showToast('Preparing ' + selectedUrls.length + ' photo' + (selectedUrls.length > 1 ? 's' : '') + '…');
+    try {
+      const files = await Promise.all(
+        selectedUrls.map(async (url, i) => {
+          const resp = await fetch(url);
+          const blob = await resp.blob();
+          const ext = (blob.type.split('/')[1] || 'jpg').split('+')[0];
+          return new File([blob], 'photo_' + (i + 1) + '.' + ext, { type: blob.type });
+        })
+      );
+      const withFiles = { ...shareData, files };
+      if (navigator.canShare && navigator.canShare(withFiles)) {
+        await navigator.share(withFiles);
+        return;
+      }
+    } catch(e) { /* fall through to text-only */ }
+  }
+
+  try {
+    await navigator.share(shareData);
+  } catch(e) {
+    if (e.name !== 'AbortError') showToast('Share failed — use Copy and attach photos manually');
+  }
 }
 
 function togglePlatformPhoto(pid, url, maxPhotos, photos) {

@@ -2313,6 +2313,10 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 .btn-upgrade-inline { border-color: #00C853; color: #00C853; font-size: 11px; }
 .qp-thumb       { position: relative; width: 64px; height: 64px; border-radius: 8px; overflow: hidden; cursor: pointer; flex-shrink: 0; border: 2px solid transparent; }
 .qp-thumb-sel   { border-color: var(--green); }
+.thumb-order-badge { position: absolute; top: 3px; left: 3px; background: var(--green); color: #000; font-size: 10px; font-weight: 800; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; }
+.qp-share-section { margin-top: 14px; }
+.qp-share-btn   { width: 100%; padding: 10px 16px; background: var(--accent); border: none; border-radius: 10px; color: #fff; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; margin-bottom: 8px; }
+.qp-share-note  { font-size: 11px; color: var(--muted); line-height: 1.5; }
 
 /* ── Copy library modal ── */
 .lib-loading    { color: var(--muted); font-size: 14px; padding: 24px 0; text-align: center; }
