@@ -420,7 +420,7 @@ Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
   }
 });
 
-exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
+exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'], timeoutSeconds: 120 }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   const fnStartMs = Date.now();
@@ -535,7 +535,7 @@ Return this exact JSON structure:
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({ model: 'claude-sonnet-4-5-20250929', max_tokens: 4096, messages: [{ role: 'user', content: prompt }] })
-    });
+    }, 110000);
     if (!aiResp.ok) {
       const t = await aiResp.text();
       const err = new Error(`Anthropic ${aiResp.status}: ${t.slice(0,200)}`);
@@ -551,7 +551,7 @@ Return this exact JSON structure:
     });
   } catch(e) {
     const failureType = classifyAiError(e);
-    if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] adaptListing timed out after 25s — uid:', decoded.uid);
+    if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] adaptListing timed out after 110s — uid:', decoded.uid);
     trackAiUsage(decoded.uid, 'adaptListing', 'claude-sonnet-4-5-20250929', null, { failureType });
     console.error('adaptListing AI error [' + failureType + ']:', e.message);
     return res.status(500).json({ error: 'AI adaptation failed: ' + e.message });
