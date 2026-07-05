@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=53" />
+<link rel="stylesheet" href="global-style.css?v=54" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -258,6 +258,8 @@
     <div class="ai-spinner"></div>
     <div class="ai-loading-text">⚡ AI is adapting your listing...</div>
     <div class="ai-loading-sub" id="ai-loading-sub">Preparing all platforms</div>
+    <div class="ai-gen-track"><div class="ai-gen-fill" id="ai-gen-fill"></div></div>
+    <div class="ai-gen-pct" id="ai-gen-pct">0%</div>
   </div>
 
   <button class="btn btn-primary btn--adaptive" id="adapt-btn" onclick="runAdaptation()" disabled>
@@ -1861,6 +1863,55 @@ window.renderAllPhotos = function() {
 };
 
 // ══════════════════════════════════════════
+// AI GENERATION PROGRESS BAR
+// ══════════════════════════════════════════
+let _aiProgressInterval = null;
+
+function _startAiProgress(platforms) {
+  if (_aiProgressInterval) { clearInterval(_aiProgressInterval); _aiProgressInterval = null; }
+  let pct = 0;
+  const fill  = document.getElementById('ai-gen-fill');
+  const pctEl = document.getElementById('ai-gen-pct');
+  const sub   = document.getElementById('ai-loading-sub');
+  if (fill)  { fill.style.transition = 'none'; fill.style.width = '0%'; }
+  if (pctEl) pctEl.textContent = '0%';
+
+  const msgs = [
+    'Reading your business info...',
+    'Crafting your offer...',
+    ...platforms.map(p => `Writing for ${p.name}...`),
+    'Polishing the copy...',
+    'Finishing up...',
+  ];
+  let msgIdx = 0;
+
+  setTimeout(() => {
+    if (fill) fill.style.transition = 'width 0.4s ease';
+  }, 50);
+
+  _aiProgressInterval = setInterval(() => {
+    pct += Math.max((88 - pct) * 0.032, 0.2);
+    if (pct > 88) pct = 88;
+    const r = Math.round(pct);
+    if (fill)  fill.style.width  = r + '%';
+    if (pctEl) pctEl.textContent = r + '%';
+    const threshold = (msgIdx + 1) * (88 / msgs.length);
+    if (r >= threshold && msgIdx < msgs.length - 1) {
+      msgIdx++;
+      if (sub) sub.textContent = msgs[msgIdx];
+    }
+  }, 160);
+}
+
+function _completeAiProgress() {
+  if (_aiProgressInterval) { clearInterval(_aiProgressInterval); _aiProgressInterval = null; }
+  const fill  = document.getElementById('ai-gen-fill');
+  const pctEl = document.getElementById('ai-gen-pct');
+  if (fill)  { fill.style.transition = 'width 0.4s ease'; fill.style.width = '100%'; }
+  if (pctEl) pctEl.textContent = '100%';
+}
+
+// ══════════════════════════════════════════
 // RUN ADAPTATION — Real AI Call
 // ══════════════════════════════════════════
 async function runAdaptation() {
@@ -1892,6 +1943,7 @@ async function runAdaptation() {
   const loader = document.getElementById('ai-loading');
   btn.style.display = 'none';
   loader.classList.add('visible');
+  _startAiProgress(enabledPlatforms);
 
   const platformList = enabledPlatforms.map(p => ({
     id: p.id,
@@ -1990,6 +2042,7 @@ Return this exact JSON structure:
     savePlatforms();
 
     // Save draft to Firestore in background, then show copy inside accordions
+    _completeAiProgress();
     const loadingSub2 = document.getElementById('ai-loading-sub');
     if (loadingSub2) loadingSub2.textContent = 'Done!';
 
@@ -2031,6 +2084,7 @@ Return this exact JSON structure:
     showToast('✅ ' + enabledPlatforms.length + ' platform' + (enabledPlatforms.length > 1 ? 's' : '') + ' ready!');
 
   } catch (err) {
+    _completeAiProgress();
     console.error(err);
     showToast('❌ AI error — check connection');
   } finally {
