@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="global-style.css?v=51" />
+<title>BlastyBiz — Account Settings</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>body{visibility:hidden}</style>
+<script type="module" src="./auth-guard.js"></script>
+<script src="blastybiz-menu.js?v=2"></script>
+</head>
+<body class="has-site-header app-page">
+
+<div id="header__inject"></div>
+<script>fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('header__inject').innerHTML=html;});</script>
+
+<div class="main"><div class="main-inner">
+
+  <h1 class="page-title" style="margin-bottom:4px;">Account <span>Settings</span></h1>
+  <p class="page-sub" style="margin-bottom:24px;">Manage your plan, billing, and account.</p>
+
+  <!-- ── Plan & Usage ── -->
+  <div class="card">
+    <div class="card-title">💼 Plan &amp; Usage</div>
+    <div class="cost-line"><span>Email</span><strong id="acct-email">—</strong></div>
+    <div class="cost-line"><span>Plan</span><strong id="acct-plan-label">—</strong></div>
+    <div class="cost-line"><span>AI requests used</span><strong id="acct-ai-usage">—</strong></div>
+    <div class="cost-line"><span>Resets on</span><strong id="acct-renewal">—</strong></div>
+    <div class="btn-row" style="margin-top:12px;">
+      <a class="btn btn-primary" id="acct-billing-btn" href="#" onclick="handleBilling(event)">View Billing</a>
+    </div>
+  </div>
+
+  <!-- ── Admin (only shown if user is admin) ── -->
+  <div class="card" id="acct-admin-card" style="display:none;">
+    <div class="card-title">🛡 Admin</div>
+    <p class="helper" style="margin-bottom:12px;">You have admin access to this BlastyBiz installation.</p>
+    <a class="btn" href="BlastyBiz-Admin.html">Open Admin Panel →</a>
+  </div>
+
+  <!-- ── Danger Zone ── -->
+  <div class="card">
+    <div class="card-title" style="color:var(--danger,#e53935);">⚠️ Danger Zone</div>
+    <p class="helper" style="margin-bottom:12px;">Deleting your account is permanent and cannot be undone. All businesses, campaigns, and data will be removed.</p>
+    <button onclick="openDeleteModal()" class="delete-account-btn">Delete account</button>
+  </div>
+
+</div></div><!-- /.main-inner /.main -->
+
+<div class="toast" id="toast"></div>
+
+<!-- DELETE ACCOUNT MODAL -->
+<div id="delete-overlay">
+  <div class="delete-modal">
+    <h3>Delete Account</h3>
+    <p>
+      This permanently deletes your account, all businesses, listings, and publish history. Your subscription will be cancelled. <strong class="danger-text">This cannot be undone.</strong>
+    </p>
+    <p>Type <strong>DELETE</strong> to confirm:</p>
+    <input id="delete-confirm-input" type="text" placeholder="DELETE" class="delete-input"
+      oninput="document.getElementById('delete-confirm-btn').disabled = this.value !== 'DELETE'"/>
+    <div class="delete-actions">
+      <button onclick="closeDeleteModal()" class="delete-cancel">Cancel</button>
+      <button id="delete-confirm-btn" onclick="confirmDeleteAccount()" disabled>
+        Delete Everything
+      </button>
+    </div>
+    <p id="delete-error"></p>
+  </div>
+</div>
+
+<!-- UPGRADE PLAN MODAL -->
+<div id="upgrade-overlay" onclick="closeUpgradeModal()">
+  <div class="delete-modal" onclick="event.stopPropagation()" style="max-width:480px">
+    <h3>📈 Upgrade Your Plan</h3>
+    <p id="upgrade-modal-msg">Upgrade to unlock more businesses and AI requests.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--light);margin-bottom:2px">Pro</div>
+        <div style="font-size:13px;color:var(--silver);margin-bottom:14px">3 businesses · 100 AI/mo</div>
+        <button onclick="closeUpgradeModal();startCheckout('pro')" style="width:100%;background:#00C853;color:#0d1a0d;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">Upgrade to Pro</button>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--light);margin-bottom:2px">Agency</div>
+        <div style="font-size:13px;color:var(--silver);margin-bottom:14px">10 businesses · 500 AI/mo</div>
+        <button onclick="closeUpgradeModal();startCheckout('agency')" style="width:100%;background:#00C853;color:#0d1a0d;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">Upgrade to Agency</button>
+      </div>
+    </div>
+    <div style="text-align:center">
+      <button onclick="closeUpgradeModal()" class="delete-cancel" style="max-width:160px">Not now</button>
+    </div>
+  </div>
+</div>
+
+<div id="site-footer-inject"></div>
+<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
+
+<script type="module">
+import { auth, db } from './firebase-init-v2.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
+const ADMIN_EMAILS = ['info@blastybiz.com'];
+
+let currentUser = null;
+let userPlan = 'starter';
+
+function showToast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isErr ? ' toast-error' : ' toast-show');
+  setTimeout(() => { t.className = 'toast'; }, 3200);
+}
+
+auth.authStateReady().then(() => {
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+    currentUser = user;
+
+    document.getElementById('acct-email').textContent = user.email || '—';
+
+    // Show admin card if applicable
+    if (ADMIN_EMAILS.includes(user.email)) {
+      document.getElementById('acct-admin-card').style.display = '';
+    }
+
+    try {
+      const userSnap = await getDoc(doc(db, 'users', user.uid));
+      const userData = userSnap.exists() ? userSnap.data() : {};
+
+      userPlan = userData.plan || 'starter';
+      const planLabel = userPlan.charAt(0).toUpperCase() + userPlan.slice(1);
+      document.getElementById('acct-plan-label').textContent = planLabel;
+
+      const billingBtn = document.getElementById('acct-billing-btn');
+      billingBtn.textContent = userPlan === 'starter' ? 'Upgrade Plan' : 'View Billing';
+
+      const aiUsed = userData.aiActionsUsed || 0;
+      const aiCap  = { starter: 10, pro: 100, agency: 500 }[userPlan] || 10;
+      document.getElementById('acct-ai-usage').textContent = `${aiUsed} / ${aiCap}`;
+
+      const resetAt = userData.aiActionsResetAt?.toDate?.();
+      document.getElementById('acct-renewal').textContent = resetAt
+        ? resetAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : '—';
+
+      // Activation toast
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('success') === '1') {
+        showToast('🎉 Subscription activated — welcome to BlastyBiz Pro!');
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    } catch(e) {
+      console.error('[Account] load failed:', e);
+    }
+  });
+});
+
+async function startCheckout(plan) {
+  showToast('Setting up checkout…');
+  try {
+    const idToken = await currentUser.getIdToken();
+    const r = await fetch(`${CF}/createCheckoutSession`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+      body: JSON.stringify({ plan, uid: currentUser.uid, email: currentUser.email })
+    });
+    const data = await r.json();
+    if (data.url) { window.location.href = data.url; }
+    else showToast('Checkout setup failed', true);
+  } catch(e) {
+    showToast('Checkout unavailable', true);
+  }
+}
+
+window.handleBilling = async function(e) {
+  e && e.preventDefault();
+  if (!currentUser) return;
+  const btn = document.getElementById('acct-billing-btn');
+  if (btn) { btn.textContent = 'Loading…'; btn.style.pointerEvents = 'none'; }
+  try {
+    if (userPlan === 'starter') {
+      await startCheckout('pro');
+    } else {
+      const idToken = await currentUser.getIdToken();
+      const r = await fetch(`${CF}/createPortalSession`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+        body: JSON.stringify({ uid: currentUser.uid })
+      });
+      const data = await r.json();
+      if (data.url) { window.location.href = data.url; }
+      else showToast('Billing portal unavailable', true);
+    }
+  } catch(e) {
+    showToast('Billing unavailable', true);
+    if (btn) { btn.textContent = userPlan === 'starter' ? 'Upgrade Plan' : 'View Billing'; btn.style.pointerEvents = ''; }
+  }
+};
+
+window.openDeleteModal = function() {
+  const overlay = document.getElementById('delete-overlay');
+  overlay.style.display = 'flex';
+  document.getElementById('delete-confirm-input').value = '';
+  document.getElementById('delete-confirm-btn').disabled = true;
+  document.getElementById('delete-confirm-btn').style.opacity = '0.5';
+  document.getElementById('delete-error').style.display = 'none';
+};
+
+window.closeDeleteModal = function() {
+  document.getElementById('delete-overlay').style.display = 'none';
+};
+
+window.confirmDeleteAccount = async function() {
+  const btn = document.getElementById('delete-confirm-btn');
+  const errEl = document.getElementById('delete-error');
+  btn.textContent = 'Deleting…';
+  btn.disabled = true;
+  errEl.style.display = 'none';
+  try {
+    const idToken = await currentUser.getIdToken();
+    const r = await fetch(`${CF}/deleteAccount`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken })
+    });
+    const data = await r.json();
+    if (data.success) {
+      await auth.signOut();
+      window.location.href = 'BlastyBiz-Home.html';
+    } else {
+      errEl.textContent = data.error || 'Delete failed. Please try again.';
+      errEl.style.display = 'block';
+      btn.textContent = 'Delete Everything';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
+  } catch(e) {
+    errEl.textContent = 'Something went wrong. Please try again.';
+    errEl.style.display = 'block';
+    btn.textContent = 'Delete Everything';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
+};
+
+window.closeUpgradeModal = function() {
+  document.getElementById('upgrade-overlay').style.display = 'none';
+};
+</script>
+</body>
+</html>

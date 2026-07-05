@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=45" />
+<link rel="stylesheet" href="global-style.css?v=51" />
 <title>BlastyBiz — Command Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}</style>
@@ -61,20 +61,7 @@
       <button class="btn" onclick="editActiveBusiness()">✏️ Edit Business Info</button>
       <a class="btn" href="BlastyBiz-Connect.html">🔗 Connect Platforms</a>
       <a class="btn" href="BlastyBiz-BizContext.html">📖 Business Story</a>
-    </div>
-  </div>
-
-  <!-- ── Account & Danger Zone ── -->
-  <div class="card">
-    <div class="card-title">💼 Account</div>
-    <div class="cost-line"><span>Plan</span><strong id="snapshot-plan-label">—</strong></div>
-    <div class="cost-line"><span>AI requests used</span><strong id="ai-usage-display">—</strong></div>
-    <div class="btn-row" style="margin-top:8px;">
-      <a class="btn" id="billing-btn" href="#" onclick="handleBilling(event)">View Billing</a>
-      <a class="btn" href="BlastyBiz-Admin.html">Admin</a>
-    </div>
-    <div class="danger-zone" style="margin-top:16px;border-top:1px solid var(--border,#333);padding-top:16px;">
-      <button onclick="openDeleteModal()" class="delete-account-btn">Delete account</button>
+      <a class="btn" href="BlastyBiz-Account.html">💼 Account Settings</a>
     </div>
   </div>
 
@@ -94,25 +81,6 @@
     <div id="score-desc"></div><div id="score-bar"></div><div id="score-ring"></div>
   </div>
 
-<!-- DELETE ACCOUNT MODAL -->
-<div id="delete-overlay">
-  <div class="delete-modal">
-    <h3>Delete Account</h3>
-    <p>
-      This permanently deletes your account, all businesses, listings, and publish history. Your Square subscription will be cancelled. <strong class="danger-text">This cannot be undone.</strong>
-    </p>
-    <p>Type <strong>DELETE</strong> to confirm:</p>
-    <input id="delete-confirm-input" type="text" placeholder="DELETE" class="delete-input"
-      oninput="document.getElementById('delete-confirm-btn').disabled = this.value !== 'DELETE'"/>
-    <div class="delete-actions">
-      <button onclick="closeDeleteModal()" class="delete-cancel">Cancel</button>
-      <button id="delete-confirm-btn" onclick="confirmDeleteAccount()" disabled>
-        Delete Everything
-      </button>
-    </div>
-    <p id="delete-error"></p>
-  </div>
-</div>
 <div class="toast" id="toast"></div>
 
 <!-- UPGRADE PLAN MODAL -->
@@ -484,11 +452,6 @@ onAuthStateChanged(auth, async (user) => {
   const planLabel = userPlan.charAt(0).toUpperCase() + userPlan.slice(1);
   const planEl = document.getElementById('active-plan');
   if (planEl) planEl.textContent = `${planLabel} plan`;
-  const snapPlanEl = document.getElementById('snapshot-plan-label');
-  if (snapPlanEl) snapPlanEl.textContent = planLabel;
-  const billingBtn = document.getElementById('billing-btn');
-  if (billingBtn) billingBtn.textContent = userPlan === 'starter' ? 'Upgrade to Pro' : 'View Billing';
-
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('success') === '1') {
     showToast('🎉 Subscription activated — welcome to BlastyBiz Pro!');
@@ -813,77 +776,6 @@ async function startCheckout(plan) {
   }
 }
 
-window.handleBilling = async function(e) {
-  e && e.preventDefault();
-  if (!currentUser) return;
-  const btn = document.getElementById('billing-btn');
-  if (btn) { btn.textContent = 'Loading…'; btn.style.pointerEvents = 'none'; }
-  try {
-    if (userPlan === 'starter') {
-      await startCheckout('pro');
-    } else {
-      const idToken = await currentUser.getIdToken();
-      const r = await fetch(`${CF}/createPortalSession`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-        body: JSON.stringify({ uid: currentUser.uid })
-      });
-      const data = await r.json();
-      if (data.url) { window.location.href = data.url; }
-      else showToast('Billing portal unavailable', true);
-    }
-  } catch(e) {
-    showToast('Billing unavailable', true);
-    if (btn) { btn.textContent = userPlan === 'starter' ? 'Upgrade to Pro' : 'View Billing'; btn.style.pointerEvents = ''; }
-  }
-};
-
-// ── Delete Account ──────────────────────────────────────────────────────────
-window.openDeleteModal = function() {
-  const overlay = document.getElementById('delete-overlay');
-  overlay.style.display = 'flex';
-  document.getElementById('delete-confirm-input').value = '';
-  document.getElementById('delete-confirm-btn').disabled = true;
-  document.getElementById('delete-confirm-btn').style.opacity = '0.5';
-  document.getElementById('delete-error').style.display = 'none';
-};
-
-window.closeDeleteModal = function() {
-  document.getElementById('delete-overlay').style.display = 'none';
-};
-
-window.confirmDeleteAccount = async function() {
-  const btn = document.getElementById('delete-confirm-btn');
-  const errEl = document.getElementById('delete-error');
-  btn.textContent = 'Deleting…';
-  btn.disabled = true;
-  errEl.style.display = 'none';
-  try {
-    const idToken = await currentUser.getIdToken();
-    const r = await fetch(`${CF}/deleteAccount`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken })
-    });
-    const data = await r.json();
-    if (data.success) {
-      await auth.signOut();
-      window.location.href = 'BlastyBiz-Home.html';
-    } else {
-      errEl.textContent = data.error || 'Delete failed. Please try again.';
-      errEl.style.display = 'block';
-      btn.textContent = 'Delete Everything';
-      btn.disabled = false;
-      btn.style.opacity = '1';
-    }
-  } catch(e) {
-    errEl.textContent = 'Something went wrong. Please try again.';
-    errEl.style.display = 'block';
-    btn.textContent = 'Delete Everything';
-    btn.disabled = false;
-    btn.style.opacity = '1';
-  }
-};
 </script>
 <script>
 fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('header__inject').innerHTML=html;});
