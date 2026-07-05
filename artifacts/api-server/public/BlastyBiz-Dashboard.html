@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=54" />
+<link rel="stylesheet" href="global-style.css?v=55" />
 <title>BlastyBiz — Command Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}</style>
@@ -22,12 +22,19 @@
   <div class="biz-bar">
     <div class="biz-bar-title">⚙ Control Panel</div>
     <div class="biz-select-row">
-      <select id="biz-select" onchange="switchBusiness(this.value)">
-        <!-- populated by JS -->
-      </select>
+      <!-- Custom on-screen dropdown replaces native <select> -->
+      <div class="biz-custom-dd" id="biz-custom-dd">
+        <button class="biz-dd-trigger" id="biz-dd-trigger" onclick="toggleBizDropdown()">
+          <span id="biz-dd-label">Loading…</span>
+          <span class="biz-dd-chevron">▾</span>
+        </button>
+        <div class="biz-dd-list" id="biz-dd-list"></div>
+      </div>
       <button class="add-biz-btn" onclick="addBusiness()" title="Add business">＋</button>
-      <button class="del-biz-btn" onclick="window.deleteBusiness && window.deleteBusiness(document.getElementById('biz-select').value)" title="Delete selected business">🗑</button>
+      <button class="del-biz-btn" onclick="window.deleteBusiness && window.deleteBusiness(window.activeBizId || activeBizId)" title="Delete selected business">🗑</button>
     </div>
+    <!-- hidden select kept for any legacy JS that reads its value -->
+    <select id="biz-select" style="display:none"></select>
     <div class="agency-bar">
       <span id="agency-usage-text" class="agency-usage-text"></span>
       <div class="agency-pips" id="agency-pips"></div>
@@ -185,13 +192,67 @@ function renderNoBusinessState() {
 // RENDER SWITCHER BAR — inline cards, always visible
 // ══════════════════════════════════════════
 function renderSwitcherBar() {
-  const select = document.getElementById('biz-select');
-  if (!select) return;
-  const currentBizId = window.activeBizId ?? activeBizId;
+  const currentBizId   = window.activeBizId ?? activeBizId;
   const currentBizList = window.BUSINESSES || BUSINESSES;
-  select.innerHTML = currentBizList.map(biz =>
-    `<option value="${biz.id}"${biz.id === currentBizId ? ' selected' : ''}>${biz.name}</option>`
-  ).join('');
+
+  // Keep hidden select in sync (legacy compat)
+  const select = document.getElementById('biz-select');
+  if (select) {
+    select.innerHTML = currentBizList.map(b =>
+      `<option value="${b.id}"${b.id === currentBizId ? ' selected' : ''}>${b.name}</option>`
+    ).join('');
+  }
+
+  // Update custom dropdown label
+  const activeBizObj = currentBizList.find(b => b.id === currentBizId);
+  const label = document.getElementById('biz-dd-label');
+  if (label) label.textContent = activeBizObj ? activeBizObj.name : 'Select business';
+
+  // Render dropdown list items
+  const list = document.getElementById('biz-dd-list');
+  if (list) {
+    list.innerHTML = currentBizList.map(b => `
+      <button class="biz-dd-item${b.id === currentBizId ? ' active' : ''}"
+              onclick="selectBizOption('${b.id}')">
+        <span class="biz-dd-item-name">${escHtml(b.name)}</span>
+        ${b.id === currentBizId ? '<span class="biz-dd-check">✓</span>' : ''}
+      </button>`).join('');
+  }
+}
+
+function toggleBizDropdown() {
+  const list    = document.getElementById('biz-dd-list');
+  const trigger = document.getElementById('biz-dd-trigger');
+  if (!list) return;
+  const isOpen = list.classList.contains('open');
+  if (isOpen) {
+    list.classList.remove('open');
+    trigger.classList.remove('open');
+  } else {
+    list.classList.add('open');
+    trigger.classList.add('open');
+    setTimeout(() => {
+      document.addEventListener('click', _closeBizDdOutside, { once: true });
+    }, 0);
+  }
+}
+
+function _closeBizDdOutside(e) {
+  const dd = document.getElementById('biz-custom-dd');
+  if (dd && dd.contains(e.target)) {
+    setTimeout(() => document.addEventListener('click', _closeBizDdOutside, { once: true }), 0);
+    return;
+  }
+  document.getElementById('biz-dd-list')?.classList.remove('open');
+  document.getElementById('biz-dd-trigger')?.classList.remove('open');
+}
+
+function selectBizOption(bizId) {
+  document.getElementById('biz-dd-list')?.classList.remove('open');
+  document.getElementById('biz-dd-trigger')?.classList.remove('open');
+  const select = document.getElementById('biz-select');
+  if (select) select.value = bizId;
+  if (window.switchBusiness) window.switchBusiness(bizId);
 }
 
 function renderDashboardCampaigns(campaigns) {
