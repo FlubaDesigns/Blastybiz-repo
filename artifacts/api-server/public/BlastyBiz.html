@@ -3148,6 +3148,18 @@ function openNewCampaign() {
   const story = document.getElementById('new-campaign-story');
   if (story) story.value = '';
   input.focus();
+  // After browser auto-scrolls to the input, correct so the CAMPAIGN card heading
+  // is fully visible below the sticky tab bar (not tucked behind it).
+  requestAnimationFrame(() => {
+    const tabsEl  = document.querySelector('.tabs');
+    const card    = document.querySelector('#create-step-1 .card');
+    if (!card || !tabsEl) return;
+    const tabsBottom = tabsEl.getBoundingClientRect().bottom;
+    const cardTop    = card.getBoundingClientRect().top;
+    if (cardTop < tabsBottom + 8) {
+      window.scrollBy({ top: cardTop - tabsBottom - 8, behavior: 'smooth' });
+    }
+  });
 }
 
 function cancelNewCampaign() {
