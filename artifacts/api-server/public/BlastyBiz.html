@@ -3674,7 +3674,7 @@ onAuthStateChanged(auth, async (user) => {
 
   const userSnap = await getDoc(doc(db, 'users', user.uid));
   const userData = userSnap.exists() ? userSnap.data() : {};
-  activeBizId = userData.activeBusiness || user.uid;
+  activeBizId = new URLSearchParams(window.location.search).get('bizId') || userData.activeBusiness || user.uid;
   userPlan = userData.plan || 'starter';
   window._bbUserPlan = userPlan;
   renderPlatforms();

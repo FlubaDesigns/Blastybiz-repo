@@ -369,7 +369,8 @@ function loadBusinessContext(bizId) {
 // Routes to BlastyBiz.html — Firestore already loads saved data on that page
 // ══════════════════════════════════════════
 function editActiveBusiness() {
-  window.location.href = 'BlastyBiz.html?edit=1';
+  const bizId = window.activeBizId || activeBizId;
+  window.location.href = 'BlastyBiz.html?edit=1' + (bizId ? '&bizId=' + encodeURIComponent(bizId) : '');
 }
 
 // ══════════════════════════════════════════
