@@ -1191,6 +1191,8 @@ body.onboarding-page textarea     { resize: none; }
 .connect-btn             { background: transparent; border: 1px solid var(--border); border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 600; color: var(--silver); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; }
 .connect-btn:hover       { border-color: var(--green); color: var(--green); }
 .connect-btn.done        { background: rgba(0,200,83,0.1); border-color: var(--green); color: var(--green); }
+.connect-btn.btn-copy-paste { background: rgba(255,167,38,0.08); border-color: #FFA726; color: #FFA726; cursor: default; }
+.connect-btn.btn-manual     { background: rgba(79,195,247,0.08); border-color: #4FC3F7; color: #4FC3F7; cursor: default; }
 .connect-skip            { text-align: center; font-size: 12px; color: var(--muted); margin-top: 4px; cursor: pointer; transition: color 0.2s; }
 .connect-skip:hover      { color: var(--silver); }
 

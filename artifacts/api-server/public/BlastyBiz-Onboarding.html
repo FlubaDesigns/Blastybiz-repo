@@ -71,25 +71,32 @@
       <span class="slide-icon">🏪</span>
       <div class="slide-title">What's Your<br/><span>Business Called?</span></div>
       <div class="slide-sub">This is how you'll appear across every platform.</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Fields marked <span style="color:#e57373">*</span> are required.</div>
 
       <div class="field">
-        <label>Business Name</label>
+        <label>Business Name <span style="color:#e57373">*</span></label>
         <input type="text" id="s-name" placeholder="e.g. Maria's Kitchen" oninput="checkStep(1)" />
       </div>
 
       <div class="field">
-        <label>Your Name (optional)</label>
+        <label>Your Name <small style="color:var(--muted);font-weight:400">(optional — used to personalize your listings)</small></label>
         <input type="text" id="s-owner" placeholder="e.g. Maria Rodriguez" />
       </div>
 
       <div class="field">
-        <label>Phone Number</label>
+        <label>Phone Number <span style="color:#e57373">*</span></label>
         <input type="tel" id="s-phone" placeholder="(555) 000-0000" oninput="var d=this.value.replace(/\D/g,'').slice(0,10);this.value=d.length>6?'('+d.slice(0,3)+') '+d.slice(3,6)+'-'+d.slice(6):d.length>3?'('+d.slice(0,3)+') '+d.slice(3):d.length?'('+d:d;checkStep(1);" />
       </div>
 
       <div class="field">
-        <label>Business Email</label>
+        <label>Business Email <span style="color:#e57373">*</span></label>
         <input type="email" id="s-email" placeholder="you@yourbusiness.com" oninput="checkStep(1)" />
+      </div>
+
+      <div class="field">
+        <label>Website (optional)</label>
+        <input type="text" id="s-website" placeholder="yourbusiness.com"
+          onblur="var v=this.value.trim();if(v&&!/^https?:\/\//i.test(v)){this.value='https://'+v;}" />
       </div>
     </div>
 
@@ -147,7 +154,7 @@
           </div>
           <div class="field">
             <label>State</label>
-            <input type="text" id="s-state" placeholder="FL" oninput="checkStep(3)" onchange="checkStep(3)" />
+            <input type="text" id="s-state" placeholder="FL" maxlength="2" oninput="this.value=this.value.toUpperCase();checkStep(3)" onchange="checkStep(3)" />
           </div>
         </div>
       </div>
@@ -175,20 +182,27 @@
 
         <div class="input-row">
           <div class="field">
-            <label>Opens At</label>
+            <label>Opens At (Weekdays)</label>
             <input type="time" id="s-open" value="09:00" oninput="checkStep(3)" onchange="checkStep(3)" />
           </div>
           <div class="field">
-            <label>Closes At</label>
+            <label>Closes At (Weekdays)</label>
             <input type="time" id="s-close" value="17:00" oninput="checkStep(3)" onchange="checkStep(3)" />
           </div>
         </div>
-      </div>
 
-      <div class="field">
-        <label>Website (optional)</label>
-        <input type="text" id="s-website" placeholder="yourbusiness.com" oninput="checkStep(3)" onchange="checkStep(3)"
-          onblur="var v=this.value.trim();if(v&&!/^https?:\/\//i.test(v)){this.value='https://'+v;}" />
+        <div id="weekend-hours-row" style="display:none">
+          <div class="input-row">
+            <div class="field">
+              <label>Opens At (Weekend)</label>
+              <input type="time" id="s-open-wknd" value="10:00" oninput="checkStep(3)" onchange="checkStep(3)" />
+            </div>
+            <div class="field">
+              <label>Closes At (Weekend)</label>
+              <input type="time" id="s-close-wknd" value="17:00" oninput="checkStep(3)" onchange="checkStep(3)" />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -271,7 +285,7 @@
             <a class="connect-setup" href="https://business.nextdoor.com" target="_blank" rel="noopener">Claim your business →</a>
             <span class="connect-tag tag-copy">Copy & Paste</span>
           </div>
-          <button class="connect-btn done">Ready ✓</button>
+          <button class="connect-btn btn-copy-paste" disabled>Copy & Paste ✓</button>
         </div>
 
         <div class="connect-card" id="cc-yelp">
@@ -282,7 +296,7 @@
             <a class="connect-setup" href="https://biz.yelp.com/claim" target="_blank" rel="noopener">Claim your listing →</a>
             <span class="connect-tag tag-copy">Copy & Paste</span>
           </div>
-          <button class="connect-btn done">Ready ✓</button>
+          <button class="connect-btn btn-copy-paste" disabled>Copy & Paste ✓</button>
         </div>
 
         <div class="connect-card" id="cc-thumbtack">
@@ -293,7 +307,7 @@
             <a class="connect-setup" href="https://www.thumbtack.com/pro" target="_blank" rel="noopener">Join as a pro →</a>
             <span class="connect-tag tag-copy">Copy & Paste</span>
           </div>
-          <button class="connect-btn done">Ready ✓</button>
+          <button class="connect-btn btn-copy-paste" disabled>Copy & Paste ✓</button>
         </div>
 
         <div class="connect-card" id="cc-angi">
@@ -304,7 +318,7 @@
             <a class="connect-setup" href="https://pro.angi.com" target="_blank" rel="noopener">Join as a pro →</a>
             <span class="connect-tag tag-copy">Copy & Paste</span>
           </div>
-          <button class="connect-btn done">Ready ✓</button>
+          <button class="connect-btn btn-copy-paste" disabled>Copy & Paste ✓</button>
         </div>
 
         <div class="connect-card" id="cc-alignable">
@@ -315,7 +329,7 @@
             <a class="connect-setup" href="https://www.alignable.com" target="_blank" rel="noopener">Create free account →</a>
             <span class="connect-tag tag-copy">Copy & Paste</span>
           </div>
-          <button class="connect-btn done">Ready ✓</button>
+          <button class="connect-btn btn-copy-paste" disabled>Copy & Paste ✓</button>
         </div>
 
         <div class="connect-card" id="cc-fbmarket">
@@ -326,7 +340,7 @@
             <a class="connect-setup" href="https://www.facebook.com/marketplace/create/item" target="_blank" rel="noopener">Post directly on Marketplace →</a>
             <span class="connect-tag tag-copy">Copy & Paste</span>
           </div>
-          <button class="connect-btn done">Ready ✓</button>
+          <button class="connect-btn btn-copy-paste" disabled>Copy & Paste ✓</button>
         </div>
 
         <div class="connect-card" id="cc-craigslist">
@@ -337,7 +351,7 @@
             <a class="connect-setup" href="https://accounts.craigslist.org/login/signup" target="_blank" rel="noopener">Create free account →</a>
             <span class="connect-tag tag-copy">Copy & Paste</span>
           </div>
-          <button class="connect-btn done">Ready ✓</button>
+          <button class="connect-btn btn-copy-paste" disabled>Copy & Paste ✓</button>
         </div>
 
         <div class="connect-card" id="cc-bing">
@@ -348,7 +362,7 @@
             <a class="connect-setup" href="https://www.bingplaces.com" target="_blank" rel="noopener">Go to Bing Places →</a>
             <span class="connect-tag tag-copy">Manual</span>
           </div>
-          <button class="connect-btn done">Ready ✓</button>
+          <button class="connect-btn btn-manual" disabled>Manual Setup →</button>
         </div>
 
         <div class="connect-card" id="cc-applemaps">
@@ -359,7 +373,7 @@
             <a class="connect-setup" href="https://mapsconnect.apple.com" target="_blank" rel="noopener">Go to Apple Maps Connect →</a>
             <span class="connect-tag tag-copy">Manual</span>
           </div>
-          <button class="connect-btn done">Ready ✓</button>
+          <button class="connect-btn btn-manual" disabled>Manual Setup →</button>
         </div>
       </div>
 
@@ -383,7 +397,7 @@
             <div class="sstat-lbl">To Post All</div>
           </div>
           <div class="sstat">
-            <div class="sstat-num">∞</div>
+            <div class="sstat-num" id="ss-listings">∞</div>
             <div class="sstat-lbl">Listings</div>
           </div>
         </div>
@@ -926,6 +940,9 @@ function toggleDay(btn, day) {
   } else {
     selectedDays.push(day);
   }
+  const hasWknd = selectedDays.some(d => d === 'Sat' || d === 'Sun');
+  const wkndRow = document.getElementById('weekend-hours-row');
+  if (wkndRow) wkndRow.style.display = hasWknd ? '' : 'none';
 }
 
 // ══════════════════════════════════════════
@@ -1143,6 +1160,12 @@ auth.authStateReady().then(() => {
       const emailField = document.getElementById('s-email');
       if (ownerField && !ownerField.value) ownerField.value = data.ownerName || user.displayName || '';
       if (emailField && !emailField.value) emailField.value = data.email || user.email || '';
+      // Fix 12: plan-aware listings stat on success screen
+      const listingsEl = document.getElementById('ss-listings');
+      if (listingsEl) {
+        const plan = (data.plan || 'starter').toLowerCase();
+        listingsEl.textContent = plan === 'pro' ? '∞' : plan === 'growth' ? '5' : '1';
+      }
     } catch(e) { /* non-fatal */ }
 
     // Restore draft (overrides pre-fill if draft has values)
