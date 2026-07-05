@@ -1148,7 +1148,8 @@ function renderLibraryItems(items) {
           <div class="lib-item-header">
             <div class="lib-item-meta">${adLabel} ${date ? '· ' + date : ''}</div>
             <div class="lib-item-actions">
-              <button onclick="navigator.clipboard.writeText(${JSON.stringify(item.copy)}).then(()=>showToast('📋 Copied!'))"
+              <button onclick="copyLibItem(this)"
+                data-copy="${escHtml(item.copy)}"
                 class="lib-action-btn">📋 Copy</button>
               <button onclick="deleteLibraryItem('${escHtml(item.docId)}')"
                 class="lib-delete-btn">🗑</button>
@@ -1160,6 +1161,11 @@ function renderLibraryItems(items) {
     html += '</div>';
   });
   body.innerHTML = html;
+}
+
+function copyLibItem(btn) {
+  const text = btn.getAttribute('data-copy') || '';
+  navigator.clipboard.writeText(text).then(() => showToast('📋 Copied!'));
 }
 
 async function deleteLibraryItem(docId) {
