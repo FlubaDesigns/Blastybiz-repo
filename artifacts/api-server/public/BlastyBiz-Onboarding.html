@@ -1238,13 +1238,9 @@ window.nextStep = async function() {
           if (btn) { btn.disabled = false; btn.textContent = 'Complete Setup'; }
           if (cfResp.status === 403 && cfResult.plan) {
             const planLabel = cfResult.plan;
-            if (window.showToast) {
-              window.showToast(`Business limit reached for ${planLabel.charAt(0).toUpperCase() + planLabel.slice(1)} plan. Upgrade to add more.`);
-            } else { alert(`You\u2019ve reached the ${cfResult.cap || 1}-business limit for your ${planLabel.charAt(0).toUpperCase() + planLabel.slice(1)} plan.\n\nReturn to your Dashboard and upgrade your plan to add more businesses.`); }
+            showToast(`Business limit reached for ${planLabel.charAt(0).toUpperCase() + planLabel.slice(1)} plan. Upgrade to add more.`);
           } else {
-            if (window.showToast) {
-              window.showToast('Save failed — please try again. (Error ' + cfResp.status + ')');
-            } else { alert('Save failed \u2014 please try again. (Error\u00a0' + cfResp.status + ')'); }
+            showToast('Save failed — please try again. (Error ' + cfResp.status + ')');
           }
           return;
         }
@@ -1252,9 +1248,7 @@ window.nextStep = async function() {
     } catch(e) {
       console.error('Save failed:', e);
       if (btn) { btn.disabled = false; btn.textContent = 'Complete Setup'; }
-      if (window.showToast) {
-        window.showToast('Save failed — please try again. (' + (e.message || 'network error') + ')');
-      } else { alert('Save failed \u2014 please try again. (' + (e.message || 'network error') + ')'); }
+      showToast('Save failed — please try again. (' + (e.message || 'network error') + ')');
       return;
     }
     // Show personalized success screen — let user click to continue
