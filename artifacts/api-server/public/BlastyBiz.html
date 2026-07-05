@@ -3730,6 +3730,12 @@ onAuthStateChanged(auth, async (user) => {
         ownerName:    biz.ownerName || '',
         postingSchedule: biz.postingSchedule || null,
         aiContext:    biz.aiContext || null,
+        ynMentionName:    biz.ynMentionName    || 'no',
+        ynMentionRole:    biz.ynMentionRole    || 'no',
+        ynMentionAddress: biz.ynMentionAddress || 'yes',
+        ynMentionPhone:   biz.ynMentionPhone   || 'yes',
+        ynMentionEmail:   biz.ynMentionEmail   || 'yes',
+        ynMentionWebsite: biz.ynMentionWebsite || 'yes',
       };
       if (window._bbSetProfile) window._bbSetProfile(p);
       if (window.loadInsights)      window.loadInsights(biz.bizInsights || []);
