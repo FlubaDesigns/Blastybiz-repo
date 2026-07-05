@@ -83,15 +83,6 @@
       </div>
 
       <div class="field">
-        <label>Your Role</label>
-        <select id="s-owner-role">
-          <option value="owner">Owner</option>
-          <option value="manager">Manager</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-
-      <div class="field">
         <label>Phone Number</label>
         <input type="tel" id="s-phone" placeholder="(555) 000-0000" oninput="var d=this.value.replace(/\D/g,'').slice(0,10);this.value=d.length>6?'('+d.slice(0,3)+') '+d.slice(3,6)+'-'+d.slice(6):d.length>3?'('+d.slice(0,3)+') '+d.slice(3):d.length?'('+d:d;checkStep(1);" />
       </div>
@@ -110,7 +101,7 @@
 
       <div class="field">
         <label>Describe Your Business</label>
-        <textarea id="s-biztype" placeholder="e.g. I run a drone photography company specializing in real estate and weddings..." rows="3" oninput="checkStep(2)"></textarea>
+        <textarea id="s-biztype" placeholder="e.g. Drone photography for real estate and weddings" rows="3" oninput="checkStep(2); _schedCatResolve()"></textarea>
       </div>
 
       <div id="cat-resolve-wrap" class="hidden">
@@ -247,7 +238,7 @@
             <a class="connect-setup" href="https://business.google.com/create" target="_blank" rel="noopener">No profile yet? Create one →</a>
             <span class="connect-tag tag-auto">Auto-Post</span>
           </div>
-          <button class="connect-btn btn-coming-soon" onclick="return false;">Coming Soon</button>
+          <button class="connect-btn" id="cc-btn-google" onclick="connectPlatform('google', this)">Connect Google →</button>
         </div>
 
         <div class="connect-card" id="cc-facebook">
@@ -258,7 +249,7 @@
             <a class="connect-setup" href="https://www.facebook.com/pages/create" target="_blank" rel="noopener">No Page yet? Create one →</a>
             <span class="connect-tag tag-auto">Auto-Post</span>
           </div>
-          <button class="connect-btn btn-coming-soon" onclick="return false;">Coming Soon</button>
+          <button class="connect-btn" id="cc-btn-facebook" onclick="connectPlatform('facebook', this)">Connect Facebook →</button>
         </div>
 
         <div class="connect-card" id="cc-instagram">
@@ -269,7 +260,7 @@
             <a class="connect-setup" href="https://business.instagram.com" target="_blank" rel="noopener">Convert to Business account →</a>
             <span class="connect-tag tag-auto">Auto-Post</span>
           </div>
-          <button class="connect-btn btn-coming-soon" onclick="return false;">Coming Soon</button>
+          <button class="connect-btn btn-info" id="cc-btn-instagram" onclick="connectPlatform('instagram', this)">Connects via Facebook →</button>
         </div>
 
         <div class="connect-card" id="cc-nextdoor">
@@ -509,6 +500,10 @@ const NEXT_LABELS = [
 function init() {
   buildDots();
   updateUI();
+  const _stepParam = parseInt(new URLSearchParams(window.location.search).get('step') || '0', 10);
+  if (_stepParam > 0 && _stepParam <= TOTAL_STEPS) {
+    setTimeout(() => goToStep(_stepParam), 100);
+  }
 }
 
 function buildDots() {
@@ -525,11 +520,60 @@ function buildDots() {
 // ══════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════
+function _markInvalid(id) {
+  const el = document.getElementById(id);
+  if (el) { el.style.borderColor = '#e57373'; el.style.boxShadow = '0 0 0 2px rgba(229,115,115,0.3)'; }
+}
+function _markValid(id) {
+  const el = document.getElementById(id);
+  if (el) { el.style.borderColor = ''; el.style.boxShadow = ''; }
+}
+function _scrollToFirst(ids) {
+  for (const id of ids) {
+    const el = document.getElementById(id);
+    if (el && !el.value?.trim()) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus(); return; }
+  }
+}
+function showToast(msg) {
+  let t = document.getElementById('ob-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'ob-toast';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transition:opacity 0.3s;pointer-events:none;max-width:90vw;text-align:center';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._to);
+  t._to = setTimeout(() => { t.style.opacity = '0'; }, 3000);
+}
+var _catResolveTimer = null;
+function _schedCatResolve() {
+  clearTimeout(_catResolveTimer);
+  const desc = document.getElementById('s-biztype')?.value?.trim() || '';
+  if (desc.length < 15) return;
+  _catResolveTimer = setTimeout(() => {
+    const resolveBtn = document.getElementById('cat-resolve-btn');
+    if (resolveBtn && !resolveBtn.disabled) resolveCats();
+  }, 1800);
+}
+
 function nextStep() {
   if (currentStep === TOTAL_STEPS) {
     saveProfile();
-    window.location.href = 'BlastyBiz-Dashboard.html';
     return;
+  }
+  if (currentStep === 1) {
+    const name  = document.getElementById('s-name')?.value?.trim();
+    const phone = document.getElementById('s-phone')?.value?.trim();
+    const email = document.getElementById('s-email')?.value?.trim();
+    const nameOk  = name?.length  > 1;
+    const phoneOk = phone?.length > 6;
+    const emailOk = email?.includes('@');
+    if (!nameOk)  _markInvalid('s-name');  else _markValid('s-name');
+    if (!phoneOk) _markInvalid('s-phone'); else _markValid('s-phone');
+    if (!emailOk) _markInvalid('s-email'); else _markValid('s-email');
+    if (!nameOk || !phoneOk || !emailOk) { _scrollToFirst(['s-name', 's-phone', 's-email']); return; }
   }
   goToStep(currentStep + 1);
 }
@@ -603,6 +647,9 @@ function checkStep(step) {
     const phone = document.getElementById('s-phone')?.value?.trim();
     const email = document.getElementById('s-email')?.value?.trim();
     valid = name?.length > 1 && phone?.length > 6 && email?.includes('@');
+    if (name?.length  > 1) _markValid('s-name');
+    if (phone?.length > 6) _markValid('s-phone');
+    if (email?.includes('@')) _markValid('s-email');
   } else if (step === 2) {
     const desc = document.getElementById('s-biztype')?.value?.trim();
     valid = desc?.length > 5;
@@ -1104,6 +1151,29 @@ auth.authStateReady().then(() => {
     if (typeof checkStep === 'function' && typeof currentStep !== 'undefined') {
       checkStep(currentStep);
     }
+
+    // Refresh connect card states if returning from OAuth
+    async function refreshOnboardConnectCards() {
+      if (!currentUser) return;
+      try {
+        const bizId = currentUser.uid;
+        const [gSnap, fbSnap] = await Promise.all([
+          getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'platformConnections', 'google')),
+          getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'platformConnections', 'facebook')),
+        ]);
+        if (gSnap.exists() && gSnap.data().status === 'connected') {
+          const btn = document.getElementById('cc-btn-google');
+          if (btn) { btn.textContent = 'Connected ✓'; btn.className = 'connect-btn done'; btn.disabled = true; }
+        }
+        if (fbSnap.exists() && fbSnap.data().status === 'connected') {
+          const fb = document.getElementById('cc-btn-facebook');
+          if (fb) { fb.textContent = 'Connected ✓'; fb.className = 'connect-btn done'; fb.disabled = true; }
+          const ig = document.getElementById('cc-btn-instagram');
+          if (ig) { ig.textContent = 'Connected via Facebook ✓'; ig.className = 'connect-btn done'; ig.disabled = true; }
+        }
+      } catch(e) {}
+    }
+    refreshOnboardConnectCards();
   });
 });
 
@@ -1167,23 +1237,38 @@ window.nextStep = async function() {
         if (!cfResp.ok) {
           if (btn) { btn.disabled = false; btn.textContent = 'Complete Setup'; }
           if (cfResp.status === 403 && cfResult.plan) {
-            // Server confirmed plan limit — show the specific cap message
             const planLabel = cfResult.plan;
-            alert(`You\u2019ve reached the ${cfResult.cap || 1}-business limit for your ${planLabel.charAt(0).toUpperCase() + planLabel.slice(1)} plan.\n\nReturn to your Dashboard and upgrade your plan to add more businesses.`);
+            if (window.showToast) {
+              window.showToast(`Business limit reached for ${planLabel.charAt(0).toUpperCase() + planLabel.slice(1)} plan. Upgrade to add more.`);
+            } else { alert(`You\u2019ve reached the ${cfResult.cap || 1}-business limit for your ${planLabel.charAt(0).toUpperCase() + planLabel.slice(1)} plan.\n\nReturn to your Dashboard and upgrade your plan to add more businesses.`); }
           } else {
-            alert('Save failed \u2014 please try again. (Error\u00a0' + cfResp.status + ')');
+            if (window.showToast) {
+              window.showToast('Save failed — please try again. (Error ' + cfResp.status + ')');
+            } else { alert('Save failed \u2014 please try again. (Error\u00a0' + cfResp.status + ')'); }
           }
           return;
         }
-        _clearDraft();
       }
     } catch(e) {
       console.error('Save failed:', e);
       if (btn) { btn.disabled = false; btn.textContent = 'Complete Setup'; }
-      alert('Save failed \u2014 please try again. (' + (e.message || 'network error') + ')');
+      if (window.showToast) {
+        window.showToast('Save failed — please try again. (' + (e.message || 'network error') + ')');
+      } else { alert('Save failed \u2014 please try again. (' + (e.message || 'network error') + ')'); }
       return;
     }
-    window.location.href = 'BlastyBiz-Dashboard.html';
+    // Show personalized success screen — let user click to continue
+    _clearDraft();
+    const bizName = data.businessName || 'Your business';
+    const successTitle = document.querySelector('#slide-6 .success-title');
+    if (successTitle) successTitle.innerHTML = `${bizName}<br/><span>is Ready!</span>`;
+    const successSub = document.getElementById('success-sub');
+    if (successSub) successSub.innerHTML = `Your business profile is complete.<br/>Now let\u2019s create your first AI-powered campaign.`;
+    if (btn) { btn.disabled = false; btn.textContent = 'Create First Campaign \u2192'; }
+    // Override nextStep so the button navigates to campaign creation
+    window.nextStep = function() {
+      window.location.href = 'BlastyBiz.html?newcampaign=1&firstrun=1';
+    };
     return;
   }
   if (origNextStep) origNextStep();

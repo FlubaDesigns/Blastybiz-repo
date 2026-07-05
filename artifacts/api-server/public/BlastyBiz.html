@@ -3199,6 +3199,20 @@ async function saveNewCampaign() {
   renderCampaignChips();
   _syncSchedCampaign(id, name);
   showToast('Campaign "' + name + '" created');
+
+  if (window._bbFirstRun) {
+    window._bbFirstRun = false;
+    const banner = document.getElementById('firstrun-banner');
+    if (banner) banner.remove();
+    setTimeout(() => {
+      const offerField = document.getElementById('biz-offer');
+      if (offerField) {
+        offerField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        offerField.focus();
+        offerField.placeholder = "What are you promoting? e.g. 20% off all services this weekend only";
+      }
+    }, 400);
+  }
 }
 
 async function deleteCampaign(id, name) {
@@ -3755,6 +3769,18 @@ onAuthStateChanged(auth, async (user) => {
       } else if (_qp.get('newcampaign') === '1') {
         showTab('create');
         openNewCampaign();
+        window._bbFirstRun = _qp.get('firstrun') === '1';
+        if (window._bbFirstRun) {
+          const chipsContainer = document.getElementById('campaign-chips');
+          if (chipsContainer) {
+            const banner = document.createElement('div');
+            banner.id = 'firstrun-banner';
+            banner.style.cssText = 'padding:14px 0 6px;border-bottom:1px solid var(--border);margin-bottom:10px;';
+            banner.innerHTML = '<div style="font-size:15px;font-weight:700;color:var(--light)">👋 Welcome! Let\'s create your first campaign.</div>'
+              + '<div style="font-size:12px;color:var(--muted);margin-top:4px;">Name your campaign below — something like <em>Grand Opening</em> or <em>Holiday Special</em>.<br/>Then fill in what you\'re offering. AI will write the rest.</div>';
+            chipsContainer.parentNode.insertBefore(banner, chipsContainer);
+          }
+        }
       }
     }
   } catch(e) {
