@@ -907,7 +907,7 @@ exports.uploadImage = onRequest({ invoker: 'public' }, async (req, res) => {
   const bucket = admin.storage().bucket();
   const file = bucket.file(`users/${uid}/images/${Date.now()}_${safeFileName}`);
   await file.save(rawBytes, { contentType: mimeType });
-  const [url] = await file.getSignedUrl({ action: 'read', expires: '03-01-2500' });
+  const [url] = await file.getSignedUrl({ action: 'read', expires: new Date(Date.now() + 10 * 365 * 24 * 3600 * 1000) });
   res.json({ url });
 });
 
@@ -2594,7 +2594,10 @@ exports.adminSubscriptionSummary = onRequest({ invoker: 'public' }, async (req, 
   ]);
   const planCounts = { starter: 0, pro: 0, agency: 0 };
   usersSnap.docs.forEach(d => {
-    const p = d.data().plan || 'starter';
+    const data = d.data();
+    const p = data.plan || 'starter';
+    // Only count paid plans when the subscription is actually active
+    if (p !== 'starter' && data.planActive !== true) return;
     planCounts[p] = (planCounts[p] || 0) + 1;
   });
   const pricingSnap = await db.collection('settings').doc('pricing').get();
@@ -3067,13 +3070,15 @@ async function _runScheduledPost(bizId, biz) {
   const activeCampaignId = sched.activeCampaignId || '';
   const schedUid = biz.uid || '';
 
-  // Gate: only paid active users get scheduled AI posting
+  // Gate: only paid active users get scheduled AI posting.
+  // Cache userData here — reused later to avoid a second Firestore read.
+  let _schedUserData = {};
   if (schedUid) {
     try {
       const userSnap = await db.collection('users').doc(schedUid).get();
-      const userData = userSnap.exists ? userSnap.data() : {};
-      const isPaid = userData.planActive === true &&
-                     (userData.plan === 'pro' || userData.plan === 'agency');
+      _schedUserData = userSnap.exists ? userSnap.data() : {};
+      const isPaid = _schedUserData.planActive === true &&
+                     (_schedUserData.plan === 'pro' || _schedUserData.plan === 'agency');
       if (!isPaid) {
         console.log(`[scheduledPost] Skipping biz ${bizId} — not a paid active plan (uid=${schedUid})`);
         return;
@@ -3199,15 +3204,9 @@ Return ONLY valid JSON: { "adaptations": { "PLATFORM_ID": "text" } }`;
     return;
   }
 
-  // Get user plan to determine manual vs auto-post
+  // Reuse the plan cached from the paid-gate check above (avoids a second Firestore read)
   const uid = schedUid;
-  let plan = 'starter';
-  if (uid) {
-    try {
-      const userSnap = await db.collection('users').doc(uid).get();
-      if (userSnap.exists) plan = userSnap.data().plan || 'starter';
-    } catch(e) { console.warn('_runScheduledPost: users read failed, defaulting to starter:', e.message); }
-  }
+  const plan = _schedUserData.plan || 'starter';
   const isStarter = plan === 'starter';
 
   const batch = db.batch();
