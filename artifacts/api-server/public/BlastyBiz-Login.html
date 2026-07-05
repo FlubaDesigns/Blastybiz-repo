@@ -173,7 +173,7 @@
 
               </div>
 
-              <!-- RESET PASSWORD -->
+              <!-- RESET PASSWORD (request form) -->
               <div class="reset-view" id="reset-view">
                 <button class="reset-back" onclick="hideReset()">← Back to Sign In</button>
                 <h2>Reset Password</h2>
@@ -187,6 +187,35 @@
                 <button class="btn-submit" onclick="handleReset()">
                   <div class="spinner"></div>
                   <span class="btn-text">Send Reset Link →</span>
+                </button>
+              </div>
+
+              <!-- SET NEW PASSWORD (arrived via reset link in email) -->
+              <div class="reset-view" id="set-password-view">
+                <h2>Set New Password</h2>
+                <p>Resetting password for <strong id="set-pw-email"></strong></p>
+
+                <div class="field">
+                  <label>New Password</label>
+                  <div class="pw-wrap">
+                    <input type="password" id="set-pw-new" placeholder="New password (8+ characters)" oninput="clearErr('set-pw-new')" />
+                    <button class="pw-toggle" onclick="togglePw('set-pw-new', this)" type="button">👁️</button>
+                  </div>
+                  <div class="field-error" id="set-pw-new-err">Password must be at least 8 characters</div>
+                </div>
+
+                <div class="field">
+                  <label>Confirm New Password</label>
+                  <div class="pw-wrap">
+                    <input type="password" id="set-pw-confirm" placeholder="Repeat your new password" oninput="clearErr('set-pw-confirm')" />
+                    <button class="pw-toggle" onclick="togglePw('set-pw-confirm', this)" type="button">👁️</button>
+                  </div>
+                  <div class="field-error" id="set-pw-confirm-err">Passwords don't match</div>
+                </div>
+
+                <button class="btn-submit" id="btn-set-pw" onclick="handleSetPassword()">
+                  <div class="spinner"></div>
+                  <span class="btn-text">Save New Password →</span>
                 </button>
               </div>
 
@@ -323,6 +352,7 @@ function handleSignUp() {}
 function handleGoogle() {}
 function handleFacebook() {}
 function handleReset() {}
+function handleSetPassword() {}
 </script>
 
 <script type="module">
@@ -334,7 +364,9 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   sendPasswordResetEmail,
-  sendEmailVerification
+  sendEmailVerification,
+  verifyPasswordResetCode,
+  confirmPasswordReset
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -342,6 +374,60 @@ import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs
   const el = document.getElementById(id);
   if (el) el.disabled = false;
 });
+
+// ── Password-reset link handler ───────────────────────────────────────────────
+// When the user clicks the reset link in their email, Firebase redirects back
+// to this page with ?mode=resetPassword&oobCode=...  Detect that here, verify
+// the code, and show the "Set New Password" form instead of the login form.
+let _resetOobCode = null;
+
+(async function checkResetLink() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('mode') !== 'resetPassword') return;
+  const oobCode = params.get('oobCode');
+  if (!oobCode) return;
+  try {
+    const email = await verifyPasswordResetCode(auth, oobCode);
+    _resetOobCode = oobCode;
+    document.getElementById('set-pw-email').textContent = email;
+    document.getElementById('auth-loading').style.display = 'none';
+    document.getElementById('auth-card-wrap').classList.add('ready');
+    document.getElementById('set-password-view').classList.add('visible');
+  } catch (e) {
+    showToast('This reset link has expired or already been used. Please request a new one.', true);
+    document.getElementById('auth-loading').style.display = 'none';
+    document.getElementById('auth-card-wrap').classList.add('ready');
+  }
+})();
+
+window.handleSetPassword = async function() {
+  if (!_resetOobCode) return;
+  const newPw      = document.getElementById('set-pw-new').value;
+  const confirmPw  = document.getElementById('set-pw-confirm').value;
+  let valid = true;
+  if (newPw.length < 8)      { showErr('set-pw-new', 'Password must be at least 8 characters'); valid = false; }
+  if (newPw !== confirmPw)   { showErr('set-pw-confirm', "Passwords don't match"); valid = false; }
+  if (!valid) return;
+  setLoading('btn-set-pw', true);
+  try {
+    await confirmPasswordReset(auth, _resetOobCode, newPw);
+    showToast('Password updated! Sign in with your new password ✓');
+    _resetOobCode = null;
+    // Clear the oobCode from the URL, then show normal sign-in form
+    history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => {
+      document.getElementById('set-password-view').classList.remove('visible');
+      document.getElementById('form-signin').style.display = '';
+    }, 1800);
+  } catch (e) {
+    setLoading('btn-set-pw', false);
+    const msg = e.code === 'auth/expired-action-code'  ? 'This link has expired — request a new one.' :
+                e.code === 'auth/invalid-action-code'  ? 'Invalid link — please request a new reset email.' :
+                e.code === 'auth/weak-password'        ? 'Password is too weak — use 8+ characters.' :
+                'Could not save password — try again.';
+    showToast(msg, true);
+  }
+};
 
 window.selectPlan = function(plan) {
   document.querySelectorAll('.plan-pick-btn').forEach(b =>
@@ -413,6 +499,10 @@ window.backFromVerify = async function() {
 };
 
 onAuthStateChanged(auth, async (user) => {
+  // If we're processing a password-reset link, don't auto-redirect —
+  // checkResetLink() is already showing the set-password form.
+  if (new URLSearchParams(window.location.search).get('mode') === 'resetPassword') return;
+
   if (!user) {
     localStorage.setItem('bb_auth', '0');
     showLoginForm();
