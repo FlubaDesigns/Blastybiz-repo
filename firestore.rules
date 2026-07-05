@@ -144,19 +144,19 @@ service cloud.firestore {
           allow create, update, delete: if isAdmin();
         }
 
-        // Platform connections — owner read; admin read/write; owner may only set status→disconnected
-        // All other field changes (tokens, locationId, etc.) must go through Cloud Functions (Admin SDK).
+        // Platform connections — owner read; admin read/write
+        // Owners may update safe fields (enabled, status, updatedAt, platformName, uid, businessId, platform).
+        // Sensitive OAuth fields (accessToken, refreshToken, locationId, pageId, pageToken) are admin-only.
         match /platformConnections/{connId} {
           allow read: if request.auth != null &&
             (request.auth.uid == userId || isAdmin());
           allow write: if isAdmin();
           allow create: if request.auth != null &&
             request.auth.uid == userId;
-          // Owners may disconnect their own connection but cannot write any other field
           allow update: if request.auth != null &&
             request.auth.uid == userId &&
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
-            request.resource.data.status == 'disconnected';
+            !request.resource.data.diff(resource.data).affectedKeys()
+              .hasAny(['accessToken', 'refreshToken', 'locationId', 'pageId', 'pageToken', 'code', 'tokenExpiry']);
         }
 
         // Pending posts (review queue) — owner read only; all writes via Cloud Functions (Admin SDK)
