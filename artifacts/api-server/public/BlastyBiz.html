@@ -2110,8 +2110,8 @@ function clearAndStartOver() {
   // Reset to physical location type
   setLocationType('physical');
 
-  // Reset platforms to defaults
-  platforms = PLATFORMS.map(p => ({...p, adaptedContent: null, status: 'idle'}));
+  // Reset platform content/status but preserve user's enabled choices
+  platforms = platforms.map(p => ({...p, adaptedContent: null, status: 'idle'}));
   savePlatforms();
   renderPlatforms();
 
