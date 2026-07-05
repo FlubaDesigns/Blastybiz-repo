@@ -1949,6 +1949,8 @@ function setYN(field, val) {
   const no  = document.getElementById('yn-' + field + '-no');
   if (yes) { yes.classList.toggle('yn-active', val === 'yes'); }
   if (no)  { no.classList.toggle('yn-active',  val === 'no');  }
+  // Persist to Firestore via the debounced saveProfile path
+  if (window.saveProfile) window.saveProfile();
 }
 
 function updateCopyPreview() {
@@ -3069,10 +3071,16 @@ window._bbSetProfile = function(p) {
       street: p.street, city: p.city, state: p.state, zip: p.zip,
       region: p.region, locationType: p.locationType, website: p.website,
       hours: p.hours, tone: p.tone, platformCats: p.platformCats || {},
-      postingSchedule: p.postingSchedule || null, aiContext: p.aiContext || null
+      postingSchedule: p.postingSchedule || null, aiContext: p.aiContext || null,
+      ynMentionName: p.ynMentionName || 'no', ynMentionRole: p.ynMentionRole || 'no'
     }));
   } catch(e) {}
   loadProfile();
+  // Restore About You in Copy pill state from saved profile
+  if (typeof setYN === 'function') {
+    setYN('name', p.ynMentionName || 'no');
+    setYN('role', p.ynMentionRole || 'no');
+  }
 };
 
 window._bbFirestoreDismissPending = async function(id) {
@@ -3678,10 +3686,12 @@ window.saveProfile = function() {
       ...(profile.address  ? { address:      profile.address }  : {}),
       ...(profile.website  ? { website:      profile.website }  : {}),
       ...(profile.hours    ? { hours:        profile.hours }    : {}),
-      locationType: profile.locationType || 'physical',
-      region:       profile.region || '',
-      tone:         profile.tone   || 'friendly',
-      updatedAt:    serverTimestamp(),
+      locationType:   profile.locationType || 'physical',
+      region:         profile.region || '',
+      tone:           profile.tone   || 'friendly',
+      ynMentionName:  ynState.name,
+      ynMentionRole:  ynState.role,
+      updatedAt:      serverTimestamp(),
     }, { merge: true });
   } catch(e) {
     console.error('saveProfile Firestore error:', e);
