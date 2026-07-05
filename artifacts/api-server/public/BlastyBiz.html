@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=47" />
+<link rel="stylesheet" href="global-style.css?v=48" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -639,6 +639,7 @@ var ynState = { name: 'no', role: 'no', address: 'yes', phone: 'yes', email: 'ye
 // Per-platform photo selection (session only — resets on reload)
 // { pid: Set of selected photo URLs }
 window._bbPlatformPhotoSel = {};
+window._bbPlatformUrls     = {};   // { pid: savedPageUrl } — persisted to Firestore
 let platformReasons     = {};                 // AI-suggested reasons per platform id
 let profileLocationType = 'physical';         // 'physical' | 'online' — profile form
 window._bbPhotoItems = []; // [{url, path, localUrl, done, progress, error}]
@@ -804,6 +805,16 @@ function renderQuickSelect() {
           </div>`;
       }
 
+      // Platform page URL row — always visible once accordion is open
+      bodyInner += '<div class="qp-url-section"><div class="qp-url-row">' +
+        '<span class="qp-url-label">Your ' + escHtml(p.name) + ' page</span>' +
+        '<input type="url" id="qp-url-input-' + p.id + '" class="qp-url-input"' +
+          ' placeholder="' + escHtml(PLATFORM_URL_HINTS[p.id] || 'Paste your ' + p.name + ' page URL') + '"' +
+          ' value="' + escHtml((window._bbPlatformUrls || {})[p.id] || '') + '"' +
+          ' onblur="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', this.value.trim())" />' +
+        '<button class="qp-open-btn" onclick="window.openPlatformPage(\'' + p.id + '\')">Open →</button>' +
+        '</div></div>';
+
       // Copy output section — hidden until Generate is clicked this session
       bodyInner += `
         <div id="qp-copy-${p.id}" class="qp-copy${hasCats ? ' qp-copy-cats' : ''}">
@@ -871,6 +882,44 @@ const PLATFORM_IMAGE_SUPPORT = {
   // yelp, alignable, thumbtack, angi, applemaps, bing — no per-post image upload
 };
 
+// Default URLs to open for each platform (fallback when user hasn't saved their own)
+const PLATFORM_DEFAULT_URLS = {
+  google:     'https://business.google.com/',
+  facebook:   'https://www.facebook.com/',
+  instagram:  'https://www.instagram.com/',
+  bing:       'https://www.bingplaces.com/',
+  nextdoor:   'https://nextdoor.com/',
+  fbmarket:   'https://www.facebook.com/marketplace/create/item',
+  craigslist: 'https://post.craigslist.org/',
+  yelp:       'https://biz.yelp.com/',
+  alignable:  'https://www.alignable.com/',
+  thumbtack:  'https://www.thumbtack.com/pro',
+  angi:       'https://pro.angi.com/',
+  applemaps:  'https://businessconnect.apple.com/',
+  linkedin:   'https://www.linkedin.com/feed/',
+  x:          'https://x.com/compose/post',
+  pinterest:  'https://www.pinterest.com/pin-builder/',
+};
+
+// Placeholder hints shown in the URL input for each platform
+const PLATFORM_URL_HINTS = {
+  google:     'e.g. https://business.google.com/dashboard/…',
+  facebook:   'e.g. https://www.facebook.com/YourPageName',
+  instagram:  'e.g. https://www.instagram.com/youraccount',
+  bing:       'Leave blank — opens Bing Places dashboard',
+  nextdoor:   'Leave blank — opens Nextdoor feed',
+  fbmarket:   'Leave blank — opens Marketplace listing form',
+  craigslist: 'Leave blank — opens Craigslist post form',
+  yelp:       'e.g. https://biz.yelp.com/biz_info/…',
+  alignable:  'e.g. https://www.alignable.com/…',
+  thumbtack:  'e.g. https://www.thumbtack.com/profile/…',
+  angi:       'e.g. https://pro.angi.com/…',
+  applemaps:  'Leave blank — opens Apple Business Connect',
+  linkedin:   'e.g. https://www.linkedin.com/company/yourcompany',
+  x:          'Leave blank — opens X post composer',
+  pinterest:  'Leave blank — opens Pinterest pin builder',
+};
+
 function showCopyInAccordions(adaptations, featuredPhotoUrl) {
   // Reset all platform photo selections for this new generation
   window._bbPlatformPhotoSel = {};
@@ -918,24 +967,32 @@ function showCopyInAccordions(adaptations, featuredPhotoUrl) {
       renderPlatformPhotoStrip(p.id, campaignPhotos, imgSupport.max);
     }
 
-    // Share-to-platform button — manual platforms only
-    if (p.type === 'manual') {
-      const shareSection = document.getElementById('qp-share-' + p.id);
-      if (shareSection) {
-        const hasImgs = !!(imgSupport && campaignPhotos.length > 0);
+    // Refresh URL input value in case Firestore loaded after accordion was built
+    const urlInput = document.getElementById('qp-url-input-' + p.id);
+    if (urlInput && !urlInput.value && (window._bbPlatformUrls || {})[p.id]) {
+      urlInput.value = window._bbPlatformUrls[p.id];
+    }
+
+    // Action section — every platform gets Copy & Open; manual also gets mobile Share sheet
+    const shareSection = document.getElementById('qp-share-' + p.id);
+    if (shareSection) {
+      const isManual = p.type === 'manual';
+      const hasImgs = !!(imgSupport && campaignPhotos.length > 0);
+      let html = '<button class="qp-copy-open-btn" onclick="window.copyAndOpen(\'' + p.id + '\')">'
+        + '📋 Copy &amp; Open ' + escHtml(p.name) + ' →</button>';
+      if (isManual) {
+        html += '<button class="qp-share-btn" onclick="sharePlatformContent(\'' + p.id + '\')">'
+          + '📤 Share with photos</button>';
         const imgLine = hasImgs
-          ? 'Select the photos above in the order you want them, then tap Share.'
-          : 'No campaign photos uploaded — shares your copy text only.';
-        shareSection.style.display = 'block';
-        shareSection.innerHTML = `
-          <button class="qp-share-btn" onclick="sharePlatformContent('${p.id}')">
-            📤 Share to ${escHtml(p.name)}
-          </button>
-          <div class="qp-share-note">
-            ${escHtml(imgLine)}<br>
-            <strong>Why this way?</strong> ${escHtml(p.name)} controls who can post to it directly — that's their policy, not ours. We hand you the copy and photos ready to go. You confirm in their app.
-          </div>`;
+          ? 'Select photos above in order, then tap Share to send everything at once.'
+          : 'No campaign photos — Share sends copy text only.';
+        html += '<div class="qp-share-note">' + escHtml(imgLine) + '<br>'
+          + '<strong>Why Copy &amp; Open?</strong> One tap copies your AI copy to the clipboard and opens '
+          + escHtml(p.name) + ' in a new tab — just paste and post. '
+          + escHtml(p.name) + ' controls direct access; we get you there as fast as possible.</div>';
       }
+      shareSection.style.display = 'block';
+      shareSection.innerHTML = html;
     }
 
     // Expand every enabled platform that received copy
@@ -1014,6 +1071,28 @@ async function sharePlatformContent(pid) {
     if (e.name !== 'AbortError') showToast('Share failed — use Copy and attach photos manually');
   }
 }
+
+// Open a platform page in a new tab (uses saved URL or platform default)
+window.openPlatformPage = function(pid) {
+  const saved = (window._bbPlatformUrls || {})[pid];
+  const url = (saved && saved.startsWith('http')) ? saved : (PLATFORM_DEFAULT_URLS[pid] || 'https://google.com');
+  window.open(url, '_blank');
+};
+
+// Copy AI copy to clipboard + open platform page in new tab — one tap
+window.copyAndOpen = async function(pid) {
+  const el = document.getElementById('qp-copy-text-' + pid);
+  const text = el?.textContent?.trim() || '';
+  const plat = platforms.find(p => p.id === pid);
+  const name = plat?.name || pid;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch(e) { /* clipboard blocked — still open the tab */ }
+  const saved = (window._bbPlatformUrls || {})[pid];
+  const url = (saved && saved.startsWith('http')) ? saved : (PLATFORM_DEFAULT_URLS[pid] || 'https://google.com');
+  showToast('📋 Copied! Opening ' + name + '…');
+  setTimeout(() => window.open(url, '_blank'), 80);
+};
 
 function togglePlatformPhoto(pid, url, maxPhotos, photos) {
   if (!window._bbPlatformPhotoSel[pid]) window._bbPlatformPhotoSel[pid] = new Set();
@@ -3662,6 +3741,10 @@ onAuthStateChanged(auth, async (user) => {
     if (!connsSnap.empty) {
       const connMap = {};
       connsSnap.forEach(d => { connMap[d.data().platform || d.id] = d.data(); });
+      // Load saved page URLs into global map so accordion URL inputs are pre-filled
+      Object.entries(connMap).forEach(([pid, data]) => {
+        if (data.profileUrl) window._bbPlatformUrls[pid] = data.profileUrl;
+      });
       const updatedPlatforms = PLATFORMS.map(p => {
         const conn = connMap[p.id];
         return conn ? { ...p, enabled: !!conn.enabled, status: conn.status || 'idle' } : p;
@@ -3788,6 +3871,19 @@ document.addEventListener('bb:clearAll', async () => {
     console.error('clearAll Firestore error:', e);
   }
 });
+
+// Save a platform's page URL to Firestore — called from URL input onblur
+window.savePlatformUrl = async function(pid, url) {
+  window._bbPlatformUrls[pid] = url;
+  if (!currentUser || !activeBizId) return;
+  try {
+    await setDoc(
+      doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'platformConnections', pid),
+      { profileUrl: url, updatedAt: serverTimestamp() },
+      { merge: true }
+    );
+  } catch(e) { console.error('savePlatformUrl error:', e); }
+};
 
 const origSaveProfile = window.saveProfile;
 let _saveProfileTimer = null;

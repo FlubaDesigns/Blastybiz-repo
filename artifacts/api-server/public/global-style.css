@@ -2317,6 +2317,17 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 .qp-share-section { margin-top: 14px; }
 .qp-share-btn   { width: 100%; padding: 10px 16px; background: var(--accent); border: none; border-radius: 10px; color: #fff; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; margin-bottom: 8px; }
 .qp-share-note  { font-size: 11px; color: var(--muted); line-height: 1.5; }
+/* ── Platform URL row (always visible in accordion) ── */
+.qp-url-section { border-top: 1px solid var(--border); margin-top: 14px; padding-top: 12px; }
+.qp-url-row     { display: flex; align-items: center; gap: 8px; }
+.qp-url-label   { font-size: 11px; font-weight: 700; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+.qp-url-input   { flex: 1; background: var(--input-bg,rgba(255,255,255,.06)); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; color: var(--text); font-size: 12px; font-family: inherit; min-width: 0; }
+.qp-url-input::placeholder { color: var(--muted); opacity: .7; }
+.qp-open-btn    { flex-shrink: 0; padding: 7px 12px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 12px; font-weight: 700; font-family: inherit; cursor: pointer; white-space: nowrap; }
+.qp-open-btn:active { opacity: .7; }
+/* ── Copy & Open CTA ── */
+.qp-copy-open-btn { width: 100%; padding: 11px 16px; background: var(--green); border: none; border-radius: 10px; color: #000; font-size: 13px; font-weight: 800; font-family: inherit; cursor: pointer; margin-bottom: 8px; letter-spacing: .2px; }
+.qp-copy-open-btn:active { opacity: .85; }
 
 /* ── Copy library modal ── */
 .lib-loading    { color: var(--muted); font-size: 14px; padding: 24px 0; text-align: center; }
