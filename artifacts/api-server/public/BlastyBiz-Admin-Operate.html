@@ -377,6 +377,40 @@
   </div>
 
   <!-- ══════════════════════════════════════════
+       SQUARE SUBSCRIPTION SETUP
+  ══════════════════════════════════════════ -->
+  <div class="op-section">
+    <div class="section-header">
+      <span class="section-icon">💳</span>
+      <span class="section-title">Square Subscription Setup</span>
+      <span class="section-badge error">Required before first paid user</span>
+    </div>
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-square-plans" onclick="toggleCheck(event,'square-plans')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">Run <code>adminUpdatePricing</code> to create Square subscription plans</div>
+          <div class="op-card-sub">Until this runs, checkout returns a 503 error for every user who tries to upgrade. This creates the 4 Square subscription catalog plans (Pro monthly/annual, Agency monthly/annual) and writes their IDs to Firestore.</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-step-label">What to do</p>
+        <ol class="op-list">
+          <li>Go to <a href="BlastyBiz-Admin-Platforms.html" style="color:#00C853">Admin → Platforms</a> and click <strong>Update Pricing</strong>, <em>or</em> call the function directly:</li>
+          <li>Open your browser's dev tools console while signed in as admin and run:</li>
+        </ol>
+        <div class="code-block" style="margin:8px 0 12px">
+          <span class="code-text" id="sq-plan-curl-text">const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/11.8.1/firebase-functions.js'); const fn = httpsCallable(window._bbFunctions, 'adminUpdatePricing'); fn({proMonthly:1900,proAnnual:19900,agencyMonthly:9900,agencyAnnual:99900}).then(r=>console.log(r));</span>
+          <button class="copy-btn" onclick="copyCode(this, document.getElementById('sq-plan-curl-text').textContent)">Copy</button>
+        </div>
+        <div class="op-note">✅ When it succeeds, Firestore <code>settings/pricing</code> will have 4 plan IDs (<code>squareProMonthlyPlanId</code>, <code>squareProAnnualPlanId</code>, <code>squareAgencyMonthlyPlanId</code>, <code>squareAgencyAnnualPlanId</code>). Checkout will work immediately — no redeploy needed.</div>
+        <div class="op-note" style="margin-top:8px">⚠️ Only run this once. If you run it again it will create duplicate plans in Square — delete the old ones in the Square Dashboard first if you need to reset pricing.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
        PLANNED PLATFORM APIS
   ══════════════════════════════════════════ -->
   <div class="op-section">
