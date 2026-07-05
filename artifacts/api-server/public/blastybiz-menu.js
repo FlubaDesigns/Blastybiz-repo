@@ -35,8 +35,10 @@ document.addEventListener('DOMContentLoaded', function() {
     var obs = new MutationObserver(function() {
       if (document.querySelector('.header')) {
         obs.disconnect();
-        // Small rAF delay so fonts/images have rendered height
-        requestAnimationFrame(_applyHeaderOffset);
+        // Double rAF ensures layout is fully settled before measuring
+        requestAnimationFrame(function() {
+          requestAnimationFrame(_applyHeaderOffset);
+        });
       }
     });
     obs.observe(injectEl, { childList: true, subtree: true });
