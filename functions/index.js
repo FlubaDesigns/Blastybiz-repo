@@ -1000,46 +1000,68 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
   const uid   = decoded.uid;
   const email = decoded.email || req.body.email || '';
-  const { plan } = req.body;
-  // Read prices from Firestore (written by adminUpdatePricing) — fall back to defaults
-  let proMonthly = 49, agencyMonthly = 149;
+  const { plan, billingPeriod: rawPeriod } = req.body;
+  const billingPeriod = rawPeriod === 'annual' ? 'annual' : 'monthly';
+
+  // Read prices + Square plan IDs from Firestore (written by adminUpdatePricing)
+  let proMonthly = 19, agencyMonthly = 99;
+  let proAnnual  = 199, agencyAnnual  = 999;
+  let squareProMonthlyPlanId, squareProAnnualPlanId;
+  let squareAgencyMonthlyPlanId, squareAgencyAnnualPlanId;
   try {
     const pricingSnap = await db.collection('settings').doc('pricing').get();
     if (pricingSnap.exists) {
       const d = pricingSnap.data();
-      if (d.proMonthly)    proMonthly    = d.proMonthly;
-      if (d.agencyMonthly) agencyMonthly = d.agencyMonthly;
+      if (d.proMonthly)               proMonthly               = d.proMonthly;
+      if (d.agencyMonthly)            agencyMonthly            = d.agencyMonthly;
+      if (d.proAnnual)                proAnnual                = d.proAnnual;
+      if (d.agencyAnnual)             agencyAnnual             = d.agencyAnnual;
+      if (d.squareProMonthlyPlanId)   squareProMonthlyPlanId   = d.squareProMonthlyPlanId;
+      if (d.squareProAnnualPlanId)    squareProAnnualPlanId    = d.squareProAnnualPlanId;
+      if (d.squareAgencyMonthlyPlanId) squareAgencyMonthlyPlanId = d.squareAgencyMonthlyPlanId;
+      if (d.squareAgencyAnnualPlanId)  squareAgencyAnnualPlanId  = d.squareAgencyAnnualPlanId;
     }
   } catch(e) {
     console.warn('createCheckoutSession: Firestore pricing read failed, using defaults:', e.message);
   }
-  const planNames  = { pro: 'BlastyBiz Pro',    agency: 'BlastyBiz Agency' };
-  const planPrices = { pro: proMonthly, agency: agencyMonthly };
-  if (!planPrices[plan]) return res.status(400).json({ error: 'Invalid plan' });
-  // Idempotency key uses a 1-hour window so retries within the hour reuse the same key
-  // (protects against double-clicks and slow-network retries without blocking legitimate re-purchases)
-  const idempotencyKey = `checkout-${uid}-${plan}-${Math.floor(Date.now() / 3600000)}`;
+
+  if (!['pro', 'agency'].includes(plan)) return res.status(400).json({ error: 'Invalid plan' });
+
+  // Resolve which Square subscription plan ID and display price to use
+  const planIdMap = {
+    pro:    { monthly: squareProMonthlyPlanId,    annual: squareProAnnualPlanId },
+    agency: { monthly: squareAgencyMonthlyPlanId, annual: squareAgencyAnnualPlanId },
+  };
+  const priceMap = {
+    pro:    { monthly: proMonthly,    annual: proAnnual },
+    agency: { monthly: agencyMonthly, annual: agencyAnnual },
+  };
+  const subscriptionPlanId = planIdMap[plan][billingPeriod];
+  if (!subscriptionPlanId) {
+    return res.status(503).json({ error: 'Subscription plans not yet configured. Run adminUpdatePricing first.' });
+  }
+
+  // Idempotency key — 1-hour window protects against double-clicks / slow-network retries
+  const idempotencyKey = `checkout-${uid}-${plan}-${billingPeriod}-${Math.floor(Date.now() / 3600000)}`;
+
   const response = await getSquare().checkout.paymentLinks.create({
     idempotencyKey,
-    quickPay: {
-      name: planNames[plan],
-      priceMoney: { amount: BigInt(Math.round(planPrices[plan] * 100)), currency: 'USD' },
-      locationId: process.env.SQUARE_LOCATION_ID,
-    },
     checkoutOptions: {
       redirectUrl: `${APP_BASE_URL}/BlastyBiz-Dashboard.html?success=1`,
       merchantSupportEmail: 'info@blastybiz.com',
+      subscriptionPlanId,
     },
     prePopulatedData: { buyerEmail: email },
   });
-  // Store uid + plan keyed by Square orderId so squareWebhook can reliably map payments back
-  // to users without depending on Square metadata fields (referenceId/catalogObjectId).
+
+  // Store uid + plan + billingPeriod keyed by Square orderId so squareWebhook can
+  // reliably map the payment.completed event back to the right user + plan tier.
   const orderId = response.paymentLink?.orderId;
   if (orderId) {
     await db.collection('pendingCheckouts').doc(orderId).set({
-      uid, plan,
+      uid, plan, billingPeriod,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      // TTL field — Firestore TTL policy on pendingCheckouts/expiresAt cleans up abandoned checkouts after 48h
+      // TTL — Firestore TTL policy on pendingCheckouts/expiresAt cleans up abandoned checkouts after 48h
       expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 48 * 60 * 60 * 1000),
     });
   }
@@ -1092,7 +1114,8 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
       // This is reliable regardless of Square metadata fields (referenceId/catalogObjectId).
       const pendingSnap = await db.collection('pendingCheckouts').doc(orderId).get();
       if (!pendingSnap.exists) return res.json({ received: true });
-      const { uid, plan } = pendingSnap.data();
+      const { uid, plan, billingPeriod: pendingBillingPeriod } = pendingSnap.data();
+      const billingPeriod = pendingBillingPeriod || 'monthly';
       if (!uid) return res.json({ received: true });
       await db.collection('pendingCheckouts').doc(orderId).delete();
       // Atomic batch: users/{uid}.plan + all businesses/{bizId}.currentPlan in one commit.
@@ -1102,7 +1125,7 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
       const syncBatch = db.batch();
       syncBatch.set(
         db.collection('users').doc(uid),
-        { plan, planActive: true },
+        { plan, planActive: true, billingPeriod },
         { merge: true }
       );
       bizSnaps.docs.forEach(biz => {
@@ -1114,6 +1137,7 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
         squareCustomerId: payment.customer_id || '',
         squarePaymentId: payment.id,
         plan,
+        billingPeriod,
         status: 'active',
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       }, { merge: true });
@@ -2864,24 +2888,29 @@ exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_AC
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: 'Forbidden' }); }
-  const { proMonthly, agencyMonthly } = req.body;
+  const { proMonthly, agencyMonthly, proAnnual, agencyAnnual } = req.body;
   if (!proMonthly || !agencyMonthly) return res.status(400).json({ error: 'proMonthly and agencyMonthly required' });
-  const pro    = parseFloat(proMonthly);
-  const agency = parseFloat(agencyMonthly);
-  if (isNaN(pro) || isNaN(agency) || pro < 0 || agency < 0) return res.status(400).json({ error: 'Invalid prices' });
+  const pro          = parseFloat(proMonthly);
+  const agency       = parseFloat(agencyMonthly);
+  const proAnn       = proAnnual    ? parseFloat(proAnnual)    : 199;
+  const agencyAnn    = agencyAnnual ? parseFloat(agencyAnnual) : 999;
+  if ([pro, agency, proAnn, agencyAnn].some(v => isNaN(v) || v < 0)) return res.status(400).json({ error: 'Invalid prices' });
 
-  // Create new Square subscription plans at the given prices
+  // Create four Square subscription plans: monthly + annual for each tier.
+  // Each call uses a unique idempotency key so re-running creates fresh plan objects.
   const catalog = getSquare().catalog;
   const ts = Date.now();
 
-  let squareProPlanId, squareAgencyPlanId, squareError;
+  let squareProMonthlyPlanId, squareProAnnualPlanId;
+  let squareAgencyMonthlyPlanId, squareAgencyAnnualPlanId;
+  let squareError;
   try {
-    const [proResult, agencyResult] = await Promise.all([
+    const [proMonResult, proAnnResult, agencyMonResult, agencyAnnResult] = await Promise.all([
       catalog.object.upsert({
-        idempotencyKey: `blastybiz-pro-${ts}`,
+        idempotencyKey: `bb-pro-monthly-${ts}`,
         object: {
           type: 'SUBSCRIPTION_PLAN',
-          id: '#pro_plan',
+          id: '#pro_monthly_plan',
           subscriptionPlanData: {
             name: `BlastyBiz Pro — $${pro}/mo`,
             phases: [{
@@ -2893,10 +2922,25 @@ exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_AC
         },
       }),
       catalog.object.upsert({
-        idempotencyKey: `blastybiz-agency-${ts}`,
+        idempotencyKey: `bb-pro-annual-${ts}`,
         object: {
           type: 'SUBSCRIPTION_PLAN',
-          id: '#agency_plan',
+          id: '#pro_annual_plan',
+          subscriptionPlanData: {
+            name: `BlastyBiz Pro — $${proAnn}/yr`,
+            phases: [{
+              cadence: 'ANNUAL',
+              recurringPriceMoney: { amount: BigInt(Math.round(proAnn * 100)), currency: 'USD' },
+              ordinal: BigInt(0),
+            }],
+          },
+        },
+      }),
+      catalog.object.upsert({
+        idempotencyKey: `bb-agency-monthly-${ts}`,
+        object: {
+          type: 'SUBSCRIPTION_PLAN',
+          id: '#agency_monthly_plan',
           subscriptionPlanData: {
             name: `BlastyBiz Agency — $${agency}/mo`,
             phases: [{
@@ -2907,9 +2951,26 @@ exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_AC
           },
         },
       }),
+      catalog.object.upsert({
+        idempotencyKey: `bb-agency-annual-${ts}`,
+        object: {
+          type: 'SUBSCRIPTION_PLAN',
+          id: '#agency_annual_plan',
+          subscriptionPlanData: {
+            name: `BlastyBiz Agency — $${agencyAnn}/yr`,
+            phases: [{
+              cadence: 'ANNUAL',
+              recurringPriceMoney: { amount: BigInt(Math.round(agencyAnn * 100)), currency: 'USD' },
+              ordinal: BigInt(0),
+            }],
+          },
+        },
+      }),
     ]);
-    squareProPlanId    = proResult.catalogObject?.id;
-    squareAgencyPlanId = agencyResult.catalogObject?.id;
+    squareProMonthlyPlanId    = proMonResult.catalogObject?.id;
+    squareProAnnualPlanId     = proAnnResult.catalogObject?.id;
+    squareAgencyMonthlyPlanId = agencyMonResult.catalogObject?.id;
+    squareAgencyAnnualPlanId  = agencyAnnResult.catalogObject?.id;
   } catch (e) {
     squareError = e.message || String(e);
     console.error('[adminUpdatePricing] Square plan creation failed:', squareError);
@@ -2919,19 +2980,25 @@ exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_AC
   const update = {
     proMonthly: pro,
     agencyMonthly: agency,
+    proAnnual: proAnn,
+    agencyAnnual: agencyAnn,
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
-  if (squareProPlanId)    update.squareProPlanId    = squareProPlanId;
-  if (squareAgencyPlanId) update.squareAgencyPlanId = squareAgencyPlanId;
+  if (squareProMonthlyPlanId)    update.squareProMonthlyPlanId    = squareProMonthlyPlanId;
+  if (squareProAnnualPlanId)     update.squareProAnnualPlanId     = squareProAnnualPlanId;
+  if (squareAgencyMonthlyPlanId) update.squareAgencyMonthlyPlanId = squareAgencyMonthlyPlanId;
+  if (squareAgencyAnnualPlanId)  update.squareAgencyAnnualPlanId  = squareAgencyAnnualPlanId;
   await db.collection('settings').doc('pricing').set(update, { merge: true });
 
   res.json({
     ok: true,
-    proMonthly: pro,
-    agencyMonthly: agency,
-    squareProPlanId:    squareProPlanId    || null,
-    squareAgencyPlanId: squareAgencyPlanId || null,
-    squareError:        squareError        || null,
+    proMonthly: pro, proAnnual: proAnn,
+    agencyMonthly: agency, agencyAnnual: agencyAnn,
+    squareProMonthlyPlanId:    squareProMonthlyPlanId    || null,
+    squareProAnnualPlanId:     squareProAnnualPlanId     || null,
+    squareAgencyMonthlyPlanId: squareAgencyMonthlyPlanId || null,
+    squareAgencyAnnualPlanId:  squareAgencyAnnualPlanId  || null,
+    squareError: squareError || null,
   });
 });
 

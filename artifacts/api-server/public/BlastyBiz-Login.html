@@ -92,6 +92,19 @@
 
                 <div class="field">
                   <label class="section-label" style="margin-bottom:10px">Choose your plan</label>
+
+                  <!-- Billing period toggle -->
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+                    <button type="button" id="toggle-monthly" onclick="selectBilling('monthly')"
+                      style="flex:1;padding:7px 0;border-radius:8px;border:1px solid var(--border,#2a3a2a);background:#00C853;color:#0d1a0d;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">
+                      Monthly
+                    </button>
+                    <button type="button" id="toggle-annual" onclick="selectBilling('annual')"
+                      style="flex:1;padding:7px 0;border-radius:8px;border:1px solid var(--border,#2a3a2a);background:transparent;color:#aaa;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">
+                      Annual &nbsp;<span style="font-size:11px;font-weight:600;color:#00C853">Save a month!</span>
+                    </button>
+                  </div>
+
                   <div class="plan-picker" id="plan-picker">
                     <button type="button" class="plan-pick-btn" data-plan="starter" onclick="selectPlan('starter')">
                       <span class="plan-pick-name">Starter</span>
@@ -99,11 +112,11 @@
                     </button>
                     <button type="button" class="plan-pick-btn" data-plan="pro" onclick="selectPlan('pro')">
                       <span class="plan-pick-name">Pro</span>
-                      <span class="plan-pick-price">$19/mo</span>
+                      <span class="plan-pick-price" id="price-pro">$19/mo</span>
                     </button>
                     <button type="button" class="plan-pick-btn" data-plan="agency" onclick="selectPlan('agency')">
                       <span class="plan-pick-name">Agency</span>
-                      <span class="plan-pick-price">$99/mo</span>
+                      <span class="plan-pick-price" id="price-agency">$99/mo</span>
                     </button>
                   </div>
                 </div>
@@ -436,14 +449,31 @@ window.selectPlan = function(plan) {
   localStorage.setItem('bb_selected_plan', plan);
 };
 
+window.selectBilling = function(period) {
+  const isAnnual = period === 'annual';
+  localStorage.setItem('bb_billing_period', period);
+  // Toggle button styles
+  const mBtn = document.getElementById('toggle-monthly');
+  const aBtn = document.getElementById('toggle-annual');
+  if (mBtn) { mBtn.style.background = isAnnual ? 'transparent' : '#00C853'; mBtn.style.color = isAnnual ? '#aaa' : '#0d1a0d'; }
+  if (aBtn) { aBtn.style.background = isAnnual ? '#00C853' : 'transparent'; aBtn.style.color = isAnnual ? '#0d1a0d' : '#aaa'; }
+  // Update price labels
+  const proPriceEl    = document.getElementById('price-pro');
+  const agencyPriceEl = document.getElementById('price-agency');
+  if (proPriceEl)    proPriceEl.textContent    = isAnnual ? '$199/yr' : '$19/mo';
+  if (agencyPriceEl) agencyPriceEl.textContent = isAnnual ? '$999/yr' : '$99/mo';
+};
+
 (function initPlanPicker() {
-  const urlPlan = new URLSearchParams(window.location.search).get('plan');
-  const saved   = localStorage.getItem('bb_selected_plan');
-  const valid   = ['starter','pro','agency'];
-  const pick    = valid.includes(urlPlan) ? urlPlan
-                : valid.includes(saved)   ? saved
-                : 'starter';
+  const urlPlan    = new URLSearchParams(window.location.search).get('plan');
+  const urlBilling = new URLSearchParams(window.location.search).get('billing');
+  const saved      = localStorage.getItem('bb_selected_plan');
+  const savedBill  = localStorage.getItem('bb_billing_period');
+  const valid      = ['starter','pro','agency'];
+  const pick       = valid.includes(urlPlan) ? urlPlan : valid.includes(saved) ? saved : 'starter';
+  const billing    = (urlBilling === 'annual' || savedBill === 'annual') ? 'annual' : 'monthly';
   selectPlan(pick);
+  selectBilling(billing);
 })();
 
 async function afterAuth(user) {
@@ -451,8 +481,9 @@ async function afterAuth(user) {
     const snap     = await getDoc(doc(db, 'users', user.uid));
     const userData = snap.exists() ? snap.data() : {};
     const picked   = localStorage.getItem('bb_selected_plan');
+    const billing  = localStorage.getItem('bb_billing_period') || 'monthly';
     const dashUrl  = picked && picked !== 'starter'
-      ? `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(picked)}`
+      ? `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(picked)}&billing=${encodeURIComponent(billing)}`
       : 'BlastyBiz-Dashboard.html?from=login';
     if (userData.onboarded) {
       window.location.href = dashUrl;

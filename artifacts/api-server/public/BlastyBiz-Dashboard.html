@@ -92,18 +92,33 @@
 
 <!-- UPGRADE PLAN MODAL -->
 <div id="upgrade-overlay" onclick="closeUpgradeModal()">
-  <div class="delete-modal" onclick="event.stopPropagation()" style="max-width:480px">
+  <div class="delete-modal" onclick="event.stopPropagation()" style="max-width:500px">
     <h3>📈 Upgrade Your Plan</h3>
     <p id="upgrade-modal-msg">You've reached the business limit for your current plan. Upgrade to add more.</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0">
+
+    <!-- Billing period toggle -->
+    <div style="display:flex;gap:8px;margin:16px 0 4px">
+      <button id="up-toggle-monthly" type="button" onclick="selectUpgradeBilling('monthly')"
+        style="flex:1;padding:8px 0;border-radius:8px;border:1px solid #2a3a2a;background:#00C853;color:#0d1a0d;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">
+        Monthly
+      </button>
+      <button id="up-toggle-annual" type="button" onclick="selectUpgradeBilling('annual')"
+        style="flex:1;padding:8px 0;border-radius:8px;border:1px solid #2a3a2a;background:transparent;color:#888;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">
+        Annual &nbsp;<span style="font-size:11px;color:#00C853;font-weight:600">Save a month!</span>
+      </button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0">
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center">
         <div style="font-size:22px;font-weight:800;color:var(--light);margin-bottom:2px">Pro</div>
-        <div style="font-size:13px;color:var(--silver);margin-bottom:14px">3 businesses</div>
+        <div id="up-price-pro" style="font-size:15px;font-weight:700;color:#00C853;margin-bottom:2px">$19/mo</div>
+        <div style="font-size:12px;color:var(--silver);margin-bottom:14px">3 businesses</div>
         <button onclick="closeUpgradeModal();startCheckout('pro')" style="width:100%;background:#00C853;color:#0d1a0d;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">Upgrade to Pro</button>
       </div>
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center">
         <div style="font-size:22px;font-weight:800;color:var(--light);margin-bottom:2px">Agency</div>
-        <div style="font-size:13px;color:var(--silver);margin-bottom:14px">10 businesses</div>
+        <div id="up-price-agency" style="font-size:15px;font-weight:700;color:#00C853;margin-bottom:2px">$99/mo</div>
+        <div style="font-size:12px;color:var(--silver);margin-bottom:14px">10 businesses</div>
         <button onclick="closeUpgradeModal();startCheckout('agency')" style="width:100%;background:#00C853;color:#0d1a0d;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">Upgrade to Agency</button>
       </div>
     </div>
@@ -817,6 +832,27 @@ onAuthStateChanged(auth, async (user) => {
 
 const CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
 
+let _upgradeBillingPeriod = 'monthly';
+
+function selectUpgradeBilling(period) {
+  _upgradeBillingPeriod = period;
+  const isAnnual = period === 'annual';
+  const mBtn = document.getElementById('up-toggle-monthly');
+  const aBtn = document.getElementById('up-toggle-annual');
+  if (mBtn) { mBtn.style.background = isAnnual ? 'transparent' : '#00C853'; mBtn.style.color = isAnnual ? '#888' : '#0d1a0d'; }
+  if (aBtn) { aBtn.style.background = isAnnual ? '#00C853' : 'transparent'; aBtn.style.color = isAnnual ? '#0d1a0d' : '#888'; }
+  const proPriceEl    = document.getElementById('up-price-pro');
+  const agencyPriceEl = document.getElementById('up-price-agency');
+  if (proPriceEl)    proPriceEl.textContent    = isAnnual ? '$199/yr' : '$19/mo';
+  if (agencyPriceEl) agencyPriceEl.textContent = isAnnual ? '$999/yr' : '$99/mo';
+}
+
+// Pre-select billing period from URL if arriving from sign-up flow
+(function initUpgradeBilling() {
+  const urlBilling = new URLSearchParams(window.location.search).get('billing');
+  if (urlBilling === 'annual') selectUpgradeBilling('annual');
+})();
+
 async function startCheckout(plan) {
   showToast('Setting up checkout…');
   try {
@@ -824,11 +860,11 @@ async function startCheckout(plan) {
     const r = await fetch(`${CF}/createCheckoutSession`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-      body: JSON.stringify({ plan, uid: currentUser.uid, email: currentUser.email })
+      body: JSON.stringify({ plan, billingPeriod: _upgradeBillingPeriod, uid: currentUser.uid, email: currentUser.email })
     });
     const data = await r.json();
     if (data.url) { window.location.href = data.url; }
-    else showToast('Checkout setup failed — check Square config', true);
+    else showToast(data.error || 'Checkout setup failed — check Square config', true);
   } catch(e) {
     showToast('Checkout unavailable', true);
   }
