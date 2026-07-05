@@ -214,7 +214,7 @@
         <button class="yn-btn yn-no yn-active" id="yn-name-no" onclick="setYN('name','no')">No</button>
       </div>
     </div>
-    <div class="yn-row">
+    <div class="yn-row mb-12">
       <span class="yn-label">
         Mention my role
         <span id="copy-role-preview" class="check-hint"></span>
@@ -222,6 +222,13 @@
       <div class="yn-btns">
         <button class="yn-btn yn-yes" id="yn-role-yes" onclick="setYN('role','yes')">Yes</button>
         <button class="yn-btn yn-no yn-active" id="yn-role-no" onclick="setYN('role','no')">No</button>
+      </div>
+    </div>
+    <div class="yn-row hidden" id="yn-address-row">
+      <span class="yn-label">Include address in copy</span>
+      <div class="yn-btns">
+        <button class="yn-btn yn-yes yn-active" id="yn-address-yes" onclick="setYN('address','yes')">Yes</button>
+        <button class="yn-btn yn-no" id="yn-address-no" onclick="setYN('address','no')">No</button>
       </div>
     </div>
   </div>
@@ -607,7 +614,7 @@ let locationType        = 'physical';         // 'physical' | 'online' — creat
 let campaigns           = [];                 // [{id, name, photos:[]}] loaded from Firestore
 let activeCampaignId    = null;
 let activeCampaignName  = '';
-var ynState = { name: 'no', role: 'no' }; // About You in Copy pill state
+var ynState = { name: 'no', role: 'no', address: 'yes' }; // About You in Copy pill state
 // Per-platform photo selection (session only — resets on reload)
 // { pid: Set of selected photo URLs }
 window._bbPlatformPhotoSel = {};
@@ -1166,7 +1173,7 @@ async function regeneratePlatformCopy(pid) {
   const website     = profile.website  || '';
   const hours       = profile.hours    || '';
   const effLocType  = profile.locationType || 'physical';
-  const address     = (effLocType === 'physical' || effLocType === 'both') ? (profile.address || '') : '';
+  const address     = (effLocType === 'physical' || effLocType === 'both') && ynState.address !== 'no' ? (profile.address || '') : '';
   const region      = effLocType === 'both' ? (profile.region || '') : '';
   const offer       = document.getElementById('biz-offer')?.value?.trim() || '';
   const price       = document.getElementById('biz-price')?.value?.trim() || '';
@@ -1556,7 +1563,7 @@ async function runAdaptation() {
   const website   = profile.website  || '';
   const hours     = profile.hours    || '';
   const effLocType = profile.locationType || 'physical';
-  const address   = (effLocType === 'physical' || effLocType === 'both') ? (profile.address || '') : '';
+  const address   = (effLocType === 'physical' || effLocType === 'both') && ynState.address !== 'no' ? (profile.address || '') : '';
   const region    = effLocType === 'both' ? (profile.region || '') : '';
   const offer     = document.getElementById('biz-offer').value.trim();
   const price     = document.getElementById('biz-price').value.trim();
@@ -1960,8 +1967,10 @@ function updateCopyPreview() {
   if (!card) return;
   const hasName = !!profile.ownerName;
   const hasRole = !!profile.ownerRole;
-  // Show card only if at least a name is saved in Profile
-  if (hasName) card.classList.remove('hidden'); else card.classList.add('hidden');
+  const locType = profile.locationType || 'physical';
+  const hasAddress = locType !== 'online';
+  // Show card if name is saved OR location has a physical address
+  if (hasName || hasAddress) card.classList.remove('hidden'); else card.classList.add('hidden');
   if (namePreview) namePreview.textContent = profile.ownerName ? `→ "${profile.ownerName}" added to prompt` : 'No name saved yet — add it in Profile';
   if (rolePreview) {
     const roleLabel = profile.ownerRole === 'manager' ? 'Manager' : profile.ownerRole === 'other' ? 'Other' : 'Owner';
@@ -1970,6 +1979,9 @@ function updateCopyPreview() {
   // Disable role Yes button if no name saved (role alone isn't useful)
   const roleYes = document.getElementById('yn-role-yes');
   if (roleYes) roleYes.disabled = !hasName;
+  // Show address row only for physical/both — online never uses address
+  const addrRow = document.getElementById('yn-address-row');
+  if (addrRow) { if (hasAddress) addrRow.classList.remove('hidden'); else addrRow.classList.add('hidden'); }
 }
 
 // ══════════════════════════════════════════
@@ -3072,7 +3084,8 @@ window._bbSetProfile = function(p) {
       region: p.region, locationType: p.locationType, website: p.website,
       hours: p.hours, tone: p.tone, platformCats: p.platformCats || {},
       postingSchedule: p.postingSchedule || null, aiContext: p.aiContext || null,
-      ynMentionName: p.ynMentionName || 'no', ynMentionRole: p.ynMentionRole || 'no'
+      ynMentionName: p.ynMentionName || 'no', ynMentionRole: p.ynMentionRole || 'no',
+      ynMentionAddress: p.ynMentionAddress || 'yes'
     }));
   } catch(e) {}
   loadProfile();
@@ -3080,6 +3093,7 @@ window._bbSetProfile = function(p) {
   if (typeof setYN === 'function') {
     setYN('name', p.ynMentionName || 'no');
     setYN('role', p.ynMentionRole || 'no');
+    setYN('address', p.ynMentionAddress || 'yes');
   }
 };
 
@@ -3689,8 +3703,9 @@ window.saveProfile = function() {
       locationType:   profile.locationType || 'physical',
       region:         profile.region || '',
       tone:           profile.tone   || 'friendly',
-      ynMentionName:  ynState.name,
-      ynMentionRole:  ynState.role,
+      ynMentionName:    ynState.name,
+      ynMentionRole:    ynState.role,
+      ynMentionAddress: ynState.address,
       updatedAt:      serverTimestamp(),
     }, { merge: true });
   } catch(e) {
