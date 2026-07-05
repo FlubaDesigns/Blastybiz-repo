@@ -1413,7 +1413,7 @@ body.onboarding-page textarea     { resize: none; }
 .btn--block, .btn--full { display: flex; width: 100%; justify-content: center; }
 
 /* Responsive: full-width + centered on mobile, shrinks to fit on desktop */
-.btn--adaptive          { display: flex !important; width: 100% !important; justify-content: center; }
+.btn--adaptive          { display: flex !important; width: 100% !important; justify-content: center; margin-top: 16px; }
 @media (min-width: 768px) {
   .btn--adaptive        { display: inline-flex !important; width: fit-content !important; }
 }
