@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=48" />
+<link rel="stylesheet" href="global-style.css?v=49" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -805,6 +805,19 @@ function renderQuickSelect() {
           </div>`;
       }
 
+      // Get Started card — shown only when platform is not yet enabled
+      if (!p.enabled) {
+        const setup = PLATFORM_SETUP[p.id] || {};
+        const setupUrl = escHtml(setup.url || PLATFORM_DEFAULT_URLS[p.id] || '#');
+        const setupTip = escHtml(setup.tip || 'Create a free account on ' + p.name + ' to start reaching more customers.');
+        bodyInner += '<div class="qp-getstarted">'
+          + '<div class="qp-getstarted-tip">' + setupTip + '</div>'
+          + '<a href="' + setupUrl + '" target="_blank" rel="noopener" class="qp-getstarted-link">'
+          + '🔗 Get started on ' + escHtml(p.name) + ' →</a>'
+          + '<div class="qp-getstarted-hint">Once you\'re set up, toggle this platform on above and we\'ll generate posts for you.</div>'
+          + '</div>';
+      }
+
       // Platform page URL row — always visible once accordion is open
       bodyInner += '<div class="qp-url-section"><div class="qp-url-row">' +
         '<span class="qp-url-label">Your ' + escHtml(p.name) + ' page</span>' +
@@ -899,6 +912,25 @@ const PLATFORM_DEFAULT_URLS = {
   linkedin:   'https://www.linkedin.com/feed/',
   x:          'https://x.com/compose/post',
   pinterest:  'https://www.pinterest.com/pin-builder/',
+};
+
+// Per-platform setup info shown when a platform accordion is open but not yet enabled
+const PLATFORM_SETUP = {
+  google:     { url: 'https://business.google.com/',                    tip: 'Your Google Business Profile appears in Google Search and Maps when locals look for what you do — the highest-value free listing available.' },
+  facebook:   { url: 'https://www.facebook.com/business/pages/create', tip: 'A Facebook Page gives your business a public presence on the world\'s largest social network. Create yours free in minutes.' },
+  instagram:  { url: 'https://business.instagram.com/',                 tip: 'Switch to an Instagram Business account to reach local customers with photos, Reels, and Stories.' },
+  bing:       { url: 'https://www.bingplaces.com/',                     tip: 'Bing Places is free and reaches millions of Bing and Microsoft users — takes about 5 minutes to claim.' },
+  nextdoor:   { url: 'https://business.nextdoor.com/',                  tip: 'Nextdoor connects you directly with paying customers in your own neighborhood. Free business page included.' },
+  fbmarket:   { url: 'https://www.facebook.com/marketplace',           tip: 'Facebook Marketplace reaches local buyers actively looking to purchase. No fees on local sales.' },
+  craigslist: { url: 'https://accounts.craigslist.org/login/signup',    tip: 'Craigslist is one of the most visited local classifieds sites and free to post in most categories. Great for services and local inventory.' },
+  yelp:       { url: 'https://biz.yelp.com/',                          tip: 'Claim your free Yelp Business page so customers can find you, read reviews, and contact you directly.' },
+  alignable:  { url: 'https://www.alignable.com/signup',               tip: 'Alignable is a local business network built for referrals and community — great for word-of-mouth growth.' },
+  thumbtack:  { url: 'https://www.thumbtack.com/pro',                  tip: 'Thumbtack matches you with customers who are actively searching for your exact service in your area.' },
+  angi:       { url: 'https://pro.angi.com/',                          tip: 'Angi (formerly Angie\'s List) connects you with homeowners looking for home services — one of the top lead sources for tradespeople.' },
+  applemaps:  { url: 'https://businessconnect.apple.com/',             tip: 'Apple Business Connect puts your listing in Apple Maps — seen by every iPhone user searching nearby. Free to claim.' },
+  linkedin:   { url: 'https://www.linkedin.com/company/setup/new/',    tip: 'A LinkedIn Company Page builds credibility and reaches B2B customers, local professionals, and potential employees.' },
+  x:          { url: 'https://x.com/i/flow/signup',                    tip: 'X (formerly Twitter) keeps your business visible in real-time conversations — great for promotions, local events, and quick updates.' },
+  pinterest:  { url: 'https://business.pinterest.com/',                tip: 'Pinterest users are actively planning purchases. Especially powerful for home, food, beauty, fashion, and lifestyle businesses.' },
 };
 
 // Placeholder hints shown in the URL input for each platform

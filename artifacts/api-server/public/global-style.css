@@ -2317,6 +2317,12 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 .qp-share-section { margin-top: 14px; }
 .qp-share-btn   { width: 100%; padding: 10px 16px; background: var(--accent); border: none; border-radius: 10px; color: #fff; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; margin-bottom: 8px; }
 .qp-share-note  { font-size: 11px; color: var(--muted); line-height: 1.5; }
+/* ── Platform "Get Started" card (shown when not yet enabled) ── */
+.qp-getstarted       { background: rgba(0,200,83,.04); border: 1px solid rgba(0,200,83,.18); border-radius: 10px; padding: 14px 14px 12px; margin-top: 10px; }
+.qp-getstarted-tip   { font-size: 13px; color: var(--text); line-height: 1.55; margin-bottom: 10px; }
+.qp-getstarted-link  { display: block; padding: 9px 14px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--green); font-size: 13px; font-weight: 700; text-decoration: none; margin-bottom: 8px; }
+.qp-getstarted-link:active { opacity: .7; }
+.qp-getstarted-hint  { font-size: 11px; color: var(--muted); line-height: 1.5; }
 /* ── Platform URL row (always visible in accordion) ── */
 .qp-url-section { border-top: 1px solid var(--border); margin-top: 14px; padding-top: 12px; }
 .qp-url-row     { display: flex; align-items: center; gap: 8px; }
