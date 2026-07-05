@@ -104,6 +104,44 @@ async function trackAiUsage(uid, fnName, model, usage, opts = {}) {
   }
 }
 
+// ── reserveAiAction — atomic AI usage gate ────────────────────────────────────
+// Reads current usage, checks against plan cap, and atomically increments the
+// counter — all in one Firestore transaction. Call AFTER dedup checks (so cached
+// hits return for free) and BEFORE the Anthropic API call.
+// Throws { message: 'LIMIT_REACHED', used, cap, plan } if at cap.
+async function reserveAiAction(uid) {
+  return db.runTransaction(async (tx) => {
+    const userRef = db.collection('users').doc(uid);
+    const snap    = await tx.get(userRef);
+    const data    = snap.exists ? snap.data() : {};
+    const plan    = data.plan || 'starter';
+    const cap     = AI_LIMITS[plan] || AI_LIMITS.starter;
+    const resetAt = data.aiActionsResetAt?.toDate?.() || null;
+    const now     = new Date();
+    const needsReset = !resetAt || now > resetAt;
+    const used    = needsReset ? 0 : (data.aiActionsUsed || 0);
+
+    if (used >= cap) {
+      throw Object.assign(new Error('LIMIT_REACHED'), { used, cap, plan });
+    }
+
+    if (needsReset) {
+      tx.update(userRef, {
+        aiActionsUsed: 1,
+        aiActionsResetAt: admin.firestore.Timestamp.fromDate(
+          new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+        ),
+      });
+    } else {
+      tx.update(userRef, {
+        aiActionsUsed: admin.firestore.FieldValue.increment(1),
+      });
+    }
+
+    return { plan, used: used + 1, cap };
+  });
+}
+
 // ── fetchWithTimeout — wraps fetch() with a 25s AbortController timeout ──────
 // Throws AbortError on timeout; all other errors pass through unchanged.
 // ⚠ REQUIRED OPS STEP: Create a Firestore TTL policy on the aiRequestDedup
@@ -340,16 +378,10 @@ exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
 
   try {
-    const userSnap = await db.collection('users').doc(decoded.uid).get();
-    const userData  = userSnap.exists ? userSnap.data() : {};
-    const plan      = userData.plan || 'starter';
-    const cap       = AI_LIMITS[plan] || AI_LIMITS.starter;
-    const resetAt   = userData.aiActionsResetAt?.toDate?.() || null;
-    const needsReset = !resetAt || new Date() > resetAt;
-    const used      = needsReset ? 0 : (userData.aiActionsUsed || 0);
-    if (used >= cap) return res.status(429).json({ error: `AI limit reached (${used}/${cap} this month). Upgrade your plan for more.` });
-  } catch(fsErr) {
-    console.warn('generateEnrichmentQuestions: Firestore read failed (IAM?), proceeding with starter defaults:', fsErr.message);
+    await reserveAiAction(decoded.uid);
+  } catch(e) {
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: `AI limit reached (${e.used}/${e.cap} this month). Upgrade your plan for more.` });
+    console.warn('[reserveAiAction] generateEnrichmentQuestions transaction failed, proceeding:', e.message);
   }
 
   const { businessName, category, address, locationType, region, existingInsights } = req.body;
@@ -428,23 +460,24 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
 
-  let plan = 'starter', needsReset = true, used = 0;
-  try {
-    const userSnap = await db.collection('users').doc(decoded.uid).get();
-    const userData  = userSnap.exists ? userSnap.data() : {};
-    plan      = userData.plan || 'starter';
-    const cap       = AI_LIMITS[plan] || AI_LIMITS.starter;
-    const resetAt   = userData.aiActionsResetAt?.toDate?.() || null;
-    const now2      = new Date();
-    needsReset = !resetAt || now2 > resetAt;
-    used      = needsReset ? 0 : (userData.aiActionsUsed || 0);
-    if (used >= cap) return res.status(429).json({ error: `AI limit reached (${used}/${cap} this month). Upgrade your plan for more.` });
-  } catch(fsErr) {
-    console.warn('adaptListing: Firestore read failed (IAM?), proceeding with starter defaults:', fsErr.message);
+  const { listing, platforms, tone, platformCats } = req.body;
+  const now = new Date();
+
+  // Dedup check BEFORE usage reservation — cached hit returns without cost
+  const requestId = listing?.requestId;
+  if (requestId) {
+    try {
+      const dedupSnap = await db.collection('aiRequestDedup').doc(`${decoded.uid}_${requestId}`).get();
+      if (dedupSnap.exists) return res.json(dedupSnap.data().result);
+    } catch(e) { console.warn('[adaptListing] dedup read failed:', e.message); }
   }
 
-  const now = new Date();
-  const { listing, platforms, tone, platformCats } = req.body;
+  try {
+    await reserveAiAction(decoded.uid);
+  } catch(e) {
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: `AI limit reached (${e.used}/${e.cap} this month). Upgrade your plan for more.` });
+    console.warn('[reserveAiAction] adaptListing transaction failed, proceeding:', e.message);
+  }
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   const platformList = (platforms || []).map(p => ({
@@ -515,15 +548,6 @@ Return this exact JSON structure:
   }
 }`;
 
-  // ── Idempotency — return cached result for duplicate requestId within 30 min ──
-  const requestId = listing.requestId;
-  if (requestId) {
-    try {
-      const dedupSnap = await db.collection('aiRequestDedup').doc(`${decoded.uid}_${requestId}`).get();
-      if (dedupSnap.exists) return res.json(dedupSnap.data().result);
-    } catch(e) { console.warn('[adaptListing] dedup read failed:', e.message); }
-  }
-
   let parsed;
   const aiStartMs = Date.now();
   try {
@@ -557,21 +581,6 @@ Return this exact JSON structure:
     return res.status(500).json({ error: 'AI adaptation failed: ' + e.message });
   }
 
-  try {
-    if (needsReset) {
-      await db.collection('users').doc(decoded.uid).update({
-        aiActionsUsed: 1,
-        aiActionsResetAt: admin.firestore.Timestamp.fromDate(new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000))
-      });
-    } else {
-      await db.collection('users').doc(decoded.uid).update({
-        aiActionsUsed: admin.firestore.FieldValue.increment(1)
-      });
-    }
-  } catch(fsErr) {
-    console.warn('adaptListing: Firestore update failed (IAM?), usage not tracked:', fsErr.message);
-  }
-
   if (requestId) {
     try {
       await db.collection('aiRequestDedup').doc(`${decoded.uid}_${requestId}`).set({
@@ -598,24 +607,24 @@ exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
 
-  let needsReset = true;
+  const { businessName, ownerName, city, state, description, specialNotes, followUpAnswers, platformCatLists, locationType, requestId: rcRequestId } = req.body;
+
+  // Dedup check BEFORE usage reservation — cached hit returns without cost
+  if (rcRequestId) {
+    try {
+      const dedupSnap = await db.collection('aiRequestDedup').doc(`${decoded.uid}_${rcRequestId}`).get();
+      if (dedupSnap.exists) return res.json(dedupSnap.data().result);
+    } catch(e) { console.warn('[resolveCategories] dedup read failed:', e.message); }
+  }
+
   try {
-    const userSnap = await db.collection('users').doc(decoded.uid).get();
-    const userData  = userSnap.exists ? userSnap.data() : {};
-    const plan      = userData.plan || 'starter';
-    const cap       = AI_LIMITS[plan] || AI_LIMITS.starter;
-    const resetAt   = userData.aiActionsResetAt?.toDate?.() || null;
-    const now2      = new Date();
-    needsReset = !resetAt || now2 > resetAt;
-    const used      = needsReset ? 0 : (userData.aiActionsUsed || 0);
-    if (used >= cap) return res.status(429).json({ error: `AI limit reached (${used}/${cap} this month). Upgrade your plan for more.` });
-  } catch(fsErr) {
-    console.warn('resolveCategories: Firestore read failed (IAM?), proceeding with starter defaults:', fsErr.message);
+    await reserveAiAction(decoded.uid);
+  } catch(e) {
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: `AI limit reached (${e.used}/${e.cap} this month). Upgrade your plan for more.` });
+    console.warn('[reserveAiAction] resolveCategories transaction failed, proceeding:', e.message);
   }
 
   const now = new Date();
-
-  const { businessName, ownerName, city, state, description, specialNotes, followUpAnswers, platformCatLists, locationType, requestId: rcRequestId } = req.body;
 
   const platformContext = {
     fbmarket:   'Facebook Marketplace — consumer marketplace for buying/selling goods and booking local services',
@@ -687,13 +696,6 @@ ${returnInstructions}
 
 ${platformBlocks}`;
 
-  if (rcRequestId) {
-    try {
-      const dedupSnap = await db.collection('aiRequestDedup').doc(`${decoded.uid}_${rcRequestId}`).get();
-      if (dedupSnap.exists) return res.json(dedupSnap.data().result);
-    } catch(e) { console.warn('[resolveCategories] dedup read failed:', e.message); }
-  }
-
   let parsed;
   const aiStartMs = Date.now();
   try {
@@ -720,21 +722,6 @@ ${platformBlocks}`;
     trackAiUsage(decoded.uid, 'resolveCategories', 'claude-sonnet-4-5-20250929', null, { failureType });
     console.error('resolveCategories AI error [' + failureType + ']:', e.message);
     return res.status(500).json({ error: 'AI category resolution failed: ' + e.message });
-  }
-
-  try {
-    if (needsReset) {
-      await db.collection('users').doc(decoded.uid).update({
-        aiActionsUsed: 1,
-        aiActionsResetAt: admin.firestore.Timestamp.fromDate(new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000))
-      });
-    } else {
-      await db.collection('users').doc(decoded.uid).update({
-        aiActionsUsed: admin.firestore.FieldValue.increment(1)
-      });
-    }
-  } catch(fsErr) {
-    console.warn('resolveCategories: Firestore update failed (IAM?), usage not tracked:', fsErr.message);
   }
 
   if (rcRequestId) {
@@ -2266,8 +2253,9 @@ exports.adminListFailedJobs = onRequest({ invoker: 'public' }, async (req, res) 
 exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
-  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
-  const { jobId, uid: jobUid, businessId: jobBizId } = req.body;
+  let adminDecoded;
+  try { adminDecoded = await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+  const { jobId, uid: jobUid, businessId: jobBizId, force } = req.body;
   if (!jobId) return res.status(400).json({ error: 'jobId required' });
   if (!jobUid || !jobBizId) return res.status(400).json({ error: 'uid and businessId required' });
 
@@ -2275,6 +2263,31 @@ exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_
   const jobSnap = await jobRef.get();
   if (!jobSnap.exists) return res.status(404).json({ error: 'Job not found' });
   const job = { ...jobSnap.data(), id: jobId };
+
+  const currentAttempts = job.attempts || 0;
+  const maxAttempts     = job.maxAttempts || 3;
+  if (currentAttempts >= maxAttempts && !force) {
+    return res.status(400).json({
+      error: `Job has exceeded maxAttempts (${currentAttempts}/${maxAttempts}). Pass force: true to override.`,
+    });
+  }
+  if (force && currentAttempts >= maxAttempts) {
+    try {
+      await db.collection('activityLogs').add({
+        type:             'admin_force_retry',
+        adminEmail:       adminDecoded?.email || 'unknown',
+        jobId,
+        uid:              jobUid,
+        businessId:       jobBizId,
+        platform:         job.platform,
+        previousAttempts: currentAttempts,
+        maxAttempts,
+        forcedAt:         admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch(logErr) {
+      console.warn('[adminRetryJob] activity log write failed:', logErr.message);
+    }
+  }
 
   // Claim the job so concurrent retries don't double-fire
   await jobRef.update({
@@ -2620,20 +2633,22 @@ exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_A
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
 
-  try {
-    const userSnap = await db.collection('users').doc(decoded.uid).get();
-    const userData  = userSnap.exists ? userSnap.data() : {};
-    const plan      = userData.plan || 'starter';
-    const cap       = AI_LIMITS[plan] || AI_LIMITS.starter;
-    const resetAt   = userData.aiActionsResetAt?.toDate?.() || null;
-    const needsReset = !resetAt || new Date() > resetAt;
-    const used      = needsReset ? 0 : (userData.aiActionsUsed || 0);
-    if (used >= cap) return res.status(429).json({ error: `AI limit reached (${used}/${cap} this month). Upgrade your plan for more.` });
-  } catch(fsErr) {
-    console.warn('suggestPlatforms: Firestore read failed (IAM?), proceeding with starter defaults:', fsErr.message);
+  const { name, category, description, locationType, website, requestId: spRequestId } = req.body;
+
+  // Dedup check BEFORE usage reservation — cached hit returns without cost
+  if (spRequestId) {
+    try {
+      const dedupSnap = await db.collection('aiRequestDedup').doc(`${decoded.uid}_${spRequestId}`).get();
+      if (dedupSnap.exists) return res.json(dedupSnap.data().result);
+    } catch(e) { console.warn('[suggestPlatforms] dedup read failed:', e.message); }
   }
 
-  const { name, category, description, locationType, website, requestId: spRequestId } = req.body;
+  try {
+    await reserveAiAction(decoded.uid);
+  } catch(e) {
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: `AI limit reached (${e.used}/${e.cap} this month). Upgrade your plan for more.` });
+    console.warn('[reserveAiAction] suggestPlatforms transaction failed, proceeding:', e.message);
+  }
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const fnStartMs = Date.now();
 
@@ -2697,13 +2712,6 @@ Return ONLY valid JSON, no markdown, no explanation:
     "x":          { "enabled": false, "reason": "max 7 words why" }
   }
 }`;
-
-  if (spRequestId) {
-    try {
-      const dedupSnap = await db.collection('aiRequestDedup').doc(`${decoded.uid}_${spRequestId}`).get();
-      if (dedupSnap.exists) return res.json(dedupSnap.data().result);
-    } catch(e) { console.warn('[suggestPlatforms] dedup read failed:', e.message); }
-  }
 
   const aiStartMs = Date.now();
   try {
@@ -3058,6 +3066,24 @@ async function _runScheduledPost(bizId, biz) {
   let campaignContext = '';
   const activeCampaignId = sched.activeCampaignId || '';
   const schedUid = biz.uid || '';
+
+  // Gate: only paid active users get scheduled AI posting
+  if (schedUid) {
+    try {
+      const userSnap = await db.collection('users').doc(schedUid).get();
+      const userData = userSnap.exists ? userSnap.data() : {};
+      const isPaid = userData.planActive === true &&
+                     (userData.plan === 'pro' || userData.plan === 'agency');
+      if (!isPaid) {
+        console.log(`[scheduledPost] Skipping biz ${bizId} — not a paid active plan (uid=${schedUid})`);
+        return;
+      }
+    } catch(e) {
+      console.error(`[scheduledPost] plan check failed for biz ${bizId}:`, e.message);
+      return; // Skip rather than risk free AI usage
+    }
+  }
+
   if (activeCampaignId) {
     try {
       const draftQ = await userBizDraftsRef(schedUid, bizId)
@@ -3215,32 +3241,72 @@ exports.scheduledPostingCheck = onSchedule(
   { schedule: 'every 1 hours', region: 'us-central1', secrets: ['ANTHROPIC_API_KEY'] },
   async () => {
     const now = new Date();
-    const snap = await db.collectionGroup('businesses')
-      .where('postingSchedule.enabled', '==', true)
-      .get();
+    const BATCH_SIZE = 50;
+    let lastDoc = null;
 
-    for (const bizDoc of snap.docs) {
-      const biz   = bizDoc.data();
-      const bizId = bizDoc.id;
-      const sched = biz.postingSchedule;
-      if (!sched?.nextRunAt) continue;
+    while (true) {
+      let q = db.collectionGroup('businesses')
+        .where('postingSchedule.enabled', '==', true)
+        .orderBy(admin.firestore.FieldPath.documentId())
+        .limit(BATCH_SIZE);
+      if (lastDoc) q = q.startAfter(lastDoc);
 
-      const nextRun = sched.nextRunAt.toDate ? sched.nextRunAt.toDate() : new Date(sched.nextRunAt);
-      if (nextRun > now) continue; // not yet time
+      const snap = await q.get();
+      if (snap.empty) break;
 
-      try {
-        await _runScheduledPost(bizId, biz);
+      for (const bizDoc of snap.docs) {
+        const biz   = bizDoc.data();
+        const bizId = bizDoc.id;
+        const sched = biz.postingSchedule;
+        if (!sched?.nextRunAt) continue;
 
-        const next = _computeNextRunAt(sched, now);
-        await bizDoc.ref.update({
-          'postingSchedule.lastRunAt':  admin.firestore.FieldValue.serverTimestamp(),
-          'postingSchedule.nextRunAt':  admin.firestore.Timestamp.fromDate(next),
-          'postingSchedule.updatedAt':  admin.firestore.FieldValue.serverTimestamp(),
-        });
-        console.log(`[scheduledPostingCheck] Posted for biz ${bizId}, next run: ${next.toISOString()}`);
-      } catch (e) {
-        console.error(`[scheduledPostingCheck] biz ${bizId} failed:`, e.message);
+        const nextRun = sched.nextRunAt.toDate ? sched.nextRunAt.toDate() : new Date(sched.nextRunAt);
+        if (nextRun > now) continue;
+
+        // Claim this document — prevents double-fire if Cloud Scheduler fires twice
+        let claimed = false;
+        try {
+          await db.runTransaction(async (tx) => {
+            const freshDoc  = await tx.get(bizDoc.ref);
+            const freshSched = freshDoc.data()?.postingSchedule || {};
+            if (freshSched.processing === true) {
+              const claimedAt = freshSched.processingStartedAt?.toDate?.() || new Date(0);
+              const stale = (now - claimedAt) > 10 * 60 * 1000; // 10 min staleness window
+              if (!stale) return; // already claimed by another invocation
+            }
+            tx.update(bizDoc.ref, {
+              'postingSchedule.processing': true,
+              'postingSchedule.processingStartedAt': admin.firestore.FieldValue.serverTimestamp(),
+            });
+            claimed = true;
+          });
+        } catch(e) {
+          console.warn(`[scheduledPostingCheck] claim tx failed for ${bizId}:`, e.message);
+        }
+        if (!claimed) continue;
+
+        try {
+          await _runScheduledPost(bizId, biz);
+          const next = _computeNextRunAt(sched, now);
+          await bizDoc.ref.update({
+            'postingSchedule.lastRunAt':          admin.firestore.FieldValue.serverTimestamp(),
+            'postingSchedule.nextRunAt':          admin.firestore.Timestamp.fromDate(next),
+            'postingSchedule.updatedAt':          admin.firestore.FieldValue.serverTimestamp(),
+            'postingSchedule.processing':         false,
+            'postingSchedule.processingStartedAt': null,
+          });
+          console.log(`[scheduledPostingCheck] Posted for biz ${bizId}, next run: ${next.toISOString()}`);
+        } catch (e) {
+          await bizDoc.ref.update({
+            'postingSchedule.processing':         false,
+            'postingSchedule.processingStartedAt': null,
+          }).catch(() => {});
+          console.error(`[scheduledPostingCheck] biz ${bizId} failed:`, e.message);
+        }
       }
+
+      if (snap.docs.length < BATCH_SIZE) break;
+      lastDoc = snap.docs[snap.docs.length - 1];
     }
   }
 );
