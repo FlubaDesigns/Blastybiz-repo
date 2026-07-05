@@ -206,6 +206,12 @@ const CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
 let _fbConnectUrl = '';
 let _googleConnectUrl = '';
 
+// ── Meta App Review gate ──────────────────────────────────────────────────────
+// Set to false once Meta approves the app in App Review → Requests.
+// When true: un-connected Facebook/Instagram cards show a "pending" notice
+// instead of the Connect button. Already-connected users see their normal state.
+const META_PENDING = true;
+
 function showToast(msg, isError) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -279,10 +285,16 @@ function renderPlatform(platformId, conn, bizId, uid) {
     if (conn && conn.status === 'connected') {
       cardEl.classList.add('connected');
       statusEl.textContent = 'Connected through Facebook · IG: ' + (conn.igUserId || 'linked');
-      actionsEl.innerHTML = '<span class="status-badge badge-live">Connected</span>'} else {
+      actionsEl.innerHTML = '<span class="status-badge badge-live">Connected</span>';
+    } else if (META_PENDING) {
+      statusEl.textContent = 'Connects automatically once Facebook is linked.';
+      actionsEl.innerHTML = '<span class="status-badge badge-pending">Approval pending</span>';
+    } else {
       statusEl.textContent = 'Connects automatically when you link Facebook.';
-      actionsEl.innerHTML = '<span class="status-badge badge-none">Via Facebook</span>'}
-    return}
+      actionsEl.innerHTML = '<span class="status-badge badge-none">Via Facebook</span>';
+    }
+    return;
+  }
 
   const initiateFn = platformId === 'google' ? 'initiateGoogleOAuth' : 'initiateFacebookOAuth';
   const returnToParam = new URLSearchParams(window.location.search).get('returnTo') || '';
@@ -293,12 +305,19 @@ function renderPlatform(platformId, conn, bizId, uid) {
 
   if (!conn || !conn.status || conn.status === 'disconnected') {
     cardEl.classList.remove('connected','error');
-    statusEl.textContent = platformId === 'google'
-      ? 'Auto-posts to your Google Business Profile when you approve a listing.'
-      : 'Auto-posts to your Facebook Page (and Instagram) when you approve a listing.';
-    if (platformId === 'google') {
-      actionsEl.innerHTML = `<button class="btn-connect" onclick="openGoogleExplainer()">Connect</button>`} else {
-      actionsEl.innerHTML = `<button class="btn-connect" onclick="openFbGate()">Connect</button>`}
+    if (platformId === 'facebook' && META_PENDING) {
+      statusEl.textContent = 'Meta App Review in progress — available soon.';
+      actionsEl.innerHTML = `<span class="status-badge badge-pending">Approval pending</span>`;
+    } else {
+      statusEl.textContent = platformId === 'google'
+        ? 'Auto-posts to your Google Business Profile when you approve a listing.'
+        : 'Auto-posts to your Facebook Page (and Instagram) when you approve a listing.';
+      if (platformId === 'google') {
+        actionsEl.innerHTML = `<button class="btn-connect" onclick="openGoogleExplainer()">Connect</button>`;
+      } else {
+        actionsEl.innerHTML = `<button class="btn-connect" onclick="openFbGate()">Connect</button>`;
+      }
+    }
   } else if (conn.status === 'connected') {
     cardEl.classList.add('connected');
     if (platformId === 'google') document.getElementById('explainer-google')?.classList.remove('open');
