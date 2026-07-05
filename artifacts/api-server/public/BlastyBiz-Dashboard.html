@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=55" />
+<link rel="stylesheet" href="global-style.css?v=56" />
 <title>BlastyBiz — Command Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}</style>
@@ -278,8 +278,8 @@ function renderDashboardCampaigns(campaigns) {
     return `<div style="padding:12px 0;border-bottom:1px solid var(--border,#333);">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
         <div style="font-size:14px;font-weight:600;color:var(--light,#fff);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(c.name || '(unnamed)')}</div>
-        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-          <a href="BlastyBiz.html?cid=${c.id}" class="badge off" style="text-decoration:none;white-space:nowrap;font-size:11px;">Open →</a>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <a href="BlastyBiz.html?cid=${c.id}" class="camp-open-btn" style="text-decoration:none;">Open →</a>
           <button class="del-camp-btn" onclick="window.deleteCampaign && window.deleteCampaign('${c.id}')" title="Delete campaign">🗑</button>
         </div>
       </div>

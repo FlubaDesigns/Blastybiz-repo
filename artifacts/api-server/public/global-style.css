@@ -1546,6 +1546,8 @@ body.onboarding-page textarea     { resize: none; }
 .add-biz-btn:hover   { border-color: var(--green); color: var(--green); }
 .del-biz-btn         { background: transparent; border: 1px solid transparent; border-radius: 8px; color: var(--muted); height: 34px; width: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; transition: all 0.2s; flex-shrink: 0; }
 .del-biz-btn:hover   { border-color: #c0392b; color: #e74c3c; background: rgba(231,76,60,0.08); }
+.camp-open-btn       { display: inline-flex; align-items: center; background: rgba(0,200,83,0.1); border: 1px solid rgba(0,200,83,0.4); color: var(--green); border-radius: 8px; padding: 8px 14px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.camp-open-btn:hover { background: rgba(0,200,83,0.18); border-color: var(--green); }
 .del-camp-btn        { background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 2px 4px; border-radius: 4px; transition: color 0.15s; line-height: 1; }
 .del-camp-btn:hover  { color: #e74c3c; }
 
