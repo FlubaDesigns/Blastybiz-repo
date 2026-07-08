@@ -156,9 +156,9 @@
 
   /* Header clearance — single source of truth.
      All padding-top on .main AND sticky top values must use var(--main-offset).
-     Mobile default: nav-row 4px+46px+4px = 54px exactly. No breathing room built in —
+     Mobile default: nav-row 4px+46px+4px = 54px + 1px border = 55px exactly. No breathing room built in —
      content pages add their own section padding. JS overrides this on load anyway. */
-  --main-offset: 54px;
+  --main-offset: 55px;
   --badge-bar-h: 36px;     /* home-page only badge bar height */
 }
 @media (min-width: 600px)  { :root { --gutter: 3rem; --section-v: 80px; } }
@@ -2461,9 +2461,14 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 /* ═══ CREATE PAGE — SCOPED OVERRIDES (conflict prevention) ═══ */
 
 /* Tabs (conflict: listing-preview page also uses .tab/.tabs) */
-/* Sticky top matches --main-offset so tabs lock flush under the header automatically.
-   No separate mobile override needed — the variable handles the breakpoint. */
+/* Sticky top matches --main-offset so tabs lock flush under the header automatically. */
 body.create-page .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--dark); position: sticky; top: var(--main-offset); z-index: 99; border-radius: 10px 10px 0 0; overflow: hidden; }
+/* Mobile: hardcode the exact header height (46px icon + 8px nav-row padding + 1px border = 55px)
+   so the layout is correct even before JS runs — bypasses any CSS-variable timing issues. */
+@media (max-width: 767px) {
+  body.create-page .main { padding-top: 55px; }
+  body.create-page .tabs { top: 55px; }
+}
 body.create-page .tab  { flex: 1; padding: 14px 8px; text-align: center; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s; }
 body.create-page .tab.active { color: var(--green); border-bottom-color: var(--green); }
 @media (max-width: 479px) {
