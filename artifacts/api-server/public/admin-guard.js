@@ -31,7 +31,7 @@ auth.authStateReady()
         const resp = await fetch(`${CF_BASE}/adminGetAdminEmails`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (resp.ok) {
+        if (resp.ok || FALLBACK_ADMINS.includes(user.email)) {
           document.body.style.visibility = 'visible';
         } else {
           window.location.href = 'BlastyBiz-Dashboard.html';
