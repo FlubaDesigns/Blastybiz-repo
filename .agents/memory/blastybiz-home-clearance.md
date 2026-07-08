@@ -17,4 +17,5 @@ The global rule `body.has-site-header .main { padding-top: var(--main-offset) }`
 - All non-home pages: clearance via CSS `var(--main-offset)` on `.main` only.
 - Home page: clearance via JS `body.style.paddingTop` only. CSS `.main` padding-top must be 0.
 - If the header component height ever changes, `_setHeaderOffset()` adapts automatically — no CSS change needed for the home page.
-- The `--main-offset` variable (67px mobile / 90px desktop at ≥768px) remains correct for all other pages.
+- The `--main-offset` variable (55px mobile / 77px desktop at ≥768px) remains correct for all other pages.
+- **Create page (BlastyBiz.html) mobile fix:** `.tabs` is `position: fixed; top: 55px` on mobile — makes the tab bar part of the fixed header chrome. `.main { padding-top: 98px }` (55px header + ~43px tabs). Using `position: sticky` for the tab bar on mobile caused a persistent gap because CSS-variable timing was unreliable. The fix is structural: glue the tab bar to the fixed header so a gap is geometrically impossible.
