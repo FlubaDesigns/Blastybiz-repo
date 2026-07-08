@@ -4219,6 +4219,12 @@ fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){
   document.getElementById('header__inject').innerHTML=html;
   function _setHeaderOffset(){var h=document.querySelector('.header');if(!h)return;var px=h.offsetHeight+'px';document.documentElement.style.setProperty('--main-offset',px);document.documentElement.style.setProperty('--header-h',px);}
   _setHeaderOffset();
+  // Re-measure once header images have loaded — they have no size until painted,
+  // so the first measurement above is often too small and leaves a gap.
+  document.querySelectorAll('#header__inject img').forEach(function(img){
+    if(img.complete){_setHeaderOffset();}else{img.addEventListener('load',_setHeaderOffset);}
+  });
+  setTimeout(_setHeaderOffset, 250);
   window.addEventListener('load',_setHeaderOffset);
   window.addEventListener('resize',_setHeaderOffset);
   function playSound(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)();function ck(t,f){var b=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.03),ctx.sampleRate),D=b.getChannelData(0);for(var i=0;i<D.length;i++){var s=i/ctx.sampleRate;D[i]=(Math.random()*2-1)*Math.exp(-s/0.004)*1.2+Math.sin(2*Math.PI*f*s)*Math.exp(-s/0.005)*0.3;}var src=ctx.createBufferSource();src.buffer=b;var g=ctx.createGain();g.gain.setValueAtTime(1,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.03);src.connect(g);g.connect(ctx.destination);src.start(t);}ctx.resume().then(function(){var n=ctx.currentTime;ck(n+0.01,220);ck(n+0.30,160);}).catch(function(){});}catch(e){}}
