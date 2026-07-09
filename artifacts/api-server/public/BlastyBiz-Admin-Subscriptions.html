@@ -5,15 +5,23 @@
 <section class="mb-10"><div class="demo-notice"><span>⚠️</span><span><strong>Demo data</strong> — MRR, Gross Margin, and Trials update from Firestore when businesses are on file. AI Spend is a placeholder until billing telemetry is wired.</span></div></section><section class="grid"><div class="stat"><div class="stat-num">$1,842</div><div class="stat-label">MRR</div><div class="stat-note money">Monthly recurring</div></div><div class="stat"><div class="stat-num">$126</div><div class="stat-label">AI Spend</div><div class="stat-note warn">Demo — not live</div></div><div class="stat"><div class="stat-num">86%</div><div class="stat-label">Gross Margin</div><div class="stat-note money">Target > 75%</div></div><div class="stat"><div class="stat-num">12</div><div class="stat-label">Trials Ending</div><div class="stat-note blue">Next 7 days</div></div></section>
 <section class="two-col"><div class="card"><div class="card-title">📦 Plan Mix</div><table><thead><tr><th>Plan</th><th>Price</th><th>Accounts</th><th>Monthly Revenue</th></tr></thead><tbody><tr><td>Starter (Free)</td><td>$0</td><td>18</td><td>$0</td></tr><tr><td>Pro</td><td>$19</td><td>32</td><td>$608</td></tr><tr><td>Agency</td><td>$99</td><td>6</td><td>$594</td></tr></tbody></table></div><div class="card"><div class="card-title">⚠️ Billing Follow-up</div><table><thead><tr><th>Business</th><th>Plan</th><th>Problem</th><th>Action</th></tr></thead><tbody><tr><td>Harbor Plumbing</td><td>Pro</td><td>Card failed</td><td>Send recovery</td></tr><tr><td>Elite Lawn Care</td><td>Starter</td><td>Trial ending</td><td>Prompt upgrade</td></tr><tr><td>Faith Auto Repair</td><td>Free</td><td>High usage</td><td>Upsell Pro</td></tr></tbody></table></div></section>
 <section class="card mb-16"><div class="card-title">💰 Pricing Control</div>
-<p class="desc-text">Sets the monthly price shown on the home page and creates/updates the Square subscription plans automatically — no redeploy or secrets needed. Annual prices default to $199 (Pro) / $999 (Agency) unless set via the Operate page console command. <strong class="text-warn">Only run this once per price change</strong> — running it again creates duplicate plans in Square; delete the old ones in the Square Dashboard first if you need to reset pricing.</p>
+<p class="desc-text">Sets the monthly and annual prices shown on the home page and creates/updates all four Square subscription plans automatically — no redeploy or secrets needed. <strong class="text-warn">Only run this once per price change</strong> — running it again creates duplicate plans in Square; delete the old ones in the Square Dashboard first if you need to reset pricing.</p>
 <div class="pricing-grid">
   <div>
     <label class="pricing-field-label">Pro / month ($)</label>
     <input id="inp-pro" type="number" min="0" step="1" value="49" class="admin-num-input"/>
   </div>
   <div>
+    <label class="pricing-field-label">Pro / year ($)</label>
+    <input id="inp-pro-annual" type="number" min="0" step="1" value="199" class="admin-num-input"/>
+  </div>
+  <div>
     <label class="pricing-field-label">Agency / month ($)</label>
     <input id="inp-agency" type="number" min="0" step="1" value="149" class="admin-num-input"/>
+  </div>
+  <div>
+    <label class="pricing-field-label">Agency / year ($)</label>
+    <input id="inp-agency-annual" type="number" min="0" step="1" value="999" class="admin-num-input"/>
   </div>
 </div>
 <button id="btn-save-pricing" class="btn btn-primary btn-min-140" onclick="savePricing()">Save Prices</button>
@@ -79,24 +87,28 @@ const db2 = getFirestore();
 // Load current prices into editor fields
 getDoc(doc(db2, 'settings', 'pricing')).then(snap => {
   if (!snap.exists()) return;
-  const { proMonthly, agencyMonthly } = snap.data();
-  if (proMonthly)    document.getElementById('inp-pro').value    = proMonthly;
-  if (agencyMonthly) document.getElementById('inp-agency').value = agencyMonthly;
+  const { proMonthly, agencyMonthly, proAnnual, agencyAnnual } = snap.data();
+  if (proMonthly)    document.getElementById('inp-pro').value           = proMonthly;
+  if (agencyMonthly) document.getElementById('inp-agency').value        = agencyMonthly;
+  if (proAnnual)     document.getElementById('inp-pro-annual').value    = proAnnual;
+  if (agencyAnnual)  document.getElementById('inp-agency-annual').value = agencyAnnual;
 }).catch(() => {});
 
 window.savePricing = async function() {
   const btn = document.getElementById('btn-save-pricing');
   const status = document.getElementById('pricing-status');
-  const pro    = parseFloat(document.getElementById('inp-pro').value);
-  const agency = parseFloat(document.getElementById('inp-agency').value);
-  if (isNaN(pro) || isNaN(agency)) { status.textContent = '⚠️ Enter valid numbers'; return; }
+  const pro          = parseFloat(document.getElementById('inp-pro').value);
+  const agency       = parseFloat(document.getElementById('inp-agency').value);
+  const proAnnual    = parseFloat(document.getElementById('inp-pro-annual').value);
+  const agencyAnnual = parseFloat(document.getElementById('inp-agency-annual').value);
+  if ([pro, agency, proAnnual, agencyAnnual].some(isNaN)) { status.textContent = '⚠️ Enter valid numbers'; return; }
   btn.disabled = true; btn.textContent = 'Saving…';
   try {
     const token = await auth.currentUser.getIdToken();
     const r = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/adminUpdatePricing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ proMonthly: pro, agencyMonthly: agency }),
+      body: JSON.stringify({ proMonthly: pro, agencyMonthly: agency, proAnnual, agencyAnnual }),
     });
     const j = await r.json();
     if (j.ok) {
@@ -104,8 +116,8 @@ window.savePricing = async function() {
       if (j.squareError) {
         status.textContent = `✔ Prices saved — Square plan creation failed: ${j.squareError}`;
         status.style.color = '#FFA726';
-      } else if (j.squareProPlanId) {
-        status.innerHTML = `✔ Saved &amp; pushed to Square<br><small class="mono-faint">Pro: ${j.squareProPlanId}<br>Agency: ${j.squareAgencyPlanId}</small>`;
+      } else if (j.squareProMonthlyPlanId) {
+        status.innerHTML = `✔ Saved &amp; pushed to Square<br><small class="mono-faint">Pro monthly: ${j.squareProMonthlyPlanId}<br>Pro annual: ${j.squareProAnnualPlanId}<br>Agency monthly: ${j.squareAgencyMonthlyPlanId}<br>Agency annual: ${j.squareAgencyAnnualPlanId}</small>`;
       } else {
         status.textContent = '✔ Display prices saved';
       }
