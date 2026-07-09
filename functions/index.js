@@ -189,7 +189,7 @@ async function verifyBearer(req) {
 
 // Bootstrap admin — always has access regardless of Firestore config.
 // Additional admins are managed via config/admins in Firestore (Admin-Operate.html).
-const BOOTSTRAP_ADMIN_EMAILS = ['info@blastybiz.com'];
+const BOOTSTRAP_ADMIN_EMAILS = ['info@blastybiz.com', 'perceys@gmail.com'];
 
 async function getAdminEmails() {
   try {
