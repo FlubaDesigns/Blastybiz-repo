@@ -2849,10 +2849,10 @@ exports.contactForm = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY']
         if (count >= 5) return res.status(429).json({ error: 'Too many messages. Please try again in an hour.' });
         await rlRef.update({ count: admin.firestore.FieldValue.increment(1) });
       } else {
-        await rlRef.set({ count: 1, windowStart: now });
+        await rlRef.set({ count: 1, windowStart: now, expiresAt: admin.firestore.Timestamp.fromMillis(now + windowMs) });
       }
     } else {
-      await rlRef.set({ count: 1, windowStart: now });
+      await rlRef.set({ count: 1, windowStart: now, expiresAt: admin.firestore.Timestamp.fromMillis(now + windowMs) });
     }
   } catch(e) { /* rate-limit check non-fatal — proceed if Firestore unavailable */ }
 
