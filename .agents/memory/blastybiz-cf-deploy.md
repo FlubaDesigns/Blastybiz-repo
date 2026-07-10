@@ -27,3 +27,10 @@ When `package.json` changes (e.g. `squareup` → `square`), Cloud Build runs `np
 
 ## Rule 5 — secrets: [] declarations in function config
 Do NOT add `secrets: ['SQUARE_ACCESS_TOKEN', ...]` to function option objects unless the secret actually exists in Firebase Secret Manager. These declarations cause Firebase CLI to validate Secret Manager at deploy time — if the secret doesn't exist, deploy fails with 404. Functions reading from `process.env.*` directly do not need the `secrets:` binding; just remove it.
+
+## Rule 6 — Cloud Functions default (compute) service account is missing IAM roles by default
+Gen2 Cloud Functions run as `{project-number}-compute@developer.gserviceaccount.com`, NOT the Firebase Admin SDK service account (`firebase-adminsdk-fbsvc@...`). Admin SDK calls that need elevated IAM (e.g. `admin.auth().deleteUser()`) silently fail with `auth/insufficient-permission` if the compute SA lacks the matching role (e.g. `roles/firebaseauth.admin`), even though the Admin SDK's own service account has it.
+
+**Why:** Two different service accounts exist in every Firebase project — the compute default (used at Cloud Functions runtime) and the Admin SDK one (used for local/admin tooling) — and IAM roles must be granted to the one actually executing the code. This bug shipped silently for weeks: `deleteAccount` always wiped Firestore data successfully but never actually deleted the Auth user, and the error was swallowed into a generic 500 with no visible symptom to the end user.
+
+**How to apply:** When any Admin SDK call inside a deployed Cloud Function needs elevated permissions, check IAM bindings on `{project-number}-compute@developer.gserviceaccount.com` (via Cloud Resource Manager `getIamPolicy`/`setIamPolicy` REST, since `gcloud` isn't available in this environment) — don't assume it inherits the Admin SDK service account's roles.

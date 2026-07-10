@@ -2137,18 +2137,35 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
     const bizSubRefs = [];
     for (const bizDoc of bizSnap.docs) {
       const bizId = bizDoc.id;
-      const [draftsSnap, jobsSnap, connsSnap, pendingSnap, libSnap] = await Promise.all([
+      const [draftsSnap, jobsSnap, connsSnap, pendingSnap, libSnap,
+             bizFactsSnap, bizImagesSnap] = await Promise.all([
         userBizDraftsRef(uid, bizId).get(),
         userBizJobsRef(uid, bizId).get(),
         userBizConnsRef(uid, bizId).get(),
         userBizPostsRef(uid, bizId).get(),
         userBizRef(uid, bizId).collection('documents').get(),
+        userBizRef(uid, bizId).collection('facts').get(),
+        userBizRef(uid, bizId).collection('images').get(),
       ]);
-      draftsSnap.docs.forEach(d => bizSubRefs.push(d.ref));
-      jobsSnap.docs.forEach(d => bizSubRefs.push(d.ref));
-      connsSnap.docs.forEach(d => bizSubRefs.push(d.ref));
-      pendingSnap.docs.forEach(d => bizSubRefs.push(d.ref));
-      libSnap.docs.forEach(d => bizSubRefs.push(d.ref));
+      [draftsSnap, jobsSnap, connsSnap, pendingSnap, libSnap,
+       bizFactsSnap, bizImagesSnap]
+        .forEach(snap => snap.docs.forEach(d => bizSubRefs.push(d.ref)));
+
+      // Campaign subcollections
+      const campSnap = await userBizRef(uid, bizId).collection('campaigns').get();
+      for (const campDoc of campSnap.docs) {
+        const campId = campDoc.id;
+        const [cFacts, cImages, cDocs, cCopy, cAds] = await Promise.all([
+          userBizRef(uid, bizId).collection('campaigns').doc(campId).collection('facts').get(),
+          userBizRef(uid, bizId).collection('campaigns').doc(campId).collection('images').get(),
+          userBizRef(uid, bizId).collection('campaigns').doc(campId).collection('documents').get(),
+          userBizRef(uid, bizId).collection('campaigns').doc(campId).collection('copy').get(),
+          userBizRef(uid, bizId).collection('campaigns').doc(campId).collection('advertising').get(),
+        ]);
+        [cFacts, cImages, cDocs, cCopy, cAds]
+          .forEach(snap => snap.docs.forEach(d => bizSubRefs.push(d.ref)));
+        bizSubRefs.push(campDoc.ref);
+      }
     }
 
     // Assemble all refs (aiUsageLogs intentionally excluded — billing records must be retained)
@@ -2171,7 +2188,15 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
     // Delete Storage files — wrapped so account deletion doesn't fail if Storage throws
     try {
       const storageBucket = admin.storage().bucket();
-      await storageBucket.deleteFiles({ prefix: `users/${uid}/images/` });
+      const storageDeletes = [
+        storageBucket.deleteFiles({ prefix: `users/${uid}/images/` }),
+      ];
+      for (const bizDoc of bizSnap.docs) {
+        storageDeletes.push(
+          storageBucket.deleteFiles({ prefix: `businesses/${bizDoc.id}/` })
+        );
+      }
+      await Promise.allSettled(storageDeletes);
     } catch(e) {
       console.error('[deleteAccount] Storage cleanup failed:', e.message);
     }
@@ -3525,13 +3550,22 @@ exports.scheduledWeeklyDigest = onSchedule(
       }
     } catch(e) { console.error('[scheduledWeeklyDigest] template fetch failed:', e.message); }
 
-    // Get all paid users (pro or agency)
-    const usersSnap = await db.collection('users')
-      .where('planActive', '==', true)
-      .get();
-
+    // Get all paid users (pro or agency), paginated to avoid memory/timeout limits at scale
+    const DIGEST_BATCH = 100;
+    let lastDoc = null;
     let sent = 0;
-    for (const userDoc of usersSnap.docs) {
+
+    while (true) {
+      let q = db.collection('users')
+        .where('planActive', '==', true)
+        .orderBy('__name__')
+        .limit(DIGEST_BATCH);
+      if (lastDoc) q = q.startAfter(lastDoc);
+
+      const usersSnap = await q.get();
+      if (usersSnap.empty) break;
+
+      for (const userDoc of usersSnap.docs) {
       const userData = userDoc.data();
       if (!userData.email) continue;
       if (userData.emailUnsubscribed) continue;
@@ -3625,7 +3659,12 @@ exports.scheduledWeeklyDigest = onSchedule(
         await sendResendEmail({ to: userData.email, subject, html });
         sent++;
       } catch(e) { console.error(`[scheduledWeeklyDigest] failed for ${userData.email}:`, e.message); }
-    }
+      } // end for
+
+      if (usersSnap.docs.length < DIGEST_BATCH) break;
+      lastDoc = usersSnap.docs[usersSnap.docs.length - 1];
+    } // end while
+
     console.log(`[scheduledWeeklyDigest] sent ${sent} digest emails`);
   }
 );
