@@ -13,6 +13,10 @@ let currentUser = null;
 let loadedJobs = [];
 const bizNameCache = {};
 
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
 // Extract uid and businessId from a Firestore ref path:
 // users/{uid}/businesses/{bizId}/publishJobs/{jobId}
 function uidBizFromRef(ref) {
@@ -199,12 +203,12 @@ onAuthStateChanged(auth, (user) => {
 
       tableRows.push(`<tr data-job-id="${j._id}">
         <td><input type="checkbox" class="job-select cb-styled" value="${j._id}"></td>
-        <td>${bizName}</td>
-        <td>${j.jobType || 'Listing sync'}</td>
-        <td>${j.platform || '—'}</td>
-        <td class="muted">${reason || '—'}</td>
+        <td>${escHtml(bizName)}</td>
+        <td>${escHtml(j.jobType || 'Listing sync')}</td>
+        <td>${escHtml(j.platform || '—')}</td>
+        <td class="muted">${escHtml(reason || '—')}</td>
         <td class="actions">${tableActs}</td>
-        <td><span class="badge needs">${statusLabel}</span></td>
+        <td><span class="badge needs">${escHtml(statusLabel)}</span></td>
       </tr>`);
 
       const cardActs = isReconnect
@@ -218,11 +222,11 @@ onAuthStateChanged(auth, (user) => {
       cardItems.push(`<div class="job-card">
         <div class="job-card-top">
           <input type="checkbox" class="job-select job-card-cb cb-styled" value="${j._id}">
-          <span class="job-card-biz">${bizName}</span>
-          <span class="badge needs">${statusLabel}</span>
+          <span class="job-card-biz">${escHtml(bizName)}</span>
+          <span class="badge needs">${escHtml(statusLabel)}</span>
         </div>
-        <div class="job-card-meta">${jobMeta}</div>
-        ${reason ? `<div class="job-card-reason">${reason}</div>` : ''}
+        <div class="job-card-meta">${escHtml(jobMeta)}</div>
+        ${reason ? `<div class="job-card-reason">${escHtml(reason)}</div>` : ''}
         <div class="job-card-actions">${cardActs}</div>
       </div>`);
     });

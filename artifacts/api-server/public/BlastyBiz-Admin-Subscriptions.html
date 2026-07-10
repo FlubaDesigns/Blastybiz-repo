@@ -32,6 +32,10 @@ import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, collectionGroup, query, orderBy, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
 onAuthStateChanged(auth, (user) => {
   if (!user) return;
   const q = query(collectionGroup(db, 'businesses'), orderBy('businessName'), limit(100));
@@ -70,8 +74,8 @@ onAuthStateChanged(auth, (user) => {
       const tb = tables[1].querySelector('tbody');
       if (tb) tb.innerHTML = needsAttn.length
         ? needsAttn.map(b => `<tr>
-            <td>${b.businessName || '—'}</td>
-            <td>${b.currentPlan || 'Free'}</td>
+            <td>${escHtml(b.businessName || '—')}</td>
+            <td>${escHtml(b.currentPlan || 'Free')}</td>
             <td>${b.subscriptionStatus === 'past_due' ? 'Card failed' : b.subscriptionStatus === 'trial' ? 'Trial ending' : 'Canceled'}</td>
             <td>${b.subscriptionStatus === 'past_due' ? 'Send recovery' : 'Prompt upgrade'}</td>
           </tr>`).join('')

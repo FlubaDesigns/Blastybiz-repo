@@ -167,14 +167,43 @@ function classifyAiError(e) {
   return 'unknown';
 }
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-  'Access-Control-Allow-Methods': 'POST,OPTIONS',
-};
+const ALLOWED_ORIGINS = new Set([
+  'https://blastybiz.com',
+  'https://www.blastybiz.com',
+  'https://blastybiz-9523e.web.app',
+  'https://blastybiz-9523e.firebaseapp.com',
+]);
 
-function setCors(res) {
-  Object.entries(CORS_HEADERS).forEach(([k, v]) => res.set(k, v));
+// ── Simple per-uid rate limiter (Firestore-backed, mirrors contactForm's IP limiter) ──
+// Returns true if the caller is within limit (and records the hit); false if over limit.
+async function checkUidRateLimit(collectionName, uid, maxCount, windowMs) {
+  try {
+    const rlRef = db.collection(collectionName).doc(uid);
+    const rlSnap = await rlRef.get();
+    const now = Date.now();
+    if (rlSnap.exists) {
+      const { count, windowStart } = rlSnap.data();
+      if (now - windowStart < windowMs) {
+        if (count >= maxCount) return false;
+        await rlRef.update({ count: admin.firestore.FieldValue.increment(1) });
+      } else {
+        await rlRef.set({ count: 1, windowStart: now, expiresAt: admin.firestore.Timestamp.fromMillis(now + windowMs) });
+      }
+    } else {
+      await rlRef.set({ count: 1, windowStart: now, expiresAt: admin.firestore.Timestamp.fromMillis(now + windowMs) });
+    }
+    return true;
+  } catch(e) { return true; /* rate-limit check non-fatal — proceed if Firestore unavailable */ }
+}
+
+function setCors(req, res) {
+  const origin = req && req.headers && req.headers.origin;
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    res.set('Access-Control-Allow-Origin', origin);
+    res.set('Vary', 'Origin');
+  }
+  res.set('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  res.set('Access-Control-Allow-Methods', 'POST,OPTIONS');
 }
 
 // ── Auth helpers ─────────────────────────────────────────────────────────────
@@ -372,7 +401,7 @@ function buildPlatformBlock(p) {
 // POST /adaptListing
 // ══════════════════════════════════════════
 exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
@@ -381,7 +410,8 @@ exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['
     await reserveAiAction(decoded.uid);
   } catch(e) {
     if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: `AI limit reached (${e.used}/${e.cap} this month). Upgrade your plan for more.` });
-    console.warn('[reserveAiAction] generateEnrichmentQuestions transaction failed, proceeding:', e.message);
+    console.error('[reserveAiAction] generateEnrichmentQuestions transaction failed:', e.message);
+    return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
   }
 
   const { businessName, category, address, locationType, region, existingInsights } = req.body;
@@ -453,7 +483,7 @@ Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
 });
 
 exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'], timeoutSeconds: 120 }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   const fnStartMs = Date.now();
 
@@ -476,7 +506,8 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
     await reserveAiAction(decoded.uid);
   } catch(e) {
     if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: `AI limit reached (${e.used}/${e.cap} this month). Upgrade your plan for more.` });
-    console.warn('[reserveAiAction] adaptListing transaction failed, proceeding:', e.message);
+    console.error('[reserveAiAction] adaptListing transaction failed:', e.message);
+    return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
   }
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -600,7 +631,7 @@ Return this exact JSON structure:
 // POST /resolveCategories
 // ══════════════════════════════════════════
 exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   const fnStartMs = Date.now();
 
@@ -621,7 +652,8 @@ exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_
     await reserveAiAction(decoded.uid);
   } catch(e) {
     if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: `AI limit reached (${e.used}/${e.cap} this month). Upgrade your plan for more.` });
-    console.warn('[reserveAiAction] resolveCategories transaction failed, proceeding:', e.message);
+    console.error('[reserveAiAction] resolveCategories transaction failed:', e.message);
+    return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
   }
 
   const now = new Date();
@@ -743,7 +775,7 @@ ${platformBlocks}`;
 // POST /approveDraft
 // ══════════════════════════════════════════
 exports.approvePendingPost = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
@@ -801,7 +833,7 @@ exports.approvePendingPost = onRequest({ invoker: 'public' }, async (req, res) =
 });
 
 exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
   let decoded;
@@ -872,7 +904,7 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
 // POST /uploadImage
 // ══════════════════════════════════════════
 exports.uploadImage = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
   let decoded;
@@ -994,7 +1026,7 @@ async function _publishInstagramJob(job, conn) {
 // POST /createCheckoutSession
 // ══════════════════════════════════════════
 exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN', 'SQUARE_LOCATION_ID'] }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
@@ -1002,6 +1034,11 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
   const email = decoded.email || req.body.email || '';
   const { plan, billingPeriod: rawPeriod } = req.body;
   const billingPeriod = rawPeriod === 'annual' ? 'annual' : 'monthly';
+
+  // Rate limit: 10 checkout attempts per user per hour
+  if (!(await checkUidRateLimit('checkoutRateLimit', uid, 10, 60 * 60 * 1000))) {
+    return res.status(429).json({ error: 'Too many checkout attempts. Please try again in an hour.' });
+  }
 
   // Read prices + Square plan IDs from Firestore (written by adminUpdatePricing)
   let proMonthly = 19, agencyMonthly = 99;
@@ -1075,7 +1112,7 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
 // Returns a mailto link so the user can request changes.
 // ══════════════════════════════════════════
 exports.createPortalSession = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
@@ -1446,7 +1483,7 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
 // OAuth 2.0 redirect URI = https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback
 // ══════════════════════════════════════════
 exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID'] }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   let decoded;
@@ -1454,6 +1491,9 @@ exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
   const uid = decoded.uid;
   const { businessId, returnTo } = req.query;
   if (!businessId) { res.status(400).json({ error: 'Missing businessId' }); return; }
+  if (!(await checkUidRateLimit('oauthInitRateLimit', uid, 20, 60 * 60 * 1000))) {
+    return res.status(429).json({ error: 'Too many connection attempts. Please try again in an hour.' });
+  }
   const bizSnap = await userBizRef(uid, businessId).get();
   if (!bizSnap.exists) { return res.status(403).json({ error: 'Forbidden' }); }
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -1556,7 +1596,7 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', region: 'us-central
 //   instagram_basic, instagram_content_publish
 // ══════════════════════════════════════════
 exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBOOK_APP_ID'] }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   let decoded;
@@ -1564,6 +1604,9 @@ exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBO
   const uid = decoded.uid;
   const { businessId, returnTo } = req.query;
   if (!businessId) { res.status(400).json({ error: 'Missing businessId' }); return; }
+  if (!(await checkUidRateLimit('oauthInitRateLimit', uid, 20, 60 * 60 * 1000))) {
+    return res.status(429).json({ error: 'Too many connection attempts. Please try again in an hour.' });
+  }
   const bizSnap = await userBizRef(uid, businessId).get();
   if (!bizSnap.exists) { return res.status(403).json({ error: 'Forbidden' }); }
   const appId = process.env.FACEBOOK_APP_ID;
@@ -1707,7 +1750,7 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-centr
 // Marks the job as manual_required with copy-paste instructions.
 // ══════════════════════════════════════════
 exports.postToBing = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
@@ -1733,7 +1776,7 @@ exports.postToBing = onRequest({ invoker: 'public' }, async (req, res) => {
 // Marks the job as manual_required with submission instructions.
 // ══════════════════════════════════════════
 exports.postToAppleMaps = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
@@ -2111,7 +2154,7 @@ exports.businessCreatedTrigger = onDocumentCreated(
 // Cancels Square sub, wipes all Firestore data, deletes Auth user
 // ══════════════════════════════════════════
 exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN'] }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
 
   const { idToken } = req.body;
@@ -2282,7 +2325,7 @@ exports.setOperatorSecret = onRequest({ invoker: 'public', cors: true }, async (
 // ══════════════════════════════════════════
 
 exports.adminListPublishJobs = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
   const { status, limit: lim = '100' } = req.query;
@@ -2298,7 +2341,7 @@ exports.adminListPublishJobs = onRequest({ invoker: 'public' }, async (req, res)
 });
 
 exports.adminListFailedJobs = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
   const snap = await db.collectionGroup('publishJobs')
@@ -2309,7 +2352,7 @@ exports.adminListFailedJobs = onRequest({ invoker: 'public' }, async (req, res) 
 });
 
 exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   let adminDecoded;
   try { adminDecoded = await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
@@ -2402,7 +2445,7 @@ exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_
 });
 
 exports.adminMarkManualFollowup = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
   const { jobId, uid: jobUid, businessId: jobBizId } = req.body;
@@ -2416,7 +2459,7 @@ exports.adminMarkManualFollowup = onRequest({ invoker: 'public' }, async (req, r
 });
 
 exports.adminListBusinesses = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
   const snap = await db.collectionGroup('businesses').orderBy('createdAt', 'desc').limit(200).get();
@@ -2424,7 +2467,7 @@ exports.adminListBusinesses = onRequest({ invoker: 'public' }, async (req, res) 
 });
 
 exports.adminListPlatformConnections = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
   const snap = await db.collectionGroup('platformConnections').get();
@@ -2435,7 +2478,7 @@ exports.adminListPlatformConnections = onRequest({ invoker: 'public' }, async (r
 
 // Returns connection-health summary + list of broken/expiring connections joined with business names
 exports.adminPlatformHealth = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
 
@@ -2486,7 +2529,7 @@ exports.adminPlatformHealth = onRequest({ invoker: 'public' }, async (req, res) 
 
 // Sends a one-off reconnect nudge email to the business owner for a given connection
 exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
 
@@ -2550,7 +2593,7 @@ exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESE
 // Onboarding calls this instead of writing Firestore directly.
 // Returns { bizId } on success; 403 if the user has hit their plan cap.
 exports.createBusiness = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
   let uid;
@@ -2621,7 +2664,7 @@ exports.createBusiness = onRequest({ invoker: 'public' }, async (req, res) => {
 // Allow authorized admins to manage the dynamic admin list stored in config/admins.
 // BOOTSTRAP_ADMIN_EMAILS (info@blastybiz.com) is always included and cannot be removed.
 exports.adminGetAdminEmails = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
   const snap = await db.collection('config').doc('admins').get();
@@ -2630,7 +2673,7 @@ exports.adminGetAdminEmails = onRequest({ invoker: 'public' }, async (req, res) 
 });
 
 exports.adminUpdateAdminEmails = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
@@ -2645,7 +2688,7 @@ exports.adminUpdateAdminEmails = onRequest({ invoker: 'public' }, async (req, re
 });
 
 exports.adminListActivityLogs = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
   const { uid } = req.query;
@@ -2658,7 +2701,7 @@ exports.adminListActivityLogs = onRequest({ invoker: 'public' }, async (req, res
 });
 
 exports.adminSubscriptionSummary = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
   const [usersSnap, subsSnap] = await Promise.all([
@@ -2703,7 +2746,7 @@ exports.adminSubscriptionSummary = onRequest({ invoker: 'public' }, async (req, 
 // User toggles remain fully editable after suggestions are applied.
 // ══════════════════════════════════════════
 exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
   let decoded;
@@ -2723,7 +2766,8 @@ exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_A
     await reserveAiAction(decoded.uid);
   } catch(e) {
     if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: `AI limit reached (${e.used}/${e.cap} this month). Upgrade your plan for more.` });
-    console.warn('[reserveAiAction] suggestPlatforms transaction failed, proceeding:', e.message);
+    console.error('[reserveAiAction] suggestPlatforms transaction failed:', e.message);
+    return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
   }
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const fnStartMs = Date.now();
@@ -2829,7 +2873,7 @@ Return ONLY valid JSON, no markdown, no explanation:
 });
 
 exports.sendTestEmail = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: 'Forbidden' }); }
   const { to, subject: rawSubject, html: rawHtml } = req.body;
@@ -2873,7 +2917,7 @@ exports.sendTestEmail = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY
 // Accepts to, name, email, message from the Contact page
 // ══════════════════════════════════════════
 exports.contactForm = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   const ALLOWED_TO = new Set(['support@blastybiz.com', 'info@blastybiz.com', 'sales@blastybiz.com', 'billing@blastybiz.com']);
   const { to, name, email, message } = req.body || {};
@@ -2934,7 +2978,7 @@ exports.contactForm = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY']
 });
 
 exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_ACCESS_TOKEN'] }, async (req, res) => {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: 'Forbidden' }); }
   const { proMonthly, agencyMonthly, proAnnual, agencyAnnual } = req.body;
@@ -3091,7 +3135,7 @@ async function fetchAndCacheYelpCategories() {
 exports.refreshYelpCategories = onRequest(
   { invoker: 'public', region: 'us-central1', secrets: ['YELP_API_KEY'] },
   async (req, res) => {
-    setCors(res);
+    setCors(req, res);
     if (req.method === 'OPTIONS') return res.status(204).end();
     try {
       await requireAdmin(req);

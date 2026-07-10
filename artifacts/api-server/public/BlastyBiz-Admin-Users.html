@@ -9,6 +9,10 @@ import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, collectionGroup, query, orderBy, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
 function timeAgo(ts) {
   if (!ts) return '—';
   const d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -32,12 +36,12 @@ onAuthStateChanged(auth, (user) => {
       const status = b.subscriptionStatus || 'active';
       const bc = { active:'live', trial:'info', past_due:'needs', canceled:'off' }[status] || 'live';
       return `<tr>
-        <td>${b.businessName || '—'}</td>
-        <td>${b.ownerName || b.email || '—'}</td>
-        <td>${b.currentPlan || 'Free'}</td>
-        <td><span class="badge ${bc}">${status}</span></td>
-        <td>${timeAgo(b.lastLoginAt || b.updatedAt)}</td>
-        <td class="muted">${b.adminNote || ''}</td>
+        <td>${escHtml(b.businessName || '—')}</td>
+        <td>${escHtml(b.ownerName || b.email || '—')}</td>
+        <td>${escHtml(b.currentPlan || 'Free')}</td>
+        <td><span class="badge ${bc}">${escHtml(status)}</span></td>
+        <td>${escHtml(timeAgo(b.lastLoginAt || b.updatedAt))}</td>
+        <td class="muted">${escHtml(b.adminNote || '')}</td>
       </tr>`;
     }).join('');
     const nums = document.querySelectorAll('.stat-num');
