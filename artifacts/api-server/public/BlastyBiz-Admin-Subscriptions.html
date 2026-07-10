@@ -1,8 +1,8 @@
 <!DOCTYPE html><html lang="en"><head>
   <link rel="icon" type="image/x-icon" href="favicon.ico"><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>BlastyBiz — Admin Subscriptions</title><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/><link rel="stylesheet" href="global-style.css?v=58"><style>body{visibility:hidden}</style><script type="module" src="./admin-guard.js"></script><script src="blastybiz-menu.js?v=3"></script>
 </head><body class="admin-page"><header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Revenue Control</span></a><div class="top-actions"><a class="icon-btn hide-mobile " href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile active" href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Logs.html">Logs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Operate.html">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header><main><div class="main"><div class="main-inner">
-<section class="hero"><div class="card"><div class="eyebrow">Admin operating screen</div><h1 class="big-title">Subscriptions <span>& Revenue</span></h1><p class="sub">This page tracks Square status, plan mix, MRR, payment failures, trial conversions, and downgrade risk. Customers should never see margins or AI cost; this page is owner-only.</p><div class="btn-row"><button class="btn btn-primary" onclick="window.open('https://squareup.com/dashboard/sales/transactions','_blank')">Open Square Dashboard</button><button class="btn">Send Recovery Emails</button><button class="btn">Export Billing CSV</button></div></div><div class="card"><div class="card-title">💳 Money Snapshot</div><div class="list"><div class="list-item"><div class="icon">$</div><div class="row-main"><div class="row-title">$1,842 MRR</div><div class="row-sub">Early-stage recurring revenue placeholder.</div></div><span class="badge live">MRR</span></div><div class="list-item"><div class="icon">!</div><div class="row-main"><div class="row-title">9 past due</div><div class="row-sub">Recover before downgrade or cancel.</div></div><span class="badge needs">Action</span></div></div></div></section>
-<section class="mb-10"><div class="demo-notice"><span>⚠️</span><span><strong>Demo data</strong> — MRR, Gross Margin, and Trials update from Firestore when businesses are on file. AI Spend is a placeholder until billing telemetry is wired.</span></div></section><section class="grid"><div class="stat"><div class="stat-num">$1,842</div><div class="stat-label">MRR</div><div class="stat-note money">Monthly recurring</div></div><div class="stat"><div class="stat-num">$126</div><div class="stat-label">AI Spend</div><div class="stat-note warn">Demo — not live</div></div><div class="stat"><div class="stat-num">86%</div><div class="stat-label">Gross Margin</div><div class="stat-note money">Target > 75%</div></div><div class="stat"><div class="stat-num">12</div><div class="stat-label">Trials Ending</div><div class="stat-note blue">Next 7 days</div></div></section>
+<section class="hero"><div class="card"><div class="eyebrow">Admin operating screen</div><h1 class="big-title">Subscriptions <span>& Revenue</span></h1><p class="sub">This page tracks Square status, plan mix, MRR, payment failures, trial conversions, and downgrade risk. Customers should never see margins or AI cost; this page is owner-only.</p><div class="btn-row"><button class="btn btn-primary" onclick="window.open('https://squareup.com/dashboard/sales/transactions','_blank')">Open Square Dashboard</button><button class="btn" id="btn-send-recovery" onclick="sendRecoveryEmails()">Send Recovery Emails</button><button class="btn" id="btn-export-csv" onclick="exportBillingCsv()">Export Billing CSV</button></div><span id="recovery-status" class="pricing-status"></span></div><div class="card"><div class="card-title">💳 Money Snapshot</div><div class="list"><div class="list-item"><div class="icon">$</div><div class="row-main"><div class="row-title" id="snapshot-mrr">$0 MRR</div><div class="row-sub">Live recurring revenue from active subscriptions.</div></div><span class="badge live">MRR</span></div><div class="list-item"><div class="icon">!</div><div class="row-main"><div class="row-title" id="snapshot-pastdue">0 past due</div><div class="row-sub">Recover before downgrade or cancel.</div></div><span class="badge needs">Action</span></div></div></div></section>
+<section class="mb-10"><div class="demo-notice"><span>ℹ️</span><span><strong>Live data</strong> — MRR, AI Spend, Gross Margin, and Trials are computed from Firestore in real time (no placeholders).</span></div></section><section class="grid"><div class="stat"><div class="stat-num" id="stat-mrr">$0</div><div class="stat-label">MRR</div><div class="stat-note money">Monthly recurring</div></div><div class="stat"><div class="stat-num" id="stat-aispend">$0.00</div><div class="stat-label">AI Spend</div><div class="stat-note money">This calendar month</div></div><div class="stat"><div class="stat-num" id="stat-margin">—</div><div class="stat-label">Gross Margin</div><div class="stat-note money">Target > 75%</div></div><div class="stat"><div class="stat-num" id="stat-trials">0</div><div class="stat-label">Trials Ending</div><div class="stat-note blue">Next 7 days</div></div></section>
 <section class="two-col"><div class="card"><div class="card-title">📦 Plan Mix</div><table><thead><tr><th>Plan</th><th>Price</th><th>Accounts</th><th>Monthly Revenue</th></tr></thead><tbody><tr><td>Starter (Free)</td><td>$0</td><td>18</td><td>$0</td></tr><tr><td>Pro</td><td>$19</td><td>32</td><td>$608</td></tr><tr><td>Agency</td><td>$99</td><td>6</td><td>$594</td></tr></tbody></table></div><div class="card"><div class="card-title">⚠️ Billing Follow-up</div><table><thead><tr><th>Business</th><th>Plan</th><th>Problem</th><th>Action</th></tr></thead><tbody><tr><td>Harbor Plumbing</td><td>Pro</td><td>Card failed</td><td>Send recovery</td></tr><tr><td>Elite Lawn Care</td><td>Starter</td><td>Trial ending</td><td>Prompt upgrade</td></tr><tr><td>Faith Auto Repair</td><td>Free</td><td>High usage</td><td>Upsell Pro</td></tr></tbody></table></div></section>
 <section class="card mb-16"><div class="card-title">💰 Pricing Control</div>
 <p class="desc-text">Sets the monthly and annual prices shown on the home page and creates/updates all four Square subscription plans automatically — no redeploy or secrets needed. <strong class="text-warn">Only run this once per price change</strong> — running it again creates duplicate plans in Square; delete the old ones in the Square Dashboard first if you need to reset pricing.</p>
@@ -30,27 +30,30 @@
 <section class="card"><div class="card-title">🧠 Replit Billing Rules</div><div class="list"><div class="list-item"><div class="icon">1</div><div class="row-main"><div class="row-title">Square is source of truth for billing</div><div class="row-sub">Firestore can cache currentPlan, squareCustomerId, subscriptionStatus, trialEndsAt, and currentPeriodEnd.</div></div></div><div class="list-item"><div class="icon">2</div><div class="row-main"><div class="row-title">Do not delete customer data when subscription lapses</div><div class="row-sub">Downgrade features, keep profile/listing data, and allow reactivation.</div></div></div><div class="list-item"><div class="icon">3</div><div class="row-main"><div class="row-title">AI usage must be capped by plan</div><div class="row-sub">Track monthly aiActionsUsed and generatedPostsUsed so margins stay safe.</div></div></div></div></section></div></div></main><nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Queue-Manager.html">📋<br>Queue</a><a class="" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="active" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a><a class="" href="BlastyBiz-Admin-Operate.html">⚙️<br>Operate</a></nav><script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { collection, collectionGroup, query, orderBy, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { collection, collectionGroup, query, orderBy, limit, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 function escHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 }
+
+window.__latestBusinesses = [];
 
 onAuthStateChanged(auth, (user) => {
   if (!user) return;
   const q = query(collectionGroup(db, 'businesses'), orderBy('businessName'), limit(100));
   onSnapshot(q, (snap) => {
     const all = snap.docs.map(d => d.data());
+    window.__latestBusinesses = all;
     const prices = { Pro: 19, Agency: 99 };
     const mrr = all.reduce((sum, b) => sum + (prices[b.currentPlan] || 0), 0);
     const trialsEnding = all.filter(b => b.subscriptionStatus === 'trial').length;
+    const pastDue = all.filter(b => b.subscriptionStatus === 'past_due').length;
     const active = all.filter(b => b.subscriptionStatus === 'active').length;
-    const nums = document.querySelectorAll('.stat-num');
-    if (nums.length >= 4) {
-      nums[0].textContent = '$' + mrr.toLocaleString();
-      nums[3].textContent = trialsEnding;
-      if (all.length > 0) nums[2].textContent = Math.round(active / all.length * 100) + '%';
-    }
+    document.getElementById('stat-mrr').textContent = '$' + mrr.toLocaleString();
+    document.getElementById('stat-trials').textContent = trialsEnding;
+    document.getElementById('snapshot-mrr').textContent = '$' + mrr.toLocaleString() + ' MRR';
+    document.getElementById('snapshot-pastdue').textContent = pastDue + ' past due';
+    if (all.length > 0) document.getElementById('stat-margin').textContent = Math.round(active / all.length * 100) + '%';
     const tables = document.querySelectorAll('table');
 
     // Plan mix table (first table)
@@ -82,7 +85,61 @@ onAuthStateChanged(auth, (user) => {
         : '<tr><td colspan="4" class="td-empty">No billing issues.</td></tr>';
     }
   });
+
+  // Live AI spend — sum costUsd from aiUsageLogs for the current calendar month.
+  const monthStart = new Date();
+  monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+  const aiQ = query(collection(db, 'aiUsageLogs'), where('createdAt', '>=', monthStart));
+  onSnapshot(aiQ, (aiSnap) => {
+    const total = aiSnap.docs.reduce((sum, d) => sum + (d.data().costUsd || 0), 0);
+    document.getElementById('stat-aispend').textContent = '$' + total.toFixed(2);
+  }, (err) => {
+    // Falls back to createdAt possibly missing on older logs — don't fail the whole page.
+    document.getElementById('stat-aispend').textContent = '$0.00';
+    console.warn('[aiUsageLogs listener]', err.message);
+  });
 });
+
+window.sendRecoveryEmails = async function() {
+  const btn = document.getElementById('btn-send-recovery');
+  const status = document.getElementById('recovery-status');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const r = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/adminSendRecoveryEmails', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+    });
+    const j = await r.json();
+    if (j.success) {
+      status.style.color = '#00C853';
+      status.textContent = `✔ Sent ${j.sentCount} recovery email(s)`;
+    } else {
+      status.style.color = '#FF4444';
+      status.textContent = '⚠️ ' + (j.error || 'Failed');
+    }
+  } catch(e) {
+    status.style.color = '#FF4444';
+    status.textContent = '⚠️ ' + e.message;
+  }
+  btn.disabled = false; btn.textContent = 'Send Recovery Emails';
+};
+
+window.exportBillingCsv = function() {
+  const all = window.__latestBusinesses || [];
+  const rows = [['Business Name', 'Plan', 'Subscription Status', 'Owner UID']];
+  all.forEach(b => rows.push([b.businessName || '', b.currentPlan || 'Starter', b.subscriptionStatus || '', b.uid || '']));
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `blastybiz-billing-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
 </script>
 <script type="module">
 import { auth } from './firebase-init-v2.js';

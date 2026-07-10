@@ -2589,6 +2589,56 @@ exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESE
   res.json({ success: true, sentTo: userData.email });
 });
 
+// ── adminSendRecoveryEmails — bulk billing-recovery nudge for past_due businesses ──
+// Admin-only. Emails the owner of every business currently in `past_due` status.
+exports.adminSendRecoveryEmails = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+
+  try {
+    const bizSnap = await db.collectionGroup('businesses').where('subscriptionStatus', '==', 'past_due').get();
+    const results = [];
+    for (const bizDoc of bizSnap.docs) {
+      const biz = bizDoc.data();
+      const uid = biz.uid;
+      if (!uid) { results.push({ bizId: bizDoc.id, sent: false, reason: 'no uid on business doc' }); continue; }
+      const userSnap = await db.collection('users').doc(uid).get();
+      const userData = userSnap.exists ? userSnap.data() : null;
+      if (!userData || !userData.email) { results.push({ bizId: bizDoc.id, sent: false, reason: 'no user email' }); continue; }
+      if (userData.emailUnsubscribed) { results.push({ bizId: bizDoc.id, sent: false, reason: 'unsubscribed' }); continue; }
+
+      const ownerName = userData.ownerName || userData.displayName || 'there';
+      const bizLabel = biz.businessName || 'your business';
+      const dashboardUrl = APP_BASE_URL + '/BlastyBiz-Dashboard.html#billing';
+      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, process.env.RESEND_API_KEY)}`;
+
+      const subject = `Payment failed for ${bizLabel} — update your card to avoid downgrade`;
+      const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:28px 32px 22px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:32px">
+    <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Hi ${ownerName}, your last payment for ${bizLabel} didn't go through.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">Update your payment method to keep your plan active and avoid being downgraded to Starter.</p>
+    <a href="${dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Update payment method &#8594;</a>
+  </div>
+  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz, a Fluba Designs LLC brand. &bull; <a href="${unsubUrl}" style="color:#999">Unsubscribe</a></p>
+  </div>
+</div>`;
+
+      await sendResendEmail({ to: userData.email, subject, html });
+      results.push({ bizId: bizDoc.id, sent: true, to: userData.email });
+    }
+    res.json({ success: true, sentCount: results.filter(r => r.sent).length, results });
+  } catch(e) {
+    console.error('[adminSendRecoveryEmails]', e.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // ── createBusiness — server-enforced plan limits + atomic write ───────────────
 // Onboarding calls this instead of writing Firestore directly.
 // Returns { bizId } on success; 403 if the user has hit their plan cap.
