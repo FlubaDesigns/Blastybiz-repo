@@ -227,45 +227,43 @@
     <div class="section-header">
       <span class="section-icon">🔍</span>
       <span class="section-title">Google OAuth Consent Screen Verification</span>
-      <span class="section-badge error">Rejected — Resubmit</span>
-    </div>
-    <div class="card">
-      <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-google-verify" onclick="toggleCheck(event,'google-verify')"></div>
-        <div class="flex-1">
-          <div class="op-card-title">Submit BlastyBiz for Google OAuth Verification</div>
-          <div class="op-card-sub">Unverified apps show a red "This app isn't verified" warning to users when connecting Google Business Profile. Verification removes it.</div>
-        </div>
-        <span class="op-chevron">▼</span>
-      </div>
-      <div class="op-card-body">
-        <p class="op-step-label">What to do</p>
-        <ol class="op-list">
-          <li>Go to <span class="cf-url">console.cloud.google.com → APIs &amp; Services → OAuth consent screen</span></li>
-          <li>Make sure App name, support email, homepage URL (<strong>blastybiz.com</strong>), privacy policy URL, and terms URL are all filled in</li>
-          <li>Under <strong>Scopes</strong> confirm <strong>business.manage</strong> is listed</li>
-          <li>Click <strong>Prepare for verification</strong> → fill in the justification (e.g. "BlastyBiz posts business listings to Google Business Profile on behalf of the business owner")</li>
-          <li>Submit — Google review typically takes a few days to a few weeks</li>
-          <li>Once approved, the warning screen goes away for all users</li>
-        </ol>
-        <div class="op-note">⚠️ Until verified, users can still connect by clicking "Advanced → Go to BlastyBiz anyway" but most will not trust it.</div>
-      </div>
+      <span class="section-badge info">Not required — no action</span>
     </div>
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
         <div class="check-box" id="chk-google-logo" onclick="toggleCheck(event,'google-logo')"></div>
         <div class="flex-1">
-          <div class="op-card-title">Create and upload BlastyBiz logo (120×120px)</div>
-          <div class="op-card-sub">Google requires a square logo to display on the OAuth consent screen. Upload it in Branding before submitting for verification.</div>
+          <div class="op-card-title">✅ Logo uploaded, app is live in production</div>
+          <div class="op-card-sub">The 120×120 BlastyBiz logo is uploaded in Branding, and the OAuth consent screen is already published (Publishing status: In production).</div>
         </div>
         <span class="op-chevron">▼</span>
       </div>
       <div class="op-card-body">
+        <p class="op-step-label">Confirmed via Google Cloud Console</p>
         <ol class="op-list">
-          <li>Create a 120×120px square logo (JPG, PNG, or BMP, max 1MB)</li>
-          <li>Go to <span class="cf-url">console.cloud.google.com → APIs &amp; Services → OAuth consent screen → Branding</span></li>
-          <li>Upload under <strong>App logo</strong> and save</li>
+          <li>App logo: uploaded ✅</li>
+          <li>Publishing status: <strong>In production</strong> ✅</li>
+          <li>Data Access status: "Verification is not required since your app is not requesting any sensitive or restricted scopes." ✅</li>
         </ol>
+      </div>
+    </div>
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-google-verify" onclick="toggleCheck(event,'google-verify')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">Nothing to submit — only matters if you cross 100 users</div>
+          <div class="op-card-sub">There is no "Rejected" status and no submit-for-review button anywhere in the console right now. Google only requires full verification if BlastyBiz starts requesting sensitive scopes or exceeds the 100-user OAuth cap.</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-step-label">What this means today</p>
+        <ol class="op-list">
+          <li>Real users connecting Google Business Profile will see a "Google hasn't verified this app" screen, but can click <strong>Advanced → Go to BlastyBiz (unsafe)</strong> to continue — this works fine</li>
+          <li>Check <span class="cf-url">console.cloud.google.com → OAuth consent screen → Audience</span> occasionally to watch the user count (currently 1 / 100 cap)</li>
+          <li>Only revisit this once you're approaching 100 connected Google accounts — at that point come back and we'll start the real verification submission</li>
+        </ol>
+        <div class="op-note">ℹ️ This was previously marked "Rejected — Resubmit" on this page, which was inaccurate. Confirmed directly in Google Cloud Console on Jul 9, 2026 that no rejection or pending review exists.</div>
       </div>
     </div>
   </div>
