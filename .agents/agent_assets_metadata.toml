@@ -125,3 +125,9 @@ id = "cG4H6-722fTyvygQi694y"
 uri = "file://download/BlastyBiz-Logo-120x120.jpg"
 type = "image"
 title = "BlastyBiz-Logo-120x120.jpg"
+
+[[outputs]]
+id = "7KWWxlEyUyf_LBSGgfXcy"
+uri = "file://download/BlastyBiz_Launch_Checklist_Status.md"
+type = "text"
+title = "Launch Checklist Verification Status"
