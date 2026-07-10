@@ -303,114 +303,6 @@
   </div>
 
   <!-- ══════════════════════════════════════════
-       FIREBASE CONSOLE SETUP
-  ══════════════════════════════════════════ -->
-  <div class="op-section">
-    <div class="section-header">
-      <span class="section-icon">🔥</span>
-      <span class="section-title">Firebase Console Setup</span>
-      <span class="section-badge warn">Required before real users</span>
-    </div>
-    <div class="card">
-      <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-pending-checkouts-ttl" onclick="toggleCheck(event,'pending-checkouts-ttl')"></div>
-        <div class="flex-1">
-          <div class="op-card-title">Set Firestore TTL policy on <code>pendingCheckouts</code></div>
-          <div class="op-card-sub">Abandoned checkout sessions accumulate forever without this. Each one is tiny but grows continuously.</div>
-        </div>
-        <span class="op-chevron">▼</span>
-      </div>
-      <div class="op-card-body">
-        <p class="op-step-label">What to do</p>
-        <ol class="op-list">
-          <li>Go to <span class="cf-url">console.firebase.google.com → blastybiz-9523e → Firestore Database → TTL policies</span></li>
-          <li>Click <strong>Add TTL policy</strong></li>
-          <li>Collection group: <strong>pendingCheckouts</strong></li>
-          <li>Timestamp field: <strong>expiresAt</strong></li>
-          <li>Save — Firestore will automatically delete docs 48 hours after checkout creation if payment was never completed</li>
-        </ol>
-        <div class="op-note">ℹ️ Completed checkouts are deleted immediately by the Square webhook handler. This TTL only catches abandoned sessions where the user started checkout but never paid.</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-firestore-ttl" onclick="toggleCheck(event,'firestore-ttl')"></div>
-        <div class="flex-1">
-          <div class="op-card-title">Set Firestore TTL policy on <code>aiRequestDedup</code></div>
-          <div class="op-card-sub">Without this, dedup docs from the AI idempotency system accumulate forever and inflate Firestore storage costs.</div>
-        </div>
-        <span class="op-chevron">▼</span>
-      </div>
-      <div class="op-card-body">
-        <p class="op-step-label">What to do</p>
-        <ol class="op-list">
-          <li>Go to <span class="cf-url">console.firebase.google.com → blastybiz-9523e → Firestore Database → TTL policies</span></li>
-          <li>Click <strong>Add TTL policy</strong></li>
-          <li>Collection group: <strong>aiRequestDedup</strong></li>
-          <li>Timestamp field: <strong>expiresAt</strong></li>
-          <li>Save — Firestore will automatically delete documents once their <code>expiresAt</code> timestamp is in the past (30 min after creation)</li>
-        </ol>
-        <div class="op-note">⚠️ Each AI Adapt button tap writes one dedup doc. Without the TTL, every request is kept forever. This collection is otherwise invisible and low-cost, but it will grow continuously.</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-contact-ratelimit-ttl" onclick="toggleCheck(event,'contact-ratelimit-ttl')"></div>
-        <div class="flex-1">
-          <div class="op-card-title">Set Firestore TTL policy on <code>contactRateLimit</code></div>
-          <div class="op-card-sub">Rate-limit docs for the contact form accumulate indefinitely without a TTL. Each doc is tiny but grows continuously.</div>
-        </div>
-        <span class="op-chevron">▼</span>
-      </div>
-      <div class="op-card-body">
-        <p class="op-step-label">What to do</p>
-        <ol class="op-list">
-          <li>Go to <span class="cf-url">console.firebase.google.com → blastybiz-9523e → Firestore Database → TTL policies</span></li>
-          <li>Click <strong>Add TTL policy</strong></li>
-          <li>Collection group: <strong>contactRateLimit</strong></li>
-          <li>Timestamp field: <strong>windowStart</strong></li>
-          <li>Save — Firestore will automatically delete docs once <code>windowStart</code> is old enough (effective ~24h cleanup window)</li>
-        </ol>
-        <div class="op-note">ℹ️ One doc is written per unique IP address per hour window. The TTL prevents indefinite accumulation of hashed IP rate-limit records.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
-       SQUARE SUBSCRIPTION SETUP
-  ══════════════════════════════════════════ -->
-  <div class="op-section">
-    <div class="section-header">
-      <span class="section-icon">💳</span>
-      <span class="section-title">Square Subscription Setup</span>
-      <span class="section-badge error">Required before first paid user</span>
-    </div>
-    <div class="card">
-      <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-square-plans" onclick="toggleCheck(event,'square-plans')"></div>
-        <div class="flex-1">
-          <div class="op-card-title">Run <code>adminUpdatePricing</code> to create Square subscription plans</div>
-          <div class="op-card-sub">Until this runs, checkout returns a 503 error for every user who tries to upgrade. This creates the 4 Square subscription catalog plans (Pro monthly/annual, Agency monthly/annual) and writes their IDs to Firestore.</div>
-        </div>
-        <span class="op-chevron">▼</span>
-      </div>
-      <div class="op-card-body">
-        <p class="op-step-label">What to do</p>
-        <ol class="op-list">
-          <li>Go to <a href="BlastyBiz-Admin-Subscriptions.html" style="color:#00C853">Admin → Subscriptions</a> and use <strong>Pricing Control → Save Prices</strong> — sets monthly and annual prices for both plans and pushes all 4 Square plans in one click, <em>or</em> call the function directly:</li>
-          <li>Open your browser's dev tools console while signed in as admin and run:</li>
-        </ol>
-        <div class="code-block" style="margin:8px 0 12px">
-          <span class="code-text" id="sq-plan-curl-text">const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/11.8.1/firebase-functions.js'); const fn = httpsCallable(window._bbFunctions, 'adminUpdatePricing'); fn({proMonthly:1900,proAnnual:19900,agencyMonthly:9900,agencyAnnual:99900}).then(r=>console.log(r));</span>
-          <button class="copy-btn" onclick="copyCode(this, document.getElementById('sq-plan-curl-text').textContent)">Copy</button>
-        </div>
-        <div class="op-note">✅ When it succeeds, Firestore <code>settings/pricing</code> will have 4 plan IDs (<code>squareProMonthlyPlanId</code>, <code>squareProAnnualPlanId</code>, <code>squareAgencyMonthlyPlanId</code>, <code>squareAgencyAnnualPlanId</code>). Checkout will work immediately — no redeploy needed.</div>
-        <div class="op-note" style="margin-top:8px">⚠️ Only run this once. If you run it again it will create duplicate plans in Square — delete the old ones in the Square Dashboard first if you need to reset pricing.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
        PLANNED PLATFORM APIS
   ══════════════════════════════════════════ -->
   <div class="op-section">
@@ -617,7 +509,6 @@ function renderChecks() {
                      'client-bing','client-thumbtack',
                      'google-verify','google-logo',
                      'meta-review',
-                     'pending-checkouts-ttl','firestore-ttl','contact-ratelimit-ttl',
                      'linkedin-api','x-api'];
   checkable.forEach(key => {
     const box = document.getElementById('chk-' + key);
@@ -725,36 +616,6 @@ async function smRequest(url, method, body) {
   });
   return resp;
 }
-
-// ── Create Square plans ───────────────────────────────────────────────────
-  window.createSquarePlans = async function(btn) {
-    const pro    = parseFloat(document.getElementById('inp-pro-price').value);
-    const agency = parseFloat(document.getElementById('inp-agency-price').value);
-    const st     = document.getElementById('st-square-plans');
-    if (!pro || !agency || pro <= 0 || agency <= 0) {
-      st.textContent = 'Enter both prices first.'; st.style.color = '#c0392b'; return;
-    }
-    btn.disabled = true; btn.textContent = 'Creating…'; st.textContent = ''; st.style.color = '#4a604a';
-    try {
-      const user = auth.currentUser;
-      if (!user) throw new Error('Not signed in');
-      const token = await user.getIdToken();
-      const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/adminUpdatePricing', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ proMonthly: pro, agencyMonthly: agency })
-      });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || 'Failed');
-      if (data.squareError) throw new Error('Square: ' + data.squareError);
-      st.innerHTML = `✅ Plans created!<br><span class="plan-sub-note">Pro ID: ${data.squareProPlanId}<br>Agency ID: ${data.squareAgencyPlanId}</span>`;
-      st.style.color = '#1a6630';
-    } catch(e) {
-      st.textContent = '✗ ' + e.message; st.style.color = '#c0392b';
-    } finally {
-      btn.disabled = false; btn.textContent = 'Create Plans in Square';
-    }
-  };
 
 // ── Send test email ──────────────────────────────────────────────────────
   window.sendTestEmail = async function(btn) {
