@@ -137,3 +137,9 @@ id = "Z9OzNagsvDaXKJGP2bdCl"
 uri = "file://.agents/memory/blastybiz-firestore-rules.md"
 type = "text"
 title = "Firestore Rules Memory Note"
+
+[[outputs]]
+id = "3SA5ALVhBUlw-NN9pmgxP"
+uri = "file://download/BlastyBiz_PreLaunch_TODO.md"
+type = "text"
+title = "Pre-Launch Fix To-Do List"
