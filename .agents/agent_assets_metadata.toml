@@ -131,3 +131,9 @@ id = "7KWWxlEyUyf_LBSGgfXcy"
 uri = "file://download/BlastyBiz_Launch_Checklist_Status.md"
 type = "text"
 title = "Launch Checklist Verification Status"
+
+[[outputs]]
+id = "Z9OzNagsvDaXKJGP2bdCl"
+uri = "file://.agents/memory/blastybiz-firestore-rules.md"
+type = "text"
+title = "Firestore Rules Memory Note"
