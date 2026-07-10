@@ -1088,8 +1088,11 @@ exports.createPortalSession = onRequest({ invoker: 'public' }, async (req, res) 
 // ══════════════════════════════════════════
 // Function 10: squareWebhook
 // POST /squareWebhook
-// Verifies Square HMAC signature, handles payment.completed,
-// subscription.created, and subscription.updated (cancellation) events.
+// Verifies Square HMAC signature, handles payment.updated (status COMPLETED
+// or FAILED), subscription.created, and subscription.updated (cancellation,
+// via status CANCELED/DEACTIVATED) events. Square's webhook API has no
+// `payment.completed`, `payment.failed`, or `subscription.canceled` event —
+// status changes are delivered inside `payment.updated` / `subscription.updated`.
 // ══════════════════════════════════════════
 exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_WEBHOOK_SIGNATURE_KEY', 'RESEND_API_KEY'] }, async (req, res) => {
   const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
@@ -1104,7 +1107,11 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
 
   const event = req.body;
 
-  if (event.type === 'payment.completed') {
+  // Square's actual webhook API only emits `payment.created` / `payment.updated`
+  // (there is no `payment.completed` or `payment.failed` event). Completion and
+  // failure are both delivered as `payment.updated` with a `status` field, so we
+  // gate on that status here instead of a nonexistent event.type.
+  if (event.type === 'payment.updated' && event.data?.object?.payment?.status === 'COMPLETED') {
     const payment = event.data?.object?.payment;
     if (!payment) return res.json({ received: true });
     const orderId = payment.order_id || payment.orderId;
@@ -1353,8 +1360,10 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
     }
   }
 
-  // Payment failed — notify the customer so they can update their payment method
-  if (event.type === 'payment.failed') {
+  // Payment failed — notify the customer so they can update their payment method.
+  // Delivered as `payment.updated` with status FAILED (see comment above — there is
+  // no separate `payment.failed` event in Square's webhook API).
+  if (event.type === 'payment.updated' && event.data?.object?.payment?.status === 'FAILED') {
     const payment = event.data?.object?.payment;
     if (payment) {
       try {
