@@ -2536,16 +2536,31 @@ exports.createBusiness = onRequest({ invoker: 'public' }, async (req, res) => {
     const userData = userSnap.exists ? userSnap.data() : {};
     const plan = userData.plan || 'starter';
     const cap = BIZ_LIMITS[plan] || 1;
-    if (isNew) {
+    // Guard against duplicate businesses: if the incoming name+address already
+    // matches one of this user's existing businesses, treat this as an edit
+    // of that business instead of creating a new one (even if isNew was passed).
+    let dedupedBizId = null;
+    if (isNew && profileData.businessName && profileData.address) {
+      const existingSnap = await userBizCol(uid)
+        .where('businessName', '==', profileData.businessName)
+        .where('address', '==', profileData.address)
+        .limit(1)
+        .get();
+      if (!existingSnap.empty) {
+        dedupedBizId = existingSnap.docs[0].id;
+      }
+    }
+    const treatAsNew = isNew && !dedupedBizId;
+    if (treatAsNew) {
       const bizSnap = await userBizCol(uid).where('onboarded', '==', true).get();
       if (bizSnap.size >= cap) {
         return res.status(403).json({ error: 'Business limit reached', plan, cap, used: bizSnap.size });
       }
     }
-    // New business: auto-generated ID. Editing existing: use the user's activeBusiness doc.
-    const bizRef = isNew
+    // New business: auto-generated ID. Editing existing (or deduped match): use that doc.
+    const bizRef = treatAsNew
       ? userBizCol(uid).doc()
-      : userBizRef(uid, userData.activeBusiness || uid);
+      : userBizRef(uid, dedupedBizId || userData.activeBusiness || uid);
     // Strip any client-side timestamp fields — CF sets authoritative timestamps.
     const { updatedAt: _d1, createdAt: _d2, ...cleanData } = profileData;
     const batch = db.batch();
