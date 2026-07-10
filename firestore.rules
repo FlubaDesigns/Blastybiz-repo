@@ -20,7 +20,11 @@ service cloud.firestore {
       // Admin can write any field (plan override tool, support, etc.)
       allow write: if isAdmin();
       allow create: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.plan == 'starter';
+        && request.resource.data.plan == 'starter'
+        && !('planActive' in request.resource.data)
+        && !('aiUsage' in request.resource.data)
+        && !('aiActionsUsed' in request.resource.data)
+        && !('aiActionsResetAt' in request.resource.data);
       // ⚠️  MAINTAINED DENYLIST — if you add a new billing/entitlement field to users docs
       //     (e.g. squareCustomerId, subscriptionId, usageCounters) you MUST add it here too,
       //     or it will be client-writable by default.
@@ -39,7 +43,11 @@ service cloud.firestore {
         allow read: if request.auth != null &&
           (request.auth.uid == userId || isAdmin());
         allow create: if request.auth != null &&
-          request.auth.uid == userId;
+          request.auth.uid == userId &&
+          !('currentPlan' in request.resource.data) &&
+          !('subscriptionStatus' in request.resource.data) &&
+          !('squareCustomerId' in request.resource.data) &&
+          !('squareSubscriptionId' in request.resource.data);
         allow update: if request.auth != null &&
           request.auth.uid == userId
           && !('currentPlan'          in request.resource.data.diff(resource.data).affectedKeys())
