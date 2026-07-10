@@ -43,7 +43,7 @@ Local business marketing distribution tool. Business owner fills out one form, A
 2. **Fix** — make the code change.
 3. **Deploy to Firebase** — run `npx firebase-tools deploy --only hosting` for HTML/JS changes; deploy individual functions for Cloud Function changes.
 4. **Confirm** — verify the fix is actually live (e.g. `curl` the deployed file and check the output). Do not assume it worked.
-5. **TEST WITH PLAYWRIGHT** — run `runTest()` via the `testing` skill against https://blastybiz-9523e.web.app to exercise the fixed flow in a real browser. This is NOT optional. Skipping this step is not allowed under any circumstances. If the test fails, go back to step 1.
+5. **TEST WITH CURL** — Dave has found Playwright unreliable for this project. Do NOT use `runTest()`/Playwright. Instead verify with `curl` against the live site/functions: confirm the deployed file/response reflects the fix, and where possible exercise the actual behavior (e.g. hit a Cloud Function endpoint, check Firestore state via the REST-API token-refresh technique). This is NOT optional — skipping verification entirely is not allowed. If verification fails, go back to step 1.
 6. **Update `download/BlastyBiz_Audit.md`** — add a row to the 🐛 Bugs Fixed table with date, location, and what was wrong and how it was fixed.
 7. **Rebuild `download/BlastyBiz_Site.zip`** — run the Python zipfile script so the zip always reflects the latest state.
 8. **Present both files** to the user before closing out the fix.
