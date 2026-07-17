@@ -71,10 +71,18 @@ function userBizPostsRef(uid, bizId)  { return userBizRef(uid, bizId).collection
 function userBizConnsRef(uid, bizId)  { return userBizRef(uid, bizId).collection('platformConnections'); }
 
 // ── AI cost tracking ──────────────────────────────────────────────────────────
-// Prices per million tokens (update if Anthropic changes rates)
+// Prices per million tokens (update as provider pricing changes)
 const AI_COSTS = {
-  'claude-haiku-4-5':           { input: 0.80, output: 4.00 },
-  'claude-sonnet-4-5-20250929': { input: 3.00, output: 15.00 },
+  'claude-haiku-4-5':           { input: 0.80,  output:  4.00 },
+  'claude-sonnet-4-5-20250929': { input: 3.00,  output: 15.00 },
+  'claude-opus-4-5':            { input: 15.00, output: 75.00 },
+  'gpt-4o':                     { input: 2.50,  output: 10.00 },
+  'gpt-4o-mini':                { input: 0.15,  output:  0.60 },
+  'gpt-5':                      { input: 2.50,  output: 10.00 },
+  'gemini-2.5-pro':             { input: 1.25,  output:  5.00 },
+  'gemini-2.5-flash':           { input: 0.075, output:  0.30 },
+  'grok-3':                     { input: 3.00,  output: 15.00 },
+  'grok-3-mini':                { input: 0.30,  output:  0.50 },
 };
 async function trackAiUsage(uid, fnName, model, usage, opts = {}) {
   const { failureType = null, timing = null, context = null } = opts;
@@ -102,6 +110,77 @@ async function trackAiUsage(uid, fnName, model, usage, opts = {}) {
   } catch (e) {
     console.warn('[trackAiUsage] failed:', e.message);
   }
+}
+
+// ── AI provider settings — admin-switchable, Firestore-backed ────────────────
+// Stored in config/aiSettings: { provider, fastModel, smartModel }
+// In-memory cache with 60 s TTL avoids a Firestore read on every AI call.
+let _aiSettingsCache = null;
+let _aiSettingsCacheAt = 0;
+const AI_SETTINGS_TTL = 60_000;
+const AI_DEFAULTS = {
+  provider:   'anthropic',
+  fastModel:  'claude-haiku-4-5',
+  smartModel: 'claude-sonnet-4-5-20250929',
+};
+
+async function getAiSettings() {
+  const now = Date.now();
+  if (_aiSettingsCache && now - _aiSettingsCacheAt < AI_SETTINGS_TTL) return _aiSettingsCache;
+  try {
+    const snap = await db.collection('config').doc('aiSettings').get();
+    _aiSettingsCache = snap.exists ? { ...AI_DEFAULTS, ...snap.data() } : { ...AI_DEFAULTS };
+  } catch { _aiSettingsCache = _aiSettingsCache || { ...AI_DEFAULTS }; }
+  _aiSettingsCacheAt = now;
+  return _aiSettingsCache;
+}
+
+// ── callAI — provider-agnostic wrapper for every AI call ─────────────────────
+// content:   string (single user prompt) OR ChatMessage[] (conversation history)
+// system:    optional system/instruction prompt (string)
+// tier:      'fast' or 'smart' — picks fastModel / smartModel from settings
+// Returns    { text, usage: { input_tokens, output_tokens }, model }
+const _OAI_BASES = {
+  openai: 'https://api.openai.com/v1',
+  gemini: 'https://generativelanguage.googleapis.com/v1beta/openai',
+  grok:   'https://api.x.ai/v1',
+};
+const _OAI_KEY_VARS = { openai: 'OPENAI_API_KEY', gemini: 'GEMINI_API_KEY', grok: 'XAI_API_KEY' };
+
+async function callAI(content, { system = '', maxTokens = 1024, tier = 'smart', timeoutMs = 25000 } = {}) {
+  const settings = await getAiSettings();
+  const provider = settings.provider || 'anthropic';
+  const model    = tier === 'fast' ? settings.fastModel : settings.smartModel;
+  const messages = Array.isArray(content) ? content : [{ role: 'user', content }];
+
+  if (provider === 'anthropic') {
+    const body = { model, max_tokens: maxTokens, messages };
+    if (system) body.system = system;
+    const resp = await fetchWithTimeout(
+      'https://api.anthropic.com/v1/messages',
+      { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' }, body: JSON.stringify(body) },
+      timeoutMs
+    );
+    if (!resp.ok) { const err = new Error(`Anthropic ${resp.status}: ${(await resp.text()).slice(0, 200)}`); err._isHttpError = true; throw err; }
+    const j = await resp.json();
+    return { text: j.content[0].text, usage: j.usage, model };
+  }
+
+  // OpenAI-compatible providers (openai, gemini, grok)
+  const baseUrl = _OAI_BASES[provider];
+  const apiKey  = process.env[_OAI_KEY_VARS[provider]];
+  if (!baseUrl || !apiKey) throw new Error(`Provider "${provider}" is not configured — set its API key as a Firebase secret and redeploy functions once.`);
+  const oaiMsgs = system
+    ? [{ role: 'system', content: system }, ...messages.filter(m => m.role !== 'system')]
+    : messages;
+  const resp = await fetchWithTimeout(
+    `${baseUrl}/chat/completions`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model, max_tokens: maxTokens, messages: oaiMsgs }) },
+    timeoutMs
+  );
+  if (!resp.ok) { const err = new Error(`${provider} ${resp.status}: ${(await resp.text()).slice(0, 200)}`); err._isHttpError = true; throw err; }
+  const j = await resp.json();
+  return { text: j.choices[0].message.content, usage: { input_tokens: j.usage?.prompt_tokens || 0, output_tokens: j.usage?.completion_tokens || 0 }, model };
 }
 
 // ── reserveAiAction — atomic AI usage gate ────────────────────────────────────
@@ -450,33 +529,19 @@ Rules:
 
 Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
 
+  let _genModel;
   const aiStartMs = Date.now();
   try {
-    const aiResp = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 300, messages: [{ role: 'user', content: prompt }] }),
-    });
-    if (!aiResp.ok) {
-      const err = new Error(`Anthropic ${aiResp.status}: ${await aiResp.text()}`);
-      err._isHttpError = true;
-      throw err;
-    }
-    const aiJson = await aiResp.json();
-    const parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
+    const { text: aiText, usage: aiUsage, model } = await callAI(prompt, { tier: 'fast', maxTokens: 300 });
+    _genModel = model;
+    const parsed = JSON.parse(aiText.replace(/```json|```/g, '').trim());
     const aiElapsedMs = Date.now() - aiStartMs;
-    trackAiUsage(decoded.uid, 'followUpQuestions', 'claude-haiku-4-5', aiJson.usage, {
-      timing: { aiElapsedMs },
-    });
+    trackAiUsage(decoded.uid, 'followUpQuestions', _genModel, aiUsage, { timing: { aiElapsedMs } });
     res.json({ questions: parsed.questions || [] });
   } catch(e) {
     const failureType = classifyAiError(e);
     if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] generateEnrichmentQuestions timed out after 25s — uid:', decoded.uid);
-    trackAiUsage(decoded.uid, 'followUpQuestions', 'claude-haiku-4-5', null, { failureType });
+    trackAiUsage(decoded.uid, 'followUpQuestions', _genModel || AI_DEFAULTS.fastModel, null, { failureType });
     console.error('generateEnrichmentQuestions error [' + failureType + ']:', e.message);
     res.status(500).json({ error: e.message });
   }
@@ -509,8 +574,6 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
     console.error('[reserveAiAction] adaptListing transaction failed:', e.message);
     return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
   }
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
   const platformList = (platforms || []).map(p => ({
     id: p.id, name: p.name, type: p.type,
     doc: PLATFORM_DOCS[p.id] || {},
@@ -589,34 +652,21 @@ Return this exact JSON structure:
 }`;
 
   let parsed;
+  let _adaptModel;
   const aiStartMs = Date.now();
   try {
-    const aiResp = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({ model: 'claude-sonnet-4-5-20250929', max_tokens: 4096, messages: [{ role: 'user', content: prompt }] })
-    }, 110000);
-    if (!aiResp.ok) {
-      const t = await aiResp.text();
-      const err = new Error(`Anthropic ${aiResp.status}: ${t.slice(0,200)}`);
-      err._isHttpError = true;
-      throw err;
-    }
-    const aiJson = await aiResp.json();
-    parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
+    const { text: aiText, usage: aiUsage, model } = await callAI(prompt, { tier: 'smart', maxTokens: 4096, timeoutMs: 110000 });
+    _adaptModel = model;
+    parsed = JSON.parse(aiText.replace(/```json|```/g, '').trim());
     const aiElapsedMs = Date.now() - aiStartMs;
-    trackAiUsage(decoded.uid, 'adaptListing', 'claude-sonnet-4-5-20250929', aiJson.usage, {
+    trackAiUsage(decoded.uid, 'adaptListing', _adaptModel, aiUsage, {
       timing:  { aiElapsedMs, fnElapsedMs: Date.now() - fnStartMs },
       context: { businessId: listing.businessId || null, campaignId: listing.campaignId || null },
     });
   } catch(e) {
     const failureType = classifyAiError(e);
     if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] adaptListing timed out after 110s — uid:', decoded.uid);
-    trackAiUsage(decoded.uid, 'adaptListing', 'claude-sonnet-4-5-20250929', null, { failureType });
+    trackAiUsage(decoded.uid, 'adaptListing', _adaptModel || AI_DEFAULTS.smartModel, null, { failureType });
     console.error('adaptListing AI error [' + failureType + ']:', e.message);
     return res.status(500).json({ error: 'AI adaptation failed: ' + e.message });
   }
@@ -738,29 +788,20 @@ ${returnInstructions}
 ${platformBlocks}`;
 
   let parsed;
+  let _rcModel;
   const aiStartMs = Date.now();
   try {
-    const aiResp = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-5-20250929', max_tokens: 1024, messages: [{ role: 'user', content: prompt }] })
-    });
-    if (!aiResp.ok) {
-      const t = await aiResp.text();
-      const err = new Error(`Anthropic ${aiResp.status}: ${t.slice(0,200)}`);
-      err._isHttpError = true;
-      throw err;
-    }
-    const aiJson = await aiResp.json();
-    parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
+    const { text: aiText, usage: aiUsage, model } = await callAI(prompt, { tier: 'smart', maxTokens: 1024 });
+    _rcModel = model;
+    parsed = JSON.parse(aiText.replace(/```json|```/g, '').trim());
     const aiElapsedMs = Date.now() - aiStartMs;
-    trackAiUsage(decoded.uid, 'resolveCategories', 'claude-sonnet-4-5-20250929', aiJson.usage, {
+    trackAiUsage(decoded.uid, 'resolveCategories', _rcModel, aiUsage, {
       timing: { aiElapsedMs, fnElapsedMs: Date.now() - fnStartMs },
     });
   } catch(e) {
     const failureType = classifyAiError(e);
     if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] resolveCategories timed out after 25s — uid:', decoded.uid);
-    trackAiUsage(decoded.uid, 'resolveCategories', 'claude-sonnet-4-5-20250929', null, { failureType });
+    trackAiUsage(decoded.uid, 'resolveCategories', _rcModel || AI_DEFAULTS.smartModel, null, { failureType });
     console.error('resolveCategories AI error [' + failureType + ']:', e.message);
     return res.status(500).json({ error: 'AI category resolution failed: ' + e.message });
   }
@@ -2828,7 +2869,6 @@ exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_A
     console.error('[reserveAiAction] suggestPlatforms transaction failed:', e.message);
     return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
   }
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const fnStartMs = Date.now();
 
   const prompt = `You are a local business marketing expert. Based on the business info below, decide which platforms this business should target.
@@ -2892,23 +2932,14 @@ Return ONLY valid JSON, no markdown, no explanation:
   }
 }`;
 
+  let _spModel;
   const aiStartMs = Date.now();
   try {
-    const aiResp = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-5-20250929', max_tokens: 600, messages: [{ role: 'user', content: prompt }] })
-    });
-    if (!aiResp.ok) {
-      const t = await aiResp.text();
-      const err = new Error(`Anthropic ${aiResp.status}: ${t.slice(0,200)}`);
-      err._isHttpError = true;
-      throw err;
-    }
-    const aiJson = await aiResp.json();
-    const parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
+    const { text: aiText, usage: aiUsage, model } = await callAI(prompt, { tier: 'smart', maxTokens: 600 });
+    _spModel = model;
+    const parsed = JSON.parse(aiText.replace(/```json|```/g, '').trim());
     const aiElapsedMs = Date.now() - aiStartMs;
-    trackAiUsage(decoded.uid, 'suggestPlatforms', 'claude-sonnet-4-5-20250929', aiJson.usage, {
+    trackAiUsage(decoded.uid, 'suggestPlatforms', _spModel, aiUsage, {
       timing: { aiElapsedMs, fnElapsedMs: Date.now() - fnStartMs },
     });
     if (spRequestId) {
@@ -2925,7 +2956,7 @@ Return ONLY valid JSON, no markdown, no explanation:
   } catch(e) {
     const failureType = classifyAiError(e);
     if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] suggestPlatforms timed out after 25s — uid:', decoded.uid);
-    trackAiUsage(decoded.uid, 'suggestPlatforms', 'claude-sonnet-4-5-20250929', null, { failureType });
+    trackAiUsage(decoded.uid, 'suggestPlatforms', _spModel || AI_DEFAULTS.smartModel, null, { failureType });
     console.error('suggestPlatforms error [' + failureType + ']:', e.message);
     res.status(500).json({ error: 'AI suggestion failed: ' + e.message });
   }
@@ -3373,39 +3404,27 @@ ${platformList.map(buildPlatformBlock).join('\n')}
 
 Return ONLY valid JSON: { "adaptations": { "PLATFORM_ID": "text" } }`;
 
+  let _gspModel;
   const aiStartMs = Date.now();
-  let aiJson, parsed;
+  let parsed;
   try {
-    const aiResp = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({ model: 'claude-sonnet-4-5-20250929', max_tokens: 2000, messages: [{ role: 'user', content: prompt }] }),
+    const { text: aiText, usage: aiUsage, model } = await callAI(prompt, { tier: 'smart', maxTokens: 2000 });
+    _gspModel = model;
+    parsed = JSON.parse(aiText.replace(/```json|```/g, '').trim());
+    const aiElapsedMs = Date.now() - aiStartMs;
+    trackAiUsage('system', 'generateScheduledPost', _gspModel, aiUsage, {
+      timing:  { aiElapsedMs },
+      context: { businessId: bizId || null, scheduleId: bizId || null, campaignId: activeCampaignId || null },
     });
-    if (!aiResp.ok) {
-      const err = new Error(`Anthropic ${aiResp.status}: ${await aiResp.text()}`);
-      err._isHttpError = true;
-      throw err;
-    }
-    aiJson = await aiResp.json();
-    parsed = JSON.parse(aiJson.content[0].text.replace(/```json|```/g, '').trim());
   } catch(e) {
     const failureType = classifyAiError(e);
     if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] generateScheduledPost timed out after 25s — bizId:', bizId);
-    trackAiUsage('system', 'generateScheduledPost', 'claude-sonnet-4-5-20250929', null, {
+    trackAiUsage('system', 'generateScheduledPost', _gspModel || AI_DEFAULTS.smartModel, null, {
       failureType,
       context: { businessId: bizId || null, scheduleId: bizId || null, campaignId: activeCampaignId || null },
     });
     throw e;
   }
-  const aiElapsedMs = Date.now() - aiStartMs;
-  trackAiUsage('system', 'generateScheduledPost', 'claude-sonnet-4-5-20250929', aiJson.usage, {
-    timing:  { aiElapsedMs },
-    context: { businessId: bizId || null, scheduleId: bizId || null, campaignId: activeCampaignId || null },
-  });
   const adapted = parsed.adaptations || {};
 
   // If owner wants to review before posting — save draft to pendingPosts and stop
@@ -4187,18 +4206,11 @@ If finished: {"done":true,"message":"brief warm closing line","globalMemory":"ri
     : [{ role: 'user', content: `Start the interview for ${cd.bizName || 'this business'}.` }];
 
   try {
-    const aiResp = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 600, system: systemPrompt, messages })
-    }, 30000);
-
-    if (!aiResp.ok) { const t = await aiResp.text(); return res.status(500).json({ error: `AI error: ${t.slice(0,200)}` }); }
-    const aiJson = await aiResp.json();
-    const raw = aiJson.content[0].text.replace(/```json|```/g, '').trim();
+    const { text: aiText, usage: aiUsage, model: aiModel } = await callAI(messages, { tier: 'fast', maxTokens: 600, system: systemPrompt, timeoutMs: 30000 });
+    const raw = aiText.replace(/```json|```/g, '').trim();
     let parsed;
     try { parsed = JSON.parse(raw); } catch(e) { parsed = { done: false, message: raw.slice(0, 300) }; }
-    trackAiUsage(decoded.uid, 'chatOnboard', 'claude-haiku-4-5', aiJson.usage, {});
+    trackAiUsage(decoded.uid, 'chatOnboard', aiModel, aiUsage, {});
     return res.json(parsed);
   } catch(e) {
     console.error('[chatOnboard] error:', e.message);
@@ -4256,21 +4268,63 @@ If finished: {"done":true,"message":"brief warm wrap-up line","campaignMemory":"
     : [{ role: 'user', content: `Start the campaign brief for "${cd.campaignName || 'this campaign'}".` }];
 
   try {
-    const aiResp = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 600, system: systemPrompt, messages })
-    }, 30000);
-
-    if (!aiResp.ok) { const t = await aiResp.text(); return res.status(500).json({ error: `AI error: ${t.slice(0,200)}` }); }
-    const aiJson = await aiResp.json();
-    const raw = aiJson.content[0].text.replace(/```json|```/g, '').trim();
+    const { text: aiText, usage: aiUsage, model: aiModel } = await callAI(messages, { tier: 'fast', maxTokens: 600, system: systemPrompt, timeoutMs: 30000 });
+    const raw = aiText.replace(/```json|```/g, '').trim();
     let parsed;
     try { parsed = JSON.parse(raw); } catch(e) { parsed = { done: false, message: raw.slice(0, 300) }; }
-    trackAiUsage(decoded.uid, 'chatCampaign', 'claude-haiku-4-5', aiJson.usage, {});
+    trackAiUsage(decoded.uid, 'chatCampaign', aiModel, aiUsage, {});
     return res.json(parsed);
   } catch(e) {
     console.error('[chatCampaign] error:', e.message);
     return res.status(500).json({ error: 'Campaign interview failed. Please try again.' });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// adminGetAiSettings — returns current AI provider/model config (admin only)
+// ══════════════════════════════════════════════════════════════════════════════
+exports.adminGetAiSettings = onRequest({ invoker: 'public' }, async (req, res) => {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: 'Forbidden' }); }
+
+  try {
+    const snap = await db.collection('config').doc('aiSettings').get();
+    const data = snap.exists ? snap.data() : {};
+    return res.json({
+      provider:   data.provider   || AI_DEFAULTS.provider,
+      fastModel:  data.fastModel  || AI_DEFAULTS.fastModel,
+      smartModel: data.smartModel || AI_DEFAULTS.smartModel,
+    });
+  } catch(e) {
+    console.error('[adminGetAiSettings]', e.message);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// adminSetAiSettings — updates AI provider/model config (admin only)
+// Resets the in-memory cache so new calls pick up the change within seconds.
+// ══════════════════════════════════════════════════════════════════════════════
+exports.adminSetAiSettings = onRequest({ invoker: 'public' }, async (req, res) => {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: 'Forbidden' }); }
+
+  const VALID_PROVIDERS = ['anthropic', 'openai', 'gemini', 'grok'];
+  const { provider, fastModel, smartModel } = req.body;
+  if (!provider || !fastModel || !smartModel) return res.status(400).json({ error: 'provider, fastModel, and smartModel are required' });
+  if (!VALID_PROVIDERS.includes(provider)) return res.status(400).json({ error: `provider must be one of: ${VALID_PROVIDERS.join(', ')}` });
+
+  try {
+    await db.collection('config').doc('aiSettings').set({ provider, fastModel, smartModel }, { merge: true });
+    // Reset this instance's cache so subsequent calls pick up the new settings
+    _aiSettingsCache = null;
+    _aiSettingsCacheAt = 0;
+    console.log(`[adminSetAiSettings] Updated to provider=${provider} fast=${fastModel} smart=${smartModel}`);
+    return res.json({ ok: true, provider, fastModel, smartModel });
+  } catch(e) {
+    console.error('[adminSetAiSettings]', e.message);
+    return res.status(500).json({ error: e.message });
   }
 });

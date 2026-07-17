@@ -133,6 +133,37 @@
     </div>
   </section>
 
+  <!-- ── AI SETTINGS ── -->
+  <section class="card mb-16" id="ai-settings-card" style="border-left:4px solid #6200EA;">
+    <div class="card-title">🤖 AI Provider &amp; Models</div>
+    <p style="font-size:13px;color:#666;margin:0 0 16px;">Controls which AI runs all copy generation, chat onboarding, and platform suggestions. Changes take effect within 60 seconds — no redeploy needed.</p>
+    <div id="ai-settings-status" style="font-size:13px;color:#888;margin-bottom:12px;">Loading current settings…</div>
+    <div style="display:grid;gap:12px;grid-template-columns:1fr 1fr 1fr;margin-bottom:14px;" id="ai-selects-grid">
+      <label style="font-size:12px;font-weight:600;color:#555;">
+        Provider
+        <select id="ai-provider" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="openai">OpenAI (GPT)</option>
+          <option value="gemini">Google Gemini</option>
+          <option value="grok">xAI Grok</option>
+        </select>
+      </label>
+      <label style="font-size:12px;font-weight:600;color:#555;">
+        Fast Model <span style="font-weight:400;color:#aaa;">(chat, questions)</span>
+        <select id="ai-fast-model" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;"></select>
+      </label>
+      <label style="font-size:12px;font-weight:600;color:#555;">
+        Smart Model <span style="font-weight:400;color:#aaa;">(copy generation)</span>
+        <select id="ai-smart-model" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;"></select>
+      </label>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button onclick="window.saveAiSettings()" class="btn btn-primary" style="background:#6200EA;border-color:#6200EA;">Save AI Settings</button>
+      <span id="ai-save-msg" style="font-size:13px;color:#888;"></span>
+    </div>
+    <p style="font-size:12px;color:#aaa;margin:12px 0 0;">⚠️ Switching to a non-Anthropic provider also requires setting that provider's API key as a Firebase secret (<code>firebase functions:secrets:set OPENAI_API_KEY</code> etc.) and redeploying functions once.</p>
+  </section>
+
   <section class="three-col">
     <div class="card">
       <div class="card-title">💳 Billing</div>
@@ -169,10 +200,89 @@ import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, collectionGroup, query, where, orderBy, limit, onSnapshot, deleteDoc, getDocs, getDoc, setDoc, doc, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+const CF_BASE = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
+const AI_PROVIDER_MODELS = {
+  anthropic: [
+    { id: 'claude-haiku-4-5',           label: 'Claude Haiku 4.5 (fast/cheap)' },
+    { id: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet 4.5 (recommended)' },
+    { id: 'claude-opus-4-5',            label: 'Claude Opus 4.5 (powerful/expensive)' },
+  ],
+  openai: [
+    { id: 'gpt-4o-mini', label: 'GPT-4o Mini (fast/cheap)' },
+    { id: 'gpt-4o',      label: 'GPT-4o (recommended)' },
+    { id: 'gpt-5',       label: 'GPT-5 (powerful)' },
+  ],
+  gemini: [
+    { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (fast/cheap)' },
+    { id: 'gemini-2.5-pro',   label: 'Gemini 2.5 Pro (recommended)' },
+  ],
+  grok: [
+    { id: 'grok-3-mini', label: 'Grok 3 Mini (fast/cheap)' },
+    { id: 'grok-3',      label: 'Grok 3 (recommended)' },
+  ],
+};
+
+function populateModelSelects(provider, fastModel, smartModel) {
+  const models = AI_PROVIDER_MODELS[provider] || AI_PROVIDER_MODELS.anthropic;
+  ['ai-fast-model', 'ai-smart-model'].forEach((selId, idx) => {
+    const sel = document.getElementById(selId);
+    if (!sel) return;
+    const current = idx === 0 ? fastModel : smartModel;
+    sel.innerHTML = models.map(m => `<option value="${m.id}" ${m.id === current ? 'selected' : ''}>${m.label}</option>`).join('');
+  });
+}
+
+document.getElementById('ai-provider')?.addEventListener('change', function() {
+  populateModelSelects(this.value, null, null);
+});
+
+window.saveAiSettings = async function() {
+  const provider   = document.getElementById('ai-provider')?.value;
+  const fastModel  = document.getElementById('ai-fast-model')?.value;
+  const smartModel = document.getElementById('ai-smart-model')?.value;
+  const msg = document.getElementById('ai-save-msg');
+  if (!provider || !fastModel || !smartModel) return;
+  msg.textContent = 'Saving…';
+  try {
+    const token = await window._adminUser?.getIdToken();
+    if (!token) throw new Error('Not authenticated');
+    const resp = await fetch(`${CF_BASE}/adminSetAiSettings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ provider, fastModel, smartModel }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Save failed');
+    msg.style.color = '#00C853';
+    msg.textContent = `✓ Saved — ${provider} / ${fastModel} / ${smartModel}`;
+    document.getElementById('ai-settings-status').textContent = `Active: ${provider} · Fast: ${fastModel} · Smart: ${smartModel}`;
+  } catch(e) {
+    msg.style.color = '#e53935';
+    msg.textContent = '✗ ' + e.message;
+  }
+};
+
 onAuthStateChanged(auth, async (user) => {
   if (!user) return;
+  window._adminUser = user;
   const el = id => document.getElementById(id);
   const PRICES = { pro: 19, agency: 99 };
+
+  // ── Load current AI settings ──
+  (async () => {
+    try {
+      const token = await user.getIdToken();
+      const resp = await fetch(`${CF_BASE}/adminGetAiSettings`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (resp.ok) {
+        const { provider, fastModel, smartModel } = await resp.json();
+        const provSel = el('ai-provider');
+        if (provSel) provSel.value = provider || 'anthropic';
+        populateModelSelects(provider || 'anthropic', fastModel, smartModel);
+        const statusEl = el('ai-settings-status');
+        if (statusEl) statusEl.textContent = `Active: ${provider || 'anthropic'} · Fast: ${fastModel} · Smart: ${smartModel}`;
+      }
+    } catch(e) { console.warn('[ai-settings] load failed:', e.message); }
+  })();
 
   // ── Plan switcher ──
   function highlightPlan(plan) {
