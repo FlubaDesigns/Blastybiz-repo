@@ -107,22 +107,8 @@
 
       <div class="field">
         <label>Describe Your Business</label>
-        <textarea id="s-biztype" placeholder="e.g. Drone photography for real estate and weddings" rows="3" oninput="checkStep(2); _schedCatResolve()"></textarea>
+        <textarea id="s-biztype" placeholder="e.g. Drone photography for real estate and weddings" rows="3" oninput="checkStep(2)"></textarea>
       </div>
-
-      <div id="cat-resolve-wrap" class="hidden">
-        <div class="cat-divider-row">
-          <div class="cat-divider-line"></div>
-          <span class="cat-divider-label">Platform Categories</span>
-          <div class="cat-divider-line"></div>
-        </div>
-        <p class="cat-note">These are used for copy-paste platforms. AI auto-resolves when backend is live. Override any below.</p>
-        <div id="platform-cat-list"></div>
-      </div>
-
-      <button class="btn-next btn-cat-resolve" id="cat-resolve-btn" onclick="resolveCats()" disabled>
-        🔍 Find My Categories
-      </button>
     </div>
 
     <!-- ── STEP 3: LOCATION ── -->
@@ -241,6 +227,16 @@
       <span class="slide-icon">📡</span>
       <div class="slide-title">Connect Your<br/><span>Platforms</span></div>
       <div class="slide-sub">Connect now for auto-posting, or skip and use copy & paste. You can connect more later.</div>
+
+      <div id="cat-resolve-wrap" class="hidden" style="margin-bottom:16px">
+        <div class="cat-divider-row">
+          <div class="cat-divider-line"></div>
+          <span class="cat-divider-label">Platform Categories</span>
+          <div class="cat-divider-line"></div>
+        </div>
+        <p class="cat-note">AI picked the best category for each platform based on your business. Override any below.</p>
+        <div id="platform-cat-list"></div>
+      </div>
 
       <div class="connect-list">
         <div class="connect-card" id="cc-google">
@@ -596,17 +592,6 @@ function showToast(msg) {
   clearTimeout(t._to);
   t._to = setTimeout(() => { t.style.opacity = '0'; }, 3000);
 }
-var _catResolveTimer = null;
-function _schedCatResolve() {
-  clearTimeout(_catResolveTimer);
-  const desc = document.getElementById('s-biztype')?.value?.trim() || '';
-  if (desc.length < 15) return;
-  _catResolveTimer = setTimeout(() => {
-    const resolveBtn = document.getElementById('cat-resolve-btn');
-    if (resolveBtn && !resolveBtn.disabled) resolveCats();
-  }, 1800);
-}
-
 function nextStep() {
   if (currentStep === TOTAL_STEPS) {
     saveProfile();
@@ -672,6 +657,13 @@ function updateUI() {
   // Validate current step (immediate + deferred for autofill / programmatic fills)
   checkStep(currentStep);
   setTimeout(() => checkStep(currentStep), 150);
+
+  // Auto-resolve categories on step 5 — full context is available by now
+  if (currentStep === 5 && !window._catResolveFired) {
+    window._catResolveFired = true;
+    const desc = document.getElementById('s-biztype')?.value?.trim() || '';
+    if (desc.length > 5) setTimeout(() => resolveCats(), 300);
+  }
 
   // Success screen update
   if (currentStep === TOTAL_STEPS) {
