@@ -155,3 +155,9 @@ id = "l0iOof-D3Ik_lZ8XPBxnc"
 uri = "file://artifacts/api-server/public/img/blastie-blizz-logo.png"
 type = "image"
 title = "blastie-blizz-logo.png — full logo"
+
+[[outputs]]
+id = "h6S91aUlMpaQmMc8rGTu2"
+uri = "file://download/blastybiz-app-icon-1024.png"
+type = "image"
+title = "blastybiz-app-icon-1024.png — 1024×1024, ready for Meta"
