@@ -1701,9 +1701,8 @@ function countChars(el, counterId, max) {
 // ══════════════════════════════════════════
 function checkAdaptBtn() {
   const btn = document.getElementById('adapt-btn');
-  const hasContent = document.getElementById('biz-offer')?.value?.trim().length > 10;
   const hasEnabled = platforms.some(p => p.enabled);
-  btn.disabled = !(hasContent && hasEnabled);
+  btn.disabled = !hasEnabled;
 }
 
 function goToStep2() {
