@@ -276,6 +276,11 @@
     </button>
   </div>
 
+  <!-- REVIEW OUTPUT — visible after first adaptation -->
+  <a id="review-output-btn" href="BlastyBiz-Listing-Preview.html" class="review-btn" style="display:none;">
+    ✅ Review Your Output →
+  </a>
+
   <div class="bottom-safe"></div>
   </div><!-- /create-step-2 -->
 </div>
@@ -2049,8 +2054,25 @@ Return this exact JSON structure:
     const loadingSub2 = document.getElementById('ai-loading-sub');
     if (loadingSub2) loadingSub2.textContent = 'Done!';
 
+    // Show rewrite row + review button now that copy is ready
+    const _rewriteRow = document.getElementById('rewrite-row');
+    if (_rewriteRow) _rewriteRow.classList.remove('hidden');
+    const _reviewOutputBtn = document.getElementById('review-output-btn');
+    if (_reviewOutputBtn) _reviewOutputBtn.style.display = 'flex';
+
     if (window._afterAdaptation) {
-      window._afterAdaptation(platforms).catch(err => console.warn('Draft save failed:', err));
+      window._afterAdaptation(platforms)
+        .then(() => {
+          const draftId = window._currentDraftId;
+          if (!draftId) return;
+          if (_reviewOutputBtn) _reviewOutputBtn.href = 'BlastyBiz-Listing-Preview.html?draftId=' + draftId;
+          const _reviewListingsBtn = document.getElementById('review-listings-btn');
+          if (_reviewListingsBtn) {
+            _reviewListingsBtn.href = 'BlastyBiz-Listing-Preview.html?draftId=' + draftId;
+            _reviewListingsBtn.classList.add('visible');
+          }
+        })
+        .catch(err => console.warn('Draft save failed:', err));
     }
 
     const featuredPhotoUrl = (window._bbSelectedPhotoIndex !== null && window._bbPhotoItems)
@@ -2122,7 +2144,9 @@ function clearAndStartOver() {
   const rewriteRow = document.getElementById('rewrite-row');
   if (rewriteRow) rewriteRow.classList.add('hidden');
   const reviewBtn = document.getElementById('review-listings-btn');
-  if (reviewBtn) reviewBtn.classList.remove('visible');
+  if (reviewBtn) { reviewBtn.classList.remove('visible'); reviewBtn.href = 'BlastyBiz-Listing-Preview.html'; }
+  const reviewOutputBtn = document.getElementById('review-output-btn');
+  if (reviewOutputBtn) { reviewOutputBtn.style.display = 'none'; reviewOutputBtn.href = 'BlastyBiz-Listing-Preview.html'; }
 
   // Reset draft state
   draft = {};
