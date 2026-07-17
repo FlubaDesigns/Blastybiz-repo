@@ -657,9 +657,26 @@ let photoScope = 'campaign';        // 'campaign' | 'global'
 // ══════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════
+function savePlatformSelections() {
+  try {
+    const ids = platforms.filter(p => p.enabled).map(p => p.id);
+    localStorage.setItem('bb_platforms_enabled', JSON.stringify(ids));
+  } catch(e) {}
+}
+
+function loadPlatformSelections() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('bb_platforms_enabled') || 'null');
+    if (saved && Array.isArray(saved)) {
+      platforms = platforms.map(p => ({ ...p, enabled: saved.includes(p.id) }));
+    }
+  } catch(e) {}
+}
+
 function init() {
   loadProfile();
   loadDraft();
+  loadPlatformSelections();
   renderPlatforms();
   renderQuickSelect();
   renderHistory();
@@ -1670,6 +1687,7 @@ async function suggestPlatformsAI() {
 function toggleSelectAll() {
   const allOn = platforms.every(p => p.enabled);
   platforms = platforms.map(p => ({ ...p, enabled: !allOn }));
+  savePlatformSelections();
   savePlatforms();
   renderPlatforms();
   renderQuickSelect();
@@ -1685,6 +1703,7 @@ function _updateSelectAllBtn() {
 
 function togglePlatform(id, val) {
   platforms = platforms.map(p => p.id === id ? {...p, enabled: val} : p);
+  savePlatformSelections();
   savePlatforms();
   renderPlatforms();
   renderQuickSelect();
@@ -2135,8 +2154,9 @@ function clearAndStartOver() {
   // Reset to physical location type
   setLocationType('physical');
 
-  // Reset platform content/status but preserve user's enabled choices
-  platforms = platforms.map(p => ({...p, adaptedContent: null, status: 'idle'}));
+  // Reset platform content/status AND clear selection (user clicked Clear & Start Over)
+  platforms = platforms.map(p => ({...p, adaptedContent: null, status: 'idle', enabled: false}));
+  try { localStorage.removeItem('bb_platforms_enabled'); } catch(e) {}
   savePlatforms();
   renderPlatforms();
 
