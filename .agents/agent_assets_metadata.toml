@@ -143,3 +143,15 @@ id = "3SA5ALVhBUlw-NN9pmgxP"
 uri = "file://download/BlastyBiz_PreLaunch_TODO.md"
 type = "text"
 title = "Pre-Launch Fix To-Do List"
+
+[[outputs]]
+id = "qpECDxuzAwkZHoTj-ekNI"
+uri = "file://artifacts/api-server/public/img/bb-icon.png"
+type = "image"
+title = "bb-icon.png — square app icon (use this for Meta)"
+
+[[outputs]]
+id = "l0iOof-D3Ik_lZ8XPBxnc"
+uri = "file://artifacts/api-server/public/img/blastie-blizz-logo.png"
+type = "image"
+title = "blastie-blizz-logo.png — full logo"
