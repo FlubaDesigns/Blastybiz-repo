@@ -517,7 +517,16 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
     cat: (platformCats || {})[p.id] ? ` (category: ${platformCats[p.id]})` : ''
   }));
 
-  const { aiContext } = listing;
+  const { aiContext, globalMemory, campaignMemory } = listing;
+
+  const globalMemoryBlock = globalMemory
+    ? '\n📋 GLOBAL BUSINESS MEMORY — Read this first. This is the authoritative briefing about this business. Weave these facts, story, personality, and differentiators naturally into every platform\'s copy. Never contradict anything stated here:\n' + globalMemory + '\n'
+    : '';
+
+  const campaignMemoryBlock = campaignMemory
+    ? '\n🎯 CAMPAIGN MEMORY — Full brief for this campaign. Use the hook, specific items, urgency, and audience details to make copy feel fresh and specific — not generic:\n' + campaignMemory + '\n'
+    : '';
+
   const aiContextBlock = (() => {
     if (!aiContext) return '';
     const lines = [];
@@ -568,7 +577,7 @@ ${listing.adDetails ? `- Additional ad details: ${listing.adDetails}\n` : ''}- P
 - Hours: ${listing.hours || 'not provided'}
 - Images attached: ${listing.imageCount > 0 ? listing.imageCount + ' photo(s)' : 'none'}
 - Preferred tone: ${tone}
-${aiContextBlock}${libraryDocsBlock}${campaignContextBlock}${(listing.bizInsights||[]).length ? '\n⚠️ CAMPAIGN-SPECIFIC AI FACTS — MANDATORY. These answers are specific to this campaign. Reference them directly — do NOT write generic filler:\n' + listing.bizInsights.map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(listing.globalFactoids||[]).length ? '\n⚠️ GLOBAL BUSINESS FACTS — Always true about this business. Reference naturally where relevant:\n' + listing.globalFactoids.map(f=>`- ${f.text}`).join('\n') : ''}${(listing.campaignFactoids||[]).length ? '\n⚠️ CAMPAIGN-SPECIFIC FACTS — Specific to this campaign. Work these in:\n' + listing.campaignFactoids.map(f=>`- ${f.text}`).join('\n') : ''}
+${globalMemoryBlock}${campaignMemoryBlock}${aiContextBlock}${libraryDocsBlock}${campaignContextBlock}${(listing.bizInsights||[]).length ? '\n⚠️ CAMPAIGN-SPECIFIC AI FACTS — MANDATORY. These answers are specific to this campaign. Reference them directly — do NOT write generic filler:\n' + listing.bizInsights.map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(listing.globalFactoids||[]).length ? '\n⚠️ GLOBAL BUSINESS FACTS — Always true about this business. Reference naturally where relevant:\n' + listing.globalFactoids.map(f=>`- ${f.text}`).join('\n') : ''}${(listing.campaignFactoids||[]).length ? '\n⚠️ CAMPAIGN-SPECIFIC FACTS — Specific to this campaign. Work these in:\n' + listing.campaignFactoids.map(f=>`- ${f.text}`).join('\n') : ''}
 PLATFORMS TO ADAPT FOR:
 ${platformList.map(buildPlatformBlock).join('\n')}
 
@@ -4125,3 +4134,143 @@ exports.checkPlatformTokenExpiry = onSchedule(
   }
 );
 
+
+// ══════════════════════════════════════════════════════════════════════════════
+// chatOnboard — AI-driven onboarding interview → builds Global Memory doc
+// ══════════════════════════════════════════════════════════════════════════════
+exports.chatOnboard = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+
+  let decoded;
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+
+  const { conversationHistory, collectedData } = req.body;
+  if (!Array.isArray(conversationHistory)) return res.status(400).json({ error: 'conversationHistory array required' });
+
+  const cd = collectedData || {};
+  const locationDesc = cd.locationType === 'online' ? 'Online only'
+    : cd.locationType === 'both' ? `Physical + online — ${[cd.city, cd.state].filter(Boolean).join(', ')}`
+    : `Physical location — ${[cd.city, cd.state].filter(Boolean).join(', ')}`;
+
+  const contextBlock = [
+    cd.bizName     ? `Business Name: ${cd.bizName}`  : null,
+    cd.ownerName   ? `Owner: ${cd.ownerName}`         : null,
+    cd.locationType ? `Location: ${locationDesc}`     : null,
+    cd.phone       ? `Phone: ${cd.phone}`             : null,
+    cd.website     ? `Website: ${cd.website}`         : null,
+    cd.tone        ? `Preferred Tone: ${cd.tone}`     : null,
+  ].filter(Boolean).join('\n');
+
+  const systemPrompt = `You are a friendly business onboarding assistant for BlastyBiz — marketing software that posts local businesses everywhere automatically. You are conducting a warm conversational interview to understand this business well enough to generate great marketing copy across 12+ platforms.
+
+WHAT YOU ALREADY KNOW:
+${contextBlock || '(still collecting)'}
+
+INTERVIEW SCRIPT — ask conversationally, one question at a time. Build on what the user tells you. Skip questions already answered. Be warm and encouraging. Stop when you have enough — you do NOT need to ask every question:
+1. What does the business do — in plain language a new customer would understand?
+2. How long have they been in business? Any founding story worth knowing?
+3. What makes them different from competitors — why choose them over anyone else?
+4. Who is their ideal customer — who do they love working with most?
+5. Any awards, milestones, recognition, or community reputation?
+6. Any signature products, services, or experiences they're especially known for?
+7. Brand personality — how do they want to come across in their marketing?
+8. Anything else every piece of marketing should always know about them?
+
+WHEN TO STOP: Stop when you know what they do, what makes them special, who they serve, and have at least one memorable detail. 5–8 exchanges is typically enough.
+
+Return ONLY valid JSON. No markdown. No explanation outside the JSON.
+If continuing: {"done":false,"message":"your next warm conversational question"}
+If finished: {"done":true,"message":"brief warm closing line","globalMemory":"rich 2–4 paragraph marketing briefing capturing everything the AI should always know — their story, what makes them special, their customers, their voice, and memorable details. Written for a marketing professional who will write copy for this business.","description":"1–2 sentence plain-English business description for their profile"}`;
+
+  const messages = conversationHistory.length ? conversationHistory
+    : [{ role: 'user', content: `Start the interview for ${cd.bizName || 'this business'}.` }];
+
+  try {
+    const aiResp = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 600, system: systemPrompt, messages })
+    }, 30000);
+
+    if (!aiResp.ok) { const t = await aiResp.text(); return res.status(500).json({ error: `AI error: ${t.slice(0,200)}` }); }
+    const aiJson = await aiResp.json();
+    const raw = aiJson.content[0].text.replace(/```json|```/g, '').trim();
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch(e) { parsed = { done: false, message: raw.slice(0, 300) }; }
+    trackAiUsage(decoded.uid, 'chatOnboard', 'claude-haiku-4-5', aiJson.usage, {});
+    return res.json(parsed);
+  } catch(e) {
+    console.error('[chatOnboard] error:', e.message);
+    return res.status(500).json({ error: 'AI conversation failed. Please try again.' });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// chatCampaign — AI-driven campaign interview → builds Campaign Memory doc
+// ══════════════════════════════════════════════════════════════════════════════
+exports.chatCampaign = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+
+  let decoded;
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+
+  const { conversationHistory, businessProfile, collectedData } = req.body;
+  if (!Array.isArray(conversationHistory)) return res.status(400).json({ error: 'conversationHistory array required' });
+
+  const bp = businessProfile || {};
+  const cd = collectedData  || {};
+
+  const campaignBasics = [
+    cd.campaignName ? `Campaign Name: ${cd.campaignName}` : null,
+    cd.offer        ? `Offer/Message: ${cd.offer}`        : null,
+    cd.price        ? `Price/Range: ${cd.price}`          : null,
+    cd.dates        ? `Dates: ${cd.dates}`                : null,
+  ].filter(Boolean).join('\n');
+
+  const systemPrompt = `You are a campaign briefing assistant for BlastyBiz. You already know this business well. Your job is to gather campaign-specific details that make this campaign's marketing copy feel fresh, specific, and compelling — never generic.
+
+BUSINESS PROFILE (you know this business):
+${bp.globalMemory || bp.description || bp.name || 'Business profile not provided'}
+
+CAMPAIGN BASICS ALREADY COLLECTED:
+${campaignBasics || '(none yet)'}
+
+CAMPAIGN INTERVIEW SCRIPT — one question at a time, conversationally. Reference what you know about the business to make questions feel tailored. Stop when you have enough for specific copy:
+1. What's the main hook — what should customers get excited about?
+2. Any specific products, services, or items featured in this campaign?
+3. Any in-store experience, decorations, events, or atmosphere customers will encounter?
+4. Any story or tradition behind this campaign?
+5. Any urgency — limited time, limited stock, exclusive deal, or hard deadline?
+6. Who are you specifically trying to reach with this campaign?
+7. Anything that makes this campaign feel different from your usual marketing?
+
+WHEN TO STOP: Stop when you have the hook, at least one specific detail, and any urgency or uniqueness. 3–6 exchanges is typically enough.
+
+Return ONLY valid JSON. No markdown.
+If continuing: {"done":false,"message":"your next conversational question"}
+If finished: {"done":true,"message":"brief warm wrap-up line","campaignMemory":"rich paragraph(s) capturing everything specific to this campaign — the hook, featured items, atmosphere or experience, story or tradition, urgency, target audience, and what makes it feel unique. Written as a briefing for a copywriter who will write platform-specific posts."}`;
+
+  const messages = conversationHistory.length ? conversationHistory
+    : [{ role: 'user', content: `Start the campaign brief for "${cd.campaignName || 'this campaign'}".` }];
+
+  try {
+    const aiResp = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 600, system: systemPrompt, messages })
+    }, 30000);
+
+    if (!aiResp.ok) { const t = await aiResp.text(); return res.status(500).json({ error: `AI error: ${t.slice(0,200)}` }); }
+    const aiJson = await aiResp.json();
+    const raw = aiJson.content[0].text.replace(/```json|```/g, '').trim();
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch(e) { parsed = { done: false, message: raw.slice(0, 300) }; }
+    trackAiUsage(decoded.uid, 'chatCampaign', 'claude-haiku-4-5', aiJson.usage, {});
+    return res.json(parsed);
+  } catch(e) {
+    console.error('[chatCampaign] error:', e.message);
+    return res.status(500).json({ error: 'Campaign interview failed. Please try again.' });
+  }
+});

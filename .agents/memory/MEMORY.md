@@ -9,3 +9,4 @@
 - [BlastyBiz home-page clearance](blastybiz-home-clearance.md) — home page uses JS _setHeaderOffset() for body padding; CSS must NOT also add padding-top to .main on home-page or they double-stack.
 - [BlastyBiz page names](blastybiz-page-names.md) — Dave's names for pages differ from the HTML titles; e.g. his "to-do list" = BlastyBiz-Admin-Operate.html ("Operator Setup").
 - [BlastyBiz onboarding script scoping](blastybiz-onboarding-script-scoping.md) — let variables in plain <script> are NOT on window; module scripts must use window.X explicitly; Identity Toolkit Admin API trick for email verification.
+- [BlastyBiz memory docs](blastybiz-memory-docs.md) — globalMemory (business) + campaignMemory (per-campaign) are the primary AI context; stored on Firestore biz/campaign docs; injected at top of adaptListing prompt; window._globalMemory set on profile load in BlastyBiz.html.

@@ -88,12 +88,12 @@
       <div class="flex-row mb-8">
         <input type="text" id="new-campaign-input" placeholder="Campaign name (e.g. Christmas Sale, Grand Reopening)"
           class="input-campaign"
-          onkeydown="if(event.key==='Enter')document.getElementById('new-campaign-story').focus()" />
+          onkeydown="if(event.key==='Enter'){openCampaignChat();}" />
       </div>
-      <textarea id="new-campaign-story" class="form-textarea mb-8" rows="3"
-        placeholder="What's this campaign about? (e.g. 20% off all services through Dec 31 · Celebrating our 10th anniversary · New summer menu launch) — the AI uses this every time it writes copy for this campaign."></textarea>
+      <div style="font-size:13px;color:#4a7a52;margin-bottom:10px;">Enter a name above, then build your campaign brief with AI — or create it plain.</div>
       <div class="flex-row" style="gap:8px;">
-        <button onclick="saveNewCampaign()" class="btn-camp-save">Create Campaign</button>
+        <button onclick="openCampaignChat()" class="btn-camp-save">✨ Build with AI</button>
+        <button onclick="saveNewCampaign()" class="btn-camp-cancel" style="font-size:13px;">Quick Create</button>
         <button onclick="cancelNewCampaign()" class="btn-camp-cancel">Cancel</button>
       </div>
     </div>
@@ -1515,6 +1515,8 @@ async function regeneratePlatformCopy(pid) {
           globalFactoids: window._globalFactoids || [],
           campaignFactoids: (campaigns.find(c=>c.id===activeCampaignId)||{}).factoids || [],
           aiContext: profile.aiContext || null,
+          globalMemory: window._globalMemory || profile.globalMemory || '',
+          campaignMemory: (campaigns.find(c=>c.id===activeCampaignId)||{}).campaignMemory || '',
           libraryDocs: window._libraryDocs || [],
         },
         platforms: [{ id: platform.id, name: platform.name, type: platform.type, enabled: true }],
@@ -2014,6 +2016,8 @@ Return this exact JSON structure:
           globalFactoids: window._globalFactoids || [],
           campaignFactoids: (campaigns.find(c=>c.id===activeCampaignId)||{}).factoids || [],
           aiContext: profile.aiContext || null,
+          globalMemory: window._globalMemory || profile.globalMemory || '',
+          campaignMemory: (campaigns.find(c=>c.id===activeCampaignId)||{}).campaignMemory || '',
           libraryDocs: window._libraryDocs || [],
           businessId: window.activeBizId || '',
           campaignId: activeCampaignId || '',
@@ -3729,6 +3733,7 @@ onAuthStateChanged(auth, async (user) => {
         ownerName:    biz.ownerName || '',
         postingSchedule: biz.postingSchedule || null,
         aiContext:    biz.aiContext || null,
+        globalMemory: biz.globalMemory || '',
         ynMentionName:    biz.ynMentionName    || 'no',
         ynMentionRole:    biz.ynMentionRole    || 'no',
         ynMentionAddress: biz.ynMentionAddress || 'yes',
@@ -3737,6 +3742,7 @@ onAuthStateChanged(auth, async (user) => {
         ynMentionWebsite: biz.ynMentionWebsite || 'yes',
       };
       if (window._bbSetProfile) window._bbSetProfile(p);
+      window._globalMemory = biz.globalMemory || '';
       if (window.loadInsights)      window.loadInsights(biz.bizInsights || []);
 
       // Load global factoids from subcollection
@@ -4211,6 +4217,358 @@ window._saveScheduleToFirestore = async function(sched) {
 </div><!-- /.main-inner -->
 </div><!-- /.main -->
 <div id="site-footer-inject"></div>
+<!-- ══════════════════════════════════════════════════════════
+  Campaign AI Chat Modal
+══════════════════════════════════════════════════════════ -->
+<div id="camp-chat-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:#0d1a0d;display:flex;flex-direction:column;max-width:540px;margin:0 auto;width:100%;">
+  <style>
+    #camp-chat-modal{display:none!important}
+    #camp-chat-modal.open{display:flex!important;flex-direction:column}
+    #camp-chat-modal .cc-progress-bar{height:3px;background:#1e3320;flex-shrink:0}
+    #camp-chat-modal .cc-progress-fill{height:3px;background:#00C853;transition:width .5s ease;width:0%}
+    #camp-chat-modal .cc-header{padding:13px 16px 10px;border-bottom:1px solid #1e3320;flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+    #camp-chat-modal .cc-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#00C853;letter-spacing:1px}
+    #camp-chat-modal .cc-label{font-size:11px;color:#4caf50;letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+    #camp-chat-modal .cc-close-btn{background:none;border:none;color:#4a7a52;font-size:22px;cursor:pointer;padding:4px 8px;line-height:1}
+    #camp-chat-modal .cc-messages{flex:1;overflow-y:auto;padding:14px 14px 6px;display:flex;flex-direction:column;gap:10px}
+    #camp-chat-modal .cc-msg{max-width:84%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.55;word-wrap:break-word;animation:ccFadeUp .22s ease}
+    @keyframes ccFadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+    #camp-chat-modal .cc-ai{background:#162b19;color:#e0f0e3;border-bottom-left-radius:4px;align-self:flex-start}
+    #camp-chat-modal .cc-user{background:#00C853;color:#0a1a0c;border-bottom-right-radius:4px;align-self:flex-end;font-weight:600}
+    #camp-chat-modal .cc-typing{display:flex;align-items:center;gap:5px;background:#162b19;padding:10px 14px;border-radius:16px;border-bottom-left-radius:4px;align-self:flex-start}
+    #camp-chat-modal .cc-typing span{width:7px;height:7px;background:#4caf50;border-radius:50%;animation:blink 1.2s ease-in-out infinite}
+    #camp-chat-modal .cc-typing span:nth-child(2){animation-delay:.2s}
+    #camp-chat-modal .cc-typing span:nth-child(3){animation-delay:.4s}
+    #camp-chat-modal .cc-footer{padding:10px 12px 18px;border-top:1px solid #1e3320;flex-shrink:0;background:#0d1a0d}
+    #camp-chat-modal .cc-options{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:9px}
+    #camp-chat-modal .cc-opt-btn{background:#1a2e1d;border:1.5px solid #2e5c34;color:#e0f0e3;padding:9px 14px;border-radius:20px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+    #camp-chat-modal .cc-opt-btn:hover{background:#00C853;color:#0a1a0c;border-color:#00C853;font-weight:700}
+    #camp-chat-modal .cc-input-row{display:flex;gap:8px;align-items:center}
+    #camp-chat-input{flex:1;background:#162b19;border:1.5px solid #2e5c34;color:#e0f0e3;padding:11px 15px;border-radius:24px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s}
+    #camp-chat-input:focus{border-color:#00C853}
+    #camp-chat-input::placeholder{color:#4a7a52}
+    #camp-chat-input:disabled{opacity:.5}
+    #camp-send-btn{background:#00C853;border:none;color:#0a1a0c;width:44px;height:44px;border-radius:50%;font-size:21px;cursor:pointer;flex-shrink:0;font-weight:900;line-height:1;transition:opacity .15s}
+    #camp-send-btn:disabled{opacity:.35;cursor:default}
+    #camp-chat-modal .cc-skip-row{text-align:center;margin-top:7px;min-height:18px}
+    #camp-skip-btn{background:none;border:none;color:#4a7a52;font-size:13px;cursor:pointer;text-decoration:underline;font-family:'DM Sans',sans-serif;display:none}
+    #camp-skip-btn:hover{color:#4caf50}
+  </style>
+  <div class="cc-progress-bar"><div class="cc-progress-fill" id="cc-progress-fill"></div></div>
+  <div class="cc-header">
+    <div>
+      <div class="cc-logo">BlastyBiz</div>
+      <div class="cc-label" id="cc-label">New Campaign</div>
+    </div>
+    <button class="cc-close-btn" onclick="closeCampaignChat()" title="Cancel">✕</button>
+  </div>
+  <div class="cc-messages" id="cc-messages"></div>
+  <div class="cc-footer">
+    <div class="cc-options" id="cc-options"></div>
+    <div class="cc-input-row">
+      <input type="text" id="camp-chat-input" placeholder="Type here…" autocomplete="off"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();campSend();}"/>
+      <button id="camp-send-btn" onclick="campSend()">›</button>
+    </div>
+    <div class="cc-skip-row"><button id="camp-skip-btn" onclick="campSkip()">Skip this one →</button></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// Campaign AI Chat — State + Helpers
+// ══════════════════════════════════════════════════════════
+;(function(){
+const CC_CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/chatCampaign';
+
+let ccPhase = 'scripted'; // 'scripted'|'ai'|'done'
+let ccIdx = 0;
+let ccWaiting = false;
+const ccCol = { campaignName:'', offer:'', price:'', dates:'' };
+let ccHistory = [];
+
+const $cc = id => document.getElementById(id);
+const ccMsgs = () => $cc('cc-messages');
+
+function ccAddMsg(role, text) {
+  const d = document.createElement('div');
+  d.className = 'cc-msg cc-' + role;
+  d.textContent = text;
+  ccMsgs().appendChild(d);
+  ccMsgs().scrollTop = ccMsgs().scrollHeight;
+}
+function ccShowTyping() {
+  const d = document.createElement('div');
+  d.className = 'cc-typing'; d.id = 'cc-typing';
+  d.innerHTML = '<span></span><span></span><span></span>';
+  ccMsgs().appendChild(d);
+  ccMsgs().scrollTop = ccMsgs().scrollHeight;
+}
+function ccHideTyping() { $cc('cc-typing')?.remove(); }
+function ccSetProgress(p) { $cc('cc-progress-fill').style.width = p + '%'; }
+function ccSetLabel(t)    { $cc('cc-label').textContent = t || ''; }
+function ccSetSkip(show)  { $cc('camp-skip-btn').style.display = show ? 'inline' : 'none'; }
+function ccSetOpts(opts) {
+  const el = $cc('cc-options'); el.innerHTML = '';
+  opts.forEach(o => {
+    const b = document.createElement('button');
+    b.className = 'cc-opt-btn'; b.textContent = o.label;
+    b.onclick = () => ccPickOpt(o.value, o.label);
+    el.appendChild(b);
+  });
+  document.querySelector('.cc-input-row').style.display = 'none';
+}
+function ccClearOpts() { $cc('cc-options').innerHTML = ''; document.querySelector('.cc-input-row').style.display = 'flex'; }
+function ccSetWaiting(w) {
+  ccWaiting = w;
+  $cc('camp-send-btn').disabled = w;
+  $cc('camp-chat-input').disabled = w;
+  if (!w) { $cc('camp-chat-input').focus(); }
+}
+
+// ── Scripted Steps ────────────────────────────────────────
+const CC_STEPS = [
+  {
+    msg: () => {
+      const n = $cc('new-campaign-input')?.value?.trim();
+      if (n) { ccCol.campaignName = n; return `Building the brief for "${n}" — sounds great! 🚀\n\nWhat's the main offer or message for this campaign? (e.g. "25% off all services", "Grand reopening with live music")`; }
+      return 'What are you calling this campaign? (e.g. "Summer Sale", "Grand Reopening", "Holiday Special")';
+    },
+    field: () => ccCol.campaignName ? 'offer' : 'campaignName',
+    label: 'Campaign Name',
+    validate: v => v.trim().length > 1,
+    placeholder: () => ccCol.campaignName ? 'e.g. 20% off everything through the end of the month' : 'e.g. Christmas Sale',
+    optional: () => !!ccCol.campaignName,
+  },
+  {
+    msg: () => ccCol.campaignName && !ccCol.offer
+      ? `Got it — "${ccCol.campaignName}"! What's the main offer or hook for this one?`
+      : `Any pricing to know about? (Skip if there's nothing specific)`,
+    field: () => ccCol.campaignName && !ccCol.offer ? 'offer' : 'price',
+    label: 'Campaign Details',
+    optional: true,
+    placeholder: () => ccCol.campaignName && !ccCol.offer ? 'e.g. Free consultation with any booking' : 'e.g. Starting at $49, or 30% off',
+  },
+  {
+    msg: () => `When does this campaign run? (Skip if it's ongoing)`,
+    field: () => 'dates',
+    label: 'Campaign Dates',
+    optional: true,
+    placeholder: () => 'e.g. July 4–10, or "through end of summer"',
+  },
+];
+
+function ccAdvance() {
+  if (ccIdx >= CC_STEPS.length) { ccStartAI(); return; }
+  const step = CC_STEPS[ccIdx];
+  const msg  = typeof step.msg === 'function' ? step.msg() : step.msg;
+  const pct  = Math.round(((ccIdx + 1) / (CC_STEPS.length + 3)) * 60);
+
+  setTimeout(() => {
+    ccShowTyping();
+    setTimeout(() => {
+      ccHideTyping();
+      ccAddMsg('ai', msg);
+      ccSetProgress(pct);
+      ccSetLabel(step.label || 'Campaign Details');
+      ccClearOpts();
+      const inp = $cc('camp-chat-input');
+      inp.value = '';
+      const ph = typeof step.placeholder === 'function' ? step.placeholder() : (step.placeholder || 'Type here…');
+      inp.placeholder = ph;
+      inp.type = 'text';
+      const isOpt = typeof step.optional === 'function' ? step.optional() : !!step.optional;
+      ccSetSkip(isOpt);
+      inp.focus();
+    }, 500);
+  }, ccIdx === 0 ? 300 : 0);
+}
+
+function ccPickOpt(value, label) {
+  const step = CC_STEPS[ccIdx];
+  const field = typeof step.field === 'function' ? step.field() : step.field;
+  ccCol[field] = value;
+  ccAddMsg('user', label);
+  ccClearOpts(); ccSetSkip(false);
+  ccIdx++;
+  ccAdvance();
+}
+
+function campSkip() {
+  const step = CC_STEPS[ccIdx];
+  if (!step) return;
+  ccAddMsg('user', '(skipped)');
+  ccSetSkip(false);
+  ccIdx++;
+  ccAdvance();
+}
+
+window.campSend = function() {
+  if (ccWaiting) return;
+  const inp = $cc('camp-chat-input');
+  const val = inp.value.trim();
+
+  if (ccPhase === 'scripted') {
+    const step = CC_STEPS[ccIdx];
+    if (!val) { const isOpt = typeof step?.optional === 'function' ? step.optional() : !!step?.optional; if (isOpt) { campSkip(); } return; }
+    const field = typeof step?.field === 'function' ? step.field() : step?.field;
+    if (field) ccCol[field] = val;
+    ccAddMsg('user', val);
+    inp.value = ''; ccSetSkip(false);
+    ccIdx++;
+    ccAdvance();
+
+  } else if (ccPhase === 'ai') {
+    if (!val) return;
+    ccAddMsg('user', val);
+    inp.value = '';
+    ccHistory.push({ role: 'user', content: val });
+    ccCallCF();
+  }
+};
+
+// ── AI Phase ──────────────────────────────────────────────
+function ccStartAI() {
+  ccPhase = 'ai';
+  ccSetLabel('Tell AI About This Campaign');
+  ccSetProgress(65);
+
+  const opening = `Great${ccCol.campaignName ? ' — "' + ccCol.campaignName + '"' : ''}! Now tell me more. What should customers get excited about? What makes this campaign special or different from your usual marketing?`;
+  ccShowTyping();
+  setTimeout(() => {
+    ccHideTyping();
+    ccAddMsg('ai', opening);
+    ccHistory.push({ role: 'assistant', content: opening });
+    ccClearOpts();
+    $cc('camp-chat-input').placeholder = 'Tell me about this campaign…';
+    ccSetSkip(false);
+    $cc('camp-chat-input').focus();
+  }, 800);
+}
+
+async function ccCallCF() {
+  const user = window.currentUser || window._blastyUser;
+  if (!user) return;
+  ccSetWaiting(true);
+  ccShowTyping();
+  try {
+    const token = await user.getIdToken();
+    const resp  = await fetch(CC_CF, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        conversationHistory: ccHistory,
+        businessProfile: {
+          name:         (window._bbProfileGlobal || {}).name || '',
+          globalMemory: window._globalMemory || '',
+          description:  (window._bbProfileGlobal || {}).description || '',
+        },
+        collectedData: {
+          campaignName: ccCol.campaignName,
+          offer:        ccCol.offer,
+          price:        ccCol.price,
+          dates:        ccCol.dates,
+        }
+      })
+    });
+    ccHideTyping();
+    if (!resp.ok) throw new Error('AI error ' + resp.status);
+    const data = await resp.json();
+
+    ccAddMsg('ai', data.message);
+    ccHistory.push({ role: 'assistant', content: data.message });
+
+    if (data.done) {
+      ccPhase = 'done';
+      ccSetProgress(95);
+      ccSetLabel('Saving Campaign…');
+      document.querySelector('.cc-input-row').style.display = 'none';
+      ccSetSkip(false);
+      setTimeout(() => ccCreateCampaign(data), 1200);
+    } else {
+      ccSetWaiting(false);
+    }
+  } catch(e) {
+    ccHideTyping();
+    ccAddMsg('ai', "Sorry, hit a snag — try your message again?");
+    ccSetWaiting(false);
+  }
+}
+
+async function ccCreateCampaign(aiData) {
+  const name = ccCol.campaignName || ('Campaign ' + new Date().toLocaleDateString());
+  const id   = 'c_' + Date.now();
+  const now  = new Date().toISOString();
+  const newCampaign = {
+    id, name,
+    createdAt:       now,
+    lastUsedAt:      '',
+    photos:          [],
+    offer:           ccCol.offer || '',
+    adName:          '',
+    price:           ccCol.price || '',
+    campaignStory:   ccCol.offer || '',
+    campaignMemory:  aiData.campaignMemory || '',
+    factoids:        [],
+    platformHistory: {},
+  };
+
+  if (typeof campaigns !== 'undefined') campaigns.push(newCampaign);
+  if (typeof _sortCampaigns === 'function') _sortCampaigns();
+  window.activeCampaignId   = id;
+  window.activeCampaignName = name;
+
+  if (window._bbSaveCampaigns) {
+    try { await window._bbSaveCampaigns(campaigns); } catch(e) { console.error('Campaign save error', e); }
+  }
+
+  ccSetProgress(100);
+  ccSetLabel('Campaign Created! 🎉');
+  ccAddMsg('ai', `"${name}" is ready to blast! 🚀`);
+
+  setTimeout(() => {
+    closeCampaignChat();
+    if (typeof renderCampaignChips === 'function') renderCampaignChips();
+    if (typeof _syncSchedCampaign  === 'function') _syncSchedCampaign(id, name);
+    if (typeof document.getElementById('new-campaign-row')?.classList?.add === 'function') document.getElementById('new-campaign-row').classList.add('hidden');
+    document.getElementById('campaign-content')?.classList.remove('hidden');
+    const ctxEl = document.getElementById('campaign-context');
+    if (ctxEl) ctxEl.value = ccCol.offer || '';
+    if (typeof showToast === 'function') showToast('Campaign "' + name + '" created');
+  }, 1500);
+}
+
+// ── Public API ────────────────────────────────────────────
+window.openCampaignChat = function() {
+  const nameInput = document.getElementById('new-campaign-input');
+  const prefilledName = nameInput?.value?.trim() || '';
+  ccCol.campaignName = prefilledName;
+  ccCol.offer = ''; ccCol.price = ''; ccCol.dates = '';
+  ccPhase = 'scripted'; ccIdx = 0; ccWaiting = false; ccHistory = [];
+  $cc('cc-messages').innerHTML = '';
+  $cc('cc-options').innerHTML = '';
+  $cc('cc-progress-fill').style.width = '0%';
+  document.querySelector('.cc-input-row').style.display = 'flex';
+  $cc('camp-chat-input').value = '';
+  $cc('camp-send-btn').disabled = false;
+  $cc('camp-chat-input').disabled = false;
+  document.getElementById('new-campaign-row')?.classList.add('hidden');
+  document.getElementById('campaign-content')?.classList.add('hidden');
+  $cc('camp-chat-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  ccAdvance();
+};
+
+window.closeCampaignChat = function() {
+  $cc('camp-chat-modal').classList.remove('open');
+  document.body.style.overflow = '';
+  if (window.activeCampaignId) {
+    document.getElementById('campaign-content')?.classList.remove('hidden');
+  }
+};
+})();
+</script>
+
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 
 <script>

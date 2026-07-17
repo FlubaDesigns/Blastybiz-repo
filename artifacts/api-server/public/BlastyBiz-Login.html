@@ -493,7 +493,7 @@ async function afterAuth(user) {
         await setDoc(doc(db, 'users', user.uid), { onboarded: true }, { merge: true });
         window.location.href = dashUrl;
       } else {
-        window.location.href = 'BlastyBiz-Onboarding.html';
+        window.location.href = 'BlastyBiz-Chat-Onboarding.html';
       }
     }
   } catch (e) {
