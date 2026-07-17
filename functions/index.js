@@ -82,6 +82,7 @@ const AI_COSTS = {
   'gpt-5':                      { input: 2.50,  output: 10.00 },
   'gemini-flash-latest':        { input: 0.10,  output:  0.40 },
   'gemini-flash-lite-latest':   { input: 0.075, output:  0.30 },
+  'gemini-3.1-flash-lite':      { input: 0.10,  output:  0.40 },
   'gemini-2.5-pro':             { input: 1.25,  output:  5.00 },
   'gemini-2.5-flash':           { input: 0.075, output:  0.30 },
   'grok-3':                     { input: 3.00,  output: 15.00 },
@@ -123,8 +124,8 @@ let _aiSettingsCacheAt = 0;
 const AI_SETTINGS_TTL = 60_000;
 const AI_DEFAULTS = {
   provider:   'gemini',
-  fastModel:  'gemini-flash-lite-latest',
-  smartModel: 'gemini-flash-latest',
+  fastModel:  'gemini-3.1-flash-lite',
+  smartModel: 'gemini-3.1-flash-lite',
 };
 
 async function getAiSettings() {
