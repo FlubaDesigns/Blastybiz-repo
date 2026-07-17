@@ -5,6 +5,7 @@
  *
  * Secrets managed via Firebase Secret Manager:
  *   firebase functions:secrets:set ANTHROPIC_API_KEY
+ *   firebase functions:secrets:set GEMINI_API_KEY
  *   firebase functions:secrets:set SQUARE_ACCESS_TOKEN
  *   firebase functions:secrets:set SQUARE_LOCATION_ID
  *   firebase functions:secrets:set SQUARE_PRO_PLAN_ID
@@ -79,6 +80,8 @@ const AI_COSTS = {
   'gpt-4o':                     { input: 2.50,  output: 10.00 },
   'gpt-4o-mini':                { input: 0.15,  output:  0.60 },
   'gpt-5':                      { input: 2.50,  output: 10.00 },
+  'gemini-2.0-flash':           { input: 0.10,  output:  0.40 },
+  'gemini-2.0-flash-lite':      { input: 0.075, output:  0.30 },
   'gemini-2.5-pro':             { input: 1.25,  output:  5.00 },
   'gemini-2.5-flash':           { input: 0.075, output:  0.30 },
   'grok-3':                     { input: 3.00,  output: 15.00 },
@@ -119,9 +122,9 @@ let _aiSettingsCache = null;
 let _aiSettingsCacheAt = 0;
 const AI_SETTINGS_TTL = 60_000;
 const AI_DEFAULTS = {
-  provider:   'anthropic',
-  fastModel:  'claude-haiku-4-5',
-  smartModel: 'claude-sonnet-4-5-20250929',
+  provider:   'gemini',
+  fastModel:  'gemini-2.0-flash-lite',
+  smartModel: 'gemini-2.0-flash',
 };
 
 async function getAiSettings() {
@@ -479,7 +482,7 @@ function buildPlatformBlock(p) {
 // Function 1: adaptListing
 // POST /adaptListing
 // ══════════════════════════════════════════
-exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
+exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   let decoded;
@@ -547,7 +550,7 @@ Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
   }
 });
 
-exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'], timeoutSeconds: 120 }, async (req, res) => {
+exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'], timeoutSeconds: 120 }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   const fnStartMs = Date.now();
@@ -689,7 +692,7 @@ Return this exact JSON structure:
 // Function 2: resolveCategories
 // POST /resolveCategories
 // ══════════════════════════════════════════
-exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
+exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   const fnStartMs = Date.now();
@@ -2845,7 +2848,7 @@ exports.adminSubscriptionSummary = onRequest({ invoker: 'public' }, async (req, 
 // category knowledge since no live data can be fetched yet.
 // User toggles remain fully editable after suggestions are applied.
 // ══════════════════════════════════════════
-exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
+exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
@@ -3475,7 +3478,7 @@ Return ONLY valid JSON: { "adaptations": { "PLATFORM_ID": "text" } }`;
 }
 
 exports.scheduledPostingCheck = onSchedule(
-  { schedule: 'every 1 hours', region: 'us-central1', secrets: ['ANTHROPIC_API_KEY'] },
+  { schedule: 'every 1 hours', region: 'us-central1', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] },
   async () => {
     const now = new Date();
     const BATCH_SIZE = 50;
@@ -4157,7 +4160,7 @@ exports.checkPlatformTokenExpiry = onSchedule(
 // ══════════════════════════════════════════════════════════════════════════════
 // chatOnboard — AI-driven onboarding interview → builds Global Memory doc
 // ══════════════════════════════════════════════════════════════════════════════
-exports.chatOnboard = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
+exports.chatOnboard = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
@@ -4221,7 +4224,7 @@ If finished: {"done":true,"message":"brief warm closing line","globalMemory":"ri
 // ══════════════════════════════════════════════════════════════════════════════
 // chatCampaign — AI-driven campaign interview → builds Campaign Memory doc
 // ══════════════════════════════════════════════════════════════════════════════
-exports.chatCampaign = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'] }, async (req, res) => {
+exports.chatCampaign = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
