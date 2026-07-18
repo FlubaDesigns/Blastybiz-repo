@@ -56,6 +56,9 @@
 .step5-plat-dot{width:7px;height:7px;border-radius:50%;background:var(--border,#333);transition:all 0.22s;flex-shrink:0;cursor:pointer;}
 .step5-plat-dot.s5-active{background:var(--green,#39ff14);width:20px;border-radius:4px;}
 .step5-plat-dot.s5-done{background:rgba(57,255,20,0.45);}
+.step5-plat-dot.s5-approved{background:rgba(57,255,20,0.55);}
+.step5-plat-dot.s5-skipped{background:var(--muted,#888);opacity:.45;}
+.step5-plat-dot.s5-failed{background:#ff5555;}
 .step5-review-card{background:var(--card,#1a1a1a);border:1px solid var(--border,#333);border-radius:14px;padding:16px;margin-bottom:14px;}
 .step5-plat-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
 .step5-plat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
@@ -1269,9 +1272,10 @@ async function approvePlatformCopy(pid) {
   if (lgtmBtn) { delete lgtmBtn.dataset.saving; lgtmBtn.disabled = false; lgtmBtn.textContent = '✓ Approved'; lgtmBtn.classList.add('approved'); }
   updateStep5UI();
 
-  // 5. Advance to next unresolved platform
+  // 5. Advance to next unresolved platform — look forward first, then backward
   const enabled = getStep5Platforms();
-  const nextIdx = enabled.findIndex((p, i) => i > _step5PlatIdx && p._reviewStatus !== 'approved' && p._reviewStatus !== 'skipped');
+  let nextIdx = enabled.findIndex((p, i) => i > _step5PlatIdx && p._reviewStatus !== 'approved' && p._reviewStatus !== 'skipped');
+  if (nextIdx === -1) nextIdx = enabled.findIndex((p, i) => i < _step5PlatIdx && p._reviewStatus !== 'approved' && p._reviewStatus !== 'skipped');
   if (nextIdx !== -1) setTimeout(() => step5GoTo(nextIdx), 350);
 }
 
@@ -1284,10 +1288,11 @@ function excludePlatform(pid) {
   const pill = document.getElementById('step5-pill-' + pid);
   if (pill) { pill.textContent = '— Skipped'; pill.className = 'step5-status-pill'; }
   updateStep5UI();
-  const enabled = getStep5Platforms();
-  const nextIdx = enabled.findIndex((p, i) => i > _step5PlatIdx && p._reviewStatus !== 'approved' && p._reviewStatus !== 'skipped');
-  if (nextIdx !== -1) setTimeout(() => step5GoTo(nextIdx), 350);
   showToast('"' + name + '" excluded from this blast');
+  const enabled = getStep5Platforms();
+  let nextIdx = enabled.findIndex((p, i) => i > _step5PlatIdx && p._reviewStatus !== 'approved' && p._reviewStatus !== 'skipped');
+  if (nextIdx === -1) nextIdx = enabled.findIndex((p, i) => i < _step5PlatIdx && p._reviewStatus !== 'approved' && p._reviewStatus !== 'skipped');
+  if (nextIdx !== -1) setTimeout(() => step5GoTo(nextIdx), 350);
 }
 
 async function openLibraryModal() {
@@ -1699,7 +1704,10 @@ function createWizGoTo(step) {
     checkAdaptBtn();
   }
   if (step === 5) {
-    _step5PlatIdx = 0;
+    // Start at the first unresolved platform, not always index 0
+    const _s5enabled = platforms.filter(p => p.enabled);
+    const _s5firstUnresolved = _s5enabled.findIndex(p => p._reviewStatus !== 'approved' && p._reviewStatus !== 'skipped');
+    _step5PlatIdx = _s5firstUnresolved >= 0 ? _s5firstUnresolved : 0;
     renderStep5Review();
   }
 }
@@ -1879,8 +1887,21 @@ function updateStep5UI() {
     enabled.forEach((p, idx) => {
       const dot = document.createElement('span');
       dot.className = 'step5-plat-dot';
-      if (idx < cur)       dot.classList.add('s5-done');
-      else if (idx === cur) dot.classList.add('s5-active');
+      if (idx === cur) {
+        dot.classList.add('s5-active');
+        dot.title = p.name + ' (current)';
+      } else if (p._reviewStatus === 'approved') {
+        dot.classList.add('s5-approved');
+        dot.title = p.name + ' ✓ approved';
+      } else if (p._reviewStatus === 'skipped') {
+        dot.classList.add('s5-skipped');
+        dot.title = p.name + ' — excluded';
+      } else if (!p.adaptedContent) {
+        dot.classList.add('s5-failed');
+        dot.title = p.name + ' ⚠️ no copy';
+      } else {
+        dot.title = p.name + ' — needs review';
+      }
       dot.onclick = () => step5GoTo(idx);
       dotsEl.appendChild(dot);
     });
