@@ -469,7 +469,7 @@ const PLATFORM_DOCS = {
 function buildPlatformBlock(p) {
   const d = p.doc || {};
   return [
-    `\n=== ${(d.name || p.name).toUpperCase()} — ${p.type === 'api' ? 'AUTO-POST' : 'COPY-PASTE'}${p.cat ? ' | ' + p.cat.replace(/^\s*\(category:\s*/i,'').replace(/\)\s*$/,'') : ''} ===`,
+    `\n=== ${(d.name || p.name).toUpperCase()} (json key: "${p.id}") — ${p.type === 'api' ? 'AUTO-POST' : 'COPY-PASTE'}${p.cat ? ' | ' + p.cat.replace(/^\s*\(category:\s*/i,'').replace(/\)\s*$/,'') : ''} ===`,
     `PURPOSE: ${d.purpose || ''}`,
     `FORMAT: ${d.format || ''} Max ${d.maxChars || 1000} characters.`,
     `TONE: ${d.tone || ''}`,
@@ -648,10 +648,10 @@ ${globalMemoryBlock}${campaignMemoryBlock}${aiContextBlock}${libraryDocsBlock}${
 PLATFORMS TO ADAPT FOR:
 ${platformList.map(buildPlatformBlock).join('\n')}
 
-Return this exact JSON structure:
+Return this exact JSON structure — use each platform's exact json key shown above in the section header:
 {
   "adaptations": {
-    "PLATFORM_ID": "adapted text here"
+${platformList.map(p => `    "${p.id}": "adapted text for ${p.name}"`).join(',\n')}
   }
 }`;
 
@@ -3406,7 +3406,7 @@ ${(biz.bizInsights||[]).filter(i=>i.answer).length ? '\n⚠️ OWNER-PROVIDED FA
 PLATFORMS TO WRITE FOR:
 ${platformList.map(buildPlatformBlock).join('\n')}
 
-Return ONLY valid JSON: { "adaptations": { "PLATFORM_ID": "text" } }`;
+Return ONLY valid JSON using each platform's exact json key shown above in the section header: { "adaptations": { ${platformList.map(p=>`"${p.id}": "text"`).join(', ')} } }`;
 
   let _gspModel;
   const aiStartMs = Date.now();

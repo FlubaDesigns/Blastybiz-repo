@@ -8,10 +8,14 @@ import zipfile, os, hashlib, pathlib
 SRC  = pathlib.Path('artifacts/api-server/public')
 DEST = pathlib.Path('download/BlastyBiz_Site.zip')
 
+AUDIT = pathlib.Path('download/BlastyBiz_Audit.md')
+
 with zipfile.ZipFile(DEST, 'w', zipfile.ZIP_DEFLATED) as zf:
     for f in sorted(SRC.rglob('*')):
         if f.is_file():
             zf.write(f, f.relative_to(SRC))
+    if AUDIT.exists():
+        zf.write(AUDIT, AUDIT.name)
 
 sha = hashlib.sha256(DEST.read_bytes()).hexdigest()
 DEST.with_suffix('.zip.sha256').write_text(sha + '\n')
