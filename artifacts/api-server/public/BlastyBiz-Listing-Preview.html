@@ -277,7 +277,8 @@ function populateFromDraftData(draftData) {
   if (sbArea)     sbArea.textContent     = draftData.region   || draftData.address || '—';
   if (sbOffer)    sbOffer.textContent    = draftData.offer    || '—';
 
-  var platformIds   = Object.keys(adaptations);
+  var platformStatus = draftData.platformStatus || {};
+  var platformIds   = Object.keys(adaptations).filter(function(pid){ return platformStatus[pid] !== 'excluded'; });
   var autoCount     = platformIds.filter(function(k){ var m = PLATFORM_META[k]; return m && m.capabilityLevel !== 'manual_assisted'; }).length;
   var manualCount   = platformIds.filter(function(k){ var m = PLATFORM_META[k]; return m && m.capabilityLevel === 'manual_assisted'; }).length;
 

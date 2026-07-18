@@ -1051,6 +1051,9 @@ const PLATFORM_URL_HINTS = {
   angi:       'e.g. https://pro.angi.com/…',
   applemaps:  'Leave blank — opens Apple Business Connect',
   linkedin:   'e.g. https://www.linkedin.com/company/yourcompany',
+};
+
+function renderPlatformPhotoStrip(pid, photos, maxPhotos) {
   const container = document.getElementById('qp-photos-' + pid);
   const strip     = document.getElementById('qp-photo-strip-' + pid);
   if (!container || !strip) return;
@@ -1285,6 +1288,12 @@ function excludePlatform(pid) {
     ? { ...p, _reviewStatus: 'skipped' }
     : p);
   savePlatforms();
+  // Persist exclusion to draft so Final Review and reloads honour it
+  const draftId = window._currentDraftId;
+  if (draftId && window._bbUpdateDraft) {
+    window._bbUpdateDraft(draftId, { ['platformStatus.' + pid]: 'excluded' })
+      .catch(e => console.warn('excludePlatform draft persist failed:', e));
+  }
   const pill = document.getElementById('step5-pill-' + pid);
   if (pill) { pill.textContent = '— Skipped'; pill.className = 'step5-status-pill'; }
   updateStep5UI();
@@ -4267,7 +4276,7 @@ onAuthStateChanged(auth, async (user) => {
 window._bbUpdateDraft = async function(draftId, updates) {
   if (!currentUser || !activeBizId || !draftId) return;
   const ref = doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'listingDrafts', draftId);
-  await updateDoc(ref, { ...updates, updatedAt: serverTimestamp() });
+  await updateDoc(ref, { ...updates, updatedAt: serverTimestamp(), revision: increment(1) });
 };
 
 window._afterAdaptation = async function(adaptedPlatforms) {

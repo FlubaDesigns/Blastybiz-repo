@@ -131,8 +131,6 @@ import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, query, where, orderBy, getDocs, addDoc, updateDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-const ADMIN_EMAILS = ['perceys@gmail.com', 'rep-test@blastybiz.com'];
-
 let currentType = 'welcome';
 let versions = [];
 let selectedVersionId = null;
@@ -431,7 +429,8 @@ window.copyTag = function(tag) {
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) return;
-  if (!ADMIN_EMAILS.includes(user.email)) {
+  const tokenResult = await user.getIdTokenResult();
+  if (!tokenResult.claims.admin) {
     document.body.style.visibility = 'visible';
     document.body.innerHTML = '<p style="padding:40px;color:red">Access denied.</p>';
     return;
