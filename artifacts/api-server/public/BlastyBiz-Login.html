@@ -42,8 +42,8 @@
 
               <!-- TABS -->
               <div class="auth-tabs">
-                <button class="auth-tab active" id="tab-signin" onclick="switchTab('signin')">Sign In</button>
-                <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Create Account</button>
+                <button type="button" class="auth-tab active" id="tab-signin" onclick="switchTab('signin')">Sign In</button>
+                <button type="button" class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Create Account</button>
               </div>
 
               <!-- SIGN IN FORM -->
@@ -68,7 +68,7 @@
                   <a href="#" onclick="showReset(); return false;">Forgot password?</a>
                 </div>
 
-                <button class="btn-submit" id="btn-signin" onclick="handleSignIn()" disabled>
+                <button type="button" class="btn-submit" id="btn-signin" onclick="handleSignIn()" disabled>
                   <div class="spinner"></div>
                   <span class="btn-text">Sign In →</span>
                 </button>
@@ -80,11 +80,11 @@
                 </div>
 
                 <div class="social-btns">
-                  <button class="btn-social" onclick="handleGoogle()">
+                  <button type="button" class="btn-social" onclick="handleGoogle()">
                     <span class="btn-social-icon">🔍</span>
                     Continue with Google
                   </button>
-                  <button class="btn-social" onclick="handleFacebook()">
+                  <button type="button" class="btn-social" onclick="handleFacebook()">
                     <span class="btn-social-icon">📘</span>
                     Continue with Facebook
                   </button>
@@ -162,7 +162,7 @@
                   <div class="field-error" id="su-password2-err">Passwords don't match</div>
                 </div>
 
-                <button class="btn-submit" id="btn-signup" onclick="handleSignUp()" disabled>
+                <button type="button" class="btn-submit" id="btn-signup" onclick="handleSignUp()" disabled>
                   <div class="spinner"></div>
                   <span class="btn-text">Create Account →</span>
                 </button>
@@ -174,11 +174,11 @@
                 </div>
 
                 <div class="social-btns">
-                  <button class="btn-social" onclick="handleGoogle()">
+                  <button type="button" class="btn-social" onclick="handleGoogle()">
                     <span class="btn-social-icon">🔍</span>
                     Continue with Google
                   </button>
-                  <button class="btn-social" onclick="handleFacebook()">
+                  <button type="button" class="btn-social" onclick="handleFacebook()">
                     <span class="btn-social-icon">📘</span>
                     Continue with Facebook
                   </button>
@@ -193,7 +193,7 @@
 
               <!-- RESET PASSWORD (request form) -->
               <div class="reset-view" id="reset-view">
-                <button class="reset-back" onclick="hideReset()">← Back to Sign In</button>
+                <button type="button" class="reset-back" onclick="hideReset()">← Back to Sign In</button>
                 <h2>Reset Password</h2>
                 <p>Enter your email and we'll send you a reset link.</p>
 
@@ -202,7 +202,7 @@
                   <input type="email" id="reset-email" placeholder="you@yourbusiness.com" />
                 </div>
 
-                <button class="btn-submit" onclick="handleReset()">
+                <button type="button" class="btn-submit" onclick="handleReset()">
                   <div class="spinner"></div>
                   <span class="btn-text">Send Reset Link →</span>
                 </button>
@@ -231,7 +231,7 @@
                   <div class="field-error" id="set-pw-confirm-err">Passwords don't match</div>
                 </div>
 
-                <button class="btn-submit" id="btn-set-pw" onclick="handleSetPassword()">
+                <button type="button" class="btn-submit" id="btn-set-pw" onclick="handleSetPassword()">
                   <div class="spinner"></div>
                   <span class="btn-text">Save New Password →</span>
                 </button>

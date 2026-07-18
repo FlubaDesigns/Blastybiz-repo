@@ -190,17 +190,17 @@
         <div class="card">
           <div class="card-title">🚀 Your Blast</div>
 
-          <label>Blast name</label>
+          <label for="biz-ad-name">Blast name</label>
           <input type="text" id="biz-ad-name" placeholder="e.g. 50% off chocolate · Free consultation · Holiday special"
             oninput="saveDraft();debounceCampaignSave()" class="mb-16" />
 
-          <label>What's the offer?</label>
+          <label for="biz-offer">What's the offer?</label>
           <div class="char-wrap">
             <textarea id="biz-offer" placeholder="e.g. 20% off all haircuts this Saturday only · Grand reopening next week · New menu just dropped — come try it..." oninput="countChars(this, 'offer-count', 500);debounceCampaignSave()" class="min-h-90"></textarea>
             <span class="char-count" id="offer-count">0 / 500</span>
           </div>
 
-          <label>Price <span class="optional">(optional)</span></label>
+          <label for="biz-price">Price <span class="optional">(optional)</span></label>
           <input type="text" id="biz-price" placeholder="e.g. $25 · Free · Starting at $99" oninput="saveDraft();debounceCampaignSave()" class="max-w-260" />
 
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;min-height:22px">
@@ -535,20 +535,20 @@
       <div class="card-title">🏪 Business Profile</div>
       <p class="helper mb-16">Saved automatically. Used to pre-fill every listing.</p>
 
-      <label>Business Name</label>
+      <label for="profile-name">Business Name</label>
       <input type="text" id="profile-name" placeholder="Your business name" oninput="saveProfile()" />
 
-      <label>Your Name</label>
+      <label for="profile-owner-name">Your Name</label>
       <input type="text" id="profile-owner-name" placeholder="e.g. Maria Rodriguez" oninput="saveProfile()" />
 
-      <label>Your Role</label>
+      <label for="profile-owner-role">Your Role</label>
       <select id="profile-owner-role" onchange="saveProfile()">
         <option value="owner">Owner</option>
         <option value="manager">Manager</option>
         <option value="other">Other</option>
       </select>
 
-      <label>Category</label>
+      <label for="profile-cat">Category</label>
       <select id="profile-cat" onchange="saveProfile()">
         <option value="">Select a category...</option>
         <option>Restaurant / Food & Drink</option>
@@ -563,13 +563,13 @@
         <option>Other</option>
       </select>
 
-      <label>Phone</label>
+      <label for="profile-phone">Phone</label>
       <input type="tel" id="profile-phone" placeholder="555-000-0000" oninput="formatPhone(this);saveProfile()" inputmode="tel" />
 
-      <label>Email</label>
+      <label for="profile-email">Email</label>
       <input type="email" id="profile-email" placeholder="hello@yourbusiness.com" oninput="saveProfile()" />
 
-      <label>Location</label>
+      <label for="profile-street">Location</label>
       <div class="loc-type-toggle">
         <button type="button" class="loc-type-btn active" id="prof-loc-btn-physical" onclick="setProfileLocationType('physical')">🧱 Brick</button>
         <button type="button" class="loc-type-btn" id="prof-loc-btn-online" onclick="setProfileLocationType('online')">🌐 Online</button>
@@ -587,10 +587,10 @@
         <input type="text" id="profile-region" placeholder="Service area or region — e.g. Southwest Florida" oninput="saveProfile()" />
       </div>
 
-      <label>Website</label>
+      <label for="profile-website">Website</label>
       <input type="url" id="profile-website" placeholder="https://yourbusiness.com" oninput="saveProfile()" />
 
-      <label>Hours</label>
+      <label for="profile-hours">Hours</label>
       <input type="text" id="profile-hours" placeholder="Mon–Sat 9am–8pm" oninput="saveProfile()" />
     </div>
     </div><!-- /.profile-biz-form-col -->
@@ -600,7 +600,7 @@
   <div class="card">
     <div class="card-title">⚙️ Preferences</div>
 
-    <label>Default Tone</label>
+    <label for="profile-tone">Default Tone</label>
     <select id="profile-tone" onchange="saveProfile()">
       <option value="friendly">Friendly & Casual</option>
       <option value="professional">Professional</option>

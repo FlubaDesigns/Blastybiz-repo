@@ -36,7 +36,7 @@
     <div class="redeploy-sub">Secrets are saved to Firebase Secret Manager, but Cloud Functions pin their secrets at deploy time. After you've saved all your keys, run this <strong>one command</strong> in the Replit Shell to activate them:</div>
     <div class="code-block">
       <span class="code-text">npx firebase-tools deploy --only functions</span>
-      <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions')">Copy</button>
+      <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions')">Copy</button>
     </div>
   </div>
 
@@ -384,31 +384,31 @@
         <p class="op-cmd-label">Deploy HTML pages (hosting)</p>
         <div class="code-block">
           <span class="code-text">npx firebase-tools deploy --only hosting</span>
-          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only hosting')">Copy</button>
+          <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only hosting')">Copy</button>
         </div>
 
         <p class="op-cmd-label-12">Deploy all functions (after saving secrets)</p>
         <div class="code-block">
           <span class="code-text">npx firebase-tools deploy --only functions</span>
-          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions')">Copy</button>
+          <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions')">Copy</button>
         </div>
 
         <p class="op-cmd-label-12">Deploy Firestore security rules</p>
         <div class="code-block">
           <span class="code-text">npx firebase-tools deploy --only firestore:rules</span>
-          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only firestore:rules')">Copy</button>
+          <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only firestore:rules')">Copy</button>
         </div>
 
         <p class="op-cmd-label-12">Deploy a specific function</p>
         <div class="code-block">
           <span class="code-text">npx firebase-tools deploy --only functions:functionName</span>
-          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:functionName')">Copy</button>
+          <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:functionName')">Copy</button>
         </div>
 
         <p class="op-cmd-label-12">View function logs</p>
         <div class="code-block">
           <span class="code-text">npx firebase-tools functions:log --only functionName</span>
-          <button class="copy-btn" onclick="copyCode(this,'npx firebase-tools functions:log --only functionName')">Copy</button>
+          <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools functions:log --only functionName')">Copy</button>
         </div>
 
         <hr>
@@ -469,7 +469,7 @@
         <div style="display:flex;gap:8px;align-items:center;">
           <input id="new-admin-email" type="email" placeholder="new@example.com"
             style="flex:1;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
-          <button onclick="addAdminEmail()"
+          <button type="button" onclick="addAdminEmail()"
             style="padding:8px 14px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">
             Add
           </button>
@@ -670,7 +670,7 @@ function renderAdminEmails() {
     </div>`),
     ...extra.map(e => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0f0f0;">
       <span style="flex:1;font-size:13px;">${e}</span>
-      <button onclick="removeAdminEmail('${e}')"
+      <button type="button" onclick="removeAdminEmail('${e}')"
         style="font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;padding:2px 6px;">✕ Remove</button>
     </div>`),
   ];

@@ -44,7 +44,7 @@
   <div class="card">
     <div class="card-title" style="color:var(--danger,#e53935);">⚠️ Danger Zone</div>
     <p class="helper" style="margin-bottom:12px;">Deleting your account is permanent and cannot be undone. All businesses, campaigns, and data will be removed.</p>
-    <button onclick="openDeleteModal()" class="delete-account-btn">Delete account</button>
+    <button type="button" onclick="openDeleteModal()" class="delete-account-btn">Delete account</button>
   </div>
 
 </div></div><!-- /.main-inner /.main -->
@@ -62,8 +62,8 @@
     <input id="delete-confirm-input" type="text" placeholder="DELETE" class="delete-input"
       oninput="document.getElementById('delete-confirm-btn').disabled = this.value !== 'DELETE'"/>
     <div class="delete-actions">
-      <button onclick="closeDeleteModal()" class="delete-cancel">Cancel</button>
-      <button id="delete-confirm-btn" onclick="confirmDeleteAccount()" disabled>
+      <button type="button" onclick="closeDeleteModal()" class="delete-cancel">Cancel</button>
+      <button type="button" id="delete-confirm-btn" onclick="confirmDeleteAccount()" disabled>
         Delete Everything
       </button>
     </div>
@@ -80,16 +80,16 @@
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center">
         <div style="font-size:22px;font-weight:800;color:var(--light);margin-bottom:2px">Pro</div>
         <div style="font-size:13px;color:var(--silver);margin-bottom:14px">3 businesses · 100 AI/mo</div>
-        <button onclick="closeUpgradeModal();startCheckout('pro')" style="width:100%;background:#00C853;color:#0d1a0d;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">Upgrade to Pro</button>
+        <button type="button" onclick="closeUpgradeModal();startCheckout('pro')" style="width:100%;background:#00C853;color:#0d1a0d;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">Upgrade to Pro</button>
       </div>
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center">
         <div style="font-size:22px;font-weight:800;color:var(--light);margin-bottom:2px">Agency</div>
         <div style="font-size:13px;color:var(--silver);margin-bottom:14px">10 businesses · 500 AI/mo</div>
-        <button onclick="closeUpgradeModal();startCheckout('agency')" style="width:100%;background:#00C853;color:#0d1a0d;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">Upgrade to Agency</button>
+        <button type="button" onclick="closeUpgradeModal();startCheckout('agency')" style="width:100%;background:#00C853;color:#0d1a0d;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">Upgrade to Agency</button>
       </div>
     </div>
     <div style="text-align:center">
-      <button onclick="closeUpgradeModal()" class="delete-cancel" style="max-width:160px">Not now</button>
+      <button type="button" onclick="closeUpgradeModal()" class="delete-cancel" style="max-width:160px">Not now</button>
     </div>
   </div>
 </div>
