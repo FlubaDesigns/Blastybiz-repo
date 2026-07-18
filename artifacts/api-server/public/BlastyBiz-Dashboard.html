@@ -527,7 +527,8 @@ onAuthStateChanged(auth, async (user) => {
   const planEl = document.getElementById('active-plan');
   if (planEl) planEl.textContent = `${planLabel} plan`;
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('success') === '1') {
+  const cameFromCheckout = urlParams.get('success') === '1';
+  if (cameFromCheckout) {
     showToast('🎉 Subscription activated — welcome to BlastyBiz Pro!');
     window.history.replaceState({}, '', window.location.pathname);
   }
@@ -562,6 +563,12 @@ onAuthStateChanged(auth, async (user) => {
     console.error('[Dashboard] businesses load failed:', e.code, e.message);
     window.BUSINESSES = [];
     window.activeBizId = null;
+  }
+
+  // After checkout success, if user hasn't done onboarding yet, send them to the wizard
+  if (cameFromCheckout && !userData.onboarded && !(window.BUSINESSES && window.BUSINESSES.length)) {
+    setTimeout(() => { window.location.href = 'BlastyBiz-Chat-Onboarding.html'; }, 1800);
+    return;
   }
 
   // Re-render Control Panel now that businesses are loaded from Firestore.

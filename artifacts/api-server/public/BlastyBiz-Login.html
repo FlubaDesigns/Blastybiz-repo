@@ -8,10 +8,13 @@
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
-.verify-view.visible{display:block}
 .verify-view h2{margin:0 0 10px;font-size:1.25rem}
 .verify-view p{color:#555;font-size:.95rem;margin:0 0 20px;line-height:1.5}
 .verify-view .btn-submit{width:100%;margin-bottom:10px}
+#auth-card-wrap.verify-mode .auth-tabs,
+#auth-card-wrap.verify-mode .auth-form,
+#auth-card-wrap.verify-mode .back-home{display:none!important}
+#auth-card-wrap.verify-mode .verify-view{display:block}
 </style>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="blastybiz-menu.js?v=3"></script>
@@ -478,20 +481,24 @@ window.selectBilling = function(period) {
 
 async function afterAuth(user) {
   try {
+    const picked  = localStorage.getItem('bb_selected_plan');
+    const billing = localStorage.getItem('bb_billing_period') || 'monthly';
+
+    // Paid plan selected → go to checkout first; Dashboard sends to onboarding after payment
+    if (picked && ['pro', 'agency'].includes(picked)) {
+      window.location.href = `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(picked)}&billing=${encodeURIComponent(billing)}`;
+      return;
+    }
+
     const snap     = await getDoc(doc(db, 'users', user.uid));
     const userData = snap.exists() ? snap.data() : {};
-    const picked   = localStorage.getItem('bb_selected_plan');
-    const billing  = localStorage.getItem('bb_billing_period') || 'monthly';
-    const dashUrl  = picked && picked !== 'starter'
-      ? `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(picked)}&billing=${encodeURIComponent(billing)}`
-      : 'BlastyBiz-Dashboard.html?from=login';
     if (userData.onboarded) {
-      window.location.href = dashUrl;
+      window.location.href = 'BlastyBiz-Dashboard.html?from=login';
     } else {
       const bizSnap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
       if (!bizSnap.empty) {
         await setDoc(doc(db, 'users', user.uid), { onboarded: true }, { merge: true });
-        window.location.href = dashUrl;
+        window.location.href = 'BlastyBiz-Dashboard.html?from=login';
       } else {
         window.location.href = 'BlastyBiz-Chat-Onboarding.html';
       }
@@ -509,7 +516,9 @@ function showLoginForm() {
 
 function showVerifyView(email) {
   document.getElementById('verify-email').textContent = email || '';
-  document.getElementById('verify-view').classList.add('visible');
+  // Wizard-style: replace entire card with just the verify screen
+  document.getElementById('auth-card-wrap').classList.add('verify-mode');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 window.showVerifyView = showVerifyView;
 
@@ -525,7 +534,7 @@ window.resendVerification = async function() {
 };
 
 window.backFromVerify = async function() {
-  document.getElementById('verify-view').classList.remove('visible');
+  document.getElementById('auth-card-wrap').classList.remove('verify-mode');
   try { await auth.signOut(); } catch (_) {}
 };
 
