@@ -4,12 +4,80 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="global-style.css?v=58" />
-  <title>BlastyBiz — Review & Approve Listing</title>
+  <link rel="stylesheet" href="global-style.css?v=59" />
+  <title>BlastyBiz — Publish Your Blast</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>body{visibility:hidden}</style>
   <script type="module" src="./auth-guard.js"></script>
-<script src="blastybiz-menu.js?v=3"></script>
+  <script src="blastybiz-menu.js?v=3"></script>
+  <style>
+/* ── Page layout ────────────────────────────── */
+.pub-page-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted,#888);margin-bottom:8px;}
+.pub-hero{padding:20px 18px 18px;}
+.pub-hero .big-title{font-size:clamp(26px,6vw,36px);line-height:1.15;margin:0 0 8px;}
+.pub-hero .sub{font-size:14px;color:var(--muted,#888);margin:0;}
+
+/* ── Summary grid ───────────────────────────── */
+.pub-summary-grid{display:flex;flex-direction:column;gap:8px;}
+.pub-row{display:flex;align-items:baseline;gap:10px;}
+.pub-row .label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted,#888);flex-shrink:0;min-width:72px;}
+.pub-row .val{font-size:14px;color:var(--light,#fff);word-break:break-word;}
+
+/* ── Platform list rows ─────────────────────── */
+.pub-plat-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border,#333);}
+.pub-plat-row:last-child{border-bottom:none;padding-bottom:0;}
+.pub-plat-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;background:rgba(255,255,255,.06);}
+.pub-plat-info{flex:1;min-width:0;}
+.pub-plat-name{font-size:14px;font-weight:600;color:var(--light,#fff);}
+.pub-plat-type{font-size:11px;color:var(--muted,#888);margin-top:1px;}
+
+/* ── Copy preview accordions ────────────────── */
+.pub-preview-item{border:1px solid var(--border,#333);border-radius:12px;margin-bottom:10px;overflow:hidden;}
+.pub-preview-header{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;background:transparent;border:none;width:100%;text-align:left;font-family:inherit;}
+.pub-preview-header:active{background:rgba(255,255,255,.03);}
+.pub-preview-hdr-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;background:rgba(255,255,255,.06);}
+.pub-preview-hdr-name{font-size:14px;font-weight:600;color:var(--light,#fff);flex:1;text-align:left;}
+.pub-preview-chevron{font-size:14px;color:var(--muted,#888);transition:transform .2s;flex-shrink:0;}
+.pub-preview-body{padding:0 14px 14px;display:none;}
+.pub-preview-body.open{display:block;}
+.pub-preview-text{font-size:14px;color:var(--text,#ccc);line-height:1.65;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:9px;padding:12px;white-space:pre-wrap;word-break:break-word;}
+.pub-copy-btn{margin-top:10px;font-size:13px;font-weight:700;padding:9px 16px;border-radius:9px;border:1px solid var(--border,#333);background:transparent;color:var(--light,#fff);cursor:pointer;font-family:inherit;}
+.pub-copy-btn:active{opacity:.7;}
+
+/* ── Schedule ───────────────────────────────── */
+.pub-sched-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+.sched-input{width:100%;padding:10px 12px;background:var(--input-bg,#111);border:1px solid var(--border,#333);border-radius:9px;color:var(--light,#fff);font-size:14px;font-family:inherit;box-sizing:border-box;}
+.sched-input:focus{outline:none;border-color:var(--green,#39ff14);}
+.sched-status-text{font-size:13px;color:var(--muted,#888);margin-left:8px;}
+.sched-saved{font-size:13px;color:var(--text,#ccc);background:rgba(57,255,20,.06);border:1px solid rgba(57,255,20,.2);border-radius:9px;padding:10px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.clear-btn{font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid var(--border,#333);background:transparent;color:var(--muted,#888);cursor:pointer;font-family:inherit;flex-shrink:0;}
+
+/* ── Publish action ─────────────────────────── */
+.pub-action-card{text-align:center;}
+.pub-publish-btn{width:100%;max-width:340px;padding:16px;font-size:16px;font-weight:700;letter-spacing:.3px;border-radius:14px;border:none;background:var(--green,#39ff14);color:#000;cursor:pointer;font-family:inherit;transition:opacity .15s;}
+.pub-publish-btn:active{opacity:.8;}
+.pub-publish-btn:disabled{opacity:.45;cursor:default;}
+.pub-warn{background:rgba(255,168,0,.08);border:1px solid rgba(255,168,0,.3);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--warn,#ffa800);margin-top:14px;text-align:left;}
+
+/* ── Copy-paste panel ───────────────────────── */
+.manual-card{border:1px solid var(--border,#333);border-radius:12px;padding:14px;margin-bottom:12px;}
+.manual-card:last-child{margin-bottom:0;}
+.manual-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.manual-icon{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;margin-right:10px;}
+.manual-name{font-size:14px;font-weight:600;color:var(--light,#fff);}
+.manual-mode{font-size:11px;color:var(--muted,#888);margin-top:1px;}
+.manual-textarea{width:100%;min-height:110px;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:9px;padding:10px 12px;font-size:13px;color:var(--text,#ccc);line-height:1.6;resize:vertical;font-family:inherit;box-sizing:border-box;}
+.manual-note{font-size:12px;color:var(--muted,#888);line-height:1.5;}
+.copy-platform-btn{font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;border:1px solid var(--border,#333);background:transparent;color:var(--light,#fff);cursor:pointer;font-family:inherit;flex-shrink:0;}
+.copy-platform-btn:active{opacity:.7;}
+
+/* ── Section spacing ────────────────────────── */
+.section-mt{margin-top:16px;}
+
+/* ── Loading / no-draft state ───────────────── */
+.pub-no-draft{text-align:center;padding:32px 16px;color:var(--muted,#888);font-size:14px;}
+.pub-no-draft strong{display:block;color:var(--light,#fff);font-size:16px;margin-bottom:8px;}
+  </style>
 </head>
 <body class="app-page listing-preview-page has-site-header">
 <div id="header__inject"></div>
@@ -18,128 +86,51 @@
 <main class="main">
 <div class="main-inner">
 
-  <!-- ── HERO — two-col grid ──────────────────────────────────── -->
-  <section class="layout__split-lp-hero">
-    <div class="card">
-      <div class="page-eyebrow">Trust step before publishing</div>
-      <h1 class="big-title">Review the listing before <span>BlastyBiz posts it.</span></h1>
-      <p class="sub">Review each platform draft, make edits if needed, then approve. Or flip Auto-Send and BlastyBiz posts without asking.</p>
-      <div class="flex-row autosend-toggle-row mt-14 mb-16">
-        <div id="autosend-toggle" onclick="toggleAutoSend()" class="toggle-track">
-          <div id="autosend-knob" class="toggle-knob"></div>
-        </div>
-        <div>
-          <div class="toggle-label" id="autosend-label">Auto-Send: Off</div>
-          <div class="toggle-sub" id="autosend-sub">You review every draft before posting</div>
-        </div>
-      </div>
-      <div class="btn-row">
-        <button class="btn btn-primary" id="main-approve-btn" onclick="approveSelected()">✅ Approve Selected</button>
-        <button class="btn" onclick="saveDraft()">💾 Save Draft</button>
-        <button class="btn" onclick="copyManual()">📋 Copy Text</button>
-      </div>
-    </div>
+  <!-- ── HERO ─────────────────────────────────────── -->
+  <section class="card pub-hero">
+    <div class="pub-page-eyebrow">Step 6 of 6</div>
+    <h1 class="big-title">Publish your blast</h1>
+    <p class="sub" id="pub-sub">Review your copy below, set a send time if needed, then tap Publish.</p>
+  </section>
 
-    <div class="card">
-      <div class="card-title">🧭 Approval Flow</div>
-      <div class="stepper mt-14">
-        <div class="step"><div class="step-num mb-8">1</div><div class="step-title">Business Info</div><div class="step-sub mt-3">Pulled from onboarding</div></div>
-        <div class="step"><div class="step-num mb-8">2</div><div class="step-title">AI Drafts</div><div class="step-sub mt-3">Platform-specific copy</div></div>
-        <div class="step active"><div class="step-num mb-8">3</div><div class="step-title">Review</div><div class="step-sub mt-3">Edit and approve</div></div>
-        <div class="step"><div class="step-num mb-8">4</div><div class="step-title">Publish</div><div class="step-sub mt-3">Auto or manual</div></div>
-      </div>
-      <div class="autosend-note" id="autosend-note">
-        <strong class="text-silver">Auto-Send off</strong> — you approve each draft before it goes out.
-      </div>
+  <!-- ── BLAST SUMMARY ──────────────────────────── -->
+  <section class="card section-mt" id="pub-summary-card">
+    <div class="card-title">🧾 Blast Summary</div>
+    <div class="pub-summary-grid">
+      <div class="pub-row"><span class="label">Business</span><span class="val" id="sb-name">—</span></div>
+      <div class="pub-row"><span class="label">Category</span><span class="val" id="sb-category">—</span></div>
+      <div class="pub-row"><span class="label">Offer</span><span class="val" id="sb-offer">—</span></div>
+      <div class="pub-row"><span class="label">Phone</span><span class="val" id="sb-phone">—</span></div>
+      <div class="pub-row"><span class="label">Area</span><span class="val" id="sb-area">—</span></div>
     </div>
   </section>
 
-  <!-- ── CONTENT — left sidebar + right draft panel ───────────── -->
-  <section class="layout__split-lp-grid">
-    <aside class="card">
-      <div class="card-title">🏢 Business Summary</div>
-      <div class="platform-list">
-        <div class="summary-row"><div class="label mb-5">Business</div><div class="value" id="sb-name">—</div></div>
-        <div class="summary-row"><div class="label mb-5">Category</div><div class="value" id="sb-category">—</div></div>
-        <div class="summary-row"><div class="label mb-5">Phone</div><div class="value" id="sb-phone">—</div></div>
-        <div class="summary-row"><div class="label mb-5">Service Area</div><div class="value" id="sb-area">—</div></div>
-        <div class="summary-row"><div class="label mb-5">Offer</div><div class="value" id="sb-offer">—</div></div>
-      </div>
-
-      <div class="card-title mt-20">📬 Publish Queue</div>
-      <div class="platform-list" id="publish-queue">
-        <div class="queue-row"><div class="row-main queue-loading">Loading platforms…</div></div>
-      </div>
-    </aside>
-
-    <section class="card">
-      <div class="card-title">✍️ Platform Drafts</div>
-      <div class="platform-tabs mb-14">
-        <button class="tab active" onclick="showDraft('google', this)">Google</button>
-        <button class="tab" onclick="showDraft('facebook', this)">Facebook</button>
-        <button class="tab" onclick="showDraft('instagram', this)">Instagram</button>
-        <button class="tab" onclick="showDraft('nextdoor', this)">Nextdoor</button>
-        <button class="tab" onclick="showDraft('craigslist', this)">Craigslist</button>
-      </div>
-
-      <div class="draft-card">
-        <div class="draft-head">
-          <div class="platform-name">
-            <div class="platform-icon" id="draftIcon">G</div>
-            <div>
-              <div id="draftPlatform">Google Business Profile</div>
-              <div class="row-sub" id="draftMode">Auto-post available after approval</div>
-            </div>
-          </div>
-          <span class="badge auto" id="draftBadge">Auto</span>
-        </div>
-        <div class="draft-body">
-          <div class="field mb-12">
-            <label for="headline" class="mb-6">Headline</label>
-            <input id="headline" value="" />
-          </div>
-          <div class="field mb-12">
-            <label for="draftText" class="mb-6">Listing Text</label>
-            <textarea id="draftText"></textarea>
-            <div class="hint mt-6" id="draftHint">Keep it clear and local. Google posts should be direct, service-based, and not overstuffed with keywords.</div>
-          </div>
-          <div class="field mb-12">
-            <label for="callToAction" class="mb-6">Call To Action</label>
-            <input id="callToAction" value="" />
-          </div>
-
-          <div class="checks mt-14">
-            <div class="check"><strong class="ok">✓ Local service area</strong><span>Mentions the towns served.</span></div>
-            <div class="check"><strong class="ok">✓ Clear offer</strong><span>Customer knows what is being promoted.</span></div>
-            <div class="check"><strong class="warn">⚠ Copy-ready platforms</strong><span>Some platforms block all apps. Your text is written — just paste it.</span></div>
-          </div>
-
-          <div class="btn-row">
-            <button class="btn btn-primary btn-flex-130" id="approve-btn" onclick="approveSelected()">👍 Looks Good</button>
-            <button class="btn btn-flex-130" id="regen-btn" onclick="regenDraft('')">🔄 Regenerate</button>
-            <button class="btn btn-flex-130" id="shorter-btn" onclick="regenDraft('Make it shorter — trim to the essential points only, keep punchy and under 80 words')">✂️ Make Shorter</button>
-            <button class="btn btn-warn btn-flex-100" onclick="copyManual()">📋 Copy</button>
-          </div>
-        </div>
-      </div>
-    </section>
+  <!-- ── PLATFORMS IN THIS BLAST ────────────────── -->
+  <section class="card section-mt">
+    <div class="card-title">📣 Platforms in this blast</div>
+    <div id="pub-platform-list">
+      <div class="queue-loading" style="padding:10px 0;color:var(--muted,#888);font-size:14px;">Loading…</div>
+    </div>
   </section>
 
-</div><!-- /.main-inner -->
-</main>
+  <!-- ── CONTENT PREVIEWS ──────────────────────── -->
+  <section class="card section-mt" id="pub-previews-card" style="display:none;">
+    <div class="card-title">✍️ Your AI-written copy</div>
+    <p class="helper mb-14" style="font-size:13px;color:var(--muted,#888);">Tap any platform to expand the copy. This is what BlastyBiz will post.</p>
+    <div id="pub-previews-list"></div>
+  </section>
 
-<!-- ── SCHEDULE PANEL ───────────────────────────────────────── -->
-<section class="section-mt" id="schedule-section">
-  <div class="card">
-    <div class="card-title">🗓 Schedule & Refire</div>
-    <p class="sched-desc mb-16">Schedule your listing for later or set a recurring refire. Direct auto-posting for Google Business, Facebook, and Instagram is coming soon — we're actively building it.</p>
-    <div class="layout__split-3">
+  <!-- ── SCHEDULE THIS BLAST ─────────────────────── -->
+  <section class="card section-mt">
+    <div class="card-title">🗓 Schedule this blast</div>
+    <p class="helper mb-14" style="font-size:13px;color:var(--muted,#888);">Optional — set a future send time for this blast only. Your account-level auto-post schedule is a separate setting.</p>
+    <div class="pub-sched-grid">
       <div>
-        <label class="field-label mb-6">Send Date</label>
+        <label class="field-label mb-6" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted,#888);">Send Date</label>
         <input type="datetime-local" id="sched-date" class="sched-input"/>
       </div>
       <div>
-        <label class="field-label mb-6">Refire Every</label>
+        <label class="field-label mb-6" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted,#888);">Refire Every</label>
         <select id="sched-recur" class="sched-input">
           <option value="">None (one-time)</option>
           <option value="weekly">Weekly</option>
@@ -149,7 +140,7 @@
         </select>
       </div>
       <div>
-        <label class="field-label mb-6">Stop After</label>
+        <label class="field-label mb-6" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted,#888);">Stop After</label>
         <select id="sched-stop" class="sched-input">
           <option value="">Never</option>
           <option value="4">4 posts</option>
@@ -159,101 +150,81 @@
         </select>
       </div>
     </div>
-    <div class="flex-row">
-      <button class="btn btn-primary btn-sched" onclick="saveSchedule()" id="sched-btn">💾 Save Schedule</button>
+    <div style="display:flex;align-items:center;margin-top:14px;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="saveSchedule()" id="sched-btn" style="padding:10px 20px;">💾 Save Schedule</button>
       <span id="sched-status" class="sched-status-text"></span>
     </div>
     <div id="sched-saved" class="sched-saved mt-14 hidden">
-      <strong class="text-green">⏱ Schedule active</strong> — <span id="sched-summary"></span>
+      <strong class="text-green">⏱ Schedule saved</strong> — <span id="sched-summary"></span>
       <button onclick="clearSchedule()" class="clear-btn">Clear</button>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ── COPY-PASTE OUTPUT PANEL ──────────────────────────────── -->
-<section class="section-mt hidden" id="manual-panel">
-  <div class="card">
+  <!-- ── PUBLISH ACTION ──────────────────────────── -->
+  <section class="card section-mt pub-action-card">
+    <div class="card-title">🚀 Ready to go</div>
+    <p id="pub-action-sub" class="helper mb-16" style="font-size:14px;color:var(--muted,#888);">Tap to publish your blast to all selected platforms.</p>
+    <button class="pub-publish-btn" id="publish-btn" onclick="publishBlast()">🚀 Publish Blast</button>
+    <div id="pub-warn" class="pub-warn hidden"></div>
+  </section>
+
+  <!-- ── COPY-PASTE PLATFORMS ────────────────────── -->
+  <section class="card section-mt hidden" id="manual-panel">
     <div class="card-title">📋 Copy-Paste Platforms</div>
-    <p class="sched-desc mb-16">These platforms don't allow any app to post on your behalf. BlastyBiz wrote the copy — tap Copy and paste it in under a minute.</p>
-    <div id="manual-platform-list" class="platform-list">
-      <!-- populated by JS -->
-    </div>
-  </div>
-</section>
+    <p class="helper mb-14" style="font-size:13px;color:var(--muted,#888);">These platforms don't allow any app to post on your behalf — that's their policy, not a BlastyBiz limitation. Your copy is written. Tap Copy and paste it in.</p>
+    <div id="manual-platform-list"></div>
+  </section>
 
-<div class="approval-bar">
-  <div class="approval-inner">
-    <div class="approval-text" id="approval-bar-text"><strong>Drafts ready.</strong> Review above then approve.</div>
-    <div class="btn-row"><button class="btn" onclick="saveDraft()">Save Draft</button><button class="btn btn-primary" onclick="approveAll()">Approve & Continue</button></div>
-  </div>
-</div>
+</div><!-- /.main-inner -->
+</main>
 
 <div class="toast" id="toast"></div>
 
 <script>
 var PLATFORM_META = {
-  google:     { icon:'G',  name:'Google Business Profile', capabilityLevel:'full_auto',       mode:'Auto-post available after approval',                      badge:'Auto',       badgeClass:'badge auto',   hint:'Keep it clear and local. Google posts should be direct, service-based, and not overstuffed with keywords.' },
-  facebook:   { icon:'f',  name:'Facebook Page',           capabilityLevel:'partial_auto',    mode:'Auto-post available after approval',                      badge:'Auto',       badgeClass:'badge auto',   hint:'Facebook can be warmer and more conversational than Google.' },
-  instagram:  { icon:'◎', name:'Instagram',               capabilityLevel:'partial_auto',    mode:'Auto-post through connected Meta account',                badge:'Auto',       badgeClass:'badge auto',   hint:'Instagram should stay shorter and image-friendly. Hashtags are okay, but keep them local.' },
-  bing:       { icon:'B',  name:'Bing Places',             capabilityLevel:'manual_assisted', mode:'Copy-Ready · Bing has no public write API',               badge:'Copy-Ready', badgeClass:'badge manual', hint:'Bing Places has no API that allows third-party apps to post on your behalf — that\'s their policy, not a BlastyBiz limitation. Your listing is written and formatted. Paste it in.',         manualInstructions:'Go to bingplaces.com → sign in → add or edit listing → paste your text.' },
-  applemaps:  { icon:'🍎', name:'Apple Maps',              capabilityLevel:'partial_auto',    mode:'Submitted after approval',                               badge:'Auto',       badgeClass:'badge auto',   hint:'Apple Maps requires factual, complete info. No marketing language.' },
-  yelp:       { icon:'Y',  name:'Yelp',                   capabilityLevel:'partial_auto',    mode:'Submitted after approval',                               badge:'Auto',       badgeClass:'badge auto',   hint:'Descriptive, highlight what makes you special and your atmosphere.' },
-  nextdoor:   { icon:'N',  name:'Nextdoor',               capabilityLevel:'manual_assisted', mode:'Copy-Ready · Nextdoor blocks all third-party apps',       badge:'Copy-Ready', badgeClass:'badge manual', hint:'Nextdoor chose not to allow any app to post on your behalf — that\'s their rule, not ours. BlastyBiz wrote this post for you. Paste it in under a minute.',                                  manualInstructions:'Go to nextdoor.com → Post → For Sale & Free → paste your listing.' },
-  craigslist: { icon:'C',  name:'Craigslist',             capabilityLevel:'manual_assisted', mode:'Copy-Ready · Craigslist has banned all posting APIs',     badge:'Copy-Ready', badgeClass:'badge manual', hint:'Craigslist has banned third-party posting since day one — no app can post here automatically. BlastyBiz wrote this ad for you in plain, direct language. Paste it in.',                    manualInstructions:'Go to craigslist.org → your city → Services → paste your listing.' },
-  fbmarket:   { icon:'M',  name:'FB Marketplace',         capabilityLevel:'manual_assisted', mode:'Copy-Ready · Meta closed Marketplace to all apps in 2018', badge:'Copy-Ready', badgeClass:'badge manual', hint:'Meta closed Facebook Marketplace to all third-party apps in 2018 — not a BlastyBiz limitation, a Meta decision. Your listing is written and ready. Paste it in.',                       manualInstructions:'Go to facebook.com/marketplace → Create listing → paste your text.' },
+  google:     { icon:'G',  name:'Google Business Profile', capabilityLevel:'full_auto',       badge:'Auto',       badgeClass:'badge auto',   hint:'Keep it clear and local. Google posts should be direct, service-based, and not overstuffed with keywords.' },
+  facebook:   { icon:'f',  name:'Facebook Page',           capabilityLevel:'partial_auto',    badge:'Auto',       badgeClass:'badge auto',   hint:'Facebook can be warmer and more conversational than Google.' },
+  instagram:  { icon:'◎', name:'Instagram',               capabilityLevel:'partial_auto',    badge:'Auto',       badgeClass:'badge auto',   hint:'Instagram should stay shorter and image-friendly. Hashtags are okay, but keep them local.' },
+  bing:       { icon:'B',  name:'Bing Places',             capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to bingplaces.com → sign in → add or edit listing → paste your text.' },
+  applemaps:  { icon:'🍎', name:'Apple Maps',              capabilityLevel:'partial_auto',    badge:'Auto',       badgeClass:'badge auto' },
+  yelp:       { icon:'Y',  name:'Yelp',                   capabilityLevel:'partial_auto',    badge:'Auto',       badgeClass:'badge auto' },
+  nextdoor:   { icon:'N',  name:'Nextdoor',               capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to nextdoor.com → Post → For Sale & Free → paste your listing.' },
+  craigslist: { icon:'C',  name:'Craigslist',             capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to craigslist.org → your city → Services → paste your listing.' },
+  fbmarket:   { icon:'M',  name:'FB Marketplace',         capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to facebook.com/marketplace → Create listing → paste your text.' },
+  alignable:  { icon:'A',  name:'Alignable',              capabilityLevel:'partial_auto',    badge:'Auto',       badgeClass:'badge auto' },
+  thumbtack:  { icon:'T',  name:'Thumbtack',              capabilityLevel:'partial_auto',    badge:'Auto',       badgeClass:'badge auto' },
+  angi:       { icon:'🔧', name:'Angi',                   capabilityLevel:'partial_auto',    badge:'Auto',       badgeClass:'badge auto' },
+  linkedin:   { icon:'in', name:'LinkedIn',               capabilityLevel:'partial_auto',    badge:'Auto',       badgeClass:'badge auto' },
+  x:          { icon:'𝕏',  name:'X (Twitter)',            capabilityLevel:'partial_auto',    badge:'Auto',       badgeClass:'badge auto' },
+  pinterest:  { icon:'P',  name:'Pinterest',              capabilityLevel:'partial_auto',    badge:'Auto',       badgeClass:'badge auto' },
 };
 
-let drafts = {};
-let activeDraftKey = null;
-let draftDocId = null;
-let currentUser = null;
-let businessId = null;
-let autoSendEnabled = false;
-let currentDraftData = {};
+var drafts         = {};
+var draftDocId     = null;
+var currentUser    = null;
+var businessId     = null;
+var currentDraftData = {};
 
-function toggleAutoSend() {
-  autoSendEnabled = !autoSendEnabled;
-  const toggle = document.getElementById('autosend-toggle');
-  const label  = document.getElementById('autosend-label');
-  const sub    = document.getElementById('autosend-sub');
-  const note   = document.getElementById('autosend-note');
-  const btn    = document.getElementById('main-approve-btn');
-  toggle.classList.toggle('toggle-on', autoSendEnabled);
-  if (autoSendEnabled) {
-    label.textContent = 'Auto-Send: On';
-    sub.textContent = 'BlastyBiz will post immediately — no review step';
-    note.innerHTML = '<strong class="text-green">Auto-Send on</strong> — BlastyBiz posts all API-connected platforms the moment you click Send All.';
-    btn.textContent = '🚀 Send All Now';
-    btn.onclick = sendAllNow;
-  } else {
-    label.textContent = 'Auto-Send: Off';
-    sub.textContent = 'You review every draft before posting';
-    note.innerHTML = '<strong class="text-silver">Auto-Send off</strong> — you approve each draft before it goes out.';
-    btn.textContent = '✅ Approve Selected';
-    btn.onclick = approveSelected;
-  }
-  window._saveAutoSendPref && window._saveAutoSendPref(autoSendEnabled);
-}
-
-function sendAllNow() {
-  const keys = Object.keys(drafts);
-  if (!keys.length) { showToast('No drafts to send'); return; }
-  window._firestoreApprove && window._firestoreApprove(keys);
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2500);
 }
 
 function saveSchedule() {
-  const dateVal = document.getElementById('sched-date').value;
-  const recur   = document.getElementById('sched-recur').value;
-  const stop    = document.getElementById('sched-stop').value;
+  var dateVal = document.getElementById('sched-date').value;
+  var recur   = document.getElementById('sched-recur').value;
+  var stop    = document.getElementById('sched-stop').value;
   if (!dateVal) { showToast('Pick a send date first'); return; }
-  const sched = { sendAt: dateVal, recur: recur || null, stopAfter: stop ? parseInt(stop) : null };
+  var sched = { sendAt: dateVal, recur: recur || null, stopAfter: stop ? parseInt(stop) : null };
   window._saveSchedule && window._saveSchedule(sched);
-  const saved   = document.getElementById('sched-saved');
-  const summary = document.getElementById('sched-summary');
-  const dt = new Date(dateVal).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
-  let txt = `First post: ${dt}`;
-  if (recur) txt += ` · repeats ${recur}`;
-  if (stop)  txt += ` · stops after ${stop} posts`;
+  var saved   = document.getElementById('sched-saved');
+  var summary = document.getElementById('sched-summary');
+  var dt = new Date(dateVal).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+  var txt = 'First post: ' + dt;
+  if (recur)  txt += ' · repeats ' + recur;
+  if (stop)   txt += ' · stops after ' + stop + ' posts';
   summary.textContent = txt;
   saved.classList.remove('hidden');
   showToast('⏱ Schedule saved');
@@ -268,245 +239,179 @@ function clearSchedule() {
   showToast('Schedule cleared');
 }
 
-function renderManualPanel() {
-  const manualKeys = Object.keys(drafts).filter(k => PLATFORM_META[k]?.capabilityLevel === 'manual_assisted');
-  const panel = document.getElementById('manual-platform-list');
-  if (!panel) return;
-  if (!manualKeys.length) {
-    document.getElementById('manual-panel').classList.add('hidden');
-    return;
-  }
-  document.getElementById('manual-panel').classList.remove('hidden');
-  panel.innerHTML = manualKeys.map(k => {
-    const meta = PLATFORM_META[k];
-    const d    = drafts[k] || {};
-    const text = [d.headline, d.text, d.cta].filter(Boolean).join('\n\n');
-    return `
-      <div class="manual-card">
-        <div class="flex-between manual-card-header mb-10">
-          <div class="flex-row">
-            <div class="manual-icon">${meta.icon}</div>
-            <div>
-              <div class="manual-name">${meta.name}</div>
-              <div class="manual-mode">${meta.mode}</div>
-            </div>
-          </div>
-          <button onclick="copyPlatformText('${k}')" class="copy-platform-btn">📋 Copy</button>
-        </div>
-        <textarea id="manual-text-${k}" readonly class="manual-textarea">${text}</textarea>
-        ${meta.manualInstructions ? `<div class="manual-note mt-8">👉 ${meta.manualInstructions}</div>` : ''}
-      </div>`;
-  }).join('');
+function togglePreview(pid) {
+  var body    = document.getElementById('pub-prev-body-' + pid);
+  var chevron = document.getElementById('pub-prev-chev-' + pid);
+  if (!body) return;
+  var isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(90deg)';
 }
 
-function copyPlatformText(key) {
-  const el = document.getElementById('manual-text-' + key);
-  if (!el) return;
-  navigator.clipboard.writeText(el.value).then(() => showToast('📋 Copied — paste it into ' + (PLATFORM_META[key]?.name || key)));
-}
-
-function showDraft(key, btn) {
-  const d = drafts[key];
+function copyPreviewText(pid) {
+  var d = drafts[pid];
   if (!d) return;
-  activeDraftKey = key;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  const meta = PLATFORM_META[key] || {};
-  document.getElementById('draftIcon').textContent = meta.icon || key[0].toUpperCase();
-  document.getElementById('draftPlatform').textContent = meta.name || key;
-  document.getElementById('draftMode').textContent = meta.mode || '';
-  const badge = document.getElementById('draftBadge');
-  badge.textContent = meta.badge || 'Auto';
-  badge.className = meta.badgeClass || 'badge auto';
-  document.getElementById('headline').value = d.headline || '';
-  document.getElementById('draftText').value = d.text || '';
-  document.getElementById('callToAction').value = d.cta || '';
-  document.getElementById('draftHint').textContent = meta.hint || '';
-}
-
-function copyManual() {
-  const text = document.getElementById('draftText').value;
-  navigator.clipboard.writeText(text).then(() => showToast('📋 Copied to clipboard'));
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-function saveDraft() {
-  if (activeDraftKey) {
-    drafts[activeDraftKey] = {
-      ...drafts[activeDraftKey],
-      text: document.getElementById('draftText').value,
-      headline: document.getElementById('headline').value,
-      cta: document.getElementById('callToAction').value,
-    };
-  }
-  window._firestoreSaveDraft && window._firestoreSaveDraft();
-  showToast('💾 Draft saved');
-}
-
-function approveSelected() {
-  if (!activeDraftKey) { showToast('Select a platform first'); return; }
-  window._firestoreApprove && window._firestoreApprove([activeDraftKey]);
-}
-
-function approveAll() {
-  const keys = Object.keys(drafts);
-  if (!keys.length) { showToast('No drafts to approve'); return; }
-  window._firestoreApprove && window._firestoreApprove(keys);
-}
-
-async function regenDraft(direction) {
-  if (!activeDraftKey) { showToast('Select a platform first'); return; }
-  const regenBtn   = document.getElementById('regen-btn');
-  const shorterBtn = document.getElementById('shorter-btn');
-  const textarea   = document.getElementById('draftText');
-  const label      = direction ? '✂️ Shortening…' : '🔄 Regenerating…';
-
-  regenBtn.disabled   = true;
-  shorterBtn.disabled = true;
-  regenBtn.textContent   = direction ? '🔄 Regenerate' : label;
-  shorterBtn.textContent = direction ? label : '✂️ Make Shorter';
-  textarea.classList.add('regen-loading');
-
-  try {
-    const idToken = currentUser ? await currentUser.getIdToken() : null;
-    const listing = {
-      name:             currentDraftData.name        || '',
-      category:         currentDraftData.category    || '',
-      offer:            currentDraftData.offer        || '',
-      price:            currentDraftData.price        || '',
-      phone:            currentDraftData.phone        || '',
-      address:          currentDraftData.address      || '',
-      region:           currentDraftData.region       || '',
-      locationType:     currentDraftData.locationType || 'physical',
-      website:          currentDraftData.website      || '',
-      hours:            currentDraftData.hours        || '',
-      adName:           currentDraftData.adName       || '',
-      adDetails:        currentDraftData.adDetails    || '',
-      campaignName:     currentDraftData.campaignName || '',
-      imageCount:       0,
-      bizInsights:      currentDraftData.bizInsights      || [],
-      bizAnnouncements: currentDraftData.bizAnnouncements || [],
-      aiContext:        currentDraftData.aiContext     || null,
-      libraryDocs:      window._libraryDocs            || [],
-    };
-    const platform = { id: activeDraftKey, ...(PLATFORM_META[activeDraftKey] || { name: activeDraftKey, type: 'manual' }) };
-    const body = JSON.stringify({
-      listing,
-      platforms: [platform],
-      tone: currentDraftData.tone || 'friendly',
-      platformCats: currentDraftData.platformCats || {},
-      direction,
-    });
-    const res  = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/adaptListing', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(idToken ? { 'Authorization': 'Bearer ' + idToken } : {}) },
-      body,
-    });
-    const json = await res.json();
-    const newText = (json.adaptations || {})[activeDraftKey] || '';
-    if (newText) {
-      drafts[activeDraftKey] = { ...drafts[activeDraftKey], text: newText };
-      textarea.value = newText;
-      showToast(direction ? '✂️ Shortened!' : '🔄 Regenerated!');
-    } else {
-      showToast('AI returned empty — try again');
-    }
-  } catch(e) {
-    console.error('regenDraft error:', e);
-    showToast('Error — try again');
-  } finally {
-    textarea.classList.remove('regen-loading');
-    regenBtn.disabled   = false;
-    shorterBtn.disabled = false;
-    regenBtn.textContent   = '🔄 Regenerate';
-    shorterBtn.textContent = '✂️ Make Shorter';
-  }
+  var text = [d.headline, d.text, d.cta].filter(Boolean).join('\n\n');
+  navigator.clipboard.writeText(text).then(function(){
+    showToast('📋 Copied — paste it into ' + (PLATFORM_META[pid] ? PLATFORM_META[pid].name : pid));
+  });
 }
 
 function populateFromDraftData(draftData) {
   currentDraftData = draftData;
-  const adaptations = draftData.adaptations || {};
-  Object.entries(adaptations).forEach(([pid, text]) => {
-    drafts[pid] = { text, headline: '', cta: '' };
+  var adaptations = draftData.adaptations || {};
+  Object.entries(adaptations).forEach(function(entry){
+    var pid = entry[0], text = entry[1];
+    drafts[pid] = { text: text, headline: '', cta: '' };
   });
 
-  const sbName     = document.getElementById('sb-name');
-  const sbCategory = document.getElementById('sb-category');
-  const sbPhone    = document.getElementById('sb-phone');
-  const sbArea     = document.getElementById('sb-area');
-  const sbOffer    = document.getElementById('sb-offer');
+  var sbName     = document.getElementById('sb-name');
+  var sbCategory = document.getElementById('sb-category');
+  var sbPhone    = document.getElementById('sb-phone');
+  var sbArea     = document.getElementById('sb-area');
+  var sbOffer    = document.getElementById('sb-offer');
   if (sbName)     sbName.textContent     = draftData.name     || '—';
   if (sbCategory) sbCategory.textContent = draftData.category || '—';
   if (sbPhone)    sbPhone.textContent    = draftData.phone    || '—';
   if (sbArea)     sbArea.textContent     = draftData.region   || draftData.address || '—';
   if (sbOffer)    sbOffer.textContent    = draftData.offer    || '—';
 
-  const queue = document.getElementById('publish-queue');
-  if (queue) {
-    const platformIds = Object.keys(adaptations);
+  var platformIds   = Object.keys(adaptations);
+  var autoCount     = platformIds.filter(function(k){ var m = PLATFORM_META[k]; return m && m.capabilityLevel !== 'manual_assisted'; }).length;
+  var manualCount   = platformIds.filter(function(k){ var m = PLATFORM_META[k]; return m && m.capabilityLevel === 'manual_assisted'; }).length;
+
+  var subEl = document.getElementById('pub-sub');
+  if (subEl) {
+    var parts = [];
+    if (autoCount)   parts.push(autoCount   + ' platform' + (autoCount   > 1 ? 's' : '') + ' will auto-post');
+    if (manualCount) parts.push(manualCount + ' platform' + (manualCount > 1 ? 's' : '') + ' need' + (manualCount === 1 ? 's' : '') + ' a quick paste');
+    subEl.textContent = parts.length ? parts.join(' · ') + '.' : 'Your blast is ready to publish.';
+  }
+
+  // Platform list
+  var listEl = document.getElementById('pub-platform-list');
+  if (listEl) {
     if (platformIds.length) {
-      queue.innerHTML = platformIds.map(pid => {
-        const meta    = PLATFORM_META[pid] || { icon: pid[0].toUpperCase(), name: pid, capabilityLevel: 'manual_assisted', badge: 'Copy-Ready', badgeClass: 'badge manual' };
-        const isAuto  = meta.capabilityLevel && meta.capabilityLevel !== 'manual_assisted';
-        const subText = isAuto ? 'Ready for auto-post' : 'Copy-paste required';
-        return `<div class="queue-row">
-          <div class="platform-icon">${meta.icon}</div>
-          <div class="row-main"><div class="row-title">${meta.name}</div><div class="row-sub">${subText}</div></div>
-          <span class="${meta.badgeClass || (isAuto ? 'badge auto' : 'badge manual')}">${meta.badge || (isAuto ? 'Auto' : 'Copy-Ready')}</span>
-        </div>`;
+      listEl.innerHTML = platformIds.map(function(pid){
+        var meta    = PLATFORM_META[pid] || { icon: pid[0].toUpperCase(), name: pid, capabilityLevel: 'manual_assisted', badge: 'Copy-Ready', badgeClass: 'badge manual' };
+        var isAuto  = meta.capabilityLevel !== 'manual_assisted';
+        var typeStr = isAuto ? '⚡ Auto-post' : '✋ Copy &amp; paste';
+        return '<div class="pub-plat-row">'
+          + '<div class="pub-plat-icon">' + meta.icon + '</div>'
+          + '<div class="pub-plat-info"><div class="pub-plat-name">' + meta.name + '</div><div class="pub-plat-type">' + typeStr + '</div></div>'
+          + '<span class="' + (meta.badgeClass || (isAuto ? 'badge auto' : 'badge manual')) + '">' + (meta.badge || (isAuto ? 'Auto' : 'Copy-Ready')) + '</span>'
+          + '</div>';
       }).join('');
     } else {
-      queue.innerHTML = '<div class="queue-row"><div class="row-main queue-loading">No platforms selected.</div></div>';
+      listEl.innerHTML = '<div style="font-size:14px;color:var(--muted,#888);padding:10px 0;">No platforms in this draft.</div>';
     }
   }
 
-  const tabContainer = document.querySelector('.platform-tabs');
-  if (tabContainer) {
-    tabContainer.innerHTML = '';
-    Object.keys(drafts).forEach((pid, i) => {
-      const meta = PLATFORM_META[pid] || { icon: pid[0].toUpperCase(), name: pid };
-      const btn = document.createElement('button');
-      btn.className = 'tab' + (i === 0 ? ' active' : '');
-      btn.textContent = meta.name;
-      btn.onclick = () => showDraft(pid, btn);
-      tabContainer.appendChild(btn);
-    });
+  // Content previews
+  var previewsCard = document.getElementById('pub-previews-card');
+  var previewsList = document.getElementById('pub-previews-list');
+  if (previewsList && platformIds.length) {
+    if (previewsCard) previewsCard.style.display = '';
+    previewsList.innerHTML = platformIds.map(function(pid){
+      var meta = PLATFORM_META[pid] || { icon: pid[0].toUpperCase(), name: pid };
+      var d    = drafts[pid] || {};
+      var text = d.text || '';
+      return '<div class="pub-preview-item">'
+        + '<button class="pub-preview-header" onclick="togglePreview(\'' + pid + '\')">'
+        +   '<div class="pub-preview-hdr-icon">' + meta.icon + '</div>'
+        +   '<span class="pub-preview-hdr-name">' + meta.name + '</span>'
+        +   '<span class="pub-preview-chevron" id="pub-prev-chev-' + pid + '">›</span>'
+        + '</button>'
+        + '<div class="pub-preview-body" id="pub-prev-body-' + pid + '">'
+        +   '<div class="pub-preview-text">' + escHtmlPub(text) + '</div>'
+        +   '<button class="pub-copy-btn" onclick="copyPreviewText(\'' + pid + '\')">📋 Copy this copy</button>'
+        + '</div>'
+        + '</div>';
+    }).join('');
   }
-  const firstKey = Object.keys(drafts)[0];
-  if (firstKey) {
-    const firstBtn = document.querySelector('.tab');
-    showDraft(firstKey, firstBtn);
+
+  // Publish action sub-text
+  var actionSub = document.getElementById('pub-action-sub');
+  if (actionSub) {
+    if (manualCount > 0 && autoCount > 0) {
+      actionSub.textContent = autoCount + ' platform' + (autoCount > 1 ? 's' : '') + ' will auto-post. ' + manualCount + ' platform' + (manualCount > 1 ? 's' : '') + ' need' + (manualCount === 1 ? 's' : '') + ' a manual paste — copy-ready text is below.';
+    } else if (manualCount > 0) {
+      actionSub.textContent = 'These platforms need a manual paste — your copy is ready in the section below.';
+    } else {
+      actionSub.textContent = 'All ' + autoCount + ' platform' + (autoCount > 1 ? 's' : '') + ' will auto-post. No manual steps needed.';
+    }
   }
-  const autoCount   = Object.keys(drafts).filter(k => PLATFORM_META[k]?.capabilityLevel?.includes('auto')).length;
-  const manualCount = Object.keys(drafts).filter(k => PLATFORM_META[k]?.capabilityLevel === 'manual_assisted').length;
-  const approvalText = document.querySelector('.approval-text');
-  if (approvalText) {
-    approvalText.innerHTML = `<strong>${autoCount} platform${autoCount !== 1 ? 's' : ''} will auto-post.</strong> ${manualCount} platform${manualCount !== 1 ? 's' : ''} block third-party posting — your copy-ready text is waiting.`;
-  }
+
+  renderManualPanel();
+}
+
+function escHtmlPub(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/\n/g,'<br/>');
+}
+
+function renderManualPanel() {
+  var manualKeys = Object.keys(drafts).filter(function(k){
+    var m = PLATFORM_META[k];
+    return m && m.capabilityLevel === 'manual_assisted';
+  });
+  var panel = document.getElementById('manual-platform-list');
+  var section = document.getElementById('manual-panel');
+  if (!panel || !section) return;
+  if (!manualKeys.length) { section.classList.add('hidden'); return; }
+  section.classList.remove('hidden');
+  panel.innerHTML = manualKeys.map(function(k){
+    var meta = PLATFORM_META[k];
+    var d    = drafts[k] || {};
+    var text = [d.headline, d.text, d.cta].filter(Boolean).join('\n\n');
+    return '<div class="manual-card">'
+      + '<div class="manual-card-header">'
+      +   '<div style="display:flex;align-items:center;">'
+      +     '<div class="manual-icon">' + meta.icon + '</div>'
+      +     '<div><div class="manual-name">' + meta.name + '</div><div class="manual-mode">Copy-paste required</div></div>'
+      +   '</div>'
+      +   '<button onclick="copyPlatformText(\'' + k + '\')" class="copy-platform-btn">📋 Copy</button>'
+      + '</div>'
+      + '<textarea id="manual-text-' + k + '" readonly class="manual-textarea">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</textarea>'
+      + (meta.manualInstructions ? '<div class="manual-note mt-8">👉 ' + meta.manualInstructions + '</div>' : '')
+      + '</div>';
+  }).join('');
+}
+
+function copyPlatformText(key) {
+  var el = document.getElementById('manual-text-' + key);
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(function(){
+    showToast('📋 Copied — paste it into ' + (PLATFORM_META[key] ? PLATFORM_META[key].name : key));
+  });
+}
+
+function publishBlast() {
+  var keys = Object.keys(drafts);
+  if (!keys.length) { showToast('No platforms to publish'); return; }
+  window._firestoreApprove && window._firestoreApprove(keys);
 }
 </script>
 
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
-  if (!user) return; // auth-guard.js handles redirect
+  if (!user) return;
   window.currentUser = user;
 
   const userSnap = await getDoc(doc(db, 'users', user.uid));
   const userData = userSnap.exists() ? userSnap.data() : {};
   window.businessId = userData.activeBusiness || user.uid;
 
-  const params = new URLSearchParams(window.location.search);
+  const params    = new URLSearchParams(window.location.search);
   const draftIdParam = params.get('draftId');
 
   let draftData = null;
@@ -518,25 +423,17 @@ onAuthStateChanged(auth, async (user) => {
 
   if (draftData) {
     window.populateFromDraftData(draftData);
-    renderManualPanel();
+  } else {
+    // No draft — show placeholder state
+    const subEl = document.getElementById('pub-sub');
+    if (subEl) subEl.textContent = 'No draft found. Go back to the Create page and generate a blast first.';
+    const listEl = document.getElementById('pub-platform-list');
+    if (listEl) listEl.innerHTML = '<div style="font-size:14px;color:var(--muted,#888);padding:10px 0;">No draft loaded.</div>';
+    const publishBtn = document.getElementById('publish-btn');
+    if (publishBtn) { publishBtn.disabled = true; }
   }
 
-  const savedAutoSend = userData.autoSend || false;
-  if (savedAutoSend) { window.autoSendEnabled = false; toggleAutoSend(); }
-
-  window._saveAutoSendPref = async function(val) {
-    await setDoc(doc(db, 'users', user.uid), { autoSend: val }, { merge: true });
-  };
-
-  window._saveSchedule = async function(sched) {
-    const draftId = window.draftDocId;
-    if (!draftId) return;
-    await updateDoc(doc(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts', draftId), {
-      schedule: sched,
-      updatedAt: serverTimestamp(),
-    });
-  };
-
+  // Restore saved schedule
   if (draftData?.schedule) {
     const s = draftData.schedule;
     if (s.sendAt) document.getElementById('sched-date').value = s.sendAt;
@@ -545,48 +442,48 @@ onAuthStateChanged(auth, async (user) => {
     const saved   = document.getElementById('sched-saved');
     const summary = document.getElementById('sched-summary');
     const dt = new Date(s.sendAt).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
-    let txt = `First post: ${dt}`;
-    if (s.recur)     txt += ` · repeats ${s.recur}`;
-    if (s.stopAfter) txt += ` · stops after ${s.stopAfter} posts`;
+    let txt = 'First post: ' + dt;
+    if (s.recur)     txt += ' · repeats ' + s.recur;
+    if (s.stopAfter) txt += ' · stops after ' + s.stopAfter + ' posts';
     summary.textContent = txt;
     saved.classList.remove('hidden');
   }
 
-  window._firestoreSaveDraft = async function() {
-    const adaptations = {};
-    Object.entries(window.drafts).forEach(([pid, d]) => { adaptations[pid] = d.text; });
-    if (window.draftDocId) {
-      await updateDoc(doc(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts', window.draftDocId), { adaptations, updatedAt: serverTimestamp() });
-    }
+  window._saveSchedule = async function(sched) {
+    const draftId = window.draftDocId;
+    if (!draftId) return;
+    await updateDoc(doc(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts', draftId), {
+      schedule:  sched,
+      updatedAt: serverTimestamp(),
+    });
   };
 
   window._firestoreApprove = async function(platformKeys) {
-    const btn = document.querySelector('.btn-primary[onclick="approveAll()"]');
-    if (btn) { btn.disabled = true; btn.textContent = 'Approving…'; }
+    const btn = document.getElementById('publish-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Publishing…'; }
     try {
       let draftId = window.draftDocId;
       if (!draftId) {
-        const newRef = doc(collection(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts'));
         const adaptations = {};
         Object.entries(window.drafts).forEach(([pid, d]) => { adaptations[pid] = d.text; });
-        await setDoc(newRef, {
-          uid: user.uid,
-          businessId: window.businessId,
+        const newRef = await addDoc(collection(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts'), {
+          uid:          user.uid,
+          businessId:   window.businessId,
           adaptations,
-          status: 'draft',
-          createdAt: serverTimestamp(),
+          status:       'draft',
+          createdAt:    serverTimestamp(),
         });
         draftId = newRef.id;
         window.draftDocId = draftId;
       }
       const platforms = platformKeys.map(pid => {
         const meta  = window.PLATFORM_META[pid] || {};
-        const draft = window.drafts[pid] || {};
+        const draft = window.drafts[pid]  || {};
         return {
-          id: pid,
-          name: meta.name || pid,
-          capabilityLevel: meta.capabilityLevel || 'manual_assisted',
-          adaptedContent: draft.text || '',
+          id:                 pid,
+          name:               meta.name              || pid,
+          capabilityLevel:    meta.capabilityLevel   || 'manual_assisted',
+          adaptedContent:     draft.text             || '',
           manualInstructions: meta.manualInstructions || '',
         };
       });
@@ -594,21 +491,22 @@ onAuthStateChanged(auth, async (user) => {
       const resp = await fetch(
         'https://us-central1-blastybiz-9523e.cloudfunctions.net/approveDraft',
         {
-          method: 'POST',
+          method:  'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-          body: JSON.stringify({ draftId, businessId: window.businessId, platforms }),
+          body:    JSON.stringify({ draftId, businessId: window.businessId, platforms }),
         }
       );
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
         throw new Error(err.error || 'Approval failed (' + resp.status + ')');
       }
-      if (btn) { btn.textContent = 'Approved!'; }
+      if (btn) btn.textContent = '✅ Published!';
       window.location.href = `BlastyBiz-Publishing-Status.html?draftId=${draftId}`;
     } catch(e) {
-      console.error('approveDraft error:', e);
-      if (btn) { btn.disabled = false; btn.textContent = 'Approve & Continue'; }
-      alert('Error approving draft: ' + e.message);
+      console.error('publishBlast error:', e);
+      if (btn) { btn.disabled = false; btn.textContent = '🚀 Publish Blast'; }
+      const warn = document.getElementById('pub-warn');
+      if (warn) { warn.textContent = '⚠️ Error publishing: ' + e.message; warn.classList.remove('hidden'); }
     }
   };
 });
