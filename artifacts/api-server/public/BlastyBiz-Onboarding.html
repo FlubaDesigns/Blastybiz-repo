@@ -1011,7 +1011,29 @@ let currentUser = null;
 // AUTO-SAVE (localStorage draft)
 // ══════════════════════════════════════════
 const _isNew = () => new URLSearchParams(window.location.search).get('new') === '1';
-const _draftKey = () => currentUser ? `bb_draft_${_isNew() ? 'new_' : ''}${currentUser.uid}` : null;
+
+// Each new-business onboarding session gets a unique ID so two simultaneous
+// tabs never overwrite each other's draft data (F13).
+function _getOnboardingSessionId() {
+  if (!_isNew()) return null;
+  const params = new URLSearchParams(window.location.search);
+  let sid = params.get('sid');
+  if (!sid) {
+    sid = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)).slice(0, 12);
+    params.set('sid', sid);
+    history.replaceState(null, '', '?' + params.toString());
+  }
+  return sid;
+}
+
+const _draftKey = () => {
+  if (!currentUser) return null;
+  if (_isNew()) {
+    const sid = _getOnboardingSessionId();
+    return sid ? `bb_draft_new_${currentUser.uid}_${sid}` : `bb_draft_new_${currentUser.uid}`;
+  }
+  return `bb_draft_${currentUser.uid}`;
+};
 let _saveTimer = null;
 
 function _showDraftStatus(msg) {
@@ -1059,7 +1081,17 @@ function _doSave() {
     _showDraftStatus('Draft saved ✓');
     const delBtn = document.getElementById('btn-delete-draft');
     if (delBtn) delBtn.style.display = 'block';
-  } catch(e) { /* storage full or private mode — silent */ }
+  } catch(e) {
+    // Storage full or private mode — show a visible, non-blocking warning (F14)
+    const statusEl = document.getElementById('draft-status');
+    if (statusEl) {
+      statusEl.textContent = '⚠️ Draft not saved — storage full or private mode';
+      statusEl.style.opacity = '1';
+      statusEl.style.color = '#e57373';
+      clearTimeout(statusEl._fadeTimer);
+      statusEl._fadeTimer = setTimeout(() => { statusEl.style.opacity = '0'; statusEl.style.color = ''; }, 5000);
+    }
+  }
 }
 
 function _scheduleAutoSave() {
@@ -1107,9 +1139,26 @@ function _restoreDraft() {
 
   if (draft.step && draft.step > 1 && typeof goToStep === 'function') {
     setTimeout(() => {
+      // F15: Re-fire change/input events on all step-1 fields so the wizard
+      // recomputes derived state (category, validation, etc.) before navigating
+      document.querySelectorAll('#slide-1 input, #slide-1 select, #slide-1 textarea').forEach(function(el) {
+        el.dispatchEvent(new Event('input',  { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      // Re-sync location-type toggle buttons (classes may not have been applied yet)
+      document.querySelectorAll('[data-loctype]').forEach(function(btn) {
+        btn.classList.toggle('selected', btn.dataset.loctype === (window._onboardingLocType || 'physical'));
+        btn.classList.toggle('active',   btn.dataset.loctype === (window._onboardingLocType || 'physical'));
+      });
+      // Re-sync day-picker toggle buttons
+      document.querySelectorAll('[data-day]').forEach(function(btn) {
+        const isOn = (window.selectedDays || []).includes(btn.dataset.day);
+        btn.classList.toggle('selected', isOn);
+        btn.classList.toggle('active',   isOn);
+      });
       goToStep(draft.step);
       _showDraftStatus('Draft restored ✓');
-    }, 200);
+    }, 300);
   }
 }
 

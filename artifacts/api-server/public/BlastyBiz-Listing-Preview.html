@@ -259,6 +259,7 @@ function copyPreviewText(pid) {
 
 function populateFromDraftData(draftData) {
   currentDraftData = draftData;
+  window._draftRevision = draftData.revision || 0; // F8: track revision for stale-publish guard
   var adaptations = draftData.adaptations || {};
   Object.entries(adaptations).forEach(function(entry){
     var pid = entry[0], text = entry[1];
@@ -471,29 +472,34 @@ onAuthStateChanged(auth, async (user) => {
           businessId:   window.businessId,
           adaptations,
           status:       'draft',
+          revision:     0,
           createdAt:    serverTimestamp(),
         });
         draftId = newRef.id;
         window.draftDocId = draftId;
+        window._draftRevision = 0;
       }
-      const platforms = platformKeys.map(pid => {
-        const meta  = window.PLATFORM_META[pid] || {};
-        const draft = window.drafts[pid]  || {};
-        return {
-          id:                 pid,
-          name:               meta.name              || pid,
-          capabilityLevel:    meta.capabilityLevel   || 'manual_assisted',
-          adaptedContent:     draft.text             || '',
-          manualInstructions: meta.manualInstructions || '',
-        };
-      });
+
+      // F8: Stale-revision guard — re-fetch draft to catch any re-generations since page load
+      const freshSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts', draftId));
+      if (freshSnap.exists()) {
+        const freshRev = freshSnap.data().revision || 0;
+        if (freshRev !== (window._draftRevision || 0)) {
+          if (btn) { btn.disabled = false; btn.textContent = '🚀 Publish Blast'; }
+          const warn = document.getElementById('pub-warn');
+          if (warn) { warn.textContent = '⚠️ This blast was updated after you opened this page — the copy may have changed. Please go back and re-review before publishing.'; warn.classList.remove('hidden'); }
+          return;
+        }
+      }
+
+      // F9: Send only platformKeys — the CF reads adaptations from Firestore (don't trust client)
       const idToken = await user.getIdToken();
       const resp = await fetch(
         'https://us-central1-blastybiz-9523e.cloudfunctions.net/approveDraft',
         {
           method:  'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-          body:    JSON.stringify({ draftId, businessId: window.businessId, platforms }),
+          body:    JSON.stringify({ draftId, businessId: window.businessId, platformKeys }),
         }
       );
       if (!resp.ok) {

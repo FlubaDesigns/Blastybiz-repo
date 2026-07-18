@@ -893,7 +893,11 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
   let decoded;
   try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
 
-  const { draftId, businessId, platforms } = req.body;
+  const { draftId, businessId, platforms: legacyPlatforms, platformKeys } = req.body;
+  // Accept new platformKeys (array of IDs) or fall back to legacy platforms array
+  const platformIds = Array.isArray(platformKeys) && platformKeys.length > 0
+    ? platformKeys
+    : (Array.isArray(legacyPlatforms) ? legacyPlatforms.map(p => p.id) : []);
   const uid = decoded.uid;
 
   // Ownership verification — both draftId and businessId must belong to the caller
@@ -916,33 +920,57 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
   } catch(e) { console.warn('approveDraft: users read failed, defaulting to starter:', e.message); }
   const isStarter = userPlan === 'starter';
 
+  // F9: Server-side capability map — never trust client-supplied capabilityLevel or adaptedContent
+  const PLATFORM_CAPABILITY_MAP = {
+    google:     { name: 'Google Business Profile', capabilityLevel: 'full_auto',       manualInstructions: '' },
+    facebook:   { name: 'Facebook Page',           capabilityLevel: 'partial_auto',    manualInstructions: '' },
+    instagram:  { name: 'Instagram',               capabilityLevel: 'partial_auto',    manualInstructions: '' },
+    bing:       { name: 'Bing Places',             capabilityLevel: 'manual_assisted', manualInstructions: 'Go to bingplaces.com → sign in → add or edit listing → paste your text.' },
+    applemaps:  { name: 'Apple Maps',              capabilityLevel: 'partial_auto',    manualInstructions: '' },
+    yelp:       { name: 'Yelp',                    capabilityLevel: 'partial_auto',    manualInstructions: '' },
+    nextdoor:   { name: 'Nextdoor',                capabilityLevel: 'manual_assisted', manualInstructions: 'Go to nextdoor.com → Post → For Sale & Free → paste your listing.' },
+    craigslist: { name: 'Craigslist',              capabilityLevel: 'manual_assisted', manualInstructions: 'Go to craigslist.org → your city → Services → paste your listing.' },
+    fbmarket:   { name: 'FB Marketplace',          capabilityLevel: 'manual_assisted', manualInstructions: 'Go to facebook.com/marketplace → Create listing → paste your text.' },
+    alignable:  { name: 'Alignable',               capabilityLevel: 'partial_auto',    manualInstructions: '' },
+    thumbtack:  { name: 'Thumbtack',               capabilityLevel: 'partial_auto',    manualInstructions: '' },
+    angi:       { name: 'Angi',                    capabilityLevel: 'partial_auto',    manualInstructions: '' },
+    linkedin:   { name: 'LinkedIn',                capabilityLevel: 'partial_auto',    manualInstructions: '' },
+    x:          { name: 'X (Twitter)',             capabilityLevel: 'partial_auto',    manualInstructions: '' },
+    pinterest:  { name: 'Pinterest',               capabilityLevel: 'partial_auto',    manualInstructions: '' },
+  };
+
+  // Read adaptations from Firestore — never trust client-supplied copy
+  const draftAdaptations = draftSnap.data().adaptations || {};
+
   const batch = db.batch();
 
   batch.update(userBizDraftsRef(uid, businessId).doc(draftId), {
     status: 'approved', approvedAt: admin.firestore.FieldValue.serverTimestamp()
   });
 
-  platforms.forEach(platform => {
+  platformIds.forEach(pid => {
+    const cap = PLATFORM_CAPABILITY_MAP[pid] || { name: pid, capabilityLevel: 'manual_assisted', manualInstructions: '' };
+    const adaptedContent = draftAdaptations[pid] || '';
     const jobRef = userBizJobsRef(uid, businessId).doc();
-    const isNativelyManual = ['manual_assisted', 'unsupported'].includes(platform.capabilityLevel);
+    const isNativelyManual = ['manual_assisted', 'unsupported'].includes(cap.capabilityLevel);
     const isManual = isNativelyManual || isStarter;
     const starterBlocked = isStarter && !isNativelyManual;
     batch.set(jobRef, {
       jobId: jobRef.id, businessId, uid, draftId,
-      platform: platform.id,
-      capabilityLevel: platform.capabilityLevel,
+      platform: pid,
+      capabilityLevel: cap.capabilityLevel,
       jobType: 'publish_listing',
       status: isManual ? 'manual_required' : 'pending',
       attempts: 0, maxAttempts: 3,
       customerLabel: isManual ? 'Action needed' : 'Waiting to publish',
       customerVisibleMessage: starterBlocked
-        ? `Upgrade to Pro to auto-post to ${platform.name}. Your content is ready — copy it below.`
+        ? `Upgrade to Pro to auto-post to ${cap.name}. Your content is ready — copy it below.`
         : isManual
-          ? `Your ${platform.name} listing is ready — you need to post it manually.`
-          : `Your ${platform.name} listing is waiting to publish.`,
+          ? `Your ${cap.name} listing is ready — you need to post it manually.`
+          : `Your ${cap.name} listing is waiting to publish.`,
       planGated: starterBlocked,
-      manualInstructions: platform.manualInstructions || '',
-      adminError: '', payload: { adaptedContent: platform.adaptedContent || '' },
+      manualInstructions: cap.manualInstructions,
+      adminError: '', payload: { adaptedContent },
       apiResponse: {}, customerNotified: false,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()

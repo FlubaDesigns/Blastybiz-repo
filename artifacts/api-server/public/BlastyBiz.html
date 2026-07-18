@@ -2186,45 +2186,13 @@ async function runAdaptation() {
     rules: PLATFORM_RULES[p.id] || {}
   }));
 
-  const prompt = `You are a business marketing expert. Adapt the following business listing for each platform listed. Return ONLY a valid JSON object — no markdown, no explanation, no backticks.
-BUSINESS INFO:
-- Name: ${name || 'not provided'}
-- Category: ${category || 'General'}
-- Campaign: ${activeCampaignName || 'Uncategorized'}
-- Ad: ${adName || offer}
-- Description: ${offer}
-- Price/Range: ${price || 'not specified'}
-- Phone: ${phone || 'not provided'}
-- Email: ${email || 'not provided'}
-- Location type: ${effLocType === 'online' ? 'Online only' + (region ? ' — serves: ' + region : '') : effLocType === 'both' ? 'Brick & online' + (address ? ' — ' + address : '') + (region ? ' — also serves: ' + region : '') : 'Physical location — ' + (address || 'not provided')}
-- Website: ${website || 'none'}
-- Hours: ${hours || 'not provided'}
-- Images attached: ${(window._bbPhotoItems||[]).filter(p=>p.done).length > 0 ? (window._bbPhotoItems||[]).filter(p=>p.done).length + ' photo(s)' + (window._bbSelectedPhotoIndex !== null ? ' — featured: ' + (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || 'selected') : '') : 'none'}
-- Preferred tone: ${tone}
-${includeName || includeRole ? `- Owner/contact to mention in copy: ${[includeName ? profile.ownerName : null, includeRole ? (profile.ownerRole === 'manager' ? 'Manager' : profile.ownerRole === 'other' ? profile.ownerRole : 'Owner') : null].filter(Boolean).join(', ')}` : ''}
-${bizInsights.filter(i=>i.answer).length ? '\n⚠️ OWNER-PROVIDED FACTS — MANDATORY. The owner answered these questions so their copy is never generic. You MUST reference these details directly and specifically in the copy. Do NOT write filler when real facts are available:\n' + bizInsights.filter(i=>i.answer).map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(window._globalFactoids||[]).length ? '\n⚠️ GLOBAL BUSINESS FACTS — Always true about this business. Reference naturally where relevant:\n' + (window._globalFactoids||[]).map(f=>`- ${f.text}`).join('\n') : ''}${((campaigns.find(c=>c.id===activeCampaignId)||{}).factoids||[]).length ? '\n⚠️ CAMPAIGN-SPECIFIC FACTS — Specific to this campaign. Work these in:\n' + ((campaigns.find(c=>c.id===activeCampaignId)||{}).factoids||[]).map(f=>`- ${f.text}`).join('\n') : ''}
-PLATFORMS TO ADAPT FOR:
-${platformList.map(p => `- ${p.id}: ${p.name} (${p.type === 'api' ? 'auto-post' : 'copy-paste'})${p.rules.maxChars ? ', max ' + p.rules.maxChars + ' chars' : ''}${p.rules.notes ? ', note: ' + p.rules.notes : ''}`).join('\n')}
+  // F11: Client-side prompt string removed — the server (adaptListing CF) builds the prompt
+  // from the structured listing + platforms payload. Sending a client-built prompt is redundant
+  // and would bloat every request unnecessarily.
 
-RULES:
-- Each platform gets its own adapted version suited to that platform's audience and style
-- Google Business: professional, keyword-rich, include hours and contact
-- Facebook Business/Marketplace: friendly, engaging, emoji welcome, call to action
-- Instagram: punchy caption style, hashtags at end (max 5 relevant ones)
-- Nextdoor: warm, community-focused, neighborhood language
-- Craigslist: clear, direct, structured with sections
-- Yelp: descriptive, highlight what makes them special
-- Alignable: B2B professional networking tone
-- Thumbtack/Angi: service-focused, highlight expertise and reliability
-- Apple Maps: factual, complete business info
-
-Return this exact JSON structure:
-{
-  "adaptations": {
-    "PLATFORM_ID": "adapted text here",
-    "PLATFORM_ID2": "adapted text here"
-  }
-}`;
+  // F4: Generate a unique attempt ID before calling the AI so it can be stored alongside
+  // the draft for idempotency / audit purposes.
+  const generationAttemptId = crypto.randomUUID();
 
   try {
     document.getElementById('ai-loading-sub').textContent = `Adapting for ${enabledPlatforms.length} platform${enabledPlatforms.length > 1 ? 's' : ''}...`;
@@ -2254,11 +2222,11 @@ Return this exact JSON structure:
           libraryDocs: window._libraryDocs || [],
           businessId: window.activeBizId || '',
           campaignId: activeCampaignId || '',
-          requestId: crypto.randomUUID(),
         },
         platforms: enabledPlatforms,
         tone,
-        platformCats: profile.platformCats || {}
+        platformCats: profile.platformCats || {},
+        generationAttemptId,
       })
     });
 
@@ -3781,7 +3749,7 @@ import { auth, db, storage } from './firebase-init-v2.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   doc, getDoc, setDoc, addDoc, collection, serverTimestamp, writeBatch, deleteDoc,
-  query, where, getDocs, orderBy, limit, updateDoc, arrayUnion, arrayRemove
+  query, where, getDocs, orderBy, limit, updateDoc, arrayUnion, arrayRemove, increment
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import {
   ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject
@@ -4310,6 +4278,20 @@ window._afterAdaptation = async function(adaptedPlatforms) {
       adaptations[p.id] = p.adaptedContent.replace(/<br\/?>/gi, '\n');
     });
 
+    // F1: If a draft already exists for this blast, update it — never create a duplicate
+    const existingDraftId = window._currentDraftId;
+    if (existingDraftId) {
+      const ref = doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'listingDrafts', existingDraftId);
+      await updateDoc(ref, {
+        adaptations,
+        lastGeneratedAt: serverTimestamp(),
+        updatedAt:       serverTimestamp(),
+        revision:        increment(1),
+      });
+      return existingDraftId;
+    }
+
+    // First generation — create a new draft
     const draftData = {
       uid:          currentUser.uid,
       businessId:   activeBizId,
@@ -4328,6 +4310,8 @@ window._afterAdaptation = async function(adaptedPlatforms) {
       campaignId:   activeCampaignId || '',
       campaignName: activeCampaignName || '',
       status:       'draft',
+      revision:     0,
+      lastGeneratedAt: serverTimestamp(),
       createdAt:    serverTimestamp(),
       updatedAt:    serverTimestamp(),
     };
@@ -4349,13 +4333,12 @@ document.addEventListener('bb:savePlatforms', async (e) => {
     const batch = writeBatch(db);
     plats.forEach(p => {
       const ref = doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'platformConnections', p.id);
+      // F3: Only write connection-health fields — blast-specific enabled/status stay in listingDrafts
       batch.set(ref, {
         uid: currentUser.uid,
         businessId: activeBizId,
         platform: p.id,
         platformName: p.name,
-        enabled: !!p.enabled,
-        status: p.status || 'idle',
         updatedAt: serverTimestamp(),
       }, { merge: true });
     });
