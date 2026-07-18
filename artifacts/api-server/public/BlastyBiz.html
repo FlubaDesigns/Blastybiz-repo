@@ -244,6 +244,13 @@
             Continue: Add Photos →
           </button>
         </div>
+
+        <!-- Platform history for this campaign — hidden until history exists -->
+        <div class="card hidden" id="platform-history-card">
+          <div class="card-title">📋 Previous Blasts on These Platforms</div>
+          <div id="platform-history-list"></div>
+        </div>
+
         <div class="bottom-safe"></div>
 
       </div><!-- /campaign-content -->
@@ -2411,8 +2418,8 @@ function timeAgo(iso) {
 // ══════════════════════════════════════════
 function setLocationType(type) {
   locationType = type;
-  document.getElementById('loc-btn-physical').classList.toggle('active', type === 'physical');
-  document.getElementById('loc-btn-online').classList.toggle('active', type === 'online');
+  document.getElementById('loc-btn-physical')?.classList.toggle('active', type === 'physical');
+  document.getElementById('loc-btn-online')?.classList.toggle('active', type === 'online');
   document.getElementById('loc-physical-fields').style.display = type === 'physical' ? '' : 'none';
   document.getElementById('loc-online-fields').style.display   = type === 'online'   ? '' : 'none';
   saveDraft();
