@@ -1468,19 +1468,32 @@ async function regeneratePlatformCopy(pid) {
       : p);
     savePlatforms();
 
-    // Reset Looks Good button and status pill to Needs Review
-    const lgtmBtn = document.getElementById('step5-lgtm-' + pid);
-    if (lgtmBtn) { lgtmBtn.textContent = '✓ Looks Good'; lgtmBtn.classList.remove('approved'); delete lgtmBtn.dataset.saving; lgtmBtn.disabled = false; }
-    const pill = document.getElementById('step5-pill-' + pid);
-    if (pill) { pill.textContent = 'Needs Review'; pill.className = 'step5-status-pill needs-review'; }
-    updateStep5UI();
-
-    // Show image link if photo present
-    const imgEl = document.getElementById('qp-copy-img-' + pid);
-    if (imgEl && featuredPhotoUrl) {
-      imgEl.innerHTML = '🖼️ Image: <a href="' + escHtml(featuredPhotoUrl) + '" target="_blank" class="link-green">' + escHtml(featuredPhotoUrl) + '</a>';
-      imgEl.style.display = 'block';
+    // If the card was a no-copy layout (no Looks Good button), rebuild it now that copy exists.
+    // Also handles the normal case: reset Looks Good + pill to Needs Review.
+    const existingLgtm = document.getElementById('step5-lgtm-' + pid);
+    const oldCard = document.getElementById('step5-card-' + pid);
+    if (!existingLgtm && oldCard) {
+      // No-copy card → rebuild to editable copy card
+      const updatedPlatform = platforms.find(p => p.id === pid);
+      if (updatedPlatform) {
+        const wasVisible = oldCard.style.display !== 'none';
+        const newCard = buildStep5Card(updatedPlatform);
+        if (!wasVisible) newCard.style.display = 'none';
+        oldCard.parentNode.replaceChild(newCard, oldCard);
+      }
+    } else {
+      // Already had copy — just reset the Looks Good button + pill
+      if (existingLgtm) { existingLgtm.textContent = '✓ Looks Good'; existingLgtm.classList.remove('approved'); delete existingLgtm.dataset.saving; existingLgtm.disabled = false; }
+      const pill = document.getElementById('step5-pill-' + pid);
+      if (pill) { pill.textContent = 'Needs Review'; pill.className = 'step5-status-pill needs-review'; }
+      // Show image link if photo present
+      const imgEl = document.getElementById('qp-copy-img-' + pid);
+      if (imgEl && featuredPhotoUrl) {
+        imgEl.innerHTML = '🖼️ Image: <a href="' + escHtml(featuredPhotoUrl) + '" target="_blank" class="link-green">' + escHtml(featuredPhotoUrl) + '</a>';
+        imgEl.style.display = 'block';
+      }
     }
+    updateStep5UI();
 
     // Update canonical Firestore draft with regenerated content
     const draftId = window._currentDraftId;
@@ -1494,8 +1507,11 @@ async function regeneratePlatformCopy(pid) {
     console.error('regeneratePlatformCopy error:', err);
     showToast('❌ Regenerate failed — try again');
   } finally {
-    if (regenBtn) { regenBtn.disabled = false; regenBtn.textContent = '🔄 Regenerate'; }
-    copyTextEl.style.opacity = '1';
+    // Use fresh element refs — card may have been rebuilt
+    const freshRegenBtn = document.getElementById('qp-regen-' + pid);
+    if (freshRegenBtn) { freshRegenBtn.disabled = false; freshRegenBtn.textContent = '🔄 Regenerate'; }
+    const freshCopyEl = document.getElementById('qp-copy-text-' + pid);
+    if (freshCopyEl) freshCopyEl.style.opacity = '1';
   }
 }
 
@@ -2255,6 +2271,9 @@ Return this exact JSON structure:
           // Still allow navigation — warn but don't hard-block
           if (_reviewOutputBtn) _reviewOutputBtn.disabled = false;
         });
+    } else {
+      // Firebase module not ready — don't leave button permanently disabled
+      if (_reviewOutputBtn) _reviewOutputBtn.disabled = false;
     }
 
     // Write platformHistory to active campaign
