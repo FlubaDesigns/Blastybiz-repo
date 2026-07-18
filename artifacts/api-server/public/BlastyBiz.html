@@ -125,7 +125,7 @@
 
     <!-- Wizard header: step label + progress bar + dots -->
     <div class="create-wiz-header">
-      <div class="create-wiz-label" id="create-wiz-label">Step 1 of 3 — Your Blast</div>
+      <div class="create-wiz-label" id="create-wiz-label">Step 1 of 5 — Your Blast</div>
     </div>
     <div class="create-progress-track">
       <div class="create-progress-fill" id="create-progress-fill" style="width:20%"></div>
@@ -674,8 +674,8 @@
       <!-- REVIEW TOGGLE -->
       <div class="sched-review-row">
         <div>
-          <div class="sched-label">Review before posting</div>
-          <div class="sched-sublabel">AI drafts land in a queue — you approve before anything goes live</div>
+          <div class="sched-label">Require approval for future scheduled posts</div>
+          <div class="sched-sublabel">AI drafts for recurring auto-posts land in a queue — you approve before they go live. This does not affect the blast you are creating now.</div>
         </div>
         <label class="sched-toggle-wrap sched-toggle-ml">
           <input type="checkbox" id="sched-review" onchange="toggleSchedReview()" />
@@ -1212,69 +1212,82 @@ async function saveCopyToLibrary(pid) {
   }
 }
 
-async function acceptPlatformCopy(pid) {
+async function approvePlatformCopy(pid) {
   const el = document.getElementById('qp-copy-text-' + pid);
-  const btn = document.getElementById('qp-accept-' + pid);
-  const plan = window._bbUserPlan || 'starter';
+  const copy = (el?.innerText || el?.textContent || '').replace(/[ \t]+/g, ' ').trim();
+  if (!copy) { showToast('Copy cannot be blank — edit it first'); return; }
 
-  // No copy yet — different message depending on plan
-  if (!el || !el.textContent.trim()) {
-    if (plan === 'starter') {
-      showToast('⚡ Generate copy first — upgrade to Pro to save it to your library');
-    } else {
-      showToast('Generate AI copy first, then accept it');
+  // Guard against double-click
+  const lgtmBtn = document.getElementById('step5-lgtm-' + pid);
+  if (lgtmBtn && lgtmBtn.dataset.saving === '1') return;
+  if (lgtmBtn) { lgtmBtn.dataset.saving = '1'; lgtmBtn.disabled = true; lgtmBtn.textContent = '⏳ Saving…'; }
+
+  // 1. Write edited text into in-memory state
+  const normalized = copy.replace(/\n/g, '<br/>');
+  platforms = platforms.map(p => p.id === pid
+    ? { ...p, adaptedContent: normalized, _reviewStatus: 'approved' }
+    : p);
+  savePlatforms();
+
+  // 2. Persist to Firestore draft — must succeed before advancing
+  const draftId = window._currentDraftId;
+  if (draftId && window._bbUpdateDraft) {
+    try {
+      const adaptKey = 'adaptations.' + pid;
+      await window._bbUpdateDraft(draftId, { [adaptKey]: copy });
+    } catch(e) {
+      showToast('⚠️ Could not save draft — try again');
+      platforms = platforms.map(p => p.id === pid
+        ? { ...p, _reviewStatus: undefined }
+        : p);
+      if (lgtmBtn) { delete lgtmBtn.dataset.saving; lgtmBtn.disabled = false; lgtmBtn.textContent = '✓ Looks Good'; }
+      return;
     }
-    return;
   }
 
-  // Starter — nudge upgrade
-  if (plan === 'starter') {
-    showToast('💾 Accept & save to library is a Pro & Agency feature — tap Upgrade to unlock');
-    return;
-  }
-
-  // Already accepted
-  if (btn && btn.dataset.accepted === '1') {
-    showToast('Already saved to library');
-    return;
-  }
-
-  // Pro / Agency — save to library and lock the button
-  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
-
-  const platform = platforms.find(p => p.id === pid);
-  const copy    = el.textContent.trim();
-  const offer   = document.getElementById('biz-offer')?.value?.trim() || '';
-  const adName  = document.getElementById('biz-ad-name')?.value?.trim() || '';
-  const tone    = profile.tone || 'friendly';
-
-  try {
-    if (!window._bbSaveLibraryItem) throw new Error('Library not ready');
-    await window._bbSaveLibraryItem({
+  // 3. Archive to Copy Library for Pro/Agency — non-blocking, failure warns but doesn't block approval
+  const plan = window._bbUserPlan || 'starter';
+  if ((plan === 'pro' || plan === 'agency') && window._bbSaveLibraryItem) {
+    const platform = platforms.find(p => p.id === pid);
+    const offer  = document.getElementById('biz-offer')?.value?.trim() || '';
+    const adName = document.getElementById('biz-ad-name')?.value?.trim() || '';
+    const tone   = profile.tone || 'friendly';
+    window._bbSaveLibraryItem({
       platformId:   pid,
       platformName: platform ? platform.name : pid,
       copy,
       campaignId:   activeCampaignId,
       campaignName: activeCampaignName,
-      adName,
-      offer,
-      tone,
+      adName, offer, tone,
       savedAt: new Date().toISOString(),
-    });
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = '✅ Accepted';
-      btn.style.background = 'transparent';
-      btn.style.border = '1px solid var(--green)';
-      btn.style.color = 'var(--green)';
-      btn.style.fontWeight = '600';
-      btn.dataset.accepted = '1';
-    }
-    showToast('✅ Accepted & saved to library');
-  } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = '✅ Accept'; }
-    showToast('❌ Save failed: ' + (e.message || 'unknown'));
+    }).catch(() => showToast('⚠️ Library archive failed — copy is approved'));
   }
+
+  // 4. Update pill + button
+  const pill = document.getElementById('step5-pill-' + pid);
+  if (pill) { pill.textContent = '✓ Approved'; pill.className = 'step5-status-pill approved'; }
+  if (lgtmBtn) { delete lgtmBtn.dataset.saving; lgtmBtn.disabled = false; lgtmBtn.textContent = '✓ Approved'; lgtmBtn.classList.add('approved'); }
+  updateStep5UI();
+
+  // 5. Advance to next unresolved platform
+  const enabled = getStep5Platforms();
+  const nextIdx = enabled.findIndex((p, i) => i > _step5PlatIdx && p._reviewStatus !== 'approved' && p._reviewStatus !== 'skipped');
+  if (nextIdx !== -1) setTimeout(() => step5GoTo(nextIdx), 350);
+}
+
+function excludePlatform(pid) {
+  const name = platforms.find(p => p.id === pid)?.name || pid;
+  platforms = platforms.map(p => p.id === pid
+    ? { ...p, _reviewStatus: 'skipped' }
+    : p);
+  savePlatforms();
+  const pill = document.getElementById('step5-pill-' + pid);
+  if (pill) { pill.textContent = '— Skipped'; pill.className = 'step5-status-pill'; }
+  updateStep5UI();
+  const enabled = getStep5Platforms();
+  const nextIdx = enabled.findIndex((p, i) => i > _step5PlatIdx && p._reviewStatus !== 'approved' && p._reviewStatus !== 'skipped');
+  if (nextIdx !== -1) setTimeout(() => step5GoTo(nextIdx), 350);
+  showToast('"' + name + '" excluded from this blast');
 }
 
 async function openLibraryModal() {
@@ -1449,9 +1462,18 @@ async function regeneratePlatformCopy(pid) {
     // Update in place
     copyTextEl.textContent = newText;
 
-    // Update platforms array + save
-    platforms = platforms.map(p => p.id === pid ? { ...p, adaptedContent: newText, status: 'ready' } : p);
+    // Update platforms array + save; clear prior approval — regenerated copy invalidates it
+    platforms = platforms.map(p => p.id === pid
+      ? { ...p, adaptedContent: newText, status: 'ready', _reviewStatus: undefined }
+      : p);
     savePlatforms();
+
+    // Reset Looks Good button and status pill to Needs Review
+    const lgtmBtn = document.getElementById('step5-lgtm-' + pid);
+    if (lgtmBtn) { lgtmBtn.textContent = '✓ Looks Good'; lgtmBtn.classList.remove('approved'); delete lgtmBtn.dataset.saving; lgtmBtn.disabled = false; }
+    const pill = document.getElementById('step5-pill-' + pid);
+    if (pill) { pill.textContent = 'Needs Review'; pill.className = 'step5-status-pill needs-review'; }
+    updateStep5UI();
 
     // Show image link if photo present
     const imgEl = document.getElementById('qp-copy-img-' + pid);
@@ -1460,17 +1482,13 @@ async function regeneratePlatformCopy(pid) {
       imgEl.style.display = 'block';
     }
 
-    // Reset Accept button — new copy, needs fresh acceptance
-    const acceptBtn = document.getElementById('qp-accept-' + pid);
-    if (acceptBtn) {
-      acceptBtn.textContent = '✅ Accept';
-      acceptBtn.disabled = false;
-      acceptBtn.style.background = 'var(--green)';
-      acceptBtn.style.border = 'none';
-      acceptBtn.style.color = '#000';
-      acceptBtn.style.fontWeight = '700';
-      delete acceptBtn.dataset.accepted;
+    // Update canonical Firestore draft with regenerated content
+    const draftId = window._currentDraftId;
+    if (draftId && window._bbUpdateDraft) {
+      const adaptKey = 'adaptations.' + pid;
+      window._bbUpdateDraft(draftId, { [adaptKey]: newText }).catch(e => console.warn('Draft update after regen failed:', e));
     }
+
     showToast('✅ Copy regenerated for ' + platform.name);
   } catch (err) {
     console.error('regeneratePlatformCopy error:', err);
@@ -1798,7 +1816,6 @@ function buildStep5Card(p) {
     inner += '<div class="step5-copy-actions">'
       + '<button class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">🔄 Regenerate</button>'
       + '<button class="step5-action-btn" onclick="copyQpText(\'' + escHtml(p.id) + '\')">📋 Copy</button>'
-      + '<button class="step5-action-btn" id="qp-accept-' + p.id + '" onclick="acceptPlatformCopy(\'' + escHtml(p.id) + '\')">✅ Accept</button>'
       + '</div>'
       + '<div id="qp-copy-text-' + p.id + '" class="step5-copy-text" contenteditable="true">' + safeText + '</div>'
       + '<div id="qp-copy-img-' + p.id + '" class="qp-copy-img-note" style="margin:6px 0;"></div>'
@@ -1807,7 +1824,7 @@ function buildStep5Card(p) {
       +   '<div id="qp-photo-strip-' + p.id + '" class="qp-photo-strip"></div>'
       + '</div>'
       + '<div id="qp-share-' + p.id + '" class="qp-share-section" style="display:none;"></div>'
-      + '<button class="step5-looks-good-btn' + (p._reviewStatus === 'approved' ? ' approved' : '') + '" id="step5-lgtm-' + p.id + '" onclick="markPlatformReviewed(\'' + escHtml(p.id) + '\')">'
+      + '<button class="step5-looks-good-btn' + (p._reviewStatus === 'approved' ? ' approved' : '') + '" id="step5-lgtm-' + p.id + '" onclick="approvePlatformCopy(\'' + escHtml(p.id) + '\')">'
       +   (p._reviewStatus === 'approved' ? '✓ Approved' : '✓ Looks Good')
       + '</button>';
     if (!hasUrl) {
@@ -1820,23 +1837,15 @@ function buildStep5Card(p) {
         + '</div>';
     }
   } else {
-    const su = setup.signup || { url: PLATFORM_DEFAULT_URLS[p.id] || '#', label: 'Get Started →' };
-    const si = setup.signin || null;
-    const tip = escHtml(setup.tip || 'Set up your ' + p.name + ' account to start reaching more customers.');
     inner += '<div class="step5-setup-block">'
       + '<div class="step5-setup-title">⚠️ No copy generated</div>'
-      + '<div class="step5-setup-tip">' + tip + '</div>'
+      + '<div class="step5-setup-tip">AI didn\'t return copy for this platform. Retry generation or exclude it from this blast.</div>'
       + '<div class="step5-setup-btns">'
-      +   '<a href="' + escHtml(su.url) + '" target="_blank" rel="noopener" class="step5-setup-link signup">' + escHtml(su.label) + '</a>'
-      +   (si ? '<a href="' + escHtml(si.url) + '" target="_blank" rel="noopener" class="step5-setup-link signin">' + escHtml(si.label) + '</a>' : '')
-      + '</div>'
-      + '<div class="step5-url-row">'
-      +   '<input type="url" id="qp-url-input-' + p.id + '" class="step5-url-input" placeholder="' + urlHint + '" value="' + escHtml((window._bbPlatformUrls || {})[p.id] || '') + '" />'
-      +   '<button class="step5-url-save" onclick="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', document.getElementById(\'qp-url-input-' + p.id + '\').value.trim()); showToast(\'✓ Saved!\')">Save</button>'
+      +   '<button class="step5-action-btn" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">🔄 Retry Generation</button>'
+      +   '<button class="step5-action-btn" style="background:var(--muted,#888);color:#fff;" onclick="excludePlatform(\'' + escHtml(p.id) + '\')">✗ Exclude Platform</button>'
       + '</div>'
       + '</div>'
-      + '<div id="qp-copy-text-' + p.id + '" style="display:none;"></div>'
-      + '<button class="step5-looks-good-btn" style="margin-top:8px;" onclick="markPlatformReviewed(\'' + escHtml(p.id) + '\')">Skip → Next Platform</button>';
+      + '<div id="qp-copy-text-' + p.id + '" style="display:none;"></div>';
   }
   card.innerHTML = inner;
   return card;
@@ -1865,7 +1874,7 @@ function updateStep5UI() {
   if (prevBtn) prevBtn.disabled = cur <= 0;
   if (nextBtn) nextBtn.disabled = cur >= total - 1;
   const allDone = enabled.length > 0 && enabled.every(p =>
-    p._reviewStatus === 'approved' || p._reviewStatus === 'skipped' || !p.adaptedContent
+    p._reviewStatus === 'approved' || p._reviewStatus === 'skipped'
   );
   const finalBtn = document.getElementById('step5-final-btn');
   if (finalBtn) finalBtn.style.display = allDone ? 'flex' : 'none';
@@ -1886,17 +1895,7 @@ function step5GoTo(idx) {
 function step5Prev() { step5GoTo(_step5PlatIdx - 1); }
 function step5Next() { step5GoTo(_step5PlatIdx + 1); }
 
-function markPlatformReviewed(pid) {
-  platforms = platforms.map(p => p.id === pid ? { ...p, _reviewStatus: 'approved' } : p);
-  const pill = document.getElementById('step5-pill-' + pid);
-  if (pill) { pill.textContent = '✓ Approved'; pill.className = 'step5-status-pill approved'; }
-  const btn = document.getElementById('step5-lgtm-' + pid);
-  if (btn) { btn.textContent = '✓ Approved'; btn.classList.add('approved'); }
-  updateStep5UI();
-  const enabled = getStep5Platforms();
-  const nextIdx = enabled.findIndex((p, i) => i > _step5PlatIdx && p._reviewStatus !== 'approved');
-  if (nextIdx !== -1) setTimeout(() => step5GoTo(nextIdx), 350);
-}
+// markPlatformReviewed replaced by approvePlatformCopy above (Finding 1+2+12)
 
 function goToFinalReview() {
   const draftId = window._currentDraftId;
@@ -2234,25 +2233,28 @@ Return this exact JSON structure:
     const loadingSub2 = document.getElementById('ai-loading-sub');
     if (loadingSub2) loadingSub2.textContent = 'Done!';
 
-    // Show rewrite row + review button now that copy is ready
+    // Show rewrite row; disable review button until draft ID is confirmed (Finding 4)
     const _rewriteRow = document.getElementById('rewrite-row');
     if (_rewriteRow) _rewriteRow.classList.remove('hidden');
     const _reviewOutputBtn = document.getElementById('review-output-btn');
-    if (_reviewOutputBtn) _reviewOutputBtn.style.display = 'flex';
+    if (_reviewOutputBtn) { _reviewOutputBtn.style.display = 'flex'; _reviewOutputBtn.disabled = true; }
 
     if (window._afterAdaptation) {
       window._afterAdaptation(platforms)
         .then(() => {
           const draftId = window._currentDraftId;
-          if (!draftId) return;
-          if (_reviewOutputBtn) _reviewOutputBtn.href = 'BlastyBiz-Listing-Preview.html?draftId=' + draftId;
+          // Re-enable review button only after draft is confirmed saved
+          if (_reviewOutputBtn) _reviewOutputBtn.disabled = false;
           const _reviewListingsBtn = document.getElementById('review-listings-btn');
-          if (_reviewListingsBtn) {
-            _reviewListingsBtn.href = 'BlastyBiz-Listing-Preview.html?draftId=' + draftId;
+          if (_reviewListingsBtn && draftId) {
             _reviewListingsBtn.classList.add('visible');
           }
         })
-        .catch(err => console.warn('Draft save failed:', err));
+        .catch(err => {
+          console.warn('Draft save failed:', err);
+          // Still allow navigation — warn but don't hard-block
+          if (_reviewOutputBtn) _reviewOutputBtn.disabled = false;
+        });
     }
 
     // Write platformHistory to active campaign
@@ -2280,7 +2282,13 @@ Return this exact JSON structure:
       }
     }
 
-    showToast('✅ ' + enabledPlatforms.length + ' platform' + (enabledPlatforms.length > 1 ? 's' : '') + ' ready!');
+    const readyCount  = Object.keys(adaptations).filter(k => adaptations[k]).length;
+    const failedCount = enabledPlatforms.length - readyCount;
+    if (failedCount > 0) {
+      showToast('⚠️ ' + readyCount + ' ready, ' + failedCount + ' need retry');
+    } else {
+      showToast('✅ ' + readyCount + ' platform' + (readyCount !== 1 ? 's' : '') + ' ready!');
+    }
 
   } catch (err) {
     _completeAiProgress();
@@ -2321,7 +2329,7 @@ function clearAndStartOver() {
   const reviewBtn = document.getElementById('review-listings-btn');
   if (reviewBtn) { reviewBtn.classList.remove('visible'); reviewBtn.href = 'BlastyBiz-Listing-Preview.html'; }
   const reviewOutputBtn = document.getElementById('review-output-btn');
-  if (reviewOutputBtn) { reviewOutputBtn.style.display = 'none'; reviewOutputBtn.href = 'BlastyBiz-Listing-Preview.html'; }
+  if (reviewOutputBtn) { reviewOutputBtn.style.display = 'none'; reviewOutputBtn.disabled = false; }
 
   // Reset draft state
   draft = {};
@@ -2625,8 +2633,8 @@ function toggleSchedReview() {
   schedState.requireApproval = document.getElementById('sched-review').checked;
   saveSchedule();
   showToast(schedState.requireApproval
-    ? '📬 Review mode on — you\'ll approve posts before they go live'
-    : '⚡ Auto-posting on — posts will go straight out on schedule');
+    ? '📬 Future scheduled posts will queue for your approval'
+    : '⚡ Future scheduled posts will go straight out — no approval needed');
 }
 
 function setSchedFreq(f) {
@@ -4234,6 +4242,13 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 }); // authStateReady
+
+// Update an existing listingDraft document — used by approvePlatformCopy and regeneratePlatformCopy
+window._bbUpdateDraft = async function(draftId, updates) {
+  if (!currentUser || !activeBizId || !draftId) return;
+  const ref = doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'listingDrafts', draftId);
+  await updateDoc(ref, { ...updates, updatedAt: serverTimestamp() });
+};
 
 window._afterAdaptation = async function(adaptedPlatforms) {
   if (!currentUser) return;
