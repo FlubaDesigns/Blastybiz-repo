@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=58" />
+<link rel="stylesheet" href="global-style.css?v=59" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -25,6 +25,23 @@
 .ph-entry:last-child{margin-bottom:0;}
 .ph-entry-date{font-size:11px;color:var(--muted,#888);margin-bottom:4px;}
 .ph-entry-copy{font-size:12px;color:var(--light,#fff);line-height:1.5;white-space:pre-wrap;word-break:break-word;}
+/* ── Blast Creation Wizard ── */
+.create-wiz-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding-top:2px;}
+.create-wiz-label{font-size:11px;font-weight:700;color:var(--muted,#888);text-transform:uppercase;letter-spacing:0.09em;}
+.create-progress-track{height:3px;background:var(--border,#333);border-radius:2px;margin-bottom:10px;}
+.create-progress-fill{height:3px;background:var(--green,#39ff14);border-radius:2px;transition:width 0.3s ease;}
+.create-step-dots{display:flex;gap:8px;justify-content:center;margin-bottom:16px;}
+.cwiz-dot{width:7px;height:7px;border-radius:50%;background:var(--border,#333);transition:all 0.22s;flex-shrink:0;}
+.cwiz-dot.cwiz-done{background:rgba(57,255,20,0.35);}
+.cwiz-dot.cwiz-active{background:var(--green,#39ff14);width:20px;border-radius:4px;}
+.create-slide{display:none;}
+.create-slide.cwiz-active{display:block;}
+.create-wiz-nav{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+.create-wiz-back-btn{background:none;border:none;color:var(--muted,#888);font-size:14px;cursor:pointer;padding:12px 0;font-family:inherit;width:100%;text-align:center;}
+.create-wiz-back-btn:active{color:var(--light,#fff);}
+.about-you-toggle{width:100%;background:none;border:none;color:var(--light,#fff);font-size:14px;font-family:inherit;cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:0;}
+.about-you-chevron{font-size:18px;transition:transform 0.2s;color:var(--muted,#888);}
+.about-you-chevron.open{transform:rotate(90deg);}
 </style>
 <script type="module" src="./auth-guard.js"></script>
 <script src="blastybiz-menu.js?v=3"></script>
@@ -58,231 +75,273 @@
     <div id="pending-posts-list"></div>
   </div>
 
-  <div id="create-step-1">
+  <!-- ── BLAST CREATION WIZARD ── -->
+  <div class="create-wizard" id="create-wizard">
 
-  <!-- Hidden business fields — populated from profile, used by JS -->
-  <div class="hidden">
-    <input type="text" id="biz-name" oninput="saveDraft()" />
-    <select id="biz-category" onchange="saveDraft()"><option value="">Select a category...</option></select>
-    <input type="tel" id="biz-phone" oninput="saveDraft()" />
-    <input type="text" id="biz-address" oninput="saveDraft()" />
-    <input type="text" id="biz-region" oninput="saveDraft()" />
-    <input type="url" id="biz-website" oninput="saveDraft()" />
-    <input type="text" id="biz-hours" oninput="saveDraft()" />
-    <div id="loc-physical-fields"></div>
-    <div id="loc-online-fields"></div>
-  </div>
+    <!-- Wizard header: step label + progress bar + dots -->
+    <div class="create-wiz-header">
+      <div class="create-wiz-label" id="create-wiz-label">Step 1 of 3 — Your Blast</div>
+    </div>
+    <div class="create-progress-track">
+      <div class="create-progress-fill" id="create-progress-fill" style="width:33%"></div>
+    </div>
+    <div class="create-step-dots">
+      <span class="cwiz-dot cwiz-active" id="cwiz-dot-1"></span>
+      <span class="cwiz-dot" id="cwiz-dot-2"></span>
+      <span class="cwiz-dot" id="cwiz-dot-3"></span>
+    </div>
 
-  <div class="card">
-    <div class="card-title">📁 Campaign</div>
-    <p class="helper">Group your ads. Pick an existing campaign or create a new one.</p>
-    <div id="campaign-chips" class="chip-row">
-      <span class="chip-loading">Loading…</span>
-    </div>
-    <div id="campaign-library-row" class="mt-10 hidden">
-      <button onclick="openLibraryModal()" class="chip-green">
-        📚 <span></span> Library
-      </button>
-    </div>
-    <div id="new-campaign-row" class="mt-4 hidden">
-      <div class="flex-row mb-8">
-        <input type="text" id="new-campaign-input" placeholder="Campaign name (e.g. Christmas Sale, Grand Reopening)"
-          class="input-campaign"
-          onkeydown="if(event.key==='Enter'){openCampaignChat();}" />
+    <!-- ══ SLIDE 1: Campaign + Blast Info + Extra Facts ══ -->
+    <div class="create-slide cwiz-active" id="create-slide-1">
+
+      <!-- Hidden business fields — populated from profile, used by JS -->
+      <div class="hidden">
+        <input type="text" id="biz-name" oninput="saveDraft()" />
+        <select id="biz-category" onchange="saveDraft()"><option value="">Select a category...</option></select>
+        <input type="tel" id="biz-phone" oninput="saveDraft()" />
+        <input type="text" id="biz-address" oninput="saveDraft()" />
+        <input type="text" id="biz-region" oninput="saveDraft()" />
+        <input type="url" id="biz-website" oninput="saveDraft()" />
+        <input type="text" id="biz-hours" oninput="saveDraft()" />
+        <div id="loc-physical-fields"></div>
+        <div id="loc-online-fields"></div>
       </div>
-      <div style="font-size:13px;color:#4a7a52;margin-bottom:10px;">Enter a name above, then build your campaign brief with AI — or create it plain.</div>
-      <div class="flex-row" style="gap:8px;">
-        <button onclick="openCampaignChat()" class="btn-camp-save">✨ Build with AI</button>
-        <button onclick="saveNewCampaign()" class="btn-camp-cancel" style="font-size:13px;">Quick Create</button>
-        <button onclick="cancelNewCampaign()" class="btn-camp-cancel">Cancel</button>
-      </div>
-    </div>
-  </div>
 
-  <div id="campaign-content" class="hidden">
-
-  <div class="card">
-    <div class="card-title">🚀 Your Ad</div>
-
-    <label>Ad name</label>
-    <input type="text" id="biz-ad-name" placeholder="e.g. 50% off chocolate · Free consultation · Holiday special"
-      oninput="saveDraft();debounceCampaignSave()" class="mb-16" />
-
-    <label>What's the offer?</label>
-    <div class="char-wrap">
-      <textarea id="biz-offer" placeholder="e.g. 20% off all haircuts this Saturday only · Grand reopening next week · New menu just dropped — come try it..." oninput="countChars(this, 'offer-count', 500);debounceCampaignSave()" class="min-h-90"></textarea>
-      <span class="char-count" id="offer-count">0 / 500</span>
-    </div>
-
-    <label>Price <span class="optional">(optional)</span></label>
-    <input type="text" id="biz-price" placeholder="e.g. $25 · Free · Starting at $99" oninput="saveDraft();debounceCampaignSave()" class="max-w-260" />
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;min-height:22px">
-      <span id="ad-draft-status" style="font-size:12px;color:#4caf50;opacity:0;transition:opacity 0.4s"></span>
-      <button id="btn-discard-ad" onclick="discardAdDraft()" style="display:none;background:none;border:none;color:#e57373;font-size:12px;cursor:pointer;padding:0;text-decoration:underline">
-        × Discard this ad
-      </button>
-    </div>
-  </div>
-
-  <!-- ── ADD INFO — factoid panel ── -->
-  <div class="card card-flush" id="add-info-card">
-    <button onclick="toggleAddInfoPanel()" id="add-info-toggle-btn" class="teach-btn">
-      <div class="row gap-10">
-        <span class="teach-icon">📌</span>
-        <div>
-          <div class="teach-title">Extra Facts for AI <span id="add-info-scope-badge" class="tier-badge tier-badge--campaign">This Campaign</span></div>
-          <div class="teach-sub">Permanent facts the AI works into every generation — specific to this campaign or across all campaigns</div>
+      <!-- Campaign picker -->
+      <div class="card">
+        <div class="card-title">📁 Campaign</div>
+        <p class="helper">Group your ads. Pick an existing campaign or create a new one.</p>
+        <div id="campaign-chips" class="chip-row">
+          <span class="chip-loading">Loading…</span>
+        </div>
+        <div id="campaign-library-row" class="mt-10 hidden">
+          <button onclick="openLibraryModal()" class="chip-green">
+            📚 <span></span> Library
+          </button>
+        </div>
+        <div id="new-campaign-row" class="mt-4 hidden">
+          <div class="flex-row mb-8">
+            <input type="text" id="new-campaign-input" placeholder="Campaign name (e.g. Christmas Sale, Grand Reopening)"
+              class="input-campaign"
+              onkeydown="if(event.key==='Enter'){openCampaignChat();}" />
+          </div>
+          <div style="font-size:13px;color:#4a7a52;margin-bottom:10px;">Enter a name above, then build your campaign brief with AI — or create it plain.</div>
+          <div class="flex-row" style="gap:8px;">
+            <button onclick="openCampaignChat()" class="btn-camp-save">✨ Build with AI</button>
+            <button onclick="saveNewCampaign()" class="btn-camp-cancel" style="font-size:13px;">Quick Create</button>
+            <button onclick="cancelNewCampaign()" class="btn-camp-cancel">Cancel</button>
+          </div>
         </div>
       </div>
-      <span id="add-info-chevron" class="chevron">›</span>
-    </button>
-    <div id="add-info-panel" class="teach-inner hidden">
-      <div class="toggle-row mt-10">
-        <button onclick="setFactoidScope('campaign')" id="scope-btn-campaign" class="scope-btn active">📁 This Campaign</button>
-        <button onclick="setFactoidScope('global')" id="scope-btn-global" class="scope-btn">🌐 All Campaigns</button>
+
+      <!-- Campaign content — shown once a campaign is selected -->
+      <div id="campaign-content" class="hidden">
+
+        <div class="card">
+          <div class="card-title">🚀 Your Blast</div>
+
+          <label>Blast name</label>
+          <input type="text" id="biz-ad-name" placeholder="e.g. 50% off chocolate · Free consultation · Holiday special"
+            oninput="saveDraft();debounceCampaignSave()" class="mb-16" />
+
+          <label>What's the offer?</label>
+          <div class="char-wrap">
+            <textarea id="biz-offer" placeholder="e.g. 20% off all haircuts this Saturday only · Grand reopening next week · New menu just dropped — come try it..." oninput="countChars(this, 'offer-count', 500);debounceCampaignSave()" class="min-h-90"></textarea>
+            <span class="char-count" id="offer-count">0 / 500</span>
+          </div>
+
+          <label>Price <span class="optional">(optional)</span></label>
+          <input type="text" id="biz-price" placeholder="e.g. $25 · Free · Starting at $99" oninput="saveDraft();debounceCampaignSave()" class="max-w-260" />
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;min-height:22px">
+            <span id="ad-draft-status" style="font-size:12px;color:#4caf50;opacity:0;transition:opacity 0.4s"></span>
+            <button id="btn-discard-ad" onclick="discardAdDraft()" style="display:none;background:none;border:none;color:#e57373;font-size:12px;cursor:pointer;padding:0;text-decoration:underline">
+              × Discard this ad
+            </button>
+          </div>
+        </div>
+
+        <!-- Extra Facts for AI (collapsed accordion) -->
+        <div class="card card-flush" id="add-info-card">
+          <button onclick="toggleAddInfoPanel()" id="add-info-toggle-btn" class="teach-btn">
+            <div class="row gap-10">
+              <span class="teach-icon">📌</span>
+              <div>
+                <div class="teach-title">Extra Facts for AI <span id="add-info-scope-badge" class="tier-badge tier-badge--campaign">This Campaign</span></div>
+                <div class="teach-sub">Permanent facts the AI works into every generation — specific to this campaign or across all campaigns</div>
+              </div>
+            </div>
+            <span id="add-info-chevron" class="chevron">›</span>
+          </button>
+          <div id="add-info-panel" class="teach-inner hidden">
+            <div class="toggle-row mt-10">
+              <button onclick="setFactoidScope('campaign')" id="scope-btn-campaign" class="scope-btn active">📁 This Campaign</button>
+              <button onclick="setFactoidScope('global')" id="scope-btn-global" class="scope-btn">🌐 All Campaigns</button>
+            </div>
+            <textarea id="add-info-text" rows="3" class="textarea-naked mt-8"
+              placeholder="e.g. Our chocolate lab Biscuit greets every customer · We use zero artificial ingredients · Parking is free behind the building · Owner trained under a James Beard Award winner…"></textarea>
+            <div class="row mt-10 gap-8">
+              <button onclick="submitFactoid()" class="btn-save">Save Fact</button>
+            </div>
+            <div id="add-info-confirm" class="hidden" style="color:var(--green);font-size:13px;font-weight:600;margin-top:6px;">✓ Saved.</div>
+          </div>
+          <!-- hidden enrichment stubs so existing JS doesn't break -->
+          <div id="enrichment-questions" class="hidden"></div>
+          <span id="enrichment-badge" class="hidden"></span>
+          <button id="enrichment-more-btn" class="hidden"></button>
+        </div>
+
+        <!-- Slide 1 nav -->
+        <div class="create-wiz-nav">
+          <button class="btn btn-primary btn--adaptive" id="continue-btn" onclick="createWizNext(1)">
+            Continue: Add Photos →
+          </button>
+        </div>
+        <div class="bottom-safe"></div>
+
+      </div><!-- /campaign-content -->
+    </div><!-- /create-slide-1 -->
+
+    <!-- ══ SLIDE 2: Photos ══ -->
+    <div class="create-slide" id="create-slide-2">
+
+      <div class="card">
+        <div class="row-base-sb mb-4">
+          <div class="card-title mb-0">📷 Photos <span class="optional" style="font-size:12px;font-weight:400;color:var(--muted)">(optional)</span></div>
+          <span id="photo-cap-label" class="text-xs text-muted"></span>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <button id="scope-photo-campaign" class="chip active" onclick="setPhotoScope('campaign')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:var(--accent);color:#fff;font-size:12px;cursor:pointer;font-weight:600">Campaign</button>
+          <button id="scope-photo-global" class="chip" onclick="setPhotoScope('global')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:transparent;color:var(--light);font-size:12px;cursor:pointer">Global</button>
+        </div>
+        <p class="text-base text-muted mb-12" id="photo-scope-hint">Campaign photos are linked to the active campaign. Select a campaign above first.</p>
+        <div id="photo-upload-area" class="image-upload-area" onclick="document.getElementById('img-input').click()">
+          <input type="file" id="img-input" accept="image/*" multiple onchange="handleImages(event)" onclick="event.stopPropagation()" />
+          <div class="upload-icon">📸</div>
+          <div class="upload-text" id="photo-upload-text">Tap to add photos<br/><span>from your camera roll</span></div>
+        </div>
+        <div class="thumb-grid" id="thumb-grid"></div>
       </div>
-      <textarea id="add-info-text" rows="3" class="textarea-naked mt-8"
-        placeholder="e.g. Our chocolate lab Biscuit greets every customer · We use zero artificial ingredients · Parking is free behind the building · Owner trained under a James Beard Award winner…"></textarea>
-      <div class="row mt-10 gap-8">
-        <button onclick="submitFactoid()" class="btn-save">Save Fact</button>
+
+      <!-- Slide 2 nav -->
+      <div class="create-wiz-nav">
+        <button class="btn btn-primary btn--adaptive" onclick="createWizNext(2)">
+          Continue: Select Platforms →
+        </button>
+        <button class="create-wiz-back-btn" onclick="createWizPrev(2)">← Back to Blast Info</button>
       </div>
-      <div id="add-info-confirm" class="hidden" style="color:var(--green);font-size:13px;font-weight:600;margin-top:6px;">✓ Saved.</div>
-    </div>
-    <!-- hidden enrichment stubs so existing JS doesn't break -->
-    <div id="enrichment-questions" class="hidden"></div>
-    <span id="enrichment-badge" class="hidden"></span>
-    <button id="enrichment-more-btn" class="hidden"></button>
-  </div>
+      <div class="bottom-safe"></div>
+    </div><!-- /create-slide-2 -->
 
-  <!-- IMAGE UPLOAD -->
-  <div class="card">
-    <div class="row-base-sb mb-4">
-      <div class="card-title mb-0">📷 Photos</div>
-      <span id="photo-cap-label" class="text-xs text-muted"></span>
-    </div>
-    <div style="display:flex;gap:6px;margin-bottom:10px">
-      <button id="scope-photo-campaign" class="chip active" onclick="setPhotoScope('campaign')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:var(--accent);color:#fff;font-size:12px;cursor:pointer;font-weight:600">Campaign</button>
-      <button id="scope-photo-global" class="chip" onclick="setPhotoScope('global')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:transparent;color:var(--light);font-size:12px;cursor:pointer">Global</button>
-    </div>
-    <p class="text-base text-muted mb-12" id="photo-scope-hint">Campaign photos are linked to the active campaign. Select a campaign above first.</p>
-    <div id="photo-upload-area" class="image-upload-area" onclick="document.getElementById('img-input').click()">
-      <input type="file" id="img-input" accept="image/*" multiple onchange="handleImages(event)" onclick="event.stopPropagation()" />
-      <div class="upload-icon">📸</div>
-      <div class="upload-text" id="photo-upload-text">Tap to add photos<br/><span>from your camera roll</span></div>
-    </div>
-    <div class="thumb-grid" id="thumb-grid"></div>
-  </div>
+    <!-- ══ SLIDE 3: Platforms + Generate ══ -->
+    <div class="create-slide" id="create-slide-3">
 
-  <button class="btn btn-primary btn--adaptive mt-4" id="continue-btn" onclick="goToStep2()">
-    Continue to Platforms →
-  </button>
-  <div class="bottom-safe"></div>
-  </div><!-- /campaign-content -->
-
-  </div><!-- /create-step-1 -->
-
-  <!-- ── STEP 2: PLATFORM SELECT + AI ── -->
-  <div id="create-step-2" class="hidden">
-  <button class="step2-back" onclick="goToStep1()">← Back to your ad</button>
-
-  <!-- PLATFORM QUICK SELECT -->
-  <div class="card">
-    <div class="row-base-sb mb-12">
-      <div class="card-title mb-0">📡 Send To</div>
-      <button id="select-all-btn" onclick="toggleSelectAll()" class="chip-green" style="font-family:inherit;font-size:12px;">Select All</button>
-    </div>
-    <p class="helper">Select which platforms to target. AI will adapt your listing for each one.</p>
-
-    <div id="quick-platform-list">
-      <!-- populated by JS -->
-    </div>
-
-  </div>
-
-
-  <!-- ABOUT YOU IN COPY -->
-  <div class="card about-you-card hidden" id="about-you-card">
-    <div class="card-title mb-12">🪪 About You in Copy</div>
-    <div class="yn-row mb-12">
-      <span class="yn-label">
-        Mention my name
-        <span id="copy-name-preview" class="check-hint"></span>
-      </span>
-      <div class="yn-btns">
-        <button class="yn-btn yn-yes" id="yn-name-yes" onclick="setYN('name','yes')">Yes</button>
-        <button class="yn-btn yn-no yn-active" id="yn-name-no" onclick="setYN('name','no')">No</button>
+      <!-- Platform quick select -->
+      <div class="card">
+        <div class="row-base-sb mb-12">
+          <div class="card-title mb-0">📡 Send To</div>
+          <button id="select-all-btn" onclick="toggleSelectAll()" class="chip-green" style="font-family:inherit;font-size:12px;">Select All</button>
+        </div>
+        <p class="helper">Select which platforms to target. AI will adapt your listing for each one.</p>
+        <div id="quick-platform-list">
+          <!-- populated by JS -->
+        </div>
       </div>
-    </div>
-    <div class="yn-row mb-12">
-      <span class="yn-label">
-        Mention my role
-        <span id="copy-role-preview" class="check-hint"></span>
-      </span>
-      <div class="yn-btns">
-        <button class="yn-btn yn-yes" id="yn-role-yes" onclick="setYN('role','yes')">Yes</button>
-        <button class="yn-btn yn-no yn-active" id="yn-role-no" onclick="setYN('role','no')">No</button>
-      </div>
-    </div>
-    <div class="yn-row hidden" id="yn-address-row">
-      <span class="yn-label">Include address in copy</span>
-      <div class="yn-btns">
-        <button class="yn-btn yn-yes yn-active" id="yn-address-yes" onclick="setYN('address','yes')">Yes</button>
-        <button class="yn-btn yn-no" id="yn-address-no" onclick="setYN('address','no')">No</button>
-      </div>
-    </div>
-    <div class="yn-row hidden" id="yn-phone-row">
-      <span class="yn-label">Include phone in copy</span>
-      <div class="yn-btns">
-        <button class="yn-btn yn-yes yn-active" id="yn-phone-yes" onclick="setYN('phone','yes')">Yes</button>
-        <button class="yn-btn yn-no" id="yn-phone-no" onclick="setYN('phone','no')">No</button>
-      </div>
-    </div>
-    <div class="yn-row hidden" id="yn-email-row">
-      <span class="yn-label">Include email in copy</span>
-      <div class="yn-btns">
-        <button class="yn-btn yn-yes yn-active" id="yn-email-yes" onclick="setYN('email','yes')">Yes</button>
-        <button class="yn-btn yn-no" id="yn-email-no" onclick="setYN('email','no')">No</button>
-      </div>
-    </div>
-    <div class="yn-row hidden" id="yn-website-row">
-      <span class="yn-label">Include website in copy</span>
-      <div class="yn-btns">
-        <button class="yn-btn yn-yes yn-active" id="yn-website-yes" onclick="setYN('website','yes')">Yes</button>
-        <button class="yn-btn yn-no" id="yn-website-no" onclick="setYN('website','no')">No</button>
-      </div>
-    </div>
-  </div>
 
-  <div class="ai-loading" id="ai-loading">
-    <div class="ai-spinner"></div>
-    <div class="ai-loading-text">⚡ AI is adapting your listing...</div>
-    <div class="ai-loading-sub" id="ai-loading-sub">Preparing all platforms</div>
-    <div class="ai-gen-track"><div class="ai-gen-fill" id="ai-gen-fill"></div></div>
-    <div class="ai-gen-pct" id="ai-gen-pct">0%</div>
-  </div>
+      <!-- About You in Copy — collapsed accordion; all rows preserved for JS compatibility -->
+      <div class="card" id="about-you-card">
+        <button class="about-you-toggle" id="about-you-toggle-btn" onclick="toggleAboutYouPanel()">
+          <span>🪪 Edit what appears in this blast</span>
+          <span class="about-you-chevron" id="about-you-chevron">›</span>
+        </button>
+        <div id="about-you-panel" class="hidden">
+          <p class="helper-sm mt-10">Defaults come from your profile — override here for this blast only.</p>
+          <div class="yn-row mb-12">
+            <span class="yn-label">
+              Mention my name
+              <span id="copy-name-preview" class="check-hint"></span>
+            </span>
+            <div class="yn-btns">
+              <button class="yn-btn yn-yes" id="yn-name-yes" onclick="setYN('name','yes')">Yes</button>
+              <button class="yn-btn yn-no yn-active" id="yn-name-no" onclick="setYN('name','no')">No</button>
+            </div>
+          </div>
+          <div class="yn-row mb-12">
+            <span class="yn-label">
+              Mention my role
+              <span id="copy-role-preview" class="check-hint"></span>
+            </span>
+            <div class="yn-btns">
+              <button class="yn-btn yn-yes" id="yn-role-yes" onclick="setYN('role','yes')">Yes</button>
+              <button class="yn-btn yn-no yn-active" id="yn-role-no" onclick="setYN('role','no')">No</button>
+            </div>
+          </div>
+          <div class="yn-row hidden" id="yn-address-row">
+            <span class="yn-label">Include address in copy</span>
+            <div class="yn-btns">
+              <button class="yn-btn yn-yes yn-active" id="yn-address-yes" onclick="setYN('address','yes')">Yes</button>
+              <button class="yn-btn yn-no" id="yn-address-no" onclick="setYN('address','no')">No</button>
+            </div>
+          </div>
+          <div class="yn-row hidden" id="yn-phone-row">
+            <span class="yn-label">Include phone in copy</span>
+            <div class="yn-btns">
+              <button class="yn-btn yn-yes yn-active" id="yn-phone-yes" onclick="setYN('phone','yes')">Yes</button>
+              <button class="yn-btn yn-no" id="yn-phone-no" onclick="setYN('phone','no')">No</button>
+            </div>
+          </div>
+          <div class="yn-row hidden" id="yn-email-row">
+            <span class="yn-label">Include email in copy</span>
+            <div class="yn-btns">
+              <button class="yn-btn yn-yes yn-active" id="yn-email-yes" onclick="setYN('email','yes')">Yes</button>
+              <button class="yn-btn yn-no" id="yn-email-no" onclick="setYN('email','no')">No</button>
+            </div>
+          </div>
+          <div class="yn-row hidden" id="yn-website-row">
+            <span class="yn-label">Include website in copy</span>
+            <div class="yn-btns">
+              <button class="yn-btn yn-yes yn-active" id="yn-website-yes" onclick="setYN('website','yes')">Yes</button>
+              <button class="yn-btn yn-no" id="yn-website-no" onclick="setYN('website','no')">No</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-  <button class="btn btn-primary btn--adaptive" id="adapt-btn" onclick="runAdaptation()" disabled>
-    ⚡ Generate AI Copy
-  </button>
+      <div class="ai-loading" id="ai-loading">
+        <div class="ai-spinner"></div>
+        <div class="ai-loading-text">⚡ AI is adapting your listing...</div>
+        <div class="ai-loading-sub" id="ai-loading-sub">Preparing all platforms</div>
+        <div class="ai-gen-track"><div class="ai-gen-fill" id="ai-gen-fill"></div></div>
+        <div class="ai-gen-pct" id="ai-gen-pct">0%</div>
+      </div>
 
-  <!-- REWRITE + CLEAR — stacked, visible after first adaptation -->
-  <div id="rewrite-row" class="hidden">
-    <button class="btn btn-rewrite" onclick="runAdaptation()">
-      🔄 Rewrite with Direction
-    </button>
-    <button class="btn btn-clear" onclick="clearAndStartOver()">
-      🗑️ Clear & Start Over
-    </button>
-  </div>
+      <button class="btn btn-primary btn--adaptive" id="adapt-btn" onclick="runAdaptation()" disabled>
+        ⚡ Generate AI Copy
+      </button>
 
-  <!-- REVIEW OUTPUT — visible after first adaptation -->
-  <a id="review-output-btn" href="BlastyBiz-Listing-Preview.html" class="review-btn" style="display:none;">
-    ✅ Review Your Output →
-  </a>
+      <!-- REWRITE + CLEAR — stacked, visible after first adaptation -->
+      <div id="rewrite-row" class="hidden">
+        <button class="btn btn-rewrite" onclick="runAdaptation()">
+          🔄 Rewrite with Direction
+        </button>
+        <button class="btn btn-clear" onclick="clearAndStartOver()">
+          🗑️ Clear & Start Over
+        </button>
+      </div>
 
-  <div class="bottom-safe"></div>
-  </div><!-- /create-step-2 -->
+      <!-- REVIEW OUTPUT — visible after first adaptation -->
+      <a id="review-output-btn" href="BlastyBiz-Listing-Preview.html" class="review-btn" style="display:none;">
+        ✅ Review Your Output →
+      </a>
+
+      <!-- Slide 3 back nav -->
+      <div class="create-wiz-nav" style="margin-top:20px;">
+        <button class="create-wiz-back-btn" onclick="createWizPrev(3)">← Back to Photos</button>
+      </div>
+      <div class="bottom-safe"></div>
+    </div><!-- /create-slide-3 -->
+
+  </div><!-- /create-wizard -->
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -696,8 +755,7 @@ function showTab(name) {
   if (name === 'history') renderHistory();
   if (name === 'profile') loadProfile();
   if (name === 'create') {
-    document.getElementById('create-step-1').classList.remove('hidden');
-    document.getElementById('create-step-2').classList.add('hidden');
+    createWizGoTo(1);
   }
 }
 
@@ -1732,18 +1790,66 @@ function checkAdaptBtn() {
   btn.disabled = !hasEnabled;
 }
 
-function goToStep2() {
-  saveDraft();
-  renderQuickSelect();
-  document.getElementById('create-step-1').classList.add('hidden');
-  document.getElementById('create-step-2').classList.remove('hidden');
+function goToStep2() { createWizGoTo(3); }
+function goToStep1() { createWizGoTo(1); }
+
+// ══════════════════════════════════════════
+// BLAST CREATION WIZARD
+// ══════════════════════════════════════════
+let createWizStep = 1;
+const CREATE_WIZ_TOTAL = 3;
+const CREATE_WIZ_LABELS = {
+  1: 'Step 1 of 3 — Your Blast',
+  2: 'Step 2 of 3 — Photos',
+  3: 'Step 3 of 3 — Platforms & Generate'
+};
+
+function createWizGoTo(step) {
+  for (let i = 1; i <= CREATE_WIZ_TOTAL; i++) {
+    const slide = document.getElementById('create-slide-' + i);
+    if (slide) slide.classList.remove('cwiz-active');
+    const dot = document.getElementById('cwiz-dot-' + i);
+    if (dot) {
+      dot.classList.remove('cwiz-active', 'cwiz-done');
+      if (i < step)        dot.classList.add('cwiz-done');
+      else if (i === step) dot.classList.add('cwiz-active');
+    }
+  }
+  const target = document.getElementById('create-slide-' + step);
+  if (target) target.classList.add('cwiz-active');
+  const labelEl = document.getElementById('create-wiz-label');
+  if (labelEl) labelEl.textContent = CREATE_WIZ_LABELS[step] || '';
+  const fillEl = document.getElementById('create-progress-fill');
+  if (fillEl) fillEl.style.width = Math.round((step / CREATE_WIZ_TOTAL) * 100) + '%';
+  createWizStep = step;
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (step === 3) {
+    renderQuickSelect();
+    checkAdaptBtn();
+    updateCopyPreview();
+  }
 }
 
-function goToStep1() {
-  document.getElementById('create-step-2').classList.add('hidden');
-  document.getElementById('create-step-1').classList.remove('hidden');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+function createWizNext(fromStep) {
+  if (fromStep === 1) {
+    const offer = document.getElementById('biz-offer')?.value?.trim();
+    if (!offer) { showToast('Add your offer description first'); return; }
+    saveDraft();
+  }
+  createWizGoTo(fromStep + 1);
+}
+
+function createWizPrev(fromStep) {
+  createWizGoTo(Math.max(1, fromStep - 1));
+}
+
+function toggleAboutYouPanel() {
+  const panel   = document.getElementById('about-you-panel');
+  const chevron = document.getElementById('about-you-chevron');
+  if (!panel) return;
+  const isOpen = !panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', isOpen);
+  if (chevron) chevron.classList.toggle('open', !isOpen);
 }
 
 // ══════════════════════════════════════════
@@ -2383,7 +2489,7 @@ function updateCopyPreview() {
   const locType = profile.locationType || 'physical';
   const hasAddress = locType !== 'online';
   // Show card if name is saved OR location has a physical address
-  if (hasName || hasAddress) card.classList.remove('hidden'); else card.classList.add('hidden');
+  // about-you-card is now a persistent collapsed accordion — always visible
   if (namePreview) namePreview.textContent = profile.ownerName ? `→ "${profile.ownerName}" added to prompt` : 'No name saved yet — add it in Profile';
   if (rolePreview) {
     const roleLabel = profile.ownerRole === 'manager' ? 'Manager' : profile.ownerRole === 'other' ? 'Other' : 'Owner';
@@ -3200,7 +3306,7 @@ function openNewCampaign() {
   // is fully visible below the sticky tab bar (not tucked behind it).
   requestAnimationFrame(() => {
     const tabsEl  = document.querySelector('.tabs');
-    const card    = document.querySelector('#create-step-1 .card');
+    const card    = document.querySelector('#create-slide-1 .card');
     if (!card || !tabsEl) return;
     const tabsBottom = tabsEl.getBoundingClientRect().bottom;
     const cardTop    = card.getBoundingClientRect().top;

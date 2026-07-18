@@ -2178,9 +2178,6 @@ body.create-page .char-count.over { color: #ff6b35; }
 .ai-gen-fill           { height: 100%; width: 0%; background: linear-gradient(90deg, var(--green), #00FF88); border-radius: 999px; transition: width 0.4s ease; }
 .ai-gen-pct            { font-size: 11px; font-weight: 700; color: var(--green); margin-top: 6px; letter-spacing: 0.5px; }
 
-/* ── Step 2 back button ── */
-.step2-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--green); background: transparent; border: none; cursor: pointer; padding: 14px 0 10px; font-family: inherit; letter-spacing: .3px; }
-.step2-back:active { opacity: .7; }
 
 /* ── Platform grid (create-page vertical accordion layout) ── */
 .platform-grid { display: flex; flex-direction: column; gap: 12px; }
@@ -2276,7 +2273,6 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 .sched-review-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 2px; border-top: 1px solid var(--border); margin-top: 12px; }
 
 /* ── About You in Copy checkboxes ── */
-.about-you-card { padding: 14px 16px; }
 .check-row  { display: flex; align-items: center; justify-content: space-between; cursor: pointer; gap: 12px; }
 .check-text { font-size: 14px; color: var(--text); line-height: 1.4; }
 .check-hint { display: block; color: var(--muted); font-size: 13px; margin-top: 1px; }
