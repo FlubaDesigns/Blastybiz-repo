@@ -4,6 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
   <link rel="stylesheet" href="global-style.css?v=58" />
   <title>BlastyBiz — Sign In</title>
 <style>
@@ -37,6 +38,7 @@
 
           <div id="auth-card-wrap">
             <div class="auth-card">
+              <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Sign In or Create a BlastyBiz Account</h1>
 
               <!-- TABS -->
               <div class="auth-tabs">
@@ -48,13 +50,13 @@
               <div class="auth-form active" id="form-signin">
 
                 <div class="field">
-                  <label>Email</label>
+                  <label for="si-email">Email</label>
                   <input type="email" id="si-email" placeholder="you@yourbusiness.com" oninput="clearErr('si-email')" />
                   <div class="field-error" id="si-email-err">Please enter a valid email</div>
                 </div>
 
                 <div class="field">
-                  <label>Password</label>
+                  <label for="si-password">Password</label>
                   <div class="pw-wrap">
                     <input type="password" id="si-password" placeholder="Your password" oninput="clearErr('si-password')" />
                     <button class="pw-toggle" onclick="togglePw('si-password', this)" type="button">👁️</button>
@@ -125,19 +127,19 @@
                 </div>
 
                 <div class="field">
-                  <label>Full Name</label>
+                  <label for="su-name">Full Name</label>
                   <input type="text" id="su-name" placeholder="Your name" oninput="clearErr('su-name')" />
                   <div class="field-error" id="su-name-err">Name is required</div>
                 </div>
 
                 <div class="field">
-                  <label>Email</label>
+                  <label for="su-email">Email</label>
                   <input type="email" id="su-email" placeholder="you@yourbusiness.com" oninput="clearErr('su-email')" />
                   <div class="field-error" id="su-email-err">Please enter a valid email</div>
                 </div>
 
                 <div class="field">
-                  <label>Password</label>
+                  <label for="su-password">Password</label>
                   <div class="pw-wrap">
                     <input type="password" id="su-password" placeholder="Create a password" oninput="checkStrength(this.value)" />
                     <button class="pw-toggle" onclick="togglePw('su-password', this)" type="button">👁️</button>
@@ -152,7 +154,7 @@
                 </div>
 
                 <div class="field">
-                  <label>Re-enter Password</label>
+                  <label for="su-password2">Re-enter Password</label>
                   <div class="pw-wrap">
                     <input type="password" id="su-password2" placeholder="Confirm your password" oninput="clearErr('su-password2')" />
                     <button class="pw-toggle" onclick="togglePw('su-password2', this)" type="button">👁️</button>

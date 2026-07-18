@@ -165,7 +165,7 @@
           <span class="chip-loading">Loading…</span>
         </div>
         <div id="campaign-library-row" class="mt-10 hidden">
-          <button onclick="openLibraryModal()" class="chip-green">
+          <button type="button" onclick="openLibraryModal()" class="chip-green">
             📚 <span></span> Library
           </button>
         </div>
@@ -177,9 +177,9 @@
           </div>
           <div style="font-size:13px;color:#4a7a52;margin-bottom:10px;">Enter a name above, then build your campaign brief with AI — or create it plain.</div>
           <div class="flex-row" style="gap:8px;">
-            <button onclick="openCampaignChat()" class="btn-camp-save">✨ Build with AI</button>
-            <button onclick="saveNewCampaign()" class="btn-camp-cancel" style="font-size:13px;">Quick Create</button>
-            <button onclick="cancelNewCampaign()" class="btn-camp-cancel">Cancel</button>
+            <button type="button" onclick="openCampaignChat()" class="btn-camp-save">✨ Build with AI</button>
+            <button type="button" onclick="saveNewCampaign()" class="btn-camp-cancel" style="font-size:13px;">Quick Create</button>
+            <button type="button" onclick="cancelNewCampaign()" class="btn-camp-cancel">Cancel</button>
           </div>
         </div>
       </div>
@@ -205,7 +205,7 @@
 
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;min-height:22px">
             <span id="ad-draft-status" style="font-size:12px;color:#4caf50;opacity:0;transition:opacity 0.4s"></span>
-            <button id="btn-discard-ad" onclick="discardAdDraft()" style="display:none;background:none;border:none;color:#e57373;font-size:12px;cursor:pointer;padding:0;text-decoration:underline">
+            <button type="button" id="btn-discard-ad" onclick="discardAdDraft()" style="display:none;background:none;border:none;color:#e57373;font-size:12px;cursor:pointer;padding:0;text-decoration:underline">
               × Discard this ad
             </button>
           </div>
@@ -213,7 +213,7 @@
 
         <!-- Extra Facts for AI (collapsed accordion) -->
         <div class="card card-flush" id="add-info-card">
-          <button onclick="toggleAddInfoPanel()" id="add-info-toggle-btn" class="teach-btn">
+          <button type="button" onclick="toggleAddInfoPanel()" id="add-info-toggle-btn" class="teach-btn">
             <div class="row gap-10">
               <span class="teach-icon">📌</span>
               <div>
@@ -225,25 +225,25 @@
           </button>
           <div id="add-info-panel" class="teach-inner hidden">
             <div class="toggle-row mt-10">
-              <button onclick="setFactoidScope('campaign')" id="scope-btn-campaign" class="scope-btn active">📁 This Campaign</button>
-              <button onclick="setFactoidScope('global')" id="scope-btn-global" class="scope-btn">🌐 All Campaigns</button>
+              <button type="button" onclick="setFactoidScope('campaign')" id="scope-btn-campaign" class="scope-btn active">📁 This Campaign</button>
+              <button type="button" onclick="setFactoidScope('global')" id="scope-btn-global" class="scope-btn">🌐 All Campaigns</button>
             </div>
             <textarea id="add-info-text" rows="3" class="textarea-naked mt-8"
               placeholder="e.g. Our chocolate lab Biscuit greets every customer · We use zero artificial ingredients · Parking is free behind the building · Owner trained under a James Beard Award winner…"></textarea>
             <div class="row mt-10 gap-8">
-              <button onclick="submitFactoid()" class="btn-save">Save Fact</button>
+              <button type="button" onclick="submitFactoid()" class="btn-save">Save Fact</button>
             </div>
             <div id="add-info-confirm" class="hidden" style="color:var(--green);font-size:13px;font-weight:600;margin-top:6px;">✓ Saved.</div>
           </div>
           <!-- hidden enrichment stubs so existing JS doesn't break -->
           <div id="enrichment-questions" class="hidden"></div>
           <span id="enrichment-badge" class="hidden"></span>
-          <button id="enrichment-more-btn" class="hidden"></button>
+          <button type="button" id="enrichment-more-btn" class="hidden"></button>
         </div>
 
         <!-- Slide 1 nav -->
         <div class="create-wiz-nav">
-          <button class="btn btn-primary btn--adaptive" id="continue-btn" onclick="createWizNext(1)">
+          <button type="button" class="btn btn-primary btn--adaptive" id="continue-btn" onclick="createWizNext(1)">
             Continue: Add Photos →
           </button>
         </div>
@@ -268,8 +268,8 @@
           <span id="photo-cap-label" class="text-xs text-muted"></span>
         </div>
         <div style="display:flex;gap:6px;margin-bottom:10px">
-          <button id="scope-photo-campaign" class="chip active" onclick="setPhotoScope('campaign')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:var(--accent);color:#fff;font-size:12px;cursor:pointer;font-weight:600">Campaign</button>
-          <button id="scope-photo-global" class="chip" onclick="setPhotoScope('global')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:transparent;color:var(--light);font-size:12px;cursor:pointer">Global</button>
+          <button type="button" id="scope-photo-campaign" class="chip active" onclick="setPhotoScope('campaign')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:var(--accent);color:#fff;font-size:12px;cursor:pointer;font-weight:600">Campaign</button>
+          <button type="button" id="scope-photo-global" class="chip" onclick="setPhotoScope('global')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:transparent;color:var(--light);font-size:12px;cursor:pointer">Global</button>
         </div>
         <p class="text-base text-muted mb-12" id="photo-scope-hint">Campaign photos are linked to the active campaign. Select a campaign above first.</p>
         <div id="photo-upload-area" class="image-upload-area" onclick="document.getElementById('img-input').click()">
@@ -282,10 +282,10 @@
 
       <!-- Slide 2 nav -->
       <div class="create-wiz-nav">
-        <button class="btn btn-primary btn--adaptive" onclick="createWizNext(2)">
+        <button type="button" class="btn btn-primary btn--adaptive" onclick="createWizNext(2)">
           Continue: Select Platforms →
         </button>
-        <button class="create-wiz-back-btn" onclick="createWizPrev(2)">← Back to Blast Info</button>
+        <button type="button" class="create-wiz-back-btn" onclick="createWizPrev(2)">← Back to Blast Info</button>
       </div>
       <div class="bottom-safe"></div>
     </div><!-- /create-slide-2 -->
@@ -296,7 +296,7 @@
       <div class="card">
         <div class="row-base-sb mb-12">
           <div class="card-title mb-0">📡 Send To</div>
-          <button id="select-all-btn" onclick="toggleSelectAll()" class="chip-green" style="font-family:inherit;font-size:12px;">Select All</button>
+          <button type="button" id="select-all-btn" onclick="toggleSelectAll()" class="chip-green" style="font-family:inherit;font-size:12px;">Select All</button>
         </div>
         <p class="helper">Pick which platforms to blast. AI will adapt your listing for each one.</p>
         <div id="quick-platform-list">
@@ -306,7 +306,7 @@
 
       <!-- About You in Copy — collapsed accordion; all rows preserved for JS compatibility -->
       <div class="card" id="about-you-card">
-        <button class="about-you-toggle" id="about-you-toggle-btn" onclick="toggleAboutYouPanel()">
+        <button type="button" class="about-you-toggle" id="about-you-toggle-btn" onclick="toggleAboutYouPanel()">
           <span>🪪 Edit what appears in this blast</span>
           <span class="about-you-chevron" id="about-you-chevron">›</span>
         </button>
@@ -318,8 +318,8 @@
               <span id="copy-name-preview" class="check-hint"></span>
             </span>
             <div class="yn-btns">
-              <button class="yn-btn yn-yes" id="yn-name-yes" onclick="setYN('name','yes')">Yes</button>
-              <button class="yn-btn yn-no yn-active" id="yn-name-no" onclick="setYN('name','no')">No</button>
+              <button type="button" class="yn-btn yn-yes" id="yn-name-yes" onclick="setYN('name','yes')">Yes</button>
+              <button type="button" class="yn-btn yn-no yn-active" id="yn-name-no" onclick="setYN('name','no')">No</button>
             </div>
           </div>
           <div class="yn-row mb-12">
@@ -328,36 +328,36 @@
               <span id="copy-role-preview" class="check-hint"></span>
             </span>
             <div class="yn-btns">
-              <button class="yn-btn yn-yes" id="yn-role-yes" onclick="setYN('role','yes')">Yes</button>
-              <button class="yn-btn yn-no yn-active" id="yn-role-no" onclick="setYN('role','no')">No</button>
+              <button type="button" class="yn-btn yn-yes" id="yn-role-yes" onclick="setYN('role','yes')">Yes</button>
+              <button type="button" class="yn-btn yn-no yn-active" id="yn-role-no" onclick="setYN('role','no')">No</button>
             </div>
           </div>
           <div class="yn-row hidden" id="yn-address-row">
             <span class="yn-label">Include address in copy</span>
             <div class="yn-btns">
-              <button class="yn-btn yn-yes yn-active" id="yn-address-yes" onclick="setYN('address','yes')">Yes</button>
-              <button class="yn-btn yn-no" id="yn-address-no" onclick="setYN('address','no')">No</button>
+              <button type="button" class="yn-btn yn-yes yn-active" id="yn-address-yes" onclick="setYN('address','yes')">Yes</button>
+              <button type="button" class="yn-btn yn-no" id="yn-address-no" onclick="setYN('address','no')">No</button>
             </div>
           </div>
           <div class="yn-row hidden" id="yn-phone-row">
             <span class="yn-label">Include phone in copy</span>
             <div class="yn-btns">
-              <button class="yn-btn yn-yes yn-active" id="yn-phone-yes" onclick="setYN('phone','yes')">Yes</button>
-              <button class="yn-btn yn-no" id="yn-phone-no" onclick="setYN('phone','no')">No</button>
+              <button type="button" class="yn-btn yn-yes yn-active" id="yn-phone-yes" onclick="setYN('phone','yes')">Yes</button>
+              <button type="button" class="yn-btn yn-no" id="yn-phone-no" onclick="setYN('phone','no')">No</button>
             </div>
           </div>
           <div class="yn-row hidden" id="yn-email-row">
             <span class="yn-label">Include email in copy</span>
             <div class="yn-btns">
-              <button class="yn-btn yn-yes yn-active" id="yn-email-yes" onclick="setYN('email','yes')">Yes</button>
-              <button class="yn-btn yn-no" id="yn-email-no" onclick="setYN('email','no')">No</button>
+              <button type="button" class="yn-btn yn-yes yn-active" id="yn-email-yes" onclick="setYN('email','yes')">Yes</button>
+              <button type="button" class="yn-btn yn-no" id="yn-email-no" onclick="setYN('email','no')">No</button>
             </div>
           </div>
           <div class="yn-row hidden" id="yn-website-row">
             <span class="yn-label">Include website in copy</span>
             <div class="yn-btns">
-              <button class="yn-btn yn-yes yn-active" id="yn-website-yes" onclick="setYN('website','yes')">Yes</button>
-              <button class="yn-btn yn-no" id="yn-website-no" onclick="setYN('website','no')">No</button>
+              <button type="button" class="yn-btn yn-yes yn-active" id="yn-website-yes" onclick="setYN('website','yes')">Yes</button>
+              <button type="button" class="yn-btn yn-no" id="yn-website-no" onclick="setYN('website','no')">No</button>
             </div>
           </div>
         </div>
@@ -365,10 +365,10 @@
 
       <!-- Slide 3 nav -->
       <div class="create-wiz-nav">
-        <button class="btn btn-primary btn--adaptive" id="s3-continue-btn" onclick="createWizNext(3)" disabled>
+        <button type="button" class="btn btn-primary btn--adaptive" id="s3-continue-btn" onclick="createWizNext(3)" disabled>
           Continue: Generate Copy →
         </button>
-        <button class="create-wiz-back-btn" onclick="createWizPrev(3)">← Back to Photos</button>
+        <button type="button" class="create-wiz-back-btn" onclick="createWizPrev(3)">← Back to Photos</button>
       </div>
       <div class="bottom-safe"></div>
     </div><!-- /create-slide-3 -->
@@ -389,28 +389,28 @@
         <div class="ai-gen-pct" id="ai-gen-pct">0%</div>
       </div>
 
-      <button class="btn btn-primary btn--adaptive" id="adapt-btn" onclick="runAdaptation()" disabled>
+      <button type="button" class="btn btn-primary btn--adaptive" id="adapt-btn" onclick="runAdaptation()" disabled>
         ⚡ Generate AI Copy
       </button>
 
       <!-- REWRITE + CLEAR — stacked, visible after first adaptation -->
       <div id="rewrite-row" class="hidden">
-        <button class="btn btn-rewrite" onclick="runAdaptation()">
+        <button type="button" class="btn btn-rewrite" onclick="runAdaptation()">
           🔄 Rewrite with Direction
         </button>
-        <button class="btn btn-clear" onclick="clearAndStartOver()">
+        <button type="button" class="btn btn-clear" onclick="clearAndStartOver()">
           🗑️ Clear & Start Over
         </button>
       </div>
 
       <!-- REVIEW PLATFORMS — visible after first adaptation -->
-      <button id="review-output-btn" class="review-btn" style="display:none;" onclick="createWizGoTo(5)">
+      <button type="button" id="review-output-btn" class="review-btn" style="display:none;" onclick="createWizGoTo(5)">
         → Review Your Platforms
       </button>
 
       <!-- Slide 4 back nav -->
       <div class="create-wiz-nav" style="margin-top:20px;">
-        <button class="create-wiz-back-btn" onclick="createWizPrev(4)">← Back to Platforms</button>
+        <button type="button" class="create-wiz-back-btn" onclick="createWizPrev(4)">← Back to Platforms</button>
       </div>
       <div class="bottom-safe"></div>
     </div><!-- /create-slide-4 -->
@@ -424,16 +424,16 @@
         <!-- populated by renderStep5Review() -->
       </div>
       <div class="step5-nav">
-        <button class="step5-nav-btn" id="step5-prev-btn" onclick="step5Prev()">← Prev</button>
-        <button class="step5-nav-btn" id="step5-next-btn" onclick="step5Next()">Next →</button>
+        <button type="button" class="step5-nav-btn" id="step5-prev-btn" onclick="step5Prev()">← Prev</button>
+        <button type="button" class="step5-nav-btn" id="step5-next-btn" onclick="step5Next()">Next →</button>
       </div>
-      <button class="review-btn" id="step5-final-btn" style="display:none;" onclick="goToFinalReview()">
+      <button type="button" class="review-btn" id="step5-final-btn" style="display:none;" onclick="goToFinalReview()">
         ✅ Continue to Final Review →
       </button>
 
       <!-- Slide 5 back nav -->
       <div class="create-wiz-nav" style="margin-top:20px;">
-        <button class="create-wiz-back-btn" onclick="createWizPrev(5)">← Back to Generate</button>
+        <button type="button" class="create-wiz-back-btn" onclick="createWizPrev(5)">← Back to Generate</button>
       </div>
       <div class="bottom-safe"></div>
     </div><!-- /create-slide-5 -->
@@ -571,9 +571,9 @@
 
       <label>Location</label>
       <div class="loc-type-toggle">
-        <button class="loc-type-btn active" id="prof-loc-btn-physical" onclick="setProfileLocationType('physical')">🧱 Brick</button>
-        <button class="loc-type-btn" id="prof-loc-btn-online" onclick="setProfileLocationType('online')">🌐 Online</button>
-        <button class="loc-type-btn" id="prof-loc-btn-both" onclick="setProfileLocationType('both')">🌍 Both</button>
+        <button type="button" class="loc-type-btn active" id="prof-loc-btn-physical" onclick="setProfileLocationType('physical')">🧱 Brick</button>
+        <button type="button" class="loc-type-btn" id="prof-loc-btn-online" onclick="setProfileLocationType('online')">🌐 Online</button>
+        <button type="button" class="loc-type-btn" id="prof-loc-btn-both" onclick="setProfileLocationType('both')">🌍 Both</button>
       </div>
       <div class="loc-fields" id="prof-loc-physical-fields">
         <input type="text" id="profile-street" placeholder="Street address" oninput="saveProfile()" class="mb-8" />
@@ -626,40 +626,40 @@
     <div id="sched-fields" class="hidden">
       <label>How often?</label>
       <div class="sched-chips">
-        <button class="sched-chip active" id="sched-freq-weekly"    onclick="setSchedFreq('weekly')">Weekly</button>
-        <button class="sched-chip"        id="sched-freq-biweekly"  onclick="setSchedFreq('biweekly')">Every 2 wks</button>
-        <button class="sched-chip"        id="sched-freq-monthly"   onclick="setSchedFreq('monthly')">Monthly</button>
+        <button type="button" class="sched-chip active" id="sched-freq-weekly"    onclick="setSchedFreq('weekly')">Weekly</button>
+        <button type="button" class="sched-chip"        id="sched-freq-biweekly"  onclick="setSchedFreq('biweekly')">Every 2 wks</button>
+        <button type="button" class="sched-chip"        id="sched-freq-monthly"   onclick="setSchedFreq('monthly')">Monthly</button>
       </div>
 
       <div id="sched-dow-wrap">
         <label>Which day?</label>
         <div class="sched-chips">
-          <button class="sched-chip"        id="sched-dow-0" onclick="setSchedDay(0)">Sun</button>
-          <button class="sched-chip active" id="sched-dow-1" onclick="setSchedDay(1)">Mon</button>
-          <button class="sched-chip"        id="sched-dow-2" onclick="setSchedDay(2)">Tue</button>
-          <button class="sched-chip"        id="sched-dow-3" onclick="setSchedDay(3)">Wed</button>
-          <button class="sched-chip"        id="sched-dow-4" onclick="setSchedDay(4)">Thu</button>
-          <button class="sched-chip"        id="sched-dow-5" onclick="setSchedDay(5)">Fri</button>
-          <button class="sched-chip"        id="sched-dow-6" onclick="setSchedDay(6)">Sat</button>
+          <button type="button" class="sched-chip"        id="sched-dow-0" onclick="setSchedDay(0)">Sun</button>
+          <button type="button" class="sched-chip active" id="sched-dow-1" onclick="setSchedDay(1)">Mon</button>
+          <button type="button" class="sched-chip"        id="sched-dow-2" onclick="setSchedDay(2)">Tue</button>
+          <button type="button" class="sched-chip"        id="sched-dow-3" onclick="setSchedDay(3)">Wed</button>
+          <button type="button" class="sched-chip"        id="sched-dow-4" onclick="setSchedDay(4)">Thu</button>
+          <button type="button" class="sched-chip"        id="sched-dow-5" onclick="setSchedDay(5)">Fri</button>
+          <button type="button" class="sched-chip"        id="sched-dow-6" onclick="setSchedDay(6)">Sat</button>
         </div>
       </div>
 
       <div id="sched-dom-wrap" class="hidden">
         <label>Which day of the month?</label>
         <div class="sched-chips">
-          <button class="sched-chip active" id="sched-dom-1"  onclick="setSchedDom(1)">1st</button>
-          <button class="sched-chip"        id="sched-dom-8"  onclick="setSchedDom(8)">8th</button>
-          <button class="sched-chip"        id="sched-dom-15" onclick="setSchedDom(15)">15th</button>
-          <button class="sched-chip"        id="sched-dom-22" onclick="setSchedDom(22)">22nd</button>
+          <button type="button" class="sched-chip active" id="sched-dom-1"  onclick="setSchedDom(1)">1st</button>
+          <button type="button" class="sched-chip"        id="sched-dom-8"  onclick="setSchedDom(8)">8th</button>
+          <button type="button" class="sched-chip"        id="sched-dom-15" onclick="setSchedDom(15)">15th</button>
+          <button type="button" class="sched-chip"        id="sched-dom-22" onclick="setSchedDom(22)">22nd</button>
         </div>
       </div>
 
       <label>What time?</label>
       <div class="sched-chips">
-        <button class="sched-chip active" id="sched-time-morning"   onclick="setSchedTime('morning')">☀️ 9am</button>
-        <button class="sched-chip"        id="sched-time-midday"    onclick="setSchedTime('midday')">🌤 12pm</button>
-        <button class="sched-chip"        id="sched-time-afternoon" onclick="setSchedTime('afternoon')">⛅ 3pm</button>
-        <button class="sched-chip"        id="sched-time-evening"   onclick="setSchedTime('evening')">🌙 6pm</button>
+        <button type="button" class="sched-chip active" id="sched-time-morning"   onclick="setSchedTime('morning')">☀️ 9am</button>
+        <button type="button" class="sched-chip"        id="sched-time-midday"    onclick="setSchedTime('midday')">🌤 12pm</button>
+        <button type="button" class="sched-chip"        id="sched-time-afternoon" onclick="setSchedTime('afternoon')">⛅ 3pm</button>
+        <button type="button" class="sched-chip"        id="sched-time-evening"   onclick="setSchedTime('evening')">🌙 6pm</button>
       </div>
 
       <div id="sched-next-preview" class="sched-next-preview"></div>
@@ -692,7 +692,7 @@
     <div class="card-title">🏷️ Platform Categories</div>
     <p class="helper mb-16">The category BlastyBiz uses when adapting your listing for each platform. AI picks these automatically — update any time.</p>
     <div id="profile-cat-list"></div>
-    <button class="btn btn-outline mt-12" id="rerun-ai-cats-btn" onclick="rerunAICats()">
+    <button type="button" class="btn btn-outline mt-12" id="rerun-ai-cats-btn" onclick="rerunAICats()">
       🤖 Re-run AI Category Picker
     </button>
     <p id="platcats-note" class="platcats-note"></p>
@@ -716,7 +716,7 @@
 
   <!-- TEACH AI ACCORDION -->
   <div class="card card-flush" id="teach-ai-card">
-    <button onclick="toggleTeachAI()" id="teach-ai-header" class="teach-btn">
+    <button type="button" onclick="toggleTeachAI()" id="teach-ai-header" class="teach-btn">
       <div class="row gap-10">
         <span class="teach-icon">🧠</span>
         <div>
@@ -728,13 +728,13 @@
     </button>
     <div id="teach-ai-body" class="teach-inner hidden">
       <div id="profile-insight-list"></div>
-      <button id="profile-enrich-more-btn" onclick="fetchEnrichmentQuestions(true)" class="btn-more-qs">
+      <button type="button" id="profile-enrich-more-btn" onclick="fetchEnrichmentQuestions(true)" class="btn-more-qs">
         ✨ Ask me something new
       </button>
     </div>
   </div>
 
-  <button class="btn btn-outline mt-8" onclick="clearAll()">
+  <button type="button" class="btn btn-outline mt-8" onclick="clearAll()">
     🗑️ Clear All Data
   </button>
 
@@ -882,7 +882,7 @@ function buildPlatformCard(p) {
   const adaptedText = p.adaptedContent
     ? `<div class="copy-box visible" id="copy-${p.id}">
          <span class="copy-box-label">⚡ AI-Generated Copy</span>
-         <button class="copy-btn-float" onclick="copyText('${p.id}')">Copy</button>
+         <button type="button" class="copy-btn-float" onclick="copyText('${p.id}')">Copy</button>
          ${p.adaptedContent}
        </div>`
     : `<div class="copy-box" id="copy-${p.id}"></div>`;
@@ -891,8 +891,8 @@ function buildPlatformCard(p) {
   const actionBtn = starterLocked
     ? `<a href="BlastyBiz-Dashboard.html?checkout=pro" class="btn btn-outline btn-sm btn-upgrade-inline">⚡ Upgrade to Auto-Post</a>`
     : p.type === 'api'
-      ? `<button class="btn btn-primary btn-sm" onclick="deployPlatform('${p.id}')" ${!p.enabled ? 'disabled' : ''}>🚀 Post</button>`
-      : `<button class="btn btn-outline btn-sm" onclick="copyText('${p.id}')" ${!p.enabled || !p.adaptedContent ? 'disabled' : ''}>📋 Copy</button>`;
+      ? `<button type="button" class="btn btn-primary btn-sm" onclick="deployPlatform('${p.id}')" ${!p.enabled ? 'disabled' : ''}>🚀 Post</button>`
+      : `<button type="button" class="btn btn-outline btn-sm" onclick="copyText('${p.id}')" ${!p.enabled || !p.adaptedContent ? 'disabled' : ''}>📋 Copy</button>`;
 
   div.innerHTML = `
     <div class="platform-header">
@@ -1360,10 +1360,10 @@ function renderLibraryItems(items) {
           <div class="lib-item-header">
             <div class="lib-item-meta">${adLabel} ${date ? '· ' + date : ''}</div>
             <div class="lib-item-actions">
-              <button onclick="copyLibItem(this)"
+              <button type="button" onclick="copyLibItem(this)"
                 data-copy="${escHtml(item.copy)}"
                 class="lib-action-btn">📋 Copy</button>
-              <button onclick="deleteLibraryItem('${escHtml(item.docId)}')"
+              <button type="button" onclick="deleteLibraryItem('${escHtml(item.docId)}')"
                 class="lib-delete-btn">🗑</button>
             </div>
           </div>
@@ -1850,8 +1850,8 @@ function buildStep5Card(p) {
   if (hasContent) {
     const safeText = escHtml(p.adaptedContent.replace(/<br\/?>/gi, '\n'));
     inner += '<div class="step5-copy-actions">'
-      + '<button class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">🔄 Regenerate</button>'
-      + '<button class="step5-action-btn" onclick="copyQpText(\'' + escHtml(p.id) + '\')">📋 Copy</button>'
+      + '<button type="button" class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">🔄 Regenerate</button>'
+      + '<button type="button" class="step5-action-btn" onclick="copyQpText(\'' + escHtml(p.id) + '\')">📋 Copy</button>'
       + '</div>'
       + '<div id="qp-copy-text-' + p.id + '" class="step5-copy-text" contenteditable="true">' + safeText + '</div>'
       + '<div id="qp-copy-img-' + p.id + '" class="qp-copy-img-note" style="margin:6px 0;"></div>'
@@ -1860,7 +1860,7 @@ function buildStep5Card(p) {
       +   '<div id="qp-photo-strip-' + p.id + '" class="qp-photo-strip"></div>'
       + '</div>'
       + '<div id="qp-share-' + p.id + '" class="qp-share-section" style="display:none;"></div>'
-      + '<button class="step5-looks-good-btn' + (p._reviewStatus === 'approved' ? ' approved' : '') + '" id="step5-lgtm-' + p.id + '" onclick="approvePlatformCopy(\'' + escHtml(p.id) + '\')">'
+      + '<button type="button" class="step5-looks-good-btn' + (p._reviewStatus === 'approved' ? ' approved' : '') + '" id="step5-lgtm-' + p.id + '" onclick="approvePlatformCopy(\'' + escHtml(p.id) + '\')">'
       +   (p._reviewStatus === 'approved' ? '✓ Approved' : '✓ Looks Good')
       + '</button>';
     if (!hasUrl) {
@@ -1868,7 +1868,7 @@ function buildStep5Card(p) {
         + '<div class="step5-setup-title">📍 Save your ' + escHtml(p.name) + ' link</div>'
         + '<div class="step5-url-row">'
         +   '<input type="url" id="qp-url-input-' + p.id + '" class="step5-url-input" placeholder="' + urlHint + '" value="' + escHtml((window._bbPlatformUrls || {})[p.id] || '') + '" onblur="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', this.value.trim())" />'
-        +   '<button class="step5-url-save" onclick="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', document.getElementById(\'qp-url-input-' + p.id + '\').value.trim()); showToast(\'✓ Saved!\')">Save</button>'
+        +   '<button type="button" class="step5-url-save" onclick="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', document.getElementById(\'qp-url-input-' + p.id + '\').value.trim()); showToast(\'✓ Saved!\')">Save</button>'
         + '</div>'
         + '</div>';
     }
@@ -1877,8 +1877,8 @@ function buildStep5Card(p) {
       + '<div class="step5-setup-title">⚠️ No copy generated</div>'
       + '<div class="step5-setup-tip">AI didn\'t return copy for this platform. Retry generation or exclude it from this blast.</div>'
       + '<div class="step5-setup-btns">'
-      +   '<button class="step5-action-btn" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">🔄 Retry Generation</button>'
-      +   '<button class="step5-action-btn" style="background:var(--muted,#888);color:#fff;" onclick="excludePlatform(\'' + escHtml(p.id) + '\')">✗ Exclude Platform</button>'
+      +   '<button type="button" class="step5-action-btn" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">🔄 Retry Generation</button>'
+      +   '<button type="button" class="step5-action-btn" style="background:var(--muted,#888);color:#fff;" onclick="excludePlatform(\'' + escHtml(p.id) + '\')">✗ Exclude Platform</button>'
       + '</div>'
       + '</div>'
       + '<div id="qp-copy-text-' + p.id + '" style="display:none;"></div>';
@@ -2029,7 +2029,7 @@ window.renderAllPhotos = function() {
       wrap.innerHTML = `
         <div class="thumb-error-overlay">⚠️</div>
         <div class="thumb-error-msg">${item.errorMsg || 'Upload failed'}</div>
-        <button class="thumb-remove" onclick="window._bbDeletePhoto&&window._bbDeletePhoto(${i})">✕</button>`;
+        <button type="button" class="thumb-remove" onclick="window._bbDeletePhoto&&window._bbDeletePhoto(${i})">✕</button>`;
     } else if (!item.done) {
       const label = item.compressing
         ? `<div class="thumb-progress-pct" style="font-size:10px">⚙️</div><div style="font-size:9px;color:#ccc;margin-top:2px">Compressing…</div>`
@@ -2046,7 +2046,7 @@ window.renderAllPhotos = function() {
       };
       wrap.innerHTML = `
         <img src="${item.localUrl}" />
-        <button class="thumb-remove" onclick="event.stopPropagation();window._bbDeletePhoto&&window._bbDeletePhoto(${i})">✕</button>
+        <button type="button" class="thumb-remove" onclick="event.stopPropagation();window._bbDeletePhoto&&window._bbDeletePhoto(${i})">✕</button>
         ${isSelected
           ? `<div class="thumb-selected-badge">✓</div>`
           : `<div class="thumb-saved-badge">☁ Saved</div>`
@@ -2836,10 +2836,10 @@ function _renderPendingPosts() {
       <div class="pending-post-date">Drafted ${dateLabel}</div>
       ${platformRows}
       <div class="pending-post-actions">
-        <button onclick="_approvePendingPost('${p.id}')" class="pending-approve-btn">
+        <button type="button" onclick="_approvePendingPost('${p.id}')" class="pending-approve-btn">
           ✅ Approve &amp; Post
         </button>
-        <button onclick="_dismissPendingPost('${p.id}')" class="pending-skip-btn">
+        <button type="button" onclick="_dismissPendingPost('${p.id}')" class="pending-skip-btn">
           🗑️ Skip
         </button>
       </div>
@@ -2914,7 +2914,7 @@ function renderProfileInsights() {
   el.innerHTML = bizInsights.map((item, idx) => {
     const hasAnswer = !!item.answer;
     return `<div class="pir-row">
-      <button onclick="toggleInsightRow(${idx})" class="pir-btn">
+      <button type="button" onclick="toggleInsightRow(${idx})" class="pir-btn">
         <div class="pir-content">
           <div class="pir-question">${escHtml(item.question)}</div>
           <div style="font-size:12px;margin-top:3px;color:${hasAnswer ? 'var(--green)' : 'var(--muted)'};">${hasAnswer ? '✓ ' + escHtml(item.answer) : 'Tap to answer'}</div>
@@ -2927,7 +2927,7 @@ function renderProfileInsights() {
           oninput="this.style.height='auto';this.style.height=Math.max(42,this.scrollHeight)+'px'"
           onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();saveProfileInsightAnswer(${idx},this.value);}"
         >${escHtml(item.answer||'')}</textarea>
-        <button onclick="saveProfileInsightAnswer(${idx},document.getElementById('pir-inp-${idx}').value)" class="pir-save-btn">
+        <button type="button" onclick="saveProfileInsightAnswer(${idx},document.getElementById('pir-inp-${idx}').value)" class="pir-save-btn">
           ✓ Save
         </button>
       </div>
@@ -3310,7 +3310,7 @@ function renderCampaignChips() {
       `<span class="chip-del" onclick="deleteCampaign('${escId}','${escName}');event.stopPropagation()" title="Delete">✕</span>` +
       `</span>`;
   });
-  html += `<button onclick="openNewCampaign()" class="chip-new">＋ New Campaign</button>`;
+  html += `<button type="button" onclick="openNewCampaign()" class="chip-new">＋ New Campaign</button>`;
   container.innerHTML = html;
 
   // Library button row — only for Pro/Agency with an active campaign
@@ -4496,7 +4496,7 @@ window._saveScheduleToFirestore = async function(sched) {
     <!-- Header -->
     <div class="modal-head">
       <span id="library-modal-title" class="modal-title">📚 Copy Library</span>
-      <button onclick="closeLibraryModal()" class="btn-icon-close">✕</button>
+      <button type="button" onclick="closeLibraryModal()" class="btn-icon-close">✕</button>
     </div>
     <!-- Body -->
     <div id="library-modal-body" class="modal-body"></div>
@@ -4549,7 +4549,7 @@ window._saveScheduleToFirestore = async function(sched) {
       <div class="cc-logo">BlastyBiz</div>
       <div class="cc-label" id="cc-label">New Campaign</div>
     </div>
-    <button class="cc-close-btn" onclick="closeCampaignChat()" title="Cancel">✕</button>
+    <button type="button" class="cc-close-btn" onclick="closeCampaignChat()" title="Cancel">✕</button>
   </div>
   <div class="cc-messages" id="cc-messages"></div>
   <div class="cc-footer">
@@ -4557,9 +4557,9 @@ window._saveScheduleToFirestore = async function(sched) {
     <div class="cc-input-row">
       <input type="text" id="camp-chat-input" placeholder="Type here…" autocomplete="off"
         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();campSend();}"/>
-      <button id="camp-send-btn" onclick="campSend()">›</button>
+      <button type="button" id="camp-send-btn" onclick="campSend()">›</button>
     </div>
-    <div class="cc-skip-row"><button id="camp-skip-btn" onclick="campSkip()">Skip this one →</button></div>
+    <div class="cc-skip-row"><button type="button" id="camp-skip-btn" onclick="campSkip()">Skip this one →</button></div>
   </div>
 </div>
 

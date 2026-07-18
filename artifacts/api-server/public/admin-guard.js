@@ -2,10 +2,10 @@ import { auth } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const CF_BASE = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
-const FALLBACK_ADMINS = ['perceys@gmail.com', 'info@blastybiz.com'];
 
+// Safety valve: if auth never resolves, redirect to login — never reveal admin content.
 const _safetyTimer = setTimeout(() => {
-  document.body.style.visibility = 'visible';
+  window.location.href = 'BlastyBiz-Login.html';
 }, 5000);
 
 auth.authStateReady()
@@ -17,10 +17,9 @@ auth.authStateReady()
         setTimeout(() => {
           if (!auth.currentUser) {
             window.location.href = 'BlastyBiz-Login.html';
-          } else if (!FALLBACK_ADMINS.includes(auth.currentUser.email)) {
-            window.location.href = 'BlastyBiz-Dashboard.html';
           } else {
-            document.body.style.visibility = 'visible';
+            // User appeared during the 3s wait — re-run the check
+            window.location.reload();
           }
         }, 3000);
         return;
@@ -31,17 +30,14 @@ auth.authStateReady()
         const resp = await fetch(`${CF_BASE}/adminGetAdminEmails`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (resp.ok || FALLBACK_ADMINS.includes(user.email)) {
+        if (resp.ok) {
           document.body.style.visibility = 'visible';
         } else {
           window.location.href = 'BlastyBiz-Dashboard.html';
         }
       } catch (e) {
-        if (FALLBACK_ADMINS.includes(user.email)) {
-          document.body.style.visibility = 'visible';
-        } else {
-          window.location.href = 'BlastyBiz-Dashboard.html';
-        }
+        // CF check failed — fail closed, redirect rather than reveal admin page
+        window.location.href = 'BlastyBiz-Dashboard.html';
       }
     });
   });

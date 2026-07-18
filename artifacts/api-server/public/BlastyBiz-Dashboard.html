@@ -16,6 +16,7 @@
 
 <!-- MAIN CONTENT -->
 <div class="main"><div class="main-inner">
+<h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">BlastyBiz Dashboard</h1>
 
 
   <!-- BUSINESS SWITCHER BAR -->
@@ -74,10 +75,6 @@
 
   <!-- hidden stubs for legacy JS references -->
   <div style="display:none">
-    <span id="snapshot-biz"></span>
-    <span id="ai-cost-display"></span>
-    <span id="snapshot-failed"></span>
-    <span id="snapshot-renewal"></span>
     <div id="platform-list"></div>
     <div id="task-list"></div>
     <div id="activity-list"></div>
@@ -369,7 +366,6 @@ function switchBusiness(bizId) {
 function loadBusinessContext(bizId) {
   const biz = BUSINESSES.find(b => b.id === bizId) || BUSINESSES[0];
   document.getElementById('dashboard-biz-name').textContent = biz.name;
-  document.getElementById('snapshot-biz').textContent = biz.name;
   document.getElementById('visibility-score').textContent = biz.score;
   document.getElementById('score-bar').style.width = biz.score + '%';
   // Firebase: load businesses/{bizId}, platformConnections, publishJobs, listingDrafts
@@ -864,7 +860,7 @@ async function startCheckout(plan) {
     const r = await fetch(`${CF}/createCheckoutSession`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-      body: JSON.stringify({ plan, billingPeriod: _upgradeBillingPeriod, uid: currentUser.uid, email: currentUser.email })
+      body: JSON.stringify({ plan, billingPeriod: _upgradeBillingPeriod })
     });
     const data = await r.json();
     if (data.url) { window.location.href = data.url; }

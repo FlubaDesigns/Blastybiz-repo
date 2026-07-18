@@ -103,8 +103,6 @@ import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/
 import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
-const ADMIN_EMAILS = ['info@blastybiz.com'];
-
 let currentUser = null;
 let userPlan = 'starter';
 
@@ -122,10 +120,13 @@ auth.authStateReady().then(() => {
 
     document.getElementById('acct-email').textContent = user.email || '—';
 
-    // Show admin card if applicable
-    if (ADMIN_EMAILS.includes(user.email)) {
-      document.getElementById('acct-admin-card').style.display = '';
-    }
+    // Show admin card based on custom claim — no hardcoded email list
+    try {
+      const tokenResult = await user.getIdTokenResult();
+      if (tokenResult.claims.admin) {
+        document.getElementById('acct-admin-card').style.display = '';
+      }
+    } catch(e) { /* admin card stays hidden if claim check fails */ }
 
     try {
       const userSnap = await getDoc(doc(db, 'users', user.uid));
@@ -166,7 +167,7 @@ async function startCheckout(plan) {
     const r = await fetch(`${CF}/createCheckoutSession`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-      body: JSON.stringify({ plan, uid: currentUser.uid, email: currentUser.email })
+      body: JSON.stringify({ plan })
     });
     const data = await r.json();
     if (data.url) { window.location.href = data.url; }
@@ -189,7 +190,7 @@ window.handleBilling = async function(e) {
       const r = await fetch(`${CF}/createPortalSession`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-        body: JSON.stringify({ uid: currentUser.uid })
+        body: JSON.stringify({})
       });
       const data = await r.json();
       if (data.url) { window.location.href = data.url; }
@@ -224,8 +225,8 @@ window.confirmDeleteAccount = async function() {
     const idToken = await currentUser.getIdToken();
     const r = await fetch(`${CF}/deleteAccount`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken })
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+      body: JSON.stringify({})
     });
     const data = await r.json();
     if (data.success) {

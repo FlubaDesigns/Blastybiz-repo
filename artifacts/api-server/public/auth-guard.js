@@ -1,10 +1,9 @@
 import { auth } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-// Safety valve — if authStateReady rejects or onAuthStateChanged never fires,
-// reveal the body after 5s so pages never stay permanently hidden.
+// Safety valve: if auth never resolves, redirect to login — never reveal protected content.
 const _safetyTimer = setTimeout(() => {
-  document.body.style.visibility = 'visible';
+  window.location.href = 'BlastyBiz-Login.html';
 }, 5000);
 
 auth.authStateReady()
