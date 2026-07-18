@@ -658,10 +658,11 @@ let photoScope = 'campaign';        // 'campaign' | 'global'
 // INIT
 // ══════════════════════════════════════════
 function savePlatformSelections() {
-  try {
-    const ids = platforms.filter(p => p.enabled).map(p => p.id);
-    localStorage.setItem('bb_platforms_enabled', JSON.stringify(ids));
-  } catch(e) {}
+  const ids = platforms.filter(p => p.enabled).map(p => p.id);
+  try { localStorage.setItem('bb_platforms_enabled', JSON.stringify(ids)); } catch(e) {}
+  if (window._bbSavePlatformSelections) {
+    window._bbSavePlatformSelections(ids).catch(e => console.warn('savePlatformSelections:', e));
+  }
 }
 
 function loadPlatformSelections() {
@@ -3579,6 +3580,14 @@ let activeBizId = null;
 let userPlan = 'starter';
 
 // Exposed to regular script — module owns db + activeBizId
+window._bbSavePlatformSelections = async function(enabledIds) {
+  if (!activeBizId || !currentUser) return;
+  await setDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId),
+    { enabledPlatforms: enabledIds },
+    { merge: true }
+  );
+};
+
 window._bbSaveCampaigns = async function(cams) {
   if (!activeBizId || !currentUser) throw new Error('No active business');
   if (!cams.length) return;
@@ -3787,7 +3796,15 @@ onAuthStateChanged(auth, async (user) => {
       };
       if (window._bbSetProfile) window._bbSetProfile(p);
       window._globalMemory = biz.globalMemory || '';
-      if (window.loadInsights)      window.loadInsights(biz.bizInsights || []);
+      if (window.loadInsights) window.loadInsights(biz.bizInsights || []);
+
+      // Restore saved platform selections (cross-device)
+      if (biz.enabledPlatforms && Array.isArray(biz.enabledPlatforms) && biz.enabledPlatforms.length > 0) {
+        const ids = biz.enabledPlatforms;
+        const restored = window.PLATFORMS.map(p => ({ ...p, enabled: ids.includes(p.id) }));
+        if (window._bbSetPlatforms) window._bbSetPlatforms(restored);
+        try { localStorage.setItem('bb_platforms_enabled', JSON.stringify(ids)); } catch(e) {}
+      }
 
       // Load global factoids from subcollection
       try {
