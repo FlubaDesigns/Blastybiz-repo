@@ -3578,6 +3578,7 @@ window.doSignOut = () => { localStorage.setItem('bb_auth','0'); signOut(auth).fi
 let currentUser = null;
 let activeBizId = null;
 let userPlan = 'starter';
+let _enabledPlatformIds = null; // authoritative enabled set from biz doc
 
 // Exposed to regular script — module owns db + activeBizId
 window._bbSavePlatformSelections = async function(enabledIds) {
@@ -3799,11 +3800,13 @@ onAuthStateChanged(auth, async (user) => {
       if (window.loadInsights) window.loadInsights(biz.bizInsights || []);
 
       // Restore saved platform selections (cross-device)
-      if (biz.enabledPlatforms && Array.isArray(biz.enabledPlatforms) && biz.enabledPlatforms.length > 0) {
-        const ids = biz.enabledPlatforms;
-        const restored = window.PLATFORMS.map(p => ({ ...p, enabled: ids.includes(p.id) }));
-        if (window._bbSetPlatforms) window._bbSetPlatforms(restored);
-        try { localStorage.setItem('bb_platforms_enabled', JSON.stringify(ids)); } catch(e) {}
+      if (biz.enabledPlatforms && Array.isArray(biz.enabledPlatforms)) {
+        _enabledPlatformIds = biz.enabledPlatforms;
+        if (_enabledPlatformIds.length > 0) {
+          const restored = window.PLATFORMS.map(p => ({ ...p, enabled: _enabledPlatformIds.includes(p.id) }));
+          if (window._bbSetPlatforms) window._bbSetPlatforms(restored);
+          try { localStorage.setItem('bb_platforms_enabled', JSON.stringify(_enabledPlatformIds)); } catch(e) {}
+        }
       }
 
       // Load global factoids from subcollection
@@ -4043,7 +4046,11 @@ onAuthStateChanged(auth, async (user) => {
       });
       const updatedPlatforms = PLATFORMS.map(p => {
         const conn = connMap[p.id];
-        return conn ? { ...p, enabled: !!conn.enabled, status: conn.status || 'idle' } : p;
+        // _enabledPlatformIds (from biz doc) is authoritative; fall back to conn.enabled
+        const isEnabled = _enabledPlatformIds !== null
+          ? _enabledPlatformIds.includes(p.id)
+          : (conn ? !!conn.enabled : false);
+        return { ...p, enabled: isEnabled, status: (conn ? conn.status || 'idle' : p.status) };
       });
       if (window._bbSetPlatforms) window._bbSetPlatforms(updatedPlatforms);
     }
