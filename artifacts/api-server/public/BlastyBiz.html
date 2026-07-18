@@ -42,6 +42,51 @@
 .about-you-toggle{width:100%;background:none;border:none;color:var(--light,#fff);font-size:14px;font-family:inherit;cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:0;}
 .about-you-chevron{font-size:18px;transition:transform 0.2s;color:var(--muted,#888);}
 .about-you-chevron.open{transform:rotate(90deg);}
+/* ── Stage 2: Step 3 platform selection rows ── */
+.s3-plat-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border,#333);}
+.s3-plat-row:last-child{border-bottom:none;}
+.s3-plat-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.s3-plat-meta{flex:1;min-width:0;}
+.s3-plat-name{font-size:14px;font-weight:600;color:var(--light,#fff);}
+.s3-plat-badge{font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted,#888);margin-top:1px;}
+.s3-plat-badge.api{color:var(--green,#39ff14);}
+/* ── Stage 2: Step 5 per-platform review ── */
+.step5-subhead{font-size:12px;font-weight:700;color:var(--muted,#888);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-bottom:10px;}
+.step5-plat-dots{display:flex;gap:6px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;}
+.step5-plat-dot{width:7px;height:7px;border-radius:50%;background:var(--border,#333);transition:all 0.22s;flex-shrink:0;cursor:pointer;}
+.step5-plat-dot.s5-active{background:var(--green,#39ff14);width:20px;border-radius:4px;}
+.step5-plat-dot.s5-done{background:rgba(57,255,20,0.45);}
+.step5-review-card{background:var(--card,#1a1a1a);border:1px solid var(--border,#333);border-radius:14px;padding:16px;margin-bottom:14px;}
+.step5-plat-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.step5-plat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.step5-plat-info{flex:1;min-width:0;}
+.step5-plat-name{font-size:15px;font-weight:700;color:var(--light,#fff);}
+.step5-plat-type{font-size:11px;color:var(--muted,#888);margin-top:1px;}
+.step5-status-pill{font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;white-space:nowrap;flex-shrink:0;}
+.step5-status-pill.needs-review{background:rgba(255,168,0,.12);color:var(--warn,#ffa800);}
+.step5-status-pill.approved{background:rgba(57,255,20,.12);color:var(--green,#39ff14);}
+.step5-status-pill.failed{background:rgba(255,59,59,.12);color:#ff3b3b;}
+.step5-copy-text{width:100%;min-height:130px;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:10px;padding:12px;font-size:14px;color:var(--text,#ccc);line-height:1.6;resize:vertical;font-family:inherit;box-sizing:border-box;outline:none;}
+.step5-copy-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.step5-action-btn{font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;border:1px solid var(--border,#333);background:transparent;color:var(--muted,#888);cursor:pointer;font-family:inherit;white-space:nowrap;}
+.step5-action-btn:active{opacity:.7;}
+.step5-looks-good-btn{width:100%;padding:14px;font-size:15px;font-weight:700;border-radius:12px;border:2px solid var(--green,#39ff14);background:var(--green,#39ff14);color:#000;cursor:pointer;font-family:inherit;letter-spacing:.2px;margin-top:8px;transition:all .2s;}
+.step5-looks-good-btn.approved{background:transparent;color:var(--green,#39ff14);}
+.step5-looks-good-btn:active{opacity:.85;}
+.step5-nav{display:flex;gap:12px;margin:4px 0;}
+.step5-nav-btn{flex:1;padding:12px;font-size:14px;font-weight:700;border-radius:12px;border:1px solid var(--border,#333);background:transparent;color:var(--light,#fff);cursor:pointer;font-family:inherit;}
+.step5-nav-btn:disabled{opacity:.3;cursor:default;}
+.step5-nav-btn:not(:disabled):active{opacity:.7;}
+.step5-setup-block{background:rgba(255,168,0,.06);border:1px solid rgba(255,168,0,.25);border-radius:10px;padding:14px;margin-bottom:12px;}
+.step5-setup-title{font-size:12px;font-weight:700;color:var(--warn,#ffa800);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
+.step5-setup-tip{font-size:13px;color:var(--muted,#888);line-height:1.5;margin-bottom:10px;}
+.step5-setup-btns{display:flex;flex-direction:column;gap:8px;}
+.step5-setup-link{display:block;padding:11px 14px;border-radius:10px;font-size:13px;font-weight:700;text-align:center;text-decoration:none;}
+.step5-setup-link.signup{background:var(--green,#39ff14);color:#000;}
+.step5-setup-link.signin{background:transparent;border:1px solid var(--border,#333);color:var(--muted,#888);}
+.step5-url-row{display:flex;gap:6px;margin-top:10px;}
+.step5-url-input{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:8px;padding:9px 10px;font-size:13px;color:var(--light,#fff);font-family:inherit;min-width:0;}
+.step5-url-save{padding:9px 12px;border-radius:8px;background:var(--green,#39ff14);border:none;color:#000;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;}
 </style>
 <script type="module" src="./auth-guard.js"></script>
 <script src="blastybiz-menu.js?v=3"></script>
@@ -83,12 +128,14 @@
       <div class="create-wiz-label" id="create-wiz-label">Step 1 of 3 — Your Blast</div>
     </div>
     <div class="create-progress-track">
-      <div class="create-progress-fill" id="create-progress-fill" style="width:33%"></div>
+      <div class="create-progress-fill" id="create-progress-fill" style="width:20%"></div>
     </div>
     <div class="create-step-dots">
       <span class="cwiz-dot cwiz-active" id="cwiz-dot-1"></span>
       <span class="cwiz-dot" id="cwiz-dot-2"></span>
       <span class="cwiz-dot" id="cwiz-dot-3"></span>
+      <span class="cwiz-dot" id="cwiz-dot-4"></span>
+      <span class="cwiz-dot" id="cwiz-dot-5"></span>
     </div>
 
     <!-- ══ SLIDE 1: Campaign + Blast Info + Extra Facts ══ -->
@@ -233,18 +280,17 @@
       <div class="bottom-safe"></div>
     </div><!-- /create-slide-2 -->
 
-    <!-- ══ SLIDE 3: Platforms + Generate ══ -->
+    <!-- ══ SLIDE 3: Platform Selection ══ -->
     <div class="create-slide" id="create-slide-3">
 
-      <!-- Platform quick select -->
       <div class="card">
         <div class="row-base-sb mb-12">
           <div class="card-title mb-0">📡 Send To</div>
           <button id="select-all-btn" onclick="toggleSelectAll()" class="chip-green" style="font-family:inherit;font-size:12px;">Select All</button>
         </div>
-        <p class="helper">Select which platforms to target. AI will adapt your listing for each one.</p>
+        <p class="helper">Pick which platforms to blast. AI will adapt your listing for each one.</p>
         <div id="quick-platform-list">
-          <!-- populated by JS -->
+          <!-- populated by renderStep3Platforms() -->
         </div>
       </div>
 
@@ -307,6 +353,24 @@
         </div>
       </div>
 
+      <!-- Slide 3 nav -->
+      <div class="create-wiz-nav">
+        <button class="btn btn-primary btn--adaptive" id="s3-continue-btn" onclick="createWizNext(3)" disabled>
+          Continue: Generate Copy →
+        </button>
+        <button class="create-wiz-back-btn" onclick="createWizPrev(3)">← Back to Photos</button>
+      </div>
+      <div class="bottom-safe"></div>
+    </div><!-- /create-slide-3 -->
+
+    <!-- ══ SLIDE 4: AI Generation ══ -->
+    <div class="create-slide" id="create-slide-4">
+
+      <div class="card" style="text-align:center;padding:24px 16px 20px;">
+        <div class="card-title mb-8">⚡ Generate AI Copy</div>
+        <p class="helper mb-0">AI will adapt your listing for each selected platform.</p>
+      </div>
+
       <div class="ai-loading" id="ai-loading">
         <div class="ai-spinner"></div>
         <div class="ai-loading-text">⚡ AI is adapting your listing...</div>
@@ -329,17 +393,40 @@
         </button>
       </div>
 
-      <!-- REVIEW OUTPUT — visible after first adaptation -->
-      <a id="review-output-btn" href="BlastyBiz-Listing-Preview.html" class="review-btn" style="display:none;">
-        ✅ Review Your Output →
-      </a>
+      <!-- REVIEW PLATFORMS — visible after first adaptation -->
+      <button id="review-output-btn" class="review-btn" style="display:none;" onclick="createWizGoTo(5)">
+        → Review Your Platforms
+      </button>
 
-      <!-- Slide 3 back nav -->
+      <!-- Slide 4 back nav -->
       <div class="create-wiz-nav" style="margin-top:20px;">
-        <button class="create-wiz-back-btn" onclick="createWizPrev(3)">← Back to Photos</button>
+        <button class="create-wiz-back-btn" onclick="createWizPrev(4)">← Back to Platforms</button>
       </div>
       <div class="bottom-safe"></div>
-    </div><!-- /create-slide-3 -->
+    </div><!-- /create-slide-4 -->
+
+    <!-- ══ SLIDE 5: Platform-by-Platform Review ══ -->
+    <div class="create-slide" id="create-slide-5">
+
+      <div class="step5-subhead" id="step5-subhead">Reviewing platform 1 of 1</div>
+      <div class="step5-plat-dots" id="step5-plat-dots"></div>
+      <div id="step5-review-container">
+        <!-- populated by renderStep5Review() -->
+      </div>
+      <div class="step5-nav">
+        <button class="step5-nav-btn" id="step5-prev-btn" onclick="step5Prev()">← Prev</button>
+        <button class="step5-nav-btn" id="step5-next-btn" onclick="step5Next()">Next →</button>
+      </div>
+      <button class="review-btn" id="step5-final-btn" style="display:none;" onclick="goToFinalReview()">
+        ✅ Continue to Final Review →
+      </button>
+
+      <!-- Slide 5 back nav -->
+      <div class="create-wiz-nav" style="margin-top:20px;">
+        <button class="create-wiz-back-btn" onclick="createWizPrev(5)">← Back to Generate</button>
+      </div>
+      <div class="bottom-safe"></div>
+    </div><!-- /create-slide-5 -->
 
   </div><!-- /create-wizard -->
 </div>
@@ -822,6 +909,8 @@ function buildPlatformCard(p) {
 }
 
 function renderQuickSelect() {
+  renderStep3Platforms();
+  return;
   const el = document.getElementById('quick-platform-list');
   el.innerHTML = '';
   platforms.forEach(p => {
@@ -1786,8 +1875,8 @@ function countChars(el, counterId, max) {
 // ══════════════════════════════════════════
 function checkAdaptBtn() {
   const btn = document.getElementById('adapt-btn');
-  const hasEnabled = platforms.some(p => p.enabled);
-  btn.disabled = !hasEnabled;
+  if (btn) btn.disabled = !platforms.some(p => p.enabled);
+  checkS3ContinueBtn();
 }
 
 function goToStep2() { createWizGoTo(3); }
@@ -1797,11 +1886,13 @@ function goToStep1() { createWizGoTo(1); }
 // BLAST CREATION WIZARD
 // ══════════════════════════════════════════
 let createWizStep = 1;
-const CREATE_WIZ_TOTAL = 3;
+const CREATE_WIZ_TOTAL = 5;
 const CREATE_WIZ_LABELS = {
-  1: 'Step 1 of 3 — Your Blast',
-  2: 'Step 2 of 3 — Photos',
-  3: 'Step 3 of 3 — Platforms & Generate'
+  1: 'Step 1 of 5 — Your Blast',
+  2: 'Step 2 of 5 — Photos',
+  3: 'Step 3 of 5 — Select Platforms',
+  4: 'Step 4 of 5 — Generate Copy',
+  5: 'Step 5 of 5 — Review & Approve'
 };
 
 function createWizGoTo(step) {
@@ -1824,9 +1915,17 @@ function createWizGoTo(step) {
   createWizStep = step;
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (step === 3) {
-    renderQuickSelect();
+    renderStep3Platforms();
     checkAdaptBtn();
+    checkS3ContinueBtn();
     updateCopyPreview();
+  }
+  if (step === 4) {
+    checkAdaptBtn();
+  }
+  if (step === 5) {
+    _step5PlatIdx = 0;
+    renderStep5Review();
   }
 }
 
@@ -1835,6 +1934,9 @@ function createWizNext(fromStep) {
     const offer = document.getElementById('biz-offer')?.value?.trim();
     if (!offer) { showToast('Add your offer description first'); return; }
     saveDraft();
+  }
+  if (fromStep === 3) {
+    if (!platforms.some(p => p.enabled)) { showToast('Select at least one platform first'); return; }
   }
   createWizGoTo(fromStep + 1);
 }
@@ -1850,6 +1952,214 @@ function toggleAboutYouPanel() {
   const isOpen = !panel.classList.contains('hidden');
   panel.classList.toggle('hidden', isOpen);
   if (chevron) chevron.classList.toggle('open', !isOpen);
+}
+
+// ══════════════════════════════════════════
+// STEP 3: CLEAN PLATFORM SELECTION ROWS
+// ══════════════════════════════════════════
+function renderStep3Platforms() {
+  const el = document.getElementById('quick-platform-list');
+  if (!el) return;
+  el.innerHTML = '';
+  platforms.forEach(p => {
+    const isApi = p.type === 'api';
+    const starterLocked = isApi && (window._bbUserPlan || 'starter') === 'starter';
+    const row = document.createElement('div');
+    row.className = 's3-plat-row';
+    row.id = 's3-row-' + p.id;
+    row.innerHTML =
+      '<div class="s3-plat-icon" style="background:' + escHtml(p.color || '#222') + '22;">' + p.icon + '</div>'
+      + '<div class="s3-plat-meta">'
+      +   '<div class="s3-plat-name">' + escHtml(p.name) + '</div>'
+      +   '<div class="s3-plat-badge' + (isApi ? ' api' : '') + '">'
+      +     (starterLocked ? '🔒 Pro only' : isApi ? '⚡ Auto-Post' : '✋ Copy &amp; Paste')
+      +   '</div>'
+      + '</div>'
+      + '<label class="toggle" onclick="event.stopPropagation()">'
+      +   '<input type="checkbox"' + (p.enabled ? ' checked' : '') + ' onchange="togglePlatform(\'' + escHtml(p.id) + '\', this.checked)" />'
+      +   '<span class="toggle-slider"></span>'
+      + '</label>';
+    el.appendChild(row);
+  });
+  checkS3ContinueBtn();
+  _updateSelectAllBtn();
+}
+
+function checkS3ContinueBtn() {
+  const btn = document.getElementById('s3-continue-btn');
+  if (btn) btn.disabled = !platforms.some(p => p.enabled);
+}
+
+// ══════════════════════════════════════════
+// STEP 5: PER-PLATFORM REVIEW
+// ══════════════════════════════════════════
+let _step5PlatIdx = 0;
+
+function getStep5Platforms() {
+  return platforms.filter(p => p.enabled);
+}
+
+function renderStep5Review() {
+  const container = document.getElementById('step5-review-container');
+  if (!container) return;
+  const enabled = getStep5Platforms();
+  if (!enabled.length) {
+    container.innerHTML = '<div class="helper" style="text-align:center;padding:24px 0;">No platforms selected. Go back and pick at least one.</div>';
+    updateStep5UI();
+    return;
+  }
+  if (_step5PlatIdx >= enabled.length) _step5PlatIdx = 0;
+  container.innerHTML = '';
+  enabled.forEach((p, idx) => {
+    const card = buildStep5Card(p);
+    card.style.display = idx === _step5PlatIdx ? 'block' : 'none';
+    container.appendChild(card);
+  });
+  // Populate photo strips now that elements are in DOM
+  const campaignPhotos = (window._bbPhotoItems || []).filter(i => i.done && i.url);
+  const featuredUrl = (window._bbSelectedPhotoIndex !== null && window._bbPhotoItems)
+    ? (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || '') : '';
+  enabled.forEach(p => {
+    if (!p.adaptedContent) return;
+    const imgSupport = PLATFORM_IMAGE_SUPPORT[p.id];
+    if (imgSupport && campaignPhotos.length > 0) {
+      if (!window._bbPlatformPhotoSel) window._bbPlatformPhotoSel = {};
+      if (!window._bbPlatformPhotoSel[p.id]) {
+        window._bbPlatformPhotoSel[p.id] = new Set(featuredUrl ? [featuredUrl] : []);
+      }
+      renderPlatformPhotoStrip(p.id, campaignPhotos, imgSupport.max);
+    }
+  });
+  updateStep5UI();
+}
+
+function buildStep5Card(p) {
+  const card = document.createElement('div');
+  card.className = 'step5-review-card';
+  card.id = 'step5-card-' + p.id;
+  const hasContent = !!p.adaptedContent;
+  const isApi = p.type === 'api';
+  const setup = PLATFORM_SETUP[p.id] || {};
+  const hasUrl = !!((window._bbPlatformUrls || {})[p.id]);
+  const urlHint = escHtml(PLATFORM_URL_HINTS[p.id] || 'Paste your ' + p.name + ' page URL');
+  const statusClass = p._reviewStatus === 'approved' ? 'approved' : hasContent ? 'needs-review' : 'failed';
+  const statusLabel = p._reviewStatus === 'approved' ? '✓ Approved' : hasContent ? 'Needs Review' : 'No Copy';
+  let inner = '<div class="step5-plat-hdr">'
+    + '<div class="step5-plat-icon" style="background:' + escHtml(p.color || '#222') + '22;">' + p.icon + '</div>'
+    + '<div class="step5-plat-info">'
+    +   '<div class="step5-plat-name">' + escHtml(p.name) + '</div>'
+    +   '<div class="step5-plat-type">' + (isApi ? '⚡ Auto-Post' : '✋ Copy &amp; Paste') + '</div>'
+    + '</div>'
+    + '<span class="step5-status-pill ' + statusClass + '" id="step5-pill-' + p.id + '">' + statusLabel + '</span>'
+    + '</div>';
+  if (hasContent) {
+    const safeText = escHtml(p.adaptedContent.replace(/<br\/?>/gi, '\n'));
+    inner += '<div class="step5-copy-actions">'
+      + '<button class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">🔄 Regenerate</button>'
+      + '<button class="step5-action-btn" onclick="copyQpText(\'' + escHtml(p.id) + '\')">📋 Copy</button>'
+      + '<button class="step5-action-btn" id="qp-accept-' + p.id + '" onclick="acceptPlatformCopy(\'' + escHtml(p.id) + '\')">✅ Accept</button>'
+      + '</div>'
+      + '<div id="qp-copy-text-' + p.id + '" class="step5-copy-text" contenteditable="true">' + safeText + '</div>'
+      + '<div id="qp-copy-img-' + p.id + '" class="qp-copy-img-note" style="margin:6px 0;"></div>'
+      + '<div id="qp-photos-' + p.id + '" class="qp-photos-section" style="display:none;">'
+      +   '<div class="qp-photos-label">📷 Photos for this post</div>'
+      +   '<div id="qp-photo-strip-' + p.id + '" class="qp-photo-strip"></div>'
+      + '</div>'
+      + '<div id="qp-share-' + p.id + '" class="qp-share-section" style="display:none;"></div>'
+      + '<button class="step5-looks-good-btn' + (p._reviewStatus === 'approved' ? ' approved' : '') + '" id="step5-lgtm-' + p.id + '" onclick="markPlatformReviewed(\'' + escHtml(p.id) + '\')">'
+      +   (p._reviewStatus === 'approved' ? '✓ Approved' : '✓ Looks Good')
+      + '</button>';
+    if (!hasUrl) {
+      inner += '<div class="step5-setup-block" style="margin-top:14px;">'
+        + '<div class="step5-setup-title">📍 Save your ' + escHtml(p.name) + ' link</div>'
+        + '<div class="step5-url-row">'
+        +   '<input type="url" id="qp-url-input-' + p.id + '" class="step5-url-input" placeholder="' + urlHint + '" value="' + escHtml((window._bbPlatformUrls || {})[p.id] || '') + '" onblur="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', this.value.trim())" />'
+        +   '<button class="step5-url-save" onclick="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', document.getElementById(\'qp-url-input-' + p.id + '\').value.trim()); showToast(\'✓ Saved!\')">Save</button>'
+        + '</div>'
+        + '</div>';
+    }
+  } else {
+    const su = setup.signup || { url: PLATFORM_DEFAULT_URLS[p.id] || '#', label: 'Get Started →' };
+    const si = setup.signin || null;
+    const tip = escHtml(setup.tip || 'Set up your ' + p.name + ' account to start reaching more customers.');
+    inner += '<div class="step5-setup-block">'
+      + '<div class="step5-setup-title">⚠️ No copy generated</div>'
+      + '<div class="step5-setup-tip">' + tip + '</div>'
+      + '<div class="step5-setup-btns">'
+      +   '<a href="' + escHtml(su.url) + '" target="_blank" rel="noopener" class="step5-setup-link signup">' + escHtml(su.label) + '</a>'
+      +   (si ? '<a href="' + escHtml(si.url) + '" target="_blank" rel="noopener" class="step5-setup-link signin">' + escHtml(si.label) + '</a>' : '')
+      + '</div>'
+      + '<div class="step5-url-row">'
+      +   '<input type="url" id="qp-url-input-' + p.id + '" class="step5-url-input" placeholder="' + urlHint + '" value="' + escHtml((window._bbPlatformUrls || {})[p.id] || '') + '" />'
+      +   '<button class="step5-url-save" onclick="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', document.getElementById(\'qp-url-input-' + p.id + '\').value.trim()); showToast(\'✓ Saved!\')">Save</button>'
+      + '</div>'
+      + '</div>'
+      + '<div id="qp-copy-text-' + p.id + '" style="display:none;"></div>'
+      + '<button class="step5-looks-good-btn" style="margin-top:8px;" onclick="markPlatformReviewed(\'' + escHtml(p.id) + '\')">Skip → Next Platform</button>';
+  }
+  card.innerHTML = inner;
+  return card;
+}
+
+function updateStep5UI() {
+  const enabled = getStep5Platforms();
+  const total   = enabled.length;
+  const cur     = _step5PlatIdx;
+  const subhead = document.getElementById('step5-subhead');
+  if (subhead) subhead.textContent = 'Platform ' + (cur + 1) + ' of ' + total;
+  const dotsEl = document.getElementById('step5-plat-dots');
+  if (dotsEl) {
+    dotsEl.innerHTML = '';
+    enabled.forEach((p, idx) => {
+      const dot = document.createElement('span');
+      dot.className = 'step5-plat-dot';
+      if (idx < cur)       dot.classList.add('s5-done');
+      else if (idx === cur) dot.classList.add('s5-active');
+      dot.onclick = () => step5GoTo(idx);
+      dotsEl.appendChild(dot);
+    });
+  }
+  const prevBtn = document.getElementById('step5-prev-btn');
+  const nextBtn = document.getElementById('step5-next-btn');
+  if (prevBtn) prevBtn.disabled = cur <= 0;
+  if (nextBtn) nextBtn.disabled = cur >= total - 1;
+  const allDone = enabled.length > 0 && enabled.every(p =>
+    p._reviewStatus === 'approved' || p._reviewStatus === 'skipped' || !p.adaptedContent
+  );
+  const finalBtn = document.getElementById('step5-final-btn');
+  if (finalBtn) finalBtn.style.display = allDone ? 'flex' : 'none';
+}
+
+function step5GoTo(idx) {
+  const enabled = getStep5Platforms();
+  if (idx < 0 || idx >= enabled.length) return;
+  const curCard = document.getElementById('step5-card-' + enabled[_step5PlatIdx].id);
+  if (curCard) curCard.style.display = 'none';
+  _step5PlatIdx = idx;
+  const newCard = document.getElementById('step5-card-' + enabled[_step5PlatIdx].id);
+  if (newCard) newCard.style.display = 'block';
+  updateStep5UI();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function step5Prev() { step5GoTo(_step5PlatIdx - 1); }
+function step5Next() { step5GoTo(_step5PlatIdx + 1); }
+
+function markPlatformReviewed(pid) {
+  platforms = platforms.map(p => p.id === pid ? { ...p, _reviewStatus: 'approved' } : p);
+  const pill = document.getElementById('step5-pill-' + pid);
+  if (pill) { pill.textContent = '✓ Approved'; pill.className = 'step5-status-pill approved'; }
+  const btn = document.getElementById('step5-lgtm-' + pid);
+  if (btn) { btn.textContent = '✓ Approved'; btn.classList.add('approved'); }
+  updateStep5UI();
+  const enabled = getStep5Platforms();
+  const nextIdx = enabled.findIndex((p, i) => i > _step5PlatIdx && p._reviewStatus !== 'approved');
+  if (nextIdx !== -1) setTimeout(() => step5GoTo(nextIdx), 350);
+}
+
+function goToFinalReview() {
+  const draftId = window._currentDraftId;
+  window.location.href = 'BlastyBiz-Listing-Preview.html' + (draftId ? '?draftId=' + draftId : '');
 }
 
 // ══════════════════════════════════════════
@@ -2069,6 +2379,9 @@ async function runAdaptation() {
 
   const enabledPlatforms = platforms.filter(p => p.enabled);
   if (!enabledPlatforms.length) { showToast('Select at least one platform'); return; }
+
+  // Reset per-platform review status for this fresh generation
+  platforms = platforms.map(p => ({ ...p, _reviewStatus: undefined }));
 
   // Show loading, hide button
   const btn = document.getElementById('adapt-btn');
