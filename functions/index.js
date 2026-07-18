@@ -2116,7 +2116,7 @@ exports.userCreatedTrigger = onDocumentCreated(
 // ══════════════════════════════════════════
 // Function 19b: businessCreatedTrigger
 // Firestore trigger — businesses/{bizId} created (end of onboarding step 6)
-// Sends welcome email + admin alert once businessName is known
+// Sends plan-specific welcome email + admin alert once businessName is known
 // ══════════════════════════════════════════
 exports.businessCreatedTrigger = onDocumentCreated(
   { document: 'users/{uid}/businesses/{bizId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
@@ -2125,46 +2125,77 @@ exports.businessCreatedTrigger = onDocumentCreated(
     const uid = event.params.uid;
     if (!uid) return;
 
-    // Get auth email from users doc (the form email field is the business contact, not auth email)
-    let email, ownerName;
+    // Get auth email + plan from users doc
+    let email, ownerName, plan;
     try {
       const userSnap = await db.collection('users').doc(uid).get();
       if (!userSnap.exists) return;
       const userData = userSnap.data();
-      email = userData.email;
+      email     = userData.email;
       ownerName = biz.ownerName || userData.ownerName || userData.displayName || '';
+      plan      = userData.plan || 'starter';
     } catch(e) { console.warn('[businessCreatedTrigger] users read failed:', e.message); return; }
     if (!email) return;
 
     const businessName = biz.businessName || (ownerName ? ownerName + '\'s Business' : 'your business');
+    const isPro    = plan === 'pro';
+    const isAgency = plan === 'agency';
 
     const mergeData = {
       name: ownerName || 'there',
       businessName,
       dashboardUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html',
-      upgradeUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html#upgrade',
-      appUrl: APP_BASE_URL,
+      upgradeUrl:   APP_BASE_URL + '/BlastyBiz-Dashboard.html#upgrade',
+      appUrl:       APP_BASE_URL,
     };
     function applyTags(str) {
       return str.replace(/\{\{(\w+)\}\}/g, (_, k) => mergeData[k] || '');
     }
 
-    let subject = 'Welcome to BlastyBiz, ' + mergeData.name + '! 🚀';
-    let html = null;
-    try {
-      const snap = await db.collection('emailTemplates')
-        .where('type', '==', 'welcome')
-        .where('active', '==', true)
-        .limit(1)
-        .get();
-      if (!snap.empty) {
-        const tmpl = snap.docs[0].data();
-        subject = applyTags(tmpl.subject || subject);
-        html = applyTags(tmpl.html || '');
-      }
-    } catch(e) { console.error('[businessCreatedTrigger] template fetch failed:', e.message); }
+    // ── Pick template type and fallback content by plan ──────────────────────
+    let templateType, subject, html;
 
-    if (!html) {
+    if (isAgency) {
+      templateType = 'agency-welcome';
+      subject = `Welcome to BlastyBiz Agency, ${mergeData.name} — you&#39;re all set. 🚀`;
+      html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:28px 32px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz Agency</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:32px">
+    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re Agency, ${mergeData.name}. Full power unlocked.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> is live on BlastyBiz Agency. You can manage unlimited client businesses, blast to every platform, and schedule posts automatically.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">Add your first client from the dashboard and start blasting.</p>
+    <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Open Dashboard &#8594;</a>
+  </div>
+  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="${mergeData.appUrl}" style="color:#999">blastybiz.com</a></p>
+  </div>
+</div>`;
+
+    } else if (isPro) {
+      templateType = 'pro-welcome';
+      subject = `Welcome to BlastyBiz Pro, ${mergeData.name} — let&#39;s get blasting. 🎯`;
+      html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:28px 32px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz Pro</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:32px">
+    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re Pro, ${mergeData.name}. Everything&#39;s unlocked.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> is set up on BlastyBiz Pro. You have full API publishing, auto-scheduled posts, and unlimited blasts.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">Head to your dashboard and fire off your first blast — it takes about 5 minutes.</p>
+    <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Go to Dashboard &#8594;</a>
+  </div>
+  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="${mergeData.appUrl}" style="color:#999">blastybiz.com</a></p>
+  </div>
+</div>`;
+
+    } else {
+      templateType = 'welcome';
+      subject = `Welcome to BlastyBiz, ${mergeData.name}! 🚀`;
       html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
   <div style="background:#0d1a0d;padding:28px 32px">
     <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
@@ -2172,8 +2203,12 @@ exports.businessCreatedTrigger = onDocumentCreated(
   </div>
   <div style="padding:32px">
     <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re in, ${mergeData.name}. Let&#39;s blast.</h1>
-    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px"><strong>${mergeData.businessName}</strong> is set up and ready. Fill out your profile once — BlastyBiz writes the copy for every platform automatically.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> is set up and ready. Fill out your profile once — BlastyBiz writes the copy for every platform automatically.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">You&#39;re on the free Starter plan. Upgrade to Pro anytime to unlock auto-publishing and scheduled posts.</p>
     <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px">Go to Dashboard &#8594;</a>
+    <div style="margin-top:20px">
+      <a href="${mergeData.upgradeUrl}" style="font-size:13px;color:#00873a;font-weight:700;text-decoration:none">Upgrade to Pro &#8594;</a>
+    </div>
   </div>
   <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
     <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="${mergeData.appUrl}" style="color:#999">blastybiz.com</a></p>
@@ -2181,17 +2216,32 @@ exports.businessCreatedTrigger = onDocumentCreated(
 </div>`;
     }
 
+    // Check for a custom template override in Firestore
+    try {
+      const tmplSnap = await db.collection('emailTemplates')
+        .where('type', '==', templateType)
+        .where('active', '==', true)
+        .limit(1)
+        .get();
+      if (!tmplSnap.empty) {
+        const tmpl = tmplSnap.docs[0].data();
+        subject = applyTags(tmpl.subject || subject);
+        html    = applyTags(tmpl.html    || html);
+      }
+    } catch(e) { console.error('[businessCreatedTrigger] template fetch failed:', e.message); }
+
     await sendResendEmail({ to: email, subject, html });
 
     // Internal admin alert — new signup completed onboarding
     try {
       await sendResendEmail({
         to: 'info@blastybiz.com',
-        subject: `[BlastyBiz] New signup: ${mergeData.name} (${email})`,
+        subject: `[BlastyBiz] New signup (${plan}): ${mergeData.name} (${email})`,
         html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#111">
   <h2 style="margin:0 0 12px;font-size:18px">&#128226; New signup — onboarding complete</h2>
   <table style="width:100%;border-collapse:collapse;font-size:14px">
-    <tr><td style="padding:6px 0;color:#888;width:140px">Name</td><td style="padding:6px 0;font-weight:600">${mergeData.name}</td></tr>
+    <tr><td style="padding:6px 0;color:#888;width:140px">Plan</td><td style="padding:6px 0;font-weight:700;color:#00873a;text-transform:uppercase">${plan}</td></tr>
+    <tr><td style="padding:6px 0;color:#888">Name</td><td style="padding:6px 0;font-weight:600">${mergeData.name}</td></tr>
     <tr><td style="padding:6px 0;color:#888">Email</td><td style="padding:6px 0">${email}</td></tr>
     <tr><td style="padding:6px 0;color:#888">Business</td><td style="padding:6px 0">${businessName}</td></tr>
     <tr><td style="padding:6px 0;color:#888">Time</td><td style="padding:6px 0">${new Date().toUTCString()}</td></tr>
