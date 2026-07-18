@@ -69,7 +69,7 @@
 .step5-status-pill.needs-review{background:rgba(255,168,0,.12);color:var(--warn,#ffa800);}
 .step5-status-pill.approved{background:rgba(57,255,20,.12);color:var(--green,#39ff14);}
 .step5-status-pill.failed{background:rgba(255,59,59,.12);color:#ff3b3b;}
-.step5-copy-text{width:100%;min-height:130px;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:10px;padding:12px;font-size:14px;color:var(--text,#ccc);line-height:1.6;resize:vertical;font-family:inherit;box-sizing:border-box;outline:none;}
+.step5-copy-text{width:100%;min-height:130px;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:10px;padding:12px;font-size:14px;color:var(--text,#ccc);line-height:1.6;resize:vertical;font-family:inherit;box-sizing:border-box;outline:none;white-space:pre-wrap;}
 .step5-copy-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
 .step5-action-btn{font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;border:1px solid var(--border,#333);background:transparent;color:var(--muted,#888);cursor:pointer;font-family:inherit;white-space:nowrap;}
 .step5-action-btn:active{opacity:.7;}
@@ -1485,6 +1485,18 @@ async function regeneratePlatformCopy(pid) {
         const newCard = buildStep5Card(updatedPlatform);
         if (!wasVisible) newCard.style.display = 'none';
         oldCard.parentNode.replaceChild(newCard, oldCard);
+        // Repopulate photo strip for the rebuilt card (renderStep5Review doesn't re-run for inline rebuilds)
+        const _rebuildPhotos = (window._bbPhotoItems || []).filter(i => i.done && i.url);
+        const _rebuildImgSupport = PLATFORM_IMAGE_SUPPORT[pid];
+        if (_rebuildImgSupport && _rebuildPhotos.length > 0) {
+          if (!window._bbPlatformPhotoSel) window._bbPlatformPhotoSel = {};
+          if (!window._bbPlatformPhotoSel[pid]) {
+            const _featuredUrl = (window._bbSelectedPhotoIndex !== null && window._bbPhotoItems)
+              ? (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || '') : '';
+            window._bbPlatformPhotoSel[pid] = new Set(_featuredUrl ? [_featuredUrl] : []);
+          }
+          renderPlatformPhotoStrip(pid, _rebuildPhotos, _rebuildImgSupport.max);
+        }
       }
     } else {
       // Already had copy — just reset the Looks Good button + pill
