@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784497702412" />
+<link rel="stylesheet" href="global-style.css?v=1784498790407" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -91,6 +91,7 @@
 .s5-photo-note{font-size:12px;color:var(--muted,#888);line-height:1.5;margin-bottom:10px;}
 .s5-card-location{margin-top:14px;padding-top:14px;border-top:1px solid var(--border,#333);}
 .s5-card-location .step5-setup-title{margin-bottom:8px;}
+.s5-no-link{font-size:12px;color:var(--muted,#888);}
 .step5-setup-link.signin{background:transparent;border:1px solid var(--border,#333);color:var(--muted,#888);}
 .step5-url-row{display:flex;gap:6px;margin-top:10px;}
 .step5-url-input{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:8px;padding:9px 10px;font-size:13px;color:var(--light,#fff);font-family:inherit;min-width:0;}
@@ -1935,7 +1936,9 @@ function buildStep5Card(p) {
   card.id = 'step5-card-' + p.id;
   const hasContent = !!p.adaptedContent;
   const isApi = p.type === 'api';
-  const urlHint = escHtml(PLATFORM_URL_HINTS[p.id] || 'Paste your ' + p.name + ' page URL');
+  const rawHint  = PLATFORM_URL_HINTS[p.id] || '';
+  const needsUrl = !rawHint || !rawHint.startsWith('Leave blank');
+  const urlHint  = escHtml(rawHint || 'Paste your ' + p.name + ' page URL');
   const savedUrl = escHtml((window._bbPlatformUrls || {})[p.id] || '');
   const statusClass = p._reviewStatus === 'approved' ? 'approved' : hasContent ? 'needs-review' : 'failed';
   const statusLabel = p._reviewStatus === 'approved' ? '✓ Approved' : hasContent ? 'Needs Review' : 'No Copy';
@@ -1993,14 +1996,18 @@ function buildStep5Card(p) {
       + '</div>';
   }
 
-  // ── Row C: location/address (always shown) ─────
-  inner += '<div class="s5-card-location">'
-    + '<div class="step5-setup-title">📍 Save your ' + escHtml(p.name) + ' link</div>'
-    + '<div class="step5-url-row">'
-    +   '<input type="url" id="qp-url-input-' + p.id + '" class="step5-url-input" placeholder="' + urlHint + '" value="' + savedUrl + '" onblur="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', this.value.trim())" />'
-    +   '<button type="button" class="step5-url-save" onclick="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', document.getElementById(\'qp-url-input-' + p.id + '\').value.trim()); showToast(\'✓ Saved!\')">Save</button>'
-    + '</div>'
-    + '</div>';
+  // ── Row C: location/address ─────────────────────
+  inner += '<div class="s5-card-location">';
+  if (needsUrl) {
+    inner += '<div class="step5-setup-title">📍 Save your ' + escHtml(p.name) + ' link</div>'
+      + '<div class="step5-url-row">'
+      +   '<input type="url" id="qp-url-input-' + p.id + '" class="step5-url-input" placeholder="' + urlHint + '" value="' + savedUrl + '" onblur="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', this.value.trim())" />'
+      +   '<button type="button" class="step5-url-save" onclick="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', document.getElementById(\'qp-url-input-' + p.id + '\').value.trim()); showToast(\'✓ Saved!\')">Save</button>'
+      + '</div>';
+  } else {
+    inner += '<div class="s5-no-link">✓ No link necessary for ' + escHtml(p.name) + '</div>';
+  }
+  inner += '</div>';
 
   card.innerHTML = inner;
   return card;
