@@ -2460,7 +2460,7 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 /* ═══ CREATE PAGE — SCOPED OVERRIDES (conflict prevention) ═══ */
 
 /* Tabs (conflict: listing-preview page also uses .tab/.tabs) */
-/* Sticky top matches --main-offset so tabs lock flush under the header automatically. */
+body.create-page .tabs-row { width: 100%; }
 body.create-page .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--dark); border-radius: 10px 10px 0 0; overflow: hidden; }
 @media (max-width: 767px) {
   body.create-page .tabs {
