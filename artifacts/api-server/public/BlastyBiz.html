@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784500332065" />
+<link rel="stylesheet" href="global-style.css?v=1784501016009" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -113,6 +113,7 @@
 <div class="tabs">
   <div class="tab active" onclick="showTab('create')" id="tab-create"><span class="tab-icon">✏️ </span>Create</div>
   <div class="tab" onclick="showTab('platforms')" id="tab-platforms"><span class="tab-icon">📡 </span>Platforms</div>
+  <div class="tab" onclick="showTab('schedule')" id="tab-schedule"><span class="tab-icon">🗓️ </span>Schedule</div>
   <div class="tab" onclick="showTab('history')" id="tab-history"><span class="tab-icon">📋 </span>History</div>
   <div class="tab" onclick="showTab('profile')" id="tab-profile"><span class="tab-icon">⚙️ </span>Profile</div>
 </div>
@@ -499,7 +500,25 @@
 </div>
 
 <!-- ══════════════════════════════════════════
-     TAB 3: HISTORY
+     TAB 3: SCHEDULE
+══════════════════════════════════════════ -->
+<div class="section" id="section-schedule">
+
+  <div class="card">
+    <div class="card-title">🗓️ Upcoming Posts</div>
+    <div id="schedule-list">
+      <div class="empty">
+        <div class="empty-icon">🗓️</div>
+        <div class="empty-text">No scheduled posts yet.<br/>Complete a blast to schedule your next one.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-safe"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 4: HISTORY
 ══════════════════════════════════════════ -->
 <div class="section" id="section-history">
 
@@ -2095,7 +2114,7 @@ async function completeBlast() {
 
   // Return to main app on History tab
   setTimeout(() => {
-    if (typeof showTab === 'function') showTab('history');
+    if (typeof showTab === 'function') showTab('schedule');
     if (typeof createWizClose === 'function') createWizClose();
   }, 600);
 }
