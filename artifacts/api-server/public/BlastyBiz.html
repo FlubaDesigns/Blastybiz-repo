@@ -567,9 +567,14 @@
       </div>
       <div class="loc-fields" id="prof-loc-physical-fields">
         <input type="text" id="profile-street" placeholder="Street address" oninput="saveProfile()" class="mb-8" />
+        <div class="addr-row" style="margin-bottom:4px;">
+          <span style="flex:1;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">City</span>
+          <span style="width:72px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">State</span>
+          <span style="width:84px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">ZIP</span>
+        </div>
         <div class="addr-row">
           <input type="text" id="profile-city"  placeholder="City"  oninput="saveProfile()" class="flex-1" />
-          <input type="text" id="profile-state" placeholder="State" oninput="saveProfile()" class="w-72" />
+          <input type="text" id="profile-state" placeholder="ST"    oninput="saveProfile()" class="w-72" />
           <input type="text" id="profile-zip"   placeholder="ZIP"   oninput="saveProfile()" class="w-84" />
         </div>
       </div>
