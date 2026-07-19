@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784496099243" />
+<link rel="stylesheet" href="global-style.css?v=1784496858874" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -388,43 +388,44 @@
     <!-- ══ PAGE 2: Generate + Review ══ -->
     <div class="create-slide" id="create-slide-5">
 
-      <!-- Spinner — auto-shows on arrival, hides when done -->
-      <div class="ai-loading" id="ai-loading">
-        <div class="ai-spinner"></div>
-        <div class="ai-loading-text">⚡ AI is adapting your listing...</div>
-        <div class="ai-loading-sub" id="ai-loading-sub">Preparing all platforms</div>
-        <div class="ai-gen-track"><div class="ai-gen-fill" id="ai-gen-fill"></div></div>
-        <div class="ai-gen-pct" id="ai-gen-pct">0%</div>
+      <div class="row">
+        <div class="col-full">
+          <div class="ai-loading" id="ai-loading">
+            <div class="ai-spinner"></div>
+            <div class="ai-loading-text">⚡ AI is adapting your listing...</div>
+            <div class="ai-loading-sub" id="ai-loading-sub">Preparing all platforms</div>
+            <div class="ai-gen-track"><div class="ai-gen-fill" id="ai-gen-fill"></div></div>
+            <div class="ai-gen-pct" id="ai-gen-pct">0%</div>
+          </div>
+        </div>
       </div>
 
-      <!-- Platform cards — populated by renderStep5Review() -->
-      <div class="step5-subhead" id="step5-subhead">Reviewing platform 1 of 1</div>
-      <div class="step5-plat-dots" id="step5-plat-dots"></div>
-      <div id="step5-review-container"></div>
+      <div class="row">
+        <div class="col-full">
+          <!-- All platform cards stacked — populated by renderStep5Review() -->
+          <div id="step5-review-container"></div>
 
-      <div class="step5-nav">
-        <button type="button" class="step5-nav-btn" id="step5-prev-btn" onclick="step5Prev()">← Prev</button>
-        <button type="button" class="step5-nav-btn" id="step5-next-btn" onclick="step5Next()">Next →</button>
+          <!-- Rewrite + Clear — visible after generation -->
+          <div id="rewrite-row" class="hidden">
+            <button type="button" class="btn btn-rewrite" onclick="runAdaptation()">
+              🔄 Rewrite with Direction
+            </button>
+            <button type="button" class="btn btn-clear" onclick="clearAndStartOver()">
+              🗑️ Clear & Start Over
+            </button>
+          </div>
+
+          <button type="button" class="review-btn" id="step5-final-btn" style="display:none;" onclick="goToFinalReview()">
+            ✅ Continue to Final Review →
+          </button>
+
+          <div class="create-wiz-nav" style="margin-top:20px;">
+            <button type="button" class="create-wiz-back-btn" onclick="createWizPrev(5)">← Back to Blast</button>
+          </div>
+          <div class="bottom-safe"></div>
+        </div>
       </div>
 
-      <!-- Rewrite + Clear — visible after generation -->
-      <div id="rewrite-row" class="hidden">
-        <button type="button" class="btn btn-rewrite" onclick="runAdaptation()">
-          🔄 Rewrite with Direction
-        </button>
-        <button type="button" class="btn btn-clear" onclick="clearAndStartOver()">
-          🗑️ Clear & Start Over
-        </button>
-      </div>
-
-      <button type="button" class="review-btn" id="step5-final-btn" style="display:none;" onclick="goToFinalReview()">
-        ✅ Continue to Final Review →
-      </button>
-
-      <div class="create-wiz-nav" style="margin-top:20px;">
-        <button type="button" class="create-wiz-back-btn" onclick="createWizPrev(5)">← Back to Blast</button>
-      </div>
-      <div class="bottom-safe"></div>
     </div><!-- /create-slide-5 -->
 
   </div><!-- /create-wizard -->
@@ -1900,9 +1901,8 @@ function renderStep5Review() {
   }
   if (_step5PlatIdx >= enabled.length) _step5PlatIdx = 0;
   container.innerHTML = '';
-  enabled.forEach((p, idx) => {
+  enabled.forEach(p => {
     const card = buildStep5Card(p);
-    card.style.display = idx === _step5PlatIdx ? 'block' : 'none';
     container.appendChild(card);
   });
   // Populate photo strips now that elements are in DOM
@@ -1984,60 +1984,12 @@ function buildStep5Card(p) {
 
 function updateStep5UI() {
   const enabled = getStep5Platforms();
-  const total   = enabled.length;
-  const cur     = _step5PlatIdx;
-  const subhead = document.getElementById('step5-subhead');
-  if (subhead) subhead.textContent = 'Platform ' + (cur + 1) + ' of ' + total;
-  const dotsEl = document.getElementById('step5-plat-dots');
-  if (dotsEl) {
-    dotsEl.innerHTML = '';
-    enabled.forEach((p, idx) => {
-      const dot = document.createElement('span');
-      dot.className = 'step5-plat-dot';
-      if (idx === cur) {
-        dot.classList.add('s5-active');
-        dot.title = p.name + ' (current)';
-      } else if (p._reviewStatus === 'approved') {
-        dot.classList.add('s5-approved');
-        dot.title = p.name + ' ✓ approved';
-      } else if (p._reviewStatus === 'skipped') {
-        dot.classList.add('s5-skipped');
-        dot.title = p.name + ' — excluded';
-      } else if (!p.adaptedContent) {
-        dot.classList.add('s5-failed');
-        dot.title = p.name + ' ⚠️ no copy';
-      } else {
-        dot.title = p.name + ' — needs review';
-      }
-      dot.onclick = () => step5GoTo(idx);
-      dotsEl.appendChild(dot);
-    });
-  }
-  const prevBtn = document.getElementById('step5-prev-btn');
-  const nextBtn = document.getElementById('step5-next-btn');
-  if (prevBtn) prevBtn.disabled = cur <= 0;
-  if (nextBtn) nextBtn.disabled = cur >= total - 1;
   const allDone = enabled.length > 0 && enabled.every(p =>
     p._reviewStatus === 'approved' || p._reviewStatus === 'skipped'
   );
   const finalBtn = document.getElementById('step5-final-btn');
   if (finalBtn) finalBtn.style.display = allDone ? 'flex' : 'none';
 }
-
-function step5GoTo(idx) {
-  const enabled = getStep5Platforms();
-  if (idx < 0 || idx >= enabled.length) return;
-  const curCard = document.getElementById('step5-card-' + enabled[_step5PlatIdx].id);
-  if (curCard) curCard.style.display = 'none';
-  _step5PlatIdx = idx;
-  const newCard = document.getElementById('step5-card-' + enabled[_step5PlatIdx].id);
-  if (newCard) newCard.style.display = 'block';
-  updateStep5UI();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function step5Prev() { step5GoTo(_step5PlatIdx - 1); }
-function step5Next() { step5GoTo(_step5PlatIdx + 1); }
 
 // markPlatformReviewed replaced by approvePlatformCopy above (Finding 1+2+12)
 
