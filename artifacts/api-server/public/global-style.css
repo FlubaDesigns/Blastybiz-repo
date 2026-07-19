@@ -2255,8 +2255,11 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 .stats-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 20px; }
 
 /* ── History items ── */
-.history-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.history-item { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
 .history-item:last-child { border-bottom: none; }
+.history-item-tap { cursor: pointer; border-radius: 8px; padding: 14px 10px; margin: 0 -10px; transition: background .15s; }
+.history-item-tap:hover, .history-item-tap:active { background: rgba(255,255,255,.06); }
+.history-reload { color: var(--green); font-size: 18px; flex-shrink: 0; opacity: .85; }
 .history-dot   { width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-top: 6px; flex-shrink: 0; }
 .history-title { font-weight: 600; font-size: 14px; color: var(--light); }
 .history-meta  { font-size: 13px; color: var(--muted); margin-top: 2px; }
