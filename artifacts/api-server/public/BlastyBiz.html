@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784492930985" />
+<link rel="stylesheet" href="global-style.css?v=1784493563632" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -237,21 +237,36 @@
           <!-- LEFT: image upload -->
           <div class="col-left">
             <div class="card">
-              <div class="row-base-sb mb-4">
-                <div class="card-title mb-0">📷 Photos <span class="optional" style="font-size:12px;font-weight:400;color:var(--muted)">(optional)</span></div>
-                <span id="photo-cap-label" class="text-xs text-muted"></span>
+              <!-- Row 1: title + cap label -->
+              <div class="row">
+                <div class="col-full">
+                  <div class="row-base-sb">
+                    <div class="card-title mb-0">📷 Photos <span class="optional" style="font-size:12px;font-weight:400;color:var(--muted)">(optional)</span></div>
+                    <span id="photo-cap-label" class="text-xs text-muted"></span>
+                  </div>
+                </div>
               </div>
-              <div style="display:flex;gap:6px;margin-bottom:10px">
-                <button type="button" id="scope-photo-campaign" class="chip active" onclick="setPhotoScope('campaign')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:var(--accent);color:#fff;font-size:12px;cursor:pointer;font-weight:600">Campaign</button>
-                <button type="button" id="scope-photo-global" class="chip" onclick="setPhotoScope('global')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:transparent;color:var(--light);font-size:12px;cursor:pointer">Global</button>
+              <!-- Row 2: scope chips + hint -->
+              <div class="row">
+                <div class="col-full">
+                  <div style="display:flex;gap:6px;margin-bottom:8px">
+                    <button type="button" id="scope-photo-campaign" class="chip active" onclick="setPhotoScope('campaign')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:var(--accent);color:#fff;font-size:12px;cursor:pointer;font-weight:600">Campaign</button>
+                    <button type="button" id="scope-photo-global" class="chip" onclick="setPhotoScope('global')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:transparent;color:var(--light);font-size:12px;cursor:pointer">Global</button>
+                  </div>
+                  <p class="text-base text-muted mb-0" id="photo-scope-hint">Campaign photos are linked to the active campaign. Select a campaign above first.</p>
+                </div>
               </div>
-              <p class="text-base text-muted mb-12" id="photo-scope-hint">Campaign photos are linked to the active campaign. Select a campaign above first.</p>
-              <div id="photo-upload-area" class="image-upload-area" onclick="document.getElementById('img-input').click()">
-                <input type="file" id="img-input" accept="image/*" multiple onchange="handleImages(event)" onclick="event.stopPropagation()" />
-                <div class="upload-icon">📸</div>
-                <div class="upload-text" id="photo-upload-text">Tap to add photos<br/><span>from your camera roll</span></div>
+              <!-- Row 3: col-1-2 — upload left, thumbnails right -->
+              <div class="row">
+                <div class="col-1-2">
+                  <div id="photo-upload-area" class="image-upload-area" onclick="document.getElementById('img-input').click()">
+                    <input type="file" id="img-input" accept="image/*" multiple onchange="handleImages(event)" onclick="event.stopPropagation()" />
+                    <div class="upload-icon">📸</div>
+                    <div class="upload-text" id="photo-upload-text">Tap to add photos<br/><span>from your camera roll</span></div>
+                  </div>
+                  <div class="thumb-grid" id="thumb-grid"></div>
+                </div>
               </div>
-              <div class="thumb-grid" id="thumb-grid"></div>
             </div>
           </div><!-- /.col-left -->
 
