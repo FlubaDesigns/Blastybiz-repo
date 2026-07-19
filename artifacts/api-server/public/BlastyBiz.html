@@ -3235,8 +3235,14 @@ async function rerunAICats() {
   const btn  = document.getElementById('rerun-ai-cats-btn');
   const note = document.getElementById('platcats-note');
   const bizName    = document.getElementById('profile-name')?.value?.trim() || profile.name || '';
-  const description = profile.category || bizName;
   if (!bizName) { showToast('⚠️ Add your business name first'); return; }
+  const descParts = [
+    profile.category && profile.category !== 'Other' ? profile.category : null,
+    profile.website  ? 'Website: ' + profile.website : null,
+    profile.hours    ? 'Hours: '   + profile.hours   : null,
+    profile.ownerRole ? 'Role: '   + profile.ownerRole : null,
+  ].filter(Boolean);
+  const description = descParts.length ? descParts.join('. ') : bizName;
 
   btn.disabled = true;
   btn.textContent = '⏳ AI is thinking…';
@@ -3262,6 +3268,8 @@ async function rerunAICats() {
         businessName:  bizName,
         ownerName:     profile.ownerName || '',
         description:   description,
+        city:          profile.city  || '',
+        state:         profile.state || '',
         locationType:  locType,
         platformCatLists,
       }),
