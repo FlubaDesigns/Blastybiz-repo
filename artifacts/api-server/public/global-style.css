@@ -379,12 +379,10 @@ body.stage {
   display: flex;
   flex-direction: column;
   min-height: 100svh;
-}
-body.stage .main {
-  flex: 1;
   padding-left: var(--gutter);
   padding-right: var(--gutter);
 }
+body.stage .main { flex: 1; }
 body.stage .row {
   max-width: var(--max-w);
   margin-left: auto;
