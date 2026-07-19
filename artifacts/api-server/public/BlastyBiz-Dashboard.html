@@ -7,7 +7,10 @@
 <link rel="stylesheet" href="global-style.css?v=59" />
 <title>BlastyBiz — Command Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-<style>body{visibility:hidden}</style>
+<style>
+body{visibility:hidden}
+@media (max-width:768px){.dash-img-col{display:none}}
+</style>
 <script type="module" src="./auth-guard.js"></script>
 <script src="blastybiz-menu.js?v=3"></script>
 </head>
@@ -55,22 +58,34 @@
 
   <p class="sub" style="margin-bottom:16px;">Showing data for <strong id="dashboard-biz-name"></strong></p>
 
-  <!-- ── Campaigns — primary content ── -->
-  <div class="card">
-    <div class="card-title">📁 Campaigns</div>
-    <a class="btn btn-primary" href="BlastyBiz.html?newcampaign=1" style="display:block;width:100%;box-sizing:border-box;text-align:center;margin-bottom:12px;">＋ New Campaign</a>
-    <div id="dashboard-campaign-list"><div class="loading-text">Loading…</div></div>
-  </div>
+  <div class="layout__split-2-1">
 
-  <!-- ── Tools ── -->
-  <div class="card">
-    <div class="card-title">⚙️ Tools</div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <button type="button" class="btn" style="width:100%;box-sizing:border-box;text-align:left;padding:14px 16px;font-size:15px;" onclick="editActiveBusiness()">✏️ Edit Business Info</button>
-      <a class="btn" style="width:100%;box-sizing:border-box;text-align:left;padding:14px 16px;font-size:15px;text-decoration:none;display:block;" href="BlastyBiz-Connect.html">🔗 Connect Platforms</a>
-      <a class="btn" style="width:100%;box-sizing:border-box;text-align:left;padding:14px 16px;font-size:15px;text-decoration:none;display:block;" href="BlastyBiz-BizContext.html">📖 Business Story</a>
-      <a class="btn" style="width:100%;box-sizing:border-box;text-align:left;padding:14px 16px;font-size:15px;text-decoration:none;display:block;" href="BlastyBiz-Account.html">💼 Account Settings</a>
+    <!-- ── Left column: Campaigns + Tools ── -->
+    <div>
+      <!-- ── Campaigns — primary content ── -->
+      <div class="card">
+        <div class="card-title">📁 Campaigns</div>
+        <a class="btn btn-primary" href="BlastyBiz.html?newcampaign=1" style="display:block;width:100%;box-sizing:border-box;text-align:center;margin-bottom:12px;">＋ New Campaign</a>
+        <div id="dashboard-campaign-list"><div class="loading-text">Loading…</div></div>
+      </div>
+
+      <!-- ── Tools ── -->
+      <div class="card">
+        <div class="card-title">⚙️ Tools</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button type="button" class="btn" style="width:100%;box-sizing:border-box;text-align:left;padding:14px 16px;font-size:15px;" onclick="editActiveBusiness()">✏️ Edit Business Info</button>
+          <a class="btn" style="width:100%;box-sizing:border-box;text-align:left;padding:14px 16px;font-size:15px;text-decoration:none;display:block;" href="BlastyBiz-Connect.html">🔗 Connect Platforms</a>
+          <a class="btn" style="width:100%;box-sizing:border-box;text-align:left;padding:14px 16px;font-size:15px;text-decoration:none;display:block;" href="BlastyBiz-BizContext.html">📖 Business Story</a>
+          <a class="btn" style="width:100%;box-sizing:border-box;text-align:left;padding:14px 16px;font-size:15px;text-decoration:none;display:block;" href="BlastyBiz-Account.html">💼 Account Settings</a>
+        </div>
+      </div>
     </div>
+
+    <!-- ── Right column: hero image — desktop only ── -->
+    <div class="dash-img-col">
+      <img src="dashboard-hero.png" alt="Business owner reviewing marketing results" style="width:100%;height:100%;object-fit:cover;border-radius:12px;display:block;" />
+    </div>
+
   </div>
 
   <!-- hidden stubs for legacy JS references -->

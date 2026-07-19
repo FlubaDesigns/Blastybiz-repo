@@ -78,6 +78,12 @@ uri = "file://attached_assets/generated_images/a_pretty_smiling_blonde_1503.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "jkTfVCCdLBVB0LkcFh2N9"
+uri = "file://artifacts/api-server/public/dashboard-hero.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "OlLytVLFMpzHayK0XXDkK"
 uri = "file://download/BlastyBiz_Site.zip"
