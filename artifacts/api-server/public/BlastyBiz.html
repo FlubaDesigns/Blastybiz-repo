@@ -588,153 +588,166 @@
         <input type="text" id="profile-hours" placeholder="Mon–Sat 9am–8pm" oninput="saveProfile()" />
       </div>
 
-      <!-- TEACH AI ACCORDION -->
-      <div class="card card-flush" id="teach-ai-card">
-        <button type="button" onclick="toggleTeachAI()" id="teach-ai-header" class="teach-btn">
-          <div class="row gap-10">
-            <span class="teach-icon">🧠</span>
-            <div>
-              <div class="teach-title">Teach AI to know you better <span class="tier-badge tier-badge--global">All Campaigns</span></div>
-              <div class="teach-sub" id="teach-ai-sub">Business insights — AI uses these across all your campaigns</div>
-            </div>
-          </div>
-          <span id="teach-ai-chevron" class="chevron">›</span>
-        </button>
-        <div id="teach-ai-body" class="teach-inner hidden">
-          <div id="profile-insight-list"></div>
-          <button type="button" id="profile-enrich-more-btn" onclick="fetchEnrichmentQuestions(true)" class="btn-more-qs">
-            ✨ Ask me something new
-          </button>
-        </div>
-      </div>
-
-      <!-- CLEAR ALL DATA -->
-      <div style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.25);border-radius:14px;padding:16px;margin-top:4px;">
-        <div style="font-size:13px;font-weight:700;color:#f87171;margin-bottom:6px;">🗑️ Clear All Data</div>
-        <p style="font-size:12px;color:var(--muted);line-height:1.5;margin:0 0 12px;">Permanently wipes your business profile, platform history, saved drafts, and all local settings. This cannot be undone.</p>
-        <div id="clear-all-confirm" class="hidden" style="background:rgba(220,38,38,0.1);border-radius:10px;padding:12px;margin-bottom:10px;">
-          <div style="font-size:13px;font-weight:700;color:#f87171;margin-bottom:10px;">Are you sure? This deletes everything.</div>
-          <div style="display:flex;gap:8px;">
-            <button type="button" onclick="clearAllConfirmed()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#dc2626;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Yes, delete everything</button>
-            <button type="button" onclick="clearAllCancel()" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Cancel</button>
-          </div>
-        </div>
-        <button type="button" id="clear-all-btn" onclick="clearAllPrompt()" style="padding:9px 16px;border-radius:8px;border:1px solid rgba(220,38,38,0.4);background:transparent;color:#f87171;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Clear All Data</button>
-      </div>
-
     </div><!-- /.profile-page-left -->
 
-    <!-- RIGHT: image → Auto-Post Schedule → Preferences -->
+    <!-- RIGHT COLUMN -->
     <div class="profile-page-right">
-
-      <img src="dashboard-hero.png" alt="BlastyBiz" class="profile-right-img" />
-
-      <!-- CAMPAIGN CONTEXT -->
-      <div class="card card-flush">
-        <div class="teach-btn">
-          <div class="row gap-10">
-            <span class="teach-icon">🎯</span>
-            <div>
-              <div class="teach-title">Campaign Context <span class="tier-badge tier-badge--campaign">This Campaign</span></div>
-              <div class="teach-sub">What's unique about this campaign — added on top of your evergreen brand story</div>
-            </div>
-          </div>
-        </div>
-        <div class="campaign-ctx-body">
-          <textarea id="campaign-context" class="form-textarea" rows="3" placeholder="e.g. Christmas window display — vintage Lionel layout running daily 10am–6pm through Jan 5. Great for families, photo ops welcome. 15% off all train sets through December." oninput="debounceCampaignSave()"></textarea>
-        </div>
-      </div>
-
-      <!-- ── AUTO-POST SCHEDULE ── -->
-      <div class="card" id="schedule-card">
-        <div class="row-sb mb-6">
-          <div class="card-title mb-0">📅 Auto-Post Schedule</div>
-          <label class="sched-toggle-wrap">
-            <input type="checkbox" id="sched-enabled" onchange="toggleSchedEnabled()" />
-            <span class="sched-toggle-track"></span>
-          </label>
-        </div>
-        <p class="helper-sm">Turn on to have BlastyBiz re-post your listing on a recurring schedule. Direct auto-posting for Google Business, Facebook, and Instagram is coming soon.</p>
-
-        <div id="sched-fields" class="hidden">
-          <label>How often?</label>
-          <div class="sched-chips">
-            <button type="button" class="sched-chip active" id="sched-freq-weekly"    onclick="setSchedFreq('weekly')">Weekly</button>
-            <button type="button" class="sched-chip"        id="sched-freq-biweekly"  onclick="setSchedFreq('biweekly')">Every 2 wks</button>
-            <button type="button" class="sched-chip"        id="sched-freq-monthly"   onclick="setSchedFreq('monthly')">Monthly</button>
-          </div>
-
-          <div id="sched-dow-wrap">
-            <label>Which day?</label>
-            <div class="sched-chips">
-              <button type="button" class="sched-chip"        id="sched-dow-0" onclick="setSchedDay(0)">Sun</button>
-              <button type="button" class="sched-chip active" id="sched-dow-1" onclick="setSchedDay(1)">Mon</button>
-              <button type="button" class="sched-chip"        id="sched-dow-2" onclick="setSchedDay(2)">Tue</button>
-              <button type="button" class="sched-chip"        id="sched-dow-3" onclick="setSchedDay(3)">Wed</button>
-              <button type="button" class="sched-chip"        id="sched-dow-4" onclick="setSchedDay(4)">Thu</button>
-              <button type="button" class="sched-chip"        id="sched-dow-5" onclick="setSchedDay(5)">Fri</button>
-              <button type="button" class="sched-chip"        id="sched-dow-6" onclick="setSchedDay(6)">Sat</button>
-            </div>
-          </div>
-
-          <div id="sched-dom-wrap" class="hidden">
-            <label>Which day of the month?</label>
-            <div class="sched-chips">
-              <button type="button" class="sched-chip active" id="sched-dom-1"  onclick="setSchedDom(1)">1st</button>
-              <button type="button" class="sched-chip"        id="sched-dom-8"  onclick="setSchedDom(8)">8th</button>
-              <button type="button" class="sched-chip"        id="sched-dom-15" onclick="setSchedDom(15)">15th</button>
-              <button type="button" class="sched-chip"        id="sched-dom-22" onclick="setSchedDom(22)">22nd</button>
-            </div>
-          </div>
-
-          <label>What time?</label>
-          <div class="sched-chips">
-            <button type="button" class="sched-chip active" id="sched-time-morning"   onclick="setSchedTime('morning')">☀️ 9am</button>
-            <button type="button" class="sched-chip"        id="sched-time-midday"    onclick="setSchedTime('midday')">🌤 12pm</button>
-            <button type="button" class="sched-chip"        id="sched-time-afternoon" onclick="setSchedTime('afternoon')">⛅ 3pm</button>
-            <button type="button" class="sched-chip"        id="sched-time-evening"   onclick="setSchedTime('evening')">🌙 6pm</button>
-          </div>
-
-          <div id="sched-next-preview" class="sched-next-preview"></div>
-
-          <!-- CAMPAIGN PICKER -->
-          <div class="sched-camp-row">
-            <div class="sched-camp-title">Which campaign?</div>
-            <div class="sched-camp-hint">Auto-posts will use this campaign's offer and ad details.</div>
-            <select id="sched-campaign-select" onchange="setSchedCampaign(this.value, this.options[this.selectedIndex].text)" class="sched-select">
-              <option value="">— No campaign selected (use business profile) —</option>
-            </select>
-          </div>
-
-          <!-- REVIEW TOGGLE -->
-          <div class="sched-review-row">
-            <div>
-              <div class="sched-label">Require approval for future scheduled posts</div>
-              <div class="sched-sublabel">AI drafts for recurring auto-posts land in a queue — you approve before they go live. This does not affect the blast you are creating now.</div>
-            </div>
-            <label class="sched-toggle-wrap sched-toggle-ml">
-              <input type="checkbox" id="sched-review" onchange="toggleSchedReview()" />
-              <span class="sched-toggle-track"></span>
-            </label>
-          </div>
-        </div>
-      </div><!-- /.schedule-card -->
 
       <!-- PREFERENCES -->
       <div class="card">
         <div class="card-title">⚙️ Preferences</div>
-
         <label for="profile-tone">Default Tone</label>
         <select id="profile-tone" onchange="saveProfile()">
-          <option value="friendly">Friendly & Casual</option>
+          <option value="friendly">Friendly &amp; Casual</option>
           <option value="professional">Professional</option>
-          <option value="bold">Bold & Energetic</option>
-          <option value="warm">Warm & Community</option>
+          <option value="bold">Bold &amp; Energetic</option>
+          <option value="warm">Warm &amp; Community</option>
         </select>
-
         <label>Default Platforms</label>
         <p class="helper-sm mb-10">Toggle platforms on/off in the Platforms tab.</p>
-      </div><!-- /.preferences card -->
+      </div>
+
+      <!-- CAMPAIGN CONTEXT ACCORDION -->
+      <div class="card card-flush">
+        <button type="button" class="teach-btn" onclick="toggleRightAccordion('right-camp-ctx-body','right-camp-ctx-chevron')">
+          <div class="row gap-10">
+            <span class="teach-icon">🎯</span>
+            <div>
+              <div class="teach-title">Campaign Context <span class="tier-badge tier-badge--campaign">This Campaign</span></div>
+              <div class="teach-sub">What's unique about this campaign</div>
+            </div>
+          </div>
+          <span id="right-camp-ctx-chevron" class="chevron">›</span>
+        </button>
+        <div id="right-camp-ctx-body" class="teach-inner hidden">
+          <p class="helper-sm" style="margin-bottom:10px;">Added on top of your evergreen brand story — specific to this campaign only.</p>
+          <textarea id="campaign-context" class="form-textarea" rows="3" placeholder="e.g. Christmas window display — vintage Lionel layout running daily 10am–6pm through Jan 5. Great for families, photo ops welcome. 15% off all train sets through December." oninput="debounceCampaignSave()"></textarea>
+        </div>
+      </div>
+
+      <!-- TEACH AI ACCORDION -->
+      <div class="card card-flush">
+        <button type="button" class="teach-btn" onclick="toggleRightAccordion('right-teach-ai-body','right-teach-ai-chevron',initTeachAIAccordion)">
+          <div class="row gap-10">
+            <span class="teach-icon">🧠</span>
+            <div>
+              <div class="teach-title">Teach AI to know you better</div>
+              <div class="teach-sub" id="right-teach-ai-sub">Notes the AI uses when writing copy for you</div>
+            </div>
+          </div>
+          <span id="right-teach-ai-chevron" class="chevron">›</span>
+        </button>
+        <div id="right-teach-ai-body" class="teach-inner hidden">
+          <!-- scope toggle -->
+          <div style="display:flex;gap:8px;margin-bottom:14px;">
+            <button type="button" id="tai-scope-global" onclick="switchAIMemoryScope('global')" class="sched-chip active" style="flex:1;">🌐 Global</button>
+            <button type="button" id="tai-scope-campaign" onclick="switchAIMemoryScope('campaign')" class="sched-chip" style="flex:1;">🎯 This Campaign</button>
+          </div>
+          <p id="tai-global-label" class="helper-sm" style="margin-bottom:10px;">Always true about your business — AI uses this across every campaign.</p>
+          <div id="tai-campaign-scope" class="hidden">
+            <p class="helper-sm" style="margin-bottom:8px;">Pick a campaign to write memory for that campaign only.</p>
+            <select id="tai-campaign-select" onchange="loadAIMemoryForCampaign(this.value)" style="margin-bottom:12px;"></select>
+          </div>
+          <textarea id="tai-memory-text" class="form-textarea" rows="4" placeholder="e.g. We're a family-run business since 1987. Our customers love the personal touch. We always lead with warmth and community…" oninput="debounceAIMemorySave()"></textarea>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+            <button type="button" onclick="saveAIMemoryNow()" style="padding:9px 18px;border-radius:8px;border:none;background:var(--green);color:#000;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Save</button>
+            <span id="tai-save-status" style="font-size:12px;color:var(--green);opacity:0;transition:opacity 0.4s;"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCHEDULE ACCORDION -->
+      <div class="card card-flush">
+        <button type="button" class="teach-btn" onclick="toggleRightAccordion('right-schedule-body','right-schedule-chevron')">
+          <div class="row gap-10">
+            <span class="teach-icon">📅</span>
+            <div>
+              <div class="teach-title">Schedule</div>
+              <div class="teach-sub">Auto-post on a recurring schedule</div>
+            </div>
+          </div>
+          <span id="right-schedule-chevron" class="chevron">›</span>
+        </button>
+        <div id="right-schedule-body" class="teach-inner hidden">
+          <div class="row-sb mb-6" style="align-items:center;">
+            <span style="font-size:13px;font-weight:600;color:var(--text);">Auto-Post Schedule</span>
+            <label class="sched-toggle-wrap">
+              <input type="checkbox" id="sched-enabled" onchange="toggleSchedEnabled()" />
+              <span class="sched-toggle-track"></span>
+            </label>
+          </div>
+          <p class="helper-sm">Turn on to have BlastyBiz re-post your listing on a recurring schedule. Direct auto-posting for Google Business, Facebook, and Instagram is coming soon.</p>
+          <div id="sched-fields" class="hidden">
+            <label>How often?</label>
+            <div class="sched-chips">
+              <button type="button" class="sched-chip active" id="sched-freq-weekly"   onclick="setSchedFreq('weekly')">Weekly</button>
+              <button type="button" class="sched-chip"        id="sched-freq-biweekly" onclick="setSchedFreq('biweekly')">Every 2 wks</button>
+              <button type="button" class="sched-chip"        id="sched-freq-monthly"  onclick="setSchedFreq('monthly')">Monthly</button>
+            </div>
+            <div id="sched-dow-wrap">
+              <label>Which day?</label>
+              <div class="sched-chips">
+                <button type="button" class="sched-chip"        id="sched-dow-0" onclick="setSchedDay(0)">Sun</button>
+                <button type="button" class="sched-chip active" id="sched-dow-1" onclick="setSchedDay(1)">Mon</button>
+                <button type="button" class="sched-chip"        id="sched-dow-2" onclick="setSchedDay(2)">Tue</button>
+                <button type="button" class="sched-chip"        id="sched-dow-3" onclick="setSchedDay(3)">Wed</button>
+                <button type="button" class="sched-chip"        id="sched-dow-4" onclick="setSchedDay(4)">Thu</button>
+                <button type="button" class="sched-chip"        id="sched-dow-5" onclick="setSchedDay(5)">Fri</button>
+                <button type="button" class="sched-chip"        id="sched-dow-6" onclick="setSchedDay(6)">Sat</button>
+              </div>
+            </div>
+            <div id="sched-dom-wrap" class="hidden">
+              <label>Which day of the month?</label>
+              <div class="sched-chips">
+                <button type="button" class="sched-chip active" id="sched-dom-1"  onclick="setSchedDom(1)">1st</button>
+                <button type="button" class="sched-chip"        id="sched-dom-8"  onclick="setSchedDom(8)">8th</button>
+                <button type="button" class="sched-chip"        id="sched-dom-15" onclick="setSchedDom(15)">15th</button>
+                <button type="button" class="sched-chip"        id="sched-dom-22" onclick="setSchedDom(22)">22nd</button>
+              </div>
+            </div>
+            <label>What time?</label>
+            <div class="sched-chips">
+              <button type="button" class="sched-chip active" id="sched-time-morning"   onclick="setSchedTime('morning')">☀️ 9am</button>
+              <button type="button" class="sched-chip"        id="sched-time-midday"    onclick="setSchedTime('midday')">🌤 12pm</button>
+              <button type="button" class="sched-chip"        id="sched-time-afternoon" onclick="setSchedTime('afternoon')">⛅ 3pm</button>
+              <button type="button" class="sched-chip"        id="sched-time-evening"   onclick="setSchedTime('evening')">🌙 6pm</button>
+            </div>
+            <div id="sched-next-preview" class="sched-next-preview"></div>
+            <div class="sched-camp-row">
+              <div class="sched-camp-title">Which campaign?</div>
+              <div class="sched-camp-hint">Auto-posts will use this campaign's offer and ad details.</div>
+              <select id="sched-campaign-select" onchange="setSchedCampaign(this.value, this.options[this.selectedIndex].text)" class="sched-select">
+                <option value="">— No campaign selected (use business profile) —</option>
+              </select>
+            </div>
+            <div class="sched-review-row">
+              <div>
+                <div class="sched-label">Require approval for future scheduled posts</div>
+                <div class="sched-sublabel">AI drafts for recurring auto-posts land in a queue — you approve before they go live. This does not affect the blast you are creating now.</div>
+              </div>
+              <label class="sched-toggle-wrap sched-toggle-ml">
+                <input type="checkbox" id="sched-review" onchange="toggleSchedReview()" />
+                <span class="sched-toggle-track"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLEAR ALL DATA -->
+      <div style="background:rgba(220,38,38,0.1);border:2px solid rgba(220,38,38,0.4);border-radius:14px;padding:20px;margin-top:4px;">
+        <div style="font-size:15px;font-weight:800;color:#f87171;margin-bottom:8px;letter-spacing:-0.2px;">⚠️ Danger Zone</div>
+        <div style="font-size:13px;font-weight:700;color:#f87171;margin-bottom:6px;">Clear All Data</div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0 0 14px;">Permanently wipes your business profile, platform history, saved drafts, and all local settings. <strong style="color:#f87171;">This cannot be undone.</strong></p>
+        <div id="clear-all-confirm" class="hidden" style="background:rgba(220,38,38,0.12);border-radius:10px;padding:14px;margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:700;color:#f87171;margin-bottom:12px;">Are you sure? This deletes everything.</div>
+          <div style="display:flex;gap:8px;">
+            <button type="button" onclick="clearAllConfirmed()" style="flex:1;padding:11px;border-radius:8px;border:none;background:#dc2626;color:#fff;font-weight:800;font-size:13px;cursor:pointer;font-family:inherit;">Yes, delete everything</button>
+            <button type="button" onclick="clearAllCancel()" style="flex:1;padding:11px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Cancel</button>
+          </div>
+        </div>
+        <button type="button" id="clear-all-btn" onclick="clearAllPrompt()" style="padding:10px 20px;border-radius:8px;border:2px solid rgba(220,38,38,0.6);background:rgba(220,38,38,0.12);color:#f87171;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;width:100%;text-align:center;">🗑️ Clear All Data</button>
+      </div>
 
     </div><!-- /.profile-page-right -->
 
@@ -2903,11 +2916,96 @@ function loadInsights(insights) {
 
 var teachAIOpen = false;
 
-function toggleTeachAI() {
-  teachAIOpen = !teachAIOpen;
-  const _tab = document.getElementById('teach-ai-body'); if (_tab) { if (teachAIOpen) _tab.classList.remove('hidden'); else _tab.classList.add('hidden'); }
-  document.getElementById('teach-ai-chevron').style.transform = teachAIOpen ? 'rotate(90deg)' : '';
-  if (teachAIOpen && !bizInsights.length) fetchEnrichmentQuestions(false);
+function toggleTeachAI() {} // legacy stub — kept for safety
+
+// ── Right-column accordion ────────────────────────────────────────────────────
+function toggleRightAccordion(bodyId, chevronId, onOpenCallback) {
+  const body = document.getElementById(bodyId);
+  const chev = document.getElementById(chevronId);
+  if (!body) return;
+  const nowHidden = body.classList.toggle('hidden');
+  if (chev) chev.style.transform = nowHidden ? '' : 'rotate(90deg)';
+  if (!nowHidden && typeof onOpenCallback === 'function') onOpenCallback();
+}
+
+// ── Teach AI accordion init ───────────────────────────────────────────────────
+var _aiMemoryScope       = 'global';
+var _aiMemoryCampaignId  = null;
+var _aiMemorySaveTimer   = null;
+
+function initTeachAIAccordion() {
+  switchAIMemoryScope('global');
+}
+
+function switchAIMemoryScope(scope) {
+  _aiMemoryScope = scope;
+  document.getElementById('tai-scope-global').classList.toggle('active', scope === 'global');
+  document.getElementById('tai-scope-campaign').classList.toggle('active', scope === 'campaign');
+  document.getElementById('tai-global-label').classList.toggle('hidden', scope !== 'global');
+  document.getElementById('tai-campaign-scope').classList.toggle('hidden', scope !== 'campaign');
+  if (scope === 'global') {
+    document.getElementById('tai-memory-text').value = window._globalMemory || profile.globalMemory || '';
+  } else {
+    populateTAICampaignDropdown();
+    const sel = document.getElementById('tai-campaign-select');
+    _aiMemoryCampaignId = sel.value || null;
+    if (_aiMemoryCampaignId) loadAIMemoryForCampaign(_aiMemoryCampaignId);
+    else document.getElementById('tai-memory-text').value = '';
+  }
+}
+
+function populateTAICampaignDropdown() {
+  const sel = document.getElementById('tai-campaign-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Pick a campaign —</option>' +
+    campaigns.map(c => `<option value="${c.id}"${c.id === activeCampaignId ? ' selected' : ''}>${c.name || 'Untitled campaign'}</option>`).join('');
+  if (activeCampaignId) sel.value = activeCampaignId;
+}
+
+function loadAIMemoryForCampaign(campaignId) {
+  _aiMemoryCampaignId = campaignId;
+  const cam = campaigns.find(c => c.id === campaignId);
+  document.getElementById('tai-memory-text').value = (cam && cam.campaignMemory) || '';
+}
+
+function debounceAIMemorySave() {
+  clearTimeout(_aiMemorySaveTimer);
+  _aiMemorySaveTimer = setTimeout(saveAIMemoryNow, 1500);
+}
+
+async function saveAIMemoryNow() {
+  clearTimeout(_aiMemorySaveTimer);
+  const text = document.getElementById('tai-memory-text')?.value || '';
+  if (_aiMemoryScope === 'global') {
+    window._globalMemory = text;
+    profile.globalMemory  = text;
+    if (window._bbSaveGlobalMemory) {
+      try { await window._bbSaveGlobalMemory(text); _showTAISaved('Global memory saved ✓'); }
+      catch(e) { console.warn('saveGlobalMemory failed:', e); }
+    } else {
+      _showTAISaved('Saved locally ✓');
+    }
+  } else {
+    if (!_aiMemoryCampaignId) return;
+    const cam = campaigns.find(c => c.id === _aiMemoryCampaignId);
+    if (!cam) return;
+    cam.campaignMemory = text;
+    if (window._bbSaveCampaigns) {
+      try { await window._bbSaveCampaigns(campaigns); _showTAISaved('Campaign memory saved ✓'); }
+      catch(e) { console.warn('saveCampaignMemory failed:', e); }
+    } else {
+      _showTAISaved('Saved locally ✓');
+    }
+  }
+}
+
+function _showTAISaved(msg) {
+  const el = document.getElementById('tai-save-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.style.opacity = '0'; }, 2500);
 }
 
 function renderProfileInsights() {
@@ -3887,6 +3985,11 @@ window._bbDeleteLibraryItem = async function(docId) {
 };
 
 // ── Global business facts (facts subcollection) ───────────────────────────────
+window._bbSaveGlobalMemory = async function(text) {
+  if (!activeBizId || !currentUser) return;
+  await updateDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), { globalMemory: text });
+};
+
 window._bbSaveGlobalFact = async function(fact) {
   if (!activeBizId || !currentUser) return null;
   const ref = await addDoc(
