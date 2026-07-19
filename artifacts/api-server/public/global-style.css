@@ -399,8 +399,8 @@ body.home-page .main { padding-top: 0 !important; }
   max-width: var(--max-w);
   margin-left: auto;
   margin-right: auto;
-  padding-top: var(--gutter);
-  padding-bottom: var(--gutter);
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 
 /* Auth state — JS adds/removes body.logged-in */
