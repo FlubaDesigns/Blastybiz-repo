@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784495416855" />
+<link rel="stylesheet" href="global-style.css?v=1784496099243" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -385,14 +385,10 @@
 
     </div><!-- /create-slide-1 -->
 
-    <!-- ══ SLIDE 4: AI Generation ══ -->
-    <div class="create-slide" id="create-slide-4">
+    <!-- ══ PAGE 2: Generate + Review ══ -->
+    <div class="create-slide" id="create-slide-5">
 
-      <div class="card" style="text-align:center;padding:24px 16px 20px;">
-        <div class="card-title mb-8">⚡ Generate AI Copy</div>
-        <p class="helper mb-0">AI will adapt your listing for each selected platform.</p>
-      </div>
-
+      <!-- Spinner — auto-shows on arrival, hides when done -->
       <div class="ai-loading" id="ai-loading">
         <div class="ai-spinner"></div>
         <div class="ai-loading-text">⚡ AI is adapting your listing...</div>
@@ -401,11 +397,17 @@
         <div class="ai-gen-pct" id="ai-gen-pct">0%</div>
       </div>
 
-      <button type="button" class="btn btn-primary btn--adaptive" id="adapt-btn" onclick="runAdaptation()" disabled>
-        ⚡ Generate AI Copy
-      </button>
+      <!-- Platform cards — populated by renderStep5Review() -->
+      <div class="step5-subhead" id="step5-subhead">Reviewing platform 1 of 1</div>
+      <div class="step5-plat-dots" id="step5-plat-dots"></div>
+      <div id="step5-review-container"></div>
 
-      <!-- REWRITE + CLEAR — stacked, visible after first adaptation -->
+      <div class="step5-nav">
+        <button type="button" class="step5-nav-btn" id="step5-prev-btn" onclick="step5Prev()">← Prev</button>
+        <button type="button" class="step5-nav-btn" id="step5-next-btn" onclick="step5Next()">Next →</button>
+      </div>
+
+      <!-- Rewrite + Clear — visible after generation -->
       <div id="rewrite-row" class="hidden">
         <button type="button" class="btn btn-rewrite" onclick="runAdaptation()">
           🔄 Rewrite with Direction
@@ -415,37 +417,12 @@
         </button>
       </div>
 
-      <!-- REVIEW PLATFORMS — visible after first adaptation -->
-      <button type="button" id="review-output-btn" class="review-btn" style="display:none;" onclick="createWizGoTo(5)">
-        → Review Your Platforms
-      </button>
-
-      <!-- Slide 4 back nav -->
-      <div class="create-wiz-nav" style="margin-top:20px;">
-        <button type="button" class="create-wiz-back-btn" onclick="createWizPrev(4)">← Back to Platforms</button>
-      </div>
-      <div class="bottom-safe"></div>
-    </div><!-- /create-slide-4 -->
-
-    <!-- ══ SLIDE 5: Platform-by-Platform Review ══ -->
-    <div class="create-slide" id="create-slide-5">
-
-      <div class="step5-subhead" id="step5-subhead">Reviewing platform 1 of 1</div>
-      <div class="step5-plat-dots" id="step5-plat-dots"></div>
-      <div id="step5-review-container">
-        <!-- populated by renderStep5Review() -->
-      </div>
-      <div class="step5-nav">
-        <button type="button" class="step5-nav-btn" id="step5-prev-btn" onclick="step5Prev()">← Prev</button>
-        <button type="button" class="step5-nav-btn" id="step5-next-btn" onclick="step5Next()">Next →</button>
-      </div>
       <button type="button" class="review-btn" id="step5-final-btn" style="display:none;" onclick="goToFinalReview()">
         ✅ Continue to Final Review →
       </button>
 
-      <!-- Slide 5 back nav -->
       <div class="create-wiz-nav" style="margin-top:20px;">
-        <button type="button" class="create-wiz-back-btn" onclick="createWizPrev(5)">← Back to Generate</button>
+        <button type="button" class="create-wiz-back-btn" onclick="createWizPrev(5)">← Back to Blast</button>
       </div>
       <div class="bottom-safe"></div>
     </div><!-- /create-slide-5 -->
@@ -1794,16 +1771,15 @@ function goToStep1() { createWizGoTo(1); }
 // BLAST CREATION WIZARD
 // ══════════════════════════════════════════
 let createWizStep = 1;
-const CREATE_WIZ_TOTAL = 3;
+const CREATE_WIZ_TOTAL = 2;
 const CREATE_WIZ_LABELS = {
-  1: 'Step 1 of 3 — Your Blast',
-  4: 'Step 2 of 3 — Generate Copy',
-  5: 'Step 3 of 3 — Review & Approve'
+  1: 'Step 1 of 2 — Your Blast',
+  5: 'Step 2 of 2 — Review & Approve'
 };
-const CREATE_WIZ_STEP_NUM = { 1: 1, 4: 2, 5: 3 };
+const CREATE_WIZ_STEP_NUM = { 1: 1, 5: 2 };
 
 function createWizGoTo(step) {
-  const SLIDE_IDS = [1, 4, 5];
+  const SLIDE_IDS = [1, 5];
   const curVisual = CREATE_WIZ_STEP_NUM[step] || step;
   for (const id of SLIDE_IDS) {
     const slide = document.getElementById('create-slide-' + id);
@@ -1830,15 +1806,15 @@ function createWizGoTo(step) {
     checkS3ContinueBtn();
     updateCopyPreview();
   }
-  if (step === 4) {
-    checkAdaptBtn();
-  }
   if (step === 5) {
     // Start at the first unresolved platform, not always index 0
     const _s5enabled = platforms.filter(p => p.enabled);
     const _s5firstUnresolved = _s5enabled.findIndex(p => p._reviewStatus !== 'approved' && p._reviewStatus !== 'skipped');
     _step5PlatIdx = _s5firstUnresolved >= 0 ? _s5firstUnresolved : 0;
     renderStep5Review();
+    // Auto-generate only if platforms don't already have copy — guards against re-firing on back/forward nav
+    const hasContent = platforms.some(p => p.enabled && p.adaptedContent);
+    if (!hasContent) runAdaptation();
   }
 }
 
@@ -1849,14 +1825,13 @@ function createWizNext(fromStep) {
     if (!platforms.some(p => p.enabled)) { showToast('Select at least one platform first'); return; }
     saveDraft();
   }
-  // Slides 2 & 3 folded into slide 1 — jump straight to 4
-  const nextStep = fromStep === 1 ? 4 : fromStep + 1;
+  // Page 2 starts at step 5
+  const nextStep = fromStep === 1 ? 5 : fromStep + 1;
   createWizGoTo(nextStep);
 }
 
 function createWizPrev(fromStep) {
-  // Slides 2 & 3 folded into slide 1 — back from 4 goes straight to 1
-  const prevStep = fromStep === 4 ? 1 : fromStep - 1;
+  const prevStep = fromStep === 5 ? 1 : fromStep - 1;
   createWizGoTo(Math.max(1, prevStep));
 }
 
@@ -2292,10 +2267,10 @@ async function runAdaptation() {
   // Reset per-platform review status for this fresh generation
   platforms = platforms.map(p => ({ ...p, _reviewStatus: undefined }));
 
-  // Show loading, hide button
+  // Show loading, hide button (adapt-btn no longer in DOM — guard is safe)
   const btn = document.getElementById('adapt-btn');
   const loader = document.getElementById('ai-loading');
-  btn.style.display = 'none';
+  if (btn) btn.style.display = 'none';
   loader.classList.add('visible');
   _startAiProgress(enabledPlatforms);
 
@@ -2369,7 +2344,10 @@ async function runAdaptation() {
     const loadingSub2 = document.getElementById('ai-loading-sub');
     if (loadingSub2) loadingSub2.textContent = 'Done!';
 
-    // Show rewrite row; disable review button until draft ID is confirmed (Finding 4)
+    // Render platform cards with real copy now that adaptation is done
+    renderStep5Review();
+
+    // Show rewrite row; review-output-btn is gone (merged into Page 2)
     const _rewriteRow = document.getElementById('rewrite-row');
     if (_rewriteRow) _rewriteRow.classList.remove('hidden');
     const _reviewOutputBtn = document.getElementById('review-output-btn');
@@ -2434,7 +2412,7 @@ async function runAdaptation() {
     console.error(err);
     showToast('❌ AI error — check connection');
   } finally {
-    btn.style.display = 'flex';
+    if (btn) btn.style.display = 'flex';
     loader.classList.remove('visible');
   }
 }
