@@ -2445,14 +2445,6 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 /* ── Uploading image (in thumb-wrap, slightly faded) ── */
 .thumb-uploading-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.55; }
 
-/* ═══ PROFILE TAB — 2-1 SPLIT LAYOUT ═══ */
-.profile-biz-split        { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; }
-.profile-biz-img-col      { position: sticky; top: 160px; }
-.profile-biz-img          { width: 100%; height: auto; object-fit: cover; border-radius: 14px; display: block; }
-@media (max-width: 767px) {
-  .profile-biz-split      { grid-template-columns: 1fr; }
-  .profile-biz-img-col    { display: none; }
-}
 
 /* ═══ CREATE PAGE — SCOPED OVERRIDES (conflict prevention) ═══ */
 
