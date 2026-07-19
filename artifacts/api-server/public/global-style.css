@@ -2450,9 +2450,11 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 .profile-page-split      { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; }
 .profile-page-left       { min-width: 0; }
 .profile-page-right      { position: sticky; top: var(--main-offset, 60px); display: flex; flex-direction: column; gap: 16px; }
+.profile-right-img       { width: 100%; height: auto; object-fit: cover; border-radius: 14px; display: block; }
 @media (max-width: 768px) {
   .profile-page-split    { display: block; }
   .profile-page-right    { position: static; }
+  .profile-right-img     { display: none; }
 }
 
 /* ═══ CREATE PAGE — SCOPED OVERRIDES (conflict prevention) ═══ */
