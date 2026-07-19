@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784492469597" />
+<link rel="stylesheet" href="global-style.css?v=1784492759282" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -223,7 +223,7 @@
           </div><!-- /.col-left -->
 
           <!-- RIGHT: decorative image (desktop only) -->
-          <div class="col-right hide-mobile" style="display:flex;flex-direction:column;">
+          <div class="col-right hide-mobile" style="display:flex;flex-direction:column;margin-bottom:16px;">
             <img src="images/cta-worker.png" alt="Create your blast" style="width:100%;border-radius:12px;display:block;flex:1;object-fit:cover;object-position:center;">
           </div><!-- /.col-right -->
 
@@ -257,12 +257,12 @@
 
           <!-- RIGHT: Teach AI card -->
           <div class="col-right" style="display:flex;flex-direction:column;gap:16px;">
-            <div class="card" style="flex:1;">
-              <button type="button" class="card-title" style="width:100%;background:none;border:none;cursor:pointer;padding:0;justify-content:space-between;" onclick="toggleRightAccordion('create-teach-ai-body','create-teach-ai-chevron')">
+            <div class="card" style="flex:1;margin-bottom:0;display:flex;flex-direction:column;justify-content:center;">
+              <button type="button" class="card-title" style="width:100%;background:none;border:none;cursor:pointer;padding:0;justify-content:space-between;margin-bottom:8px;" onclick="toggleRightAccordion('create-teach-ai-body','create-teach-ai-chevron')">
                 <span>🧠 Teach AI</span>
                 <span id="create-teach-ai-chevron" class="chevron">›</span>
               </button>
-              <p class="helper-sm" style="margin-top:-6px;margin-bottom:12px;">Feed the AI facts it uses when writing copy for this campaign</p>
+              <p class="helper-sm" style="margin-top:0;margin-bottom:12px;">Feed the AI facts it uses when writing copy for this campaign</p>
               <div id="create-teach-ai-body" class="teach-inner hidden">
                 <textarea id="create-camp-memory-text" class="form-textarea" rows="5"
                   placeholder="e.g. Hook: 'Back to school, back to savings.' Target: parents with kids 5–12. Urgency: ends Aug 31. Feature our new backpack bundle…"
@@ -275,12 +275,12 @@
             </div>
 
             <!-- Mentions — collapsed accordion; all rows preserved for JS compatibility -->
-            <div class="card" id="about-you-card" style="flex:1;">
-              <button type="button" class="card-title" id="about-you-toggle-btn" style="width:100%;background:none;border:none;cursor:pointer;padding:0;justify-content:space-between;" onclick="toggleAboutYouPanel()">
+            <div class="card" id="about-you-card" style="flex:1;margin-bottom:0;display:flex;flex-direction:column;justify-content:center;">
+              <button type="button" class="card-title" id="about-you-toggle-btn" style="width:100%;background:none;border:none;cursor:pointer;padding:0;justify-content:space-between;margin-bottom:8px;" onclick="toggleAboutYouPanel()">
                 <span>🪪 Mentions</span>
                 <span class="about-you-chevron" id="about-you-chevron">›</span>
               </button>
-              <p class="helper-sm" style="margin-top:-6px;margin-bottom:12px;">Choose what personal info shows up in your posts</p>
+              <p class="helper-sm" style="margin-top:0;margin-bottom:12px;">Choose what personal info shows up in your posts</p>
               <div id="about-you-panel" class="hidden">
                 <p class="helper-sm mt-10">Defaults come from your profile — override here for this blast only.</p>
                 <div class="yn-row mb-12">
