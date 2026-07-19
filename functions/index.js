@@ -3577,8 +3577,8 @@ exports.scheduledPostingCheck = onSchedule(
     let lastDoc = null;
 
     while (true) {
-      // Query per-campaign schedules (new model: schedule stored on campaign docs)
-      let q = db.collectionGroup('campaigns')
+      // Query per-blast schedules (source of truth: listingDraft.schedule)
+      let q = db.collectionGroup('listingDrafts')
         .where('schedule.enabled', '==', true)
         .orderBy(admin.firestore.FieldPath.documentId())
         .limit(BATCH_SIZE);
@@ -3596,9 +3596,9 @@ exports.scheduledPostingCheck = onSchedule(
         const nextRun = sched.nextRunAt.toDate ? sched.nextRunAt.toDate() : new Date(sched.nextRunAt);
         if (nextRun > now) continue;
 
-        // bizId and uid stored on campaign doc by _bbSaveCampaigns
-        const bizId  = camp.bizId  || campDoc.ref.parent.parent.id;
-        const schedUid = camp.uid  || campDoc.ref.parent.parent.parent.parent.id;
+        // listingDraft path: users/{uid}/businesses/{bizId}/listingDrafts/{draftId}
+        const bizId    = camp.bizId  || campDoc.ref.parent.parent.id;
+        const schedUid = camp.uid    || campDoc.ref.parent.parent.parent.parent.id;
 
         // Claim with optimistic lock — prevents double-fire
         let claimed = false;
