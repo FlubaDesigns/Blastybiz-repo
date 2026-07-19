@@ -108,6 +108,12 @@ uri = "file://artifacts/api-server/public/create-hero.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "oP5UdSoYruxNDfBKTqJd0"
+uri = "file://artifacts/api-server/public/images/platforms-blast.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "OlLytVLFMpzHayK0XXDkK"
 uri = "file://download/BlastyBiz_Site.zip"
