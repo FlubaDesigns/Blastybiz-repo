@@ -535,19 +535,22 @@
         </select>
 
         <label for="profile-cat">Category</label>
-        <select id="profile-cat" onchange="saveProfile()">
-          <option value="">Select a category...</option>
-          <option>Restaurant / Food & Drink</option>
-          <option>Retail Shop</option>
-          <option>Beauty & Salon</option>
-          <option>Auto Services</option>
-          <option>Home Services</option>
-          <option>Health & Fitness</option>
-          <option>Professional Services</option>
-          <option>Church / Nonprofit</option>
-          <option>Entertainment</option>
-          <option>Other</option>
-        </select>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="profile-cat" onchange="saveProfile()" style="flex:1;">
+            <option value="">Select a category...</option>
+            <option>Restaurant / Food & Drink</option>
+            <option>Retail Shop</option>
+            <option>Beauty & Salon</option>
+            <option>Auto Services</option>
+            <option>Home Services</option>
+            <option>Health & Fitness</option>
+            <option>Professional Services</option>
+            <option>Church / Nonprofit</option>
+            <option>Entertainment</option>
+            <option>Other</option>
+          </select>
+          <button type="button" id="rerun-ai-cats-btn" onclick="rerunAICats()" style="white-space:nowrap;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🤖 AI Pick</button>
+        </div>
 
         <label for="profile-phone">Phone</label>
         <input type="tel" id="profile-phone" placeholder="555-000-0000" oninput="formatPhone(this);saveProfile()" inputmode="tel" />
@@ -706,9 +709,6 @@
     <div class="card-title">🏷️ Platform Categories</div>
     <p class="helper mb-16">The category BlastyBiz uses when adapting your listing for each platform. AI picks these automatically — update any time.</p>
     <div id="profile-cat-list"></div>
-    <button type="button" class="btn btn-outline mt-12" id="rerun-ai-cats-btn" onclick="rerunAICats()">
-      🤖 Re-run AI Category Picker
-    </button>
     <p id="platcats-note" class="platcats-note"></p>
   </div>
 
@@ -3278,7 +3278,7 @@ async function rerunAICats() {
       if (note) note.textContent = '✅ AI updated ' + Object.keys(data.categories).length + ' categories';
       showToast('✅ AI picked new categories');
     } else if (data.followUpQuestions) {
-      if (note) note.textContent = '⚠️ AI needs more info — fill in your Category field and try again';
+      if (note) note.textContent = '⚠️ AI needs more info — add more detail to your business name or description';
       showToast('⚠️ AI needs a more detailed description');
     }
   } catch(e) {
