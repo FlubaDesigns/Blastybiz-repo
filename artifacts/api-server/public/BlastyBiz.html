@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784499417982" />
+<link rel="stylesheet" href="global-style.css?v=1784499609002" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -96,6 +96,7 @@
 .thumb-copy-badge{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);color:#39ff14;font-size:12px;font-weight:700;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .15s;}
 .qp-thumb-copied .thumb-copy-badge{opacity:1;}
 .qp-thumb{position:relative;cursor:pointer;}
+.qp-thumb.qp-thumb-display{cursor:default;opacity:.9;}
 .step5-setup-link.signin{background:transparent;border:1px solid var(--border,#333);color:var(--muted,#888);}
 .step5-url-row{display:flex;gap:6px;margin-top:10px;}
 .step5-url-input{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:8px;padding:9px 10px;font-size:13px;color:var(--light,#fff);font-family:inherit;min-width:0;}
@@ -1113,22 +1114,24 @@ const PLATFORM_URL_HINTS = {
   linkedin:   'e.g. https://www.linkedin.com/company/yourcompany',
 };
 
-function renderPlatformPhotoStrip(pid, photos, maxPhotos) {
+function renderPlatformPhotoStrip(pid, photos, maxPhotos, displayOnly = false) {
   const container = document.getElementById('qp-photos-' + pid);
   const strip     = document.getElementById('qp-photo-strip-' + pid);
   if (!container || !strip) return;
 
   const label = container.querySelector('.qp-photos-label');
-  if (label) label.textContent = '📷 Tap a photo to copy it';
+  if (label) label.textContent = displayOnly ? '📷 Photos included' : '📷 Tap a photo to copy it';
 
   strip.innerHTML = '';
   photos.forEach(photo => {
     const thumb = document.createElement('div');
-    thumb.className = 'qp-thumb';
-    thumb.title = 'Tap to copy this photo';
-    thumb.onclick = () => copyImageToClipboard(photo.url, thumb);
-    thumb.innerHTML = `<img src="${escHtml(photo.url)}" class="thumb-cover" alt="Uploaded photo" />
-      <div class="thumb-copy-badge">✓ Copied!</div>`;
+    thumb.className = 'qp-thumb' + (displayOnly ? ' qp-thumb-display' : '');
+    if (!displayOnly) {
+      thumb.title = 'Tap to copy this photo';
+      thumb.onclick = () => copyImageToClipboard(photo.url, thumb);
+    }
+    thumb.innerHTML = `<img src="${escHtml(photo.url)}" class="thumb-cover" alt="Uploaded photo" />`
+      + (!displayOnly ? `<div class="thumb-copy-badge">✓ Copied!</div>` : '');
     strip.appendChild(thumb);
   });
 
@@ -1940,14 +1943,13 @@ function renderStep5Review() {
     ? (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || '') : '';
   enabled.forEach(p => {
     if (!p.adaptedContent) return;
-    if (p.type === 'api') return;  // auto-post — no manual photo selection needed
     const imgSupport = PLATFORM_IMAGE_SUPPORT[p.id];
     if (imgSupport && campaignPhotos.length > 0) {
       if (!window._bbPlatformPhotoSel) window._bbPlatformPhotoSel = {};
       if (!window._bbPlatformPhotoSel[p.id]) {
         window._bbPlatformPhotoSel[p.id] = new Set(featuredUrl ? [featuredUrl] : []);
       }
-      renderPlatformPhotoStrip(p.id, campaignPhotos, imgSupport.max);
+      renderPlatformPhotoStrip(p.id, campaignPhotos, imgSupport.max, p.type === 'api');
     }
   });
   updateStep5UI();
@@ -1995,16 +1997,14 @@ function buildStep5Card(p) {
       +     (p._reviewStatus === 'approved' ? '✓ Approved' : '✓ Looks Good')
       +   '</button>'
       + '</div>'
-      // Right — photos
+      // Right — photos (shown for all platforms; tappable only for copy-paste)
       + '<div class="col-right">'
-      +   (isApi
-          ? '<div class="s5-auto-photo-note">📷 Photos will be uploaded automatically when this post goes live.</div>'
-          : '<div id="qp-copy-img-' + p.id + '" class="qp-copy-img-note"></div>'
-          +   '<div id="qp-photos-' + p.id + '" class="qp-photos-section">'
-          +     '<div class="qp-photos-label">📷 Photos for this post</div>'
-          +     '<div class="s5-photo-note">' + photoNote + '</div>'
-          +     '<div id="qp-photo-strip-' + p.id + '" class="qp-photo-strip"></div>'
-          +   '</div>')
+      +   '<div id="qp-copy-img-' + p.id + '" class="qp-copy-img-note"></div>'
+      +   '<div id="qp-photos-' + p.id + '" class="qp-photos-section">'
+      +     '<div class="qp-photos-label">📷 Photos for this post</div>'
+      +     '<div class="s5-photo-note">' + photoNote + '</div>'
+      +     '<div id="qp-photo-strip-' + p.id + '" class="qp-photo-strip"></div>'
+      +   '</div>'
       + '</div>'
       + '</div>';
   } else {
