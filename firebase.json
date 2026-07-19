@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "predeploy": ["node scripts/bump-css-version.cjs"],
     "public": "artifacts/api-server/public",
     "ignore": [
       "firebase.json",
