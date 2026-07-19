@@ -75,6 +75,9 @@
 .col-1-2        { display: grid; grid-template-columns: 1fr 2fr; gap: var(--gutter); align-items: start; }
 .col-1-2 > *   { min-width: 0; }
 @media (max-width: 479px) { .col-1-2 { grid-template-columns: 1fr; } }
+.col-3          { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; align-items: start; }
+.col-3 > *     { min-width: 0; }
+@media (max-width: 479px) { .col-3 { grid-template-columns: repeat(3, 1fr); } }
 /* Named column helpers — used inside .col-2-1 and similar grid wrappers */
 .col-left    { min-width: 0; }
 .col-right   { min-width: 0; }
@@ -2177,7 +2180,7 @@ body.create-page .char-count.over { color: #ff6b35; }
 .upload-icon { font-size: 28px; margin-bottom: 6px; }
 .upload-text { font-size: 13px; color: var(--muted); }
 .upload-text span { color: var(--green); font-weight: 600; }
-.thumb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; margin-bottom: 0; }
+.thumb-grid { margin-bottom: 0; }
 .thumb-wrap { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: #0d160d; border: 1px solid var(--border); }
 .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; }
 .thumb-remove { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,.7); border: none; border-radius: 50%; width: 22px; height: 22px; color: white; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
