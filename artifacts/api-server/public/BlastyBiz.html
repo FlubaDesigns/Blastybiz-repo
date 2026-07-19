@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784490110617" />
+<link rel="stylesheet" href="global-style.css?v=1784490254927" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -135,7 +135,6 @@
     </div>
     <div class="create-step-dots">
       <span class="cwiz-dot cwiz-active" id="cwiz-dot-1"></span>
-      <span class="cwiz-dot" id="cwiz-dot-3"></span>
       <span class="cwiz-dot" id="cwiz-dot-4"></span>
       <span class="cwiz-dot" id="cwiz-dot-5"></span>
     </div>
@@ -279,12 +278,81 @@
         </div>
       </div><!-- /.row photos -->
 
+      <!-- Row: Platform Selection — full width -->
+      <div class="row" id="slide1-platforms-row">
+        <div class="col-full">
+          <div class="card">
+            <div class="row-base-sb mb-12">
+              <div class="card-title mb-0">📡 Send To</div>
+              <button type="button" id="select-all-btn" onclick="toggleSelectAll()" class="chip-green" style="font-family:inherit;font-size:12px;">Select All</button>
+            </div>
+            <p class="helper">Pick which platforms to blast. AI will adapt your listing for each one.</p>
+            <div id="quick-platform-list">
+              <!-- populated by renderStep3Platforms() -->
+            </div>
+          </div>
+
+          <!-- About You in Copy — collapsed accordion; all rows preserved for JS compatibility -->
+          <div class="card" id="about-you-card">
+            <button type="button" class="about-you-toggle" id="about-you-toggle-btn" onclick="toggleAboutYouPanel()">
+              <span>🪪 Edit what appears in this blast</span>
+              <span class="about-you-chevron" id="about-you-chevron">›</span>
+            </button>
+            <div id="about-you-panel" class="hidden">
+              <p class="helper-sm mt-10">Defaults come from your profile — override here for this blast only.</p>
+              <div class="yn-row mb-12">
+                <span class="yn-label">Mention my name<span id="copy-name-preview" class="check-hint"></span></span>
+                <div class="yn-btns">
+                  <button type="button" class="yn-btn yn-yes" id="yn-name-yes" onclick="setYN('name','yes')">Yes</button>
+                  <button type="button" class="yn-btn yn-no yn-active" id="yn-name-no" onclick="setYN('name','no')">No</button>
+                </div>
+              </div>
+              <div class="yn-row mb-12">
+                <span class="yn-label">Mention my role<span id="copy-role-preview" class="check-hint"></span></span>
+                <div class="yn-btns">
+                  <button type="button" class="yn-btn yn-yes" id="yn-role-yes" onclick="setYN('role','yes')">Yes</button>
+                  <button type="button" class="yn-btn yn-no yn-active" id="yn-role-no" onclick="setYN('role','no')">No</button>
+                </div>
+              </div>
+              <div class="yn-row hidden" id="yn-address-row">
+                <span class="yn-label">Include address in copy</span>
+                <div class="yn-btns">
+                  <button type="button" class="yn-btn yn-yes yn-active" id="yn-address-yes" onclick="setYN('address','yes')">Yes</button>
+                  <button type="button" class="yn-btn yn-no" id="yn-address-no" onclick="setYN('address','no')">No</button>
+                </div>
+              </div>
+              <div class="yn-row hidden" id="yn-phone-row">
+                <span class="yn-label">Include phone in copy</span>
+                <div class="yn-btns">
+                  <button type="button" class="yn-btn yn-yes yn-active" id="yn-phone-yes" onclick="setYN('phone','yes')">Yes</button>
+                  <button type="button" class="yn-btn yn-no" id="yn-phone-no" onclick="setYN('phone','no')">No</button>
+                </div>
+              </div>
+              <div class="yn-row hidden" id="yn-email-row">
+                <span class="yn-label">Include email in copy</span>
+                <div class="yn-btns">
+                  <button type="button" class="yn-btn yn-yes yn-active" id="yn-email-yes" onclick="setYN('email','yes')">Yes</button>
+                  <button type="button" class="yn-btn yn-no" id="yn-email-no" onclick="setYN('email','no')">No</button>
+                </div>
+              </div>
+              <div class="yn-row hidden" id="yn-website-row">
+                <span class="yn-label">Include website in copy</span>
+                <div class="yn-btns">
+                  <button type="button" class="yn-btn yn-yes yn-active" id="yn-website-yes" onclick="setYN('website','yes')">Yes</button>
+                  <button type="button" class="yn-btn yn-no" id="yn-website-no" onclick="setYN('website','no')">No</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /.row platforms -->
+
       <!-- Row: Continue button — full width -->
       <div class="row" id="slide1-nav-row">
         <div class="col-full">
           <div class="create-wiz-nav">
-            <button type="button" class="btn btn-primary btn--adaptive" id="continue-btn" onclick="createWizNext(1)">
-              Continue: Select Platforms →
+            <button type="button" class="btn btn-primary btn--adaptive" id="s3-continue-btn" onclick="createWizNext(1)" disabled>
+              Continue: Generate Copy →
             </button>
           </div>
           <div class="bottom-safe"></div>
@@ -292,89 +360,6 @@
       </div><!-- /.row nav -->
 
     </div><!-- /create-slide-1 -->
-
-    <!-- ══ SLIDE 3: Platform Selection ══ -->
-    <div class="create-slide" id="create-slide-3">
-
-      <div class="card">
-        <div class="row-base-sb mb-12">
-          <div class="card-title mb-0">📡 Send To</div>
-          <button type="button" id="select-all-btn" onclick="toggleSelectAll()" class="chip-green" style="font-family:inherit;font-size:12px;">Select All</button>
-        </div>
-        <p class="helper">Pick which platforms to blast. AI will adapt your listing for each one.</p>
-        <div id="quick-platform-list">
-          <!-- populated by renderStep3Platforms() -->
-        </div>
-      </div>
-
-      <!-- About You in Copy — collapsed accordion; all rows preserved for JS compatibility -->
-      <div class="card" id="about-you-card">
-        <button type="button" class="about-you-toggle" id="about-you-toggle-btn" onclick="toggleAboutYouPanel()">
-          <span>🪪 Edit what appears in this blast</span>
-          <span class="about-you-chevron" id="about-you-chevron">›</span>
-        </button>
-        <div id="about-you-panel" class="hidden">
-          <p class="helper-sm mt-10">Defaults come from your profile — override here for this blast only.</p>
-          <div class="yn-row mb-12">
-            <span class="yn-label">
-              Mention my name
-              <span id="copy-name-preview" class="check-hint"></span>
-            </span>
-            <div class="yn-btns">
-              <button type="button" class="yn-btn yn-yes" id="yn-name-yes" onclick="setYN('name','yes')">Yes</button>
-              <button type="button" class="yn-btn yn-no yn-active" id="yn-name-no" onclick="setYN('name','no')">No</button>
-            </div>
-          </div>
-          <div class="yn-row mb-12">
-            <span class="yn-label">
-              Mention my role
-              <span id="copy-role-preview" class="check-hint"></span>
-            </span>
-            <div class="yn-btns">
-              <button type="button" class="yn-btn yn-yes" id="yn-role-yes" onclick="setYN('role','yes')">Yes</button>
-              <button type="button" class="yn-btn yn-no yn-active" id="yn-role-no" onclick="setYN('role','no')">No</button>
-            </div>
-          </div>
-          <div class="yn-row hidden" id="yn-address-row">
-            <span class="yn-label">Include address in copy</span>
-            <div class="yn-btns">
-              <button type="button" class="yn-btn yn-yes yn-active" id="yn-address-yes" onclick="setYN('address','yes')">Yes</button>
-              <button type="button" class="yn-btn yn-no" id="yn-address-no" onclick="setYN('address','no')">No</button>
-            </div>
-          </div>
-          <div class="yn-row hidden" id="yn-phone-row">
-            <span class="yn-label">Include phone in copy</span>
-            <div class="yn-btns">
-              <button type="button" class="yn-btn yn-yes yn-active" id="yn-phone-yes" onclick="setYN('phone','yes')">Yes</button>
-              <button type="button" class="yn-btn yn-no" id="yn-phone-no" onclick="setYN('phone','no')">No</button>
-            </div>
-          </div>
-          <div class="yn-row hidden" id="yn-email-row">
-            <span class="yn-label">Include email in copy</span>
-            <div class="yn-btns">
-              <button type="button" class="yn-btn yn-yes yn-active" id="yn-email-yes" onclick="setYN('email','yes')">Yes</button>
-              <button type="button" class="yn-btn yn-no" id="yn-email-no" onclick="setYN('email','no')">No</button>
-            </div>
-          </div>
-          <div class="yn-row hidden" id="yn-website-row">
-            <span class="yn-label">Include website in copy</span>
-            <div class="yn-btns">
-              <button type="button" class="yn-btn yn-yes yn-active" id="yn-website-yes" onclick="setYN('website','yes')">Yes</button>
-              <button type="button" class="yn-btn yn-no" id="yn-website-no" onclick="setYN('website','no')">No</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Slide 3 nav -->
-      <div class="create-wiz-nav">
-        <button type="button" class="btn btn-primary btn--adaptive" id="s3-continue-btn" onclick="createWizNext(3)" disabled>
-          Continue: Generate Copy →
-        </button>
-        <button type="button" class="create-wiz-back-btn" onclick="createWizPrev(3)">← Back to Photos</button>
-      </div>
-      <div class="bottom-safe"></div>
-    </div><!-- /create-slide-3 -->
 
     <!-- ══ SLIDE 4: AI Generation ══ -->
     <div class="create-slide" id="create-slide-4">
@@ -1785,17 +1770,16 @@ function goToStep1() { createWizGoTo(1); }
 // BLAST CREATION WIZARD
 // ══════════════════════════════════════════
 let createWizStep = 1;
-const CREATE_WIZ_TOTAL = 4;
+const CREATE_WIZ_TOTAL = 3;
 const CREATE_WIZ_LABELS = {
-  1: 'Step 1 of 4 — Your Blast',
-  3: 'Step 2 of 4 — Select Platforms',
-  4: 'Step 3 of 4 — Generate Copy',
-  5: 'Step 4 of 4 — Review & Approve'
+  1: 'Step 1 of 3 — Your Blast',
+  4: 'Step 2 of 3 — Generate Copy',
+  5: 'Step 3 of 3 — Review & Approve'
 };
-const CREATE_WIZ_STEP_NUM = { 1: 1, 3: 2, 4: 3, 5: 4 };
+const CREATE_WIZ_STEP_NUM = { 1: 1, 4: 2, 5: 3 };
 
 function createWizGoTo(step) {
-  const SLIDE_IDS = [1, 3, 4, 5];
+  const SLIDE_IDS = [1, 4, 5];
   const curVisual = CREATE_WIZ_STEP_NUM[step] || step;
   for (const id of SLIDE_IDS) {
     const slide = document.getElementById('create-slide-' + id);
@@ -1804,7 +1788,7 @@ function createWizGoTo(step) {
     if (dot) {
       const dotVisual = CREATE_WIZ_STEP_NUM[id] || id;
       dot.classList.remove('cwiz-active', 'cwiz-done');
-      if (dotVisual < curVisual)       dot.classList.add('cwiz-done');
+      if (dotVisual < curVisual)        dot.classList.add('cwiz-done');
       else if (dotVisual === curVisual) dot.classList.add('cwiz-active');
     }
   }
@@ -1816,7 +1800,7 @@ function createWizGoTo(step) {
   if (fillEl) fillEl.style.width = Math.round(((CREATE_WIZ_STEP_NUM[step] || step) / CREATE_WIZ_TOTAL) * 100) + '%';
   createWizStep = step;
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (step === 3) {
+  if (step === 1) {
     renderStep3Platforms();
     checkAdaptBtn();
     checkS3ContinueBtn();
@@ -1838,19 +1822,17 @@ function createWizNext(fromStep) {
   if (fromStep === 1) {
     const offer = document.getElementById('biz-offer')?.value?.trim();
     if (!offer) { showToast('Add your offer description first'); return; }
+    if (!platforms.some(p => p.enabled)) { showToast('Select at least one platform first'); return; }
     saveDraft();
   }
-  if (fromStep === 3) {
-    if (!platforms.some(p => p.enabled)) { showToast('Select at least one platform first'); return; }
-  }
-  // Slide 2 is folded into slide 1 — skip from 1 straight to 3
-  const nextStep = fromStep === 1 ? 3 : fromStep + 1;
+  // Slides 2 & 3 folded into slide 1 — jump straight to 4
+  const nextStep = fromStep === 1 ? 4 : fromStep + 1;
   createWizGoTo(nextStep);
 }
 
 function createWizPrev(fromStep) {
-  // Slide 2 is folded into slide 1 — skip from 3 straight back to 1
-  const prevStep = fromStep === 3 ? 1 : fromStep - 1;
+  // Slides 2 & 3 folded into slide 1 — back from 4 goes straight to 1
+  const prevStep = fromStep === 4 ? 1 : fromStep - 1;
   createWizGoTo(Math.max(1, prevStep));
 }
 
