@@ -7,7 +7,10 @@
 <link rel="stylesheet" href="global-style.css?v=59" />
 <title>BlastyBiz — Business Story</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-<style>body{visibility:hidden}</style>
+<style>
+body{visibility:hidden}
+@media (max-width:768px){.dash-img-col{display:none}}
+</style>
 <script type="module" src="./auth-guard.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="blastybiz-menu.js?v=3"></script>
@@ -19,6 +22,8 @@
 
 <main class="main w-form">
 <div class="main-inner">
+<div class="layout__split-2-1">
+<div>
   <div class="ai-badge">🤖 Feeds the AI every time it writes for you</div>
   <h1 class="page-title">Your Business <span>Story</span></h1>
   <p class="page-sub">
@@ -101,6 +106,11 @@
       <div style="font-size:12px;color:var(--muted);margin-top:8px">This is the extracted text the AI reads. It cannot be edited — to change it, use Replace.</div>
     </div>
   </div>
+</div><!-- left col -->
+<div class="dash-img-col">
+  <img src="bizcontext-hero.png" alt="Your business story" style="width:100%;height:100%;object-fit:cover;border-radius:12px;display:block;" />
+</div>
+</div><!-- /.layout__split-2-1 -->
 
 </div><!-- /.main-inner -->
 </main>

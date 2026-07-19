@@ -7,7 +7,10 @@
 <link rel="stylesheet" href="global-style.css?v=59" />
 <title>BlastyBiz — Account Settings</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-<style>body{visibility:hidden}</style>
+<style>
+body{visibility:hidden}
+@media (max-width:768px){.dash-img-col{display:none}}
+</style>
 <script type="module" src="./auth-guard.js"></script>
 <script src="blastybiz-menu.js?v=3"></script>
 </head>
@@ -17,6 +20,8 @@
 <script>fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('header__inject').innerHTML=html;});</script>
 
 <div class="main"><div class="main-inner">
+<div class="layout__split-2-1">
+<div>
 
   <h1 class="page-title" style="margin-bottom:4px;">Account <span>Settings</span></h1>
   <p class="page-sub" style="margin-bottom:24px;">Manage your plan, billing, and account.</p>
@@ -46,6 +51,12 @@
     <p class="helper" style="margin-bottom:12px;">Deleting your account is permanent and cannot be undone. All businesses, campaigns, and data will be removed.</p>
     <button type="button" onclick="openDeleteModal()" class="delete-account-btn">Delete account</button>
   </div>
+
+</div><!-- left col -->
+<div class="dash-img-col">
+  <img src="account-hero.png" alt="Account settings" style="width:100%;height:100%;object-fit:cover;border-radius:12px;display:block;" />
+</div>
+</div><!-- /.layout__split-2-1 -->
 
 </div></div><!-- /.main-inner /.main -->
 
