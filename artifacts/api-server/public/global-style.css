@@ -375,15 +375,12 @@ body.home-page .main { padding-top: 0 !important; }
    body.stage : universal surface — vertical structure lives here.
    .row inside a stage page carries max-width + horizontal gutters.
    ─────────────────────────────────────────────────────────────────── */
-body.stage {
-  display: flex;
-  flex-direction: column;
-  min-height: 100svh;
-  padding-left: var(--gutter);
-  padding-right: var(--gutter);
+.stage {
+  width: 97%;
+  margin-left: auto;
+  margin-right: auto;
 }
-body.stage .main { flex: 1; }
-body.stage .row {
+.stage .row {
   max-width: var(--max-w);
   margin-left: auto;
   margin-right: auto;
