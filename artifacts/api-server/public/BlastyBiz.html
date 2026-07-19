@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784448641916" />
+<link rel="stylesheet" href="global-style.css?v=1784448831966" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -534,10 +534,10 @@
     ⚠️ Your business name is not set — the AI is using a placeholder. Tap <strong>Business Name</strong> below and type your real name.
   </div>
 
-  <div class="profile-page-split">
+  <div class="row"><div class="col-2-1">
 
     <!-- LEFT: Business Profile form -->
-    <div class="profile-page-left">
+    <div class="col-left">
       <div class="card">
         <div class="card-title">🏪 Business Profile</div>
         <p class="helper mb-16">Saved automatically. Used to pre-fill every listing.</p>
@@ -609,10 +609,10 @@
         <input type="text" id="profile-hours" placeholder="Mon–Sat 9am–8pm" oninput="saveProfile()" />
       </div>
 
-    </div><!-- /.profile-page-left -->
+    </div><!-- /.col-left -->
 
     <!-- RIGHT COLUMN -->
-    <div class="profile-page-right">
+    <div class="col-right profile-page-right">
 
       <img src="dashboard-hero.png" alt="BlastyBiz" class="profile-right-img" />
 
@@ -682,17 +682,16 @@
 
       </div>
 
-    </div><!-- /.profile-page-right -->
+    </div><!-- /.col-right -->
 
-  </div><!-- /.profile-page-split -->
+  </div></div><!-- /.col-2-1 /.row -->
 
   <!-- Row: Schedule (left) + Danger Zone (right) -->
   <div class="row">
     <div class="col-2">
 
       <!-- LEFT: Schedule -->
-      <div class="col-left">
-        <div class="card card-flush">
+      <div class="card card-flush">
           <button type="button" class="teach-btn" onclick="toggleRightAccordion('right-schedule-body','right-schedule-chevron')">
             <div class="row gap-10">
               <span class="teach-icon">📅</span>
@@ -768,11 +767,9 @@
             </div>
           </div>
         </div>
-      </div>
 
       <!-- RIGHT: Danger Zone -->
-      <div class="col-right">
-        <div style="background:rgba(220,38,38,0.1);border:2px solid rgba(220,38,38,0.4);border-radius:14px;padding:20px;">
+      <div style="background:rgba(220,38,38,0.1);border:2px solid rgba(220,38,38,0.4);border-radius:14px;padding:20px;">
           <div style="font-size:15px;font-weight:800;color:#f87171;margin-bottom:8px;letter-spacing:-0.2px;">⚠️ Danger Zone</div>
           <div style="font-size:13px;font-weight:700;color:#f87171;margin-bottom:6px;">Clear All Data</div>
           <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0 0 14px;">Permanently wipes your business profile, platform history, saved drafts, and all local settings. <strong style="color:#f87171;">This cannot be undone.</strong></p>
@@ -784,7 +781,6 @@
             </div>
           </div>
           <button type="button" id="clear-all-btn" onclick="clearAllPrompt()" style="padding:10px 20px;border-radius:8px;border:2px solid rgba(220,38,38,0.6);background:rgba(220,38,38,0.12);color:#f87171;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;width:100%;text-align:center;">🗑️ Clear All Data</button>
-        </div>
       </div>
 
     </div>
