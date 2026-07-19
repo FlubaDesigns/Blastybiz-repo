@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784448831966" />
+<link rel="stylesheet" href="global-style.css?v=1784488938334" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -157,100 +157,115 @@
         <div id="loc-online-fields"></div>
       </div>
 
-      <!-- Campaign picker -->
-      <div class="card">
-        <div class="card-title">📁 Campaign</div>
-        <p class="helper">Group your ads. Pick an existing campaign or create a new one.</p>
-        <div id="campaign-chips" class="chip-row">
-          <span class="chip-loading">Loading…</span>
-        </div>
-        <div id="campaign-library-row" class="mt-10 hidden">
-          <button type="button" onclick="openLibraryModal()" class="chip-green">
-            📚 <span></span> Library
-          </button>
-        </div>
-        <div id="new-campaign-row" class="mt-4 hidden">
-          <div class="flex-row mb-8">
-            <input type="text" id="new-campaign-input" placeholder="Campaign name (e.g. Christmas Sale, Grand Reopening)"
-              class="input-campaign"
-              onkeydown="if(event.key==='Enter'){openCampaignChat();}" />
-          </div>
-          <div style="font-size:13px;color:#4a7a52;margin-bottom:10px;">Enter a name above, then build your campaign brief with AI — or create it plain.</div>
-          <div class="flex-row" style="gap:8px;">
-            <button type="button" onclick="openCampaignChat()" class="btn-camp-save">✨ Build with AI</button>
-            <button type="button" onclick="saveNewCampaign()" class="btn-camp-cancel" style="font-size:13px;">Quick Create</button>
-            <button type="button" onclick="cancelNewCampaign()" class="btn-camp-cancel">Cancel</button>
-          </div>
-        </div>
-      </div>
+      <div class="row">
+        <div class="col-2-1">
+          <div class="col-left">
 
-      <!-- Campaign content — shown once a campaign is selected -->
-      <div id="campaign-content" class="hidden">
-
-        <div class="card">
-          <div class="card-title">🚀 Your Blast</div>
-
-          <label for="biz-ad-name">Blast name</label>
-          <input type="text" id="biz-ad-name" placeholder="e.g. 50% off chocolate · Free consultation · Holiday special"
-            oninput="saveDraft();debounceCampaignSave()" class="mb-16" />
-
-          <label for="biz-offer">What's the offer?</label>
-          <div class="char-wrap">
-            <textarea id="biz-offer" placeholder="e.g. 20% off all haircuts this Saturday only · Grand reopening next week · New menu just dropped — come try it..." oninput="countChars(this, 'offer-count', 500);debounceCampaignSave()" class="min-h-90"></textarea>
-            <span class="char-count" id="offer-count">0 / 500</span>
-          </div>
-
-          <label for="biz-price">Price <span class="optional">(optional)</span></label>
-          <input type="text" id="biz-price" placeholder="e.g. $25 · Free · Starting at $99" oninput="saveDraft();debounceCampaignSave()" class="max-w-260" />
-
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;min-height:22px">
-            <span id="ad-draft-status" style="font-size:12px;color:#4caf50;opacity:0;transition:opacity 0.4s"></span>
-            <button type="button" id="btn-discard-ad" onclick="discardAdDraft()" style="display:none;background:none;border:none;color:#e57373;font-size:12px;cursor:pointer;padding:0;text-decoration:underline">
-              × Discard this ad
-            </button>
-          </div>
-        </div>
-
-        <!-- Extra Facts for AI (collapsed accordion) -->
-        <div class="card card-flush" id="add-info-card">
-          <button type="button" onclick="toggleAddInfoPanel()" id="add-info-toggle-btn" class="teach-btn">
-            <div class="row gap-10">
-              <span class="teach-icon">📌</span>
-              <div>
-                <div class="teach-title">Extra Facts for AI <span id="add-info-scope-badge" class="tier-badge tier-badge--campaign">This Campaign</span></div>
-                <div class="teach-sub">Permanent facts the AI works into every generation — specific to this campaign or across all campaigns</div>
+          <!-- Campaign picker -->
+          <div class="card">
+            <div class="card-title">📁 Campaign</div>
+            <p class="helper">Group your ads. Pick an existing campaign or create a new one.</p>
+            <div id="campaign-chips" class="chip-row">
+              <span class="chip-loading">Loading…</span>
+            </div>
+            <div id="campaign-library-row" class="mt-10 hidden">
+              <button type="button" onclick="openLibraryModal()" class="chip-green">
+                📚 <span></span> Library
+              </button>
+            </div>
+            <div id="new-campaign-row" class="mt-4 hidden">
+              <div class="flex-row mb-8">
+                <input type="text" id="new-campaign-input" placeholder="Campaign name (e.g. Christmas Sale, Grand Reopening)"
+                  class="input-campaign"
+                  onkeydown="if(event.key==='Enter'){openCampaignChat();}" />
+              </div>
+              <div style="font-size:13px;color:#4a7a52;margin-bottom:10px;">Enter a name above, then build your campaign brief with AI — or create it plain.</div>
+              <div class="flex-row" style="gap:8px;">
+                <button type="button" onclick="openCampaignChat()" class="btn-camp-save">✨ Build with AI</button>
+                <button type="button" onclick="saveNewCampaign()" class="btn-camp-cancel" style="font-size:13px;">Quick Create</button>
+                <button type="button" onclick="cancelNewCampaign()" class="btn-camp-cancel">Cancel</button>
               </div>
             </div>
-            <span id="add-info-chevron" class="chevron">›</span>
-          </button>
-          <div id="add-info-panel" class="teach-inner hidden">
-            <div class="toggle-row mt-10">
-              <button type="button" onclick="setFactoidScope('campaign')" id="scope-btn-campaign" class="scope-btn active">📁 This Campaign</button>
-              <button type="button" onclick="setFactoidScope('global')" id="scope-btn-global" class="scope-btn">🌐 All Campaigns</button>
-            </div>
-            <textarea id="add-info-text" rows="3" class="textarea-naked mt-8"
-              placeholder="e.g. Our chocolate lab Biscuit greets every customer · We use zero artificial ingredients · Parking is free behind the building · Owner trained under a James Beard Award winner…"></textarea>
-            <div class="row mt-10 gap-8">
-              <button type="button" onclick="submitFactoid()" class="btn-save">Save Fact</button>
-            </div>
-            <div id="add-info-confirm" class="hidden" style="color:var(--green);font-size:13px;font-weight:600;margin-top:6px;">✓ Saved.</div>
           </div>
-          <!-- hidden enrichment stubs so existing JS doesn't break -->
-          <div id="enrichment-questions" class="hidden"></div>
-          <span id="enrichment-badge" class="hidden"></span>
-          <button type="button" id="enrichment-more-btn" class="hidden"></button>
-        </div>
 
-        <!-- Slide 1 nav -->
-        <div class="create-wiz-nav">
-          <button type="button" class="btn btn-primary btn--adaptive" id="continue-btn" onclick="createWizNext(1)">
-            Continue: Add Photos →
-          </button>
-        </div>
+          <!-- Campaign content — shown once a campaign is selected -->
+          <div id="campaign-content" class="hidden">
 
-        <div class="bottom-safe"></div>
+            <div class="card">
+              <div class="card-title">🚀 Your Blast</div>
 
-      </div><!-- /campaign-content -->
+              <label for="biz-ad-name">Blast name</label>
+              <input type="text" id="biz-ad-name" placeholder="e.g. 50% off chocolate · Free consultation · Holiday special"
+                oninput="saveDraft();debounceCampaignSave()" class="mb-16" />
+
+              <label for="biz-offer">What's the offer?</label>
+              <div class="char-wrap">
+                <textarea id="biz-offer" placeholder="e.g. 20% off all haircuts this Saturday only · Grand reopening next week · New menu just dropped — come try it..." oninput="countChars(this, 'offer-count', 500);debounceCampaignSave()" class="min-h-90"></textarea>
+                <span class="char-count" id="offer-count">0 / 500</span>
+              </div>
+
+              <label for="biz-price">Price <span class="optional">(optional)</span></label>
+              <input type="text" id="biz-price" placeholder="e.g. $25 · Free · Starting at $99" oninput="saveDraft();debounceCampaignSave()" class="max-w-260" />
+
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;min-height:22px">
+                <span id="ad-draft-status" style="font-size:12px;color:#4caf50;opacity:0;transition:opacity 0.4s"></span>
+                <button type="button" id="btn-discard-ad" onclick="discardAdDraft()" style="display:none;background:none;border:none;color:#e57373;font-size:12px;cursor:pointer;padding:0;text-decoration:underline">
+                  × Discard this ad
+                </button>
+              </div>
+            </div>
+
+            <!-- Extra Facts for AI (collapsed accordion) -->
+            <div class="card card-flush" id="add-info-card">
+              <button type="button" onclick="toggleAddInfoPanel()" id="add-info-toggle-btn" class="teach-btn">
+                <div class="row gap-10">
+                  <span class="teach-icon">📌</span>
+                  <div>
+                    <div class="teach-title">Extra Facts for AI <span id="add-info-scope-badge" class="tier-badge tier-badge--campaign">This Campaign</span></div>
+                    <div class="teach-sub">Permanent facts the AI works into every generation — specific to this campaign or across all campaigns</div>
+                  </div>
+                </div>
+                <span id="add-info-chevron" class="chevron">›</span>
+              </button>
+              <div id="add-info-panel" class="teach-inner hidden">
+                <div class="toggle-row mt-10">
+                  <button type="button" onclick="setFactoidScope('campaign')" id="scope-btn-campaign" class="scope-btn active">📁 This Campaign</button>
+                  <button type="button" onclick="setFactoidScope('global')" id="scope-btn-global" class="scope-btn">🌐 All Campaigns</button>
+                </div>
+                <textarea id="add-info-text" rows="3" class="textarea-naked mt-8"
+                  placeholder="e.g. Our chocolate lab Biscuit greets every customer · We use zero artificial ingredients · Parking is free behind the building · Owner trained under a James Beard Award winner…"></textarea>
+                <div class="row mt-10 gap-8">
+                  <button type="button" onclick="submitFactoid()" class="btn-save">Save Fact</button>
+                </div>
+                <div id="add-info-confirm" class="hidden" style="color:var(--green);font-size:13px;font-weight:600;margin-top:6px;">✓ Saved.</div>
+              </div>
+              <!-- hidden enrichment stubs so existing JS doesn't break -->
+              <div id="enrichment-questions" class="hidden"></div>
+              <span id="enrichment-badge" class="hidden"></span>
+              <button type="button" id="enrichment-more-btn" class="hidden"></button>
+            </div>
+
+            <!-- Slide 1 nav -->
+            <div class="create-wiz-nav">
+              <button type="button" class="btn btn-primary btn--adaptive" id="continue-btn" onclick="createWizNext(1)">
+                Continue: Add Photos →
+              </button>
+            </div>
+
+            <div class="bottom-safe"></div>
+
+          </div><!-- /campaign-content -->
+
+          </div><!-- /.col-left -->
+
+          <!-- RIGHT: image (hidden on mobile) -->
+          <div class="col-right hide-mobile">
+            <img src="images/cta-worker.png" alt="Create your blast" style="width:100%;border-radius:12px;display:block;">
+          </div><!-- /.col-right -->
+
+        </div><!-- /.col-2-1 -->
+      </div><!-- /.row -->
+
     </div><!-- /create-slide-1 -->
 
     <!-- ══ SLIDE 2: Photos ══ -->
