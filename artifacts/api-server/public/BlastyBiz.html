@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784502984313" />
+<link rel="stylesheet" href="global-style.css?v=1784503744954" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -2577,6 +2577,9 @@ function setPlatformStatus(id, status) {
 // HISTORY
 // ══════════════════════════════════════════
 function addHistory(platformName) {
+  // Write to Firestore via module script, then reload History from Firestore
+  document.dispatchEvent(new CustomEvent('bb:addHistory', { detail: { platformName } }));
+  // Optimistic in-memory entry while Firestore reloads
   history.unshift({
     platform:  platformName,
     listing:   document.getElementById('biz-name').value || 'Listing',
@@ -2584,7 +2587,8 @@ function addHistory(platformName) {
     draftId:   window._currentDraftId || null,
   });
   renderHistory();
-  document.dispatchEvent(new CustomEvent('bb:addHistory', { detail: { platformName } }));
+  // Reload from Firestore after a short delay to get the authoritative state
+  setTimeout(() => { if (window._bbReloadHistory) window._bbReloadHistory(); }, 1500);
 }
 
 function renderHistory() {
@@ -4845,11 +4849,14 @@ onAuthStateChanged(auth, async (user) => {
   try {
     const items = [];
 
-    // 1. Completed listingDrafts — one entry per platform, carries draftId so rows are tappable
+    // 1. Completed listingDrafts only (status === 'completed') — one row per blast
     try {
-      const draftsSnap = await getDocs(
-        collection(db, 'users', user.uid, 'businesses', activeBizId, 'listingDrafts')
-      );
+      const draftsSnap = await getDocs(query(
+        collection(db, 'users', user.uid, 'businesses', activeBizId, 'listingDrafts'),
+        where('status', '==', 'completed'),
+        orderBy('updatedAt', 'desc'),
+        limit(50)
+      ));
       draftsSnap.forEach(d => {
         const data = d.data();
         const adaptations = data.adaptations || {};
@@ -4857,12 +4864,13 @@ onAuthStateChanged(auth, async (user) => {
         const t = data.updatedAt?.toDate?.()?.toISOString()
                || data.lastGeneratedAt?.toDate?.()?.toISOString()
                || new Date().toISOString();
+        // One item per draft (not per platform) — platforms listed together in render
         Object.keys(adaptations).forEach(pid => {
           const plat = window.PLATFORMS?.find(p => p.id === pid);
           items.push({
             draftId:  d.id,
             platform: plat ? plat.name : pid,
-            listing:  data.businessName || data.formData?.name || 'Listing',
+            listing:  data.businessName || data.blastName || data.formData?.name || 'Listing',
             time:     t,
           });
         });
@@ -4895,6 +4903,46 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 }); // authStateReady
+
+// Reload history from Firestore on demand (called after completeBlast)
+window._bbReloadHistory = async function() {
+  if (!currentUser || !activeBizId) return;
+  try {
+    const items = [];
+    const draftsSnap = await getDocs(query(
+      collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'listingDrafts'),
+      where('status', '==', 'completed'),
+      orderBy('updatedAt', 'desc'),
+      limit(50)
+    ));
+    draftsSnap.forEach(d => {
+      const data = d.data();
+      const adaptations = data.adaptations || {};
+      if (!Object.keys(adaptations).length) return;
+      const t = data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString();
+      Object.keys(adaptations).forEach(pid => {
+        const plat = window.PLATFORMS?.find(p => p.id === pid);
+        items.push({
+          draftId:  d.id,
+          platform: plat ? plat.name : pid,
+          listing:  data.businessName || data.blastName || data.formData?.name || 'Listing',
+          time:     t,
+        });
+      });
+    });
+    const jobsSnap = await getDocs(query(
+      collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'publishJobs'),
+      orderBy('createdAt', 'desc'),
+      limit(30)
+    ));
+    jobsSnap.forEach(d => {
+      const j = d.data();
+      items.push({ draftId: null, platform: j.platform || '', listing: j.listingName || 'Listing', time: j.createdAt?.toDate?.()?.toISOString() || new Date().toISOString() });
+    });
+    items.sort((a, b) => new Date(b.time) - new Date(a.time));
+    if (window._bbSetHistory) window._bbSetHistory(items);
+  } catch(e) { console.error('reloadHistory:', e); }
+};
 
 // Fetch a listingDraft document by id
 window._bbLoadDraft = async function(draftId) {
