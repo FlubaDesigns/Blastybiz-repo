@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784490887481" />
+<link rel="stylesheet" href="global-style.css?v=1784491475343" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -278,6 +278,59 @@
                 </div>
               </div>
             </div>
+
+            <!-- About You in Copy — collapsed accordion; all rows preserved for JS compatibility -->
+            <div class="card" id="about-you-card">
+              <button type="button" class="about-you-toggle" id="about-you-toggle-btn" onclick="toggleAboutYouPanel()">
+                <span>🪪 Edit what appears in this blast</span>
+                <span class="about-you-chevron" id="about-you-chevron">›</span>
+              </button>
+              <div id="about-you-panel" class="hidden">
+                <p class="helper-sm mt-10">Defaults come from your profile — override here for this blast only.</p>
+                <div class="yn-row mb-12">
+                  <span class="yn-label">Mention my name<span id="copy-name-preview" class="check-hint"></span></span>
+                  <div class="yn-btns">
+                    <button type="button" class="yn-btn yn-yes" id="yn-name-yes" onclick="setYN('name','yes')">Yes</button>
+                    <button type="button" class="yn-btn yn-no yn-active" id="yn-name-no" onclick="setYN('name','no')">No</button>
+                  </div>
+                </div>
+                <div class="yn-row mb-12">
+                  <span class="yn-label">Mention my role<span id="copy-role-preview" class="check-hint"></span></span>
+                  <div class="yn-btns">
+                    <button type="button" class="yn-btn yn-yes" id="yn-role-yes" onclick="setYN('role','yes')">Yes</button>
+                    <button type="button" class="yn-btn yn-no yn-active" id="yn-role-no" onclick="setYN('role','no')">No</button>
+                  </div>
+                </div>
+                <div class="yn-row hidden" id="yn-address-row">
+                  <span class="yn-label">Include address in copy</span>
+                  <div class="yn-btns">
+                    <button type="button" class="yn-btn yn-yes yn-active" id="yn-address-yes" onclick="setYN('address','yes')">Yes</button>
+                    <button type="button" class="yn-btn yn-no" id="yn-address-no" onclick="setYN('address','no')">No</button>
+                  </div>
+                </div>
+                <div class="yn-row hidden" id="yn-phone-row">
+                  <span class="yn-label">Include phone in copy</span>
+                  <div class="yn-btns">
+                    <button type="button" class="yn-btn yn-yes yn-active" id="yn-phone-yes" onclick="setYN('phone','yes')">Yes</button>
+                    <button type="button" class="yn-btn yn-no" id="yn-phone-no" onclick="setYN('phone','no')">No</button>
+                  </div>
+                </div>
+                <div class="yn-row hidden" id="yn-email-row">
+                  <span class="yn-label">Include email in copy</span>
+                  <div class="yn-btns">
+                    <button type="button" class="yn-btn yn-yes yn-active" id="yn-email-yes" onclick="setYN('email','yes')">Yes</button>
+                    <button type="button" class="yn-btn yn-no" id="yn-email-no" onclick="setYN('email','no')">No</button>
+                  </div>
+                </div>
+                <div class="yn-row hidden" id="yn-website-row">
+                  <span class="yn-label">Include website in copy</span>
+                  <div class="yn-btns">
+                    <button type="button" class="yn-btn yn-yes yn-active" id="yn-website-yes" onclick="setYN('website','yes')">Yes</button>
+                    <button type="button" class="yn-btn yn-no" id="yn-website-no" onclick="setYN('website','no')">No</button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div><!-- /.col-right -->
 
         </div><!-- /.col-2-1 -->
@@ -294,59 +347,6 @@
             <p class="helper">Pick which platforms to blast. AI will adapt your listing for each one.</p>
             <div id="quick-platform-list">
               <!-- populated by renderStep3Platforms() -->
-            </div>
-          </div>
-
-          <!-- About You in Copy — collapsed accordion; all rows preserved for JS compatibility -->
-          <div class="card" id="about-you-card">
-            <button type="button" class="about-you-toggle" id="about-you-toggle-btn" onclick="toggleAboutYouPanel()">
-              <span>🪪 Edit what appears in this blast</span>
-              <span class="about-you-chevron" id="about-you-chevron">›</span>
-            </button>
-            <div id="about-you-panel" class="hidden">
-              <p class="helper-sm mt-10">Defaults come from your profile — override here for this blast only.</p>
-              <div class="yn-row mb-12">
-                <span class="yn-label">Mention my name<span id="copy-name-preview" class="check-hint"></span></span>
-                <div class="yn-btns">
-                  <button type="button" class="yn-btn yn-yes" id="yn-name-yes" onclick="setYN('name','yes')">Yes</button>
-                  <button type="button" class="yn-btn yn-no yn-active" id="yn-name-no" onclick="setYN('name','no')">No</button>
-                </div>
-              </div>
-              <div class="yn-row mb-12">
-                <span class="yn-label">Mention my role<span id="copy-role-preview" class="check-hint"></span></span>
-                <div class="yn-btns">
-                  <button type="button" class="yn-btn yn-yes" id="yn-role-yes" onclick="setYN('role','yes')">Yes</button>
-                  <button type="button" class="yn-btn yn-no yn-active" id="yn-role-no" onclick="setYN('role','no')">No</button>
-                </div>
-              </div>
-              <div class="yn-row hidden" id="yn-address-row">
-                <span class="yn-label">Include address in copy</span>
-                <div class="yn-btns">
-                  <button type="button" class="yn-btn yn-yes yn-active" id="yn-address-yes" onclick="setYN('address','yes')">Yes</button>
-                  <button type="button" class="yn-btn yn-no" id="yn-address-no" onclick="setYN('address','no')">No</button>
-                </div>
-              </div>
-              <div class="yn-row hidden" id="yn-phone-row">
-                <span class="yn-label">Include phone in copy</span>
-                <div class="yn-btns">
-                  <button type="button" class="yn-btn yn-yes yn-active" id="yn-phone-yes" onclick="setYN('phone','yes')">Yes</button>
-                  <button type="button" class="yn-btn yn-no" id="yn-phone-no" onclick="setYN('phone','no')">No</button>
-                </div>
-              </div>
-              <div class="yn-row hidden" id="yn-email-row">
-                <span class="yn-label">Include email in copy</span>
-                <div class="yn-btns">
-                  <button type="button" class="yn-btn yn-yes yn-active" id="yn-email-yes" onclick="setYN('email','yes')">Yes</button>
-                  <button type="button" class="yn-btn yn-no" id="yn-email-no" onclick="setYN('email','no')">No</button>
-                </div>
-              </div>
-              <div class="yn-row hidden" id="yn-website-row">
-                <span class="yn-label">Include website in copy</span>
-                <div class="yn-btns">
-                  <button type="button" class="yn-btn yn-yes yn-active" id="yn-website-yes" onclick="setYN('website','yes')">Yes</button>
-                  <button type="button" class="yn-btn yn-no" id="yn-website-no" onclick="setYN('website','no')">No</button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
