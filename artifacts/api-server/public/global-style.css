@@ -380,13 +380,8 @@ body.stage {
   flex-direction: column;
   min-height: 100svh;
 }
-body.stage .main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
+body.stage .main { flex: 1; }
 body.stage .row {
-  width: 100%;
   max-width: var(--max-w);
   margin-left: auto;
   margin-right: auto;
