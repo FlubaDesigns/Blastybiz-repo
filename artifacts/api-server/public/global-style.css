@@ -2461,20 +2461,11 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 
 /* Tabs (conflict: listing-preview page also uses .tab/.tabs) */
 /* Sticky top matches --main-offset so tabs lock flush under the header automatically. */
-body.create-page .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--dark); position: sticky; top: var(--main-offset); z-index: 99; border-radius: 10px 10px 0 0; overflow: hidden; }
-/* Mobile: fix the tab bar to the top chrome so it's physically attached to the header —
-   no sticky/JS-timing gap possible. Uses var(--main-offset) so it adapts to the actual
-   measured header height (set by blastybiz-menu.js); fallback = 55px CSS default. */
+body.create-page .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--dark); border-radius: 10px 10px 0 0; overflow: hidden; }
 @media (max-width: 767px) {
   body.create-page .tabs {
-    position: fixed;
-    top: var(--main-offset);
-    left: 0;
-    right: 0;
     border-radius: 0;
-    z-index: 98;
   }
-  body.create-page .main { padding-top: calc(var(--main-offset) + 43px); }
 }
 body.create-page .tab  { flex: 1; padding: 14px 8px; text-align: center; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s; }
 body.create-page .tab.active { color: var(--green); border-bottom-color: var(--green); }
