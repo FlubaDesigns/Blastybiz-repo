@@ -525,169 +525,171 @@
 
     <!-- LEFT: Business Profile form -->
     <div class="profile-page-left">
-    <div class="card">
-      <div class="card-title">🏪 Business Profile</div>
-      <p class="helper mb-16">Saved automatically. Used to pre-fill every listing.</p>
+      <div class="card">
+        <div class="card-title">🏪 Business Profile</div>
+        <p class="helper mb-16">Saved automatically. Used to pre-fill every listing.</p>
 
-      <label for="profile-name">Business Name</label>
-      <input type="text" id="profile-name" placeholder="Your business name" oninput="saveProfile()" />
+        <label for="profile-name">Business Name</label>
+        <input type="text" id="profile-name" placeholder="Your business name" oninput="saveProfile()" />
 
-      <label for="profile-owner-name">Your Name</label>
-      <input type="text" id="profile-owner-name" placeholder="e.g. Maria Rodriguez" oninput="saveProfile()" />
+        <label for="profile-owner-name">Your Name</label>
+        <input type="text" id="profile-owner-name" placeholder="e.g. Maria Rodriguez" oninput="saveProfile()" />
 
-      <label for="profile-owner-role">Your Role</label>
-      <select id="profile-owner-role" onchange="saveProfile()">
-        <option value="owner">Owner</option>
-        <option value="manager">Manager</option>
-        <option value="other">Other</option>
-      </select>
+        <label for="profile-owner-role">Your Role</label>
+        <select id="profile-owner-role" onchange="saveProfile()">
+          <option value="owner">Owner</option>
+          <option value="manager">Manager</option>
+          <option value="other">Other</option>
+        </select>
 
-      <label for="profile-cat">Category</label>
-      <select id="profile-cat" onchange="saveProfile()">
-        <option value="">Select a category...</option>
-        <option>Restaurant / Food & Drink</option>
-        <option>Retail Shop</option>
-        <option>Beauty & Salon</option>
-        <option>Auto Services</option>
-        <option>Home Services</option>
-        <option>Health & Fitness</option>
-        <option>Professional Services</option>
-        <option>Church / Nonprofit</option>
-        <option>Entertainment</option>
-        <option>Other</option>
-      </select>
+        <label for="profile-cat">Category</label>
+        <select id="profile-cat" onchange="saveProfile()">
+          <option value="">Select a category...</option>
+          <option>Restaurant / Food & Drink</option>
+          <option>Retail Shop</option>
+          <option>Beauty & Salon</option>
+          <option>Auto Services</option>
+          <option>Home Services</option>
+          <option>Health & Fitness</option>
+          <option>Professional Services</option>
+          <option>Church / Nonprofit</option>
+          <option>Entertainment</option>
+          <option>Other</option>
+        </select>
 
-      <label for="profile-phone">Phone</label>
-      <input type="tel" id="profile-phone" placeholder="555-000-0000" oninput="formatPhone(this);saveProfile()" inputmode="tel" />
+        <label for="profile-phone">Phone</label>
+        <input type="tel" id="profile-phone" placeholder="555-000-0000" oninput="formatPhone(this);saveProfile()" inputmode="tel" />
 
-      <label for="profile-email">Email</label>
-      <input type="email" id="profile-email" placeholder="hello@yourbusiness.com" oninput="saveProfile()" />
+        <label for="profile-email">Email</label>
+        <input type="email" id="profile-email" placeholder="hello@yourbusiness.com" oninput="saveProfile()" />
 
-      <label for="profile-street">Location</label>
-      <div class="loc-type-toggle">
-        <button type="button" class="loc-type-btn active" id="prof-loc-btn-physical" onclick="setProfileLocationType('physical')">🧱 Brick</button>
-        <button type="button" class="loc-type-btn" id="prof-loc-btn-online" onclick="setProfileLocationType('online')">🌐 Online</button>
-        <button type="button" class="loc-type-btn" id="prof-loc-btn-both" onclick="setProfileLocationType('both')">🌍 Both</button>
-      </div>
-      <div class="loc-fields" id="prof-loc-physical-fields">
-        <input type="text" id="profile-street" placeholder="Street address" oninput="saveProfile()" class="mb-8" />
-        <div class="addr-row" style="margin-bottom:4px;">
-          <span style="flex:1;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">City</span>
-          <span style="width:72px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">State</span>
-          <span style="width:84px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">ZIP</span>
+        <label for="profile-street">Location</label>
+        <div class="loc-type-toggle">
+          <button type="button" class="loc-type-btn active" id="prof-loc-btn-physical" onclick="setProfileLocationType('physical')">🧱 Brick</button>
+          <button type="button" class="loc-type-btn" id="prof-loc-btn-online" onclick="setProfileLocationType('online')">🌐 Online</button>
+          <button type="button" class="loc-type-btn" id="prof-loc-btn-both" onclick="setProfileLocationType('both')">🌍 Both</button>
         </div>
-        <div class="addr-row">
-          <input type="text" id="profile-city"  placeholder="City"  oninput="saveProfile()" class="flex-1" />
-          <input type="text" id="profile-state" placeholder="ST"    oninput="saveProfile()" class="w-72" />
-          <input type="text" id="profile-zip"   placeholder="ZIP"   oninput="saveProfile()" class="w-84" />
+        <div class="loc-fields" id="prof-loc-physical-fields">
+          <input type="text" id="profile-street" placeholder="Street address" oninput="saveProfile()" class="mb-8" />
+          <div class="addr-row" style="margin-bottom:4px;">
+            <span style="flex:1;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">City</span>
+            <span style="width:72px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">State</span>
+            <span style="width:84px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">ZIP</span>
+          </div>
+          <div class="addr-row">
+            <input type="text" id="profile-city"  placeholder="City"  oninput="saveProfile()" class="flex-1" />
+            <input type="text" id="profile-state" placeholder="ST"    oninput="saveProfile()" class="w-72" />
+            <input type="text" id="profile-zip"   placeholder="ZIP"   oninput="saveProfile()" class="w-84" />
+          </div>
         </div>
-      </div>
-      <div class="loc-fields hidden" id="prof-loc-online-fields">
-        <input type="text" id="profile-region" placeholder="Service area or region — e.g. Southwest Florida" oninput="saveProfile()" />
-      </div>
+        <div class="loc-fields hidden" id="prof-loc-online-fields">
+          <input type="text" id="profile-region" placeholder="Service area or region — e.g. Southwest Florida" oninput="saveProfile()" />
+        </div>
 
-      <label for="profile-website">Website</label>
-      <input type="url" id="profile-website" placeholder="https://yourbusiness.com" oninput="saveProfile()" />
+        <label for="profile-website">Website</label>
+        <input type="url" id="profile-website" placeholder="https://yourbusiness.com" oninput="saveProfile()" />
 
-      <label for="profile-hours">Hours</label>
-      <input type="text" id="profile-hours" placeholder="Mon–Sat 9am–8pm" oninput="saveProfile()" />
-    </div>
+        <label for="profile-hours">Hours</label>
+        <input type="text" id="profile-hours" placeholder="Mon–Sat 9am–8pm" oninput="saveProfile()" />
+      </div>
     </div><!-- /.profile-page-left -->
 
-    <!-- RIGHT: image + Preferences + Auto-Post Schedule -->
+    <!-- RIGHT: image → Auto-Post Schedule → Preferences -->
     <div class="profile-page-right">
+
       <img src="img/storefront.jpg" alt="Local business storefront" class="profile-right-img" />
 
-  <div class="card">
-    <div class="card-title">⚙️ Preferences</div>
-
-    <label for="profile-tone">Default Tone</label>
-    <select id="profile-tone" onchange="saveProfile()">
-      <option value="friendly">Friendly & Casual</option>
-      <option value="professional">Professional</option>
-      <option value="bold">Bold & Energetic</option>
-      <option value="warm">Warm & Community</option>
-    </select>
-
-    <label>Default Platforms</label>
-    <p class="helper-sm mb-10">Toggle platforms on/off in the Platforms tab.</p>
-  </div>
-
-  <!-- ── AUTO-POST SCHEDULE ── -->
-  <div class="card" id="schedule-card">
-    <div class="row-sb mb-6">
-      <div class="card-title mb-0">📅 Auto-Post Schedule</div>
-      <label class="sched-toggle-wrap">
-        <input type="checkbox" id="sched-enabled" onchange="toggleSchedEnabled()" />
-        <span class="sched-toggle-track"></span>
-      </label>
-    </div>
-    <p class="helper-sm">Turn on to have BlastyBiz re-post your listing on a recurring schedule. Direct auto-posting for Google Business, Facebook, and Instagram is coming soon.</p>
-
-    <div id="sched-fields" class="hidden">
-      <label>How often?</label>
-      <div class="sched-chips">
-        <button type="button" class="sched-chip active" id="sched-freq-weekly"    onclick="setSchedFreq('weekly')">Weekly</button>
-        <button type="button" class="sched-chip"        id="sched-freq-biweekly"  onclick="setSchedFreq('biweekly')">Every 2 wks</button>
-        <button type="button" class="sched-chip"        id="sched-freq-monthly"   onclick="setSchedFreq('monthly')">Monthly</button>
-      </div>
-
-      <div id="sched-dow-wrap">
-        <label>Which day?</label>
-        <div class="sched-chips">
-          <button type="button" class="sched-chip"        id="sched-dow-0" onclick="setSchedDay(0)">Sun</button>
-          <button type="button" class="sched-chip active" id="sched-dow-1" onclick="setSchedDay(1)">Mon</button>
-          <button type="button" class="sched-chip"        id="sched-dow-2" onclick="setSchedDay(2)">Tue</button>
-          <button type="button" class="sched-chip"        id="sched-dow-3" onclick="setSchedDay(3)">Wed</button>
-          <button type="button" class="sched-chip"        id="sched-dow-4" onclick="setSchedDay(4)">Thu</button>
-          <button type="button" class="sched-chip"        id="sched-dow-5" onclick="setSchedDay(5)">Fri</button>
-          <button type="button" class="sched-chip"        id="sched-dow-6" onclick="setSchedDay(6)">Sat</button>
+      <!-- ── AUTO-POST SCHEDULE ── -->
+      <div class="card" id="schedule-card">
+        <div class="row-sb mb-6">
+          <div class="card-title mb-0">📅 Auto-Post Schedule</div>
+          <label class="sched-toggle-wrap">
+            <input type="checkbox" id="sched-enabled" onchange="toggleSchedEnabled()" />
+            <span class="sched-toggle-track"></span>
+          </label>
         </div>
-      </div>
+        <p class="helper-sm">Turn on to have BlastyBiz re-post your listing on a recurring schedule. Direct auto-posting for Google Business, Facebook, and Instagram is coming soon.</p>
 
-      <div id="sched-dom-wrap" class="hidden">
-        <label>Which day of the month?</label>
-        <div class="sched-chips">
-          <button type="button" class="sched-chip active" id="sched-dom-1"  onclick="setSchedDom(1)">1st</button>
-          <button type="button" class="sched-chip"        id="sched-dom-8"  onclick="setSchedDom(8)">8th</button>
-          <button type="button" class="sched-chip"        id="sched-dom-15" onclick="setSchedDom(15)">15th</button>
-          <button type="button" class="sched-chip"        id="sched-dom-22" onclick="setSchedDom(22)">22nd</button>
+        <div id="sched-fields" class="hidden">
+          <label>How often?</label>
+          <div class="sched-chips">
+            <button type="button" class="sched-chip active" id="sched-freq-weekly"    onclick="setSchedFreq('weekly')">Weekly</button>
+            <button type="button" class="sched-chip"        id="sched-freq-biweekly"  onclick="setSchedFreq('biweekly')">Every 2 wks</button>
+            <button type="button" class="sched-chip"        id="sched-freq-monthly"   onclick="setSchedFreq('monthly')">Monthly</button>
+          </div>
+
+          <div id="sched-dow-wrap">
+            <label>Which day?</label>
+            <div class="sched-chips">
+              <button type="button" class="sched-chip"        id="sched-dow-0" onclick="setSchedDay(0)">Sun</button>
+              <button type="button" class="sched-chip active" id="sched-dow-1" onclick="setSchedDay(1)">Mon</button>
+              <button type="button" class="sched-chip"        id="sched-dow-2" onclick="setSchedDay(2)">Tue</button>
+              <button type="button" class="sched-chip"        id="sched-dow-3" onclick="setSchedDay(3)">Wed</button>
+              <button type="button" class="sched-chip"        id="sched-dow-4" onclick="setSchedDay(4)">Thu</button>
+              <button type="button" class="sched-chip"        id="sched-dow-5" onclick="setSchedDay(5)">Fri</button>
+              <button type="button" class="sched-chip"        id="sched-dow-6" onclick="setSchedDay(6)">Sat</button>
+            </div>
+          </div>
+
+          <div id="sched-dom-wrap" class="hidden">
+            <label>Which day of the month?</label>
+            <div class="sched-chips">
+              <button type="button" class="sched-chip active" id="sched-dom-1"  onclick="setSchedDom(1)">1st</button>
+              <button type="button" class="sched-chip"        id="sched-dom-8"  onclick="setSchedDom(8)">8th</button>
+              <button type="button" class="sched-chip"        id="sched-dom-15" onclick="setSchedDom(15)">15th</button>
+              <button type="button" class="sched-chip"        id="sched-dom-22" onclick="setSchedDom(22)">22nd</button>
+            </div>
+          </div>
+
+          <label>What time?</label>
+          <div class="sched-chips">
+            <button type="button" class="sched-chip active" id="sched-time-morning"   onclick="setSchedTime('morning')">☀️ 9am</button>
+            <button type="button" class="sched-chip"        id="sched-time-midday"    onclick="setSchedTime('midday')">🌤 12pm</button>
+            <button type="button" class="sched-chip"        id="sched-time-afternoon" onclick="setSchedTime('afternoon')">⛅ 3pm</button>
+            <button type="button" class="sched-chip"        id="sched-time-evening"   onclick="setSchedTime('evening')">🌙 6pm</button>
+          </div>
+
+          <div id="sched-next-preview" class="sched-next-preview"></div>
+
+          <!-- CAMPAIGN PICKER -->
+          <div class="sched-camp-row">
+            <div class="sched-camp-title">Which campaign?</div>
+            <div class="sched-camp-hint">Auto-posts will use this campaign's offer and ad details.</div>
+            <select id="sched-campaign-select" onchange="setSchedCampaign(this.value, this.options[this.selectedIndex].text)" class="sched-select">
+              <option value="">— No campaign selected (use business profile) —</option>
+            </select>
+          </div>
+
+          <!-- REVIEW TOGGLE -->
+          <div class="sched-review-row">
+            <div>
+              <div class="sched-label">Require approval for future scheduled posts</div>
+              <div class="sched-sublabel">AI drafts for recurring auto-posts land in a queue — you approve before they go live. This does not affect the blast you are creating now.</div>
+            </div>
+            <label class="sched-toggle-wrap sched-toggle-ml">
+              <input type="checkbox" id="sched-review" onchange="toggleSchedReview()" />
+              <span class="sched-toggle-track"></span>
+            </label>
+          </div>
         </div>
-      </div>
+      </div><!-- /.schedule-card -->
 
-      <label>What time?</label>
-      <div class="sched-chips">
-        <button type="button" class="sched-chip active" id="sched-time-morning"   onclick="setSchedTime('morning')">☀️ 9am</button>
-        <button type="button" class="sched-chip"        id="sched-time-midday"    onclick="setSchedTime('midday')">🌤 12pm</button>
-        <button type="button" class="sched-chip"        id="sched-time-afternoon" onclick="setSchedTime('afternoon')">⛅ 3pm</button>
-        <button type="button" class="sched-chip"        id="sched-time-evening"   onclick="setSchedTime('evening')">🌙 6pm</button>
-      </div>
+      <!-- PREFERENCES -->
+      <div class="card">
+        <div class="card-title">⚙️ Preferences</div>
 
-      <div id="sched-next-preview" class="sched-next-preview"></div>
-
-      <!-- CAMPAIGN PICKER -->
-      <div class="sched-camp-row">
-        <div class="sched-camp-title">Which campaign?</div>
-        <div class="sched-camp-hint">Auto-posts will use this campaign's offer and ad details.</div>
-        <select id="sched-campaign-select" onchange="setSchedCampaign(this.value, this.options[this.selectedIndex].text)"
-          class="sched-select">
-          <option value="">— No campaign selected (use business profile) —</option>
+        <label for="profile-tone">Default Tone</label>
+        <select id="profile-tone" onchange="saveProfile()">
+          <option value="friendly">Friendly & Casual</option>
+          <option value="professional">Professional</option>
+          <option value="bold">Bold & Energetic</option>
+          <option value="warm">Warm & Community</option>
         </select>
-      </div>
 
-      <!-- REVIEW TOGGLE -->
-      <div class="sched-review-row">
-        <div>
-          <div class="sched-label">Require approval for future scheduled posts</div>
-          <div class="sched-sublabel">AI drafts for recurring auto-posts land in a queue — you approve before they go live. This does not affect the blast you are creating now.</div>
-        </div>
-        <label class="sched-toggle-wrap sched-toggle-ml">
-          <input type="checkbox" id="sched-review" onchange="toggleSchedReview()" />
-          <span class="sched-toggle-track"></span>
-        </label>
-      </div>
-    </div>
-  </div>
+        <label>Default Platforms</label>
+        <p class="helper-sm mb-10">Toggle platforms on/off in the Platforms tab.</p>
+      </div><!-- /.preferences card -->
+
     </div><!-- /.profile-page-right -->
 
   </div><!-- /.profile-page-split -->
