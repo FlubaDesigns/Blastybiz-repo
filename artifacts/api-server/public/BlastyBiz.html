@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784501639900" />
+<link rel="stylesheet" href="global-style.css?v=1784502477569" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -504,13 +504,22 @@
 ══════════════════════════════════════════ -->
 <div class="section" id="section-schedule">
 
-  <div class="card">
+  <!-- Upcoming posts summary bar -->
+  <div class="card" id="sched-upcoming-card">
     <div class="card-title">🗓️ Upcoming Posts</div>
-    <div id="schedule-list">
+    <div id="sched-upcoming-list">
       <div class="empty">
         <div class="empty-icon">🗓️</div>
-        <div class="empty-text">No scheduled posts yet.<br/>Complete a blast to schedule your next one.</div>
+        <div class="empty-text">No active schedules yet.<br/>Turn on a schedule below to get started.</div>
       </div>
+    </div>
+  </div>
+
+  <!-- Per-campaign schedule cards -->
+  <div id="sched-campaigns-wrap">
+    <div class="empty" id="sched-no-campaigns">
+      <div class="empty-icon">📣</div>
+      <div class="empty-text">Create a campaign first, then set its schedule here.</div>
     </div>
   </div>
 
@@ -929,8 +938,9 @@ function showTab(name) {
   document.getElementById('section-' + name).classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
   if (name === 'platforms') updateStats();
-  if (name === 'history') renderHistory();
-  if (name === 'profile') loadProfile();
+  if (name === 'history')  renderHistory();
+  if (name === 'schedule') renderScheduleTab();
+  if (name === 'profile')  loadProfile();
   if (name === 'create') {
     createWizGoTo(1);
   }
@@ -2808,132 +2818,223 @@ function updateCopyPreview() {
 }
 
 // ══════════════════════════════════════════
-// AUTO-POST SCHEDULE
+// AUTO-POST SCHEDULE (per-campaign)
 // ══════════════════════════════════════════
-var schedState = { enabled: false, frequency: 'weekly', dayOfWeek: 1, dayOfMonth: 1, timeSlot: 'morning', timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, requireApproval: false, activeCampaignId: '', activeCampaignName: '' };
 
-function loadSchedule(sched) {
-  if (sched) {
-    schedState.enabled          = !!sched.enabled;
-    schedState.frequency        = sched.frequency  || 'weekly';
-    schedState.dayOfWeek        = sched.dayOfWeek  ?? 1;
-    schedState.dayOfMonth       = sched.dayOfMonth || 1;
-    schedState.timeSlot         = sched.timeSlot   || 'morning';
-    schedState.timezone         = sched.timezone   || schedState.timezone;
-    schedState.activeCampaignId   = sched.activeCampaignId   || '';
-    schedState.activeCampaignName = sched.activeCampaignName || '';
+// In-memory map: campaignId → schedule state
+var _campSchedules = {};
+var _TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+function _defaultSched() {
+  return { enabled: false, frequency: 'weekly', customDays: 7, dayOfWeek: 1, dayOfMonth: 1, timeSlot: 'morning', timezone: _TZ };
+}
+
+// Called after campaigns[] is loaded/updated — re-render the Schedule tab
+function renderScheduleTab() {
+  const wrap  = document.getElementById('sched-campaigns-wrap');
+  const empty = document.getElementById('sched-no-campaigns');
+  if (!wrap) return;
+
+  const camps = (campaigns || []);
+  if (!camps.length) {
+    if (empty) empty.classList.remove('hidden');
+    wrap.innerHTML = '';
+    wrap.appendChild(empty);
+    _renderSchedUpcoming();
+    return;
   }
-  schedState.requireApproval = !!sched?.requireApproval;
-  document.getElementById('sched-enabled').checked = schedState.enabled;
-  const _sf = document.getElementById('sched-fields'); if (_sf) { if (schedState.enabled) _sf.classList.remove('hidden'); else _sf.classList.add('hidden'); }
-  const reviewEl = document.getElementById('sched-review');
-  if (reviewEl) reviewEl.checked = schedState.requireApproval;
-  _renderSchedChips();
-  _renderSchedCampaignSelect();
-  _updateSchedPreview();
+  if (empty) empty.classList.add('hidden');
+
+  wrap.innerHTML = camps.map(c => {
+    const s = _campSchedules[c.id] || _defaultSched();
+    return _buildCampSchedCard(c, s);
+  }).join('');
+
+  _renderSchedUpcoming();
 }
 
-function _renderSchedCampaignSelect() {
-  const sel = document.getElementById('sched-campaign-select');
-  if (!sel) return;
-  const prev = schedState.activeCampaignId || '';
-  sel.innerHTML = '<option value="">— No campaign selected (use business profile) —</option>';
-  (campaigns || []).forEach(function(c) {
-    const opt = document.createElement('option');
-    opt.value = c.id;
-    opt.textContent = c.name;
-    if (c.id === prev) opt.selected = true;
-    sel.appendChild(opt);
+function _slotLabel(t) {
+  return { morning:'☀️ 9am', midday:'🌤 12pm', afternoon:'⛅ 3pm', evening:'🌙 6pm' }[t] || t;
+}
+
+function _freqLabel(s) {
+  if (s.frequency === 'custom') return 'Every ' + (s.customDays || 7) + ' days';
+  return { daily:'Daily', weekly:'Weekly', biweekly:'Every 2 wks', monthly:'Monthly' }[s.frequency] || s.frequency;
+}
+
+function _buildCampSchedCard(camp, s) {
+  const cid       = camp.id;
+  const isMonthly = s.frequency === 'monthly';
+  const isCustom  = s.frequency === 'custom';
+  const isDaily   = s.frequency === 'daily';
+  const nextLine  = s.enabled ? _schedNextLine(s) : '';
+  const freqs = ['daily','weekly','biweekly','monthly','custom'];
+
+  return `<div class="card csched-card" id="csched-card-${escHtml(cid)}">
+    <div class="csched-header">
+      <div class="csched-name">📣 ${escHtml(camp.name)}</div>
+      <label class="sched-toggle-wrap">
+        <input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleCampSched('${escHtml(cid)}',this.checked)" />
+        <span class="sched-toggle-track"></span>
+      </label>
+    </div>
+    <div class="csched-fields${s.enabled ? '' : ' hidden'}" id="csched-fields-${escHtml(cid)}">
+      <label class="csched-lbl">How often?</label>
+      <div class="sched-chips" id="csched-freq-row-${escHtml(cid)}">
+        ${freqs.map(f => `<button type="button" class="sched-chip${s.frequency===f?' active':''}" onclick="setCampFreq('${escHtml(cid)}','${f}')">${_freqLabel({frequency:f,customDays:s.customDays})}</button>`).join('')}
+      </div>
+      <div class="csched-custom-row${isCustom ? '' : ' hidden'}" id="csched-custom-row-${escHtml(cid)}">
+        <label class="csched-lbl">Every</label>
+        <input type="number" min="1" max="365" value="${s.customDays||7}" class="csched-custom-input"
+          onchange="setCampCustomDays('${escHtml(cid)}',this.value)" />
+        <span class="csched-custom-unit">days</span>
+      </div>
+      <div id="csched-dow-wrap-${escHtml(cid)}"${isMonthly||isCustom||isDaily?' class="hidden"':''}>
+        <label class="csched-lbl">Which day?</label>
+        <div class="sched-chips">
+          ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d,i)=>`<button type="button" class="sched-chip${s.dayOfWeek===i?' active':''}" onclick="setCampDay('${escHtml(cid)}',${i})">${d}</button>`).join('')}
+        </div>
+      </div>
+      <div id="csched-dom-wrap-${escHtml(cid)}"${isMonthly?'':' class="hidden"'}>
+        <label class="csched-lbl">Which day of the month?</label>
+        <div class="sched-chips">
+          ${[[1,'1st'],[8,'8th'],[15,'15th'],[22,'22nd']].map(([v,l])=>`<button type="button" class="sched-chip${s.dayOfMonth===v?' active':''}" onclick="setCampDom('${escHtml(cid)}',${v})">${l}</button>`).join('')}
+        </div>
+      </div>
+      <label class="csched-lbl">What time?</label>
+      <div class="sched-chips">
+        ${['morning','midday','afternoon','evening'].map(t=>`<button type="button" class="sched-chip${s.timeSlot===t?' active':''}" onclick="setCampTime('${escHtml(cid)}','${t}')">${_slotLabel(t)}</button>`).join('')}
+      </div>
+      ${nextLine ? `<div class="csched-next">${escHtml(nextLine)}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function _schedNextLine(s) {
+  try {
+    const next = _computeNextRunDate(s);
+    const label = next.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+    const slot  = { morning:'9am', midday:'12pm', afternoon:'3pm', evening:'6pm' }[s.timeSlot] || '';
+    return '📅 Next post: ' + label + ' at ' + slot;
+  } catch(_) { return ''; }
+}
+
+function _renderSchedUpcoming() {
+  const list = document.getElementById('sched-upcoming-list');
+  if (!list) return;
+  const active = Object.entries(_campSchedules)
+    .filter(([, s]) => s.enabled)
+    .map(([cid, s]) => {
+      const camp = (campaigns || []).find(c => c.id === cid);
+      return { name: camp ? camp.name : cid, next: _schedNextLine(s) };
+    })
+    .filter(r => r.next)
+    .sort((a, b) => a.next.localeCompare(b.next));
+
+  if (!active.length) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">🗓️</div><div class="empty-text">No active schedules yet.<br/>Turn on a schedule below to get started.</div></div>';
+    return;
+  }
+  list.innerHTML = active.map(r => `
+    <div class="csched-upcoming-row">
+      <div class="csched-upcoming-name">${escHtml(r.name)}</div>
+      <div class="csched-upcoming-next">${escHtml(r.next)}</div>
+    </div>`).join('');
+}
+
+function toggleCampSched(cid, enabled) {
+  var s = _campSchedules[cid] = Object.assign(_defaultSched(), _campSchedules[cid] || {}, { enabled });
+  const fieldsEl = document.getElementById('csched-fields-' + cid);
+  if (fieldsEl) { if (enabled) fieldsEl.classList.remove('hidden'); else fieldsEl.classList.add('hidden'); }
+  _updateCampNextLine(cid);
+  _renderSchedUpcoming();
+  _saveCampSched(cid);
+}
+
+function setCampFreq(cid, freq) {
+  var s = _campSchedules[cid] = Object.assign(_defaultSched(), _campSchedules[cid] || {}, { frequency: freq });
+  // Refresh chip highlights
+  const row = document.getElementById('csched-freq-row-' + cid);
+  if (row) row.querySelectorAll('.sched-chip').forEach((btn, i) => {
+    btn.classList.toggle('active', ['daily','weekly','biweekly','monthly','custom'][i] === freq);
   });
+  const dowWrap  = document.getElementById('csched-dow-wrap-' + cid);
+  const domWrap  = document.getElementById('csched-dom-wrap-' + cid);
+  const custRow  = document.getElementById('csched-custom-row-' + cid);
+  const isMonthly = freq === 'monthly', isCustom = freq === 'custom', isDaily = freq === 'daily';
+  if (dowWrap)  { if (isMonthly||isCustom||isDaily) dowWrap.classList.add('hidden');  else dowWrap.classList.remove('hidden'); }
+  if (domWrap)  { if (isMonthly) domWrap.classList.remove('hidden'); else domWrap.classList.add('hidden'); }
+  if (custRow)  { if (isCustom)  custRow.classList.remove('hidden'); else custRow.classList.add('hidden'); }
+  _updateCampNextLine(cid);
+  _renderSchedUpcoming();
+  _saveCampSched(cid);
 }
 
-function setSchedCampaign(id, name) {
-  schedState.activeCampaignId   = id   || '';
-  schedState.activeCampaignName = (id ? name : '') || '';
-  saveSchedule();
-  showToast(id ? '📣 Campaign set — auto-posts will use "' + schedState.activeCampaignName + '"' : '📋 Auto-posts will use general business profile');
+function setCampCustomDays(cid, n) {
+  var days = Math.max(1, parseInt(n) || 7);
+  _campSchedules[cid] = Object.assign(_defaultSched(), _campSchedules[cid] || {}, { customDays: days });
+  _updateCampNextLine(cid);
+  _renderSchedUpcoming();
+  _saveCampSched(cid);
 }
 
-// Auto-sync: when a campaign is picked/created on the Create tab,
-// silently update the scheduler to follow it — Schedule card dropdown overrides this any time.
-function _syncSchedCampaign(id, name) {
-  schedState.activeCampaignId   = id   || '';
-  schedState.activeCampaignName = (id ? name : '') || '';
-  _renderSchedCampaignSelect();
-  saveSchedule();
+function setCampDay(cid, d) {
+  _campSchedules[cid] = Object.assign(_defaultSched(), _campSchedules[cid] || {}, { dayOfWeek: d });
+  const wrap = document.getElementById('csched-dow-wrap-' + cid);
+  if (wrap) wrap.querySelectorAll('.sched-chip').forEach((btn, i) => btn.classList.toggle('active', i === d));
+  _updateCampNextLine(cid);
+  _renderSchedUpcoming();
+  _saveCampSched(cid);
 }
 
-function toggleSchedEnabled() {
-  schedState.enabled = document.getElementById('sched-enabled').checked;
-  const _sf = document.getElementById('sched-fields'); if (_sf) { if (schedState.enabled) _sf.classList.remove('hidden'); else _sf.classList.add('hidden'); }
-  _updateSchedPreview();
-  saveSchedule();
+function setCampDom(cid, v) {
+  _campSchedules[cid] = Object.assign(_defaultSched(), _campSchedules[cid] || {}, { dayOfMonth: v });
+  const wrap = document.getElementById('csched-dom-wrap-' + cid);
+  if (wrap) wrap.querySelectorAll('.sched-chip').forEach((btn, i) => btn.classList.toggle('active', [1,8,15,22][i] === v));
+  _updateCampNextLine(cid);
+  _renderSchedUpcoming();
+  _saveCampSched(cid);
 }
 
-function toggleSchedReview() {
-  schedState.requireApproval = document.getElementById('sched-review').checked;
-  saveSchedule();
-  showToast(schedState.requireApproval
-    ? '📬 Future scheduled posts will queue for your approval'
-    : '⚡ Future scheduled posts will go straight out — no approval needed');
-}
-
-function setSchedFreq(f) {
-  schedState.frequency = f;
-  _renderSchedChips();
-  _updateSchedPreview();
-  saveSchedule();
-}
-
-function setSchedDay(d) {
-  schedState.dayOfWeek = d;
-  _renderSchedChips();
-  _updateSchedPreview();
-  saveSchedule();
-}
-
-function setSchedDom(d) {
-  schedState.dayOfMonth = d;
-  _renderSchedChips();
-  _updateSchedPreview();
-  saveSchedule();
-}
-
-function setSchedTime(t) {
-  schedState.timeSlot = t;
-  _renderSchedChips();
-  _updateSchedPreview();
-  saveSchedule();
-}
-
-function _renderSchedChips() {
-  ['weekly','biweekly','monthly'].forEach(f => {
-    const el = document.getElementById('sched-freq-' + f);
-    if (el) el.classList.toggle('active', schedState.frequency === f);
+function setCampTime(cid, t) {
+  _campSchedules[cid] = Object.assign(_defaultSched(), _campSchedules[cid] || {}, { timeSlot: t });
+  const card = document.getElementById('csched-card-' + cid);
+  if (card) card.querySelectorAll('.sched-chips').forEach(row => {
+    if (row.querySelector('[onclick*="setCampTime"]')) {
+      row.querySelectorAll('.sched-chip').forEach((btn,i) => btn.classList.toggle('active', ['morning','midday','afternoon','evening'][i] === t));
+    }
   });
-  const isMonthly = schedState.frequency === 'monthly';
-  const dowWrap = document.getElementById('sched-dow-wrap');
-  const domWrap = document.getElementById('sched-dom-wrap');
-  if (dowWrap) { if (isMonthly) dowWrap.classList.add('hidden'); else dowWrap.classList.remove('hidden'); }
-  if (domWrap) { if (isMonthly) domWrap.classList.remove('hidden'); else domWrap.classList.add('hidden'); }
-  [0,1,2,3,4,5,6].forEach(d => {
-    const el = document.getElementById('sched-dow-' + d);
-    if (el) el.classList.toggle('active', schedState.dayOfWeek === d);
-  });
-  [1,8,15,22].forEach(d => {
-    const el = document.getElementById('sched-dom-' + d);
-    if (el) el.classList.toggle('active', schedState.dayOfMonth === d);
-  });
-  ['morning','midday','afternoon','evening'].forEach(t => {
-    const el = document.getElementById('sched-time-' + t);
-    if (el) el.classList.toggle('active', schedState.timeSlot === t);
-  });
+  _updateCampNextLine(cid);
+  _renderSchedUpcoming();
+  _saveCampSched(cid);
+}
+
+function _updateCampNextLine(cid) {
+  const s    = _campSchedules[cid];
+  const card = document.getElementById('csched-card-' + cid);
+  if (!card) return;
+  let el = card.querySelector('.csched-next');
+  const line = (s && s.enabled) ? _schedNextLine(s) : '';
+  if (line) {
+    if (!el) { el = document.createElement('div'); el.className = 'csched-next'; card.querySelector('.csched-fields').appendChild(el); }
+    el.textContent = line;
+  } else if (el) {
+    el.remove();
+  }
+}
+
+function _saveCampSched(cid) {
+  const s = _campSchedules[cid] || _defaultSched();
+  const nextRun = s.enabled ? _computeNextRunDate(s) : null;
+  const payload = Object.assign({}, s, { nextRunAt: nextRun ? nextRun.toISOString() : null });
+  if (window._bbSaveCampaignSchedule) window._bbSaveCampaignSchedule(cid, payload);
+  else showToast('⚠️ Not signed in — schedule not saved');
 }
 
 function _computeNextRunDate(sched) {
+  const tz       = sched.timezone || _TZ;
   const slotHour = { morning: 9, midday: 12, afternoon: 15, evening: 18 }[sched.timeSlot || 'morning'];
-  const tz = sched.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const now = new Date();
+  const now      = new Date();
 
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: tz, year:'numeric', month:'numeric', day:'numeric',
@@ -2941,29 +3042,29 @@ function _computeNextRunDate(sched) {
   }).formatToParts(now);
   const gp = (t) => parseInt(parts.find(p => p.type === t)?.value || '0');
   const lYear = gp('year'), lMonth = gp('month') - 1, lDay = gp('day'), lHour = gp('hour');
-  const lDow = new Date(lYear, lMonth, lDay).getDay();
+  const lDow  = new Date(lYear, lMonth, lDay).getDay();
 
   let candYear = lYear, candMonth = lMonth, candDay = lDay;
 
-  if (sched.frequency === 'monthly') {
+  if (sched.frequency === 'daily') {
+    if (lHour >= slotHour) { const d = new Date(lYear, lMonth, lDay + 1); candYear = d.getFullYear(); candMonth = d.getMonth(); candDay = d.getDate(); }
+  } else if (sched.frequency === 'custom') {
+    const days = Math.max(1, sched.customDays || 7);
+    const d = new Date(lYear, lMonth, lDay + (lHour >= slotHour ? days : days - 1 || 0));
+    candYear = d.getFullYear(); candMonth = d.getMonth(); candDay = d.getDate();
+  } else if (sched.frequency === 'monthly') {
     const dom = sched.dayOfMonth || 1;
-    if (lDay < dom || (lDay === dom && lHour < slotHour)) {
-      candDay = dom;
-    } else {
-      const d = new Date(lYear, lMonth + 1, dom);
-      candYear = d.getFullYear(); candMonth = d.getMonth(); candDay = d.getDate();
-    }
+    if (lDay < dom || (lDay === dom && lHour < slotHour)) { candDay = dom; }
+    else { const d = new Date(lYear, lMonth + 1, dom); candYear = d.getFullYear(); candMonth = d.getMonth(); candDay = d.getDate(); }
   } else {
     const targetDow = sched.dayOfWeek ?? 1;
     let ahead = (targetDow - lDow + 7) % 7;
     if (ahead === 0 && lHour >= slotHour) ahead = sched.frequency === 'biweekly' ? 14 : 7;
-    else if (ahead === 0) ahead = 0;
-    else if (sched.frequency === 'biweekly' && ahead < 7) ahead += 7;
+    else if (sched.frequency === 'biweekly' && ahead > 0 && ahead < 7) ahead += 7;
     const d = new Date(lYear, lMonth, lDay + ahead);
     candYear = d.getFullYear(); candMonth = d.getMonth(); candDay = d.getDate();
   }
 
-  // Build UTC equivalent of "candDate at slotHour in tz"
   const approx = new Date(candYear, candMonth, candDay, slotHour, 0, 0);
   const tzParts = new Intl.DateTimeFormat('en-US', {
     timeZone: tz, year:'numeric', month:'numeric', day:'numeric',
@@ -2974,21 +3075,20 @@ function _computeNextRunDate(sched) {
   return new Date(approx.getTime() + (approx.getTime() - tzLocalMs));
 }
 
-function _updateSchedPreview() {
-  const el = document.getElementById('sched-next-preview');
-  if (!el) return;
-  if (!schedState.enabled) { el.textContent = ''; return; }
-  const next = _computeNextRunDate(schedState);
-  const label = next.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
-  const slotLabel = { morning:'9am', midday:'12pm', afternoon:'3pm', evening:'6pm' }[schedState.timeSlot];
-  el.textContent = '📅 Next post: ' + label + ' at ' + slotLabel;
-}
-
-function saveSchedule() {
-  const nextRun = schedState.enabled ? _computeNextRunDate(schedState) : null;
-  const payload = { ...schedState, nextRunAt: nextRun ? nextRun.toISOString() : null };
-  if (window._saveScheduleToFirestore) window._saveScheduleToFirestore(payload);
-}
+// Legacy stubs — kept so existing Create-tab accordion references don't crash
+function loadSchedule() {}
+function saveSchedule() {}
+function toggleSchedEnabled() {}
+function toggleSchedReview() {}
+function setSchedFreq() {}
+function setSchedDay() {}
+function setSchedDom() {}
+function setSchedTime() {}
+function _renderSchedChips() {}
+function _renderSchedCampaignSelect() {}
+function setSchedCampaign() {}
+function _syncSchedCampaign() {}
+function _updateSchedPreview() {}
 
 // ══════════════════════════════════════════
 // PENDING POSTS (review queue)
@@ -4130,6 +4230,12 @@ window._bbSavePlatformSelections = async function(enabledIds) {
   );
 };
 
+window._bbSaveCampaignSchedule = async function(campId, schedData) {
+  if (!currentUser || !activeBizId || !campId) return;
+  const ref = doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', campId);
+  await updateDoc(ref, { schedule: schedData, updatedAt: serverTimestamp() });
+};
+
 window._bbSaveCampaigns = async function(cams) {
   if (!activeBizId || !currentUser) throw new Error('No active business');
   if (!cams.length) return;
@@ -4390,6 +4496,10 @@ onAuthStateChanged(auth, async (user) => {
       campaigns = campColSnap.docs.map(d => ({ ...d.data(), id: d.id }));
       _sortCampaigns();
       renderCampaignChips();
+      // Seed per-campaign schedule map from saved campaign docs
+      _campSchedules = {};
+      campaigns.forEach(c => { if (c.schedule) _campSchedules[c.id] = c.schedule; });
+      renderScheduleTab();
 
       // URL param handling — ?newcampaign=1 auto-opens the create form
       // ?cid=xxx auto-selects an existing campaign

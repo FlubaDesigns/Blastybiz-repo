@@ -2254,6 +2254,22 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 /* ── Stats bar (3-col grid — create/history tabs) ── */
 .stats-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 20px; }
 
+/* ── Per-campaign schedule cards (Schedule tab) ── */
+.csched-card { margin-bottom: 14px; }
+.csched-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.csched-name { font-weight: 700; font-size: 15px; color: var(--light); }
+.csched-fields { padding-top: 12px; }
+.csched-lbl { display: block; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin: 12px 0 6px; }
+.csched-lbl:first-child { margin-top: 0; }
+.csched-custom-row { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+.csched-custom-input { width: 72px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg,rgba(255,255,255,.06)); color: var(--light); font-size: 14px; text-align: center; }
+.csched-custom-unit { font-size: 13px; color: var(--muted); }
+.csched-next { margin-top: 12px; font-size: 13px; font-weight: 600; color: var(--green); }
+.csched-upcoming-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); gap: 12px; }
+.csched-upcoming-row:last-child { border-bottom: none; }
+.csched-upcoming-name { font-weight: 600; font-size: 14px; color: var(--light); }
+.csched-upcoming-next { font-size: 13px; color: var(--muted); text-align: right; flex-shrink: 0; }
+
 /* ── History items ── */
 .history-item { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
 .history-item:last-child { border-bottom: none; }

@@ -3361,7 +3361,17 @@ function _computeNextRunAt(sched, fromDate) {
 
   let candYear = lYear, candMonth = lMonth, candDay = lDay;
 
-  if (sched.frequency === 'monthly') {
+  if (sched.frequency === 'daily') {
+    if (lHour >= slotHour) {
+      const d = new Date(lYear, lMonth, lDay + 1);
+      candYear = d.getFullYear(); candMonth = d.getMonth(); candDay = d.getDate();
+    }
+  } else if (sched.frequency === 'custom') {
+    const days = Math.max(1, parseInt(sched.customDays) || 7);
+    const ahead = lHour >= slotHour ? days : (days > 1 ? days - 1 : 0);
+    const d = new Date(lYear, lMonth, lDay + ahead);
+    candYear = d.getFullYear(); candMonth = d.getMonth(); candDay = d.getDate();
+  } else if (sched.frequency === 'monthly') {
     const dom = sched.dayOfMonth || 1;
     if (lDay < dom || (lDay === dom && lHour < slotHour)) {
       candDay = dom;
@@ -3389,8 +3399,13 @@ function _computeNextRunAt(sched, fromDate) {
   return new Date(approx.getTime() + (approx.getTime() - tzLocalMs));
 }
 
-async function _runScheduledPost(bizId, biz) {
-  const sched    = biz.postingSchedule;
+async function _runScheduledPost(bizId, biz, sched, activeCampaignId, activeCampaignName, schedUid) {
+  // Support old single-object call signature for backward compat
+  if (!sched) { sched = biz.postingSchedule || {}; }
+  if (!activeCampaignId) activeCampaignId = sched.activeCampaignId || '';
+  if (!activeCampaignName) activeCampaignName = sched.activeCampaignName || '';
+  if (!schedUid) schedUid = biz.uid || '';
+
   const bizName  = biz.businessName || biz.name;
   const tone     = biz.tone || 'friendly';
   const address  = biz.address || (biz.city ? `${biz.city}, ${biz.state}` : '');
@@ -3399,8 +3414,6 @@ async function _runScheduledPost(bizId, biz) {
 
   // Look up active campaign's most recent ad details from listingDrafts
   let campaignContext = '';
-  const activeCampaignId = sched.activeCampaignId || '';
-  const schedUid = biz.uid || '';
 
   // Gate: only paid active users get scheduled AI posting.
   // Cache userData here — reused later to avoid a second Firestore read.
@@ -3564,8 +3577,9 @@ exports.scheduledPostingCheck = onSchedule(
     let lastDoc = null;
 
     while (true) {
-      let q = db.collectionGroup('businesses')
-        .where('postingSchedule.enabled', '==', true)
+      // Query per-campaign schedules (new model: schedule stored on campaign docs)
+      let q = db.collectionGroup('campaigns')
+        .where('schedule.enabled', '==', true)
         .orderBy(admin.firestore.FieldPath.documentId())
         .limit(BATCH_SIZE);
       if (lastDoc) q = q.startAfter(lastDoc);
@@ -3573,54 +3587,61 @@ exports.scheduledPostingCheck = onSchedule(
       const snap = await q.get();
       if (snap.empty) break;
 
-      for (const bizDoc of snap.docs) {
-        const biz   = bizDoc.data();
-        const bizId = bizDoc.id;
-        const sched = biz.postingSchedule;
+      for (const campDoc of snap.docs) {
+        const camp  = campDoc.data();
+        const campId = campDoc.id;
+        const sched  = camp.schedule;
         if (!sched?.nextRunAt) continue;
 
         const nextRun = sched.nextRunAt.toDate ? sched.nextRunAt.toDate() : new Date(sched.nextRunAt);
         if (nextRun > now) continue;
 
-        // Claim this document — prevents double-fire if Cloud Scheduler fires twice
+        // bizId and uid stored on campaign doc by _bbSaveCampaigns
+        const bizId  = camp.bizId  || campDoc.ref.parent.parent.id;
+        const schedUid = camp.uid  || campDoc.ref.parent.parent.parent.parent.id;
+
+        // Claim with optimistic lock — prevents double-fire
         let claimed = false;
         try {
           await db.runTransaction(async (tx) => {
-            const freshDoc  = await tx.get(bizDoc.ref);
-            const freshSched = freshDoc.data()?.postingSchedule || {};
+            const freshDoc   = await tx.get(campDoc.ref);
+            const freshSched = freshDoc.data()?.schedule || {};
             if (freshSched.processing === true) {
               const claimedAt = freshSched.processingStartedAt?.toDate?.() || new Date(0);
-              const stale = (now - claimedAt) > 10 * 60 * 1000; // 10 min staleness window
-              if (!stale) return; // already claimed by another invocation
+              if ((now - claimedAt) < 10 * 60 * 1000) return; // already claimed, not stale
             }
-            tx.update(bizDoc.ref, {
-              'postingSchedule.processing': true,
-              'postingSchedule.processingStartedAt': admin.firestore.FieldValue.serverTimestamp(),
+            tx.update(campDoc.ref, {
+              'schedule.processing':           true,
+              'schedule.processingStartedAt':  admin.firestore.FieldValue.serverTimestamp(),
             });
             claimed = true;
           });
         } catch(e) {
-          console.warn(`[scheduledPostingCheck] claim tx failed for ${bizId}:`, e.message);
+          console.warn(`[scheduledPostingCheck] claim tx failed for camp ${campId}:`, e.message);
         }
         if (!claimed) continue;
 
         try {
-          await _runScheduledPost(bizId, biz);
+          // Fetch business doc for name, tone, address, etc.
+          const bizDoc  = await db.collection('users').doc(schedUid).collection('businesses').doc(bizId).get();
+          const biz     = bizDoc.exists ? bizDoc.data() : {};
+          await _runScheduledPost(bizId, biz, sched, campId, camp.name || '', schedUid);
+
           const next = _computeNextRunAt(sched, now);
-          await bizDoc.ref.update({
-            'postingSchedule.lastRunAt':          admin.firestore.FieldValue.serverTimestamp(),
-            'postingSchedule.nextRunAt':          admin.firestore.Timestamp.fromDate(next),
-            'postingSchedule.updatedAt':          admin.firestore.FieldValue.serverTimestamp(),
-            'postingSchedule.processing':         false,
-            'postingSchedule.processingStartedAt': null,
+          await campDoc.ref.update({
+            'schedule.lastRunAt':          admin.firestore.FieldValue.serverTimestamp(),
+            'schedule.nextRunAt':          admin.firestore.Timestamp.fromDate(next),
+            'schedule.updatedAt':          admin.firestore.FieldValue.serverTimestamp(),
+            'schedule.processing':         false,
+            'schedule.processingStartedAt': null,
           });
-          console.log(`[scheduledPostingCheck] Posted for biz ${bizId}, next run: ${next.toISOString()}`);
+          console.log(`[scheduledPostingCheck] camp ${campId} biz ${bizId} — next run: ${next.toISOString()}`);
         } catch (e) {
-          await bizDoc.ref.update({
-            'postingSchedule.processing':         false,
-            'postingSchedule.processingStartedAt': null,
+          await campDoc.ref.update({
+            'schedule.processing':         false,
+            'schedule.processingStartedAt': null,
           }).catch(() => {});
-          console.error(`[scheduledPostingCheck] biz ${bizId} failed:`, e.message);
+          console.error(`[scheduledPostingCheck] camp ${campId} failed:`, e.message);
         }
       }
 
