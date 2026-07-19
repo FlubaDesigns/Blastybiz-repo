@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784491475343" />
+<link rel="stylesheet" href="global-style.css?v=1784492001228" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -257,15 +257,9 @@
 
           <!-- RIGHT: Teach AI card -->
           <div class="col-right">
-            <div class="card card-flush">
-              <button type="button" class="teach-btn" onclick="toggleRightAccordion('create-teach-ai-body','create-teach-ai-chevron')">
-                <div class="row gap-10">
-                  <span class="teach-icon">🧠</span>
-                  <div>
-                    <div class="teach-title">Teach AI <span class="tier-badge tier-badge--campaign">This Campaign</span></div>
-                    <div class="teach-sub">Facts the AI uses when writing copy for this campaign</div>
-                  </div>
-                </div>
+            <div class="card">
+              <button type="button" class="card-title" style="width:100%;background:none;border:none;cursor:pointer;padding:0;justify-content:space-between;" onclick="toggleRightAccordion('create-teach-ai-body','create-teach-ai-chevron')">
+                <span>🧠 Teach AI</span>
                 <span id="create-teach-ai-chevron" class="chevron">›</span>
               </button>
               <div id="create-teach-ai-body" class="teach-inner hidden">
@@ -279,10 +273,10 @@
               </div>
             </div>
 
-            <!-- About You in Copy — collapsed accordion; all rows preserved for JS compatibility -->
+            <!-- Mentions — collapsed accordion; all rows preserved for JS compatibility -->
             <div class="card" id="about-you-card">
-              <button type="button" class="about-you-toggle" id="about-you-toggle-btn" onclick="toggleAboutYouPanel()">
-                <span>🪪 Edit what appears in this blast</span>
+              <button type="button" class="card-title" id="about-you-toggle-btn" style="width:100%;background:none;border:none;cursor:pointer;padding:0;justify-content:space-between;" onclick="toggleAboutYouPanel()">
+                <span>🪪 Mentions</span>
                 <span class="about-you-chevron" id="about-you-chevron">›</span>
               </button>
               <div id="about-you-panel" class="hidden">
