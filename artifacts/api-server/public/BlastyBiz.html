@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784490542124" />
+<link rel="stylesheet" href="global-style.css?v=1784490887481" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -222,11 +222,41 @@
 
           </div><!-- /.col-left -->
 
-          <!-- RIGHT: image (desktop only) + campaign Teach AI card -->
-          <div class="col-right">
-            <div class="hide-mobile">
-              <img src="images/cta-worker.png" alt="Create your blast" style="width:100%;border-radius:12px;display:block;margin-bottom:16px;">
+          <!-- RIGHT: decorative image (desktop only) -->
+          <div class="col-right hide-mobile">
+            <img src="images/cta-worker.png" alt="Create your blast" style="width:100%;border-radius:12px;display:block;">
+          </div><!-- /.col-right -->
+
+        </div><!-- /.col-2-1 -->
+      </div><!-- /.row -->
+
+      <!-- Row 3: photos upload (left) + Teach AI (right) -->
+      <div class="row">
+        <div class="col-2-1">
+
+          <!-- LEFT: image upload -->
+          <div class="col-left">
+            <div class="card">
+              <div class="row-base-sb mb-4">
+                <div class="card-title mb-0">📷 Photos <span class="optional" style="font-size:12px;font-weight:400;color:var(--muted)">(optional)</span></div>
+                <span id="photo-cap-label" class="text-xs text-muted"></span>
+              </div>
+              <div style="display:flex;gap:6px;margin-bottom:10px">
+                <button type="button" id="scope-photo-campaign" class="chip active" onclick="setPhotoScope('campaign')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:var(--accent);color:#fff;font-size:12px;cursor:pointer;font-weight:600">Campaign</button>
+                <button type="button" id="scope-photo-global" class="chip" onclick="setPhotoScope('global')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:transparent;color:var(--light);font-size:12px;cursor:pointer">Global</button>
+              </div>
+              <p class="text-base text-muted mb-12" id="photo-scope-hint">Campaign photos are linked to the active campaign. Select a campaign above first.</p>
+              <div id="photo-upload-area" class="image-upload-area" onclick="document.getElementById('img-input').click()">
+                <input type="file" id="img-input" accept="image/*" multiple onchange="handleImages(event)" onclick="event.stopPropagation()" />
+                <div class="upload-icon">📸</div>
+                <div class="upload-text" id="photo-upload-text">Tap to add photos<br/><span>from your camera roll</span></div>
+              </div>
+              <div class="thumb-grid" id="thumb-grid"></div>
             </div>
+          </div><!-- /.col-left -->
+
+          <!-- RIGHT: Teach AI card -->
+          <div class="col-right">
             <div class="card card-flush">
               <button type="button" class="teach-btn" onclick="toggleRightAccordion('create-teach-ai-body','create-teach-ai-chevron')">
                 <div class="row gap-10">
@@ -252,29 +282,6 @@
 
         </div><!-- /.col-2-1 -->
       </div><!-- /.row -->
-
-      <!-- Row: Photos — full width -->
-      <div class="row" id="slide1-photos-row">
-        <div class="col-full">
-          <div class="card">
-            <div class="row-base-sb mb-4">
-              <div class="card-title mb-0">📷 Photos <span class="optional" style="font-size:12px;font-weight:400;color:var(--muted)">(optional)</span></div>
-              <span id="photo-cap-label" class="text-xs text-muted"></span>
-            </div>
-            <div style="display:flex;gap:6px;margin-bottom:10px">
-              <button type="button" id="scope-photo-campaign" class="chip active" onclick="setPhotoScope('campaign')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:var(--accent);color:#fff;font-size:12px;cursor:pointer;font-weight:600">Campaign</button>
-              <button type="button" id="scope-photo-global" class="chip" onclick="setPhotoScope('global')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:transparent;color:var(--light);font-size:12px;cursor:pointer">Global</button>
-            </div>
-            <p class="text-base text-muted mb-12" id="photo-scope-hint">Campaign photos are linked to the active campaign. Select a campaign above first.</p>
-            <div id="photo-upload-area" class="image-upload-area" onclick="document.getElementById('img-input').click()">
-              <input type="file" id="img-input" accept="image/*" multiple onchange="handleImages(event)" onclick="event.stopPropagation()" />
-              <div class="upload-icon">📸</div>
-              <div class="upload-text" id="photo-upload-text">Tap to add photos<br/><span>from your camera roll</span></div>
-            </div>
-            <div class="thumb-grid" id="thumb-grid"></div>
-          </div>
-        </div>
-      </div><!-- /.row photos -->
 
       <!-- Row: Platform Selection — full width -->
       <div class="row" id="slide1-platforms-row">
