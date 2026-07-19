@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784488938334" />
+<link rel="stylesheet" href="global-style.css?v=1784489053647" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -157,11 +157,9 @@
         <div id="loc-online-fields"></div>
       </div>
 
+      <!-- Row 1: campaign picker — full width -->
       <div class="row">
-        <div class="col-2-1">
-          <div class="col-left">
-
-          <!-- Campaign picker -->
+        <div class="col-full">
           <div class="card">
             <div class="card-title">📁 Campaign</div>
             <p class="helper">Group your ads. Pick an existing campaign or create a new one.</p>
@@ -187,6 +185,13 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Row 2: blast form + image — shown once a campaign is selected -->
+      <div class="row">
+        <div class="col-2-1">
+          <div class="col-left">
 
           <!-- Campaign content — shown once a campaign is selected -->
           <div id="campaign-content" class="hidden">
