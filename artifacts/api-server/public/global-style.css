@@ -2274,8 +2274,9 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 .biz-missing-banner { background: #3a1a00; border: 1.5px solid var(--warn); border-radius: 12px; padding: 14px 18px; margin-bottom: 12px; color: var(--warn); font-weight: 600; font-size: 15px; text-align: center; }
 
 /* ── Review listings button ── */
-.review-btn         { display: none; margin: 20px 0 0; padding: 15px 20px; background: var(--green); color: var(--dark); border-radius: 12px; font-weight: 700; font-size: 15px; text-decoration: none; align-items: center; justify-content: center; gap: 8px; }
-.review-btn.visible { display: flex; }
+.review-btn          { display: flex; width: 100%; margin: 20px 0 0; padding: 15px 20px; background: var(--green); color: var(--dark); border-radius: 12px; font-weight: 700; font-size: 15px; border: none; cursor: pointer; font-family: inherit; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; }
+.review-btn:disabled { background: rgba(255,255,255,.07); color: var(--muted,#888); cursor: default; }
+.review-btn.visible  { display: flex; }
 
 /* ── Platform categories note ── */
 .platcats-note { font-size: 12px; color: var(--muted); margin-top: 8px; text-align: center; min-height: 16px; }

@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784499609002" />
+<link rel="stylesheet" href="global-style.css?v=1784500230477" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -425,7 +425,7 @@
             </button>
           </div>
 
-          <button type="button" class="review-btn" id="step5-final-btn" disabled onclick="goToFinalReview()">
+          <button type="button" class="review-btn" id="step5-final-btn" disabled onclick="completeBlast()">
             Approve each platform above to continue →
           </button>
 
@@ -2044,14 +2044,43 @@ function updateStep5UI() {
     p._reviewStatus === 'approved' || p._reviewStatus === 'skipped'
   );
   const finalBtn = document.getElementById('step5-final-btn');
-  if (finalBtn) finalBtn.style.display = allDone ? 'flex' : 'none';
+  if (!finalBtn) return;
+  const wasDisabled = finalBtn.disabled;
+  if (allDone) {
+    finalBtn.disabled = false;
+    finalBtn.textContent = '✅ Save to History →';
+    if (wasDisabled) {
+      // First time unlocking — scroll into view and toast so user knows
+      setTimeout(() => finalBtn.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+      showToast('✅ All platforms done — tap Save to History below');
+    }
+  } else {
+    finalBtn.disabled = true;
+    finalBtn.textContent = 'Approve each platform above to continue →';
+  }
 }
 
-// markPlatformReviewed replaced by approvePlatformCopy above (Finding 1+2+12)
+async function completeBlast() {
+  const finalBtn = document.getElementById('step5-final-btn');
+  if (finalBtn) { finalBtn.disabled = true; finalBtn.textContent = '⏳ Saving…'; }
 
-function goToFinalReview() {
+  // Write one history entry per approved platform
+  const approved = getStep5Platforms().filter(p => p._reviewStatus === 'approved');
+  approved.forEach(p => addHistory(p.name));
+
+  // Mark draft complete in Firestore
   const draftId = window._currentDraftId;
-  window.location.href = 'BlastyBiz-Listing-Preview.html' + (draftId ? '?draftId=' + draftId : '');
+  if (draftId && typeof window._bbUpdateDraft === 'function') {
+    try { await window._bbUpdateDraft(draftId, { status: 'completed' }); } catch(_) {}
+  }
+
+  showToast('🎉 Blast saved to history!');
+
+  // Return to main app on History tab
+  setTimeout(() => {
+    if (typeof showTab === 'function') showTab('history');
+    if (typeof createWizClose === 'function') createWizClose();
+  }, 600);
 }
 
 // ══════════════════════════════════════════
