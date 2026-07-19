@@ -608,6 +608,20 @@
         </div>
       </div>
 
+      <!-- CLEAR ALL DATA -->
+      <div style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.25);border-radius:14px;padding:16px;margin-top:4px;">
+        <div style="font-size:13px;font-weight:700;color:#f87171;margin-bottom:6px;">🗑️ Clear All Data</div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.5;margin:0 0 12px;">Permanently wipes your business profile, platform history, saved drafts, and all local settings. This cannot be undone.</p>
+        <div id="clear-all-confirm" class="hidden" style="background:rgba(220,38,38,0.1);border-radius:10px;padding:12px;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:700;color:#f87171;margin-bottom:10px;">Are you sure? This deletes everything.</div>
+          <div style="display:flex;gap:8px;">
+            <button type="button" onclick="clearAllConfirmed()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#dc2626;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Yes, delete everything</button>
+            <button type="button" onclick="clearAllCancel()" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Cancel</button>
+          </div>
+        </div>
+        <button type="button" id="clear-all-btn" onclick="clearAllPrompt()" style="padding:9px 16px;border-radius:8px;border:1px solid rgba(220,38,38,0.4);background:transparent;color:#f87171;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Clear All Data</button>
+      </div>
+
     </div><!-- /.profile-page-left -->
 
     <!-- RIGHT: image → Auto-Post Schedule → Preferences -->
@@ -726,10 +740,6 @@
 
   </div><!-- /.profile-page-split -->
 
-
-  <button type="button" class="btn btn-outline mt-8" onclick="clearAll()">
-    🗑️ Clear All Data
-  </button>
 
   <div class="bottom-safe"></div>
 </div>
@@ -3715,8 +3725,15 @@ function savePlatforms() {
   document.dispatchEvent(new CustomEvent('bb:savePlatforms', { detail: { platforms } }));
 }
 
-function clearAll() {
-  if (!confirm('Clear all saved data?')) return;
+function clearAllPrompt() {
+  document.getElementById('clear-all-confirm').classList.remove('hidden');
+  document.getElementById('clear-all-btn').classList.add('hidden');
+}
+function clearAllCancel() {
+  document.getElementById('clear-all-confirm').classList.add('hidden');
+  document.getElementById('clear-all-btn').classList.remove('hidden');
+}
+function clearAllConfirmed() {
   platforms = PLATFORMS.map(p => ({...p}));
   history = [];
   profile = {};
@@ -3724,9 +3741,11 @@ function clearAll() {
   window._currentDraftId = null;
   try { localStorage.removeItem('bb_profile'); } catch(e) {}
   init();
+  clearAllCancel();
   showToast('🗑️ Data cleared');
   document.dispatchEvent(new CustomEvent('bb:clearAll'));
 }
+function clearAll() { clearAllPrompt(); }
 
 // ══════════════════════════════════════════
 // TOAST
