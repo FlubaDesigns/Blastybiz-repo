@@ -587,6 +587,27 @@
         <label for="profile-hours">Hours</label>
         <input type="text" id="profile-hours" placeholder="Mon–Sat 9am–8pm" oninput="saveProfile()" />
       </div>
+
+      <!-- TEACH AI ACCORDION -->
+      <div class="card card-flush" id="teach-ai-card">
+        <button type="button" onclick="toggleTeachAI()" id="teach-ai-header" class="teach-btn">
+          <div class="row gap-10">
+            <span class="teach-icon">🧠</span>
+            <div>
+              <div class="teach-title">Teach AI to know you better <span class="tier-badge tier-badge--global">All Campaigns</span></div>
+              <div class="teach-sub" id="teach-ai-sub">Business insights — AI uses these across all your campaigns</div>
+            </div>
+          </div>
+          <span id="teach-ai-chevron" class="chevron">›</span>
+        </button>
+        <div id="teach-ai-body" class="teach-inner hidden">
+          <div id="profile-insight-list"></div>
+          <button type="button" id="profile-enrich-more-btn" onclick="fetchEnrichmentQuestions(true)" class="btn-more-qs">
+            ✨ Ask me something new
+          </button>
+        </div>
+      </div>
+
     </div><!-- /.profile-page-left -->
 
     <!-- RIGHT: image → Auto-Post Schedule → Preferences -->
@@ -705,26 +726,6 @@
 
   </div><!-- /.profile-page-split -->
 
-
-  <!-- TEACH AI ACCORDION -->
-  <div class="card card-flush" id="teach-ai-card">
-    <button type="button" onclick="toggleTeachAI()" id="teach-ai-header" class="teach-btn">
-      <div class="row gap-10">
-        <span class="teach-icon">🧠</span>
-        <div>
-          <div class="teach-title">Teach AI to know you better <span class="tier-badge tier-badge--global">All Campaigns</span></div>
-          <div class="teach-sub" id="teach-ai-sub">Business insights — AI uses these across all your campaigns</div>
-        </div>
-      </div>
-      <span id="teach-ai-chevron" class="chevron">›</span>
-    </button>
-    <div id="teach-ai-body" class="teach-inner hidden">
-      <div id="profile-insight-list"></div>
-      <button type="button" id="profile-enrich-more-btn" onclick="fetchEnrichmentQuestions(true)" class="btn-more-qs">
-        ✨ Ask me something new
-      </button>
-    </div>
-  </div>
 
   <button type="button" class="btn btn-outline mt-8" onclick="clearAll()">
     🗑️ Clear All Data
