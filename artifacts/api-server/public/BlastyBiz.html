@@ -599,6 +599,22 @@
 
       <img src="img/storefront.jpg" alt="Local business storefront" class="profile-right-img" />
 
+      <!-- CAMPAIGN CONTEXT -->
+      <div class="card card-flush">
+        <div class="teach-btn">
+          <div class="row gap-10">
+            <span class="teach-icon">🎯</span>
+            <div>
+              <div class="teach-title">Campaign Context <span class="tier-badge tier-badge--campaign">This Campaign</span></div>
+              <div class="teach-sub">What's unique about this campaign — added on top of your evergreen brand story</div>
+            </div>
+          </div>
+        </div>
+        <div class="campaign-ctx-body">
+          <textarea id="campaign-context" class="form-textarea" rows="3" placeholder="e.g. Christmas window display — vintage Lionel layout running daily 10am–6pm through Jan 5. Great for families, photo ops welcome. 15% off all train sets through December." oninput="debounceCampaignSave()"></textarea>
+        </div>
+      </div>
+
       <!-- ── AUTO-POST SCHEDULE ── -->
       <div class="card" id="schedule-card">
         <div class="row-sb mb-6">
@@ -702,22 +718,6 @@
       🤖 Re-run AI Category Picker
     </button>
     <p id="platcats-note" class="platcats-note"></p>
-  </div>
-
-  <!-- CAMPAIGN CONTEXT -->
-  <div class="card card-flush">
-    <div class="teach-btn">
-      <div class="row gap-10">
-        <span class="teach-icon">🎯</span>
-        <div>
-          <div class="teach-title">Campaign Context <span class="tier-badge tier-badge--campaign">This Campaign</span></div>
-          <div class="teach-sub">What's unique about this campaign — added on top of your evergreen brand story</div>
-        </div>
-      </div>
-    </div>
-    <div class="campaign-ctx-body">
-      <textarea id="campaign-context" class="form-textarea" rows="3" placeholder="e.g. Christmas window display — vintage Lionel layout running daily 10am–6pm through Jan 5. Great for families, photo ops welcome. 15% off all train sets through December." oninput="debounceCampaignSave()"></textarea>
-    </div>
   </div>
 
   <!-- TEACH AI ACCORDION -->
