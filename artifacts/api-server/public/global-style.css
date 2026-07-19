@@ -146,6 +146,7 @@
   --gutter:     1rem;
   --v-gutter:   8%;
   --section-v:  60px;
+  --max-w:      1200px;
 
   /* Semantic colour tokens — referenced site-wide */
   --danger:     #ff4444;   /* error / destructive */
@@ -374,6 +375,29 @@ body.has-site-header .main  { padding-top: var(--main-offset); }
    full header height (nav + badge bar). Zero out .main's own padding-top so
    the two don't stack and create a double gap. */
 body.home-page .main { padding-top: 0 !important; }
+
+/* ── STAGE BACKBONE ──────────────────────────────────────────────────
+   body.stage : universal surface — vertical structure lives here.
+   .row inside a stage page carries max-width + horizontal gutters.
+   ─────────────────────────────────────────────────────────────────── */
+body.stage {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}
+body.stage .main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+body.stage .row {
+  width: 100%;
+  max-width: var(--max-w);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+}
 
 /* Auth state — JS adds/removes body.logged-in */
 #header__nav-logout  { display: none; }
