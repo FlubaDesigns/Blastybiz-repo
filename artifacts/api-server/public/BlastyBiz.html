@@ -3238,11 +3238,14 @@ async function rerunAICats() {
   if (!bizName) { showToast('⚠️ Add your business name first'); return; }
   const descParts = [
     profile.category && profile.category !== 'Other' ? profile.category : null,
-    profile.website  ? 'Website: ' + profile.website : null,
-    profile.hours    ? 'Hours: '   + profile.hours   : null,
-    profile.ownerRole ? 'Role: '   + profile.ownerRole : null,
+    profile.website   ? 'Website: ' + profile.website  : null,
+    profile.hours     ? 'Hours: '   + profile.hours    : null,
+    profile.ownerRole ? 'Role: '    + profile.ownerRole : null,
   ].filter(Boolean);
   const description = descParts.length ? descParts.join('. ') : bizName;
+  const globalMem   = window._globalMemory || profile.globalMemory || '';
+  const campaignMem = (campaigns.find(c => c.id === activeCampaignId) || {}).campaignMemory || '';
+  const specialNotes = [globalMem, campaignMem].filter(Boolean).join('\n');
 
   btn.disabled = true;
   btn.textContent = '⏳ AI is thinking…';
@@ -3270,6 +3273,7 @@ async function rerunAICats() {
         description:   description,
         city:          profile.city  || '',
         state:         profile.state || '',
+        specialNotes:  specialNotes  || '',
         locationType:  locType,
         platformCatLists,
       }),
