@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784447872130" />
+<link rel="stylesheet" href="global-style.css?v=1784448408891" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -630,8 +630,10 @@
         <p class="helper-sm mb-10">Toggle platforms on/off in the Platforms tab.</p>
       </div>
 
-      <!-- CAMPAIGN CONTEXT ACCORDION -->
+      <!-- CAMPAIGN CONTEXT + TEACH AI — one card, two accordions -->
       <div class="card card-flush">
+
+        <!-- Campaign Context -->
         <button type="button" class="teach-btn" onclick="toggleRightAccordion('right-camp-ctx-body','right-camp-ctx-chevron')">
           <div class="row gap-10">
             <span class="teach-icon">🎯</span>
@@ -646,10 +648,10 @@
           <p class="helper-sm" style="margin-bottom:10px;">Added on top of your evergreen brand story — specific to this campaign only.</p>
           <textarea id="campaign-context" class="form-textarea" rows="3" placeholder="e.g. Christmas window display — vintage Lionel layout running daily 10am–6pm through Jan 5. Great for families, photo ops welcome. 15% off all train sets through December." oninput="debounceCampaignSave()"></textarea>
         </div>
-      </div>
 
-      <!-- TEACH AI ACCORDION -->
-      <div class="card card-flush">
+        <hr class="divider" style="margin:0;" />
+
+        <!-- Teach AI -->
         <button type="button" class="teach-btn" onclick="toggleRightAccordion('right-teach-ai-body','right-teach-ai-chevron',initTeachAIAccordion)">
           <div class="row gap-10">
             <span class="teach-icon">🧠</span>
@@ -677,6 +679,7 @@
             <span id="tai-save-status" style="font-size:12px;color:var(--green);opacity:0;transition:opacity 0.4s;"></span>
           </div>
         </div>
+
       </div>
 
       <!-- SCHEDULE ACCORDION -->
