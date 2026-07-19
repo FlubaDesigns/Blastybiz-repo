@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784489763456" />
+<link rel="stylesheet" href="global-style.css?v=1784490110617" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -135,7 +135,6 @@
     </div>
     <div class="create-step-dots">
       <span class="cwiz-dot cwiz-active" id="cwiz-dot-1"></span>
-      <span class="cwiz-dot" id="cwiz-dot-2"></span>
       <span class="cwiz-dot" id="cwiz-dot-3"></span>
       <span class="cwiz-dot" id="cwiz-dot-4"></span>
       <span class="cwiz-dot" id="cwiz-dot-5"></span>
@@ -220,14 +219,7 @@
               </div>
             </div>
 
-            <!-- Slide 1 nav -->
-            <div class="create-wiz-nav">
-              <button type="button" class="btn btn-primary btn--adaptive" id="continue-btn" onclick="createWizNext(1)">
-                Continue: Add Photos →
-              </button>
-            </div>
-
-            <div class="bottom-safe"></div>
+          </div><!-- /Your Blast card -->
 
           </div><!-- /campaign-content -->
 
@@ -264,38 +256,42 @@
         </div><!-- /.col-2-1 -->
       </div><!-- /.row -->
 
+      <!-- Row: Photos — full width -->
+      <div class="row" id="slide1-photos-row">
+        <div class="col-full">
+          <div class="card">
+            <div class="row-base-sb mb-4">
+              <div class="card-title mb-0">📷 Photos <span class="optional" style="font-size:12px;font-weight:400;color:var(--muted)">(optional)</span></div>
+              <span id="photo-cap-label" class="text-xs text-muted"></span>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:10px">
+              <button type="button" id="scope-photo-campaign" class="chip active" onclick="setPhotoScope('campaign')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:var(--accent);color:#fff;font-size:12px;cursor:pointer;font-weight:600">Campaign</button>
+              <button type="button" id="scope-photo-global" class="chip" onclick="setPhotoScope('global')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:transparent;color:var(--light);font-size:12px;cursor:pointer">Global</button>
+            </div>
+            <p class="text-base text-muted mb-12" id="photo-scope-hint">Campaign photos are linked to the active campaign. Select a campaign above first.</p>
+            <div id="photo-upload-area" class="image-upload-area" onclick="document.getElementById('img-input').click()">
+              <input type="file" id="img-input" accept="image/*" multiple onchange="handleImages(event)" onclick="event.stopPropagation()" />
+              <div class="upload-icon">📸</div>
+              <div class="upload-text" id="photo-upload-text">Tap to add photos<br/><span>from your camera roll</span></div>
+            </div>
+            <div class="thumb-grid" id="thumb-grid"></div>
+          </div>
+        </div>
+      </div><!-- /.row photos -->
+
+      <!-- Row: Continue button — full width -->
+      <div class="row" id="slide1-nav-row">
+        <div class="col-full">
+          <div class="create-wiz-nav">
+            <button type="button" class="btn btn-primary btn--adaptive" id="continue-btn" onclick="createWizNext(1)">
+              Continue: Select Platforms →
+            </button>
+          </div>
+          <div class="bottom-safe"></div>
+        </div>
+      </div><!-- /.row nav -->
+
     </div><!-- /create-slide-1 -->
-
-    <!-- ══ SLIDE 2: Photos ══ -->
-    <div class="create-slide" id="create-slide-2">
-
-      <div class="card">
-        <div class="row-base-sb mb-4">
-          <div class="card-title mb-0">📷 Photos <span class="optional" style="font-size:12px;font-weight:400;color:var(--muted)">(optional)</span></div>
-          <span id="photo-cap-label" class="text-xs text-muted"></span>
-        </div>
-        <div style="display:flex;gap:6px;margin-bottom:10px">
-          <button type="button" id="scope-photo-campaign" class="chip active" onclick="setPhotoScope('campaign')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:var(--accent);color:#fff;font-size:12px;cursor:pointer;font-weight:600">Campaign</button>
-          <button type="button" id="scope-photo-global" class="chip" onclick="setPhotoScope('global')" style="padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:transparent;color:var(--light);font-size:12px;cursor:pointer">Global</button>
-        </div>
-        <p class="text-base text-muted mb-12" id="photo-scope-hint">Campaign photos are linked to the active campaign. Select a campaign above first.</p>
-        <div id="photo-upload-area" class="image-upload-area" onclick="document.getElementById('img-input').click()">
-          <input type="file" id="img-input" accept="image/*" multiple onchange="handleImages(event)" onclick="event.stopPropagation()" />
-          <div class="upload-icon">📸</div>
-          <div class="upload-text" id="photo-upload-text">Tap to add photos<br/><span>from your camera roll</span></div>
-        </div>
-        <div class="thumb-grid" id="thumb-grid"></div>
-      </div>
-
-      <!-- Slide 2 nav -->
-      <div class="create-wiz-nav">
-        <button type="button" class="btn btn-primary btn--adaptive" onclick="createWizNext(2)">
-          Continue: Select Platforms →
-        </button>
-        <button type="button" class="create-wiz-back-btn" onclick="createWizPrev(2)">← Back to Blast Info</button>
-      </div>
-      <div class="bottom-safe"></div>
-    </div><!-- /create-slide-2 -->
 
     <!-- ══ SLIDE 3: Platform Selection ══ -->
     <div class="create-slide" id="create-slide-3">
@@ -1789,24 +1785,27 @@ function goToStep1() { createWizGoTo(1); }
 // BLAST CREATION WIZARD
 // ══════════════════════════════════════════
 let createWizStep = 1;
-const CREATE_WIZ_TOTAL = 5;
+const CREATE_WIZ_TOTAL = 4;
 const CREATE_WIZ_LABELS = {
-  1: 'Step 1 of 5 — Your Blast',
-  2: 'Step 2 of 5 — Photos',
-  3: 'Step 3 of 5 — Select Platforms',
-  4: 'Step 4 of 5 — Generate Copy',
-  5: 'Step 5 of 5 — Review & Approve'
+  1: 'Step 1 of 4 — Your Blast',
+  3: 'Step 2 of 4 — Select Platforms',
+  4: 'Step 3 of 4 — Generate Copy',
+  5: 'Step 4 of 4 — Review & Approve'
 };
+const CREATE_WIZ_STEP_NUM = { 1: 1, 3: 2, 4: 3, 5: 4 };
 
 function createWizGoTo(step) {
-  for (let i = 1; i <= CREATE_WIZ_TOTAL; i++) {
-    const slide = document.getElementById('create-slide-' + i);
+  const SLIDE_IDS = [1, 3, 4, 5];
+  const curVisual = CREATE_WIZ_STEP_NUM[step] || step;
+  for (const id of SLIDE_IDS) {
+    const slide = document.getElementById('create-slide-' + id);
     if (slide) slide.classList.remove('cwiz-active');
-    const dot = document.getElementById('cwiz-dot-' + i);
+    const dot = document.getElementById('cwiz-dot-' + id);
     if (dot) {
+      const dotVisual = CREATE_WIZ_STEP_NUM[id] || id;
       dot.classList.remove('cwiz-active', 'cwiz-done');
-      if (i < step)        dot.classList.add('cwiz-done');
-      else if (i === step) dot.classList.add('cwiz-active');
+      if (dotVisual < curVisual)       dot.classList.add('cwiz-done');
+      else if (dotVisual === curVisual) dot.classList.add('cwiz-active');
     }
   }
   const target = document.getElementById('create-slide-' + step);
@@ -1814,7 +1813,7 @@ function createWizGoTo(step) {
   const labelEl = document.getElementById('create-wiz-label');
   if (labelEl) labelEl.textContent = CREATE_WIZ_LABELS[step] || '';
   const fillEl = document.getElementById('create-progress-fill');
-  if (fillEl) fillEl.style.width = Math.round((step / CREATE_WIZ_TOTAL) * 100) + '%';
+  if (fillEl) fillEl.style.width = Math.round(((CREATE_WIZ_STEP_NUM[step] || step) / CREATE_WIZ_TOTAL) * 100) + '%';
   createWizStep = step;
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (step === 3) {
@@ -1844,11 +1843,15 @@ function createWizNext(fromStep) {
   if (fromStep === 3) {
     if (!platforms.some(p => p.enabled)) { showToast('Select at least one platform first'); return; }
   }
-  createWizGoTo(fromStep + 1);
+  // Slide 2 is folded into slide 1 — skip from 1 straight to 3
+  const nextStep = fromStep === 1 ? 3 : fromStep + 1;
+  createWizGoTo(nextStep);
 }
 
 function createWizPrev(fromStep) {
-  createWizGoTo(Math.max(1, fromStep - 1));
+  // Slide 2 is folded into slide 1 — skip from 3 straight back to 1
+  const prevStep = fromStep === 3 ? 1 : fromStep - 1;
+  createWizGoTo(Math.max(1, prevStep));
 }
 
 function toggleAboutYouPanel() {
