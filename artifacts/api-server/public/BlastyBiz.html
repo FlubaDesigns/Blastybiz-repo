@@ -1073,7 +1073,7 @@ function renderPlatformPhotoStrip(pid, photos, maxPhotos) {
     thumb.onclick = () => togglePlatformPhoto(pid, photo.url, maxPhotos, photos);
     const orderNum = isSelected ? ([...sel].indexOf(photo.url) + 1) : 0;
     thumb.innerHTML = `
-      <img src="${escHtml(photo.url)}" class="thumb-cover" />
+      <img src="${escHtml(photo.url)}" class="thumb-cover" alt="Uploaded photo" />
       ${isSelected ? `<div class="thumb-order-badge">${orderNum}</div>` : ''}
     `;
     strip.appendChild(thumb);
@@ -1282,19 +1282,35 @@ async function approvePlatformCopy(pid) {
   if (nextIdx !== -1) setTimeout(() => step5GoTo(nextIdx), 350);
 }
 
-function excludePlatform(pid) {
-  const name = platforms.find(p => p.id === pid)?.name || pid;
-  platforms = platforms.map(p => p.id === pid
-    ? { ...p, _reviewStatus: 'skipped' }
-    : p);
+async function excludePlatform(pid) {
+  const platform = platforms.find(p => p.id === pid);
+  const name = platform?.name || pid;
+  const priorStatus = platform?._reviewStatus;
+
+  // Optimistically update in-memory + show saving state before the write
+  platforms = platforms.map(p => p.id === pid ? { ...p, _reviewStatus: 'skipped' } : p);
   savePlatforms();
-  // Persist exclusion to draft so Final Review and reloads honour it
+  const pill = document.getElementById('step5-pill-' + pid);
+  if (pill) { pill.textContent = '⏳ Saving…'; pill.className = 'step5-status-pill'; }
+
+  // Await the Firestore write — navigation is blocked until it resolves
   const draftId = window._currentDraftId;
   if (draftId && window._bbUpdateDraft) {
-    window._bbUpdateDraft(draftId, { ['platformStatus.' + pid]: 'excluded' })
-      .catch(e => console.warn('excludePlatform draft persist failed:', e));
+    try {
+      await window._bbUpdateDraft(draftId, { ['platformStatus.' + pid]: 'excluded' });
+    } catch (e) {
+      // Rollback: restore prior status and show error — do not advance
+      platforms = platforms.map(p => p.id === pid ? { ...p, _reviewStatus: priorStatus } : p);
+      savePlatforms();
+      if (pill) {
+        pill.textContent = priorStatus === 'approved' ? 'Approved' : 'Needs Review';
+        pill.className = 'step5-status-pill' + (priorStatus === 'approved' ? ' approved' : ' needs-review');
+      }
+      showToast('❌ Exclude failed — check connection and try again');
+      return;
+    }
   }
-  const pill = document.getElementById('step5-pill-' + pid);
+
   if (pill) { pill.textContent = '— Skipped'; pill.className = 'step5-status-pill'; }
   updateStep5UI();
   showToast('"' + name + '" excluded from this blast');
@@ -1405,6 +1421,7 @@ async function deleteLibraryItem(docId) {
 async function regeneratePlatformCopy(pid) {
   const platform = platforms.find(p => p.id === pid);
   if (!platform) return;
+  const previousContent = platform.adaptedContent || '';
 
   const regenBtn  = document.getElementById('qp-regen-' + pid);
   const copyTextEl = document.getElementById('qp-copy-text-' + pid);
@@ -1521,11 +1538,29 @@ async function regeneratePlatformCopy(pid) {
     }
     updateStep5UI();
 
-    // Update canonical Firestore draft with regenerated content
+    // Await Firestore draft write — do not announce success until confirmed saved
     const draftId = window._currentDraftId;
     if (draftId && window._bbUpdateDraft) {
+      const regenSaving = document.getElementById('qp-regen-' + pid);
+      if (regenSaving) { regenSaving.textContent = '⏳ Saving…'; }
       const adaptKey = 'adaptations.' + pid;
-      window._bbUpdateDraft(draftId, { [adaptKey]: newText }).catch(e => console.warn('Draft update after regen failed:', e));
+      try {
+        await window._bbUpdateDraft(draftId, { [adaptKey]: newText });
+      } catch (e) {
+        // Rollback: restore previous copy and needs-review state
+        platforms = platforms.map(p => p.id === pid
+          ? { ...p, adaptedContent: previousContent, status: 'ready', _reviewStatus: undefined }
+          : p);
+        savePlatforms();
+        const rollbackEl = document.getElementById('qp-copy-text-' + pid);
+        if (rollbackEl) rollbackEl.textContent = previousContent;
+        const lgtmRb = document.getElementById('step5-lgtm-' + pid);
+        if (lgtmRb) { lgtmRb.textContent = '✓ Looks Good'; lgtmRb.classList.remove('approved'); lgtmRb.disabled = false; delete lgtmRb.dataset.saving; }
+        const pillRb = document.getElementById('step5-pill-' + pid);
+        if (pillRb) { pillRb.textContent = 'Needs Review'; pillRb.className = 'step5-status-pill needs-review'; }
+        showToast('❌ Save failed — check connection and try again');
+        return;
+      }
     }
 
     showToast('✅ Copy regenerated for ' + platform.name);
@@ -2044,7 +2079,7 @@ window.renderAllPhotos = function() {
         ? `<div class="thumb-progress-pct" style="font-size:10px">⚙️</div><div style="font-size:9px;color:#ccc;margin-top:2px">Compressing…</div>`
         : `<div class="thumb-progress-pct">${item.progress}%</div><div class="thumb-progress-bar"><div style="width:${item.progress}%;height:100%;background:var(--green);border-radius:2px;transition:width .2s;"></div></div>`;
       wrap.innerHTML = `
-        <img src="${item.localUrl}" class="thumb-uploading-img" />
+        <img src="${item.localUrl}" class="thumb-uploading-img" alt="Uploading photo…" />
         <div class="thumb-progress-overlay">${label}</div>`;
     } else {
       const isSelected = window._bbSelectedPhotoIndex === i;
@@ -2054,7 +2089,7 @@ window.renderAllPhotos = function() {
         if (window._bbSelectPhoto) window._bbSelectPhoto(i);
       };
       wrap.innerHTML = `
-        <img src="${item.localUrl}" />
+        <img src="${item.localUrl}" alt="Uploaded photo" />
         <button type="button" class="thumb-remove" onclick="event.stopPropagation();window._bbDeletePhoto&&window._bbDeletePhoto(${i})">✕</button>
         ${isSelected
           ? `<div class="thumb-selected-badge">✓</div>`

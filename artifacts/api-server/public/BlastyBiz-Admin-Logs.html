@@ -112,6 +112,10 @@ import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, query, orderBy, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
 function fmtTime(ts) {
   if (!ts) return '—';
   const d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -125,14 +129,14 @@ onAuthStateChanged(auth, (user) => {
     if (snap.empty) return;
     const rows = snap.docs.map(d => {
       const l = d.data();
-      const lc = { info:'info', success:'success', warning:'warn', error:'error' }[l.level] || 'info';
+      const lc = escHtml({ info:'info', success:'success', warning:'warn', error:'error' }[l.level] || 'info');
       return `<tr>
         <td>${fmtTime(l.createdAt)}</td>
-        <td><span class="badge ${lc}">${l.level || 'Info'}</span></td>
-        <td>${l.type || '—'}</td>
-        <td>${l.businessName || l.uid || '—'}</td>
-        <td>${l.message || '—'}</td>
-        <td class="muted">${l.relatedCollection || '—'}</td>
+        <td><span class="badge ${lc}">${escHtml(l.level || 'Info')}</span></td>
+        <td>${escHtml(l.type || '—')}</td>
+        <td>${escHtml(l.businessName || l.uid || '—')}</td>
+        <td>${escHtml(l.message || '—')}</td>
+        <td class="muted">${escHtml(l.relatedCollection || '—')}</td>
       </tr>`;
     }).join('');
     document.querySelector('tbody').innerHTML = rows;
