@@ -84,6 +84,24 @@ uri = "file://artifacts/api-server/public/dashboard-hero.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "klXDZkW6QtMI1ogDvR05x"
+uri = "file://artifacts/api-server/public/connect-hero.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "FaKk14u8tsU1d2-zTf9ns"
+uri = "file://artifacts/api-server/public/bizcontext-hero.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "9q3_6S-esI-vb4wXZwfEM"
+uri = "file://artifacts/api-server/public/account-hero.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "OlLytVLFMpzHayK0XXDkK"
 uri = "file://download/BlastyBiz_Site.zip"
