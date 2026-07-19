@@ -2454,7 +2454,6 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 @media (max-width: 768px) {
   .profile-page-split    { display: block; }
   .profile-page-right    { position: static; }
-  .profile-right-img     { display: none; }
 }
 
 /* ═══ CREATE PAGE — SCOPED OVERRIDES (conflict prevention) ═══ */
