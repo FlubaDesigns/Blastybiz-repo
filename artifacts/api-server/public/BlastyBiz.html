@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784500230477" />
+<link rel="stylesheet" href="global-style.css?v=1784500332065" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -425,7 +425,7 @@
             </button>
           </div>
 
-          <button type="button" class="review-btn" id="step5-final-btn" disabled onclick="completeBlast()">
+          <button type="button" class="review-btn" id="step5-final-btn" disabled style="display:none;" onclick="completeBlast()">
             Approve each platform above to continue →
           </button>
 
@@ -2040,23 +2040,40 @@ function buildStep5Card(p) {
 
 function updateStep5UI() {
   const enabled = getStep5Platforms();
-  const allDone = enabled.length > 0 && enabled.every(p =>
+  const doneCount = enabled.filter(p =>
     p._reviewStatus === 'approved' || p._reviewStatus === 'skipped'
-  );
+  ).length;
+  const allDone  = enabled.length > 0 && doneCount === enabled.length;
+  const anyDone  = doneCount > 0;
+
   const finalBtn = document.getElementById('step5-final-btn');
   if (!finalBtn) return;
+
+  const wasHidden   = finalBtn.style.display === 'none';
   const wasDisabled = finalBtn.disabled;
+
+  if (!anyDone) {
+    // Nothing approved yet — keep button hidden
+    finalBtn.style.display = 'none';
+    return;
+  }
+
+  // At least one done — show the button
+  finalBtn.style.display = 'flex';
+
   if (allDone) {
     finalBtn.disabled = false;
     finalBtn.textContent = '✅ Save to History →';
-    if (wasDisabled) {
-      // First time unlocking — scroll into view and toast so user knows
+    if (wasDisabled || wasHidden) {
       setTimeout(() => finalBtn.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
       showToast('✅ All platforms done — tap Save to History below');
     }
   } else {
     finalBtn.disabled = true;
     finalBtn.textContent = 'Approve each platform above to continue →';
+    if (wasHidden) {
+      setTimeout(() => finalBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+    }
   }
 }
 
