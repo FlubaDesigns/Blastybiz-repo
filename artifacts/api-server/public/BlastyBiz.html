@@ -808,6 +808,13 @@ window._bbSelectedPhotoIndex = null; // index of featured/selected photo
 window._globalImages = [];           // global business images [{url,path,id,scope:'global'}]
 let photoScope = 'campaign';        // 'campaign' | 'global'
 
+function _getAIMemory() {
+  return {
+    globalMemory:   window._globalMemory || profile.globalMemory || '',
+    campaignMemory: (campaigns.find(c => c.id === activeCampaignId) || {}).campaignMemory || '',
+  };
+}
+
 // ══════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════
@@ -1468,8 +1475,7 @@ async function regeneratePlatformCopy(pid) {
           globalFactoids: window._globalFactoids || [],
           campaignFactoids: (campaigns.find(c=>c.id===activeCampaignId)||{}).factoids || [],
           aiContext: profile.aiContext || null,
-          globalMemory: window._globalMemory || profile.globalMemory || '',
-          campaignMemory: (campaigns.find(c=>c.id===activeCampaignId)||{}).campaignMemory || '',
+          ...(_getAIMemory()),
           libraryDocs: window._libraryDocs || [],
         },
         platforms: [{ id: platform.id, name: platform.name, type: platform.type, enabled: true }],
@@ -2259,8 +2265,7 @@ async function runAdaptation() {
           globalFactoids: window._globalFactoids || [],
           campaignFactoids: (campaigns.find(c=>c.id===activeCampaignId)||{}).factoids || [],
           aiContext: profile.aiContext || null,
-          globalMemory: window._globalMemory || profile.globalMemory || '',
-          campaignMemory: (campaigns.find(c=>c.id===activeCampaignId)||{}).campaignMemory || '',
+          ...(_getAIMemory()),
           libraryDocs: window._libraryDocs || [],
           businessId: window.activeBizId || '',
           campaignId: activeCampaignId || '',
@@ -3243,8 +3248,7 @@ async function rerunAICats() {
     profile.ownerRole ? 'Role: '    + profile.ownerRole : null,
   ].filter(Boolean);
   const description = descParts.length ? descParts.join('. ') : bizName;
-  const globalMem   = window._globalMemory || profile.globalMemory || '';
-  const campaignMem = (campaigns.find(c => c.id === activeCampaignId) || {}).campaignMemory || '';
+  const { globalMemory: globalMem, campaignMemory: campaignMem } = _getAIMemory();
   const specialNotes = [globalMem, campaignMem].filter(Boolean).join('\n');
 
   btn.disabled = true;
