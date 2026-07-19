@@ -69,8 +69,9 @@
 .row         { display: block; width: 100%; }
 .flex-row    { display: flex; align-items: center; gap: 8px; }
 /* 2:1 column split — left col gets 2 parts, right col gets 1 part */
-.col-2-1     { display: grid; grid-template-columns: 2fr 1fr; gap: var(--gutter); align-items: start; }
-@media (max-width: 599px) { .col-2-1 { grid-template-columns: 1fr; } }
+.col-2-1        { display: grid; grid-template-columns: 2fr 1fr; gap: var(--gutter); align-items: start; }
+.col-2-1 > *   { min-width: 0; }
+@media (max-width: 479px) { .col-2-1 { grid-template-columns: 1fr; } }
 /* Full-width single column */
 .col-full    { display: block; width: 100%; }
 /* .row-sb has NO gap (space-between only) — used on Home page heading/CTA pairs where gap is unwanted.
