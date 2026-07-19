@@ -77,6 +77,8 @@
 .col-right   { min-width: 0; }
 /* Full-width single column */
 .col-full    { display: block; width: 100%; }
+/* Responsive visibility */
+@media (max-width: 479px) { .hide-mobile { display: none !important; } }
 /* .row-sb has NO gap (space-between only) — used on Home page heading/CTA pairs where gap is unwanted.
    .flex-between (~line 458) adds gap:12px — prefer it when items need spacing in addition to space-between. */
 .row-sb      { display: flex; align-items: center; justify-content: space-between; }
