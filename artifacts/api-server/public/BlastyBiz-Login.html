@@ -5,7 +5,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1784503744954" />
+  <link rel="stylesheet" href="global-style.css?v=1784505470015" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -488,19 +488,19 @@ async function afterAuth(user) {
 
     // Paid plan selected → go to checkout first; Dashboard sends to onboarding after payment
     if (picked && ['pro', 'agency'].includes(picked)) {
-      window.location.href = `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(picked)}&billing=${encodeURIComponent(billing)}`;
+      window.location.href = `BlastyBiz.html?checkout=${encodeURIComponent(picked)}&billing=${encodeURIComponent(billing)}`;
       return;
     }
 
     const snap     = await getDoc(doc(db, 'users', user.uid));
     const userData = snap.exists() ? snap.data() : {};
     if (userData.onboarded) {
-      window.location.href = 'BlastyBiz-Dashboard.html?from=login';
+      window.location.href = 'BlastyBiz.html';
     } else {
       const bizSnap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
       if (!bizSnap.empty) {
         await setDoc(doc(db, 'users', user.uid), { onboarded: true }, { merge: true });
-        window.location.href = 'BlastyBiz-Dashboard.html?from=login';
+        window.location.href = 'BlastyBiz.html';
       } else {
         window.location.href = 'BlastyBiz-Chat-Onboarding.html';
       }

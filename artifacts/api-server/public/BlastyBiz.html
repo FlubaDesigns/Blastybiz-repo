@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784503744954" />
+<link rel="stylesheet" href="global-style.css?v=1784505470015" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -116,6 +116,8 @@
   <div class="tab" onclick="showTab('schedule')" id="tab-schedule"><span class="tab-icon">🗓️ </span>Schedule</div>
   <div class="tab" onclick="showTab('history')" id="tab-history"><span class="tab-icon">📋 </span>History</div>
   <div class="tab" onclick="showTab('profile')" id="tab-profile"><span class="tab-icon">⚙️ </span>Profile</div>
+  <div class="tab" onclick="showTab('story')" id="tab-story"><span class="tab-icon">📖 </span>Story</div>
+  <div class="tab" onclick="showTab('account')" id="tab-account"><span class="tab-icon">💼 </span>Account</div>
 </div>
 </div>
 <!-- ══════════════════════════════════════════
@@ -823,9 +825,158 @@
   <div class="bottom-safe"></div>
 </div>
 
+<!-- ══════════════════════════════════════════
+     TAB 6: STORY
+══════════════════════════════════════════ -->
+<div class="section" id="section-story">
+  <div class="row"><div class="col-2-1">
+  <div class="col-left">
+
+    <div class="ai-badge" style="margin-bottom:12px;">🤖 Feeds the AI every time it writes for you</div>
+
+    <div class="card">
+      <div class="card-title">📖 Your Story</div>
+      <p class="helper mb-16">Everything here gets read by the AI <strong>before it writes a single word</strong> of your marketing. Write it once — AI uses it every time.</p>
+      <label for="ctx-story">How did you get started?</label>
+      <div class="char-wrap"><textarea id="ctx-story" class="form-textarea" rows="4" placeholder="e.g. We opened our doors in 1987 after my father emigrated from Mexico with nothing but a family recipe and a dream…" oninput="storyFieldInput(this,'cnt-story')"></textarea></div>
+      <div class="char-count"><span id="cnt-story">0</span> characters</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">✨ What Makes You Different</div>
+      <p class="helper mb-8">Why should someone choose you over the competitor down the street?</p>
+      <div class="char-wrap"><textarea id="ctx-different" class="form-textarea" rows="4" placeholder="e.g. We source all produce from local farms within 50 miles. Every item made from scratch daily…" oninput="storyFieldInput(this,'cnt-different')"></textarea></div>
+      <div class="char-count"><span id="cnt-different">0</span> characters</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏆 Awards &amp; Milestones</div>
+      <p class="helper mb-8">Press coverage, awards, certifications, achievements.</p>
+      <div class="char-wrap"><textarea id="ctx-awards" class="form-textarea" rows="3" placeholder="e.g. Best Local Pizza 3 years running. Featured in the Chicago Tribune. 4.9 stars across 600+ Google reviews…" oninput="storyFieldInput(this,'cnt-awards')"></textarea></div>
+      <div class="char-count"><span id="cnt-awards">0</span> characters</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🎯 Your Ideal Customer</div>
+      <p class="helper mb-8">Who are you talking to? Who gets the most value from what you do?</p>
+      <div class="char-wrap"><textarea id="ctx-customer" class="form-textarea" rows="3" placeholder="e.g. Homeowners aged 35–60 who want quality work done right the first time…" oninput="storyFieldInput(this,'cnt-customer')"></textarea></div>
+      <div class="char-count"><span id="cnt-customer">0</span> characters</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💬 Anything Else the AI Should Know</div>
+      <p class="helper mb-8">Special services, seasonal offerings, team members, community involvement — anything worth talking about.</p>
+      <div class="char-wrap"><textarea id="ctx-other" class="form-textarea" rows="5" placeholder="e.g. We offer free estimates. Loyalty program — every 10th visit is free. We sponsor the local little league…" oninput="storyFieldInput(this,'cnt-other')"></textarea></div>
+      <div class="char-count"><span id="cnt-other">0</span> characters</div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+      <button type="button" class="btn btn-primary" id="story-btn-save" onclick="saveStory()" disabled>Save Story</button>
+      <span id="story-save-status" style="font-size:12px;color:var(--green);opacity:0;transition:opacity 0.4s;"></span>
+    </div>
+
+    <!-- Business Library — locked for starter -->
+    <div id="doc-library-locked" style="display:none;margin-bottom:16px;">
+      <div class="card" style="border:1px dashed var(--border);opacity:0.85">
+        <div class="card-title">📎 Business Library <span style="font-size:11px;font-weight:500;background:var(--green);color:#000;border-radius:4px;padding:2px 7px;margin-left:8px;vertical-align:middle">PRO</span></div>
+        <p class="helper mb-12">Upload a menu, service sheet, or sales piece — the AI reads it before writing every campaign.</p>
+        <button type="button" onclick="showTab('account')" class="btn btn-primary" style="display:inline-block">Upgrade to Pro →</button>
+      </div>
+    </div>
+
+    <!-- Business Library — Pro/Agency -->
+    <div id="doc-library-section" style="display:none;margin-bottom:16px;">
+      <div class="card">
+        <div class="card-title">📎 Business Library</div>
+        <p class="helper mb-8">These documents are read by the AI every time it writes for you. Upload a menu, service list, or sales sheet.</p>
+        <div id="doc-list" style="margin-top:12px"></div>
+        <label class="btn" style="cursor:pointer;margin-top:16px;display:inline-block">
+          + Add Document
+          <input type="file" id="doc-file-input" accept=".txt,.pdf" style="display:none" onchange="handleDocUpload(event,null)" />
+        </label>
+        <div id="doc-upload-status" style="font-size:13px;color:var(--muted);margin-top:8px;min-height:18px"></div>
+      </div>
+    </div>
+
+  </div><!-- /.col-left -->
+  <div class="col-right hide-mobile">
+    <img src="bizcontext-hero.png" alt="Your business story" class="img-cover">
+  </div>
+  </div></div><!-- /.col-2-1 /.row -->
+
+  <!-- Doc preview modal -->
+  <div id="doc-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;overflow-y:auto;padding:24px 16px" onclick="if(event.target===this)closeDocModal()">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;max-width:640px;margin:0 auto;padding:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div id="doc-modal-title" style="font-size:15px;font-weight:700;color:var(--light)"></div>
+        <button type="button" onclick="closeDocModal()" style="background:transparent;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1">×</button>
+      </div>
+      <textarea id="doc-modal-text" readonly style="width:100%;height:320px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--light);font-size:13px;padding:12px;resize:vertical;font-family:monospace;line-height:1.5;box-sizing:border-box;"></textarea>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px">This is the extracted text the AI reads. To change it, use Replace.</div>
+    </div>
+  </div>
+
+  <div class="bottom-safe"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 7: ACCOUNT
+══════════════════════════════════════════ -->
+<div class="section" id="section-account">
+  <div class="row"><div class="col-2-1">
+  <div class="col-left">
+
+    <div class="card">
+      <div class="card-title">💼 Plan &amp; Usage</div>
+      <div class="cost-line"><span>Email</span><strong id="acct-email">—</strong></div>
+      <div class="cost-line"><span>Plan</span><strong id="acct-plan-label">—</strong></div>
+      <div class="cost-line"><span>AI requests used</span><strong id="acct-ai-usage">—</strong></div>
+      <div class="cost-line"><span>Resets on</span><strong id="acct-renewal">—</strong></div>
+      <div class="btn-row" style="margin-top:12px;">
+        <button type="button" class="btn btn-primary" id="acct-billing-btn" onclick="handleBilling()">View Billing</button>
+      </div>
+    </div>
+
+    <div class="card" id="acct-admin-card" style="display:none;">
+      <div class="card-title">🛡 Admin</div>
+      <p class="helper mb-12">You have admin access to this BlastyBiz installation.</p>
+      <a class="btn" href="BlastyBiz-Admin.html">Open Admin Panel →</a>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="color:var(--danger,#e53935);">⚠️ Danger Zone</div>
+      <p class="helper mb-12">Deleting your account is permanent and cannot be undone. All businesses, campaigns, and data will be removed.</p>
+      <button type="button" onclick="openDeleteModal()" class="delete-account-btn">Delete account</button>
+    </div>
+
+  </div><!-- /.col-left -->
+  <div class="col-right hide-mobile">
+    <img src="account-hero.png" alt="Account settings" class="img-cover">
+  </div>
+  </div></div><!-- /.col-2-1 /.row -->
+  <div class="bottom-safe"></div>
+</div>
+
+<!-- DELETE ACCOUNT MODAL -->
+<div id="delete-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:none;align-items:center;justify-content:center;padding:16px;">
+  <div class="delete-modal" style="max-width:440px;width:100%;">
+    <h3>Delete Account</h3>
+    <p>This permanently deletes your account, all businesses, listings, and publish history. Your subscription will be cancelled. <strong class="danger-text">This cannot be undone.</strong></p>
+    <p>Type <strong>DELETE</strong> to confirm:</p>
+    <input id="delete-confirm-input" type="text" placeholder="DELETE" class="delete-input"
+      oninput="document.getElementById('delete-confirm-btn').disabled = this.value !== 'DELETE'"/>
+    <div class="delete-actions">
+      <button type="button" onclick="closeDeleteModal()" class="delete-cancel">Cancel</button>
+      <button type="button" id="delete-confirm-btn" onclick="confirmDeleteAccount()" disabled>Delete Everything</button>
+    </div>
+    <p id="delete-error" style="display:none;color:var(--danger,#e53935);margin-top:10px;font-size:13px;"></p>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="platform-categories.js"></script>
 <script>
 // ══════════════════════════════════════════
@@ -932,6 +1083,34 @@ function init() {
 // ══════════════════════════════════════════
 // TABS
 // ══════════════════════════════════════════
+// ── Story tab helpers ──
+function storyFieldInput(el, cntId) {
+  document.getElementById(cntId).textContent = el.value.length;
+  const btn = document.getElementById('story-btn-save');
+  if (btn) { btn.disabled = false; }
+  const st = document.getElementById('story-save-status');
+  if (st) { st.textContent = ''; st.style.opacity = '0'; }
+}
+function closeDocModal() {
+  document.getElementById('doc-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+// ── Account tab helpers ──
+function openDeleteModal() {
+  const o = document.getElementById('delete-overlay');
+  if (o) { o.style.display = 'flex'; }
+  const inp = document.getElementById('delete-confirm-input');
+  if (inp) inp.value = '';
+  const btn = document.getElementById('delete-confirm-btn');
+  if (btn) { btn.disabled = true; }
+  const err = document.getElementById('delete-error');
+  if (err) err.style.display = 'none';
+}
+function closeDeleteModal() {
+  const o = document.getElementById('delete-overlay');
+  if (o) o.style.display = 'none';
+}
+
 function showTab(name) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -941,6 +1120,8 @@ function showTab(name) {
   if (name === 'history')  renderHistory();
   if (name === 'schedule') renderScheduleTab();
   if (name === 'profile')  loadProfile();
+  if (name === 'story')   { if (window._bbLoadStory) window._bbLoadStory(); }
+  if (name === 'account') { if (window._bbLoadAccount) window._bbLoadAccount(); }
   if (name === 'create') {
     createWizGoTo(1);
   }
@@ -5528,6 +5709,229 @@ window.closeCampaignChat = function() {
     document.getElementById('campaign-content')?.classList.remove('hidden');
   }
 };
+
+// ══════════════════════════════════════════
+// STORY TAB
+// ══════════════════════════════════════════
+const STORY_FIELDS = [
+  { id: 'ctx-story',     key: 'story' },
+  { id: 'ctx-different', key: 'different' },
+  { id: 'ctx-awards',    key: 'awards' },
+  { id: 'ctx-customer',  key: 'customer' },
+  { id: 'ctx-other',     key: 'other' },
+];
+
+let _storyLoaded = false;
+
+window._bbLoadStory = async function() {
+  if (_storyLoaded) return;
+  _storyLoaded = true;
+  try {
+    const bizSnap = await getDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId));
+    if (bizSnap.exists()) {
+      const ctx = bizSnap.data().aiContext || {};
+      STORY_FIELDS.forEach(f => {
+        const el = document.getElementById(f.id);
+        if (!el) return;
+        if (ctx[f.key]) {
+          el.value = ctx[f.key];
+          const cntKey = 'cnt-' + f.id.replace('ctx-', '');
+          const cntEl = document.getElementById(cntKey);
+          if (cntEl) cntEl.textContent = el.value.length;
+        }
+      });
+      const btn = document.getElementById('story-btn-save');
+      if (btn) btn.disabled = false;
+    }
+    const plan = window.userPlan || 'starter';
+    if (plan === 'pro' || plan === 'agency') {
+      document.getElementById('doc-library-section').style.display = 'block';
+      _bbLoadLibraryDocs();
+    } else {
+      document.getElementById('doc-library-locked').style.display = 'block';
+    }
+  } catch(e) { console.error('loadStory:', e); }
+};
+
+window.saveStory = async function() {
+  if (!activeBizId) { showToast('No active business found'); return; }
+  const btn = document.getElementById('story-btn-save');
+  const status = document.getElementById('story-save-status');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  const aiContext = {};
+  STORY_FIELDS.forEach(f => {
+    const el = document.getElementById(f.id);
+    if (el) aiContext[f.key] = el.value.trim();
+  });
+  try {
+    await setDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), { aiContext }, { merge: true });
+    if (btn) { btn.disabled = false; btn.textContent = 'Save Story'; }
+    if (status) { status.textContent = '✓ Saved — AI will use this next time'; status.style.opacity = '1'; setTimeout(() => { status.style.opacity = '0'; }, 3000); }
+    showToast('Business story saved');
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Save Story'; }
+    showToast('Save failed — try again');
+  }
+};
+
+async function _bbLoadLibraryDocs() {
+  const list = document.getElementById('doc-list');
+  if (!list || !activeBizId) return;
+  try {
+    const snap = await getDocs(query(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'documents'), orderBy('uploadedAt', 'desc')));
+    if (snap.empty) { list.innerHTML = '<p style="font-size:13px;color:var(--muted);margin:0">No documents yet.</p>'; return; }
+    const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    list.innerHTML = snap.docs.map(d => {
+      const data = d.data();
+      const chars = (data.extractedText || '').length;
+      const safeText = (data.extractedText || '').replace(/\\/g,'\\\\').replace(/`/g,'\\`');
+      return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <div style="min-width:0">
+            <div style="font-size:14px;font-weight:600;color:var(--light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(data.name)}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">${chars.toLocaleString()} chars extracted</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button type="button" onclick="window.viewLibraryDoc('${esc(data.name)}',\`${safeText}\`)" style="background:transparent;border:1px solid var(--border);color:var(--light);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px">View</button>
+            <label style="background:transparent;border:1px solid var(--border);color:var(--light);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;white-space:nowrap">Replace<input type="file" accept=".txt,.pdf" style="display:none" onchange="handleDocUpload(event,'${d.id}','${esc(data.name)}')" /></label>
+            <button type="button" onclick="window.deleteLibraryDoc('${d.id}')" style="background:transparent;border:1px solid var(--border);color:#f87171;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px">Remove</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { if (list) list.innerHTML = '<p style="font-size:13px;color:var(--muted);margin:0">Could not load documents.</p>'; }
+}
+
+window.viewLibraryDoc = function(name, text) {
+  document.getElementById('doc-modal-title').textContent = name;
+  document.getElementById('doc-modal-text').value = text;
+  document.getElementById('doc-modal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+};
+
+window.deleteLibraryDoc = async function(docId) {
+  if (!confirm('Remove this document from your Business Library?')) return;
+  try {
+    await deleteDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'documents', docId));
+    _bbLoadLibraryDocs();
+    showToast('Document removed');
+  } catch(e) { showToast('Remove failed — try again'); }
+};
+
+window.handleDocUpload = async function(evt, replaceDocId, replaceDocName) {
+  const file = evt.target.files[0];
+  evt.target.value = '';
+  if (!file) return;
+  const status = document.getElementById('doc-upload-status');
+  const maxBytes = 500 * 1024;
+  if (file.size > maxBytes) { status.textContent = '❌ File too large (max 500 KB)'; return; }
+  status.textContent = '⏳ Extracting text…';
+  try {
+    let extractedText;
+    if (file.name.toLowerCase().endsWith('.txt')) {
+      extractedText = await new Promise((res, rej) => { const r = new FileReader(); r.onload = e => res(e.target.result); r.onerror = rej; r.readAsText(file); });
+    } else if (file.name.toLowerCase().endsWith('.pdf')) {
+      const pdfLib = window.pdfjsLib;
+      if (!pdfLib) throw new Error('PDF support unavailable — try a .txt file');
+      pdfLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pdf = await pdfLib.getDocument({ data: await file.arrayBuffer() }).promise;
+      const pages = [];
+      for (let i = 1; i <= pdf.numPages; i++) { const pg = await pdf.getPage(i); const c = await pg.getTextContent(); pages.push(c.items.map(x=>x.str).join(' ')); }
+      extractedText = pages.join('\n');
+    } else { throw new Error('Only .txt and .pdf files are supported'); }
+    extractedText = extractedText.trim();
+    if (!extractedText) { status.textContent = '❌ No text found in this file'; return; }
+    if (extractedText.length > 20000) extractedText = extractedText.slice(0, 20000) + '\n[truncated]';
+    status.textContent = '💾 Saving…';
+    if (replaceDocId) {
+      await updateDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'documents', replaceDocId), { name: file.name, extractedText, uploadedAt: new Date(), bytes: file.size });
+      status.textContent = `✅ Replaced with "${file.name}"`;
+    } else {
+      await addDoc(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'documents'), { name: file.name, extractedText, uploadedAt: new Date(), bytes: file.size });
+      status.textContent = '✅ Document saved to Business Library';
+    }
+    _bbLoadLibraryDocs();
+  } catch(e) { status.textContent = '❌ ' + e.message; }
+};
+
+// ══════════════════════════════════════════
+// ACCOUNT TAB
+// ══════════════════════════════════════════
+const CF_BASE = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
+let _acctLoaded = false;
+
+window._bbLoadAccount = async function() {
+  if (_acctLoaded) return;
+  _acctLoaded = true;
+  try {
+    const emailEl = document.getElementById('acct-email');
+    if (emailEl) emailEl.textContent = currentUser.email || '—';
+
+    try {
+      const tok = await currentUser.getIdTokenResult();
+      if (tok.claims.admin) { const c = document.getElementById('acct-admin-card'); if (c) c.style.display = ''; }
+    } catch(_) {}
+
+    const userSnap = await getDoc(doc(db, 'users', currentUser.uid));
+    const userData = userSnap.exists() ? userSnap.data() : {};
+    const plan = userData.plan || 'starter';
+    window.userPlan = plan;
+
+    const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
+    const planEl = document.getElementById('acct-plan-label'); if (planEl) planEl.textContent = planLabel;
+
+    const billingBtn = document.getElementById('acct-billing-btn');
+    if (billingBtn) billingBtn.textContent = plan === 'starter' ? 'Upgrade Plan' : 'View Billing';
+
+    const aiUsed = userData.aiActionsUsed || 0;
+    const aiCap  = { starter: 10, pro: 100, agency: 500 }[plan] || 10;
+    const usageEl = document.getElementById('acct-ai-usage'); if (usageEl) usageEl.textContent = `${aiUsed} / ${aiCap}`;
+
+    const resetAt = userData.aiActionsResetAt?.toDate?.();
+    const renewEl = document.getElementById('acct-renewal');
+    if (renewEl) renewEl.textContent = resetAt ? resetAt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+  } catch(e) { console.error('loadAccount:', e); }
+};
+
+window.handleBilling = async function() {
+  const btn = document.getElementById('acct-billing-btn');
+  if (btn) { btn.textContent = 'Loading…'; btn.style.pointerEvents = 'none'; }
+  try {
+    const plan = window.userPlan || 'starter';
+    const idToken = await currentUser.getIdToken();
+    if (plan === 'starter') {
+      const r = await fetch(`${CF_BASE}/createCheckoutSession`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${idToken}`}, body: JSON.stringify({ plan:'pro' }) });
+      const d = await r.json(); if (d.url) window.location.href = d.url; else showToast('Checkout unavailable', true);
+    } else {
+      const r = await fetch(`${CF_BASE}/createPortalSession`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${idToken}`}, body: JSON.stringify({}) });
+      const d = await r.json(); if (d.url) window.location.href = d.url; else showToast('Billing portal unavailable', true);
+    }
+  } catch(e) {
+    showToast('Billing unavailable');
+    if (btn) { btn.textContent = (window.userPlan==='starter')?'Upgrade Plan':'View Billing'; btn.style.pointerEvents = ''; }
+  }
+};
+
+window.confirmDeleteAccount = async function() {
+  const btn = document.getElementById('delete-confirm-btn');
+  const errEl = document.getElementById('delete-error');
+  if (btn) { btn.textContent = 'Deleting…'; btn.disabled = true; }
+  if (errEl) errEl.style.display = 'none';
+  try {
+    const idToken = await currentUser.getIdToken();
+    const r = await fetch(`${CF_BASE}/deleteAccount`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${idToken}`}, body: JSON.stringify({}) });
+    const data = await r.json();
+    if (data.success) { await auth.signOut(); window.location.href = 'BlastyBiz-Home.html'; }
+    else {
+      if (errEl) { errEl.textContent = data.error || 'Delete failed. Please try again.'; errEl.style.display = 'block'; }
+      if (btn) { btn.textContent = 'Delete Everything'; btn.disabled = false; }
+    }
+  } catch(e) {
+    if (errEl) { errEl.textContent = 'Something went wrong. Please try again.'; errEl.style.display = 'block'; }
+    if (btn) { btn.textContent = 'Delete Everything'; btn.disabled = false; }
+  }
+};
+
 })();
 </script>
 
