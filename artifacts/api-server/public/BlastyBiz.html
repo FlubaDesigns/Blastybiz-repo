@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784497586279" />
+<link rel="stylesheet" href="global-style.css?v=1784497702412" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -132,7 +132,7 @@
 
     <!-- Wizard header: step label + progress bar + dots -->
     <div class="create-wiz-header">
-      <div class="create-wiz-label" id="create-wiz-label">Step 1 of 5 — Your Blast</div>
+      <div class="create-wiz-label" id="create-wiz-label">Step 1 of 2 — Your Blast</div>
     </div>
     <div class="create-progress-track">
       <div class="create-progress-fill" id="create-progress-fill" style="width:20%"></div>
@@ -1776,33 +1776,35 @@ function goToStep1() { createWizGoTo(1); }
 // BLAST CREATION WIZARD
 // ══════════════════════════════════════════
 let createWizStep = 1;
-const CREATE_WIZ_TOTAL = 2;
-const CREATE_WIZ_LABELS = {
-  1: 'Step 1 of 2 — Your Blast',
-  5: 'Step 2 of 2 — Review & Approve'
+// ── Single source of truth for wizard pages ──────────────────────────────────
+// To add/remove a page: update SLIDE_IDS (order) and SLIDE_TITLES (name).
+// Step numbers, progress fill, and dots are all derived — nothing else to touch.
+const SLIDE_IDS   = [1, 5];
+const SLIDE_TITLES = {
+  1: 'Your Blast',
+  5: 'Review & Approve'
 };
-const CREATE_WIZ_STEP_NUM = { 1: 1, 5: 2 };
 
 function createWizGoTo(step) {
-  const SLIDE_IDS = [1, 5];
-  const curVisual = CREATE_WIZ_STEP_NUM[step] || step;
+  const stepNum  = SLIDE_IDS.indexOf(step) + 1;   // 1-based position
+  const total    = SLIDE_IDS.length;
   for (const id of SLIDE_IDS) {
     const slide = document.getElementById('create-slide-' + id);
     if (slide) slide.classList.remove('cwiz-active');
     const dot = document.getElementById('cwiz-dot-' + id);
     if (dot) {
-      const dotVisual = CREATE_WIZ_STEP_NUM[id] || id;
+      const dotNum = SLIDE_IDS.indexOf(id) + 1;
       dot.classList.remove('cwiz-active', 'cwiz-done');
-      if (dotVisual < curVisual)        dot.classList.add('cwiz-done');
-      else if (dotVisual === curVisual) dot.classList.add('cwiz-active');
+      if (dotNum < stepNum)       dot.classList.add('cwiz-done');
+      else if (dotNum === stepNum) dot.classList.add('cwiz-active');
     }
   }
   const target = document.getElementById('create-slide-' + step);
   if (target) target.classList.add('cwiz-active');
   const labelEl = document.getElementById('create-wiz-label');
-  if (labelEl) labelEl.textContent = CREATE_WIZ_LABELS[step] || '';
+  if (labelEl) labelEl.textContent = stepNum > 0 ? 'Step ' + stepNum + ' of ' + total + ' — ' + (SLIDE_TITLES[step] || '') : '';
   const fillEl = document.getElementById('create-progress-fill');
-  if (fillEl) fillEl.style.width = Math.round(((CREATE_WIZ_STEP_NUM[step] || step) / CREATE_WIZ_TOTAL) * 100) + '%';
+  if (fillEl) fillEl.style.width = Math.round((stepNum / total) * 100) + '%';
   createWizStep = step;
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (step === 1) {
