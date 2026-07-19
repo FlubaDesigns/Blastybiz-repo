@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784447308489" />
+<link rel="stylesheet" href="global-style.css?v=1784447496375" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -439,26 +439,32 @@
      TAB 2: PLATFORMS
 ══════════════════════════════════════════ -->
 <div class="section" id="section-platforms">
+
+  <!-- Row 1: stats -->
+  <div class="row">
+    <div class="col-full">
+      <div class="stats-bar">
+        <div class="stat-card">
+          <div class="stat-num" id="stat-enabled">0</div>
+          <div class="stat-label">Selected</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-api">0</div>
+          <div class="stat-label">Auto-Post</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-manual">0</div>
+          <div class="stat-label">Copy-Paste</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: auto-post platforms + image -->
   <div class="row">
     <div class="col-2-1">
 
-      <!-- LEFT: auto-post platforms + stats -->
       <div class="col-left">
-        <div class="stats-bar">
-          <div class="stat-card">
-            <div class="stat-num" id="stat-enabled">0</div>
-            <div class="stat-label">Selected</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-num" id="stat-api">0</div>
-            <div class="stat-label">Auto-Post</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-num" id="stat-manual">0</div>
-            <div class="stat-label">Copy-Paste</div>
-          </div>
-        </div>
-
         <div class="section-label">Auto-Post Platforms (API)</div>
         <div class="platform-grid" id="api-platforms"></div>
       </div>
