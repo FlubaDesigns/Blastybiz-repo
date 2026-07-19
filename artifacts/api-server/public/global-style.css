@@ -68,6 +68,9 @@
    For inline icon+text or input+button pairs, use .flex-row instead. */
 .row         { display: block; width: 100%; }
 .flex-row    { display: flex; align-items: center; gap: 8px; }
+/* 2:1 column split — left col gets 2 parts, right col gets 1 part */
+.col-2-1     { display: grid; grid-template-columns: 2fr 1fr; gap: var(--gutter); align-items: start; }
+@media (max-width: 599px) { .col-2-1 { grid-template-columns: 1fr; } }
 /* .row-sb has NO gap (space-between only) — used on Home page heading/CTA pairs where gap is unwanted.
    .flex-between (~line 458) adds gap:12px — prefer it when items need spacing in addition to space-between. */
 .row-sb      { display: flex; align-items: center; justify-content: space-between; }
