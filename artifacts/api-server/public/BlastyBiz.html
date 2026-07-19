@@ -4025,11 +4025,10 @@ onAuthStateChanged(auth, async (user) => {
       // Restore saved platform selections (cross-device)
       if (biz.enabledPlatforms && Array.isArray(biz.enabledPlatforms)) {
         _enabledPlatformIds = biz.enabledPlatforms;
-        if (_enabledPlatformIds.length > 0) {
-          const restored = window.PLATFORMS.map(p => ({ ...p, enabled: _enabledPlatformIds.includes(p.id) }));
-          if (window._bbSetPlatforms) window._bbSetPlatforms(restored);
-          try { localStorage.setItem('bb_platforms_enabled', JSON.stringify(_enabledPlatformIds)); } catch(e) {}
-        }
+        // Always restore — even an empty array is a valid "all off" selection
+        const restored = window.PLATFORMS.map(p => ({ ...p, enabled: _enabledPlatformIds.includes(p.id) }));
+        if (window._bbSetPlatforms) window._bbSetPlatforms(restored);
+        try { localStorage.setItem('bb_platforms_enabled', JSON.stringify(_enabledPlatformIds)); } catch(e) {}
       }
 
       // Load global factoids from subcollection
@@ -4269,10 +4268,11 @@ onAuthStateChanged(auth, async (user) => {
       });
       const updatedPlatforms = PLATFORMS.map(p => {
         const conn = connMap[p.id];
-        // _enabledPlatformIds (from biz doc) is authoritative; fall back to conn.enabled
+        // _enabledPlatformIds (from biz doc) is authoritative.
+        // Fallback chain: localStorage-restored in-memory state → conn.enabled → false
         const isEnabled = _enabledPlatformIds !== null
           ? _enabledPlatformIds.includes(p.id)
-          : (conn ? !!conn.enabled : false);
+          : (platforms.find(pp => pp.id === p.id)?.enabled ?? (conn ? !!conn.enabled : false));
         return { ...p, enabled: isEnabled, status: (conn ? conn.status || 'idle' : p.status) };
       });
       if (window._bbSetPlatforms) window._bbSetPlatforms(updatedPlatforms);
