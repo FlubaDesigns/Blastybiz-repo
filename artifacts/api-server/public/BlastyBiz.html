@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784496858874" />
+<link rel="stylesheet" href="global-style.css?v=1784497586279" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -87,6 +87,10 @@
 .step5-setup-btns{display:flex;flex-direction:column;gap:8px;}
 .step5-setup-link{display:block;padding:11px 14px;border-radius:10px;font-size:13px;font-weight:700;text-align:center;text-decoration:none;}
 .step5-setup-link.signup{background:var(--green,#39ff14);color:#000;}
+.s5-card-body{margin-top:12px;}
+.s5-photo-note{font-size:12px;color:var(--muted,#888);line-height:1.5;margin-bottom:10px;}
+.s5-card-location{margin-top:14px;padding-top:14px;border-top:1px solid var(--border,#333);}
+.s5-card-location .step5-setup-title{margin-bottom:8px;}
 .step5-setup-link.signin{background:transparent;border:1px solid var(--border,#333);color:var(--muted,#888);}
 .step5-url-row{display:flex;gap:6px;margin-top:10px;}
 .step5-url-input{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:8px;padding:9px 10px;font-size:13px;color:var(--light,#fff);font-family:inherit;min-width:0;}
@@ -1929,11 +1933,15 @@ function buildStep5Card(p) {
   card.id = 'step5-card-' + p.id;
   const hasContent = !!p.adaptedContent;
   const isApi = p.type === 'api';
-  const setup = PLATFORM_SETUP[p.id] || {};
-  const hasUrl = !!((window._bbPlatformUrls || {})[p.id]);
   const urlHint = escHtml(PLATFORM_URL_HINTS[p.id] || 'Paste your ' + p.name + ' page URL');
+  const savedUrl = escHtml((window._bbPlatformUrls || {})[p.id] || '');
   const statusClass = p._reviewStatus === 'approved' ? 'approved' : hasContent ? 'needs-review' : 'failed';
   const statusLabel = p._reviewStatus === 'approved' ? '✓ Approved' : hasContent ? 'Needs Review' : 'No Copy';
+  const photoNote = isApi
+    ? 'These photos will be uploaded automatically when this post goes live.'
+    : 'Pick the photos you\'ll include when you paste this post.';
+
+  // ── Row A: header ──────────────────────────────
   let inner = '<div class="step5-plat-hdr">'
     + '<div class="step5-plat-icon" style="background:' + escHtml(p.color || '#222') + '22;">' + p.icon + '</div>'
     + '<div class="step5-plat-info">'
@@ -1942,42 +1950,56 @@ function buildStep5Card(p) {
     + '</div>'
     + '<span class="step5-status-pill ' + statusClass + '" id="step5-pill-' + p.id + '">' + statusLabel + '</span>'
     + '</div>';
+
+  // ── Row B: col-2-1 — copy left, photos right ──
   if (hasContent) {
     const safeText = escHtml(p.adaptedContent.replace(/<br\/?>/gi, '\n'));
-    inner += '<div class="step5-copy-actions">'
-      + '<button type="button" class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">🔄 Regenerate</button>'
-      + '<button type="button" class="step5-action-btn" onclick="copyQpText(\'' + escHtml(p.id) + '\')">📋 Copy</button>'
+    inner += '<div class="col-2-1 s5-card-body">'
+      // Left — copy
+      + '<div class="col-left">'
+      +   '<div class="step5-copy-actions">'
+      +     '<button type="button" class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">🔄 Regenerate</button>'
+      +     '<button type="button" class="step5-action-btn" onclick="copyQpText(\'' + escHtml(p.id) + '\')">📋 Copy</button>'
+      +   '</div>'
+      +   '<div id="qp-copy-text-' + p.id + '" class="step5-copy-text" contenteditable="true">' + safeText + '</div>'
+      +   '<div id="qp-share-' + p.id + '" class="qp-share-section" style="display:none;"></div>'
+      +   '<button type="button" class="step5-looks-good-btn' + (p._reviewStatus === 'approved' ? ' approved' : '') + '" id="step5-lgtm-' + p.id + '" onclick="approvePlatformCopy(\'' + escHtml(p.id) + '\')">'
+      +     (p._reviewStatus === 'approved' ? '✓ Approved' : '✓ Looks Good')
+      +   '</button>'
       + '</div>'
-      + '<div id="qp-copy-text-' + p.id + '" class="step5-copy-text" contenteditable="true">' + safeText + '</div>'
-      + '<div id="qp-copy-img-' + p.id + '" class="qp-copy-img-note" style="margin:6px 0;"></div>'
-      + '<div id="qp-photos-' + p.id + '" class="qp-photos-section" style="display:none;">'
-      +   '<div class="qp-photos-label">📷 Photos for this post</div>'
-      +   '<div id="qp-photo-strip-' + p.id + '" class="qp-photo-strip"></div>'
+      // Right — photos
+      + '<div class="col-right">'
+      +   '<div id="qp-copy-img-' + p.id + '" class="qp-copy-img-note"></div>'
+      +   '<div id="qp-photos-' + p.id + '" class="qp-photos-section">'
+      +     '<div class="qp-photos-label">📷 Photos for this post</div>'
+      +     '<div class="s5-photo-note">' + photoNote + '</div>'
+      +     '<div id="qp-photo-strip-' + p.id + '" class="qp-photo-strip"></div>'
+      +   '</div>'
       + '</div>'
-      + '<div id="qp-share-' + p.id + '" class="qp-share-section" style="display:none;"></div>'
-      + '<button type="button" class="step5-looks-good-btn' + (p._reviewStatus === 'approved' ? ' approved' : '') + '" id="step5-lgtm-' + p.id + '" onclick="approvePlatformCopy(\'' + escHtml(p.id) + '\')">'
-      +   (p._reviewStatus === 'approved' ? '✓ Approved' : '✓ Looks Good')
-      + '</button>';
-    if (!hasUrl) {
-      inner += '<div class="step5-setup-block" style="margin-top:14px;">'
-        + '<div class="step5-setup-title">📍 Save your ' + escHtml(p.name) + ' link</div>'
-        + '<div class="step5-url-row">'
-        +   '<input type="url" id="qp-url-input-' + p.id + '" class="step5-url-input" placeholder="' + urlHint + '" value="' + escHtml((window._bbPlatformUrls || {})[p.id] || '') + '" onblur="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', this.value.trim())" />'
-        +   '<button type="button" class="step5-url-save" onclick="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', document.getElementById(\'qp-url-input-' + p.id + '\').value.trim()); showToast(\'✓ Saved!\')">Save</button>'
-        + '</div>'
-        + '</div>';
-    }
+      + '</div>';
   } else {
-    inner += '<div class="step5-setup-block">'
-      + '<div class="step5-setup-title">⚠️ No copy generated</div>'
-      + '<div class="step5-setup-tip">AI didn\'t return copy for this platform. Retry generation or exclude it from this blast.</div>'
-      + '<div class="step5-setup-btns">'
-      +   '<button type="button" class="step5-action-btn" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">🔄 Retry Generation</button>'
-      +   '<button type="button" class="step5-action-btn" style="background:var(--muted,#888);color:#fff;" onclick="excludePlatform(\'' + escHtml(p.id) + '\')">✗ Exclude Platform</button>'
+    inner += '<div class="s5-card-body">'
+      + '<div class="step5-setup-block">'
+      +   '<div class="step5-setup-title">⚠️ No copy generated</div>'
+      +   '<div class="step5-setup-tip">AI didn\'t return copy for this platform. Retry generation or exclude it from this blast.</div>'
+      +   '<div class="step5-setup-btns">'
+      +     '<button type="button" class="step5-action-btn" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">🔄 Retry Generation</button>'
+      +     '<button type="button" class="step5-action-btn" style="background:var(--muted,#888);color:#fff;" onclick="excludePlatform(\'' + escHtml(p.id) + '\')">✗ Exclude Platform</button>'
+      +   '</div>'
       + '</div>'
-      + '</div>'
-      + '<div id="qp-copy-text-' + p.id + '" style="display:none;"></div>';
+      + '<div id="qp-copy-text-' + p.id + '" style="display:none;"></div>'
+      + '</div>';
   }
+
+  // ── Row C: location/address (always shown) ─────
+  inner += '<div class="s5-card-location">'
+    + '<div class="step5-setup-title">📍 Save your ' + escHtml(p.name) + ' link</div>'
+    + '<div class="step5-url-row">'
+    +   '<input type="url" id="qp-url-input-' + p.id + '" class="step5-url-input" placeholder="' + urlHint + '" value="' + savedUrl + '" onblur="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', this.value.trim())" />'
+    +   '<button type="button" class="step5-url-save" onclick="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', document.getElementById(\'qp-url-input-' + p.id + '\').value.trim()); showToast(\'✓ Saved!\')">Save</button>'
+    + '</div>'
+    + '</div>';
+
   card.innerHTML = inner;
   return card;
 }
