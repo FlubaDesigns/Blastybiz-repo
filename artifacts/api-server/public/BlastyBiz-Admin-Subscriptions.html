@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="en"><head>
-  <link rel="icon" type="image/x-icon" href="favicon.ico"><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>BlastyBiz — Admin Subscriptions</title><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/><link rel="stylesheet" href="global-style.css?v=1784527450583"><style>body{visibility:hidden}</style><script type="module" src="./admin-guard.js"></script><script src="blastybiz-menu.js?v=3"></script>
+  <link rel="icon" type="image/x-icon" href="favicon.ico"><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>BlastyBiz — Admin Subscriptions</title><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/><link rel="stylesheet" href="global-style.css?v=1784528944879"><style>body{visibility:hidden}</style><script type="module" src="./admin-guard.js"></script><script src="blastybiz-menu.js?v=3"></script>
 </head><body class="admin-page"><header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Revenue Control</span></a><div class="top-actions"><a class="icon-btn hide-mobile " href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile active" href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Logs.html">Logs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Operate.html">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header><main><div class="main"><div class="main-inner">
 <section class="hero"><div class="card"><div class="eyebrow">Admin operating screen</div><h1 class="big-title">Subscriptions <span>& Revenue</span></h1><p class="sub">This page tracks Square status, plan mix, MRR, payment failures, trial conversions, and downgrade risk. Customers should never see margins or AI cost; this page is owner-only.</p><div class="btn-row"><button class="btn btn-primary" onclick="window.open('https://squareup.com/dashboard/sales/transactions','_blank')">Open Square Dashboard</button><button class="btn" id="btn-send-recovery" onclick="sendRecoveryEmails()">Send Recovery Emails</button><button class="btn" id="btn-export-csv" onclick="exportBillingCsv()">Export Billing CSV</button></div><span id="recovery-status" class="pricing-status"></span></div><div class="card"><div class="card-title">💳 Money Snapshot</div><div class="list"><div class="list-item"><div class="icon">$</div><div class="row-main"><div class="row-title" id="snapshot-mrr">$0 MRR</div><div class="row-sub">Live recurring revenue from active subscriptions.</div></div><span class="badge live">MRR</span></div><div class="list-item"><div class="icon">!</div><div class="row-main"><div class="row-title" id="snapshot-pastdue">0 past due</div><div class="row-sub">Recover before downgrade or cancel.</div></div><span class="badge needs">Action</span></div></div></div></section>
 <section class="mb-10"><div class="demo-notice"><span>ℹ️</span><span><strong>Live data</strong> — MRR, AI Spend, Gross Margin, and Trials are computed from Firestore in real time (no placeholders).</span></div></section><section class="grid"><div class="stat"><div class="stat-num" id="stat-mrr">$0</div><div class="stat-label">MRR</div><div class="stat-note money">Monthly recurring</div></div><div class="stat"><div class="stat-num" id="stat-aispend">$0.00</div><div class="stat-label">AI Spend</div><div class="stat-note money">This calendar month</div></div><div class="stat"><div class="stat-num" id="stat-margin">—</div><div class="stat-label">Gross Margin</div><div class="stat-note money">Target > 75%</div></div><div class="stat"><div class="stat-num" id="stat-trials">0</div><div class="stat-label">Trials Ending</div><div class="stat-note blue">Next 7 days</div></div></section>
@@ -26,6 +26,25 @@
 </div>
 <button id="btn-save-pricing" class="btn btn-primary btn-min-140" onclick="savePricing()">Save Prices</button>
 <span id="pricing-status" class="pricing-status"></span>
+</section>
+<section class="card"><div class="card-title">📦 Business Limits per Plan</div>
+<p class="desc-text">Max number of businesses a user can create under each plan. Takes effect immediately — no redeploy needed.</p>
+<div class="pricing-grid">
+  <div>
+    <label class="pricing-field-label">Starter max businesses</label>
+    <input id="inp-lim-starter" type="number" min="1" step="1" value="1" class="admin-num-input"/>
+  </div>
+  <div>
+    <label class="pricing-field-label">Pro max businesses</label>
+    <input id="inp-lim-pro" type="number" min="1" step="1" value="3" class="admin-num-input"/>
+  </div>
+  <div>
+    <label class="pricing-field-label">Agency max businesses</label>
+    <input id="inp-lim-agency" type="number" min="1" step="1" value="10" class="admin-num-input"/>
+  </div>
+</div>
+<button id="btn-save-lim" class="btn btn-primary btn-min-140" onclick="saveBizLimits()">Save Limits</button>
+<span id="lim-status" class="pricing-status"></span>
 </section>
 <section class="card"><div class="card-title">🧠 Replit Billing Rules</div><div class="list"><div class="list-item"><div class="icon">1</div><div class="row-main"><div class="row-title">Square is source of truth for billing</div><div class="row-sub">Firestore can cache currentPlan, squareCustomerId, subscriptionStatus, trialEndsAt, and currentPeriodEnd.</div></div></div><div class="list-item"><div class="icon">2</div><div class="row-main"><div class="row-title">Do not delete customer data when subscription lapses</div><div class="row-sub">Downgrade features, keep profile/listing data, and allow reactivation.</div></div></div><div class="list-item"><div class="icon">3</div><div class="row-main"><div class="row-title">AI usage must be capped by plan</div><div class="row-sub">Track monthly aiActionsUsed and generatedPostsUsed so margins stay safe.</div></div></div></div></section></div></div></main><nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Queue-Manager.html">📋<br>Queue</a><a class="" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="active" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a><a class="" href="BlastyBiz-Admin-Operate.html">⚙️<br>Operate</a></nav><script type="module">
 import { auth, db } from './firebase-init-v2.js';
@@ -143,7 +162,7 @@ window.exportBillingCsv = function() {
 </script>
 <script type="module">
 import { auth } from './firebase-init-v2.js';
-import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 const db2 = getFirestore();
 // Load current prices into editor fields
 getDoc(doc(db2, 'settings', 'pricing')).then(snap => {
@@ -154,6 +173,34 @@ getDoc(doc(db2, 'settings', 'pricing')).then(snap => {
   if (proAnnual)     document.getElementById('inp-pro-annual').value    = proAnnual;
   if (agencyAnnual)  document.getElementById('inp-agency-annual').value = agencyAnnual;
 }).catch(() => {});
+
+// Load current biz limits
+getDoc(doc(db2, 'settings', 'bizLimits')).then(snap => {
+  if (!snap.exists()) return;
+  const d = snap.data();
+  if (d.starterMax != null) document.getElementById('inp-lim-starter').value = d.starterMax;
+  if (d.proMax     != null) document.getElementById('inp-lim-pro').value     = d.proMax;
+  if (d.agencyMax  != null) document.getElementById('inp-lim-agency').value  = d.agencyMax;
+}).catch(() => {});
+
+window.saveBizLimits = async function() {
+  const btn    = document.getElementById('btn-save-lim');
+  const status = document.getElementById('lim-status');
+  const starter = parseInt(document.getElementById('inp-lim-starter').value);
+  const pro     = parseInt(document.getElementById('inp-lim-pro').value);
+  const agency  = parseInt(document.getElementById('inp-lim-agency').value);
+  if ([starter, pro, agency].some(isNaN)) { status.textContent = '⚠️ Enter valid numbers'; return; }
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    await setDoc(doc(db2, 'settings', 'bizLimits'), { starterMax: starter, proMax: pro, agencyMax: agency }, { merge: true });
+    status.style.color = '#00C853';
+    status.textContent = '✔ Saved — limits active immediately';
+  } catch(e) {
+    status.style.color = '#e53935';
+    status.textContent = '✖ ' + e.message;
+  }
+  btn.disabled = false; btn.textContent = 'Save Limits';
+};
 
 window.savePricing = async function() {
   const btn = document.getElementById('btn-save-pricing');

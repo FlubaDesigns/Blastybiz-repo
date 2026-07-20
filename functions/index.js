@@ -2807,6 +2807,15 @@ exports.createBusiness = onRequest({ invoker: 'public' }, async (req, res) => {
   }
   const BIZ_LIMITS = { starter: 1, pro: 3, agency: 10 };
   try {
+    const limSnap = await db.collection('settings').doc('bizLimits').get();
+    if (limSnap.exists) {
+      const d = limSnap.data();
+      if (d.proMax    != null) BIZ_LIMITS.pro     = d.proMax;
+      if (d.agencyMax != null) BIZ_LIMITS.agency  = d.agencyMax;
+      if (d.starterMax!= null) BIZ_LIMITS.starter = d.starterMax;
+    }
+  } catch(e) { /* use hardcoded defaults */ }
+  try {
     const userSnap = await db.collection('users').doc(uid).get();
     const userData = userSnap.exists ? userSnap.data() : {};
     const plan = userData.plan || 'starter';
