@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784522440539"/>
+  <link rel="stylesheet" href="global-style.css?v=1784522819336"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -429,7 +429,7 @@
 <script>
 (function() {
   const answers = {};
-  const toggles = { ynMentionRole: false, ynMentionAddress: true, ynMentionPhone: true, ynMentionWebsite: true };
+  const toggles = { ynMentionName: false, ynMentionRole: false, ynMentionAddress: true, ynMentionPhone: true };
   let step = 0;
 
   const STEPS = [
@@ -450,7 +450,10 @@
       placeholder: 'e.g. Owner, Marketing Manager, GM',
       hint: 'Your title or position',
       validate: v => v.trim().length >= 1 ? null : 'Please enter your role.',
-      toggle: { stateKey: 'ynMentionRole', label: 'Include my role in marketing copy' }
+      toggles: [
+        { stateKey: 'ynMentionName', label: 'Include my name in marketing copy' },
+        { stateKey: 'ynMentionRole', label: 'Include my role in marketing copy' }
+      ]
     },
     {
       mood: 's-ask',
@@ -479,8 +482,7 @@
       key: 'website',
       placeholder: 'e.g. https://qrgear.com',
       hint: 'Leave blank if you don\'t have one yet — no worries!',
-      validate: () => null,
-      toggle: { stateKey: 'ynMentionWebsite', label: 'Include website in marketing copy' }
+      validate: () => null
     },
     {
       mood: 's-happy',
@@ -549,16 +551,17 @@
     } else {
       html += '<input id="ob2-input" type="' + s.inputType + '" class="bubble-input" placeholder="' + (s.placeholder || '') + '" autocomplete="off"/>';
       if (s.hint) html += '<div class="bubble-hint">' + s.hint + '</div>';
-      if (s.toggle) {
+      const toggleDefs = s.toggles || (s.toggle ? [s.toggle] : []);
+      toggleDefs.forEach((t, i) => {
         html += '<div class="toggle-row">'
-              + '<span class="toggle-label">' + s.toggle.label + '</span>'
+              + '<span class="toggle-label">' + t.label + '</span>'
               + '<label class="toggle-switch">'
-              + '<input type="checkbox" id="ob2-toggle"' + (toggles[s.toggle.stateKey] ? ' checked' : '')
-              + ' onchange="window._ob2ToggleChange(\'' + s.toggle.stateKey + '\',this.checked)"/>'
+              + '<input type="checkbox" id="ob2-toggle-' + i + '"' + (toggles[t.stateKey] ? ' checked' : '')
+              + ' onchange="window._ob2ToggleChange(\'' + t.stateKey + '\',this.checked)"/>'
               + '<span class="toggle-slider"></span>'
               + '</label>'
               + '</div>';
-      }
+      });
       html += '<button type="button" class="bubble-action-btn" id="ob2-btn" onclick="window._ob2Continue()">Continue →</button>';
     }
 
@@ -657,11 +660,11 @@ window._ob2Save = async function(answers, toggles) {
     address:            answers.address      || '',
     website:            answers.website      || '',
     locationType:       answers.locationType || '',
+    ynMentionName:      toggles.ynMentionName    ? 'yes' : 'no',
+    ynMentionRole:      toggles.ynMentionRole    ? 'yes' : 'no',
     ynMentionAddress:   toggles.ynMentionAddress ? 'yes' : 'no',
     ynMentionPhone:     toggles.ynMentionPhone   ? 'yes' : 'no',
-    ynMentionWebsite:   toggles.ynMentionWebsite ? 'yes' : 'no',
-    ynMentionRole:      toggles.ynMentionRole    ? 'yes' : 'no',
-    ynMentionName:      'no',
+    ynMentionWebsite:   'yes',
     ynMentionEmail:     'yes',
     createdAt:          serverTimestamp()
   });
