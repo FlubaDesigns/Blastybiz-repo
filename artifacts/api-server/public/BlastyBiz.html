@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784506647021" />
+<link rel="stylesheet" href="global-style.css?v=1784507069645" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -109,6 +109,33 @@
 <div id="header__inject"></div>
 <div class="stage">
 <div class="main">
+
+  <!-- BUSINESS SWITCHER BAR -->
+  <div class="biz-bar">
+    <div class="biz-bar-title">✏️ Create</div>
+    <div class="biz-select-row">
+      <div class="biz-custom-dd" id="biz-custom-dd">
+        <button type="button" class="biz-dd-trigger" id="biz-dd-trigger" onclick="toggleBizDropdown()">
+          <span id="biz-dd-label">Loading…</span>
+          <span class="biz-dd-chevron">▾</span>
+        </button>
+        <div class="biz-dd-list" id="biz-dd-list"></div>
+      </div>
+      <button type="button" class="add-biz-btn" onclick="window.addBusiness&&window.addBusiness()" title="Add business">＋</button>
+      <button type="button" class="del-biz-btn" onclick="window.deleteBusiness&&window.deleteBusiness(window.activeBizId)" title="Delete selected business">🗑</button>
+    </div>
+    <select id="biz-select" style="display:none"></select>
+    <div class="agency-bar">
+      <span id="agency-usage-text" class="agency-usage-text"></span>
+      <div class="agency-pips" id="agency-pips"></div>
+    </div>
+    <div style="display:none">
+      <div id="biz-active-btn"></div><div id="active-avatar"></div><div id="active-name"></div>
+      <div id="active-plan"></div><div id="biz-count"></div><div id="biz-cards"></div>
+      <div id="biz-cards-inline"></div><div id="sheet-overlay"></div>
+    </div>
+  </div>
+
 <div class="tabs-row">
 <div class="tabs">
   <div class="tab active" onclick="showTab('create')" id="tab-create"><span class="tab-icon">✏️ </span>Create</div>
@@ -4525,6 +4552,74 @@ window._bbFirestoreDismissPending = async function(id) {
 // _saveInsightToFirestore and _saveGlobalFactoidsToFirestore are defined in the
 // module script below where activeBizId, db, and currentUser are in scope.
 
+// ══════════════════════════════════════════
+// BUSINESS SWITCHER BAR (regular scope)
+// ══════════════════════════════════════════
+const BIZ_LIMITS = { starter: 1, pro: 3, agency: 10 };
+function getBizLimit() { return BIZ_LIMITS[window._bbUserPlan || 'starter'] || 1; }
+
+function renderSwitcherBar() {
+  const bizList  = window.BUSINESSES || [];
+  const currentId = window.activeBizId;
+  const select = document.getElementById('biz-select');
+  if (select) select.innerHTML = bizList.map(b => `<option value="${b.id}"${b.id===currentId?' selected':''}>${b.name||b.businessName||''}</option>`).join('');
+  const active = bizList.find(b => b.id === currentId);
+  const label  = document.getElementById('biz-dd-label');
+  if (label) label.textContent = active ? (active.name||active.businessName||'Business') : 'Select business';
+  const list = document.getElementById('biz-dd-list');
+  if (list) list.innerHTML = bizList.map(b => `
+    <button type="button" class="biz-dd-item${b.id===currentId?' active':''}" onclick="selectBizOption('${b.id}')">
+      <span class="biz-dd-item-name">${b.name||b.businessName||'(unnamed)'}</span>
+      ${b.id===currentId?'<span class="biz-dd-check">✓</span>':''}
+    </button>`).join('');
+}
+
+function renderAgencyBar() {
+  const bizList = window.BUSINESSES || [];
+  const used    = bizList.length;
+  const limit   = getBizLimit();
+  const usageEl = document.getElementById('agency-usage-text');
+  if (usageEl) usageEl.textContent = `${used} of ${limit} businesses used`;
+  const pips = document.getElementById('agency-pips');
+  if (!pips) return;
+  pips.innerHTML = '';
+  for (let i = 0; i < limit; i++) {
+    const pip = document.createElement('div');
+    const isActive = i === bizList.findIndex(b => b.id === window.activeBizId);
+    pip.className = 'pip' + (i < used ? (isActive ? ' active-pip' : ' used') : '');
+    pips.appendChild(pip);
+  }
+}
+
+function toggleBizDropdown() {
+  const list    = document.getElementById('biz-dd-list');
+  const trigger = document.getElementById('biz-dd-trigger');
+  if (!list) return;
+  const isOpen = list.classList.contains('open');
+  if (isOpen) {
+    list.classList.remove('open'); trigger.classList.remove('open');
+  } else {
+    list.classList.add('open'); trigger.classList.add('open');
+    setTimeout(() => document.addEventListener('click', _closeBizDdOutside, { once: true }), 0);
+  }
+}
+
+function _closeBizDdOutside(e) {
+  const dd = document.getElementById('biz-custom-dd');
+  if (dd && dd.contains(e.target)) {
+    setTimeout(() => document.addEventListener('click', _closeBizDdOutside, { once: true }), 0);
+    return;
+  }
+  document.getElementById('biz-dd-list')?.classList.remove('open');
+  document.getElementById('biz-dd-trigger')?.classList.remove('open');
+}
+
+function selectBizOption(bizId) {
+  document.getElementById('biz-dd-list')?.classList.remove('open');
+  document.getElementById('biz-dd-trigger')?.classList.remove('open');
+  if (window.switchBusiness) window.switchBusiness(bizId);
+}
+
 </script>
 
 <script type="module">
@@ -4760,7 +4855,24 @@ onAuthStateChanged(auth, async (user) => {
   activeBizId = new URLSearchParams(window.location.search).get('bizId') || userData.activeBusiness || user.uid;
   userPlan = userData.plan || 'starter';
   window._bbUserPlan = userPlan;
+  window.activeBizId = activeBizId;
   renderPlatforms();
+
+  // Load all businesses for the switcher bar
+  try {
+    const allBizSnap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
+    window.BUSINESSES = allBizSnap.docs.map(d => ({ ...d.data(), id: d.id }));
+  } catch(_) { window.BUSINESSES = []; }
+  if (typeof renderSwitcherBar === 'function') { renderSwitcherBar(); renderAgencyBar(); }
+
+  // Allow switching business from the bar
+  window.switchBusiness = async function(bizId) {
+    activeBizId = bizId;
+    window.activeBizId = bizId;
+    await setDoc(doc(db, 'users', user.uid), { activeBusiness: bizId }, { merge: true });
+    if (typeof renderSwitcherBar === 'function') { renderSwitcherBar(); renderAgencyBar(); }
+    window.location.reload();
+  };
 
   try {
     const bizSnap = await getDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId));
@@ -4856,6 +4968,10 @@ onAuthStateChanged(auth, async (user) => {
       if (_qpCid) {
         const _qpCamp = campaigns.find(c => c.id === _qpCid);
         if (_qpCamp) selectCampaign(_qpCamp.id, _qpCamp.name);
+      } else if (campaigns.length && !_qp.get('newcampaign')) {
+        // Auto-select most-recently-used campaign so the form is visible on load
+        const autoC = [...campaigns].sort((a,b) => new Date(b.lastUsedAt||b.createdAt||0) - new Date(a.lastUsedAt||a.createdAt||0))[0];
+        selectCampaign(autoC.id, autoC.name);
       } else if (_qp.get('newcampaign') === '1') {
         showTab('create');
         openNewCampaign();
