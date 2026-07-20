@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784507235422" />
+<link rel="stylesheet" href="global-style.css?v=1784507561529" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -126,38 +126,52 @@
 ══════════════════════════════════════════ -->
 <div class="section active" id="section-create">
 
-  <!-- BUSINESS SELECTOR CARD -->
-  <div class="card" id="create-biz-card">
-    <div class="card-title">🏢 Business</div>
-    <div class="biz-select-row" style="margin-bottom:10px;">
-      <div class="biz-custom-dd" id="biz-custom-dd">
-        <button type="button" class="biz-dd-trigger" id="biz-dd-trigger" onclick="toggleBizDropdown()">
-          <span id="biz-dd-label">Loading…</span>
-          <span class="biz-dd-chevron">▾</span>
-        </button>
-        <div class="biz-dd-list" id="biz-dd-list"></div>
-      </div>
-      <button type="button" class="add-biz-btn" onclick="window.addBusiness&&window.addBusiness()" title="Add business">＋</button>
-      <button type="button" class="del-biz-btn" onclick="window.deleteBusiness&&window.deleteBusiness(window.activeBizId)" title="Delete selected business">🗑</button>
-    </div>
-    <select id="biz-select" style="display:none"></select>
-    <div class="agency-bar">
-      <span id="agency-usage-text" class="agency-usage-text"></span>
-      <div class="agency-pips" id="agency-pips"></div>
-    </div>
-    <div style="display:none">
-      <div id="biz-active-btn"></div><div id="active-avatar"></div><div id="active-name"></div>
-      <div id="active-plan"></div><div id="biz-count"></div><div id="biz-cards"></div>
-      <div id="biz-cards-inline"></div><div id="sheet-overlay"></div>
-    </div>
-  </div>
+  <!-- TOP ROW: 2-1 — business + campaigns left, hero image right -->
+  <div class="row">
+    <div class="col-2-1">
 
-  <!-- CAMPAIGN LIST — always visible, mirrors Dashboard campaigns card -->
-  <div class="card" id="create-camp-list-card">
-    <div class="card-title">📁 Campaigns</div>
-    <a class="btn btn-primary" href="BlastyBiz.html?newcampaign=1" style="display:block;width:100%;box-sizing:border-box;text-align:center;margin-bottom:12px;">＋ New Campaign</a>
-    <div id="create-camp-list"><div class="loading-text">Loading…</div></div>
-  </div>
+      <div class="col-left">
+        <!-- BUSINESS SELECTOR CARD -->
+        <div class="card" id="create-biz-card">
+          <div class="card-title">🏢 Business</div>
+          <div class="biz-select-row" style="margin-bottom:10px;">
+            <div class="biz-custom-dd" id="biz-custom-dd">
+              <button type="button" class="biz-dd-trigger" id="biz-dd-trigger" onclick="toggleBizDropdown()">
+                <span id="biz-dd-label">Loading…</span>
+                <span class="biz-dd-chevron">▾</span>
+              </button>
+              <div class="biz-dd-list" id="biz-dd-list"></div>
+            </div>
+            <button type="button" class="add-biz-btn" onclick="window.addBusiness&&window.addBusiness()" title="Add business">＋</button>
+            <button type="button" class="del-biz-btn" onclick="window.deleteBusiness&&window.deleteBusiness(window.activeBizId)" title="Delete selected business">🗑</button>
+          </div>
+          <select id="biz-select" style="display:none"></select>
+          <div class="agency-bar">
+            <span id="agency-usage-text" class="agency-usage-text"></span>
+            <div class="agency-pips" id="agency-pips"></div>
+          </div>
+          <div style="display:none">
+            <div id="biz-active-btn"></div><div id="active-avatar"></div><div id="active-name"></div>
+            <div id="active-plan"></div><div id="biz-count"></div><div id="biz-cards"></div>
+            <div id="biz-cards-inline"></div><div id="sheet-overlay"></div>
+          </div>
+        </div>
+
+        <!-- CAMPAIGN LIST CARD -->
+        <div class="card" id="create-camp-list-card">
+          <div class="card-title">📁 Campaigns</div>
+          <a class="btn btn-primary" href="BlastyBiz.html?newcampaign=1" style="display:block;width:100%;box-sizing:border-box;text-align:center;margin-bottom:12px;">＋ New Campaign</a>
+          <div id="create-camp-list"><div class="loading-text">Loading…</div></div>
+        </div>
+      </div><!-- /.col-left -->
+
+      <!-- RIGHT: hero image -->
+      <div class="col-right" style="overflow:hidden;border-radius:14px;">
+        <img src="dashboard-hero.png" alt="" class="img-cover" style="width:100%;height:100%;object-fit:cover;object-position:top;border-radius:14px;">
+      </div><!-- /.col-right -->
+
+    </div><!-- /.col-2-1 -->
+  </div><!-- /.row -->
 
   <!-- PENDING POSTS — shown only when scheduled drafts need approval -->
   <div id="pending-posts-card" class="card hidden">
@@ -269,10 +283,6 @@
 
           </div><!-- /.col-left -->
 
-          <!-- RIGHT: decorative image (desktop only) -->
-          <div class="col-right hide-mobile" style="max-height:320px;overflow:hidden;">
-            <img src="dashboard-hero.png" alt="Create your blast" class="img-cover" style="max-height:320px;object-fit:cover;object-position:top;">
-          </div><!-- /.col-right -->
 
         </div><!-- /.col-2-1 -->
       </div><!-- /.row -->
