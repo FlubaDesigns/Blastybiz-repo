@@ -209,3 +209,9 @@ id = "5BsrqEntDlKLeTAGGNGq4"
 uri = "file://download/BlastyBiz_ToDo.md"
 type = "text"
 title = "BlastyBiz_ToDo.md — Pass 4 maintainability items"
+
+[[outputs]]
+id = "KRGyaQw-o6czs58iJ6u1Z"
+uri = "file://download/BlastyBiz_Blasty_README.md"
+type = "text"
+title = "BlastyBiz_Blasty_README.md"
