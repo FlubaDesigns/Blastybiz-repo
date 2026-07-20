@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>BlastyBiz — Operator Setup</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="global-style.css?v=1784534731271">
+<link rel="stylesheet" href="global-style.css?v=1784536404913">
 
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
@@ -764,18 +764,34 @@ function renderAdminEmails() {
   const { bootstrap, extra } = _adminEmailsCache;
   const el = document.getElementById('admin-email-list');
   if (!el) return;
-  const rows = [
-    ...bootstrap.map(e => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0f0f0;">
-      <span style="flex:1;font-size:13px;">${e}</span>
-      <span style="font-size:11px;color:#9ca3af;padding:2px 6px;background:#f3f4f6;border-radius:10px;">permanent</span>
-    </div>`),
-    ...extra.map(e => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0f0f0;">
-      <span style="flex:1;font-size:13px;">${e}</span>
-      <button type="button" onclick="removeAdminEmail('${e}')"
-        style="font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;padding:2px 6px;">✕ Remove</button>
-    </div>`),
+  el.innerHTML = '';
+  const all = [
+    ...bootstrap.map(e => ({ email: e, permanent: true })),
+    ...extra.map(e => ({ email: e, permanent: false })),
   ];
-  el.innerHTML = rows.length ? rows.join('') : '<p style="font-size:13px;color:#9ca3af;">No extra admins yet.</p>';
+  if (!all.length) { el.innerHTML = '<p style="font-size:13px;color:#9ca3af;">No extra admins yet.</p>'; return; }
+  all.forEach(({ email, permanent }) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0f0f0;';
+    const span = document.createElement('span');
+    span.style.cssText = 'flex:1;font-size:13px;';
+    span.textContent = email;
+    row.appendChild(span);
+    if (permanent) {
+      const badge = document.createElement('span');
+      badge.style.cssText = 'font-size:11px;color:#9ca3af;padding:2px 6px;background:#f3f4f6;border-radius:10px;';
+      badge.textContent = 'permanent';
+      row.appendChild(badge);
+    } else {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.style.cssText = 'font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;padding:2px 6px;';
+      btn.textContent = '✕ Remove';
+      btn.addEventListener('click', () => removeAdminEmail(email));
+      row.appendChild(btn);
+    }
+    el.appendChild(row);
+  });
 }
 
 async function loadAdminEmails() {

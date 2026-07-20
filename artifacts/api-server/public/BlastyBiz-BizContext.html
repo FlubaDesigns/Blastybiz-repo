@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784534731271" />
+<link rel="stylesheet" href="global-style.css?v=1784536404913" />
 <title>BlastyBiz — Business Story</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -219,27 +219,36 @@ async function loadLibraryDocs() {
   try {
     const snap = await getDocs(query(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'documents'), orderBy('uploadedAt', 'desc')));
     if (snap.empty) { list.innerHTML = '<p style="font-size:13px;color:var(--muted);margin:0">No documents yet.</p>'; return; }
+    const _docStore = {};
     list.innerHTML = snap.docs.map(d => {
       const data = d.data();
       const chars = (data.extractedText || '').length;
-      const safeText = (data.extractedText || '').replace(/\\/g,'\\\\').replace(/`/g,'\\`');
-      return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
+      _docStore[d.id] = { name: data.name || '', text: data.extractedText || '' };
+      return `<div style="padding:12px 0;border-bottom:1px solid var(--border)" data-docid="${d.id}">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
           <div style="min-width:0">
-            <div style="font-size:14px;font-weight:600;color:var(--light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(data.name)}</div>
+            <div class="doc-row-name" style="font-size:14px;font-weight:600;color:var(--light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
             <div style="font-size:12px;color:var(--muted);margin-top:2px">${chars.toLocaleString()} characters extracted</div>
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0">
-            <button onclick="viewLibraryDoc('${escHtml(data.name)}',\`${safeText}\`)" style="background:transparent;border:1px solid var(--border);color:var(--light);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px">View</button>
+            <button class="doc-view-btn" style="background:transparent;border:1px solid var(--border);color:var(--light);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px">View</button>
             <label style="background:transparent;border:1px solid var(--border);color:var(--light);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;white-space:nowrap">
               Replace
-              <input type="file" accept=".txt,.pdf" style="display:none" onchange="handleDocUpload(event,'${d.id}','${escHtml(data.name)}')" />
+              <input type="file" accept=".txt,.pdf" style="display:none" class="doc-replace-input" />
             </label>
-            <button onclick="deleteLibraryDoc('${d.id}')" style="background:transparent;border:1px solid var(--border);color:#f87171;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px">Remove</button>
+            <button class="doc-del-btn" style="background:transparent;border:1px solid var(--border);color:#f87171;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px">Remove</button>
           </div>
         </div>
       </div>`;
     }).join('');
+    list.querySelectorAll('[data-docid]').forEach(row => {
+      const id = row.dataset.docid;
+      const entry = _docStore[id] || { name: '', text: '' };
+      row.querySelector('.doc-row-name').textContent = entry.name;
+      row.querySelector('.doc-view-btn').addEventListener('click', () => viewLibraryDoc(entry.name, entry.text));
+      row.querySelector('.doc-replace-input').addEventListener('change', e => handleDocUpload(e, id, entry.name));
+      row.querySelector('.doc-del-btn').addEventListener('click', () => deleteLibraryDoc(id));
+    });
   } catch(e) {
     list.innerHTML = '<p style="font-size:13px;color:var(--muted);margin:0">Could not load documents.</p>';
   }

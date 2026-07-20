@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>BlastyBiz Admin — Queue Manager</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="global-style.css?v=1784534731271">
+<link rel="stylesheet" href="global-style.css?v=1784536404913">
 
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
@@ -209,31 +209,34 @@ onAuthStateChanged(auth, (user) => {
     }
     let queued = 0, posting = 0, attention = 0, completed = 0;
     snap.docs.forEach(d => { jobRefMap[d.id] = d.ref; jobDataMap[d.id] = d.data(); });
+    const _esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const VALID_STATUS = new Set(['pending','retry_pending','running','success','manual_completed','failed','manual_required','customer_reconnect_required','paused','closed']);
     const rows = snap.docs.map(d => {
       const j = d.data();
-      const id = d.id;
-      if (j.status === 'pending' || j.status === 'retry_pending') queued++;
-      else if (j.status === 'running') posting++;
-      else if (['failed','manual_required','customer_reconnect_required'].includes(j.status)) attention++;
-      else if (j.status === 'success' || j.status === 'manual_completed') completed++;
+      const id = d.id; // Firestore auto-ID — alphanumeric, safe in onclick
+      const status = VALID_STATUS.has(j.status) ? j.status : 'pending';
+      if (status === 'pending' || status === 'retry_pending') queued++;
+      else if (status === 'running') posting++;
+      else if (['failed','manual_required','customer_reconnect_required'].includes(status)) attention++;
+      else if (status === 'success' || status === 'manual_completed') completed++;
       const sc = {
         pending:'pending', retry_pending:'pending', running:'posting',
         success:'success', manual_completed:'success',
         failed:'failed', manual_required:'manual',
         customer_reconnect_required:'manual', paused:'pending', closed:'success'
-      }[j.status] || 'pending';
-      const acts = ['failed','customer_reconnect_required'].includes(j.status)
+      }[status] || 'pending';
+      const acts = ['failed','customer_reconnect_required'].includes(status)
         ? `<button class="primary" onclick="jobAction('${id}','retry')">Retry</button><button class="light" onclick="jobAction('${id}','notify')">Notify</button><button class="btn-danger" onclick="jobAction('${id}','close')">Close</button>`
-        : j.status === 'manual_required'
+        : status === 'manual_required'
         ? `<button class="safe" onclick="jobAction('${id}','complete')">Mark Complete</button><button class="light">View Instructions</button>`
-        : j.status === 'pending'
+        : status === 'pending'
         ? `<button class="primary" onclick="jobAction('${id}','run')">Run Now</button><button class="warn-btn" onclick="jobAction('${id}','pause')">Pause</button>`
         : `<button class="light">View Receipt</button>`;
       return `<tr>
-        <td><strong>${j.businessId || '—'}</strong><br><span class="muted">${j.platform || ''}</span></td>
-        <td>${j.platform || '—'}</td>
-        <td><span class="badge ${sc}">${j.status || 'pending'}</span></td>
-        <td>${j.customerVisibleMessage || '—'}</td>
+        <td><strong>${_esc(j.businessId) || '—'}</strong><br><span class="muted">${_esc(j.platform)}</span></td>
+        <td>${_esc(j.platform) || '—'}</td>
+        <td><span class="badge ${sc}">${_esc(status)}</span></td>
+        <td>${_esc(j.customerVisibleMessage) || '—'}</td>
         <td>${j.attempts || 0}</td>
         <td>${timeAgo(j.updatedAt)}</td>
         <td class="actions">${acts}</td>

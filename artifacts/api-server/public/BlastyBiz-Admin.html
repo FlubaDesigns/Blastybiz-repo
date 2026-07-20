@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>BlastyBiz — Admin Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="global-style.css?v=1784534731271">
+<link rel="stylesheet" href="global-style.css?v=1784536404913">
 
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
@@ -348,18 +348,23 @@ onAuthStateChanged(auth, async (user) => {
     const billingTr = el('admin-billing-trials');
     if (billingTr) billingTr.querySelector('.row-title').textContent = trial + ' trials active';
 
+    const _esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const SUB_BADGE = { active:'live', trial:'info', past_due:'error', canceled:'off' };
+    const SAFE_PLANS = new Set(['starter','pro','agency','free']);
+
     // All Accounts table — every business with a name, sorted by join date desc
     const allTbody = el('admin-all-accounts-tbody');
     if (allTbody) {
-      const bc = { active:'live', trial:'info', past_due:'error', canceled:'off' };
       const named = all.filter(b => b.businessName).sort((a,b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
       allTbody.innerHTML = named.length
         ? named.map(b => {
             const s = b.subscriptionStatus || 'active';
+            const plan = SAFE_PLANS.has((b.currentPlan||'').toLowerCase()) ? b.currentPlan : 'Free';
             const joined = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
-            return '<tr><td>' + b.businessName + '</td><td>' + (b.currentPlan||'Free') + '</td><td><span class="badge ' + (bc[s]||'live') + '">' + s + '</span></td><td class="muted">' + joined + '</td></tr>';
+            return '<tr><td class="biz-name-cell"></td><td>' + _esc(plan) + '</td><td><span class="badge ' + (SUB_BADGE[s]||'live') + '">' + _esc(s) + '</span></td><td class="muted">' + _esc(joined) + '</td></tr>';
           }).join('')
         : '<tr><td colspan="4" class="td-empty">No accounts yet.</td></tr>';
+      allTbody.querySelectorAll('.biz-name-cell').forEach((td, i) => { td.textContent = named[i]?.businessName || '—'; });
     }
 
     // A business is considered onboarded if it has a businessName — the flag is unreliable
@@ -368,19 +373,28 @@ onAuthStateChanged(auth, async (user) => {
     const attn = all.filter(b => ['past_due','canceled','trial'].includes(b.subscriptionStatus) || !isOnboarded(b));
     const tbody = el('admin-accounts-tbody');
     if (tbody) {
-      const bc = { active:'live', trial:'info', past_due:'error', canceled:'off' };
       tbody.innerHTML = attn.length
         ? attn.slice(0,20).map(b => {
             const s = b.subscriptionStatus || 'active';
+            const plan = SAFE_PLANS.has((b.currentPlan||'').toLowerCase()) ? b.currentPlan : 'Free';
             const issue = !isOnboarded(b) ? 'Empty signup — no profile'
               : s === 'past_due' ? 'Square payment failed'
               : s === 'trial'    ? 'Trial — needs upgrade'
               : s === 'canceled' ? 'Canceled' : '—';
-            const name = b.businessName || ('<span class="name-na">No name · ' + b.id.slice(0,8) + '</span>');
-            const delBtn = '<button onclick="_adminDeleteBiz(\'' + b.id + '\',\'' + (b.businessName||'').replace(/'/g,"\\'") + '\',\'' + (b.uid||'') + '\')" class="del-btn" title="Delete">🗑</button>';
-            return '<tr><td>' + name + '</td><td>' + (b.currentPlan||'Free') + '</td><td><span class="badge ' + (bc[s]||'live') + '">' + s + '</span></td><td class="muted">' + issue + '</td><td>' + delBtn + '</td></tr>';
+            return '<tr><td class="attn-name-cell" data-id="' + b.id + '"></td><td>' + _esc(plan) + '</td><td><span class="badge ' + (SUB_BADGE[s]||'live') + '">' + _esc(s) + '</span></td><td class="muted">' + _esc(issue) + '</td><td><button class="del-btn" data-id="' + b.id + '" data-uid="' + _esc(b.uid) + '" title="Delete">🗑</button></td></tr>';
           }).join('')
         : '<tr><td colspan="5" class="td-empty">All accounts healthy.</td></tr>';
+      tbody.querySelectorAll('.attn-name-cell').forEach(td => {
+        const b = attn.find(x => x.id === td.dataset.id);
+        if (b && b.businessName) { td.textContent = b.businessName; }
+        else { const sp = document.createElement('span'); sp.className = 'name-na'; sp.textContent = 'No name · ' + (b?.id||'').slice(0,8); td.appendChild(sp); }
+      });
+      tbody.querySelectorAll('.del-btn[data-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const b = attn.find(x => x.id === btn.dataset.id);
+          _adminDeleteBiz(btn.dataset.id, b?.businessName || '', btn.dataset.uid);
+        });
+      });
     }
   });
 

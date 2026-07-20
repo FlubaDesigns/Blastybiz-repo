@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="en"><head>
-  <link rel="icon" type="image/x-icon" href="favicon.ico"><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>BlastyBiz — Admin Platform Health</title><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/><link rel="stylesheet" href="global-style.css?v=1784534731271"><style>body{visibility:hidden}
+  <link rel="icon" type="image/x-icon" href="favicon.ico"><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>BlastyBiz — Admin Platform Health</title><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/><link rel="stylesheet" href="global-style.css?v=1784536404913"><style>body{visibility:hidden}
 .filter-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
 .filter-row select,.filter-row input{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit}
 .filter-row input{flex:1;min-width:160px}
@@ -140,6 +140,8 @@ function renderBroken() {
     return;
   }
 
+  const _esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const CONN_STATUS = new Set(['expired','error','disconnected','connected','pending','unknown']);
   tbody.innerHTML = filtered.map(c => {
     const days = c.daysSinceExpired;
     let daysClass = 'days-cell';
@@ -148,21 +150,23 @@ function renderBroken() {
       daysText = days < 0 ? 'Expires in ' + Math.abs(days) + 'd' : days + 'd ago';
       daysClass += days > 30 ? ' old' : days > 7 ? ' mid' : ' fresh';
     }
-    const statusBadge = c.status === 'expired' || c.status === 'error'
-      ? `<span class="badge needs">${c.status}</span>`
-      : c.status === 'disconnected'
-        ? `<span class="badge off">${c.status}</span>`
-        : `<span class="badge info">${c.status}</span>`;
+    const safeStatus = CONN_STATUS.has(c.status) ? c.status : 'unknown';
+    const statusBadge = safeStatus === 'expired' || safeStatus === 'error'
+      ? `<span class="badge needs">${safeStatus}</span>`
+      : safeStatus === 'disconnected'
+        ? `<span class="badge off">${safeStatus}</span>`
+        : `<span class="badge info">${safeStatus}</span>`;
 
     return `<tr>
-      <td><strong>${c.businessName}</strong><br><span style="color:#999;font-size:11px">${c.businessId || ''}</span></td>
-      <td>${platformLabel(c.platform)}</td>
+      <td><strong class="ph-biz-name"></strong><br><span style="color:#999;font-size:11px">${_esc(c.businessId)}</span></td>
+      <td>${_esc(platformLabel(c.platform))}</td>
       <td>${statusBadge}</td>
-      <td style="white-space:nowrap">${fmtDate(c.expiresAt)}</td>
+      <td style="white-space:nowrap">${_esc(fmtDate(c.expiresAt))}</td>
       <td class="${daysClass}">${daysText}</td>
-      <td><button class="nudge-btn" data-uid="${c.uid || ''}" data-bizid="${c.businessId || ''}" data-platform="${c.platform || ''}" title="Send reconnect email to business owner">Send Nudge</button></td>
+      <td><button class="nudge-btn" data-uid="${_esc(c.uid)}" data-bizid="${_esc(c.businessId)}" data-platform="${_esc(c.platform)}" title="Send reconnect email to business owner">Send Nudge</button></td>
     </tr>`;
   }).join('');
+  tbody.querySelectorAll('.ph-biz-name').forEach((el, i) => { el.textContent = filtered[i]?.businessName || '—'; });
 
   // Attach nudge handlers
   tbody.querySelectorAll('.nudge-btn').forEach(btn => {

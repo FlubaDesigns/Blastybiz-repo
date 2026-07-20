@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="stylesheet" href="global-style.css?v=1784534731271" />
+<link rel="stylesheet" href="global-style.css?v=1784536404913" />
 <title>BlastyBiz — Publishing Status</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>body{visibility:hidden}</style>
@@ -119,20 +119,31 @@ function renderJobs(jobs) {
   const actionItems = document.getElementById('action-items');
   if (manualJobs.length) {
     actionCard.classList.remove('hidden');
+    const _listingStore = {};
     actionItems.innerHTML = manualJobs.map(job => {
-      const meta = PLATFORM_META[job.platform] || { name: job.platform };
-      const text = typeof job.payload === 'object' ? (job.payload.adaptedContent || '') : '';
-      return `
-        <div class="action-item">
-          <div class="action-platform">${meta.name}</div>
-          <div class="action-desc">${job.customerVisibleMessage || 'Your listing is ready — post it manually.'}</div>
+      _listingStore[job.jobId] = typeof job.payload === 'object' ? (job.payload.adaptedContent || '') : '';
+      return `<div class="action-item" data-jobid="${job.jobId}" data-platform="${job.platform}">
+          <div class="action-platform"></div>
+          <div class="action-desc"></div>
           <div class="action-btns">
-            <button class="btn-copy" onclick="copyListing('${job.jobId}', \`${text.replace(/`/g,'\\`')}\`)">📋 Copy Listing</button>
-            <button class="btn-instructions" onclick="showInstructions('${job.platform}')">View Instructions</button>
+            <button class="btn-copy">📋 Copy Listing</button>
+            <button class="btn-instructions">View Instructions</button>
           </div>
-        </div>
-      `}).join('')} else {
-    actionCard.classList.add('hidden')}
+        </div>`;
+    }).join('');
+    actionItems.querySelectorAll('.action-item').forEach(item => {
+      const jobId    = item.dataset.jobid;
+      const platform = item.dataset.platform;
+      const job = manualJobs.find(j => j.jobId === jobId);
+      const meta = PLATFORM_META[platform] || { name: platform };
+      item.querySelector('.action-platform').textContent = meta.name;
+      item.querySelector('.action-desc').textContent = (job && job.customerVisibleMessage) || 'Your listing is ready — post it manually.';
+      item.querySelector('.btn-copy').addEventListener('click', () => copyListing(jobId, _listingStore[jobId] || ''));
+      item.querySelector('.btn-instructions').addEventListener('click', () => showInstructions(platform));
+    });
+  } else {
+    actionCard.classList.add('hidden');
+  }
 
   const hoursSaved = (done * 0.8).toFixed(1);
   document.getElementById('hours-saved').textContent = hoursSaved;
