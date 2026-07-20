@@ -2,6 +2,7 @@
 
 | Date | File(s) | What was wrong | How it was fixed |
 |------|---------|----------------|-----------------|
+| 2026-07-20 | BlastyBiz.html | **Businesses and campaigns not showing.** `renderSwitcherBar()` / `renderAgencyBar()` calls in the module's async `onAuthStateChanged` were not wrapped in try/catch — any throw there short-circuits the async function before the campaigns `try` block runs, so campaigns stayed "Loading…". Fixed: wrapped switcher bar calls in try/catch. Also set `window._bbCampaigns = campaigns` in the module after loading, and updated `renderCreateCampList()` to fall back to `window._bbCampaigns` so it works regardless of scope visibility. |
 | 2026-07-20 | BlastyBiz.html | **Left column spacing: each card wrapped in its own row > col-full.** Business and Campaigns cards were flush against each other with no gap. Wrapped each in `row > col-full` so the row gutter provides breathing room between them. |
 | 2026-07-20 | BlastyBiz.html | **Create tab top row reworked to col-2-1 layout.** Business + Campaigns cards stacked in `col-left`; hero image (`dashboard-hero.png`) moved to `col-right`. Image removed from its old position inside the wizard's second row. |
 | 2026-07-19 | BlastyBiz.html | **Business selector card repositioned into Create tab.** Moved from standalone `biz-bar` above the tabs into a proper `card` inside `section-create` (above the Campaigns card), with the same green `card-title` header style. Now sits as a single full-width row above Campaigns, matching the page layout. |

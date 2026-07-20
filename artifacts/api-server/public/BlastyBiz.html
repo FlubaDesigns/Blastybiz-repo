@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784507720134" />
+<link rel="stylesheet" href="global-style.css?v=1784508014269" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -4056,18 +4056,19 @@ function formatPhone(el) {
 function renderCreateCampList() {
   const el = document.getElementById('create-camp-list');
   if (!el) return;
-  if (!campaigns || !campaigns.length) {
+  const _camps = (typeof campaigns !== 'undefined' && campaigns.length) ? campaigns : (window._bbCampaigns || []);
+  if (!_camps.length) {
     el.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:4px 0;">No campaigns yet — create your first one above.</div>';
     return;
   }
   const esc  = s => (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   const html = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
-  const sorted = [...campaigns].sort((a, b) =>
+  const sorted = [..._camps].sort((a, b) =>
     new Date(b.lastUsedAt || b.createdAt || 0) - new Date(a.lastUsedAt || a.createdAt || 0)
   );
   el.innerHTML = sorted.map(c => {
-    const isActive = c.id === activeCampaignId;
+    const isActive = c.id === (typeof activeCampaignId !== 'undefined' ? activeCampaignId : '');
     return `<div style="position:relative;border-bottom:1px solid var(--border,#333);">
       <button type="button" onclick="selectCampaign('${esc(c.id)}','${esc(c.name||'')}');document.getElementById('create-wizard').scrollIntoView({behavior:'smooth'})"
         style="width:100%;background:none;border:none;text-align:left;padding:14px 40px 14px 0;cursor:pointer;">
@@ -4883,7 +4884,9 @@ onAuthStateChanged(auth, async (user) => {
     const allBizSnap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
     window.BUSINESSES = allBizSnap.docs.map(d => ({ ...d.data(), id: d.id }));
   } catch(_) { window.BUSINESSES = []; }
-  if (typeof renderSwitcherBar === 'function') { renderSwitcherBar(); renderAgencyBar(); }
+  try {
+    if (typeof renderSwitcherBar === 'function') { renderSwitcherBar(); renderAgencyBar(); }
+  } catch(e) { console.error('renderSwitcherBar error:', e); }
 
   // Allow switching business from the bar
   window.switchBusiness = async function(bizId) {
@@ -4974,6 +4977,7 @@ onAuthStateChanged(auth, async (user) => {
       // Load campaigns from sub-collection (hierarchical model)
       const campColSnap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns'));
       campaigns = campColSnap.docs.map(d => ({ ...d.data(), id: d.id }));
+      window._bbCampaigns = campaigns;
       _sortCampaigns();
       renderCampaignChips();
       // Seed per-campaign schedule map from saved campaign docs
