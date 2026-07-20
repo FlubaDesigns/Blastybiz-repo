@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784522100075"/>
+  <link rel="stylesheet" href="global-style.css?v=1784522440539"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -429,7 +429,7 @@
 <script>
 (function() {
   const answers = {};
-  const toggles = { ynMentionAddress: true, ynMentionPhone: true, ynMentionWebsite: true };
+  const toggles = { ynMentionRole: false, ynMentionAddress: true, ynMentionPhone: true, ynMentionWebsite: true };
   let step = 0;
 
   const STEPS = [
@@ -441,6 +441,16 @@
       placeholder: "e.g. Mike's Auto Repair",
       hint: 'This is how customers will find you everywhere',
       validate: v => v.trim().length >= 1 ? null : 'Please enter your business name.'
+    },
+    {
+      mood: 's-happy',
+      blastyMsgFn: a => 'Love it! And what\'s your role at ' + a.bizName + '?',
+      inputType: 'text',
+      key: 'role',
+      placeholder: 'e.g. Owner, Marketing Manager, GM',
+      hint: 'Your title or position',
+      validate: v => v.trim().length >= 1 ? null : 'Please enter your role.',
+      toggle: { stateKey: 'ynMentionRole', label: 'Include my role in marketing copy' }
     },
     {
       mood: 's-ask',
@@ -641,16 +651,17 @@ const db = getFirestore(getApp());
 window._ob2Save = async function(answers, toggles) {
   const bizRef = doc(collection(db, 'users', window._ob2Uid, 'businesses'));
   await setDoc(bizRef, {
-    name:               answers.bizName     || '',
-    phone:              answers.phone       || '',
-    address:            answers.address     || '',
-    website:            answers.website     || '',
+    name:               answers.bizName      || '',
+    role:               answers.role         || '',
+    phone:              answers.phone        || '',
+    address:            answers.address      || '',
+    website:            answers.website      || '',
     locationType:       answers.locationType || '',
-    ynMentionAddress:   toggles.ynMentionAddress  ? 'yes' : 'no',
-    ynMentionPhone:     toggles.ynMentionPhone    ? 'yes' : 'no',
-    ynMentionWebsite:   toggles.ynMentionWebsite  ? 'yes' : 'no',
+    ynMentionAddress:   toggles.ynMentionAddress ? 'yes' : 'no',
+    ynMentionPhone:     toggles.ynMentionPhone   ? 'yes' : 'no',
+    ynMentionWebsite:   toggles.ynMentionWebsite ? 'yes' : 'no',
+    ynMentionRole:      toggles.ynMentionRole    ? 'yes' : 'no',
     ynMentionName:      'no',
-    ynMentionRole:      'no',
     ynMentionEmail:     'yes',
     createdAt:          serverTimestamp()
   });
