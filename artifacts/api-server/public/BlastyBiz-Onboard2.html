@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784524123721"/>
+  <link rel="stylesheet" href="global-style.css?v=1784524230966"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -540,22 +540,53 @@
     },
     {
       mood: 's-ask',    pos: 'left',
-      blastyMsgFn: a => 'What\'s the address for ' + a.bizName + '?',
+      blastyMsgFn: () => 'What\'s the street address?',
       inputType: 'text',
-      key: 'address',
-      placeholder: 'e.g. 123 Main St, Springfield, IL',
-      hint: 'Street address, city, and state',
+      key: 'street',
+      placeholder: 'e.g. 123 Main St',
+      hint: 'Street number and street name',
       skipIf: a => a.locationType === 'online',
-      validate: v => v.trim().length >= 2 ? null : 'Please enter an address.',
+      validate: v => v.trim().length >= 2 ? null : 'Please enter a street address.',
       toggle: { stateKey: 'ynMentionAddress', label: 'Mention address in marketing copy' }
     },
     {
-      mood: 's-working', pos: 'right',
-      blastyMsgFn: a => 'Almost there! Does ' + a.bizName + ' have a website?',
+      mood: 's-happy',  pos: 'right',
+      blastyMsgFn: () => 'City?',
+      inputType: 'text',
+      key: 'city',
+      placeholder: 'e.g. Springfield',
+      hint: '',
+      skipIf: a => a.locationType === 'online',
+      validate: v => v.trim().length >= 2 ? null : 'Please enter a city.'
+    },
+    {
+      mood: 's-ask',    pos: 'left',
+      blastyMsgFn: () => 'State?',
+      inputType: 'text',
+      key: 'state',
+      placeholder: 'e.g. IL',
+      hint: 'Two-letter abbreviation or full name',
+      skipIf: a => a.locationType === 'online',
+      validate: v => v.trim().length >= 2 ? null : 'Please enter a state.'
+    },
+    {
+      mood: 's-happy',  pos: 'right',
+      blastyMsgFn: () => 'ZIP code?',
+      inputType: 'text',
+      key: 'zip',
+      placeholder: 'e.g. 62701',
+      hint: '',
+      skipIf: a => a.locationType === 'online',
+      validate: v => /^\d{5}(-\d{4})?$/.test(v.trim()) ? null : 'Please enter a valid ZIP code.'
+    },
+    {
+      mood: 's-working', pos: 'left',
+      blastyMsgFn: a => 'Almost there! What\'s the website for ' + a.bizName + '?',
       inputType: 'url',
       key: 'website',
       placeholder: 'e.g. https://qrgear.com',
       hint: 'Leave blank if you don\'t have one yet — no worries!',
+      skipIf: a => a.locationType === 'brick',
       validate: () => null
     }
   ];
@@ -737,7 +768,10 @@ window._ob2Save = async function(answers, toggles) {
     ownerName:          answers.ownerName    || '',
     role:               answers.role         || '',
     phone:              answers.phone        || '',
-    address:            answers.address      || '',
+    street:             answers.street       || '',
+    city:               answers.city         || '',
+    state:              answers.state        || '',
+    zip:                answers.zip          || '',
     website:            answers.website      || '',
     locationType:       answers.locationType || '',
     ynMentionName:      toggles.ynMentionName    ? 'yes' : 'no',
