@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BlastyBiz — Onboard Step Editor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="global-style.css?v=1784570763504">
+  <style>
+    body { visibility: hidden }
+    .ose-wrap { display:grid; grid-template-columns:1fr 230px; gap:26px; align-items:start; }
+    @media (max-width:880px) { .ose-wrap { grid-template-columns:1fr; } .ose-preview { display:none; } }
+    /* step cards */
+    .step-card { background:#fff; border:1.5px solid #e4e9f0; border-radius:12px; margin-bottom:12px; overflow:hidden; }
+    .step-card.has-ov { border-color:#2563eb; }
+    .step-head { display:flex; align-items:center; gap:9px; padding:10px 14px; background:#f8fafc; border-bottom:1px solid #e4e9f0; cursor:pointer; user-select:none; }
+    .step-num { background:#e2e8f0; color:#475569; font-size:11px; font-weight:700; padding:2px 6px; border-radius:18px; min-width:22px; text-align:center; }
+    .step-card.has-ov .step-num { background:#dbeafe; color:#1d4ed8; }
+    .sk { font-size:12px; font-weight:700; color:#0f172a; font-family:monospace; }
+    .sd { font-size:12px; color:#94a3b8; flex:1; }
+    .mod-badge { font-size:10px; background:#dbeafe; color:#1d4ed8; padding:1px 6px; border-radius:9px; font-weight:700; display:none; }
+    .step-card.has-ov .mod-badge { display:inline; }
+    .exp-ic { color:#94a3b8; font-size:12px; margin-left:auto; transition:transform .18s; }
+    .step-card.open .exp-ic { transform:rotate(180deg); }
+    .step-body { display:none; padding:14px; }
+    .step-card.open .step-body { display:block; }
+    .msg-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+    @media (max-width:600px) { .msg-row { grid-template-columns:1fr; } }
+    .fl { display:block; font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.07em; margin-bottom:3px; }
+    textarea.mta { width:100%; box-sizing:border-box; border:1.5px solid #e2e8f0; border-radius:7px; padding:7px 9px; font:13px/1.5 'DM Sans',sans-serif; color:#0f172a; resize:vertical; min-height:58px; }
+    textarea.mta:focus { border-color:#2563eb; outline:none; }
+    textarea.mta.def { background:#f8fafc; color:#94a3b8; }
+    .anim-row { display:flex; flex-wrap:wrap; gap:9px; margin-bottom:9px; }
+    .asg label { display:block; font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px; }
+    .asg select { border:1.5px solid #e2e8f0; border-radius:6px; padding:4px 7px; font:13px 'DM Sans',sans-serif; color:#0f172a; background:#fff; }
+    .asg select:focus { border-color:#2563eb; outline:none; }
+    .anim-chk { display:flex; gap:14px; margin-bottom:12px; }
+    .anim-chk label { display:flex; align-items:center; gap:4px; font-size:13px; color:#475569; cursor:pointer; }
+    .card-acts { display:flex; gap:7px; align-items:center; flex-wrap:wrap; }
+    .btn-sv { background:#2563eb; color:#fff; border:none; border-radius:7px; padding:6px 15px; font:600 13px 'DM Sans',sans-serif; cursor:pointer; }
+    .btn-sv:hover { background:#1d4ed8; } .btn-sv:disabled { opacity:.5; cursor:default; }
+    .btn-rst { background:none; border:1.5px solid #e2e8f0; border-radius:7px; padding:5px 11px; font:13px 'DM Sans',sans-serif; cursor:pointer; color:#64748b; }
+    .btn-rst:hover { border-color:#ef4444; color:#ef4444; }
+    .btn-prv { background:none; border:1.5px solid #e2e8f0; border-radius:7px; padding:5px 11px; font:13px 'DM Sans',sans-serif; cursor:pointer; color:#64748b; }
+    .btn-prv:hover { border-color:#7c3aed; color:#7c3aed; }
+    .sts { font-size:12px; color:#22c55e; }
+    /* preview */
+    .ose-preview { position:sticky; top:80px; }
+    .prev-panel { background:#0d1f3c; border-radius:14px; padding:18px; text-align:center; }
+    .prev-lbl { font-size:10px; color:#64748b; text-transform:uppercase; letter-spacing:.1em; margin-bottom:12px; }
+    #pb-blasty { display:inline-block; position:relative; }
+    #pb-blasty svg { width:160px; height:auto; overflow:visible; }
+    .prev-cap { font-size:12px; color:#9ca3af; margin-top:8px; min-height:16px; }
+    /* Blasty animation library (copied from OB1) */
+    .pb-blasty { --flame-top:#ffdc2f; --flame-mid:#ff961f; --flame-bot:#ef3d10; --flamein-top:#fffbd7; --flamein-mid:#fff04c; --flamein-bot:#ffac20; position:relative; }
+    .pb-blasty #blasty-body { transform-box:fill-box; transform-origin:center 60%; animation:b-float 3.2s ease-in-out infinite; }
+    @keyframes b-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+    .pb-blasty.s-arrive #blasty-body { animation:b-arrive .45s cubic-bezier(.34,1.56,.64,1) both; }
+    @keyframes b-arrive { 0%{transform:translateY(40px) scale(.85);opacity:.2} 100%{transform:translateY(0) scale(1);opacity:1} }
+    .pb-blasty .blasty-arm-wave,.pb-blasty .blasty-arm-point,.pb-blasty .blasty-arm { opacity:0; }
+    .pb-blasty #mouths .mouth-happy,.pb-blasty #mouths .mouth-celebrate { display:none; }
+    .pb-blasty.s-wave .blasty-arm-wave { opacity:1!important; }
+    .pb-blasty.s-wave #blasty-body { animation:b-wave .5s ease-in-out 3,b-float 3.2s ease-in-out infinite 1.55s; }
+    @keyframes b-wave { 0%,100%{transform:rotate(0deg) translateY(0)} 25%{transform:rotate(-22deg) translateY(-10px)} 65%{transform:rotate(14deg) translateY(-5px)} }
+    .pb-blasty.s-wave-2 .blasty-arm-wave { opacity:1!important; }
+    .pb-blasty.s-wave-2 #blasty-body { animation:b-wave-big .45s ease-in-out 5,b-float 3.2s ease-in-out infinite 2.25s; }
+    @keyframes b-wave-big { 0%,100%{transform:rotate(0deg) translateY(0)} 25%{transform:rotate(-28deg) translateY(-12px)} 65%{transform:rotate(20deg) translateY(-6px)} }
+    .pb-blasty.s-happy #blasty-body { animation:b-float 3.2s ease-in-out infinite; }
+    .pb-blasty.s-happy #mouths .mouth-happy { display:block; } .pb-blasty.s-happy #mouths .mouth-working,.pb-blasty.s-happy #mouths .mouth-ask { display:none; }
+    .pb-blasty.s-working #blasty-body { animation:b-float 2s ease-in-out infinite; }
+    .pb-blasty.s-working #mouths .mouth-working { display:block; } .pb-blasty.s-working #mouths .mouth-happy,.pb-blasty.s-working #mouths .mouth-ask { display:none; }
+    .pb-blasty.s-celebrate .blasty-arm-wave { opacity:1!important; }
+    .pb-blasty.s-celebrate #blasty-body { animation:b-celebrate .38s ease-in-out 5; }
+    @keyframes b-celebrate { 0%,100%{transform:translateY(0) scale(1) rotate(0deg)} 25%{transform:translateY(-30px) scale(1.14) rotate(-8deg)} 75%{transform:translateY(-22px) scale(1.14) rotate(8deg)} }
+    .pb-blasty.s-spin #blasty-body { animation:b-spin-full 1s cubic-bezier(.34,1.56,.64,1) both,b-float 3.2s ease-in-out infinite 1.05s; }
+    @keyframes b-spin-full { 0%{transform:rotate(0deg) scale(1)} 50%{transform:rotate(200deg) scale(1.1)} 85%{transform:rotate(355deg) scale(1)} 100%{transform:rotate(360deg) scale(1)} }
+    .pb-blasty.s-tilt-left #blasty-body { animation:b-tilt-l 3.2s ease-in-out infinite; }
+    @keyframes b-tilt-l { 0%,100%{transform:rotate(-8deg) translateY(0)} 50%{transform:rotate(-8deg) translateY(-10px)} }
+    .pb-blasty.s-tilt-right #blasty-body { animation:b-tilt-r 3.2s ease-in-out infinite; }
+    @keyframes b-tilt-r { 0%,100%{transform:rotate(8deg) translateY(0)} 50%{transform:rotate(8deg) translateY(-10px)} }
+    .pb-blasty.s-ask-2 #blasty-body { animation:b-lean-r 3s ease-in-out infinite; }
+    @keyframes b-lean-r { 0%,100%{transform:translateY(0) rotate(8deg)} 50%{transform:translateY(-9px) rotate(8deg)} }
+    .pb-blasty.s-ask-3 #blasty-body { animation:b-float 2.2s ease-in-out infinite; }
+    .pb-blasty.s-arrive-land #blasty-svg { animation:b-land .7s cubic-bezier(.22,1.4,.64,1) both; }
+    @keyframes b-land { 0%{transform:translateY(-80px) scale(.8);opacity:.2} 70%{transform:translateY(8px) scale(1.04);opacity:1} 100%{transform:translateY(0) scale(1);opacity:1} }
+    .pb-blasty.s-flame-blue   { --flame-top:#b3e5fc; --flame-mid:#0288d1; --flame-bot:#01579b; --flamein-top:#e1f5fe; --flamein-mid:#4fc3f7; --flamein-bot:#0288d1; }
+    .pb-blasty.s-flame-green  { --flame-top:#b9f6ca; --flame-mid:#00c853; --flame-bot:#1b5e20; --flamein-top:#f1fff1; --flamein-mid:#69f0ae; --flamein-bot:#00c853; }
+    .pb-blasty.s-flame-red    { --flame-top:#ff8a80; --flame-mid:#ff1744; --flame-bot:#b71c1c; --flamein-top:#fff;    --flamein-mid:#ff8a80; --flamein-bot:#ff1744; }
+    .pb-blasty.s-flame-purple { --flame-top:#ea80fc; --flame-mid:#aa00ff; --flame-bot:#4a148c; --flamein-top:#fce4ff; --flamein-mid:#e040fb; --flamein-bot:#aa00ff; }
+    .pb-blasty.s-flame-white  { --flame-top:#fff;    --flame-mid:#e0f7fa; --flame-bot:#b2ebf2; --flamein-top:#fff;    --flamein-mid:#fff;    --flamein-bot:#e0f7fa; }
+    .pb-blasty.s-eyes-up    .pupil-group-l,.pb-blasty.s-eyes-up    .pupil-group-r { transform:translateY(-9px); }
+    .pb-blasty.s-eyes-down  .pupil-group-l,.pb-blasty.s-eyes-down  .pupil-group-r { transform:translateY(8px); }
+    .pb-blasty.s-eyes-left  .pupil-group-l,.pb-blasty.s-eyes-left  .pupil-group-r { transform:translateX(-9px); }
+    .pb-blasty.s-eyes-right .pupil-group-l,.pb-blasty.s-eyes-right .pupil-group-r { transform:translateX(9px); }
+    .pb-blasty.s-eyes-roll .pupil-group-l,.pb-blasty.s-eyes-roll .pupil-group-r { animation:b-eye-roll 1.4s ease-in-out 2 both; }
+    @keyframes b-eye-roll { 0%{transform:translate(0,0)} 20%{transform:translate(8px,-4px)} 50%{transform:translate(0,-10px)} 75%{transform:translate(-8px,-4px)} 100%{transform:translate(0,0)} }
+    .pb-blasty.s-eyes-surprise .pupil-group-l,.pb-blasty.s-eyes-surprise .pupil-group-r { animation:b-eye-surprise 1s ease both; }
+    @keyframes b-eye-surprise { 0%{transform:translateY(0)} 15%{transform:translateY(-12px)} 65%{transform:translateY(-12px)} 100%{transform:translateY(0)} }
+    .pb-blasty.s-nose-spin .blasty-nose { animation:b-nose-spin .7s cubic-bezier(.34,1.56,.64,1) 1 both; }
+    @keyframes b-nose-spin { 0%{transform:rotate(0deg)} 55%{transform:rotate(210deg)} 100%{transform:rotate(360deg)} }
+    .pb-blasty.s-light-nose #blasty-nose-light { opacity:.9; animation:b-beacon 1.8s ease-in-out infinite; }
+    @keyframes b-beacon { 0%,75%,100%{opacity:.9} 40%{opacity:.1} }
+    .pb-blasty.s-lights-pulse .w-light { animation:b-light-pulse 1.1s ease-in-out infinite; }
+    @keyframes b-light-pulse { 0%,100%{opacity:.9} 50%{opacity:.15} }
+    .pb-blasty.s-lights-sequence .w-light:nth-child(1){animation:b-light-seq 1.4s 0.0s ease-in-out infinite}
+    .pb-blasty.s-lights-sequence .w-light:nth-child(2){animation:b-light-seq 1.4s 0.2s ease-in-out infinite}
+    .pb-blasty.s-lights-sequence .w-light:nth-child(3){animation:b-light-seq 1.4s 0.4s ease-in-out infinite}
+    .pb-blasty.s-lights-sequence .w-light:nth-child(4){animation:b-light-seq 1.4s 0.6s ease-in-out infinite}
+    .pb-blasty.s-lights-sequence .w-light:nth-child(5){animation:b-light-seq 1.4s 0.8s ease-in-out infinite}
+    .pb-blasty.s-lights-sequence .w-light:nth-child(6){animation:b-light-seq 1.4s 1.0s ease-in-out infinite}
+    .pb-blasty.s-lights-sequence .w-light:nth-child(7){animation:b-light-seq 1.4s 1.2s ease-in-out infinite}
+    @keyframes b-light-seq { 0%,100%{opacity:.1} 50%{opacity:1} }
+    .pb-blasty.s-lights-flash .w-light { animation:b-light-flash .28s ease-in-out 6; }
+    @keyframes b-light-flash { 0%,100%{opacity:0} 50%{opacity:1} }
+    .pb-blasty.s-smoke .smoke-puff { animation:b-smoke 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; }
+    .pb-blasty.s-smoke .smoke-puff:nth-child(1){animation-delay:0s}
+    .pb-blasty.s-smoke .smoke-puff:nth-child(2){animation-delay:.18s}
+    .pb-blasty.s-smoke .smoke-puff:nth-child(3){animation-delay:.36s}
+    @keyframes b-smoke { 0%{opacity:.7;transform:scale(.15) translateY(0)} 35%{opacity:.5;transform:scale(1.5) translateY(-20px)} 100%{opacity:0;transform:scale(2.8) translateY(-55px)} }
+  </style>
+  <script type="module" src="./admin-guard.js"></script>
+  <script src="blastybiz-menu.js?v=3"></script>
+</head>
+<body class="admin-page">
+
+<header>
+  <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Onboard Editor</span></a>
+  <div class="top-actions">
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin.html">Dashboard</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Operate.html">Operate</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Onboard2.html" target="_blank">▶ OB1 Live</a>
+    <a class="icon-btn hide-mobile active" href="#">OB1 Steps</a>
+    <a class="icon-btn" href="BlastyBiz-Login.html">👤</a>
+  </div>
+</header>
+
+<main><div class="main"><div class="main-inner">
+
+  <div class="op-page-header">
+    <h1 class="op-page-title">🚀 Onboard Step Editor</h1>
+    <p class="op-page-sub">Customize Blasty's message text and animation for each OB1 (Obi-Wan) onboarding step. Changes are live immediately. Modified steps show a blue border.</p>
+  </div>
+
+  <div id="ose-status" style="text-align:center;padding:32px 0;color:#64748b">Loading steps…</div>
+
+  <div class="ose-wrap" id="ose-wrap" style="display:none">
+    <div id="ose-steps"></div>
+
+    <div class="ose-preview">
+      <div class="prev-panel">
+        <div class="prev-lbl">Live Preview</div>
+        <div class="pb-blasty s-wave" id="pb-blasty">
+          <svg id="blasty-svg" viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="o-bodyFill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#dce9ff"/><stop offset=".5" stop-color="#b3c8f8"/><stop offset="1" stop-color="#7ea4f0"/></linearGradient>
+              <linearGradient id="o-bodyShade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#102957" stop-opacity="0"/><stop offset="1" stop-color="#102957" stop-opacity=".35"/></linearGradient>
+              <linearGradient id="o-redFill" x1="0" y1="0" x2=".8" y2="1"><stop offset="0" stop-color="#ff8fa3"/><stop offset="1" stop-color="#e53935"/></linearGradient>
+              <linearGradient id="o-greenFill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b9fbc0"/><stop offset="1" stop-color="#43a047"/></linearGradient>
+              <radialGradient id="o-eyeFill" cx=".35" cy=".25" r=".9"><stop offset="0" stop-color="#fff"/><stop offset=".15" stop-color="#deffd8"/><stop offset=".58" stop-color="#65d84a"/><stop offset="1" stop-color="#1b8e2b"/></radialGradient>
+              <linearGradient id="o-flameOut" x1=".5" y1="0" x2=".5" y2="1">
+                <stop offset="0"   style="stop-color:var(--flame-top,#ffdc2f)"/>
+                <stop offset=".46" style="stop-color:var(--flame-mid,#ff961f)"/>
+                <stop offset="1"   style="stop-color:var(--flame-bot,#ef3d10)"/>
+              </linearGradient>
+              <linearGradient id="o-flameIn" x1=".5" y1="0" x2=".5" y2="1">
+                <stop offset="0"   style="stop-color:var(--flamein-top,#fffbd7)"/>
+                <stop offset=".55" style="stop-color:var(--flamein-mid,#fff04c)"/>
+                <stop offset="1"   style="stop-color:var(--flamein-bot,#ffac20)"/>
+              </linearGradient>
+              <clipPath id="o-bodyClip"><path d="M180 42 C117 89 89 163 91 251 C92 309 119 348 180 378 C241 348 268 309 269 251 C271 163 243 89 180 42Z"/></clipPath>
+            </defs>
+            <g class="confetti" id="blasty-effects"></g>
+            <g id="blasty-body" style="transform-box:fill-box;transform-origin:center 60%">
+              <g id="blasty-exhaust" class="flame">
+                <ellipse cx="180" cy="396" rx="32" ry="14" fill="#102957" opacity=".55"/>
+                <path d="M154 385 C148 418 145 445 145 458 C155 448 164 442 180 438 C196 442 205 448 215 458 C215 445 212 418 206 385Z" fill="url(#o-flameOut)"/>
+                <path d="M163 387 C160 413 158 434 158 444 C165 438 172 435 180 434 C188 435 195 438 202 444 C202 434 200 413 197 387Z" fill="url(#o-flameIn)"/>
+              </g>
+              <path d="M180 42 C117 89 89 163 91 251 C92 309 119 348 180 378 C241 348 268 309 269 251 C271 163 243 89 180 42Z" fill="url(#o-bodyFill)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>
+              <g clip-path="url(#o-bodyClip)">
+                <path d="M129 76 C163 135 178 240 214 315 C228 340 250 359 180 377 C153 285 146 168 176 43Z" fill="#fff" opacity=".18"/>
+                <path d="M231 76 C265 135 278 240 246 315 C232 340 210 359 180 377 C207 285 214 168 184 43Z" fill="url(#o-bodyShade)" opacity=".75"/>
+              </g>
+              <path d="M93 269 C121 289 148 299 180 299 C212 299 239 289 267 269 L265 301 C239 319 211 327 180 327 C149 327 121 319 95 301Z" fill="url(#o-greenFill)" stroke="#102957" stroke-width="8"/>
+              <path d="M105 283 C132 298 156 304 180 304 C204 304 228 298 255 283" fill="none" stroke="#b3ff70" stroke-width="5" opacity=".8"/>
+              <g id="blasty-nose" class="blasty-nose" style="transform-box:fill-box;transform-origin:180px 100px">
+                <path d="M180 42 C151 64 129 88 113 116 C137 105 157 100 180 100 C203 100 223 105 247 116 C231 88 209 64 180 42Z" fill="url(#o-redFill)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>
+                <path d="M205 56 C220 72 229 85 236 102" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity=".9"/>
+                <circle id="blasty-nose-light" cx="180" cy="50" r="8" fill="#ffdc2f" opacity="0"/>
+              </g>
+              <path d="M126 161 Q145 146 160 158" fill="none" stroke="#102957" stroke-width="8" stroke-linecap="round"/>
+              <path d="M200 161 Q215 146 234 158" fill="none" stroke="#102957" stroke-width="8" stroke-linecap="round"/>
+              <ellipse cx="142" cy="185" rx="29" ry="30" fill="url(#o-eyeFill)" stroke="#102957" stroke-width="8"/>
+              <g class="pupil-group-l" style="transform-box:fill-box;transform-origin:center">
+                <ellipse cx="142" cy="188" rx="13" ry="14" fill="#102957"/>
+                <ellipse cx="139" cy="184" rx="5" ry="5" fill="#fff"/>
+              </g>
+              <ellipse cx="218" cy="185" rx="29" ry="30" fill="url(#o-eyeFill)" stroke="#102957" stroke-width="8"/>
+              <g class="pupil-group-r" style="transform-box:fill-box;transform-origin:center">
+                <ellipse cx="218" cy="188" rx="13" ry="14" fill="#102957"/>
+                <ellipse cx="215" cy="184" rx="5" ry="5" fill="#fff"/>
+              </g>
+              <g id="mouths">
+                <path class="mouth-ask"  d="M157 238 Q180 248 203 238" fill="none" stroke="#102957" stroke-width="7" stroke-linecap="round"/>
+                <path class="mouth-happy"     d="M157 234 Q180 254 203 234" fill="none" stroke="#102957" stroke-width="7" stroke-linecap="round" style="display:none"/>
+                <path class="mouth-working"   d="M165 240 Q180 235 195 240" fill="none" stroke="#102957" stroke-width="6" stroke-linecap="round" style="display:none"/>
+                <path class="mouth-celebrate" d="M155 232 Q180 260 205 232" fill="#102957" style="display:none"/>
+              </g>
+              <g id="blasty-badge">
+                <rect x="155" y="312" width="50" height="35" rx="7" fill="#102957" stroke="#b3c8f8" stroke-width="3"/>
+                <text x="180" y="328" text-anchor="middle" fill="#fff" font-size="9" font-family="DM Sans,sans-serif" font-weight="700">BLASTY</text>
+                <text x="180" y="340" text-anchor="middle" fill="#7ea4f0" font-size="7" font-family="DM Sans,sans-serif">BIZ</text>
+              </g>
+              <g id="blasty-lights-waist">
+                <circle class="w-light" cx="122" cy="289" r="5" fill="#39ff14" opacity="0"/>
+                <circle class="w-light" cx="140" cy="296" r="5" fill="#39ff14" opacity="0"/>
+                <circle class="w-light" cx="160" cy="300" r="5" fill="#39ff14" opacity="0"/>
+                <circle class="w-light" cx="180" cy="301" r="5" fill="#39ff14" opacity="0"/>
+                <circle class="w-light" cx="200" cy="300" r="5" fill="#39ff14" opacity="0"/>
+                <circle class="w-light" cx="220" cy="296" r="5" fill="#39ff14" opacity="0"/>
+                <circle class="w-light" cx="238" cy="289" r="5" fill="#39ff14" opacity="0"/>
+              </g>
+              <g id="blasty-arms">
+                <g class="blasty-arm blasty-arm-wave" opacity="0">
+                  <path d="M113 261 C84 253 73 229 82 207" fill="none" stroke="#102957" stroke-width="19" stroke-linecap="round"/>
+                  <path d="M113 261 C84 253 73 229 82 207" fill="none" stroke="#f8fbff" stroke-width="11" stroke-linecap="round"/>
+                  <circle cx="82" cy="203" r="14" fill="#f8fbff" stroke="#102957" stroke-width="8"/>
+                </g>
+              </g>
+            </g>
+            <g id="blasty-smoke">
+              <ellipse class="smoke-puff" cx="180" cy="415" rx="2" ry="2" fill="#c8c8c8" opacity="0"/>
+              <ellipse class="smoke-puff" cx="158" cy="428" rx="2" ry="2" fill="#b8b8b8" opacity="0"/>
+              <ellipse class="smoke-puff" cx="202" cy="422" rx="2" ry="2" fill="#d0d0d0" opacity="0"/>
+            </g>
+          </svg>
+        </div>
+        <div class="prev-cap" id="prev-cap">Wave</div>
+      </div>
+    </div>
+  </div>
+
+</div></div></main>
+
+<script type="module">
+import { auth } from './firebase-init-v2.js';
+import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, deleteField } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const db = getFirestore(getApp());
+
+const STEP_DEFS = [
+  { idx:1,  key:'bizName',           label:'Business Name',              defaultMsg:"Great! First — what's the name of your business?" },
+  { idx:2,  key:'ownerName',         label:'Owner Name',                 defaultMsg:"And what's your name?" },
+  { idx:3,  key:'role',              label:'Owner Title / Role',         defaultMsg:"What's your title at the business?" },
+  { idx:4,  key:'phone',             label:'Phone Number',               defaultMsg:"What's the best phone number?" },
+  { idx:5,  key:'locationType',      label:'Location Type',              defaultMsg:"Physical, online only, or both?" },
+  { idx:6,  key:'street',            label:'Street Address',             defaultMsg:"What's the street address?" },
+  { idx:7,  key:'city',              label:'City',                       defaultMsg:"City?" },
+  { idx:8,  key:'state',             label:'State',                      defaultMsg:"State?" },
+  { idx:9,  key:'zip',               label:'ZIP Code',                   defaultMsg:"ZIP code?" },
+  { idx:10, key:'website',           label:'Website',                    defaultMsg:"What's the website?" },
+  { idx:11, key:'_fork',             label:'Path Fork (story vs blast)', defaultMsg:"You're all set! Blast now, or tell me your story first?" },
+  { idx:12, key:'story',             label:'Business Story',             defaultMsg:"How did the business get started? What's the story?" },
+  { idx:13, key:'different',         label:'What Makes You Different',   defaultMsg:"What makes you different from the competition?" },
+  { idx:14, key:'awards',            label:'Awards / Press',             defaultMsg:"Any awards, press coverage, or milestones?" },
+  { idx:15, key:'customer',          label:'Ideal Customer',             defaultMsg:"Who's your ideal customer?" },
+  { idx:16, key:'other',             label:'Other Info',                 defaultMsg:"Anything else I should always know?" },
+  { idx:17, key:'campaignName',      label:'Campaign Name',              defaultMsg:"Let's build your first campaign. What to call it?" },
+  { idx:18, key:'campaignAbout',     label:'Campaign About',             defaultMsg:"What's this campaign about? What are you promoting?" },
+  { idx:19, key:'campaignAudience',  label:'Campaign Audience',          defaultMsg:"Who is this campaign targeting?" },
+  { idx:20, key:'campaignOffer',     label:'Campaign Offer / CTA',       defaultMsg:"Any special offer or call to action?" },
+  { idx:21, key:'campaignPlatforms', label:'Platforms',                  defaultMsg:"Last one — which platforms do you want to blast on?" },
+  { idx:22, key:'category',          label:'Business Category (AI)',     defaultMsg:"Almost done! Let me figure out the right category..." },
+];
+
+const MOOD_OPTS  = [{v:'s-ask',l:'Ask'},{v:'s-ask-2',l:'Ask 2 (lean right)'},{v:'s-ask-3',l:'Ask 3 (look up)'},{v:'s-wave',l:'Wave'},{v:'s-wave-2',l:'Wave 2 (big)'},{v:'s-happy',l:'Happy'},{v:'s-working',l:'Working'},{v:'s-celebrate',l:'Celebrate'},{v:'s-spin',l:'Spin'},{v:'s-tilt-left',l:'Tilt Left'},{v:'s-tilt-right',l:'Tilt Right'},{v:'s-arrive-land',l:'Arrive Land'}];
+const FLAME_OPTS = [{v:'',l:'Orange (default)'},{v:'s-flame-blue',l:'Blue'},{v:'s-flame-green',l:'Green'},{v:'s-flame-red',l:'Red'},{v:'s-flame-purple',l:'Purple'},{v:'s-flame-white',l:'White'}];
+const LIGHTS_OPTS= [{v:'',l:'Off'},{v:'s-lights-pulse',l:'Pulse'},{v:'s-lights-sequence',l:'Sequence'},{v:'s-lights-flash',l:'Flash'}];
+const EYES_OPTS  = [{v:'',l:'Default'},{v:'s-eyes-up',l:'Up'},{v:'s-eyes-down',l:'Down'},{v:'s-eyes-left',l:'Left'},{v:'s-eyes-right',l:'Right'},{v:'s-eyes-roll',l:'Roll'},{v:'s-eyes-surprise',l:'Surprise'}];
+
+const sel = (opts, val) => opts.map(o=>`<option value="${o.v}"${o.v===val?' selected':''}>${o.l}</option>`).join('');
+
+let overrides = {};
+
+function renderSteps() {
+  document.getElementById('ose-steps').innerHTML = STEP_DEFS.map(s => {
+    const ov = overrides[s.key] || {};
+    const an = ov.anim || {};
+    const hasOv = !!(ov.blastyMsg || ov.anim);
+    return `<div class="step-card${hasOv?' has-ov':''}" id="sc-${s.key}">
+      <div class="step-head" onclick="window._oseToggle('${s.key}')">
+        <span class="step-num">${s.idx}</span>
+        <span class="sk">${s.key}</span>
+        <span class="sd">${s.label}</span>
+        <span class="mod-badge">Modified</span>
+        <span class="exp-ic">▾</span>
+      </div>
+      <div class="step-body">
+        <div class="msg-row">
+          <div>
+            <span class="fl">Default (read-only)</span>
+            <textarea class="mta def" readonly>${s.defaultMsg}</textarea>
+          </div>
+          <div>
+            <span class="fl">Override text <span style="font-weight:400;text-transform:none">(use {bizName} {ownerName})</span></span>
+            <textarea class="mta" id="msg-${s.key}" placeholder="Leave blank to keep default">${ov.blastyMsg||''}</textarea>
+          </div>
+        </div>
+        <div class="anim-row">
+          <div class="asg"><label>Mood</label><select id="am-${s.key}">${sel(MOOD_OPTS,an.mood||'s-ask')}</select></div>
+          <div class="asg"><label>Flame</label><select id="af-${s.key}">${sel(FLAME_OPTS,an.flame||'')}</select></div>
+          <div class="asg"><label>Lights</label><select id="al-${s.key}">${sel(LIGHTS_OPTS,an.lights||'')}</select></div>
+          <div class="asg"><label>Eyes</label><select id="ae-${s.key}">${sel(EYES_OPTS,an.eyes||'')}</select></div>
+        </div>
+        <div class="anim-chk">
+          <label><input type="checkbox" id="as-${s.key}"${an.smoke?' checked':''}> 💨 Smoke</label>
+          <label><input type="checkbox" id="an-${s.key}"${an.noseSpin?' checked':''}> 🌀 Nose spin</label>
+        </div>
+        <div class="card-acts">
+          <button class="btn-sv" onclick="window._oseSave('${s.key}')">Save</button>
+          <button class="btn-rst" onclick="window._oseReset('${s.key}')">Reset to default</button>
+          <button class="btn-prv" onclick="window._osePreview('${s.key}')">▶ Preview</button>
+          <span class="sts" id="sts-${s.key}"></span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window._oseToggle = k => document.getElementById('sc-'+k).classList.toggle('open');
+
+window._osePreview = function(k) {
+  const mood  = document.getElementById('am-'+k).value;
+  const flame = document.getElementById('af-'+k).value;
+  const lights= document.getElementById('al-'+k).value;
+  const eyes  = document.getElementById('ae-'+k).value;
+  const smoke = document.getElementById('as-'+k).checked;
+  const nose  = document.getElementById('an-'+k).checked;
+  const el = document.getElementById('pb-blasty');
+  el.className = ['pb-blasty','s-arrive',mood,flame,lights,eyes,smoke?'s-smoke':'',nose?'s-nose-spin':''].filter(Boolean).join(' ');
+  void el.offsetWidth;
+  setTimeout(()=>{
+    el.className = ['pb-blasty',mood,flame,lights,eyes,smoke?'s-smoke':'',nose?'s-nose-spin':''].filter(Boolean).join(' ');
+  }, 500);
+  document.getElementById('prev-cap').textContent = MOOD_OPTS.find(o=>o.v===mood)?.l || mood;
+};
+
+window._oseSave = async function(k) {
+  const btn = document.querySelector(`#sc-${k} .btn-sv`);
+  const sts = document.getElementById('sts-'+k);
+  btn.disabled=true; btn.textContent='Saving…';
+  sts.style.color='#22c55e'; sts.textContent='';
+  const msg   = document.getElementById('msg-'+k).value.trim();
+  const mood  = document.getElementById('am-'+k).value;
+  const flame = document.getElementById('af-'+k).value;
+  const lights= document.getElementById('al-'+k).value;
+  const eyes  = document.getElementById('ae-'+k).value;
+  const smoke = document.getElementById('as-'+k).checked;
+  const nose  = document.getElementById('an-'+k).checked;
+  const animRaw = { mood, flame:flame||undefined, lights:lights||undefined, eyes:eyes||undefined, smoke:smoke||undefined, noseSpin:nose||undefined };
+  const anim = Object.fromEntries(Object.entries(animRaw).filter(([,v])=>v!==undefined&&v!==false&&v!==''));
+  const data = { anim };
+  if (msg) data.blastyMsg = msg;
+  try {
+    await setDoc(doc(db,'config','ob1Steps'), { [k]: data }, { merge:true });
+    overrides[k] = data;
+    document.getElementById('sc-'+k).classList.add('has-ov');
+    sts.textContent = '✓ Saved';
+    setTimeout(()=>{ sts.textContent=''; }, 2500);
+  } catch(e) {
+    sts.style.color='#ef4444'; sts.textContent='✗ '+e.message;
+  }
+  btn.disabled=false; btn.textContent='Save';
+};
+
+window._oseReset = async function(k) {
+  if (!confirm('Reset "'+k+'" to default? This removes all overrides for this step.')) return;
+  const btn = document.querySelector(`#sc-${k} .btn-rst`);
+  btn.disabled=true;
+  try {
+    await setDoc(doc(db,'config','ob1Steps'), { [k]: deleteField() }, { merge:true });
+    delete overrides[k];
+    document.getElementById('sc-'+k).classList.remove('has-ov');
+    document.getElementById('msg-'+k).value='';
+    const sts = document.getElementById('sts-'+k);
+    sts.style.color='#64748b'; sts.textContent='↩ Reset';
+    setTimeout(()=>{ sts.textContent=''; }, 2500);
+  } catch(e) { alert('Error: '+e.message); }
+  btn.disabled=false;
+};
+
+onAuthStateChanged(auth, async user => {
+  if (!user) return;
+  try {
+    const snap = await getDoc(doc(db,'config','ob1Steps'));
+    overrides = snap.exists() ? snap.data() : {};
+    document.getElementById('ose-status').style.display='none';
+    document.getElementById('ose-wrap').style.display='grid';
+    renderSteps();
+  } catch(e) {
+    document.getElementById('ose-status').textContent='Error loading: '+e.message;
+  }
+});
+</script>
+
+</body>
+</html>

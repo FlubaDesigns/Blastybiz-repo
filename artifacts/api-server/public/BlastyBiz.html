@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784569018667" />
+<link rel="stylesheet" href="global-style.css?v=1784570763504" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -5235,7 +5235,7 @@ onAuthStateChanged(auth, async (user) => {
     window.location.reload();
   };
 
-  // ── Add a new business (calls createBusiness CF, server enforces plan limit) ──
+  // ── Add a new business — show Wizard vs Form choice modal ──
   window.addBusiness = async function() {
     if (!currentUser) return;
     const bizList = window.BUSINESSES || [];
@@ -5245,32 +5245,7 @@ onAuthStateChanged(auth, async (user) => {
       if (window.showToast) window.showToast(msg); else alert(msg);
       return;
     }
-    const name = (prompt('Enter the new business name:') || '').trim();
-    if (!name) return;
-    const addBtn = document.querySelector('.add-biz-btn');
-    if (addBtn) { addBtn.disabled = true; addBtn.textContent = '…'; }
-    try {
-      const token = await currentUser.getIdToken();
-      const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/createBusiness', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ profileData: { businessName: name, onboarded: true }, isNew: true })
-      });
-      const data = await resp.json();
-      if (!resp.ok) {
-        const err = data.error || 'Could not create business.';
-        if (window.showToast) window.showToast(err); else alert(err);
-        return;
-      }
-      window.BUSINESSES = [...bizList, { id: data.bizId, businessName: name, name }];
-      window.switchBusiness(data.bizId);
-    } catch (e) {
-      console.error('[addBusiness]', e);
-      const msg = 'Error creating business. Please try again.';
-      if (window.showToast) window.showToast(msg); else alert(msg);
-    } finally {
-      if (addBtn) { addBtn.disabled = false; addBtn.textContent = '＋'; }
-    }
+    document.getElementById('cb-choose-modal').style.display = 'flex';
   };
 
   // ── Delete the selected business (requires confirmation; server enforces ownership) ──
@@ -6581,5 +6556,41 @@ fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){
   document.addEventListener('pointerdown',function onPD(){document.removeEventListener('pointerdown',onPD);playSound();runAnim();},{once:true});
 });
 </script>
+
+<!-- ── Create-Business choice modal ─────────────────────────── -->
+<div id="cb-choose-modal" class="cbm-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="cbm-card">
+    <button class="cbm-close" onclick="document.getElementById('cb-choose-modal').style.display='none'">✕</button>
+    <h2 class="cbm-title">Add a New Business</h2>
+    <p class="cbm-sub">How do you want to set it up?</p>
+    <div class="cbm-opts">
+      <a href="BlastyBiz-Onboard2.html?new=1" class="cbm-opt">
+        <span class="cbm-opt-icon">🚀</span>
+        <span class="cbm-opt-title">Blasty Wizard</span>
+        <span class="cbm-opt-desc">Let Blasty walk you through it — step by step, with AI guiding the way</span>
+      </a>
+      <a href="BlastyBiz-CreateBiz.html?new=1" class="cbm-opt">
+        <span class="cbm-opt-icon">📝</span>
+        <span class="cbm-opt-title">Quick Form</span>
+        <span class="cbm-opt-desc">Fill in your details directly — fast and no-fuss</span>
+      </a>
+    </div>
+  </div>
+</div>
+<style>
+.cbm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+.cbm-card{background:#0d1f0d;border:1.5px solid #1e3320;border-radius:18px;padding:28px 24px;max-width:460px;width:100%;position:relative}
+.cbm-close{position:absolute;top:12px;right:14px;background:none;border:none;color:#4a7a52;font-size:18px;cursor:pointer;line-height:1;padding:4px}
+.cbm-close:hover{color:#e0f0e3}
+.cbm-title{font-family:'Bebas Neue',sans-serif;font-size:26px;color:#00C853;margin:0 0 6px;letter-spacing:1px}
+.cbm-sub{color:#7aab82;font-size:14px;margin:0 0 20px}
+.cbm-opts{display:flex;flex-direction:column;gap:12px}
+@media(min-width:420px){.cbm-opts{flex-direction:row}}
+.cbm-opt{display:flex;flex-direction:column;gap:5px;flex:1;background:#111f11;border:1.5px solid #1e3320;border-radius:12px;padding:16px;text-decoration:none;transition:border-color .15s,background .15s}
+.cbm-opt:hover{border-color:#00C853;background:#0d1a0d}
+.cbm-opt-icon{font-size:26px}
+.cbm-opt-title{font-size:15px;font-weight:700;color:#e0f0e3}
+.cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
+</style>
 </body>
 </html>

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>BlastyBiz — Create Business</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+  <style>
+    body { visibility:hidden }
+  </style>
+  <script type="module" src="./auth-guard.js"></script>
+<style>
+  *,*::before,*::after { box-sizing:border-box; }
+  :root { --green:#00C853; --blue:#1565c0; --dark:#0d1a0d; --card:#111f11; --border:#1e3320; --text:#e0f0e3; --sub:#7aab82; --red:#ef5350; }
+  html,body { margin:0; min-height:100vh; background:var(--dark); color:var(--text); font-family:'DM Sans',sans-serif; }
+
+  /* ── Header bar with mini Blasty ──────────────────── */
+  .cb-header { background:#0a1409; border-bottom:1px solid var(--border); padding:14px 20px; display:flex; align-items:center; gap:16px; position:sticky; top:0; z-index:50; }
+  .cb-header-logo { font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--green); letter-spacing:1px; text-decoration:none; flex-shrink:0; }
+  .cb-blasty-mini { flex-shrink:0; position:relative; }
+  .cb-blasty-mini svg { width:52px; height:auto; overflow:visible; }
+  .cb-header-msg { font-size:14px; color:var(--text); flex:1; }
+  .cb-header-msg strong { color:var(--green); }
+
+  /* ── Blasty animation classes ──────────────────────── */
+  .cb-blasty-mini { --flame-top:#ffdc2f; --flame-mid:#ff961f; --flame-bot:#ef3d10; --flamein-top:#fffbd7; --flamein-mid:#fff04c; --flamein-bot:#ffac20; }
+  .cb-blasty-mini #cb-body { transform-box:fill-box; transform-origin:center 60%; animation:cb-float 3.2s ease-in-out infinite; }
+  @keyframes cb-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  .cb-blasty-mini.s-wave #cb-body { animation:cb-wave .5s ease-in-out 3,cb-float 3.2s ease-in-out infinite 1.6s; }
+  @keyframes cb-wave { 0%,100%{transform:rotate(0deg) translateY(0)} 25%{transform:rotate(-20deg) translateY(-5px)} 65%{transform:rotate(12deg) translateY(-3px)} }
+  .cb-blasty-mini.s-working #cb-body { animation:cb-float 2s ease-in-out infinite; }
+  .cb-blasty-mini.s-celebrate #cb-body { animation:cb-cel .38s ease-in-out 5; }
+  @keyframes cb-cel { 0%,100%{transform:translateY(0) scale(1) rotate(0deg)} 25%{transform:translateY(-12px) scale(1.1) rotate(-8deg)} 75%{transform:translateY(-9px) scale(1.1) rotate(8deg)} }
+  .cb-blasty-mini.s-flame-blue { --flame-top:#b3e5fc; --flame-mid:#0288d1; --flame-bot:#01579b; --flamein-top:#e1f5fe; --flamein-mid:#4fc3f7; --flamein-bot:#0288d1; }
+  .cb-blasty-mini.s-flame-green { --flame-top:#b9f6ca; --flame-mid:#00c853; --flame-bot:#1b5e20; --flamein-top:#f1fff1; --flamein-mid:#69f0ae; --flamein-bot:#00c853; }
+  .cb-blasty-mini.s-lights-pulse .cb-wl { animation:cb-lp 1.1s ease-in-out infinite; }
+  @keyframes cb-lp { 0%,100%{opacity:.9} 50%{opacity:.1} }
+  .cb-blasty-mini.s-lights-flash .cb-wl { animation:cb-lf .28s ease-in-out 6; }
+  @keyframes cb-lf { 0%,100%{opacity:0} 50%{opacity:1} }
+  .cb-blasty-mini.s-smoke .cb-sp { animation:cb-sm 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; }
+  .cb-blasty-mini.s-smoke .cb-sp:nth-child(1){animation-delay:0s}
+  .cb-blasty-mini.s-smoke .cb-sp:nth-child(2){animation-delay:.18s}
+  @keyframes cb-sm { 0%{opacity:.6;transform:scale(.2) translateY(0)} 100%{opacity:0;transform:scale(2.5) translateY(-30px)} }
+
+  /* ── Page content ──────────────────────────────────── */
+  .cb-main { max-width:680px; margin:0 auto; padding:24px 16px 60px; }
+  .cb-page-title { font-family:'Bebas Neue',sans-serif; font-size:28px; color:var(--green); letter-spacing:1px; margin:0 0 4px; }
+  .cb-page-sub { color:var(--sub); font-size:14px; margin:0 0 24px; }
+
+  /* ── Sections ──────────────────────────────────────── */
+  .cb-section { background:var(--card); border:1px solid var(--border); border-radius:14px; margin-bottom:14px; overflow:hidden; }
+  .cb-sec-head { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; cursor:pointer; user-select:none; }
+  .cb-sec-title { font-size:15px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px; }
+  .cb-sec-badge { font-size:11px; background:#1e3320; color:var(--sub); padding:2px 7px; border-radius:10px; font-weight:600; }
+  .cb-sec-ic { color:var(--sub); font-size:13px; transition:transform .2s; }
+  .cb-section.open .cb-sec-ic { transform:rotate(180deg); }
+  .cb-sec-body { display:none; padding:0 18px 18px; }
+  .cb-section.open .cb-sec-body { display:block; }
+
+  /* ── Form fields ───────────────────────────────────── */
+  .cb-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+  @media (max-width:500px) { .cb-row { grid-template-columns:1fr; } }
+  .cb-field { margin-bottom:12px; }
+  .cb-label { display:block; font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.07em; margin-bottom:4px; }
+  .cb-input,.cb-select,.cb-ta { width:100%; background:#0d1a0d; border:1.5px solid var(--border); border-radius:9px; padding:10px 13px; color:var(--text); font:14px 'DM Sans',sans-serif; transition:border-color .15s; }
+  .cb-input:focus,.cb-select:focus,.cb-ta:focus { border-color:var(--green); outline:none; }
+  .cb-ta { resize:vertical; min-height:72px; }
+  .cb-select option { background:#0d1a0d; }
+  .cb-hint { font-size:11px; color:var(--sub); margin-top:3px; }
+  .cb-toggle-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); }
+  .cb-toggle-row:last-child { border-bottom:none; }
+  .cb-toggle-lbl { font-size:13px; color:var(--text); }
+  .cb-toggle-sw { position:relative; width:40px; height:22px; flex-shrink:0; }
+  .cb-toggle-sw input { opacity:0; width:0; height:0; }
+  .cb-toggle-sl { position:absolute; inset:0; background:#1e3320; border-radius:22px; cursor:pointer; transition:.2s; }
+  .cb-toggle-sl::before { content:''; position:absolute; width:16px; height:16px; left:3px; bottom:3px; background:#5a7a60; border-radius:50%; transition:.2s; }
+  .cb-toggle-sw input:checked + .cb-toggle-sl { background:var(--green); }
+  .cb-toggle-sw input:checked + .cb-toggle-sl::before { transform:translateX(18px); background:#0a1409; }
+
+  /* ── Platforms checkboxes ──────────────────────────── */
+  .plat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; margin-top:6px; }
+  .plat-chk { display:flex; align-items:center; gap:7px; background:#0d1a0d; border:1.5px solid var(--border); border-radius:8px; padding:8px 10px; cursor:pointer; transition:border-color .15s; }
+  .plat-chk:has(input:checked) { border-color:var(--green); background:#0d1f0d; }
+  .plat-chk input { accent-color:var(--green); width:14px; height:14px; }
+  .plat-chk span { font-size:13px; color:var(--text); }
+
+  /* ── Submit ────────────────────────────────────────── */
+  .cb-submit-area { margin-top:24px; }
+  .cb-submit-btn { width:100%; background:var(--green); color:#0a1409; border:none; border-radius:12px; padding:15px; font:700 16px 'DM Sans',sans-serif; cursor:pointer; letter-spacing:.02em; transition:opacity .15s; }
+  .cb-submit-btn:hover { opacity:.9; }
+  .cb-submit-btn:disabled { opacity:.5; cursor:default; }
+  .cb-err { color:var(--red); font-size:13px; margin-top:10px; text-align:center; min-height:18px; }
+  .cb-success { text-align:center; padding:40px 20px; }
+  .cb-success h2 { font-family:'Bebas Neue',sans-serif; font-size:32px; color:var(--green); margin-bottom:8px; }
+  .cb-success p { color:var(--sub); font-size:14px; }
+</style>
+</head>
+<body>
+
+<header class="cb-header">
+  <a class="cb-header-logo" href="BlastyBiz.html">BlastyBiz</a>
+  <div class="cb-blasty-mini s-wave" id="cb-blasty">
+    <svg viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="cb-bf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#dce9ff"/><stop offset=".5" stop-color="#b3c8f8"/><stop offset="1" stop-color="#7ea4f0"/></linearGradient>
+        <linearGradient id="cb-bs" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#102957" stop-opacity="0"/><stop offset="1" stop-color="#102957" stop-opacity=".35"/></linearGradient>
+        <linearGradient id="cb-rf" x1="0" y1="0" x2=".8" y2="1"><stop offset="0" stop-color="#ff8fa3"/><stop offset="1" stop-color="#e53935"/></linearGradient>
+        <linearGradient id="cb-gf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b9fbc0"/><stop offset="1" stop-color="#43a047"/></linearGradient>
+        <radialGradient id="cb-ef" cx=".35" cy=".25" r=".9"><stop offset="0" stop-color="#fff"/><stop offset=".15" stop-color="#deffd8"/><stop offset=".58" stop-color="#65d84a"/><stop offset="1" stop-color="#1b8e2b"/></radialGradient>
+        <linearGradient id="cb-fo" x1=".5" y1="0" x2=".5" y2="1">
+          <stop offset="0"   style="stop-color:var(--flame-top,#ffdc2f)"/>
+          <stop offset=".46" style="stop-color:var(--flame-mid,#ff961f)"/>
+          <stop offset="1"   style="stop-color:var(--flame-bot,#ef3d10)"/>
+        </linearGradient>
+        <linearGradient id="cb-fi" x1=".5" y1="0" x2=".5" y2="1">
+          <stop offset="0"   style="stop-color:var(--flamein-top,#fffbd7)"/>
+          <stop offset=".55" style="stop-color:var(--flamein-mid,#fff04c)"/>
+          <stop offset="1"   style="stop-color:var(--flamein-bot,#ffac20)"/>
+        </linearGradient>
+        <clipPath id="cb-bc"><path d="M180 42 C117 89 89 163 91 251 C92 309 119 348 180 378 C241 348 268 309 269 251 C271 163 243 89 180 42Z"/></clipPath>
+      </defs>
+      <g id="cb-body" style="transform-box:fill-box;transform-origin:center 60%">
+        <path d="M154 385 C148 418 145 445 145 458 C155 448 164 442 180 438 C196 442 205 448 215 458 C215 445 212 418 206 385Z" fill="url(#cb-fo)"/>
+        <path d="M163 387 C160 413 158 434 158 444 C165 438 172 435 180 434 C188 435 195 438 202 444 C202 434 200 413 197 387Z" fill="url(#cb-fi)"/>
+        <path d="M180 42 C117 89 89 163 91 251 C92 309 119 348 180 378 C241 348 268 309 269 251 C271 163 243 89 180 42Z" fill="url(#cb-bf)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>
+        <g clip-path="url(#cb-bc)"><path d="M129 76 C163 135 178 240 214 315 C228 340 250 359 180 377 C153 285 146 168 176 43Z" fill="#fff" opacity=".18"/><path d="M231 76 C265 135 278 240 246 315 C232 340 210 359 180 377 C207 285 214 168 184 43Z" fill="url(#cb-bs)" opacity=".75"/></g>
+        <path d="M93 269 C121 289 148 299 180 299 C212 299 239 289 267 269 L265 301 C239 319 211 327 180 327 C149 327 121 319 95 301Z" fill="url(#cb-gf)" stroke="#102957" stroke-width="8"/>
+        <g style="transform-box:fill-box;transform-origin:180px 100px">
+          <path d="M180 42 C151 64 129 88 113 116 C137 105 157 100 180 100 C203 100 223 105 247 116 C231 88 209 64 180 42Z" fill="url(#cb-rf)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>
+        </g>
+        <ellipse cx="142" cy="185" rx="29" ry="30" fill="url(#cb-ef)" stroke="#102957" stroke-width="8"/>
+        <ellipse cx="142" cy="188" rx="13" ry="14" fill="#102957"/><ellipse cx="139" cy="184" rx="5" ry="5" fill="#fff"/>
+        <ellipse cx="218" cy="185" rx="29" ry="30" fill="url(#cb-ef)" stroke="#102957" stroke-width="8"/>
+        <ellipse cx="218" cy="188" rx="13" ry="14" fill="#102957"/><ellipse cx="215" cy="184" rx="5" ry="5" fill="#fff"/>
+        <path d="M157 238 Q180 248 203 238" fill="none" stroke="#102957" stroke-width="7" stroke-linecap="round"/>
+        <g>
+          <circle class="cb-wl" cx="140" cy="296" r="5" fill="#39ff14" opacity="0"/>
+          <circle class="cb-wl" cx="160" cy="300" r="5" fill="#39ff14" opacity="0"/>
+          <circle class="cb-wl" cx="180" cy="301" r="5" fill="#39ff14" opacity="0"/>
+          <circle class="cb-wl" cx="200" cy="300" r="5" fill="#39ff14" opacity="0"/>
+          <circle class="cb-wl" cx="220" cy="296" r="5" fill="#39ff14" opacity="0"/>
+        </g>
+      </g>
+      <g>
+        <ellipse class="cb-sp" cx="180" cy="415" rx="2" ry="2" fill="#c8c8c8" opacity="0"/>
+        <ellipse class="cb-sp" cx="165" cy="425" rx="2" ry="2" fill="#b8b8b8" opacity="0"/>
+      </g>
+    </svg>
+  </div>
+  <div class="cb-header-msg" id="cb-header-msg">
+    <strong>Let's set up your business!</strong> Fill in what you know — you can always update later.
+  </div>
+</header>
+
+<div class="cb-main">
+  <div class="cb-page-title">Create Business</div>
+  <p class="cb-page-sub">OB2 — Direct setup. No wizard, no waiting — just fill in your details and blast.</p>
+
+  <div id="cb-form">
+    <!-- Section 1: Business Info -->
+    <div class="cb-section open" id="cbs-info">
+      <div class="cb-sec-head" onclick="cbToggle('info')">
+        <span class="cb-sec-title">🏢 Business Info <span class="cb-sec-badge">Required</span></span>
+        <span class="cb-sec-ic">▾</span>
+      </div>
+      <div class="cb-sec-body">
+        <div class="cb-row">
+          <div class="cb-field">
+            <label class="cb-label">Business name *</label>
+            <input class="cb-input" id="f-bizName" type="text" placeholder="e.g. Mike's Auto Repair" autocomplete="organization"/>
+          </div>
+          <div class="cb-field">
+            <label class="cb-label">Website</label>
+            <input class="cb-input" id="f-website" type="url" placeholder="https://yoursite.com" autocomplete="url"/>
+          </div>
+        </div>
+        <div class="cb-row">
+          <div class="cb-field">
+            <label class="cb-label">Your name *</label>
+            <input class="cb-input" id="f-ownerName" type="text" placeholder="First Last" autocomplete="name"/>
+          </div>
+          <div class="cb-field">
+            <label class="cb-label">Your title / role</label>
+            <input class="cb-input" id="f-role" type="text" placeholder="e.g. Owner, Manager"/>
+          </div>
+        </div>
+        <div class="cb-row">
+          <div class="cb-field">
+            <label class="cb-label">Phone</label>
+            <input class="cb-input" id="f-phone" type="tel" placeholder="(555) 555-5555" autocomplete="tel"/>
+          </div>
+          <div class="cb-field">
+            <label class="cb-label">Location type</label>
+            <select class="cb-select" id="f-locationType">
+              <option value="physical">Physical location</option>
+              <option value="online">Online only</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
+        </div>
+        <div id="cb-address-fields">
+          <div class="cb-field">
+            <label class="cb-label">Street address</label>
+            <input class="cb-input" id="f-street" type="text" placeholder="123 Main St" autocomplete="street-address"/>
+          </div>
+          <div class="cb-row">
+            <div class="cb-field">
+              <label class="cb-label">City</label>
+              <input class="cb-input" id="f-city" type="text" autocomplete="address-level2"/>
+            </div>
+            <div class="cb-field">
+              <label class="cb-label">State</label>
+              <input class="cb-input" id="f-state" type="text" placeholder="TX" autocomplete="address-level1" maxlength="2"/>
+            </div>
+            <div class="cb-field">
+              <label class="cb-label">ZIP</label>
+              <input class="cb-input" id="f-zip" type="text" placeholder="12345" autocomplete="postal-code" maxlength="10"/>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:8px">
+          <div class="cb-label" style="margin-bottom:8px">Marketing preferences</div>
+          <div class="cb-toggle-row">
+            <span class="cb-toggle-lbl">Include my name in marketing copy</span>
+            <label class="cb-toggle-sw"><input type="checkbox" id="pref-name"><span class="cb-toggle-sl"></span></label>
+          </div>
+          <div class="cb-toggle-row">
+            <span class="cb-toggle-lbl">Include my title in marketing copy</span>
+            <label class="cb-toggle-sw"><input type="checkbox" id="pref-role"><span class="cb-toggle-sl"></span></label>
+          </div>
+          <div class="cb-toggle-row">
+            <span class="cb-toggle-lbl">Include phone number in marketing copy</span>
+            <label class="cb-toggle-sw"><input type="checkbox" id="pref-phone" checked><span class="cb-toggle-sl"></span></label>
+          </div>
+          <div class="cb-toggle-row">
+            <span class="cb-toggle-lbl">Mention address in marketing copy</span>
+            <label class="cb-toggle-sw"><input type="checkbox" id="pref-address" checked><span class="cb-toggle-sl"></span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Your Story -->
+    <div class="cb-section" id="cbs-story">
+      <div class="cb-sec-head" onclick="cbToggle('story')">
+        <span class="cb-sec-title">📖 Your Story <span class="cb-sec-badge">Optional — makes AI smarter</span></span>
+        <span class="cb-sec-ic">▾</span>
+      </div>
+      <div class="cb-sec-body">
+        <div class="cb-field">
+          <label class="cb-label">How did the business start?</label>
+          <textarea class="cb-ta" id="f-story" placeholder="Tell the origin story…" rows="3"></textarea>
+        </div>
+        <div class="cb-field">
+          <label class="cb-label">What makes you different?</label>
+          <textarea class="cb-ta" id="f-different" placeholder="vs. the competition…" rows="2"></textarea>
+        </div>
+        <div class="cb-row">
+          <div class="cb-field">
+            <label class="cb-label">Awards / press / milestones</label>
+            <textarea class="cb-ta" id="f-awards" placeholder="Any recognition…" rows="2"></textarea>
+          </div>
+          <div class="cb-field">
+            <label class="cb-label">Ideal customer</label>
+            <textarea class="cb-ta" id="f-customer" placeholder="Who do you serve best?" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="cb-field">
+          <label class="cb-label">Anything else I should always know?</label>
+          <textarea class="cb-ta" id="f-other" placeholder="Extra context for AI…" rows="2"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: First Campaign -->
+    <div class="cb-section" id="cbs-campaign">
+      <div class="cb-sec-head" onclick="cbToggle('campaign')">
+        <span class="cb-sec-title">🚀 First Campaign <span class="cb-sec-badge">Required</span></span>
+        <span class="cb-sec-ic">▾</span>
+      </div>
+      <div class="cb-sec-body">
+        <div class="cb-row">
+          <div class="cb-field">
+            <label class="cb-label">Campaign name *</label>
+            <input class="cb-input" id="f-campName" type="text" placeholder="e.g. Summer Sale"/>
+          </div>
+          <div class="cb-field">
+            <label class="cb-label">Special offer / CTA</label>
+            <input class="cb-input" id="f-offer" type="text" placeholder="e.g. 20% off this week"/>
+          </div>
+        </div>
+        <div class="cb-field">
+          <label class="cb-label">What's this campaign about? *</label>
+          <textarea class="cb-ta" id="f-about" placeholder="What are you promoting?" rows="2"></textarea>
+        </div>
+        <div class="cb-row">
+          <div class="cb-field">
+            <label class="cb-label">Target audience</label>
+            <input class="cb-input" id="f-audience" type="text" placeholder="e.g. Local homeowners 30–55"/>
+          </div>
+          <div class="cb-field">
+            <label class="cb-label">Business category</label>
+            <input class="cb-input" id="f-category" type="text" placeholder="e.g. Auto Repair"/>
+            <p class="cb-hint">Leave blank — AI will suggest one after you save.</p>
+          </div>
+        </div>
+        <div class="cb-field">
+          <label class="cb-label">Platforms to blast on</label>
+          <div class="plat-grid">
+            <label class="plat-chk"><input type="checkbox" value="google_business" checked> <span>📍 Google</span></label>
+            <label class="plat-chk"><input type="checkbox" value="facebook" checked> <span>📘 Facebook</span></label>
+            <label class="plat-chk"><input type="checkbox" value="instagram"> <span>📸 Instagram</span></label>
+            <label class="plat-chk"><input type="checkbox" value="twitter"> <span>𝕏 Twitter/X</span></label>
+            <label class="plat-chk"><input type="checkbox" value="linkedin"> <span>💼 LinkedIn</span></label>
+            <label class="plat-chk"><input type="checkbox" value="yelp"> <span>⭐ Yelp</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cb-submit-area">
+      <button class="cb-submit-btn" id="cb-submit" onclick="cbSubmit()">🚀 Create Business &amp; Launch</button>
+      <div class="cb-err" id="cb-err"></div>
+    </div>
+  </div>
+
+  <div class="cb-success" id="cb-success" style="display:none">
+    <div id="cb-success-blasty" style="display:inline-block;margin-bottom:16px"></div>
+    <h2>🎉 You're Live!</h2>
+    <p>Your business is set up and your first campaign is ready. Redirecting to your dashboard…</p>
+  </div>
+</div>
+
+<script>
+function cbToggle(id) {
+  document.getElementById('cbs-'+id).classList.toggle('open');
+}
+document.getElementById('f-locationType').addEventListener('change', function() {
+  document.getElementById('cb-address-fields').style.display = this.value === 'online' ? 'none' : '';
+});
+function cbSetMood(cls) {
+  const el = document.getElementById('cb-blasty');
+  el.className = 'cb-blasty-mini s-arrive ' + cls;
+  void el.offsetWidth;
+  setTimeout(()=>{ el.className = 'cb-blasty-mini ' + cls; }, 400);
+}
+document.querySelectorAll('.cb-input,.cb-ta,.cb-select').forEach(el => {
+  el.addEventListener('focus', () => cbSetMood('s-ask'));
+  el.addEventListener('blur',  () => cbSetMood('s-wave'));
+});
+</script>
+
+<script type="module">
+import { auth } from './firebase-init-v2.js';
+import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import {
+  getFirestore, doc, collection, serverTimestamp, writeBatch, getDoc, setDoc
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const db = getFirestore(getApp());
+let currentUser = null;
+let editBizId   = null;
+
+const urlP = new URLSearchParams(window.location.search);
+editBizId = urlP.get('bizId') || null;
+
+onAuthStateChanged(auth, async user => {
+  if (!user) { window.location.href = 'BlastyBiz-Login.html?next=BlastyBiz-CreateBiz.html'; return; }
+  currentUser = user;
+
+  if (editBizId) {
+    try {
+      const snap = await getDoc(doc(db, 'users', user.uid, 'businesses', editBizId));
+      if (snap.exists()) prefill(snap.data());
+    } catch(e) { console.warn('[cb prefill]', e); }
+  }
+});
+
+function prefill(d) {
+  const s = (id, v) => { const el=document.getElementById(id); if(el&&v!==undefined) el.value=v; };
+  s('f-bizName',   d.name||'');
+  s('f-ownerName', d.ownerName||'');
+  s('f-role',      d.ownerRole||'');
+  s('f-phone',     d.phone||'');
+  s('f-website',   d.website||'');
+  if (d.address) {
+    s('f-street', d.address.street||'');
+    s('f-city',   d.address.city||'');
+    s('f-state',  d.address.state||'');
+    s('f-zip',    d.address.zip||'');
+  }
+  if (d.locationType) s('f-locationType', d.locationType);
+  s('f-story',     d.story||'');
+  s('f-different', d.different||'');
+  s('f-awards',    d.awards||'');
+  s('f-customer',  d.customer||'');
+  s('f-other',     d.otherInfo||'');
+  document.querySelector('.cb-page-title').textContent = 'Edit Business';
+  document.getElementById('cb-header-msg').innerHTML = '<strong>Update your business</strong> — edit any details and hit save.';
+}
+
+window.cbSubmit = async function() {
+  const err = document.getElementById('cb-err');
+  err.textContent = '';
+  const bizName  = document.getElementById('f-bizName').value.trim();
+  const campName = document.getElementById('f-campName').value.trim();
+  const about    = document.getElementById('f-about').value.trim();
+  if (!bizName)  { err.textContent='Please enter a business name.'; return; }
+  if (!campName) { err.textContent='Please enter a campaign name.'; document.getElementById('cbs-campaign').classList.add('open'); return; }
+  if (!about)    { err.textContent='Please describe what this campaign is about.'; return; }
+  if (!currentUser) { err.textContent='Not signed in. Please reload.'; return; }
+
+  const btn = document.getElementById('cb-submit');
+  btn.disabled=true; btn.textContent='Saving…';
+  cbSetMood('s-working s-flame-blue s-lights-pulse');
+
+  const platforms = [...document.querySelectorAll('.plat-chk input:checked')].map(c=>c.value);
+  const toggles = {
+    ynMentionName:    document.getElementById('pref-name').checked,
+    ynMentionRole:    document.getElementById('pref-role').checked,
+    ynMentionPhone:   document.getElementById('pref-phone').checked,
+    ynMentionAddress: document.getElementById('pref-address').checked,
+  };
+
+  try {
+    const batch = writeBatch(db);
+    let bizRef;
+    if (editBizId) {
+      bizRef = doc(db, 'users', currentUser.uid, 'businesses', editBizId);
+    } else {
+      bizRef = doc(collection(db, 'users', currentUser.uid, 'businesses'));
+    }
+    const bizId  = bizRef.id;
+    const campId = 'c_' + Date.now();
+
+    const locType = document.getElementById('f-locationType').value;
+    const address = locType !== 'online' ? {
+      street: document.getElementById('f-street').value.trim(),
+      city:   document.getElementById('f-city').value.trim(),
+      state:  document.getElementById('f-state').value.trim(),
+      zip:    document.getElementById('f-zip').value.trim(),
+    } : {};
+
+    const ownerName = document.getElementById('f-ownerName').value.trim();
+    const role      = document.getElementById('f-role').value.trim();
+    const story     = document.getElementById('f-story').value.trim();
+    const different = document.getElementById('f-different').value.trim();
+    const awards    = document.getElementById('f-awards').value.trim();
+    const customer  = document.getElementById('f-customer').value.trim();
+    const other     = document.getElementById('f-other').value.trim();
+    const phone     = document.getElementById('f-phone').value.trim();
+    const website   = document.getElementById('f-website').value.trim();
+    const category  = document.getElementById('f-category').value.trim();
+    const audience  = document.getElementById('f-audience').value.trim();
+    const offer     = document.getElementById('f-offer').value.trim();
+
+    const globalMemory = [
+      bizName     && 'Business: ' + bizName,
+      ownerName   && 'Owner: ' + ownerName + (role ? ' (' + role + ')' : ''),
+      phone       && toggles.ynMentionPhone   && 'Phone: ' + phone,
+      website     && 'Website: ' + website,
+      locType !== 'online' && address.city && 'Location: ' + [address.street,address.city,address.state].filter(Boolean).join(', '),
+      story       && 'Story: ' + story,
+      different   && 'What makes us different: ' + different,
+      awards      && 'Awards/press: ' + awards,
+      customer    && 'Ideal customer: ' + customer,
+      other       && other,
+    ].filter(Boolean).join('\n');
+
+    const bizData = {
+      name: bizName, businessName: bizName, ownerName, ownerRole: role,
+      phone, website, locationType: locType, address,
+      story, different, awards, customer, otherInfo: other,
+      businessDescription: [story, different].filter(Boolean).join(' '),
+      globalMemory, toggles,
+      uid: currentUser.uid, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+      onboarded: true, onboardingVersion: 'ob2',
+      activeCampaign: campId,
+    };
+
+    const campaignStory = [
+      about    && 'About this campaign: ' + about,
+      audience && 'Target audience: '     + audience,
+    ].filter(Boolean).join('\n');
+
+    const campData = {
+      name: campName, story: campaignStory, audience, offer,
+      platformsEnabled: platforms,
+      category: category || '',
+      createdAt: serverTimestamp(), businessId: bizId, uid: currentUser.uid, status: 'active',
+    };
+
+    if (editBizId) {
+      batch.set(bizRef, bizData, { merge: true });
+    } else {
+      batch.set(bizRef, bizData);
+      await setDoc(doc(db, 'users', currentUser.uid), {
+        activeBusiness: bizId, onboarded: true, onboardingVersion: 'ob2',
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    }
+    batch.set(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'campaigns', campId), campData);
+
+    await batch.commit();
+
+    cbSetMood('s-celebrate s-flame-green s-lights-flash s-smoke');
+    document.getElementById('cb-form').style.display   = 'none';
+    document.getElementById('cb-success').style.display = 'block';
+
+    setTimeout(() => {
+      window.location.href = 'BlastyBiz.html?bizId=' + bizId + '&cid=' + campId + '&autogenerate=1';
+    }, 2200);
+
+  } catch(e) {
+    console.error('[cb save]', e);
+    cbSetMood('s-ask');
+    err.textContent = 'Something went wrong: ' + e.message;
+    btn.disabled=false; btn.textContent='🚀 Create Business & Launch';
+  }
+};
+
+function cbSetMood(cls) {
+  const el = document.getElementById('cb-blasty');
+  el.className = 'cb-blasty-mini s-arrive ' + cls;
+  void el.offsetWidth;
+  setTimeout(()=>{ el.className = 'cb-blasty-mini ' + cls; }, 400);
+}
+</script>
+
+</body>
+</html>

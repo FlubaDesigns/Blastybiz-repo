@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784569018667"/>
+  <link rel="stylesheet" href="global-style.css?v=1784570763504"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -1046,6 +1046,33 @@
     }
   ];
 
+  /* Expose override applicator — called by module script after loading config/ob1Steps */
+  window._ob2ApplyOverrides = function(ov) {
+    if (!ov) return;
+    STEPS.forEach(function(s) {
+      if (s.key && ov[s.key]) {
+        var o = ov[s.key];
+        if (o.blastyMsg) { s.blastyMsg = o.blastyMsg; delete s.blastyMsgFn; }
+        if (o.anim)      s.anim = o.anim;
+      }
+    });
+  };
+
+  const DEFAULT_ANIM = {
+    's-wave':        { flame: 's-flame-green',  lights: 's-lights-sequence' },
+    's-wave-2':      { flame: 's-flame-green',  lights: 's-lights-sequence', noseSpin: true },
+    's-ask':         {},
+    's-ask-2':       {},
+    's-ask-3':       { lights: 's-lights-pulse' },
+    's-happy':       { flame: 's-flame-green',  noseSpin: true },
+    's-working':     { flame: 's-flame-blue',   lights: 's-lights-pulse' },
+    's-celebrate':   { flame: 's-flame-green',  lights: 's-lights-flash', smoke: true },
+    's-spin':        { flame: 's-flame-purple', noseSpin: true },
+    's-tilt-left':   { eyes: 's-eyes-left' },
+    's-tilt-right':  { eyes: 's-eyes-right' },
+    's-arrive-land': { flame: 's-flame-blue',   lights: 's-lights-pulse' },
+  };
+
   const MOOD_CAPTIONS = {
     's-wave':        'Hey there! 👋',
     's-wave-2':      'So great to meet you! 🚀',
@@ -1067,11 +1094,12 @@
     const spec  = typeof moodOrSpec === 'string'
                   ? { mood: moodOrSpec }
                   : (moodOrSpec || { mood: 's-ask' });
-    const mood  = spec.mood || 's-ask';
+    const mood     = spec.mood || 's-ask';
+    const merged   = Object.assign({}, DEFAULT_ANIM[mood] || {}, spec);
     const extra = [
-      spec.eyes, spec.flame, spec.lights,
-      spec.smoke    ? 's-smoke'     : '',
-      spec.noseSpin ? 's-nose-spin' : ''
+      merged.eyes, merged.flame, merged.lights,
+      merged.smoke    ? 's-smoke'     : '',
+      merged.noseSpin ? 's-nose-spin' : ''
     ].filter(Boolean);
     const el = document.getElementById('pb-blasty');
     el.className = 'pb-blasty s-arrive';
@@ -1352,9 +1380,13 @@
   }
 
   window._ob2StartConvo = function() {
+    if (window._ob2Prefill) Object.assign(answers, window._ob2Prefill);
     setMood('s-wave');
     setTimeout(() => {
-      addBlastyBubble("Hi! I'm <strong>Blasty</strong> 🚀 I'm your AI marketing assistant — I'll walk you through setting up your BlastyBiz profile. It only takes a few minutes and I'll ask everything I need to start blasting for you!");
+      const greeting = window._ob2EditBizId
+        ? "Welcome back! Let's update your business profile. I'll walk through each step — just edit anything that's changed. 👋"
+        : "Hi! I'm <strong>Blasty</strong> 🚀 I'm your AI marketing assistant — I'll walk you through setting up your BlastyBiz profile. It only takes a few minutes and I'll ask everything I need to start blasting for you!";
+      addBlastyBubble(greeting);
       setTimeout(showStep, 1400);
     }, 600);
   };
@@ -1378,7 +1410,10 @@ import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.
 const db = getFirestore(getApp());
 
 window._ob2Save = async function(answers, toggles) {
-  const bizRef = doc(collection(db, 'users', window._ob2Uid, 'businesses'));
+  const isEdit = !!window._ob2EditBizId;
+  const bizRef = isEdit
+    ? doc(db, 'users', window._ob2Uid, 'businesses', window._ob2EditBizId)
+    : doc(collection(db, 'users', window._ob2Uid, 'businesses'));
   const bizId  = bizRef.id;
   const campId = 'c_' + Date.now();
 
@@ -1417,15 +1452,17 @@ window._ob2Save = async function(answers, toggles) {
       other:     answers.other     || '',
     },
     createdAt: serverTimestamp()
-  });
+  }, isEdit ? { merge: true } : {});
 
-  /* ── Mark user as onboarded (all three docs or none) ─────── */
-  batch.set(doc(db, 'users', window._ob2Uid), {
-    onboarded:           true,
-    activeBusiness:      bizId,
-    onboardingVersion:   1,
-    onboardingCompleted: serverTimestamp()
-  }, { merge: true });
+  /* ── Mark user as onboarded — only for new businesses ─────── */
+  if (!isEdit) {
+    batch.set(doc(db, 'users', window._ob2Uid), {
+      onboarded:           true,
+      activeBusiness:      bizId,
+      onboardingVersion:   1,
+      onboardingCompleted: serverTimestamp()
+    }, { merge: true });
+  }
 
   /* ── First campaign document ──────────────────────────────── */
   batch.set(
@@ -1483,12 +1520,51 @@ if (isSignInWithEmailLink(auth, window.location.href)) {
 } else {
   onAuthStateChanged(auth, async user => {
     if (!user) { window.location.href = 'BlastyBiz-Trial.html'; return; }
-    const userSnap = await getDoc(doc(db, 'users', user.uid));
-    const ud = userSnap.exists() ? userSnap.data() : {};
-    if (ud.onboarded && ud.onboardingVersion && ud.activeBusiness) {
+    const urlP      = new URLSearchParams(window.location.search);
+    const editBizId = urlP.get('bizId') || null;
+    const isNew     = urlP.has('new');
+    const userSnap  = await getDoc(doc(db, 'users', user.uid));
+    const ud        = userSnap.exists() ? userSnap.data() : {};
+    // Redirect already-onboarded users back to the app UNLESS they explicitly
+    // chose to add a new business (?new=1) or edit an existing one (?bizId=...)
+    if (ud.onboarded && ud.onboardingVersion && ud.activeBusiness && !isNew && !editBizId) {
       window.location.href = 'BlastyBiz.html';
       return;
     }
+    // Return-visit: load existing biz data for pre-population
+    if (editBizId) {
+      window._ob2EditBizId = editBizId;
+      try {
+        const bizSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', editBizId));
+        if (bizSnap.exists()) {
+          const d = bizSnap.data();
+          window._ob2Prefill = {
+            bizName:      d.name || d.businessName || '',
+            ownerName:    d.ownerName    || '',
+            role:         d.ownerRole   || '',
+            phone:        d.phone       || '',
+            locationType: d.locationType|| '',
+            street:       (d.address && d.address.street) || d.street || '',
+            city:         (d.address && d.address.city)   || d.city   || '',
+            state:        (d.address && d.address.state)  || d.state  || '',
+            zip:          (d.address && d.address.zip)    || d.zip    || '',
+            website:      d.website     || '',
+            story:        (d.aiContext && d.aiContext.story)     || d.story     || '',
+            different:    (d.aiContext && d.aiContext.different) || d.different || '',
+            awards:       (d.aiContext && d.aiContext.awards)    || d.awards    || '',
+            customer:     (d.aiContext && d.aiContext.customer)  || d.customer  || '',
+            other:        (d.aiContext && d.aiContext.other)     || d.otherInfo || '',
+          };
+        }
+      } catch(e) { console.warn('[ob2 prefill]', e); }
+    }
+    // Load step overrides from Firestore (non-fatal)
+    try {
+      const ovSnap = await getDoc(doc(db, 'config', 'ob1Steps'));
+      if (ovSnap.exists() && window._ob2ApplyOverrides) {
+        window._ob2ApplyOverrides(ovSnap.data());
+      }
+    } catch(e) { /* use defaults if unavailable */ }
     const plan = ud.plan || 'trial';
     _ready(user.uid, user.displayName || '', plan);
   });

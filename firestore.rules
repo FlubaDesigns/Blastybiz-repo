@@ -257,6 +257,12 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // OB1 step text/anim overrides — public read so onboarding users get live customizations
+    match /config/ob1Steps {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Admin config (admin email list, feature flags, etc.) — admin only
     match /config/{doc} {
       allow read, write: if isAdmin();
