@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784525937232"/>
+  <link rel="stylesheet" href="global-style.css?v=1784527450583"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -738,6 +738,21 @@
         { value: 'linkedin',        label: '💼 LinkedIn',    proOnly: true }
       ],
       validate: v => (v && v.length) ? null : 'Pick at least one platform!'
+    },
+    {
+      mood: 's-working', pos: 'left',
+      blastyMsgFn: a => 'Almost done! Let me figure out the right <strong>category</strong> for ' + a.bizName + ' — the right one gets you found on every platform...',
+      inputType: 'ai-suggest',
+      key: 'category',
+      fetchFn: async a => {
+        const res = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/suggestCategory', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bizName: a.bizName })
+        });
+        const data = await res.json();
+        return data.category || 'Local Business';
+      }
     }
   ];
 
@@ -822,6 +837,12 @@
       html += '</div>';
       html += '<input type="hidden" id="ob2-input" value=""/>';
       html += '<button type="button" class="bubble-action-btn" id="ob2-btn" onclick="window._ob2Continue()">Blast! 🚀</button>';
+    } else if (s.inputType === 'ai-suggest') {
+      html += '<div id="ob2-ai-suggest-wrap" style="padding:4px 0">'
+        + '<div style="color:var(--muted,#888);font-size:13px;display:flex;align-items:center;gap:8px">'
+        + '<span style="display:inline-block;animation:spin 1s linear infinite;font-size:16px">⚙️</span> Thinking...</div>'
+        + '</div>'
+        + '<input type="hidden" id="ob2-input" value=""/>';
     } else if (s.inputType === 'textarea') {
       html += '<textarea id="ob2-input" class="bubble-textarea" placeholder="' + (s.placeholder || '') + '" rows="3"></textarea>';
       if (s.hint) html += '<div class="bubble-hint">' + s.hint + '</div>';
@@ -864,9 +885,50 @@
     setTimeout(() => {
       const msg = s.blastyMsgFn ? s.blastyMsgFn(answers) : s.blastyMsg;
       addBlastyBubble(msg);
-      setTimeout(() => renderInput(s), 320);
+      setTimeout(() => {
+        renderInput(s);
+        /* ── AI-suggest: fire fetch after bubble renders ── */
+        if (s.inputType === 'ai-suggest' && s.fetchFn) {
+          s.fetchFn(answers)
+            .then(suggestion => {
+              const wrap = document.getElementById('ob2-ai-suggest-wrap');
+              if (!wrap) return;
+              /* Blasty states the category confidently, then user confirms or fixes */
+              setMood('s-happy');
+              setTimeout(() => {
+                addBlastyBubble('The best category for ' + answers.bizName + ' on the platforms is <strong>' + suggestion + '</strong> — does that sound right?');
+                const safe = suggestion.replace(/'/g, "\\'");
+                wrap.innerHTML =
+                  '<div class="ob2-choices">'
+                  + '<button type="button" class="ob2-choice-btn" onclick="window._ob2AcceptSuggestion(\'' + safe + '\')">✅ Yep, that\'s it</button>'
+                  + '<button type="button" class="ob2-choice-btn" onclick="window._ob2ChangeSuggestion()">✏️ Not quite</button>'
+                  + '</div>';
+              }, 200);
+            })
+            .catch(() => { window._ob2ChangeSuggestion(); });
+        }
+      }, 320);
     }, delay);
   }
+
+  window._ob2AcceptSuggestion = function(value) {
+    answers[STEPS[step].key] = value;
+    const bubble = document.getElementById('ob2-current-bubble');
+    if (bubble) lockBubble(bubble, value);
+    step++;
+    setTimeout(showStep, 380);
+  };
+
+  window._ob2ChangeSuggestion = function() {
+    const wrap = document.getElementById('ob2-ai-suggest-wrap');
+    if (!wrap) return;
+    wrap.innerHTML =
+      '<input id="ob2-input-cat" type="text" class="bubble-input" placeholder="e.g. Hair Salon, Mexican Restaurant..." autocomplete="off"/>'
+      + '<button type="button" class="bubble-action-btn" style="margin-top:8px" '
+      + 'onclick="window._ob2AcceptSuggestion(document.getElementById(\'ob2-input-cat\').value.trim()||\'Local Business\')">Looks good →</button>';
+    const inp = document.getElementById('ob2-input-cat');
+    if (inp) { inp.focus(); inp.addEventListener('keydown', e => { if (e.key === 'Enter') window._ob2AcceptSuggestion(inp.value.trim() || 'Local Business'); }); }
+  };
 
   window._ob2MsChange = function() {
     const checked = [...document.querySelectorAll('.ob2-ms-check:checked')].map(c => c.value);
@@ -953,6 +1015,7 @@ window._ob2Save = async function(answers, toggles) {
   /* ── Save business doc ─────────────────────────────────────── */
   await setDoc(bizRef, {
     name:               answers.bizName      || '',
+    category:           answers.category     || '',
     ownerName:          answers.ownerName    || '',
     role:               answers.role         || '',
     phone:              answers.phone        || '',

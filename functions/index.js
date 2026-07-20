@@ -551,6 +551,22 @@ Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
   }
 });
 
+exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, async (req, res) => {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  const { bizName } = req.body;
+  if (!bizName) return res.status(400).json({ error: 'bizName required' });
+  try {
+    const { text } = await callAI(
+      `What type of business is "${bizName}"? Reply with ONLY the business category, 1-4 words. Examples: "Hair Salon", "Mexican Restaurant", "Auto Repair Shop", "Digital Marketing Agency", "Landscaping Company", "Coffee Shop". No punctuation, no explanation — just the category.`,
+      { tier: 'fast', maxTokens: 20 }
+    );
+    res.json({ category: text.trim().replace(/^["']+|["']+$/g, '') });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'], timeoutSeconds: 120 }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
