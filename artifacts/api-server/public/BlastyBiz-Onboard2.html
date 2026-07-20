@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784536404913"/>
+  <link rel="stylesheet" href="global-style.css?v=1784537230277"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -1120,9 +1120,17 @@
     }, 440);
     try {
       const { bizId, campId } = await window._ob2Save(answers, toggles);
+      // #2 Post-onboarding summary — show "Here's what we built" before redirect
+      const safeBizName = (answers.bizName || 'Your business').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       setTimeout(() => {
-        window.location.href = 'BlastyBiz.html?bizId=' + bizId + '&cid=' + campId + '&autogenerate=1';
-      }, 1800);
+        addBlastyBubble(
+          "Here's what we just built: <strong>" + safeBizName + "</strong> is set up with your first campaign ready to go. " +
+          "AI is about to generate your content — let's launch! 🚀"
+        );
+        setTimeout(() => {
+          window.location.href = 'BlastyBiz.html?bizId=' + bizId + '&cid=' + campId + '&autogenerate=1';
+        }, 2400);
+      }, 600);
     } catch (e) {
       console.error('[ob2 save]', e);
       addBlastyBubble("Something went wrong saving — let's try again.");

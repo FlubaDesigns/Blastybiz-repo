@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784536404913" />
+<link rel="stylesheet" href="global-style.css?v=1784537230277" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -121,10 +121,31 @@
   <div class="tab" onclick="showTab('account')" id="tab-account"><span class="tab-icon">💼 </span>Account</div>
 </div>
 </div>
+
+<!-- ── Persistent workspace info bar: biz name + plan badge (all tabs) ── -->
+<div id="workspace-info-bar" style="display:none;align-items:center;gap:10px;padding:7px 16px;background:var(--card,#1e1e1e);border-bottom:1px solid var(--border,#2a2a2a);font-size:13px;">
+  <span style="color:var(--muted,#888);font-size:12px;flex-shrink:0;">🏢</span>
+  <span id="wb-biz-name" style="font-weight:600;color:var(--light,#f0f0f0);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+  <span id="wb-plan-badge" style="display:none;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 8px;border-radius:10px;background:#2a2a2a;color:#aaa;flex-shrink:0;"></span>
+</div>
+<!-- ── Trial mode banner: visible only when plan === 'trial' ── -->
+<div id="trial-banner" style="display:none;align-items:center;gap:10px;padding:9px 16px;background:#7c2d00;color:#ffcca0;font-size:13px;font-weight:600;">
+  <span>⚠️ Trial mode — your changes are not being saved.</span>
+  <a href="BlastyBiz-Plan-Pro.html" style="color:#ffcca0;text-decoration:underline;margin-left:auto;font-weight:700;white-space:nowrap;">Sign up to save →</a>
+</div>
+
 <!-- ══════════════════════════════════════════
      TAB 1: CREATE LISTING
 ══════════════════════════════════════════ -->
 <div class="section active" id="section-create">
+
+  <!-- Recent campaigns bar — shown for returning users with 2+ campaigns -->
+  <div id="recent-activity-bar" style="display:none;padding:0 0 4px;">
+    <div class="card" style="padding:10px 14px 8px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;color:var(--muted,#888);letter-spacing:.5px;margin-bottom:8px;">RECENT CAMPAIGNS</div>
+      <div id="recent-activity-list" style="display:flex;flex-direction:column;gap:4px;"></div>
+    </div>
+  </div>
 
   <!-- TOP ROW: 2-1 — business + campaigns left, hero image right -->
   <div class="row">
@@ -658,7 +679,7 @@
     <div class="col-left">
       <div class="card">
         <div class="card-title">🏪 Business Profile</div>
-        <p class="helper mb-16">Saved automatically. Used to pre-fill every listing.</p>
+        <p class="helper mb-16">Saved automatically. Used to pre-fill every listing. <span id="profile-save-status" style="font-size:12px;color:#4caf50;opacity:0;transition:opacity 0.4s;margin-left:4px;"></span></p>
 
         <label for="profile-name">Business Name</label>
         <input type="text" id="profile-name" placeholder="Your business name" oninput="saveProfile()" />
@@ -1747,21 +1768,47 @@ function closeLibraryModal() {
   document.body.style.overflow = '';
 }
 
-function renderLibraryItems(items) {
+function filterLibraryByPlatform(platformId) {
+  const filterSel = document.getElementById('lib-platform-filter');
+  const allItems  = filterSel ? filterSel._allItems : null;
+  if (allItems) renderLibraryItems(allItems, platformId);
+}
+
+function renderLibraryItems(items, filterPlatformId) {
   const body = document.getElementById('library-modal-body');
   if (!body) return;
-  if (!items || items.length === 0) {
+
+  // #7 Platform filter — build dropdown when items span 2+ platforms
+  const filterRow = document.getElementById('lib-filter-row');
+  const filterSel = document.getElementById('lib-platform-filter');
+  if (filterRow && filterSel) {
+    const uniquePlatforms = [...new Map(items.map(i => [i.platformId, i])).values()];
+    if (uniquePlatforms.length >= 2) {
+      filterRow.style.display = 'block';
+      const prev = filterSel.value;
+      filterSel.innerHTML = '<option value="">All platforms</option>' +
+        uniquePlatforms.map(i => `<option value="${escHtml(i.platformId||'')}"${prev===(i.platformId||'')?'  selected':''}>${escHtml(i.platformName||i.platformId||'Other')}</option>`).join('');
+      filterSel._allItems = items;
+      if (!filterPlatformId) filterPlatformId = prev;
+    } else {
+      filterRow.style.display = 'none';
+    }
+  }
+
+  const displayItems = filterPlatformId ? items.filter(i => i.platformId === filterPlatformId) : items;
+
+  if (!displayItems || displayItems.length === 0) {
     body.innerHTML = `
       <div class="lib-empty">
         <div class="lib-empty-icon">📭</div>
-        <div class="lib-empty-title">No saved copy yet</div>
-        <div class="lib-empty-sub">Generate AI copy and tap 💾 Save in any platform accordion</div>
+        <div class="lib-empty-title">${filterPlatformId ? 'No saved copy for this platform' : 'No saved copy yet'}</div>
+        <div class="lib-empty-sub">${filterPlatformId ? 'Try a different platform filter above' : 'Generate AI copy and tap 💾 Save in any platform accordion'}</div>
       </div>`;
     return;
   }
-  // Group by platform
+  // Group by platform (use filtered set)
   const grouped = {};
-  items.forEach(item => {
+  displayItems.forEach(item => {
     const key = item.platformId || 'other';
     if (!grouped[key]) grouped[key] = { name: item.platformName || key, items: [] };
     grouped[key].items.push(item);
@@ -1957,6 +2004,27 @@ async function regeneratePlatformCopy(pid) {
     }
 
     showToast('✅ Copy regenerated for ' + platform.name);
+    // #6 Show restore-previous button so user can revert without re-running AI
+    if (previousContent) {
+      const freshRegen = document.getElementById('qp-regen-' + pid);
+      if (freshRegen && freshRegen.parentNode) {
+        freshRegen.parentNode.querySelector('.qp-restore-btn')?.remove();
+        const restoreBtn = document.createElement('button');
+        restoreBtn.type = 'button';
+        restoreBtn.className = 'qp-restore-btn';
+        restoreBtn.textContent = '↩ Restore previous';
+        restoreBtn.style.cssText = 'background:none;border:1px solid var(--border,#333);color:var(--muted,#888);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;margin-left:6px;';
+        restoreBtn.addEventListener('click', () => {
+          const textEl = document.getElementById('qp-copy-text-' + pid);
+          if (textEl) textEl.textContent = previousContent;
+          platforms = platforms.map(p => p.id === pid ? { ...p, adaptedContent: previousContent, _reviewStatus: undefined } : p);
+          savePlatforms();
+          restoreBtn.remove();
+          showToast('↩ Restored previous copy');
+        });
+        freshRegen.parentNode.insertBefore(restoreBtn, freshRegen.nextSibling);
+      }
+    }
   } catch (err) {
     console.error('regeneratePlatformCopy error:', err);
     showToast('❌ Regenerate failed — try again');
@@ -3687,6 +3755,69 @@ function _showCreateCampMemorySaved(msg) {
   el._timer = setTimeout(() => { el.style.opacity = '0'; }, 2500);
 }
 
+// #1 Trial save nudge — flash the trial banner to draw attention
+window._flashTrialBanner = function() {
+  const b = document.getElementById('trial-banner');
+  if (!b || b.style.display === 'none') return;
+  b.style.background = '#a84000';
+  clearTimeout(b._ft);
+  b._ft = setTimeout(() => { b.style.background = '#7c2d00'; }, 900);
+};
+
+// #8 Profile save indicator — same pattern as _showCreateCampMemorySaved
+window._showProfileSaved = function(msg) {
+  const el = document.getElementById('profile-save-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.style.opacity = '0'; }, 2500);
+};
+
+// #3 Recent campaigns bar — shown for returning users with 2+ campaigns
+function renderRecentActivity() {
+  const bar  = document.getElementById('recent-activity-bar');
+  const list = document.getElementById('recent-activity-list');
+  if (!bar || !list) return;
+  const _camps = (typeof campaigns !== 'undefined' && campaigns.length) ? campaigns : (window._bbCampaigns || []);
+  if (_camps.length < 2) { bar.style.display = 'none'; return; }
+  const sorted = [..._camps].sort((a, b) =>
+    new Date(b.lastUsedAt || b.createdAt || 0) - new Date(a.lastUsedAt || a.createdAt || 0)
+  ).slice(0, 3);
+  list.innerHTML = '';
+  sorted.forEach(c => {
+    const ts  = c.lastUsedAt || c.createdAt;
+    const ago = ts ? _bbTimeAgoShort(new Date(ts)) : '';
+    const statusText = c.offer ? 'In progress' : 'New';
+    const statusColor = c.offer ? '#4caf50' : '#888';
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:3px 0;cursor:pointer;border-radius:4px;';
+    const nameSpan   = document.createElement('span');
+    nameSpan.style.cssText = 'font-size:13px;font-weight:600;color:var(--light,#f0f0f0);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    nameSpan.textContent = c.name || '(unnamed)';
+    const statusSpan = document.createElement('span');
+    statusSpan.style.cssText = `font-size:11px;color:${statusColor};flex-shrink:0;`;
+    statusSpan.textContent = statusText;
+    const agoSpan    = document.createElement('span');
+    agoSpan.style.cssText = 'font-size:11px;color:var(--muted,#888);flex-shrink:0;';
+    agoSpan.textContent = ago;
+    row.appendChild(nameSpan); row.appendChild(statusSpan); row.appendChild(agoSpan);
+    row.addEventListener('click', () => { if(typeof selectCampaign==='function') selectCampaign(c.id, c.name || ''); });
+    list.appendChild(row);
+  });
+  bar.style.display = 'block';
+}
+function _bbTimeAgoShort(date) {
+  if (!date || isNaN(date)) return '';
+  const diff = Date.now() - date.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 2)  return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return hrs + 'h ago';
+  return Math.floor(hrs / 24) + 'd ago';
+}
+
 function renderProfileInsights() {
   const el      = document.getElementById('profile-insight-list');
   const sub     = document.getElementById('teach-ai-sub');
@@ -4123,16 +4254,25 @@ function renderCreateCampList() {
   if (sorted.length === 1) {
     const c = sorted[0];
     const isActive = c.id === curId;
-    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;">
-      <div style="font-size:15px;font-weight:700;color:${isActive?'var(--green)':'var(--light)'};">${hesc(c.name||'(unnamed)')}</div>
+    // #5 Campaign lifecycle status
+    const sText  = c.offer ? '✍️ In progress' : '📝 New';
+    const sColor = c.offer ? '#4caf50' : '#888';
+    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0 4px;">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:${isActive?'var(--green)':'var(--light)'};">${hesc(c.name||'(unnamed)')}</div>
+        <div style="font-size:11px;color:${sColor};margin-top:2px;">${sText}</div>
+      </div>
       <button type="button" onclick="deleteCampaign('${esc(c.id)}','${esc(c.name||'')}');event.stopPropagation()" title="Delete"
         style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;">🗑</button>
     </div>`;
   } else {
+    const activeCamp = sorted.find(c => c.id === curId) || sorted[0];
+    const sText  = activeCamp?.offer ? '✍️ In progress' : '📝 New campaign';
+    const sColor = activeCamp?.offer ? '#4caf50' : '#888';
     const options = sorted.map(c =>
       `<option value="${hesc(c.id)}"${c.id===curId?' selected':''}>${hesc(c.name||'(unnamed)')}</option>`
     ).join('');
-    el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:6px 0 2px;">
       <select id="camp-select-dropdown"
         onchange="selectCampaign(this.value,this.options[this.selectedIndex].text)"
         style="flex:1;background:var(--card,#1e1e1e);color:var(--light,#fff);border:1px solid var(--border,#333);border-radius:8px;padding:10px 12px;font-size:14px;font-weight:600;cursor:pointer;">
@@ -4141,12 +4281,14 @@ function renderCreateCampList() {
       <button type="button"
         onclick="var s=document.getElementById('camp-select-dropdown');deleteCampaign(s.value,s.options[s.selectedIndex].text);event.stopPropagation()"
         title="Delete" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;flex-shrink:0;">🗑</button>
-    </div>`;
+    </div>
+    <div style="font-size:11px;color:${sColor};padding:0 2px 4px;">${sText}</div>`;
   }
 }
 
 function renderCampaignChips() {
   renderCreateCampList();
+  if (typeof renderRecentActivity === 'function') renderRecentActivity();
 }
 
 function selectCampaign(id, name) {
@@ -4370,7 +4512,7 @@ function _updateAdDiscardBtn() {
 }
 
 function debounceCampaignSave() {
-  if ((window._bbUserPlan || '') === 'trial') return;
+  if ((window._bbUserPlan || '') === 'trial') { if (window._flashTrialBanner) window._flashTrialBanner(); return; }
   updateCampaignMemory(); // immediate in-memory sync on every keystroke
   _updateAdDiscardBtn();
   clearTimeout(_campaignSaveTimer);
@@ -4615,6 +4757,9 @@ function renderSwitcherBar() {
   const active = bizList.find(b => b.id === currentId);
   const label  = document.getElementById('biz-dd-label');
   if (label) label.textContent = active ? (active.name||active.businessName||'Business') : 'Select business';
+  // #4 Persistent header — keep workspace info bar in sync
+  const wbName = document.getElementById('wb-biz-name');
+  if (wbName) wbName.textContent = active ? (active.name||active.businessName||'Business') : 'Select business';
   const list = document.getElementById('biz-dd-list');
   if (list) list.innerHTML = bizList.map(b => `
     <button type="button" class="biz-dd-item${b.id===currentId?' active':''}" onclick="selectBizOption('${b.id}')">
@@ -4672,6 +4817,30 @@ function selectBizOption(bizId) {
 // ── Plan overlay activation ───────────────────────────────────────────
 window._applyPlanOverlays = function() {
   const plan = window._bbUserPlan || 'starter';
+
+  // #4+#9 Show persistent workspace info bar on all tabs
+  const infoBar = document.getElementById('workspace-info-bar');
+  if (infoBar) infoBar.style.display = 'flex';
+
+  // #1 Show trial banner only for trial users
+  const trialBanner = document.getElementById('trial-banner');
+  if (trialBanner) trialBanner.style.display = plan === 'trial' ? 'flex' : 'none';
+
+  // #9 Plan badge in persistent header
+  const planBadge = document.getElementById('wb-plan-badge');
+  if (planBadge) {
+    const badgeStyles = {
+      trial:   { bg:'#7c2d00', color:'#ffcca0' },
+      starter: { bg:'#1a3a1a', color:'#66bb6a' },
+      pro:     { bg:'#1e1a3a', color:'#818cf8' },
+      agency:  { bg:'#3a2200', color:'#fbbf24' },
+    };
+    const s = badgeStyles[plan] || badgeStyles.starter;
+    planBadge.textContent  = plan.charAt(0).toUpperCase() + plan.slice(1);
+    planBadge.style.background = s.bg;
+    planBadge.style.color      = s.color;
+    planBadge.style.display    = 'inline';
+  }
 
   // Activate overlays whose data-plan list includes the current plan
   document.querySelectorAll('.pro-overlay[data-plan]').forEach(el => {
@@ -5652,8 +5821,13 @@ window.savePlatformUrl = async function(pid, url) {
 const origSaveProfile = window.saveProfile;
 let _saveProfileTimer = null;
 window.saveProfile = function() {
-  if ((window._bbUserPlan || '') === 'trial') { origSaveProfile && origSaveProfile(); return; }
+  if ((window._bbUserPlan || '') === 'trial') {
+    origSaveProfile && origSaveProfile();
+    if (window._flashTrialBanner) window._flashTrialBanner();
+    return;
+  }
   origSaveProfile && origSaveProfile(); // sync: updates in-memory profile + UI immediately
+  if (window._showProfileSaved) window._showProfileSaved('Saving…');
   clearTimeout(_saveProfileTimer);
   _saveProfileTimer = setTimeout(async () => {
   if (!currentUser || !activeBizId) return;
@@ -5678,6 +5852,7 @@ window.saveProfile = function() {
       tone:           profile.tone   || 'friendly',
       updatedAt:      serverTimestamp(),
     }, { merge: true });
+    if (window._showProfileSaved) window._showProfileSaved('Saved ✓');
   } catch(e) {
     console.error('saveProfile Firestore error:', e);
   }
@@ -5732,6 +5907,13 @@ window._saveScheduleToFirestore = async function(sched) {
     <div class="modal-head">
       <span id="library-modal-title" class="modal-title">📚 Copy Library</span>
       <button type="button" onclick="closeLibraryModal()" class="btn-icon-close">✕</button>
+    </div>
+    <!-- Platform filter row — shown when there are items from 2+ platforms -->
+    <div id="lib-filter-row" style="display:none;padding:8px 16px 4px;border-bottom:1px solid var(--border,#2a2a2a);">
+      <select id="lib-platform-filter" onchange="filterLibraryByPlatform(this.value)"
+        style="background:var(--card,#1e1e1e);color:var(--light,#f0f0f0);border:1px solid var(--border,#333);border-radius:6px;padding:5px 10px;font-size:12px;">
+        <option value="">All platforms</option>
+      </select>
     </div>
     <!-- Body -->
     <div id="library-modal-body" class="modal-body"></div>
