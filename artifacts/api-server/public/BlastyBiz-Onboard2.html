@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784531368281"/>
+  <link rel="stylesheet" href="global-style.css?v=1784532196072"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -209,7 +209,6 @@
     }
 
     /* ── Blasty animations ──────────────────────────────────────── */
-    /* ── Step arrival pop-in ────────────────────────────────────── */
     #blasty-svg {
       transform-box: fill-box;
       transform-origin: bottom center;
@@ -222,7 +221,7 @@
       100% { transform: scale(1)   translateY(0);    opacity: 1; }
     }
 
-    /* ── Body idle float ────────────────────────────────────────── */
+    /* Idle float — whole rocket */
     #blasty-body {
       transform-box: fill-box;
       transform-origin: bottom center;
@@ -233,7 +232,7 @@
       50%       { transform: translateY(-11px); }
     }
 
-    /* ── Flame pulse ────────────────────────────────────────────── */
+    /* Flame pulse */
     .flame {
       transform-box: fill-box;
       transform-origin: top center;
@@ -241,84 +240,108 @@
     }
     @keyframes b-flame-pulse {
       0%, 100% { transform: scaleY(1)   scaleX(1); }
-      50%       { transform: scaleY(1.3) scaleX(0.82); }
+      50%       { transform: scaleY(1.35) scaleX(0.8); }
     }
 
-    /* ── s-wave: big enthusiastic greeting ──────────────────────── */
+    /* Mouth variants — default happy visible, rest hidden */
+    .mouth-working, .mouth-celebrate, .mouth-ask { opacity: 0 !important; }
+    .pb-blasty.s-working  .mouth-happy    { opacity: 0 !important; }
+    .pb-blasty.s-working  .mouth-working  { opacity: 1 !important; }
+    .pb-blasty.s-celebrate .mouth-happy   { opacity: 0 !important; }
+    .pb-blasty.s-celebrate .mouth-celebrate { opacity: 1 !important; }
+    .pb-blasty.s-ask      .mouth-happy    { opacity: 0 !important; }
+    .pb-blasty.s-ask      .mouth-ask      { opacity: 1 !important; }
+
+    /* Arms — all hidden by default, CSS shows per mood */
+    .blasty-arm { transition: opacity .25s ease; }
+    .pb-blasty.s-wave    .blasty-arm-wave  { opacity: 1 !important; }
+    .pb-blasty.s-working .blasty-arm-point { opacity: 1 !important; }
+
+    /* ── s-wave ──────────────────────────────────────────────────── */
     .pb-blasty.s-wave #blasty-body {
       animation: b-wave .55s ease-in-out 4, b-float 3.2s ease-in-out infinite 2.2s;
     }
     @keyframes b-wave {
       0%, 100% { transform: rotate(0deg)   translateY(0); }
-      25%       { transform: rotate(-20deg) translateY(-6px); }
-      65%       { transform: rotate(14deg)  translateY(-3px); }
+      25%       { transform: rotate(-22deg) translateY(-8px); }
+      65%       { transform: rotate(16deg)  translateY(-4px); }
     }
-    /* wide eyes on wave */
-    .pb-blasty.s-wave .pupil-group-l { transform: scale(1.15) translateY(-2px); }
-    .pb-blasty.s-wave .pupil-group-r { transform: scale(1.15) translateY(-2px); }
+    .pb-blasty.s-wave .pupil-group-l { transform: scale(1.1) translateY(-3px); }
+    .pb-blasty.s-wave .pupil-group-r { transform: scale(1.1) translateY(-3px); }
 
-    /* ── s-happy: big bounce, squish on land ────────────────────── */
+    /* ── s-happy ─────────────────────────────────────────────────── */
     .pb-blasty.s-happy #blasty-body {
       animation: b-bounce .4s ease-in-out 3, b-float 3.2s ease-in-out infinite 1.2s;
     }
     @keyframes b-bounce {
-      0%   { transform: translateY(0)    scale(1,1); }
-      35%  { transform: translateY(-26px) scale(0.9,1.15); }
+      0%   { transform: translateY(0)     scale(1,1); }
+      35%  { transform: translateY(-28px) scale(0.9,1.15); }
       65%  { transform: translateY(-22px) scale(0.9,1.15); }
-      85%  { transform: translateY(4px)  scale(1.12,0.88); }
-      100% { transform: translateY(0)    scale(1,1); }
+      85%  { transform: translateY(4px)   scale(1.12,0.88); }
+      100% { transform: translateY(0)     scale(1,1); }
     }
-    /* happy eyes: slight squint */
-    .pb-blasty.s-happy .pupil-group-l { transform: translateY(3px) scaleY(0.8); }
-    .pb-blasty.s-happy .pupil-group-r { transform: translateY(3px) scaleY(0.8); }
+    .pb-blasty.s-happy .pupil-group-l { transform: translateY(4px) scaleY(0.75); }
+    .pb-blasty.s-happy .pupil-group-r { transform: translateY(4px) scaleY(0.75); }
 
-    /* ── s-ask: dramatic lean + big pupil shift ─────────────────── */
-    .pb-blasty.s-ask .pupil-group-l { transform: translateX(-5px) translateY(2px); transition: transform .3s ease; }
-    .pb-blasty.s-ask .pupil-group-r { transform: translateX(-5px) translateY(2px); transition: transform .3s ease; }
-    .pb-blasty.s-ask #blasty-body {
-      animation: b-lean 3s ease-in-out infinite;
-    }
+    /* ── s-ask ───────────────────────────────────────────────────── */
+    .pb-blasty.s-ask .pupil-group-l { transform: translateX(-6px) translateY(2px); transition: transform .3s ease; }
+    .pb-blasty.s-ask .pupil-group-r { transform: translateX(-6px) translateY(2px); transition: transform .3s ease; }
+    .pb-blasty.s-ask #blasty-body   { animation: b-lean 3s ease-in-out infinite; }
     @keyframes b-lean {
-      0%, 100% { transform: translateY(0)   rotate(-9deg); }
+      0%, 100% { transform: translateY(0)    rotate(-9deg); }
       50%       { transform: translateY(-10px) rotate(-9deg); }
     }
 
-    /* ── s-working: rapid side-to-side, flame goes wild ────────── */
+    /* ── s-working ───────────────────────────────────────────────── */
     .pb-blasty.s-working #blasty-body {
-      animation: b-work .7s ease-in-out infinite;
+      animation: b-work .65s ease-in-out infinite;
     }
     @keyframes b-work {
-      0%, 100% { transform: translateY(0)  rotate(-5deg); }
-      25%       { transform: translateY(-8px) rotate(6deg); }
-      75%       { transform: translateY(-4px) rotate(-7deg); }
+      0%, 100% { transform: translateY(0)   rotate(-5deg); }
+      25%       { transform: translateY(-9px) rotate(7deg); }
+      75%       { transform: translateY(-4px) rotate(-8deg); }
     }
     .pb-blasty.s-working .flame {
-      animation: b-flame-work .35s ease-in-out infinite;
+      animation: b-flame-work .32s ease-in-out infinite;
     }
     @keyframes b-flame-work {
       0%, 100% { transform: scaleY(1)   scaleX(1); }
-      50%       { transform: scaleY(1.9) scaleX(0.7); }
+      50%       { transform: scaleY(2.1) scaleX(0.65); }
     }
-    /* working eyes: looking down */
-    .pb-blasty.s-working .pupil-group-l { transform: translateY(4px); }
-    .pb-blasty.s-working .pupil-group-r { transform: translateY(4px); }
+    .pb-blasty.s-working .pupil-group-l { transform: translateY(5px); }
+    .pb-blasty.s-working .pupil-group-r { transform: translateY(5px); }
 
-    /* ── s-celebrate ────────────────────────────────────────────── */
+    /* ── s-celebrate ─────────────────────────────────────────────── */
     .pb-blasty.s-celebrate #blasty-body {
       animation: b-celebrate .38s ease-in-out 5;
     }
     @keyframes b-celebrate {
       0%, 100% { transform: translateY(0)    scale(1)    rotate(0deg); }
-      25%       { transform: translateY(-28px) scale(1.14) rotate(-7deg); }
-      75%       { transform: translateY(-20px) scale(1.14) rotate(7deg); }
+      25%       { transform: translateY(-30px) scale(1.14) rotate(-8deg); }
+      75%       { transform: translateY(-22px) scale(1.14) rotate(8deg); }
     }
-    .pb-blasty.s-celebrate .confetti {
+    .pb-blasty.s-celebrate .confetti > g {
       animation: confetti-burst 1.6s ease-out forwards;
     }
     @keyframes confetti-burst {
       0%   { opacity: 1; transform: translateY(0)    scale(1); }
-      100% { opacity: 0; transform: translateY(70px) scale(1.6); }
+      100% { opacity: 0; transform: translateY(80px) scale(1.8); }
     }
+
+    /* ── Per-message mini Blasty avatar ─────────────────────────── */
+    .blasty-msg-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+    .blasty-msg-avatar {
+      width: 34px;
+      flex-shrink: 0;
+      align-self: flex-end;
+      opacity: 0.92;
+    }
+    .blasty-msg-avatar svg { width: 34px; height: auto; display: block; overflow: visible; }
 
     /* ── Choice buttons ─────────────────────────────────────────── */
     .ob2-choices {
@@ -447,58 +470,136 @@
     <!-- ── Blasty (right) ────────────────────────────────────── -->
     <div class="pb-blasty-zone" id="pb-blasty-zone">
       <div class="pb-blasty s-ask" id="pb-blasty">
-        <svg id="blasty-svg" viewBox="0 0 200 275" xmlns="http://www.w3.org/2000/svg">
+        <svg id="blasty-svg" viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <clipPath id="bdy-clip">
-              <rect x="42" y="90" width="116" height="130" rx="30"/>
+            <linearGradient id="ob2-bodyFill" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ffffff"/><stop offset=".48" stop-color="#f8fbff"/><stop offset="1" stop-color="#dbe6f2"/>
+            </linearGradient>
+            <linearGradient id="ob2-bodyShade" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#ffffff" stop-opacity=".94"/><stop offset=".64" stop-color="#ffffff" stop-opacity=".08"/><stop offset="1" stop-color="#8ea4bc" stop-opacity=".34"/>
+            </linearGradient>
+            <linearGradient id="ob2-redFill" x1="0" y1="0" x2=".8" y2="1">
+              <stop offset="0" stop-color="#ff5a4f"/><stop offset=".48" stop-color="#ff2f2f"/><stop offset="1" stop-color="#d70f22"/>
+            </linearGradient>
+            <linearGradient id="ob2-greenFill" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#8ee33f"/><stop offset=".5" stop-color="#49bf24"/><stop offset="1" stop-color="#238b19"/>
+            </linearGradient>
+            <radialGradient id="ob2-eyeFill" cx=".35" cy=".25" r=".9">
+              <stop offset="0" stop-color="#ffffff"/><stop offset=".15" stop-color="#deffd8"/><stop offset=".58" stop-color="#65d84a"/><stop offset="1" stop-color="#1b8e2b"/>
+            </radialGradient>
+            <linearGradient id="ob2-flameOut" x1=".5" y1="0" x2=".5" y2="1">
+              <stop offset="0" stop-color="#ffdc2f"/><stop offset=".46" stop-color="#ff961f"/><stop offset="1" stop-color="#ef3d10"/>
+            </linearGradient>
+            <linearGradient id="ob2-flameIn" x1=".5" y1="0" x2=".5" y2="1">
+              <stop offset="0" stop-color="#fffbd7"/><stop offset=".55" stop-color="#fff04c"/><stop offset="1" stop-color="#ffac20"/>
+            </linearGradient>
+            <clipPath id="ob2-bodyClip">
+              <path d="M180 42 C117 89 89 163 91 251 C92 309 119 348 180 378 C241 348 268 309 269 251 C271 163 243 89 180 42Z"/>
             </clipPath>
           </defs>
-          <g class="confetti" opacity="0">
-            <circle cx="16"  cy="30"  r="7" fill="#00c853"/>
-            <circle cx="184" cy="18"  r="6" fill="#ffe000"/>
-            <circle cx="100" cy="6"   r="5" fill="#ff5252"/>
-            <rect   x="44"   y="12"   width="10" height="10" rx="2" fill="#00b0ff" transform="rotate(30,49,17)"/>
-            <rect   x="142"  y="20"   width="9"  height="9"  rx="2" fill="#ff6d00" transform="rotate(45,146,24)"/>
-            <circle cx="168" cy="44"  r="5" fill="#e040fb"/>
-            <rect   x="10"   y="42"   width="10" height="10" rx="2" fill="#aafc08" transform="rotate(20,15,47)"/>
+
+          <!-- Confetti effects — burst on s-celebrate -->
+          <g class="confetti" id="blasty-effects">
+            <g fill="none" stroke="#76b8ff" stroke-width="7" stroke-linecap="round" opacity="0"><path d="M64 272 Q48 294 61 319"/><path d="M47 260 Q24 292 43 329"/></g>
+            <g fill="none" stroke="#76b8ff" stroke-width="7" stroke-linecap="round" opacity="0"><path d="M296 272 Q312 294 299 319"/><path d="M313 260 Q336 292 317 329"/></g>
+            <g opacity="0"><path d="M53 102 l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#ffd12f"/><path d="M305 94 l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#62dd43"/><circle cx="67" cy="164" r="5" fill="#ff5a4f"/><circle cx="300" cy="168" r="5" fill="#ff9f1c"/></g>
+            <g opacity="0"><rect x="30" y="160" width="9" height="20" rx="3" fill="#ff3c35" transform="rotate(-26 34 170)"/><rect x="313" y="179" width="9" height="20" rx="3" fill="#52ce34" transform="rotate(22 317 189)"/><rect x="56" y="226" width="9" height="20" rx="3" fill="#ffc228" transform="rotate(32 60 236)"/><rect x="294" y="232" width="9" height="20" rx="3" fill="#44a9ff" transform="rotate(-28 298 242)"/><circle cx="37" cy="285" r="6" fill="#43d355"/><circle cx="325" cy="287" r="6" fill="#ff4b3e"/></g>
           </g>
-          <ellipse cx="100" cy="270" rx="54" ry="6" fill="rgba(0,200,83,0.12)"/>
+
+          <!-- Ground shadow (stays put, outside float group) -->
+          <ellipse cx="180" cy="434" rx="72" ry="13" fill="#000" opacity=".18"/>
+
+          <!-- Whole rocket — floats via CSS -->
           <g id="blasty-body">
-            <g class="flame">
-              <ellipse cx="100" cy="252" rx="22" ry="28" fill="#ff6d00" opacity="0.88"/>
-              <ellipse cx="100" cy="246" rx="14" ry="19" fill="#ffab00"/>
-              <ellipse cx="100" cy="240" rx="8"  ry="11" fill="#fff176"/>
+
+            <!-- Exhaust / flame -->
+            <g id="blasty-exhaust" class="flame">
+              <path d="M180 354 C213 385 207 419 180 446 C153 419 147 385 180 354Z" fill="url(#ob2-flameOut)" stroke="#102957" stroke-width="8" stroke-linejoin="round"/>
+              <path d="M180 368 C197 389 194 411 180 428 C166 411 163 389 180 368Z" fill="url(#ob2-flameIn)"/>
             </g>
-            <path d="M 48 188 Q 10 218 14 246 Q 40 228 54 224 Z"
-                  fill="#e53935" stroke="#1a237e" stroke-width="2" stroke-linejoin="round"/>
-            <path d="M 152 188 Q 190 218 186 246 Q 160 228 146 224 Z"
-                  fill="#e53935" stroke="#1a237e" stroke-width="2" stroke-linejoin="round"/>
-            <rect x="42" y="90" width="116" height="130" rx="30" fill="white"/>
-            <rect x="42" y="186" width="116" height="34" fill="#e53935" clip-path="url(#bdy-clip)"/>
-            <rect x="42" y="90" width="116" height="130" rx="30" fill="none" stroke="#1a237e" stroke-width="2.5"/>
-            <line x1="42" y1="186" x2="158" y2="186" stroke="#1a237e" stroke-width="1.5"/>
-            <path d="M 100 4 C 103 4 156 52 156 94 L 44 94 C 44 52 97 4 100 4 Z"
-                  fill="#e53935" stroke="#1a237e" stroke-width="2.5" stroke-linejoin="round"/>
-            <path d="M 100 12 C 108 12 134 52 134 92 L 108 92 C 100 56 96 14 100 12 Z"
-                  fill="#ef5350" opacity="0.36"/>
-            <ellipse cx="78"  cy="122" rx="22" ry="23" fill="white" stroke="#1a237e" stroke-width="1.5"/>
+
+            <!-- Fins -->
+            <path d="M103 240 C68 254 46 286 48 327 C74 312 97 298 116 276Z" fill="url(#ob2-redFill)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>
+            <path d="M257 240 C292 254 314 286 312 327 C286 312 263 298 244 276Z" fill="url(#ob2-redFill)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>
+            <path d="M97 258 C78 271 67 288 61 307" fill="none" stroke="#ff7d72" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+            <path d="M263 258 C282 271 293 288 299 307" fill="none" stroke="#ff7d72" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+
+            <!-- Body hull -->
+            <path d="M180 42 C117 89 89 163 91 251 C92 309 119 348 180 378 C241 348 268 309 269 251 C271 163 243 89 180 42Z" fill="url(#ob2-bodyFill)" stroke="#102957" stroke-width="10" stroke-linejoin="round"/>
+            <g clip-path="url(#ob2-bodyClip)">
+              <path d="M184 36 C138 106 128 245 149 342 C126 329 107 307 98 278 C77 209 103 104 180 42Z" fill="#fff" opacity=".88"/>
+              <path d="M231 76 C265 135 278 240 246 315 C232 340 210 359 180 377 C207 285 214 168 184 43Z" fill="url(#ob2-bodyShade)" opacity=".75"/>
+              <path d="M93 269 C121 289 148 299 180 299 C212 299 239 289 267 269 L265 301 C239 319 211 327 180 327 C149 327 121 319 95 301Z" fill="url(#ob2-greenFill)" stroke="#102957" stroke-width="8"/>
+              <path d="M105 283 C132 298 156 304 180 304 C204 304 228 298 255 283" fill="none" stroke="#b3ff70" stroke-width="5" opacity=".8"/>
+            </g>
+            <!-- Nose cone -->
+            <path d="M180 42 C151 64 129 88 113 116 C137 105 157 100 180 100 C203 100 223 105 247 116 C231 88 209 64 180 42Z" fill="url(#ob2-redFill)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>
+            <path d="M205 56 C220 72 229 85 236 102" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity=".9"/>
+
+            <!-- Face -->
+            <!-- Eyelid arcs -->
+            <path d="M126 161 Q145 146 160 158" fill="none" stroke="#102957" stroke-width="8" stroke-linecap="round"/>
+            <path d="M200 158 Q216 146 234 161" fill="none" stroke="#102957" stroke-width="8" stroke-linecap="round"/>
+            <!-- Left eye -->
+            <ellipse cx="145" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>
             <g class="pupil-group-l" style="transition:transform .3s ease">
-              <circle cx="79"  cy="123" r="13" fill="#1a237e"/>
-              <circle cx="84"  cy="117"  r="5"  fill="white"/>
+              <ellipse cx="148" cy="200" rx="18" ry="24" fill="url(#ob2-eyeFill)" stroke="#102957" stroke-width="5"/>
+              <ellipse cx="151" cy="202" rx="8" ry="13" fill="#071329"/>
+              <circle cx="143" cy="190" r="6" fill="#fff"/>
+              <circle cx="155" cy="211" r="3" fill="#fff" opacity=".8"/>
             </g>
-            <ellipse cx="122" cy="122" rx="22" ry="23" fill="white" stroke="#1a237e" stroke-width="1.5"/>
+            <!-- Right eye -->
+            <ellipse cx="215" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>
             <g class="pupil-group-r" style="transition:transform .3s ease">
-              <circle cx="123" cy="123" r="13" fill="#1a237e"/>
-              <circle cx="128" cy="117"  r="5"  fill="white"/>
+              <ellipse cx="212" cy="200" rx="18" ry="24" fill="url(#ob2-eyeFill)" stroke="#102957" stroke-width="5"/>
+              <ellipse cx="209" cy="202" rx="8" ry="13" fill="#071329"/>
+              <circle cx="204" cy="190" r="6" fill="#fff"/>
+              <circle cx="216" cy="211" r="3" fill="#fff" opacity=".8"/>
             </g>
-            <ellipse cx="58"  cy="140" rx="12" ry="8" fill="#ffcdd2" opacity="0.75"/>
-            <ellipse cx="142" cy="140" rx="12" ry="8" fill="#ffcdd2" opacity="0.75"/>
-            <path d="M 82 150 Q 100 168 118 150"
-                  stroke="#1a237e" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-            <circle cx="100" cy="174" r="16" fill="#b3e5fc" stroke="#1a237e" stroke-width="2"/>
-            <circle cx="100" cy="174" r="12" fill="#81d4fa"/>
-            <ellipse cx="94"  cy="168" rx="5"  ry="4"  fill="white" opacity="0.65"/>
-          </g>
+            <!-- Cheeks -->
+            <ellipse cx="121" cy="244" rx="15" ry="8" fill="#ff7272" opacity=".55"/>
+            <ellipse cx="239" cy="244" rx="15" ry="8" fill="#ff7272" opacity=".55"/>
+            <!-- Mouths — CSS toggles visibility per mood -->
+            <g id="mouths">
+              <path class="mouth-happy" d="M145 238 Q180 270 215 238 Q208 286 180 291 Q152 286 145 238Z" fill="#102957"/>
+              <path class="mouth-happy" d="M162 273 Q180 287 198 273 Q187 269 180 270 Q173 269 162 273Z" fill="#ff4d57"/>
+              <ellipse class="mouth-working" cx="180" cy="259" rx="17" ry="21" fill="#102957"/>
+              <ellipse class="mouth-working" cx="180" cy="268" rx="10" ry="6" fill="#ff4d57"/>
+              <ellipse class="mouth-celebrate" cx="180" cy="258" rx="26" ry="32" fill="#102957"/>
+              <path class="mouth-celebrate" d="M161 274 Q180 289 199 274 Q180 267 161 274Z" fill="#ff4d57"/>
+              <path class="mouth-ask" d="M163 260 Q180 268 197 260" fill="none" stroke="#102957" stroke-width="8" stroke-linecap="round"/>
+            </g>
+            <!-- Green band B-badge -->
+            <g id="blasty-badge">
+              <circle cx="180" cy="316" r="29" fill="#102957"/>
+              <circle cx="180" cy="316" r="23" fill="url(#ob2-greenFill)" stroke="#b9ff78" stroke-width="4"/>
+              <path d="M169 299 H183 C198 299 202 314 192 320 C202 325 198 337 183 337 H169Z" fill="#fff"/>
+              <path d="M177 306 H184 C191 306 191 314 184 314 H177ZM177 321 H185 C192 321 192 329 185 329 H177Z" fill="#2c9e1d"/>
+            </g>
+
+            <!-- Arms — CSS reveals per mood -->
+            <g id="blasty-arms">
+              <g class="blasty-arm blasty-arm-wave" opacity="0">
+                <path d="M113 261 C84 253 73 229 82 207" fill="none" stroke="#102957" stroke-width="19" stroke-linecap="round"/>
+                <path d="M113 261 C84 253 73 229 82 207" fill="none" stroke="#f8fbff" stroke-width="11" stroke-linecap="round"/>
+                <g transform="translate(78 199) rotate(-18)">
+                  <circle cx="0" cy="0" r="16" fill="#fff" stroke="#102957" stroke-width="6"/>
+                  <path d="M-12 -7 L-22 -22 M-4 -13 L-7 -31 M5 -13 L10 -31 M12 -8 L23 -22" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/>
+                  <path d="M-12 -7 L-22 -22 M-4 -13 L-7 -31 M5 -13 L10 -31 M12 -8 L23 -22" fill="none" stroke="#102957" stroke-width="4" stroke-linecap="round"/>
+                </g>
+              </g>
+              <g class="blasty-arm blasty-arm-point" opacity="0">
+                <path d="M247 259 C277 250 292 235 307 220" fill="none" stroke="#102957" stroke-width="19" stroke-linecap="round"/>
+                <path d="M247 259 C277 250 292 235 307 220" fill="none" stroke="#f8fbff" stroke-width="11" stroke-linecap="round"/>
+                <g transform="translate(311 216) rotate(-20)">
+                  <circle cx="0" cy="0" r="15" fill="#fff" stroke="#102957" stroke-width="6"/>
+                  <path d="M9 -3 L34 -11" fill="none" stroke="#102957" stroke-width="11" stroke-linecap="round"/>
+                  <path d="M9 -3 L34 -11" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+                </g>
+              </g>
+            </g>
+
+          </g><!-- end #blasty-body -->
         </svg>
       </div>
       <div class="pb-blasty-caption" id="pb-blasty-caption"></div>
@@ -785,13 +886,45 @@
     if (pos) zone.classList.add('blasty-pos-' + pos);
   }
 
+  function _miniBlastySVG(mood) {
+    const py = { 's-ask': 204, 's-working': 207, 's-wave': 198, 's-happy': 205, 's-celebrate': 198 }[mood] || 202;
+    return `<svg viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg">
+      <path d="M180 354 C213 385 207 419 180 446 C153 419 147 385 180 354Z" fill="#ff8c1a"/>
+      <path d="M103 240 C68 254 46 286 48 327 C74 312 97 298 116 276Z" fill="#ff2f2f" stroke="#102957" stroke-width="9"/>
+      <path d="M257 240 C292 254 314 286 312 327 C286 312 263 298 244 276Z" fill="#ff2f2f" stroke="#102957" stroke-width="9"/>
+      <path d="M180 42 C117 89 89 163 91 251 C92 309 119 348 180 378 C241 348 268 309 269 251 C271 163 243 89 180 42Z" fill="#f0f6ff" stroke="#102957" stroke-width="10"/>
+      <path d="M93 269 C121 289 148 299 180 299 C212 299 239 289 267 269 L265 301 C239 319 211 327 180 327 C149 327 121 319 95 301Z" fill="#49bf24" stroke="#102957" stroke-width="8"/>
+      <path d="M180 42 C151 64 129 88 113 116 C137 105 157 100 180 100 C203 100 223 105 247 116 C231 88 209 64 180 42Z" fill="#ff2f2f" stroke="#102957" stroke-width="9"/>
+      <ellipse cx="145" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>
+      <ellipse cx="148" cy="${py-2}" rx="16" ry="22" fill="#49d834"/>
+      <ellipse cx="151" cy="${py}" rx="8" ry="13" fill="#071329"/>
+      <circle cx="143" cy="190" r="5" fill="#fff"/>
+      <ellipse cx="215" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>
+      <ellipse cx="212" cy="${py-2}" rx="16" ry="22" fill="#49d834"/>
+      <ellipse cx="209" cy="${py}" rx="8" ry="13" fill="#071329"/>
+      <circle cx="204" cy="190" r="5" fill="#fff"/>
+      <ellipse cx="121" cy="244" rx="15" ry="8" fill="#ff7272" opacity=".55"/>
+      <ellipse cx="239" cy="244" rx="15" ry="8" fill="#ff7272" opacity=".55"/>
+      <path d="M155 248 Q180 265 205 248" stroke="#102957" stroke-width="9" fill="none" stroke-linecap="round"/>
+    </svg>`;
+  }
+
   function addBlastyBubble(text) {
     const thread = document.getElementById('pb-thread');
+    const currentMood = (document.getElementById('pb-blasty') || {}).className || '';
+    const mood = ['s-wave','s-happy','s-ask','s-working','s-celebrate'].find(m => currentMood.includes(m)) || 's-ask';
+    const row = document.createElement('div');
+    row.className = 'blasty-msg-row';
+    const avatar = document.createElement('div');
+    avatar.className = 'blasty-msg-avatar';
+    avatar.innerHTML = _miniBlastySVG(mood);
     const el = document.createElement('div');
     el.className = 'bubble-blasty';
-    el.textContent = text;
-    thread.appendChild(el);
-    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
+    el.innerHTML = text;
+    row.appendChild(avatar);
+    row.appendChild(el);
+    thread.appendChild(row);
+    setTimeout(() => row.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
     return el;
   }
 
