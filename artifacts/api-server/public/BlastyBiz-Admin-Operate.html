@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>BlastyBiz — Operator Setup</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="global-style.css?v=1784529466014">
+<link rel="stylesheet" href="global-style.css?v=1784531368281">
 
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
@@ -479,6 +479,105 @@
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════════
+       LIVE E2E VERIFICATION
+  ══════════════════════════════════════════ -->
+  <div class="op-section">
+    <div class="section-header">
+      <span class="section-icon">🧪</span>
+      <span class="section-title">Live End-to-End Verification</span>
+      <span class="section-badge warn" id="badge-e2e">Browser test required</span>
+    </div>
+    <p style="font-size:13px;color:#555;margin:0 0 12px 4px;">These four flows require a real logged-in session and can't be tested from the shell. Do them in the browser on the live site and check each one off when it passes.</p>
+
+    <!-- Leg 1: Onboarding -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-e2e-onboard" onclick="toggleCheck(event,'e2e-onboard')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">🦵 Leg 1 — Trial Signup + Blasty Onboarding</div>
+          <div class="op-card-sub">Sign up → magic link → complete all 22 Blasty steps → confirm business saved</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://blastybiz-9523e.web.app/BlastyBiz-Trial.html" target="_blank">BlastyBiz-Trial.html</a> — enter an email and request the magic link</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Click the magic link in the email — confirm it lands on Onboard2 and Blasty appears with <strong>s-wave</strong> greeting</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Complete all 22 steps — name, address, story, platforms (step 21), AI category (step 22)</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Confirm Blasty hits <strong>s-celebrate</strong> and redirects to the dashboard with <code>?autogenerate=1</code></div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Check Firestore → <code>users/{uid}/businesses</code> — confirm the business doc is written with all fields including <code>category</code></div></div>
+        </div>
+        <div class="note mt-12">Tests: Firebase Auth magic link, <code>suggestCategory</code> CF (AI), <code>createBusiness</code> CF (with Firestore biz limits), Firestore write.</div>
+      </div>
+    </div>
+
+    <!-- Leg 2: Blast / AI -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-e2e-blast" onclick="toggleCheck(event,'e2e-blast')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">🦵 Leg 2 — Blast + AI Draft Generation</div>
+          <div class="op-card-sub">Trigger a blast from the dashboard → confirm AI drafts appear for each platform</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">On the dashboard (<a href="https://blastybiz-9523e.web.app/BlastyBiz.html" target="_blank">BlastyBiz.html</a>), open a business and click <strong>Blast</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Confirm the spinner fires and <code>adaptListing</code> CF is called — watch the network tab or wait for drafts to appear</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Confirm AI-generated draft content appears for each selected platform card</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Click <strong>Approve</strong> on one draft — confirm <code>approveDraft</code> CF runs and the post enters the queue</div></div>
+        </div>
+        <div class="note mt-12">Tests: <code>adaptListing</code> CF (Anthropic/Gemini AI), <code>approveDraft</code> CF, Firestore draft write, publish job creation.</div>
+      </div>
+    </div>
+
+    <!-- Leg 3: Admin Subscriptions / Business Limits -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-e2e-limits" onclick="toggleCheck(event,'e2e-limits')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">🦵 Leg 3 — Admin Business Limits</div>
+          <div class="op-card-sub">Confirm the "Business Limits per Plan" section loads, saves, and is enforced by createBusiness</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://blastybiz-9523e.web.app/BlastyBiz-Admin-Subscriptions.html" target="_blank">Admin Subscriptions</a> — scroll to the <strong>Business Limits per Plan</strong> section</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Confirm the current saved limits load into the Starter / Pro / Agency fields</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Change a limit (e.g. Starter → 2), hit <strong>Save Limits</strong>, confirm the success toast</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Have a Starter-plan test account try to create a second business — confirm it's blocked at the limit</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Change Starter back to 1 and save</div></div>
+        </div>
+        <div class="note mt-12">Tests: <code>settings/bizLimits</code> Firestore doc, admin Firestore write, <code>createBusiness</code> CF limit enforcement.</div>
+      </div>
+    </div>
+
+    <!-- Leg 4: Admin Queue -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-e2e-queue" onclick="toggleCheck(event,'e2e-queue')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">🦵 Leg 4 — Admin Queue + Platform Health</div>
+          <div class="op-card-sub">Confirm queue manager shows live jobs and platform health reads real connection data</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://blastybiz-9523e.web.app/BlastyBiz-Admin-Queue-Manager.html" target="_blank">Admin Queue Manager</a> — confirm it loads and shows any pending or completed jobs from Leg 2</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Go to <a href="https://blastybiz-9523e.web.app/BlastyBiz-Admin-Platform-Health.html" target="_blank">Admin Platform Health</a> — confirm it loads and shows platform connection statuses</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Go to <a href="https://blastybiz-9523e.web.app/BlastyBiz-Admin-Users.html" target="_blank">Admin Users</a> — confirm the test user from Leg 1 appears with correct plan and business count</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Go to <a href="https://blastybiz-9523e.web.app/BlastyBiz-Admin-Logs.html" target="_blank">Admin Logs</a> — confirm activity from the blast in Leg 2 appears</div></div>
+        </div>
+        <div class="note mt-12">Tests: <code>adminListPublishJobs</code>, <code>adminPlatformHealth</code>, <code>adminListBusinesses</code>, <code>adminListActivityLogs</code> CFs — all authenticated admin endpoints.</div>
+      </div>
+    </div>
+
+  </div>
+
 </div></div></main>
 
 <script>
@@ -506,7 +605,8 @@ function renderChecks() {
                      'client-bing','client-thumbtack',
                      'google-verify','google-logo',
                      'meta-review',
-                     'linkedin-api','x-api'];
+                     'linkedin-api','x-api',
+                     'e2e-onboard','e2e-blast','e2e-limits','e2e-queue'];
   checkable.forEach(key => {
     const box = document.getElementById('chk-' + key);
     if (!box) return;
@@ -523,6 +623,7 @@ function renderChecks() {
                       'client-yelp','client-nextdoor','client-apple',
                       'client-bing','client-thumbtack'];
   updateBadge('badge-client', clientKeys, checks);
+  updateBadge('badge-e2e', ['e2e-onboard','e2e-blast','e2e-limits','e2e-queue'], checks);
 
 }
 
