@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784565670001"/>
+  <link rel="stylesheet" href="global-style.css?v=1784566148844"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -52,16 +52,18 @@
     }
 
     .bubble-blasty {
-      align-self: flex-end;
-      background: var(--panel, #111);
-      border: 1.5px solid var(--border, #222);
-      border-radius: 18px 4px 18px 18px;
+      align-self: flex-start;
+      background: #ffffff;
+      border: none;
+      border-radius: 22px;
       padding: 13px 16px;
       max-width: 88%;
       font-size: 15px;
       line-height: 1.65;
-      color: var(--light, #fff);
+      color: #0d1f3c;
+      box-shadow: 0 2px 14px rgba(0,0,0,.38);
       animation: bb-in .38s ease both;
+      position: relative;
     }
     .bubble-user {
       align-self: flex-start;
@@ -334,22 +336,34 @@
     .blasty-msg-row {
       display: flex;
       align-items: flex-end;
-      align-self: flex-end;   /* right-align row in thread column, matching existing bubble behaviour */
-      gap: 8px;
-      margin-bottom: 2px;
-      max-width: 92%;         /* cap full row width so bubble doesn't swamp the thread */
+      align-self: flex-start;   /* LEFT-align — Blasty messages are "incoming" */
+      gap: 10px;
+      margin-bottom: 4px;
+      max-width: 88%;
     }
     .blasty-msg-row .bubble-blasty {
       flex: 1;
       min-width: 0;
-      max-width: 100%;        /* constrained by row's max-width, not the thread */
+      max-width: 100%;
+      align-self: auto;
+    }
+    /* Speech bubble tail — triangle pointing LEFT toward the mini Blasty avatar */
+    .blasty-msg-row .bubble-blasty::before {
+      content: '';
+      position: absolute;
+      left: -11px;
+      bottom: 14px;
+      width: 0;
+      height: 0;
+      border-top: 9px solid transparent;
+      border-bottom: 9px solid transparent;
+      border-right: 13px solid #ffffff;
     }
     .blasty-msg-avatar {
-      width: 34px;
+      width: 48px;
       flex-shrink: 0;
-      opacity: 0.92;
     }
-    .blasty-msg-avatar svg { width: 34px; height: auto; display: block; overflow: visible; }
+    .blasty-msg-avatar svg { width: 48px; height: auto; display: block; overflow: visible; }
 
     /* ── Choice buttons ─────────────────────────────────────────── */
     .ob2-choices {
@@ -409,7 +423,7 @@
       font-weight: 700;
     }
 
-    /* ── Tablet (580 – 859px) ───────────────────────────────────── */
+    /* ── Tablet + Mobile (≤ 859px) — hide big Blasty, per-bubble avatars take over ── */
     @media (max-width: 859px) {
       .pb-layout {
         flex-direction: column;
@@ -417,28 +431,7 @@
         padding: 28px 24px 80px;
         gap: 0;
       }
-      .pb-blasty-zone {
-        width: 100%;
-        order: -1;
-        flex-direction: row;
-        justify-content: center;
-        align-items: flex-end;
-        position: static;
-        padding-bottom: 20px;
-        gap: 14px;
-        transition: justify-content .4s ease;
-      }
-      .pb-blasty-zone.blasty-pos-left  { justify-content: flex-start; }
-      .pb-blasty-zone.blasty-pos-right { justify-content: flex-end; }
-      /* caption flips side to stay readable next to Blasty */
-      .pb-blasty-zone.blasty-pos-right { flex-direction: row-reverse; }
-      .pb-blasty { width: 110px; }
-      .pb-blasty-caption {
-        font-size: 13px;
-        text-align: left;
-        margin-top: 0;
-        max-width: 180px;
-      }
+      .pb-blasty-zone { display: none; }   /* mini per-bubble Blasty handles this below */
     }
 
     /* ── Mobile (< 580px) ───────────────────────────────────────── */
@@ -446,19 +439,11 @@
       .pb-layout {
         padding: 16px 14px 60px;
       }
-      .pb-blasty-zone {
-        padding-bottom: 14px;
-        gap: 10px;
-        transition: justify-content .4s ease;
-      }
-      .pb-blasty-zone.blasty-pos-left  { justify-content: flex-start; }
-      .pb-blasty-zone.blasty-pos-right { justify-content: flex-end; flex-direction: row-reverse; }
-      .pb-blasty { width: 68px; }
       .pb-logo    { display: none; }
       .pb-tagline { margin-bottom: 14px; font-size: 13px; }
-      .pb-blasty-caption { font-size: 12px; max-width: 160px; }
       .bubble-blasty,
       .bubble-user { max-width: 96%; font-size: 14px; }
+      .blasty-msg-row { max-width: 96%; }
     }
   </style>
 </head>
