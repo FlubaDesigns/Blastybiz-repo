@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784510611468" />
+<link rel="stylesheet" href="global-style.css?v=1784510891516" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -1173,7 +1173,11 @@ function showTab(name) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('section-' + name).classList.add('active');
-  document.getElementById('tab-' + name).classList.add('active');
+  const activeTab = document.getElementById('tab-' + name);
+  if (activeTab) {
+    activeTab.classList.add('active');
+    activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+  }
   if (name === 'platforms') updateStats();
   if (name === 'history')  renderHistory();
   if (name === 'schedule') renderScheduleTab();
@@ -5446,14 +5450,16 @@ window.savePlatformUrl = async function(pid, url) {
 // Called by setYN() so toggles persist without waiting for a full saveProfile cycle.
 window._bbSaveYNDirect = async function() {
   if (!currentUser || !activeBizId) return;
+  // Use window.ynState explicitly — module strict scope cannot assume bare ynState = window.ynState
+  const yn = window.ynState || {};
   try {
     await setDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), {
-      ynMentionName:    ynState.name,
-      ynMentionRole:    ynState.role,
-      ynMentionAddress: ynState.address,
-      ynMentionPhone:   ynState.phone,
-      ynMentionEmail:   ynState.email,
-      ynMentionWebsite: ynState.website,
+      ynMentionName:    yn.name    || 'no',
+      ynMentionRole:    yn.role    || 'no',
+      ynMentionAddress: yn.address || 'yes',
+      ynMentionPhone:   yn.phone   || 'yes',
+      ynMentionEmail:   yn.email   || 'yes',
+      ynMentionWebsite: yn.website || 'yes',
       updatedAt: serverTimestamp(),
     }, { merge: true });
   } catch(e) { console.error('_bbSaveYNDirect error:', e); }
