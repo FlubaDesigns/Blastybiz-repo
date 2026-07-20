@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784509054069" />
+<link rel="stylesheet" href="global-style.css?v=1784509422435" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -345,13 +345,13 @@
 
           <!-- RIGHT: Teach AI card -->
           <div class="col-right">
-            <div class="card card-fill">
-              <button type="button" class="card-title card-title-btn" onclick="toggleRightAccordion('create-teach-ai-body','create-teach-ai-chevron')">
+            <div class="card card-fill card-tap" onclick="toggleRightAccordion('create-teach-ai-body','create-teach-ai-chevron')">
+              <button type="button" class="card-title card-title-btn">
                 <span>🧠 Teach AI</span>
                 <span id="create-teach-ai-chevron" class="chevron">›</span>
               </button>
               <p class="helper-sm" style="margin-top:0;margin-bottom:12px;">Feed the AI facts it uses when writing copy for this campaign</p>
-              <div id="create-teach-ai-body" class="teach-inner hidden">
+              <div id="create-teach-ai-body" class="teach-inner hidden" onclick="event.stopPropagation()">
                 <textarea id="create-camp-memory-text" class="form-textarea" rows="5"
                   placeholder="e.g. Hook: 'Back to school, back to savings.' Target: parents with kids 5–12. Urgency: ends Aug 31. Feature our new backpack bundle…"
                   oninput="debounceCreateCampMemorySave()"></textarea>
@@ -363,13 +363,13 @@
             </div>
 
             <!-- Mentions — collapsed accordion; all rows preserved for JS compatibility -->
-            <div class="card card-fill" id="about-you-card">
-              <button type="button" class="card-title card-title-btn" id="about-you-toggle-btn" onclick="toggleAboutYouPanel()">
+            <div class="card card-fill card-tap" id="about-you-card" onclick="toggleAboutYouPanel()">
+              <button type="button" class="card-title card-title-btn" id="about-you-toggle-btn">
                 <span>🪪 Mentions</span>
                 <span class="about-you-chevron" id="about-you-chevron">›</span>
               </button>
               <p class="helper-sm" style="margin-top:0;margin-bottom:12px;">Choose what personal info shows up in your posts</p>
-              <div id="about-you-panel" class="hidden">
+              <div id="about-you-panel" class="hidden" onclick="event.stopPropagation()">
                 <p class="helper-sm mt-10">Defaults come from your profile — override here for this blast only.</p>
                 <div class="yn-row mb-12">
                   <span class="yn-label">Mention my name<span id="copy-name-preview" class="check-hint"></span></span>
@@ -423,13 +423,13 @@
       <!-- Row: Platform Selection — full width -->
       <div class="row" id="slide1-platforms-row">
         <div class="col-full">
-          <div class="card">
-            <button type="button" class="card-title card-title-btn" id="send-to-toggle-btn" onclick="toggleRightAccordion('send-to-body','send-to-chevron')">
+          <div class="card card-tap" onclick="toggleRightAccordion('send-to-body','send-to-chevron')">
+            <button type="button" class="card-title card-title-btn" id="send-to-toggle-btn">
               <span>📡 Send To</span>
               <span id="send-to-chevron" class="chevron">›</span>
             </button>
             <p class="helper-sm" style="margin-top:0;margin-bottom:0;">AI adapts your copy for every platform you pick — each one gets its own version. Your connected accounts are set up in your Profile; the platforms you select here apply to this campaign only.</p>
-            <div id="send-to-body" class="hidden">
+            <div id="send-to-body" class="hidden" onclick="event.stopPropagation()">
               <div class="row-base-sb" style="margin-top:16px;margin-bottom:12px;">
                 <span></span>
                 <button type="button" id="select-all-btn" onclick="toggleSelectAll()" class="chip-green" style="font-family:inherit;font-size:12px;">Select All</button>

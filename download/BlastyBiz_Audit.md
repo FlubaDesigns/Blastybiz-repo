@@ -2,6 +2,7 @@
 
 | Date | File(s) | What was wrong | How it was fixed |
 |------|---------|----------------|-----------------|
+| 2026-07-20 | BlastyBiz.html + global-style.css | **card-tap: whole-card accordion trigger.** Added `.card-tap` CSS class (cursor pointer, green border glow on hover, subtle scale-down on press). Applied to Teach AI, Mentions, and Send To cards — onclick moved from inner `card-title-btn` up to the card div. Accordion body divs get `onclick="event.stopPropagation()"` so tapping inside open content doesn't re-collapse it. Reusable on any card going forward. |
 | 2026-07-20 | BlastyBiz.html | **City hero image not hidden on narrow mobile.** Top `col-right` (dashboard-hero.png) was missing `hide-mobile` class — on narrow screens it stacked full-width below the Campaigns card. Added `hide-mobile` to fix. |
 | 2026-07-20 | global-style.css | **Mobile breakpoints bumped from 479px → 767px** for `.col-2-1` (stacking) and `.hide-mobile` (image hiding). Previous 479px threshold was narrower than most modern phones, leaving 2-column layouts and hero images visible on mobile. |
 | 2026-07-20 | BlastyBiz.html | **Scribe hero image added to Create tab.** Futuristic quill-on-circuit-parchment image (`scribe-hero.png`) placed in the right column of Row 2 (blast form row), across from the "Your Blast" card. Hidden on mobile via `hide-mobile`. |

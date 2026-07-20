@@ -85,6 +85,10 @@ img { margin: 0; }
 .col-right      { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
 .card-fill      { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 .card-title-btn { width: 100%; background: none; border: none; cursor: pointer; padding: 0; justify-content: space-between; margin-bottom: 8px; }
+/* Whole-card tap target — use alongside onclick on the card div */
+.card-tap               { cursor: pointer; transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease; }
+.card-tap:hover         { border-color: var(--green); box-shadow: 0 0 0 1px var(--green); }
+.card-tap:active        { transform: scale(0.985); box-shadow: 0 0 0 2px var(--green); }
 .img-cover      { width: 100%; border-radius: 12px; display: block; flex: 1; object-fit: cover; object-position: center; }
 /* 50/50 two-column grid */
 .col-2       { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gutter); align-items: start; }
