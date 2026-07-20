@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784524230966" />
+<link rel="stylesheet" href="global-style.css?v=1784525937232" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -5089,7 +5089,28 @@ onAuthStateChanged(auth, async (user) => {
       const _qpCid = _qp.get('cid');
       if (_qpCid) {
         const _qpCamp = campaigns.find(c => c.id === _qpCid);
-        if (_qpCamp) selectCampaign(_qpCamp.id, _qpCamp.name);
+        if (_qpCamp) {
+          selectCampaign(_qpCamp.id, _qpCamp.name);
+          /* ── Auto-generate first blast from onboarding ──────── */
+          if (_qp.get('autogenerate') === '1') {
+            window._bbFromOnboarding = true;
+            window.history.replaceState({}, '', window.location.pathname + '?bizId=' + activeBizId);
+            setTimeout(() => {
+              /* Enable platforms from onboarding selection, fallback to first available */
+              const onboardingPlats = _qpCamp.onboardingPlatforms || [];
+              if (onboardingPlats.length) {
+                platforms.forEach(p => {
+                  p.enabled = onboardingPlats.includes(p.id);
+                });
+              } else {
+                /* enable first platform if none specified */
+                if (platforms.length) { platforms[0].enabled = true; }
+              }
+              /* Kick off wizard at generation step */
+              createWizGoTo(5);
+            }, 800);
+          }
+        }
       } else if (campaigns.length && !_qp.get('newcampaign')) {
         // Auto-select most-recently-used campaign so the form is visible on load
         const autoC = [...campaigns].sort((a,b) => new Date(b.lastUsedAt||b.createdAt||0) - new Date(a.lastUsedAt||a.createdAt||0))[0];

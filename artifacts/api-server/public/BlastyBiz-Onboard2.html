@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784524230966"/>
+  <link rel="stylesheet" href="global-style.css?v=1784525937232"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -343,6 +343,34 @@
     }
     .ob2-choice-btn:hover   { border-color: var(--green); background: rgba(0,200,83,.06); }
     .ob2-choice-btn:active  { transform: scale(.98); }
+    /* ── Textarea input ─────────────────────────────────────────── */
+    .bubble-textarea {
+      width: 100%; min-height: 80px; resize: vertical;
+      font-family: inherit; font-size: 15px; line-height: 1.55;
+      background: var(--bg-input, #1a1a1a); color: var(--light, #fff);
+      border: 1px solid var(--border, #333); border-radius: 10px;
+      padding: 10px 12px; box-sizing: border-box; margin-bottom: 2px;
+    }
+    .bubble-textarea:focus { border-color: var(--green); outline: none; }
+    .bubble-textarea::placeholder { color: var(--muted, #555); }
+
+    /* ── Multiselect (platforms) ─────────────────────────────────── */
+    .ob2-multiselect { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 8px; }
+    .ob2-ms-label {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 15px; cursor: pointer; padding: 10px 12px;
+      background: var(--bg-input, #1a1a1a); border: 1px solid var(--border, #333);
+      border-radius: 10px; transition: border-color .2s;
+    }
+    .ob2-ms-label:hover { border-color: var(--green); }
+    .ob2-ms-label input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--green); cursor: pointer; }
+    .ob2-ms-locked { opacity: 0.42; cursor: default; }
+    .ob2-ms-locked:hover { border-color: var(--border, #333); }
+    .ob2-pro-badge {
+      font-size: 10px; font-weight: 700; background: var(--green, #39ff14);
+      color: #000; border-radius: 4px; padding: 1px 6px; margin-left: auto;
+    }
+
     .ob2-choice-btn.selected {
       border-color: var(--green);
       background: rgba(0,200,83,.14);
@@ -588,6 +616,128 @@
       hint: 'Leave blank if you don\'t have one yet — no worries!',
       skipIf: a => a.locationType === 'brick',
       validate: () => null
+    },
+
+    /* ══════════════════════════════════════════════════════════
+       PHASE 2 — Fork: memory explanation + path choice
+    ══════════════════════════════════════════════════════════ */
+    {
+      mood: 's-celebrate', pos: 'right',
+      blastyMsg: "You're set up! Quick note — I use two kinds of memory. 📖 Your Story is what I always know about you: your vibe, what makes you different, your ideal customer. Every campaign gets sharper the more I know you. 🚀 Campaign memory is specific to one blast — the offer, goal, and audience. Want to blast right now, or tell me your story first?",
+      inputType: 'choice',
+      key: '_fork',
+      choices: [
+        { value: 'blast', label: '🚀 Let\'s blast!' },
+        { value: 'story', label: '💬 Tell me your story first' }
+      ],
+      validate: v => v ? null : 'Pick one!'
+    },
+
+    /* ══════════════════════════════════════════════════════════
+       PHASE 2B — Story questions (skip if blast chosen)
+    ══════════════════════════════════════════════════════════ */
+    {
+      mood: 's-ask', pos: 'left',
+      blastyMsgFn: a => 'Love it! How did ' + a.bizName + ' get started? What\'s the story?',
+      inputType: 'textarea',
+      key: 'story',
+      placeholder: 'e.g. We opened in 1987 after my father emigrated from Mexico with nothing but a family recipe and a dream...',
+      hint: 'As much or as little as you like',
+      skipIf: a => a._fork === 'blast',
+      validate: () => null
+    },
+    {
+      mood: 's-happy', pos: 'right',
+      blastyMsgFn: a => 'Good stuff! What makes ' + a.bizName + ' different from the competition?',
+      inputType: 'textarea',
+      key: 'different',
+      placeholder: 'e.g. Everything is made from scratch daily. Our head chef trained in Lyon for 3 years...',
+      hint: 'Why should someone choose you?',
+      skipIf: a => a._fork === 'blast',
+      validate: () => null
+    },
+    {
+      mood: 's-ask', pos: 'left',
+      blastyMsg: 'Any awards, press coverage, or milestones worth mentioning?',
+      inputType: 'textarea',
+      key: 'awards',
+      placeholder: 'e.g. Best Pizza 3 years running. Featured in the Tribune. 4.9 stars across 600+ reviews...',
+      hint: 'Leave blank if none — totally fine!',
+      skipIf: a => a._fork === 'blast',
+      validate: () => null
+    },
+    {
+      mood: 's-happy', pos: 'right',
+      blastyMsgFn: a => 'Who\'s your ideal customer for ' + a.bizName + '?',
+      inputType: 'textarea',
+      key: 'customer',
+      placeholder: 'e.g. Homeowners aged 35–60 who value quality over price and have been burned by cheap contractors before...',
+      hint: 'Who gets the most value from what you do?',
+      skipIf: a => a._fork === 'blast',
+      validate: () => null
+    },
+    {
+      mood: 's-ask', pos: 'left',
+      blastyMsg: 'Anything else I should always know about your business?',
+      inputType: 'textarea',
+      key: 'other',
+      placeholder: 'e.g. Free estimates. Loyalty program. Family-owned since 1995. We sponsor the local little league...',
+      hint: 'Special services, team, community involvement — anything',
+      skipIf: a => a._fork === 'blast',
+      validate: () => null
+    },
+
+    /* ══════════════════════════════════════════════════════════
+       PHASE 2A — Campaign questions (always run)
+    ══════════════════════════════════════════════════════════ */
+    {
+      mood: 's-working', pos: 'right',
+      blastyMsgFn: a => (a._fork === 'story' ? 'Perfect — I know you so much better now! ' : '') + 'Let\'s build your first campaign. What do you want to call it?',
+      inputType: 'text',
+      key: 'campaignName',
+      placeholder: 'e.g. Summer Sale, Grand Opening, New Menu Drop',
+      validate: v => v.trim().length >= 1 ? null : 'Give this campaign a name!'
+    },
+    {
+      mood: 's-ask', pos: 'left',
+      blastyMsg: 'What\'s this campaign about? What are you promoting?',
+      inputType: 'textarea',
+      key: 'campaignAbout',
+      placeholder: 'e.g. Grand reopening after renovations. New fall menu just dropped. Announcing our second location...',
+      hint: 'The more detail, the better the copy',
+      validate: v => v.trim().length >= 3 ? null : 'Tell me a bit more!'
+    },
+    {
+      mood: 's-happy', pos: 'right',
+      blastyMsg: 'Who is this campaign targeting?',
+      inputType: 'textarea',
+      key: 'campaignAudience',
+      placeholder: 'e.g. Local families, young professionals, pet owners in the area...',
+      hint: 'Who do you want to reach with this one?',
+      validate: v => v.trim().length >= 3 ? null : 'Tell me about your audience!'
+    },
+    {
+      mood: 's-ask', pos: 'left',
+      blastyMsg: 'Any special offer or call to action for this campaign?',
+      inputType: 'textarea',
+      key: 'campaignOffer',
+      placeholder: 'e.g. 20% off this weekend only · Free consultation · Book now and save $50...',
+      hint: 'Leave blank for pure awareness — totally fine!',
+      validate: () => null
+    },
+    {
+      mood: 's-working', pos: 'right',
+      blastyMsg: 'Last one — which platforms do you want to blast on?',
+      inputType: 'multiselect',
+      key: 'campaignPlatforms',
+      choices: [
+        { value: 'google_business', label: '📍 Google Business' },
+        { value: 'facebook_page',   label: '📘 Facebook Page' },
+        { value: 'instagram',       label: '📸 Instagram',  proOnly: true },
+        { value: 'twitter',         label: '𝕏 Twitter / X', proOnly: true },
+        { value: 'linkedin',        label: '💼 LinkedIn',    proOnly: true }
+      ],
+      validate: v => (v && v.length) ? null : 'Pick at least one platform!'
     }
   ];
 
@@ -656,6 +806,26 @@
       });
       html += '</div>';
       html += '<input type="hidden" id="ob2-input" value=""/>';
+    } else if (s.inputType === 'multiselect') {
+      const plan = window._ob2Plan || 'trial';
+      const isPro = plan === 'pro' || plan === 'agency';
+      html += '<div class="ob2-multiselect" id="ob2-multiselect">';
+      s.choices.forEach(c => {
+        const locked = c.proOnly && !isPro;
+        html += '<label class="ob2-ms-label' + (locked ? ' ob2-ms-locked' : '') + '">'
+          + '<input type="checkbox" class="ob2-ms-check" value="' + c.value + '"'
+          + (locked ? ' disabled' : '') + ' onchange="window._ob2MsChange()"/>'
+          + c.label
+          + (locked ? ' <span class="ob2-pro-badge">PRO</span>' : '')
+          + '</label>';
+      });
+      html += '</div>';
+      html += '<input type="hidden" id="ob2-input" value=""/>';
+      html += '<button type="button" class="bubble-action-btn" id="ob2-btn" onclick="window._ob2Continue()">Blast! 🚀</button>';
+    } else if (s.inputType === 'textarea') {
+      html += '<textarea id="ob2-input" class="bubble-textarea" placeholder="' + (s.placeholder || '') + '" rows="3"></textarea>';
+      if (s.hint) html += '<div class="bubble-hint">' + s.hint + '</div>';
+      html += '<button type="button" class="bubble-action-btn" id="ob2-btn" onclick="window._ob2Continue()">Continue →</button>';
     } else {
       html += '<input id="ob2-input" type="' + s.inputType + '" class="bubble-input" placeholder="' + (s.placeholder || '') + '" autocomplete="off"/>';
       if (s.hint) html += '<div class="bubble-hint">' + s.hint + '</div>';
@@ -698,6 +868,12 @@
     }, delay);
   }
 
+  window._ob2MsChange = function() {
+    const checked = [...document.querySelectorAll('.ob2-ms-check:checked')].map(c => c.value);
+    const inp = document.getElementById('ob2-input');
+    if (inp) inp.value = checked.join(',');
+  };
+
   window._ob2ToggleChange = function(stateKey, checked) {
     toggles[stateKey] = checked;
   };
@@ -720,21 +896,30 @@
       const err = s.validate(val);
       if (err) { errEl.textContent = err; errEl.style.display = 'block'; return; }
     }
-    answers[s.key] = val.trim();
-    const bubble = document.getElementById('ob2-current-bubble');
-    if (bubble) lockBubble(bubble, val.trim());
+    if (s.inputType === 'multiselect') {
+      answers[s.key] = val.split(',').filter(Boolean);
+      const bubble = document.getElementById('ob2-current-bubble');
+      if (bubble) lockBubble(bubble, answers[s.key].join(', ') || '(none selected)');
+    } else {
+      answers[s.key] = val.trim();
+      const bubble = document.getElementById('ob2-current-bubble');
+      if (bubble) lockBubble(bubble, val.trim());
+    }
     step++;
     setTimeout(showStep, 380);
   };
 
   async function finish() {
-    setMood('s-celebrate');
+    setMood('s-working');
+    setPosition('right');
     setTimeout(() => {
-      addBlastyBubble("You're all set! Saving your info now — let's get blasting! 🚀");
+      addBlastyBubble("On it! Saving everything and firing up your first blast... 🚀");
     }, 440);
     try {
-      await window._ob2Save(answers, toggles);
-      setTimeout(() => { window.location.href = 'BlastyBiz.html'; }, 2000);
+      const { bizId, campId } = await window._ob2Save(answers, toggles);
+      setTimeout(() => {
+        window.location.href = 'BlastyBiz.html?bizId=' + bizId + '&cid=' + campId + '&autogenerate=1';
+      }, 1800);
     } catch (e) {
       console.error('[ob2 save]', e);
       addBlastyBubble('Hmm, something went wrong saving. Try refreshing the page.');
@@ -755,7 +940,7 @@ import {
   onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-  getFirestore, doc, setDoc, collection, getDocs, serverTimestamp
+  getFirestore, doc, getDoc, setDoc, collection, getDocs, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 
@@ -763,6 +948,9 @@ const db = getFirestore(getApp());
 
 window._ob2Save = async function(answers, toggles) {
   const bizRef = doc(collection(db, 'users', window._ob2Uid, 'businesses'));
+  const bizId  = bizRef.id;
+
+  /* ── Save business doc ─────────────────────────────────────── */
   await setDoc(bizRef, {
     name:               answers.bizName      || '',
     ownerName:          answers.ownerName    || '',
@@ -780,14 +968,53 @@ window._ob2Save = async function(answers, toggles) {
     ynMentionPhone:     toggles.ynMentionPhone   ? 'yes' : 'no',
     ynMentionWebsite:   'yes',
     ynMentionEmail:     'yes',
+    /* Story fields — same keys as BizContext */
+    story:              answers.story     || '',
+    different:          answers.different || '',
+    awards:             answers.awards    || '',
+    customer:           answers.customer  || '',
+    other:              answers.other     || '',
     createdAt:          serverTimestamp()
   });
-  await setDoc(doc(db, 'users', window._ob2Uid), { onboarded: false }, { merge: true });
+
+  /* ── Mark user as onboarded + set active business ─────────── */
+  await setDoc(doc(db, 'users', window._ob2Uid), {
+    onboarded:      true,
+    activeBusiness: bizId
+  }, { merge: true });
+
+  /* ── Create first campaign doc ─────────────────────────────── */
+  const campId = 'c_' + Date.now();
+  const campaignStory = [
+    answers.campaignAbout    ? 'About this campaign: ' + answers.campaignAbout    : '',
+    answers.campaignAudience ? 'Target audience: '     + answers.campaignAudience : ''
+  ].filter(Boolean).join('\n');
+
+  await setDoc(
+    doc(db, 'users', window._ob2Uid, 'businesses', bizId, 'campaigns', campId),
+    {
+      id:                  campId,
+      name:                answers.campaignName || 'My First Campaign',
+      offer:               answers.campaignOffer || '',
+      campaignStory,
+      onboardingPlatforms: Array.isArray(answers.campaignPlatforms) ? answers.campaignPlatforms : [],
+      createdAt:           new Date().toISOString(),
+      lastUsedAt:          '',
+      photos:              [],
+      adName:              '',
+      price:               '',
+      factoids:            [],
+      platformHistory:     {}
+    }
+  );
+
+  return { bizId, campId };
 };
 
-function _ready(uid, name) {
+function _ready(uid, name, plan) {
   window._ob2Uid   = uid;
   window._ob2Name  = name || '';
+  window._ob2Plan  = plan || 'trial';
   window._ob2Ready = true;
   if (window._ob2StartConvo) window._ob2StartConvo();
 }
@@ -806,7 +1033,7 @@ if (isSignInWithEmailLink(auth, window.location.href)) {
         const clean = new URL(window.location.href);
         ['oobCode','apiKey','mode','lang'].forEach(p => clean.searchParams.delete(p));
         history.replaceState(null, '', clean.toString());
-        _ready(result.user.uid, name);
+        _ready(result.user.uid, name, 'trial');
       })
       .catch(() => { window.location.href = 'BlastyBiz-Trial.html'; });
   } else {
@@ -817,7 +1044,9 @@ if (isSignInWithEmailLink(auth, window.location.href)) {
     if (!user) { window.location.href = 'BlastyBiz-Trial.html'; return; }
     const snap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
     if (!snap.empty) { window.location.href = 'BlastyBiz.html'; return; }
-    _ready(user.uid, user.displayName || '');
+    const userSnap = await getDoc(doc(db, 'users', user.uid));
+    const plan = userSnap.exists() ? (userSnap.data().plan || 'trial') : 'trial';
+    _ready(user.uid, user.displayName || '', plan);
   });
 }
 </script>
