@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784537230277" />
+<link rel="stylesheet" href="global-style.css?v=1784561187061" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -817,6 +817,8 @@
             <button type="button" onclick="saveAIMemoryNow()" style="padding:9px 18px;border-radius:8px;border:none;background:var(--green);color:#000;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Save</button>
             <span id="tai-save-status" style="font-size:12px;color:var(--green);opacity:0;transition:opacity 0.4s;"></span>
           </div>
+          <!-- factoid quick-look -->
+          <div id="tai-fact-quicklook" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border,#333);"></div>
         </div>
 
       </div>
@@ -3653,6 +3655,7 @@ var _aiMemorySaveTimer   = null;
 
 function initTeachAIAccordion() {
   switchAIMemoryScope('global');
+  renderFactoidQuickLook();
 }
 
 function switchAIMemoryScope(scope) {
@@ -3976,9 +3979,11 @@ async function submitFactoid() {
   if (!text) { showToast('Add some text first'); return; }
   const entry = { text, addedAt: new Date().toISOString() };
   try {
+    let savedId = null;
     if (factoidScope === 'global') {
       if (!window._bbSaveGlobalFact) { showToast('Not ready — try again'); return; }
       const id = await window._bbSaveGlobalFact(entry);
+      savedId = id;
       window._globalFactoids.push({ ...entry, id });
     } else {
       if (!activeCampaignId) { showToast('Select a campaign first'); return; }
@@ -3986,15 +3991,45 @@ async function submitFactoid() {
       const cam = campaigns.find(c => c.id === activeCampaignId);
       if (!cam) { showToast('No active campaign'); return; }
       const id = await window._bbSaveCampaignFact(activeCampaignId, entry);
+      savedId = id;
+      if (!cam.factoids) cam.factoids = [];
+      cam.factoids.push({ ...entry, id });
     }
     document.getElementById('add-info-text').value = '';
     const confirm = document.getElementById('add-info-confirm');
     if (confirm) { confirm.classList.remove('hidden'); setTimeout(() => confirm.classList.add('hidden'), 2000); }
     showToast('✓ Saved — AI will use this');
+    if (savedId && window._bbScoreAndSaveFact) window._bbScoreAndSaveFact(savedId, text, factoidScope, activeCampaignId);
+    renderFactoidQuickLook();
   } catch(e) {
     showToast('❌ Save failed: ' + (e.message || 'unknown'));
   }
 }
+
+function renderFactoidQuickLook() {
+  const el = document.getElementById('tai-fact-quicklook');
+  if (!el) return;
+  const gFacts = window._globalFactoids || [];
+  const cam = activeCampaignId ? campaigns.find(c => c.id === activeCampaignId) : null;
+  const cFacts = cam ? (cam.factoids || []) : [];
+  const top = [...gFacts].sort((a, b) => (b.importance != null ? b.importance : 5) - (a.importance != null ? a.importance : 5)).slice(0, 3);
+  el.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:' + (top.length ? '10' : '0') + 'px;">' +
+      '<span style="font-size:12px;color:var(--muted,#888);">📌 ' + gFacts.length + ' global · ' + cFacts.length + ' campaign facts</span>' +
+      '<a href="BlastyBiz-Memory.html" style="font-size:12px;color:var(--green,#39ff14);font-weight:600;text-decoration:none;">Manage all →</a>' +
+    '</div>' +
+    top.map(function(f) {
+      var s = f.importance != null ? f.importance : null;
+      var bg = s == null ? 'var(--border,#333)' : s >= 7 ? '#16a34a' : s >= 4 ? '#d97706' : '#6b7280';
+      var label = s != null ? s : '?';
+      var txt = (f.text || '').length > 60 ? f.text.slice(0, 60) + '…' : f.text;
+      return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+        '<span style="background:' + bg + ';color:#fff;font-size:10px;font-weight:800;border-radius:4px;padding:2px 6px;min-width:20px;text-align:center;">' + label + '</span>' +
+        '<span style="font-size:12px;color:var(--muted,#aaa);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + txt + '</span>' +
+        '</div>';
+    }).join('');
+}
+window.renderFactoidQuickLook = renderFactoidQuickLook;
 
 function renderEnrichmentQuestions() {
   const el     = document.getElementById('enrichment-questions');
@@ -5022,6 +5057,31 @@ window._bbSaveGlobalFact = async function(fact) {
     { ...fact, uid: currentUser.uid, bizId: activeBizId, createdAt: serverTimestamp() }
   );
   return ref.id;
+};
+
+window._bbScoreAndSaveFact = async function(factId, text, scope, campId) {
+  if (!currentUser || !activeBizId) return;
+  try {
+    const token = await currentUser.getIdToken();
+    const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/scoreFact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ text })
+    });
+    if (!resp.ok) return;
+    const { score } = await resp.json();
+    if (score == null) return;
+    if (scope === 'global') {
+      await updateDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'facts', factId), { importance: score });
+      const f = (window._globalFactoids || []).find(x => x.id === factId);
+      if (f) f.importance = score;
+    } else if (campId) {
+      await updateDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', campId, 'facts', factId), { importance: score });
+      const cam = campaigns.find(c => c.id === campId);
+      if (cam && cam.factoids) { const f = cam.factoids.find(x => x.id === factId); if (f) f.importance = score; }
+    }
+    if (window.renderFactoidQuickLook) window.renderFactoidQuickLook();
+  } catch(_) { /* silent — scoring is non-critical */ }
 };
 
 window._bbDeleteGlobalFact = async function(factId) {

@@ -660,7 +660,7 @@ ${listing.adDetails ? `- Additional ad details: ${listing.adDetails}\n` : ''}- P
 - Hours: ${listing.hours || 'not provided'}
 - Images attached: ${listing.imageCount > 0 ? listing.imageCount + ' photo(s)' : 'none'}
 - Preferred tone: ${tone}
-${globalMemoryBlock}${campaignMemoryBlock}${aiContextBlock}${libraryDocsBlock}${campaignContextBlock}${(listing.bizInsights||[]).length ? '\n⚠️ CAMPAIGN-SPECIFIC AI FACTS — MANDATORY. These answers are specific to this campaign. Reference them directly — do NOT write generic filler:\n' + listing.bizInsights.map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(listing.globalFactoids||[]).length ? '\n⚠️ GLOBAL BUSINESS FACTS — Always true about this business. Reference naturally where relevant:\n' + listing.globalFactoids.map(f=>`- ${f.text}`).join('\n') : ''}${(listing.campaignFactoids||[]).length ? '\n⚠️ CAMPAIGN-SPECIFIC FACTS — Specific to this campaign. Work these in:\n' + listing.campaignFactoids.map(f=>`- ${f.text}`).join('\n') : ''}
+${globalMemoryBlock}${campaignMemoryBlock}${aiContextBlock}${libraryDocsBlock}${campaignContextBlock}${(listing.bizInsights||[]).length ? '\n⚠️ CAMPAIGN-SPECIFIC AI FACTS — MANDATORY. These answers are specific to this campaign. Reference them directly — do NOT write generic filler:\n' + listing.bizInsights.map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(listing.globalFactoids||[]).length ? '\n📌 BUSINESS FACTS — Use selectively. Include a fact only when it genuinely strengthens this specific post. Do NOT force every fact into every piece. Higher score = stronger brand signal:\n' + [...listing.globalFactoids].sort((a,b)=>(b.importance!=null?b.importance:5)-(a.importance!=null?a.importance:5)).map(f=>`- [${f.importance!=null?f.importance:5}/10] ${f.text}`).join('\n') : ''}${(listing.campaignFactoids||[]).length ? '\n📌 CAMPAIGN FACTS — Use selectively. Include only when it fits naturally for this campaign. Higher score = more likely to strengthen this copy:\n' + [...listing.campaignFactoids].sort((a,b)=>(b.importance!=null?b.importance:5)-(a.importance!=null?a.importance:5)).map(f=>`- [${f.importance!=null?f.importance:5}/10] ${f.text}`).join('\n') : ''}
 PLATFORMS TO ADAPT FOR:
 ${platformList.map(buildPlatformBlock).join('\n')}
 
@@ -3545,7 +3545,7 @@ BUSINESS INFO:
 - Website: ${biz.website || 'none'}
 - Hours: ${biz.hours || 'not provided'}
 - Preferred tone: ${tone}
-${(biz.bizInsights||[]).filter(i=>i.answer).length ? '\n⚠️ OWNER-PROVIDED FACTS — MANDATORY. The owner answered these questions so their copy is never generic. You MUST reference these details directly and specifically in the copy. Do NOT write filler when real facts are available:\n' + biz.bizInsights.filter(i=>i.answer).map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(biz.globalFactoids||[]).length ? '\n⚠️ GLOBAL BUSINESS FACTS — Always true about this business. Reference naturally where relevant:\n' + biz.globalFactoids.map(f=>`- ${f.text}`).join('\n') : ''}${(biz.campaignFactoids||[]).length ? '\n⚠️ CAMPAIGN-SPECIFIC FACTS — Specific to this campaign. Work these in:\n' + biz.campaignFactoids.map(f=>`- ${f.text}`).join('\n') : ''}${campaignContext}
+${(biz.bizInsights||[]).filter(i=>i.answer).length ? '\n⚠️ OWNER-PROVIDED FACTS — MANDATORY. The owner answered these questions so their copy is never generic. You MUST reference these details directly and specifically in the copy. Do NOT write filler when real facts are available:\n' + biz.bizInsights.filter(i=>i.answer).map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(biz.globalFactoids||[]).length ? '\n📌 BUSINESS FACTS — Use selectively. Include a fact only when it genuinely strengthens this specific post. Do NOT force every fact into every piece. Higher score = stronger brand signal:\n' + [...biz.globalFactoids].sort((a,b)=>(b.importance!=null?b.importance:5)-(a.importance!=null?a.importance:5)).map(f=>`- [${f.importance!=null?f.importance:5}/10] ${f.text}`).join('\n') : ''}${(biz.campaignFactoids||[]).length ? '\n📌 CAMPAIGN FACTS — Use selectively. Include only when it fits naturally for this campaign. Higher score = more likely to strengthen this copy:\n' + [...biz.campaignFactoids].sort((a,b)=>(b.importance!=null?b.importance:5)-(a.importance!=null?a.importance:5)).map(f=>`- [${f.importance!=null?f.importance:5}/10] ${f.text}`).join('\n') : ''}${campaignContext}
 PLATFORMS TO WRITE FOR:
 ${platformList.map(buildPlatformBlock).join('\n')}
 
@@ -4518,5 +4518,38 @@ exports.sendVerificationEmail = onRequest({ invoker: 'public', secrets: ['RESEND
   } catch (e) {
     console.error('[sendVerificationEmail]', e.message);
     return res.status(500).json({ error: e.message });
+  }
+});
+
+// ── scoreFact — lightweight AI importance scoring for user-added factoids ──────
+exports.scoreFact = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Headers', 'Authorization,Content-Type');
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+
+  const authHeader = req.headers.authorization || '';
+  if (!authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  try { await admin.auth().verifyIdToken(authHeader.slice(7)); } catch(e) { return res.status(401).json({ error: 'Invalid token' }); }
+
+  const { text } = req.body || {};
+  if (!text || typeof text !== 'string') return res.status(400).json({ error: 'text required' });
+
+  try {
+    const { text: aiText } = await callAI(
+      `You are a marketing intelligence assistant. A local business owner added this fact to their AI memory bank.\n\nScore it 1–10 for marketing importance:\n10 = foundational brand identity that should appear in most marketing copy (e.g. "family-owned since 1905", "fastest response in the city")\n5 = useful context used when relevant\n1 = very temporary or highly specific detail rarely relevant to copy\n\nFact: "${text.slice(0, 500)}"\n\nReturn ONLY valid JSON with no explanation: {"score": N}`,
+      { tier: 'fast', maxTokens: 20, timeoutMs: 10000 }
+    );
+    let score = 5;
+    try {
+      const parsed = JSON.parse(aiText.trim());
+      score = Math.min(10, Math.max(1, Math.round(Number(parsed.score)) || 5));
+    } catch(_) {
+      const m = aiText.match(/\d+/);
+      if (m) score = Math.min(10, Math.max(1, parseInt(m[0])));
+    }
+    res.json({ score });
+  } catch(e) {
+    console.error('[scoreFact]', e.message);
+    res.json({ score: 5 }); // graceful fallback — scoring is non-critical
   }
 });
