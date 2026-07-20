@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784561187061"/>
+  <link rel="stylesheet" href="global-style.css?v=1784565670001"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -622,6 +622,8 @@
   const answers = {};
   const toggles = { ynMentionName: false, ynMentionRole: false, ynMentionAddress: true, ynMentionPhone: true };
   let step = 0;
+  let currentBubble = null;
+  let currentInput  = null;
 
   const STEPS = [
     {
@@ -658,9 +660,9 @@
       blastyMsgFn: a => 'Perfect. What\'s the best phone number for ' + a.bizName + '?',
       inputType: 'tel',
       key: 'phone',
-      placeholder: '(555) 867-5309',
+      placeholder: '555-867-5309',
       hint: 'Customers can call or text this number',
-      validate: v => v.trim().length >= 7 ? null : 'Please enter a phone number.',
+      validate: v => v.replace(/\D/g,'').length >= 7 ? null : 'Please enter a phone number.',
       toggle: { stateKey: 'ynMentionPhone', label: 'Include phone number in marketing copy' }
     },
     {
@@ -952,7 +954,8 @@
   }
 
   function renderInput(s) {
-    const bubble = addUserBubble('ob2-current-bubble');
+    currentBubble = addUserBubble();
+    const bubble = currentBubble;
     let html = '';
 
     if (s.inputType === 'choice') {
@@ -1008,10 +1011,20 @@
     html += '<div class="pb-err" id="ob2-err"></div>';
     bubble.innerHTML = html;
 
-    const inp = document.getElementById('ob2-input');
-    if (inp && s.inputType !== 'choice') {
-      inp.focus();
-      inp.addEventListener('keydown', e => { if (e.key === 'Enter') window._ob2Continue(); });
+    currentInput = document.getElementById('ob2-input');
+    if (currentInput && s.inputType !== 'choice') {
+      currentInput.focus();
+      if (s.inputType !== 'textarea') {
+        currentInput.addEventListener('keydown', e => { if (e.key === 'Enter') window._ob2Continue(); });
+      }
+    }
+    if (s.inputType === 'tel' && currentInput) {
+      currentInput.addEventListener('input', function() {
+        let digits = this.value.replace(/\D/g, '').slice(0, 10);
+        if (digits.length >= 7)      this.value = digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6);
+        else if (digits.length >= 4) this.value = digits.slice(0,3) + '-' + digits.slice(3);
+        else                         this.value = digits;
+      });
     }
     setTimeout(() => bubble.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
   }
@@ -1054,8 +1067,7 @@
 
   window._ob2AcceptSuggestion = function(value) {
     answers[STEPS[step].key] = value;
-    const bubble = document.getElementById('ob2-current-bubble');
-    if (bubble) lockBubble(bubble, value);
+    if (currentBubble) lockBubble(currentBubble, value);
     step++;
     setTimeout(showStep, 380);
   };
@@ -1084,29 +1096,29 @@
   window._ob2PickChoice = function(btn) {
     document.querySelectorAll('.ob2-choice-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
-    document.getElementById('ob2-input').value = btn.dataset.val;
-    const errEl = document.getElementById('ob2-err');
+    if (currentInput) currentInput.value = btn.dataset.val;
+    const errEl = currentBubble ? currentBubble.querySelector('#ob2-err') : null;
     if (errEl) errEl.style.display = 'none';
     setTimeout(() => window._ob2Continue(), 220);
   };
 
   window._ob2Continue = function() {
     const s = STEPS[step];
-    const inp = document.getElementById('ob2-input');
-    const val = inp ? inp.value : '';
-    const errEl = document.getElementById('ob2-err');
+    const val = currentInput ? currentInput.value : '';
+    const errEl = currentBubble ? currentBubble.querySelector('#ob2-err') : null;
     if (s.validate) {
       const err = s.validate(val);
-      if (err) { errEl.textContent = err; errEl.style.display = 'block'; return; }
+      if (err) {
+        if (errEl) { errEl.textContent = err; errEl.style.display = 'block'; }
+        return;
+      }
     }
     if (s.inputType === 'multiselect') {
       answers[s.key] = val.split(',').filter(Boolean);
-      const bubble = document.getElementById('ob2-current-bubble');
-      if (bubble) lockBubble(bubble, answers[s.key].join(', ') || '(none selected)');
+      if (currentBubble) lockBubble(currentBubble, answers[s.key].join(', ') || '(none selected)');
     } else {
       answers[s.key] = val.trim();
-      const bubble = document.getElementById('ob2-current-bubble');
-      if (bubble) lockBubble(bubble, val.trim());
+      if (currentBubble) lockBubble(currentBubble, val.trim());
     }
     step++;
     setTimeout(showStep, 380);
@@ -1143,7 +1155,13 @@
     }
   }
 
-  window._ob2StartConvo = function() { showStep(); };
+  window._ob2StartConvo = function() {
+    setMood('s-wave');
+    setTimeout(() => {
+      addBlastyBubble("Hi! I'm <strong>Blasty</strong> 🚀 I'm your AI marketing assistant — I'll walk you through setting up your BlastyBiz profile. It only takes a few minutes and I'll ask everything I need to start blasting for you!");
+      setTimeout(showStep, 1400);
+    }, 600);
+  };
   if (window._ob2Ready) window._ob2StartConvo();
 })();
 </script>
