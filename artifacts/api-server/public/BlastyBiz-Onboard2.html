@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784520766973"/>
+  <link rel="stylesheet" href="global-style.css?v=1784522100075"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -185,7 +185,7 @@
     .toggle-switch input:checked + .toggle-slider { background: var(--green); }
     .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
 
-    /* ── Blasty zone (right) ────────────────────────────────────── */
+    /* ── Blasty zone (right — desktop) ──────────────────────────── */
     .pb-blasty-zone {
       flex-shrink: 0;
       width: 190px;
@@ -198,6 +198,15 @@
     }
     .pb-blasty { width: 160px; }
     #blasty-svg { width: 100%; height: auto; overflow: visible; }
+    .pb-blasty-caption {
+      font-size: 12px;
+      color: var(--muted, #666);
+      margin-top: 10px;
+      text-align: center;
+      font-style: italic;
+      min-height: 18px;
+      transition: opacity .3s;
+    }
 
     /* ── Blasty animations ──────────────────────────────────────── */
     #blasty-body {
@@ -265,26 +274,78 @@
       100% { opacity: 0; transform: translateY(60px) scale(1.5); }
     }
 
-    /* ── Mobile ─────────────────────────────────────────────────── */
-    @media (max-width: 620px) {
+    /* ── Choice buttons ─────────────────────────────────────────── */
+    .ob2-choices {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .ob2-choice-btn {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--panel, #111);
+      border: 1.5px solid var(--border, #333);
+      border-radius: 10px;
+      color: var(--light, #fff);
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color .18s, background .18s, transform .1s;
+    }
+    .ob2-choice-btn:hover   { border-color: var(--green); background: rgba(0,200,83,.06); }
+    .ob2-choice-btn:active  { transform: scale(.98); }
+    .ob2-choice-btn.selected {
+      border-color: var(--green);
+      background: rgba(0,200,83,.14);
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    /* ── Tablet (580 – 859px) ───────────────────────────────────── */
+    @media (max-width: 859px) {
       .pb-layout {
         flex-direction: column;
-        padding: 20px 16px 60px;
+        max-width: 600px;
+        padding: 28px 24px 80px;
         gap: 0;
       }
       .pb-blasty-zone {
         width: 100%;
         order: -1;
         flex-direction: row;
-        justify-content: flex-end;
-        align-items: center;
+        justify-content: center;
+        align-items: flex-end;
         position: static;
-        padding-bottom: 10px;
-        gap: 12px;
+        padding-bottom: 20px;
+        gap: 14px;
       }
-      .pb-blasty { width: 56px; }
-      .pb-logo   { display: none; }
-      .pb-tagline { margin-bottom: 16px; }
+      .pb-blasty { width: 110px; }
+      .pb-blasty-caption {
+        font-size: 13px;
+        text-align: left;
+        margin-top: 0;
+        max-width: 180px;
+      }
+    }
+
+    /* ── Mobile (< 580px) ───────────────────────────────────────── */
+    @media (max-width: 579px) {
+      .pb-layout {
+        padding: 16px 14px 60px;
+      }
+      .pb-blasty-zone {
+        padding-bottom: 14px;
+        gap: 10px;
+      }
+      .pb-blasty { width: 88px; }
+      .pb-logo    { display: none; }
+      .pb-tagline { margin-bottom: 14px; font-size: 13px; }
+      .pb-blasty-caption { font-size: 12px; max-width: 160px; }
+      .bubble-blasty,
+      .bubble-user { max-width: 96%; font-size: 14px; }
     }
   </style>
 </head>
@@ -358,6 +419,7 @@
           </g>
         </svg>
       </div>
+      <div class="pb-blasty-caption" id="pb-blasty-caption"></div>
     </div>
 
   </div>
@@ -367,7 +429,7 @@
 <script>
 (function() {
   const answers = {};
-  const toggles = { ynMentionAddress: true, ynMentionPhone: true };
+  const toggles = { ynMentionAddress: true, ynMentionPhone: true, ynMentionWebsite: true };
   let step = 0;
 
   const STEPS = [
@@ -399,11 +461,43 @@
       hint: 'Customers can call or text this number',
       validate: v => v.trim().length >= 7 ? null : 'Please enter a phone number.',
       toggle: { stateKey: 'ynMentionPhone', label: 'Include phone number in marketing copy' }
+    },
+    {
+      mood: 's-working',
+      blastyMsgFn: a => 'Excellent! Does ' + a.bizName + ' have a website? I\'ll make sure it shows up everywhere.',
+      inputType: 'url',
+      key: 'website',
+      placeholder: 'e.g. https://qrgear.com',
+      hint: 'Leave blank if you don\'t have one yet — no worries!',
+      validate: () => null,
+      toggle: { stateKey: 'ynMentionWebsite', label: 'Include website in marketing copy' }
+    },
+    {
+      mood: 's-happy',
+      blastyMsgFn: a => 'Almost there! Is ' + a.bizName + ' a physical location, online only, or both?',
+      inputType: 'choice',
+      key: 'locationType',
+      choices: [
+        { value: 'brick', label: '🏪  Physical Location' },
+        { value: 'online', label: '🌐  Online Only' },
+        { value: 'both', label: '🏪🌐  Both' }
+      ],
+      validate: v => v ? null : 'Please choose one.'
     }
   ];
 
+  const MOOD_CAPTIONS = {
+    's-wave':      'Hey there! 👋',
+    's-ask':       'Tell me more...',
+    's-happy':     'Looking good! 🎉',
+    's-working':   'On it...',
+    's-celebrate': 'Let\'s blast! 🚀'
+  };
+
   function setMood(mood) {
     document.getElementById('pb-blasty').className = 'pb-blasty ' + mood;
+    const cap = document.getElementById('pb-blasty-caption');
+    if (cap) cap.textContent = MOOD_CAPTIONS[mood] || '';
   }
 
   function addBlastyBubble(text) {
@@ -433,28 +527,36 @@
 
   function renderInput(s) {
     const bubble = addUserBubble('ob2-current-bubble');
+    let html = '';
 
-    let html = '<input id="ob2-input" type="' + s.inputType + '" class="bubble-input" placeholder="' + (s.placeholder || '') + '" autocomplete="off"/>';
-    if (s.hint) html += '<div class="bubble-hint">' + s.hint + '</div>';
-
-    if (s.toggle) {
-      html += '<div class="toggle-row">'
-            + '<span class="toggle-label">' + s.toggle.label + '</span>'
-            + '<label class="toggle-switch">'
-            + '<input type="checkbox" id="ob2-toggle"' + (toggles[s.toggle.stateKey] ? ' checked' : '')
-            + ' onchange="window._ob2ToggleChange(\'' + s.toggle.stateKey + '\',this.checked)"/>'
-            + '<span class="toggle-slider"></span>'
-            + '</label>'
-            + '</div>';
+    if (s.inputType === 'choice') {
+      html += '<div class="ob2-choices" id="ob2-choices">';
+      s.choices.forEach(c => {
+        html += '<button type="button" class="ob2-choice-btn" data-val="' + c.value + '" onclick="window._ob2PickChoice(this)">' + c.label + '</button>';
+      });
+      html += '</div>';
+      html += '<input type="hidden" id="ob2-input" value=""/>';
+    } else {
+      html += '<input id="ob2-input" type="' + s.inputType + '" class="bubble-input" placeholder="' + (s.placeholder || '') + '" autocomplete="off"/>';
+      if (s.hint) html += '<div class="bubble-hint">' + s.hint + '</div>';
+      if (s.toggle) {
+        html += '<div class="toggle-row">'
+              + '<span class="toggle-label">' + s.toggle.label + '</span>'
+              + '<label class="toggle-switch">'
+              + '<input type="checkbox" id="ob2-toggle"' + (toggles[s.toggle.stateKey] ? ' checked' : '')
+              + ' onchange="window._ob2ToggleChange(\'' + s.toggle.stateKey + '\',this.checked)"/>'
+              + '<span class="toggle-slider"></span>'
+              + '</label>'
+              + '</div>';
+      }
+      html += '<button type="button" class="bubble-action-btn" id="ob2-btn" onclick="window._ob2Continue()">Continue →</button>';
     }
 
-    html += '<button type="button" class="bubble-action-btn" id="ob2-btn" onclick="window._ob2Continue()">Continue →</button>'
-          + '<div class="pb-err" id="ob2-err"></div>';
-
+    html += '<div class="pb-err" id="ob2-err"></div>';
     bubble.innerHTML = html;
 
     const inp = document.getElementById('ob2-input');
-    if (inp) {
+    if (inp && s.inputType !== 'choice') {
       inp.focus();
       inp.addEventListener('keydown', e => { if (e.key === 'Enter') window._ob2Continue(); });
     }
@@ -475,6 +577,15 @@
 
   window._ob2ToggleChange = function(stateKey, checked) {
     toggles[stateKey] = checked;
+  };
+
+  window._ob2PickChoice = function(btn) {
+    document.querySelectorAll('.ob2-choice-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('ob2-input').value = btn.dataset.val;
+    const errEl = document.getElementById('ob2-err');
+    if (errEl) errEl.style.display = 'none';
+    setTimeout(() => window._ob2Continue(), 220);
   };
 
   window._ob2Continue = function() {
@@ -530,15 +641,17 @@ const db = getFirestore(getApp());
 window._ob2Save = async function(answers, toggles) {
   const bizRef = doc(collection(db, 'users', window._ob2Uid, 'businesses'));
   await setDoc(bizRef, {
-    name:               answers.bizName  || '',
-    phone:              answers.phone    || '',
-    address:            answers.address  || '',
+    name:               answers.bizName     || '',
+    phone:              answers.phone       || '',
+    address:            answers.address     || '',
+    website:            answers.website     || '',
+    locationType:       answers.locationType || '',
     ynMentionAddress:   toggles.ynMentionAddress  ? 'yes' : 'no',
     ynMentionPhone:     toggles.ynMentionPhone    ? 'yes' : 'no',
+    ynMentionWebsite:   toggles.ynMentionWebsite  ? 'yes' : 'no',
     ynMentionName:      'no',
     ynMentionRole:      'no',
     ynMentionEmail:     'yes',
-    ynMentionWebsite:   'yes',
     createdAt:          serverTimestamp()
   });
   await setDoc(doc(db, 'users', window._ob2Uid), { onboarded: false }, { merge: true });
