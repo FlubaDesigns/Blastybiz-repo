@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784507561529" />
+<link rel="stylesheet" href="global-style.css?v=1784507720134" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -131,38 +131,48 @@
     <div class="col-2-1">
 
       <div class="col-left">
-        <!-- BUSINESS SELECTOR CARD -->
-        <div class="card" id="create-biz-card">
-          <div class="card-title">🏢 Business</div>
-          <div class="biz-select-row" style="margin-bottom:10px;">
-            <div class="biz-custom-dd" id="biz-custom-dd">
-              <button type="button" class="biz-dd-trigger" id="biz-dd-trigger" onclick="toggleBizDropdown()">
-                <span id="biz-dd-label">Loading…</span>
-                <span class="biz-dd-chevron">▾</span>
-              </button>
-              <div class="biz-dd-list" id="biz-dd-list"></div>
-            </div>
-            <button type="button" class="add-biz-btn" onclick="window.addBusiness&&window.addBusiness()" title="Add business">＋</button>
-            <button type="button" class="del-biz-btn" onclick="window.deleteBusiness&&window.deleteBusiness(window.activeBizId)" title="Delete selected business">🗑</button>
-          </div>
-          <select id="biz-select" style="display:none"></select>
-          <div class="agency-bar">
-            <span id="agency-usage-text" class="agency-usage-text"></span>
-            <div class="agency-pips" id="agency-pips"></div>
-          </div>
-          <div style="display:none">
-            <div id="biz-active-btn"></div><div id="active-avatar"></div><div id="active-name"></div>
-            <div id="active-plan"></div><div id="biz-count"></div><div id="biz-cards"></div>
-            <div id="biz-cards-inline"></div><div id="sheet-overlay"></div>
-          </div>
-        </div>
 
-        <!-- CAMPAIGN LIST CARD -->
-        <div class="card" id="create-camp-list-card">
-          <div class="card-title">📁 Campaigns</div>
-          <a class="btn btn-primary" href="BlastyBiz.html?newcampaign=1" style="display:block;width:100%;box-sizing:border-box;text-align:center;margin-bottom:12px;">＋ New Campaign</a>
-          <div id="create-camp-list"><div class="loading-text">Loading…</div></div>
-        </div>
+        <div class="row">
+          <div class="col-full">
+            <!-- BUSINESS SELECTOR CARD -->
+            <div class="card" id="create-biz-card">
+              <div class="card-title">🏢 Business</div>
+              <div class="biz-select-row" style="margin-bottom:10px;">
+                <div class="biz-custom-dd" id="biz-custom-dd">
+                  <button type="button" class="biz-dd-trigger" id="biz-dd-trigger" onclick="toggleBizDropdown()">
+                    <span id="biz-dd-label">Loading…</span>
+                    <span class="biz-dd-chevron">▾</span>
+                  </button>
+                  <div class="biz-dd-list" id="biz-dd-list"></div>
+                </div>
+                <button type="button" class="add-biz-btn" onclick="window.addBusiness&&window.addBusiness()" title="Add business">＋</button>
+                <button type="button" class="del-biz-btn" onclick="window.deleteBusiness&&window.deleteBusiness(window.activeBizId)" title="Delete selected business">🗑</button>
+              </div>
+              <select id="biz-select" style="display:none"></select>
+              <div class="agency-bar">
+                <span id="agency-usage-text" class="agency-usage-text"></span>
+                <div class="agency-pips" id="agency-pips"></div>
+              </div>
+              <div style="display:none">
+                <div id="biz-active-btn"></div><div id="active-avatar"></div><div id="active-name"></div>
+                <div id="active-plan"></div><div id="biz-count"></div><div id="biz-cards"></div>
+                <div id="biz-cards-inline"></div><div id="sheet-overlay"></div>
+              </div>
+            </div>
+          </div>
+        </div><!-- /.row -->
+
+        <div class="row">
+          <div class="col-full">
+            <!-- CAMPAIGN LIST CARD -->
+            <div class="card" id="create-camp-list-card">
+              <div class="card-title">📁 Campaigns</div>
+              <a class="btn btn-primary" href="BlastyBiz.html?newcampaign=1" style="display:block;width:100%;box-sizing:border-box;text-align:center;margin-bottom:12px;">＋ New Campaign</a>
+              <div id="create-camp-list"><div class="loading-text">Loading…</div></div>
+            </div>
+          </div>
+        </div><!-- /.row -->
+
       </div><!-- /.col-left -->
 
       <!-- RIGHT: hero image -->
