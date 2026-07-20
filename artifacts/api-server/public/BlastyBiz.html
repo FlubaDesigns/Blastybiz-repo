@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784507069645" />
+<link rel="stylesheet" href="global-style.css?v=1784507235422" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -110,10 +110,26 @@
 <div class="stage">
 <div class="main">
 
-  <!-- BUSINESS SWITCHER BAR -->
-  <div class="biz-bar">
-    <div class="biz-bar-title">✏️ Create</div>
-    <div class="biz-select-row">
+<div class="tabs-row">
+<div class="tabs">
+  <div class="tab active" onclick="showTab('create')" id="tab-create"><span class="tab-icon">✏️ </span>Create</div>
+  <div class="tab" onclick="showTab('platforms')" id="tab-platforms"><span class="tab-icon">📡 </span>Platforms</div>
+  <div class="tab" onclick="showTab('schedule')" id="tab-schedule"><span class="tab-icon">🗓️ </span>Schedule</div>
+  <div class="tab" onclick="showTab('history')" id="tab-history"><span class="tab-icon">📋 </span>History</div>
+  <div class="tab" onclick="showTab('profile')" id="tab-profile"><span class="tab-icon">⚙️ </span>Profile</div>
+  <div class="tab" onclick="showTab('story')" id="tab-story"><span class="tab-icon">📖 </span>Story</div>
+  <div class="tab" onclick="showTab('account')" id="tab-account"><span class="tab-icon">💼 </span>Account</div>
+</div>
+</div>
+<!-- ══════════════════════════════════════════
+     TAB 1: CREATE LISTING
+══════════════════════════════════════════ -->
+<div class="section active" id="section-create">
+
+  <!-- BUSINESS SELECTOR CARD -->
+  <div class="card" id="create-biz-card">
+    <div class="card-title">🏢 Business</div>
+    <div class="biz-select-row" style="margin-bottom:10px;">
       <div class="biz-custom-dd" id="biz-custom-dd">
         <button type="button" class="biz-dd-trigger" id="biz-dd-trigger" onclick="toggleBizDropdown()">
           <span id="biz-dd-label">Loading…</span>
@@ -135,22 +151,6 @@
       <div id="biz-cards-inline"></div><div id="sheet-overlay"></div>
     </div>
   </div>
-
-<div class="tabs-row">
-<div class="tabs">
-  <div class="tab active" onclick="showTab('create')" id="tab-create"><span class="tab-icon">✏️ </span>Create</div>
-  <div class="tab" onclick="showTab('platforms')" id="tab-platforms"><span class="tab-icon">📡 </span>Platforms</div>
-  <div class="tab" onclick="showTab('schedule')" id="tab-schedule"><span class="tab-icon">🗓️ </span>Schedule</div>
-  <div class="tab" onclick="showTab('history')" id="tab-history"><span class="tab-icon">📋 </span>History</div>
-  <div class="tab" onclick="showTab('profile')" id="tab-profile"><span class="tab-icon">⚙️ </span>Profile</div>
-  <div class="tab" onclick="showTab('story')" id="tab-story"><span class="tab-icon">📖 </span>Story</div>
-  <div class="tab" onclick="showTab('account')" id="tab-account"><span class="tab-icon">💼 </span>Account</div>
-</div>
-</div>
-<!-- ══════════════════════════════════════════
-     TAB 1: CREATE LISTING
-══════════════════════════════════════════ -->
-<div class="section active" id="section-create">
 
   <!-- CAMPAIGN LIST — always visible, mirrors Dashboard campaigns card -->
   <div class="card" id="create-camp-list-card">
