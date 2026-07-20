@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784514685764" />
+<link rel="stylesheet" href="global-style.css?v=1784515340072" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -570,6 +570,15 @@
 ══════════════════════════════════════════ -->
 <div class="section" id="section-schedule">
 
+  <div class="pro-overlay" id="schedule-pro-overlay" data-plan="trial starter" style="position:fixed;inset:0;z-index:50;border-radius:0;padding:40px 24px;">
+    <div class="pro-overlay-content">
+      <div class="pro-overlay-badge">⚡ Pro</div>
+      <div class="pro-overlay-title">Schedule your blasts in advance</div>
+      <p class="pro-overlay-msg">Set it and forget it. Pick a date and time, approve the copy, and BlastyBiz posts for you automatically — on every platform, at the perfect moment.</p>
+      <a href="BlastyBiz-Plan-Pro.html" class="pro-overlay-btn">Upgrade to Pro →</a>
+    </div>
+  </div>
+
   <!-- Upcoming posts summary bar -->
   <div class="card" id="sched-upcoming-card">
     <div class="card-title">🗓️ Upcoming Posts</div>
@@ -950,10 +959,15 @@
 
     <!-- Business Library — locked for starter -->
     <div id="doc-library-locked" style="display:none;margin-bottom:16px;">
-      <div class="card" style="border:1px dashed var(--border);opacity:0.85">
-        <div class="card-title">📎 Business Library <span style="font-size:11px;font-weight:500;background:var(--green);color:#000;border-radius:4px;padding:2px 7px;margin-left:8px;vertical-align:middle">PRO</span></div>
-        <p class="helper mb-12">Upload a menu, service sheet, or sales piece — the AI reads it before writing every campaign.</p>
-        <button type="button" onclick="showTab('account')" class="btn btn-primary" style="display:inline-block">Upgrade to Pro →</button>
+      <div class="card pro-locked">
+        <div class="pro-overlay visible" data-plan="starter" style="position:relative;inset:unset;border-radius:12px;padding:28px 20px;">
+          <div class="pro-overlay-content">
+            <div class="pro-overlay-badge">⚡ Pro</div>
+            <div class="pro-overlay-title">Business Library</div>
+            <p class="pro-overlay-msg">Upload a menu, service sheet, or sales piece. The AI reads it before writing every campaign — so your copy is always accurate, specific, and on-brand.</p>
+            <a href="BlastyBiz-Plan-Pro.html" class="pro-overlay-btn">Upgrade to Pro →</a>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1007,6 +1021,18 @@
       <div class="cost-line"><span>Resets on</span><strong id="acct-renewal">—</strong></div>
       <div class="btn-row" style="margin-top:12px;">
         <button type="button" class="btn btn-primary" id="acct-billing-btn" onclick="handleBilling()">View Billing</button>
+      </div>
+    </div>
+
+    <!-- Agency white-label promo — shown for trial/starter/pro, hidden for agency -->
+    <div class="card pro-locked" id="agency-promo-card">
+      <div class="pro-overlay visible" data-plan="trial starter pro" style="position:relative;inset:unset;border-radius:12px;padding:28px 20px;">
+        <div class="pro-overlay-content">
+          <div class="pro-overlay-badge">🏢 Agency</div>
+          <div class="pro-overlay-title">Your brand. Your clients.</div>
+          <p class="pro-overlay-msg">Display your agency logo, name, address, and contact info. Manage unlimited client businesses from one dashboard. BlastyBiz becomes your tool — with your name on it.</p>
+          <a href="BlastyBiz-Plan-Agency.html" class="pro-overlay-btn">See Agency Plan →</a>
+        </div>
       </div>
     </div>
 
@@ -4647,26 +4673,44 @@ function selectBizOption(bizId) {
 // ── Plan overlay activation ───────────────────────────────────────────
 window._applyPlanOverlays = function() {
   const plan = window._bbUserPlan || 'starter';
+
+  // Activate overlays whose data-plan list includes the current plan
   document.querySelectorAll('.pro-overlay[data-plan]').forEach(el => {
     const plans = (el.getAttribute('data-plan') || '').split(' ');
     if (plans.includes(plan)) el.classList.add('visible');
   });
-  // History tab uses fixed positioning — only show when tab is active
-  const histOverlay = document.getElementById('history-pro-overlay');
-  if (histOverlay && histOverlay.classList.contains('visible')) {
-    // Keep it hidden until user navigates to History tab
-    histOverlay.classList.remove('visible');
-    histOverlay._pendingVisible = true;
+
+  // Hide Agency promo card entirely for Agency users (they already have the feature)
+  if (plan === 'agency') {
+    const agCard = document.getElementById('agency-promo-card');
+    if (agCard) agCard.style.display = 'none';
   }
+
+  // Fixed-position tab overlays: defer until user navigates to that tab
+  ['history-pro-overlay','schedule-pro-overlay'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.classList.contains('visible')) {
+      el.classList.remove('visible');
+      el._pendingVisible = true;
+    }
+  });
 };
 
-// Show history overlay when switching to the History tab (trial only)
+// Show deferred fixed overlays when switching to their tab
 const _origShowTab = window.showTab;
 window.showTab = function(name) {
+  // Hide all deferred fixed overlays first
+  ['history-pro-overlay','schedule-pro-overlay'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('visible');
+  });
   if (typeof _origShowTab === 'function') _origShowTab(name);
-  if (name === 'history') {
-    const ho = document.getElementById('history-pro-overlay');
-    if (ho && ho._pendingVisible) ho.classList.add('visible');
+  // Show the overlay for this tab if pending
+  const tabOverlayMap = { history: 'history-pro-overlay', schedule: 'schedule-pro-overlay' };
+  const overlayId = tabOverlayMap[name];
+  if (overlayId) {
+    const el = document.getElementById(overlayId);
+    if (el && el._pendingVisible) el.classList.add('visible');
   }
 };
 
