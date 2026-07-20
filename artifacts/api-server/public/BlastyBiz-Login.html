@@ -5,7 +5,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1784532599709" />
+  <link rel="stylesheet" href="global-style.css?v=1784533398300" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -502,7 +502,7 @@ async function afterAuth(user) {
         await setDoc(doc(db, 'users', user.uid), { onboarded: true }, { merge: true });
         window.location.href = 'BlastyBiz.html';
       } else {
-        window.location.href = 'BlastyBiz-Chat-Onboarding.html';
+        window.location.href = 'BlastyBiz-Onboard2.html';
       }
     }
   } catch (e) {

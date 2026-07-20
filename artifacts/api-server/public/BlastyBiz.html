@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784532599709" />
+<link rel="stylesheet" href="global-style.css?v=1784533398300" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -4605,8 +4605,7 @@ window._bbFirestoreDismissPending = async function(id) {
 // ══════════════════════════════════════════
 // BUSINESS SWITCHER BAR (regular scope)
 // ══════════════════════════════════════════
-const BIZ_LIMITS = { starter: 1, pro: 3, agency: 10 };
-function getBizLimit() { return BIZ_LIMITS[window._bbUserPlan || 'starter'] || 1; }
+function getBizLimit() { return window._bizLimit || 1; }
 
 function renderSwitcherBar() {
   const bizList  = window.BUSINESSES || [];
@@ -4974,6 +4973,17 @@ onAuthStateChanged(auth, async (user) => {
   userPlan = userData.plan || 'starter';
   window._bbUserPlan = userPlan;
   window.activeBizId = activeBizId;
+  // Fetch effective business limit from server (settings/bizLimits is public-readable in Firestore rules)
+  try {
+    const limSnap = await getDoc(doc(db, 'settings', 'bizLimits'));
+    const limData = limSnap.exists() ? limSnap.data() : {};
+    const _defLimits = { starter: 1, pro: 3, agency: 10 };
+    window._bizLimit = limData[userPlan + 'Max'] != null
+      ? Number(limData[userPlan + 'Max'])
+      : (_defLimits[userPlan] || 1);
+  } catch (_) {
+    window._bizLimit = { starter: 1, pro: 3, agency: 10 }[userPlan] || 1;
+  }
   if (typeof window._applyPlanOverlays === 'function') window._applyPlanOverlays();
   renderPlatforms();
 
@@ -4993,6 +5003,80 @@ onAuthStateChanged(auth, async (user) => {
     await setDoc(doc(db, 'users', user.uid), { activeBusiness: bizId }, { merge: true });
     if (typeof renderSwitcherBar === 'function') { renderSwitcherBar(); renderAgencyBar(); }
     window.location.reload();
+  };
+
+  // ── Add a new business (calls createBusiness CF, server enforces plan limit) ──
+  window.addBusiness = async function() {
+    if (!currentUser) return;
+    const bizList = window.BUSINESSES || [];
+    const limit = window._bizLimit || 1;
+    if (bizList.length >= limit) {
+      const msg = `You've reached your ${limit}-business limit. Upgrade your plan to add more.`;
+      if (window.showToast) window.showToast(msg); else alert(msg);
+      return;
+    }
+    const name = (prompt('Enter the new business name:') || '').trim();
+    if (!name) return;
+    const addBtn = document.querySelector('.add-biz-btn');
+    if (addBtn) { addBtn.disabled = true; addBtn.textContent = '…'; }
+    try {
+      const token = await currentUser.getIdToken();
+      const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/createBusiness', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ profileData: { businessName: name, onboarded: true }, isNew: true })
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        const err = data.error || 'Could not create business.';
+        if (window.showToast) window.showToast(err); else alert(err);
+        return;
+      }
+      window.BUSINESSES = [...bizList, { id: data.bizId, businessName: name, name }];
+      window.switchBusiness(data.bizId);
+    } catch (e) {
+      console.error('[addBusiness]', e);
+      const msg = 'Error creating business. Please try again.';
+      if (window.showToast) window.showToast(msg); else alert(msg);
+    } finally {
+      if (addBtn) { addBtn.disabled = false; addBtn.textContent = '＋'; }
+    }
+  };
+
+  // ── Delete the selected business (requires confirmation; server enforces ownership) ──
+  window.deleteBusiness = async function(bizId) {
+    if (!bizId || !currentUser) return;
+    const list = window.BUSINESSES || [];
+    const biz = list.find(b => b.id === bizId);
+    if (!biz) return;
+    const bizName = biz.name || biz.businessName || 'this business';
+    if (list.length <= 1) {
+      const msg = 'You need at least one business.';
+      if (window.showToast) window.showToast(msg); else alert(msg);
+      return;
+    }
+    if (!confirm(`Delete "${bizName}"? This cannot be undone.`)) return;
+    const delBtn = document.querySelector('.del-biz-btn');
+    if (delBtn) { delBtn.disabled = true; }
+    try {
+      await deleteDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId));
+      window.BUSINESSES = list.filter(b => b.id !== bizId);
+      if (window.activeBizId === bizId) {
+        const next = window.BUSINESSES[0];
+        activeBizId = next.id;
+        window.activeBizId = next.id;
+        await setDoc(doc(db, 'users', currentUser.uid), { activeBusiness: next.id }, { merge: true });
+        window.switchBusiness(next.id);
+      } else {
+        if (typeof renderSwitcherBar === 'function') { renderSwitcherBar(); renderAgencyBar(); }
+      }
+      if (window.showToast) window.showToast(`"${bizName}" deleted.`);
+    } catch (e) {
+      console.error('[deleteBusiness]', e);
+      const msg = 'Could not delete business. Please try again.';
+      if (window.showToast) window.showToast(msg); else alert(msg);
+      if (delBtn) { delBtn.disabled = false; }
+    }
   };
 
   try {

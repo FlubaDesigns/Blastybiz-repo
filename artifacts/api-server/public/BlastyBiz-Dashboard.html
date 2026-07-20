@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784532599709" />
+<link rel="stylesheet" href="global-style.css?v=1784533398300" />
 <title>BlastyBiz — Command Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -406,7 +406,7 @@ function editActiveBusiness() {
 // ══════════════════════════════════════════
 function addBusiness() {
   // module version of window.addBusiness overrides this after auth loads
-  window.location.href = 'BlastyBiz-Onboarding.html?new=1';
+  window.location.href = 'BlastyBiz-Onboard2.html';
 }
 
 // ══════════════════════════════════════════
@@ -583,7 +583,7 @@ onAuthStateChanged(auth, async (user) => {
 
   // After checkout success, if user hasn't done onboarding yet, send them to the wizard
   if (cameFromCheckout && !userData.onboarded && !(window.BUSINESSES && window.BUSINESSES.length)) {
-    setTimeout(() => { window.location.href = 'BlastyBiz-Chat-Onboarding.html'; }, 1800);
+    setTimeout(() => { window.location.href = 'BlastyBiz-Onboard2.html'; }, 1800);
     return;
   }
 
@@ -613,7 +613,7 @@ onAuthStateChanged(auth, async (user) => {
   };
 
   window.addBusiness = function() {
-    window.location.href = 'BlastyBiz-Onboarding.html?new=1';
+    window.location.href = 'BlastyBiz-Onboard2.html';
   };
 
   window.deleteCampaign = async function(campId) {
