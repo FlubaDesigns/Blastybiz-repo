@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784510064952" />
+<link rel="stylesheet" href="global-style.css?v=1784510611468" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -3025,8 +3025,8 @@ function setYN(field, val) {
   const no  = document.getElementById('yn-' + field + '-no');
   if (yes) { yes.classList.toggle('yn-active', val === 'yes'); }
   if (no)  { no.classList.toggle('yn-active',  val === 'no');  }
-  // Persist to campaign (ynMention* fields) via debounced campaign save
-  debounceCampaignSave();
+  // Persist ynMention* directly to business doc (where _bbSetProfile reads from)
+  if (window._bbSaveYNDirect) window._bbSaveYNDirect();
 }
 
 function updateCopyPreview() {
@@ -4312,16 +4312,10 @@ function updateCampaignMemory() {
   if (!activeCampaignId) return;
   const cam = campaigns.find(c => c.id === activeCampaignId);
   if (!cam) return;
-  cam.offer              = document.getElementById('biz-offer')?.value        || '';
-  cam.adName             = document.getElementById('biz-ad-name')?.value      || '';
-  cam.price              = document.getElementById('biz-price')?.value        || '';
-  cam.campaignStory      = document.getElementById('campaign-context')?.value || '';
-  cam.ynMentionName      = ynState.name;
-  cam.ynMentionRole      = ynState.role;
-  cam.ynMentionAddress   = ynState.address;
-  cam.ynMentionPhone     = ynState.phone;
-  cam.ynMentionEmail     = ynState.email;
-  cam.ynMentionWebsite   = ynState.website;
+  cam.offer         = document.getElementById('biz-offer')?.value        || '';
+  cam.adName        = document.getElementById('biz-ad-name')?.value      || '';
+  cam.price         = document.getElementById('biz-price')?.value        || '';
+  cam.campaignStory = document.getElementById('campaign-context')?.value || '';
 }
 
 // ── Debounced campaign Firestore persistence ─────────────────────────────────
@@ -5446,6 +5440,23 @@ window.savePlatformUrl = async function(pid, url) {
       { merge: true }
     );
   } catch(e) { console.error('savePlatformUrl error:', e); }
+};
+
+// Direct, immediate save of ynMention* fields to the business doc.
+// Called by setYN() so toggles persist without waiting for a full saveProfile cycle.
+window._bbSaveYNDirect = async function() {
+  if (!currentUser || !activeBizId) return;
+  try {
+    await setDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), {
+      ynMentionName:    ynState.name,
+      ynMentionRole:    ynState.role,
+      ynMentionAddress: ynState.address,
+      ynMentionPhone:   ynState.phone,
+      ynMentionEmail:   ynState.email,
+      ynMentionWebsite: ynState.website,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch(e) { console.error('_bbSaveYNDirect error:', e); }
 };
 
 const origSaveProfile = window.saveProfile;
