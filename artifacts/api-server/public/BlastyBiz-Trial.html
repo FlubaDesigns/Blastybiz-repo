@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Try BlastyBiz free — no credit card, no password. Enter your email and start generating AI-adapted marketing copy for every platform in minutes."/>
+  <link rel="stylesheet" href="global-style.css?v=1784514685764" />
+  <title>BlastyBiz — Try Free</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    .trial-wrap         { max-width:480px;margin:0 auto;padding:40px 20px 60px; }
+    .trial-logo         { font-family:'Bebas Neue',sans-serif;font-size:38px;color:var(--green);letter-spacing:2px;margin-bottom:4px; }
+    .trial-tagline      { font-size:14px;color:var(--muted);margin-bottom:32px; }
+    .trial-card         { background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px 28px; }
+    .trial-card h2      { font-size:22px;font-weight:700;margin:0 0 6px;color:var(--light); }
+    .trial-card .sub    { font-size:13px;color:var(--muted);margin:0 0 24px;line-height:1.6; }
+    .trial-field        { margin-bottom:16px; }
+    .trial-field label  { display:block;font-size:11px;font-weight:700;color:var(--silver);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px; }
+    .trial-field input  { width:100%;box-sizing:border-box;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:14px;color:var(--light);font-family:inherit; }
+    .trial-field input:focus { outline:none;border-color:var(--green); }
+    .trial-submit       { width:100%;padding:14px;background:var(--green);color:#000;font-weight:700;font-size:15px;border:none;border-radius:10px;cursor:pointer;font-family:inherit;margin-top:8px;transition:opacity .2s; }
+    .trial-submit:hover { opacity:.88; }
+    .trial-submit:disabled { opacity:.45;cursor:not-allowed; }
+    .trial-err          { color:#e57373;font-size:13px;margin-top:8px;display:none; }
+    .trial-perks        { margin-top:24px;border-top:1px solid var(--border);padding-top:20px; }
+    .trial-perk         { display:flex;gap:10px;align-items:flex-start;margin-bottom:11px;font-size:13px;color:var(--silver);line-height:1.5; }
+    .trial-perk .icon   { flex-shrink:0;margin-top:1px; }
+    .trial-success      { display:none;text-align:center;padding:8px 0; }
+    .trial-success .big { font-size:52px;margin-bottom:16px; }
+    .trial-success h3   { font-size:21px;font-weight:700;color:var(--light);margin:0 0 10px; }
+    .trial-success p    { font-size:14px;color:var(--muted);line-height:1.65;margin:0; }
+    .trial-success strong { color:var(--light); }
+    .trial-login        { text-align:center;margin-top:20px;font-size:13px;color:var(--muted); }
+    .trial-login a      { color:var(--green);text-decoration:none;font-weight:600; }
+  </style>
+  <script src="blastybiz-menu.js?v=3"></script>
+</head>
+<body class="login-page has-site-header">
+<div id="header__inject"></div>
+<main class="login-page main">
+  <div class="main-inner">
+    <div class="trial-wrap">
+      <div class="trial-logo">BlastyBiz</div>
+      <div class="trial-tagline">AI-adapted marketing copy for every platform</div>
+
+      <div class="trial-card">
+        <div id="trial-form-view">
+          <h2>Try it free — no password needed</h2>
+          <p class="sub">We'll email you a magic link. Click it and you're inside the generator instantly. No credit card, no commitment.</p>
+
+          <div class="trial-field">
+            <label>Your name</label>
+            <input type="text" id="trial-name" placeholder="e.g. Maria" autocomplete="given-name" />
+          </div>
+          <div class="trial-field">
+            <label>Email address</label>
+            <input type="email" id="trial-email" placeholder="you@example.com" autocomplete="email"
+              onkeydown="if(event.key==='Enter') sendTrialLink()" />
+          </div>
+
+          <div class="trial-err" id="trial-err"></div>
+          <button type="button" class="trial-submit" id="trial-btn" onclick="sendTrialLink()">Send My Free Link →</button>
+
+          <div class="trial-perks">
+            <div class="trial-perk"><span class="icon">✅</span><span>AI-adapted copy for Google, Facebook, Instagram, Yelp &amp; more</span></div>
+            <div class="trial-perk"><span class="icon">✅</span><span>Copy-paste results instantly — no auto-posting required</span></div>
+            <div class="trial-perk"><span class="icon">⚡</span><span>See what Pro unlocks at every step — photos, memory, auto-post &amp; more</span></div>
+          </div>
+        </div>
+
+        <div class="trial-success" id="trial-success">
+          <div class="big">📬</div>
+          <h3>Check your inbox</h3>
+          <p>We sent a magic link to <strong id="trial-sent-email"></strong>.<br/>
+          Click it to start generating — no password ever needed.</p>
+        </div>
+      </div>
+
+      <div class="trial-login">Already have an account? <a href="BlastyBiz-Login.html">Sign in →</a></div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+import { auth } from './firebase-init-v2.js';
+import { sendSignInLinkToEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+onAuthStateChanged(auth, user => {
+  if (user) window.location.href = 'BlastyBiz.html';
+});
+
+window.sendTrialLink = async function() {
+  const name  = document.getElementById('trial-name').value.trim();
+  const email = document.getElementById('trial-email').value.trim();
+  const err   = document.getElementById('trial-err');
+  const btn   = document.getElementById('trial-btn');
+
+  err.style.display = 'none';
+  if (!name)  { err.textContent = 'Please enter your name.'; err.style.display = 'block'; return; }
+  if (!email || !email.includes('@')) { err.textContent = 'Please enter a valid email.'; err.style.display = 'block'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+
+  const actionCodeSettings = {
+    url: 'https://blastybiz-9523e.web.app/BlastyBiz.html?bbmode=trial',
+    handleCodeInApp: true,
+  };
+
+  try {
+    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    window.localStorage.setItem('bb_trial_email', email);
+    window.localStorage.setItem('bb_trial_name', name);
+    document.getElementById('trial-form-view').style.display = 'none';
+    document.getElementById('trial-sent-email').textContent = email;
+    document.getElementById('trial-success').style.display = 'block';
+  } catch(e) {
+    err.textContent = e.message || 'Something went wrong. Please try again.';
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Send My Free Link →';
+  }
+};
+</script>
+</body>
+</html>

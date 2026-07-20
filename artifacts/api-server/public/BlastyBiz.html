@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784512666191" />
+<link rel="stylesheet" href="global-style.css?v=1784514685764" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -135,8 +135,16 @@
         <div class="row">
           <div class="col-full">
             <!-- BUSINESS SELECTOR CARD -->
-            <div class="card" id="create-biz-card">
+            <div class="card pro-locked" id="create-biz-card">
               <div class="card-title">🏢 Business</div>
+              <div class="pro-overlay" data-plan="trial">
+                <div class="pro-overlay-content">
+                  <div class="pro-overlay-badge">⚡ Pro</div>
+                  <div class="pro-overlay-title">Manage multiple businesses</div>
+                  <p class="pro-overlay-msg">Run all your locations and brands from one dashboard. Switch businesses in a single tap — each with its own campaigns, memory, and history.</p>
+                  <a href="BlastyBiz-Plan-Pro.html" class="pro-overlay-btn">Upgrade to Pro →</a>
+                </div>
+              </div>
               <div class="biz-select-row" style="margin-bottom:10px;">
                 <div class="biz-custom-dd" id="biz-custom-dd">
                   <button type="button" class="biz-dd-trigger" id="biz-dd-trigger" onclick="toggleBizDropdown()">
@@ -165,8 +173,16 @@
         <div class="row">
           <div class="col-full">
             <!-- CAMPAIGN LIST CARD -->
-            <div class="card" id="create-camp-list-card">
+            <div class="card pro-locked" id="create-camp-list-card">
               <div class="card-title">📁 Campaigns</div>
+              <div class="pro-overlay" data-plan="trial">
+                <div class="pro-overlay-content">
+                  <div class="pro-overlay-badge">⚡ Pro</div>
+                  <div class="pro-overlay-title">Campaigns & AI memory</div>
+                  <p class="pro-overlay-msg">Organize every offer into its own campaign. AI remembers each one separately — your work is always saved and ready to build on.</p>
+                  <a href="BlastyBiz-Plan-Pro.html" class="pro-overlay-btn">Upgrade to Pro →</a>
+                </div>
+              </div>
               <button type="button" onclick="openNewCampaign()" class="btn btn-primary" style="display:block;width:100%;box-sizing:border-box;text-align:center;margin-bottom:12px;">＋ New Campaign</button>
               <div id="new-campaign-row" class="mt-4 hidden" style="margin-bottom:12px;">
                 <input type="text" id="new-campaign-input" placeholder="Campaign name (e.g. Christmas Sale, Grand Reopening)"
@@ -281,7 +297,15 @@
 
           <!-- LEFT: image upload -->
           <div class="col-left">
-            <div class="card">
+            <div class="card pro-locked">
+              <div class="pro-overlay" data-plan="trial">
+                <div class="pro-overlay-content">
+                  <div class="pro-overlay-badge">⚡ Pro</div>
+                  <div class="pro-overlay-title">Photos that work on every platform</div>
+                  <p class="pro-overlay-msg">Add up to 20 photos per campaign. The AI picks the best fit for each platform automatically — no cropping or resizing on your end.</p>
+                  <a href="BlastyBiz-Plan-Pro.html" class="pro-overlay-btn">Upgrade to Pro →</a>
+                </div>
+              </div>
               <!-- Row 1: title + cap label -->
               <div class="row">
                 <div class="col-full">
@@ -319,7 +343,15 @@
 
           <!-- RIGHT: Teach AI card -->
           <div class="col-right">
-            <div class="card card-fill card-tap" onclick="toggleRightAccordion('create-teach-ai-body','create-teach-ai-chevron')">
+            <div class="card card-fill card-tap pro-locked" onclick="toggleRightAccordion('create-teach-ai-body','create-teach-ai-chevron')">
+              <div class="pro-overlay" data-plan="trial">
+                <div class="pro-overlay-content">
+                  <div class="pro-overlay-badge">⚡ Pro</div>
+                  <div class="pro-overlay-title">AI that knows your business</div>
+                  <p class="pro-overlay-msg">Train the AI on your voice, your offers, and your style. It remembers everything — so you never start from scratch, and every blast sounds like you.</p>
+                  <a href="BlastyBiz-Plan-Pro.html" class="pro-overlay-btn">Upgrade to Pro →</a>
+                </div>
+              </div>
               <button type="button" class="card-title card-title-btn">
                 <span>🧠 Teach AI</span>
                 <span id="create-teach-ai-chevron" class="chevron">›</span>
@@ -564,6 +596,15 @@
      TAB 4: HISTORY
 ══════════════════════════════════════════ -->
 <div class="section" id="section-history">
+
+  <div class="pro-overlay" id="history-pro-overlay" data-plan="trial" style="position:fixed;inset:0;z-index:50;border-radius:0;padding:40px 24px;">
+    <div class="pro-overlay-content">
+      <div class="pro-overlay-badge">⚡ Pro</div>
+      <div class="pro-overlay-title">Your complete blast history</div>
+      <p class="pro-overlay-msg">Every blast you send is saved here automatically. Go back and see exactly what you posted, reuse what worked, and remix what didn't — across every platform.</p>
+      <a href="BlastyBiz-Plan-Pro.html" class="pro-overlay-btn">Upgrade to Pro →</a>
+    </div>
+  </div>
 
   <div class="stats-bar">
     <div class="stat-card">
@@ -4303,6 +4344,7 @@ function _updateAdDiscardBtn() {
 }
 
 function debounceCampaignSave() {
+  if ((window._bbUserPlan || '') === 'trial') return;
   updateCampaignMemory(); // immediate in-memory sync on every keystroke
   _updateAdDiscardBtn();
   clearTimeout(_campaignSaveTimer);
@@ -4602,11 +4644,37 @@ function selectBizOption(bizId) {
   if (window.switchBusiness) window.switchBusiness(bizId);
 }
 
+// ── Plan overlay activation ───────────────────────────────────────────
+window._applyPlanOverlays = function() {
+  const plan = window._bbUserPlan || 'starter';
+  document.querySelectorAll('.pro-overlay[data-plan]').forEach(el => {
+    const plans = (el.getAttribute('data-plan') || '').split(' ');
+    if (plans.includes(plan)) el.classList.add('visible');
+  });
+  // History tab uses fixed positioning — only show when tab is active
+  const histOverlay = document.getElementById('history-pro-overlay');
+  if (histOverlay && histOverlay.classList.contains('visible')) {
+    // Keep it hidden until user navigates to History tab
+    histOverlay.classList.remove('visible');
+    histOverlay._pendingVisible = true;
+  }
+};
+
+// Show history overlay when switching to the History tab (trial only)
+const _origShowTab = window.showTab;
+window.showTab = function(name) {
+  if (typeof _origShowTab === 'function') _origShowTab(name);
+  if (name === 'history') {
+    const ho = document.getElementById('history-pro-overlay');
+    if (ho && ho._pendingVisible) ho.classList.add('visible');
+  }
+};
+
 </script>
 
 <script type="module">
 import { auth, db, storage } from './firebase-init-v2.js';
-import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { onAuthStateChanged, signOut, isSignInWithEmailLink, signInWithEmailLink } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   doc, getDoc, setDoc, addDoc, collection, serverTimestamp, writeBatch, deleteDoc,
   query, where, getDocs, orderBy, limit, updateDoc, arrayUnion, arrayRemove, increment
@@ -4616,6 +4684,30 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 window.doSignOut = () => { localStorage.setItem('bb_auth','0'); signOut(auth).finally(()=>{ window.location.href='BlastyBiz-Login.html'; }); };
+
+// ── Magic-link trial sign-in ─────────────────────────────────────────
+if (isSignInWithEmailLink(auth, window.location.href)) {
+  let _mlEmail = window.localStorage.getItem('bb_trial_email');
+  if (!_mlEmail) _mlEmail = window.prompt('Please confirm your email address:') || '';
+  if (_mlEmail) {
+    signInWithEmailLink(auth, _mlEmail, window.location.href)
+      .then(async (result) => {
+        window.localStorage.removeItem('bb_trial_email');
+        const _mlName = window.localStorage.removeItem('bb_trial_name') || '';
+        await setDoc(doc(db, 'users', result.user.uid), {
+          plan: 'trial',
+          displayName: _mlName,
+          email: _mlEmail,
+          createdAt: new Date().toISOString(),
+        }, { merge: true });
+        // Clean up Firebase URL params
+        const _clean = new URL(window.location.href);
+        ['oobCode','apiKey','mode','lang'].forEach(p => _clean.searchParams.delete(p));
+        history.replaceState(null, '', _clean.toString());
+      })
+      .catch(e => console.error('Magic link error:', e));
+  }
+}
 
 let currentUser = null;
 let activeBizId = null;
@@ -4838,6 +4930,7 @@ onAuthStateChanged(auth, async (user) => {
   userPlan = userData.plan || 'starter';
   window._bbUserPlan = userPlan;
   window.activeBizId = activeBizId;
+  if (typeof window._applyPlanOverlays === 'function') window._applyPlanOverlays();
   renderPlatforms();
 
   // Load all businesses for the switcher bar
@@ -5356,6 +5449,7 @@ document.addEventListener('bb:savePlatforms', async (e) => {
 });
 
 document.addEventListener('bb:addHistory', async (e) => {
+  if ((window._bbUserPlan || '') === 'trial') return;
   if (!currentUser || !activeBizId) return;
   try {
     const platformName = e.detail?.platformName || '';
@@ -5402,6 +5496,7 @@ window.savePlatformUrl = async function(pid, url) {
 const origSaveProfile = window.saveProfile;
 let _saveProfileTimer = null;
 window.saveProfile = function() {
+  if ((window._bbUserPlan || '') === 'trial') { origSaveProfile && origSaveProfile(); return; }
   origSaveProfile && origSaveProfile(); // sync: updates in-memory profile + UI immediately
   clearTimeout(_saveProfileTimer);
   _saveProfileTimer = setTimeout(async () => {

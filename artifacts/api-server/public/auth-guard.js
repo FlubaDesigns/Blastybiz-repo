@@ -6,6 +6,10 @@ const _safetyTimer = setTimeout(() => {
   window.location.href = 'BlastyBiz-Login.html';
 }, 5000);
 
+// Magic-link sign-in: oobCode in URL means Firebase is completing email link auth.
+// Give extra time for the module script to call signInWithEmailLink before evicting.
+const _isMagicLink = new URLSearchParams(window.location.search).has('oobCode');
+
 auth.authStateReady()
   .catch(() => {})
   .then(() => {
@@ -21,7 +25,7 @@ auth.authStateReady()
         window.location.href = 'BlastyBiz-Login.html';
       } else {
         // No user — wait for any in-flight OAuth redirect or token refresh before evicting.
-        // Cancel the safety timer now: we must not reveal protected content during the wait.
+        // Magic-link completions need more time (network round-trip to Firebase).
         clearTimeout(_safetyTimer);
         setTimeout(() => {
           const current = auth.currentUser;
@@ -30,7 +34,7 @@ auth.authStateReady()
           } else {
             window.location.href = 'BlastyBiz-Login.html';
           }
-        }, 3000);
+        }, _isMagicLink ? 8000 : 3000);
       }
     });
   });
