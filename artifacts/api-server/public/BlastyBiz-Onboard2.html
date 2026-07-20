@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784533398300"/>
+  <link rel="stylesheet" href="global-style.css?v=1784534731271"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -1125,7 +1125,13 @@
       }, 1800);
     } catch (e) {
       console.error('[ob2 save]', e);
-      addBlastyBubble('Hmm, something went wrong saving. Try refreshing the page.');
+      addBlastyBubble("Something went wrong saving — let's try again.");
+      setMood('s-ask');
+      const retryBtn = document.createElement('button');
+      retryBtn.textContent = '↩ Try again';
+      retryBtn.style.cssText = 'margin:10px auto;display:block;padding:10px 24px;background:#ff6b00;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;';
+      retryBtn.onclick = () => { retryBtn.remove(); finish(); };
+      document.getElementById('ob2-thread')?.appendChild(retryBtn);
     }
   }
 
@@ -1143,7 +1149,7 @@ import {
   onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-  getFirestore, doc, getDoc, setDoc, collection, getDocs, serverTimestamp
+  getFirestore, doc, getDoc, setDoc, collection, serverTimestamp, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 
@@ -1152,13 +1158,22 @@ const db = getFirestore(getApp());
 window._ob2Save = async function(answers, toggles) {
   const bizRef = doc(collection(db, 'users', window._ob2Uid, 'businesses'));
   const bizId  = bizRef.id;
+  const campId = 'c_' + Date.now();
 
-  /* ── Save business doc ─────────────────────────────────────── */
-  await setDoc(bizRef, {
+  const campaignStory = [
+    answers.campaignAbout    ? 'About this campaign: ' + answers.campaignAbout    : '',
+    answers.campaignAudience ? 'Target audience: '     + answers.campaignAudience : ''
+  ].filter(Boolean).join('\n');
+
+  const batch = writeBatch(db);
+
+  /* ── Business document — canonical schema ─────────────────── */
+  batch.set(bizRef, {
     name:               answers.bizName      || '',
+    businessName:       answers.bizName      || '',
     category:           answers.category     || '',
     ownerName:          answers.ownerName    || '',
-    role:               answers.role         || '',
+    ownerRole:          answers.role         || '',
     phone:              answers.phone        || '',
     street:             answers.street       || '',
     city:               answers.city         || '',
@@ -1172,29 +1187,26 @@ window._ob2Save = async function(answers, toggles) {
     ynMentionPhone:     toggles.ynMentionPhone   ? 'yes' : 'no',
     ynMentionWebsite:   'yes',
     ynMentionEmail:     'yes',
-    /* Story fields — same keys as BizContext */
-    story:              answers.story     || '',
-    different:          answers.different || '',
-    awards:             answers.awards    || '',
-    customer:           answers.customer  || '',
-    other:              answers.other     || '',
-    createdAt:          serverTimestamp()
+    aiContext: {
+      story:     answers.story     || '',
+      different: answers.different || '',
+      awards:    answers.awards    || '',
+      customer:  answers.customer  || '',
+      other:     answers.other     || '',
+    },
+    createdAt: serverTimestamp()
   });
 
-  /* ── Mark user as onboarded + set active business ─────────── */
-  await setDoc(doc(db, 'users', window._ob2Uid), {
-    onboarded:      true,
-    activeBusiness: bizId
+  /* ── Mark user as onboarded (all three docs or none) ─────── */
+  batch.set(doc(db, 'users', window._ob2Uid), {
+    onboarded:           true,
+    activeBusiness:      bizId,
+    onboardingVersion:   1,
+    onboardingCompleted: serverTimestamp()
   }, { merge: true });
 
-  /* ── Create first campaign doc ─────────────────────────────── */
-  const campId = 'c_' + Date.now();
-  const campaignStory = [
-    answers.campaignAbout    ? 'About this campaign: ' + answers.campaignAbout    : '',
-    answers.campaignAudience ? 'Target audience: '     + answers.campaignAudience : ''
-  ].filter(Boolean).join('\n');
-
-  await setDoc(
+  /* ── First campaign document ──────────────────────────────── */
+  batch.set(
     doc(db, 'users', window._ob2Uid, 'businesses', bizId, 'campaigns', campId),
     {
       id:                  campId,
@@ -1202,7 +1214,7 @@ window._ob2Save = async function(answers, toggles) {
       offer:               answers.campaignOffer || '',
       campaignStory,
       onboardingPlatforms: Array.isArray(answers.campaignPlatforms) ? answers.campaignPlatforms : [],
-      createdAt:           new Date().toISOString(),
+      createdAt:           serverTimestamp(),
       lastUsedAt:          '',
       photos:              [],
       adName:              '',
@@ -1211,6 +1223,9 @@ window._ob2Save = async function(answers, toggles) {
       platformHistory:     {}
     }
   );
+
+  /* ── Atomic commit — all three or none ────────────────────── */
+  await batch.commit();
 
   return { bizId, campId };
 };
@@ -1246,10 +1261,13 @@ if (isSignInWithEmailLink(auth, window.location.href)) {
 } else {
   onAuthStateChanged(auth, async user => {
     if (!user) { window.location.href = 'BlastyBiz-Trial.html'; return; }
-    const snap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
-    if (!snap.empty) { window.location.href = 'BlastyBiz.html'; return; }
     const userSnap = await getDoc(doc(db, 'users', user.uid));
-    const plan = userSnap.exists() ? (userSnap.data().plan || 'trial') : 'trial';
+    const ud = userSnap.exists() ? userSnap.data() : {};
+    if (ud.onboarded && ud.onboardingVersion && ud.activeBusiness) {
+      window.location.href = 'BlastyBiz.html';
+      return;
+    }
+    const plan = ud.plan || 'trial';
     _ready(user.uid, user.displayName || '', plan);
   });
 }

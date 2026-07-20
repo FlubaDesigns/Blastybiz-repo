@@ -2867,6 +2867,33 @@ exports.createBusiness = onRequest({ invoker: 'public' }, async (req, res) => {
   }
 });
 
+// ── deleteBusiness — recursive server-side deletion ───────────────────────────
+exports.deleteBusiness = onRequest({ invoker: 'public' }, async (req, res) => {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+  let uid;
+  try {
+    const decoded = await verifyBearer(req);
+    uid = decoded.uid;
+  } catch(e) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const { bizId } = req.body || {};
+  if (!bizId) return res.status(400).json({ error: 'Missing bizId' });
+  try {
+    const bizRef = db.collection('users').doc(uid).collection('businesses').doc(bizId);
+    const bizSnap = await bizRef.get();
+    if (!bizSnap.exists) return res.status(404).json({ error: 'Business not found' });
+    // Recursively delete the business and all subcollections (campaigns, facts, images, drafts, etc.)
+    await db.recursiveDelete(bizRef);
+    return res.json({ success: true });
+  } catch(e) {
+    console.error('[deleteBusiness]', e.message);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // ── adminGetAdminEmails / adminUpdateAdminEmails ───────────────────────────────
 // Allow authorized admins to manage the dynamic admin list stored in config/admins.
 // BOOTSTRAP_ADMIN_EMAILS (info@blastybiz.com) is always included and cannot be removed.

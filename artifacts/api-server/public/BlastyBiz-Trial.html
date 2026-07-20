@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Try BlastyBiz free — no credit card, no password. Say hi to Blasty and get your magic link in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1784533398300"/>
+  <link rel="stylesheet" href="global-style.css?v=1784534731271"/>
   <title>BlastyBiz — Try Free</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -632,14 +632,26 @@
 
 <!-- ── Firebase (module) ──────────────────────────────────────────── -->
 <script type="module">
-import { auth } from './firebase-init-v2.js';
+import { auth, db } from './firebase-init-v2.js';
 import {
   sendSignInLinkToEmail,
   onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-onAuthStateChanged(auth, user => {
-  if (user) window.location.href = 'BlastyBiz.html';
+onAuthStateChanged(auth, async user => {
+  if (!user) return;
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    const ud = snap.exists() ? snap.data() : {};
+    if (ud.onboarded && ud.onboardingVersion && ud.activeBusiness) {
+      window.location.href = 'BlastyBiz.html';
+    } else {
+      window.location.href = 'BlastyBiz-Onboard2.html';
+    }
+  } catch(e) {
+    window.location.href = 'BlastyBiz-Onboard2.html';
+  }
 });
 
 window._sendTrialLink = async function(name, email) {

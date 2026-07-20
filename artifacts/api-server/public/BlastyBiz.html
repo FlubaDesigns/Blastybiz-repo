@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784533398300" />
+<link rel="stylesheet" href="global-style.css?v=1784534731271" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -4827,6 +4827,7 @@ window._bbLoadLibrary = async function(campaignId) {
   const q = query(
     collection(db, 'copyLibrary'),
     where('uid', '==', currentUser.uid),
+    where('bizId', '==', activeBizId),
     where('campaignId', '==', campaignId),
     orderBy('savedAt', 'desc')
   );
@@ -5059,7 +5060,13 @@ onAuthStateChanged(auth, async (user) => {
     const delBtn = document.querySelector('.del-biz-btn');
     if (delBtn) { delBtn.disabled = true; }
     try {
-      await deleteDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId));
+      const tok = await currentUser.getIdToken();
+      const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/deleteBusiness', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok },
+        body: JSON.stringify({ bizId })
+      });
+      if (!resp.ok) throw new Error('CF returned ' + resp.status);
       window.BUSINESSES = list.filter(b => b.id !== bizId);
       if (window.activeBizId === bizId) {
         const next = window.BUSINESSES[0];
@@ -6100,11 +6107,13 @@ let _storyLoaded = false;
 
 window._bbLoadStory = async function() {
   if (_storyLoaded) return;
-  _storyLoaded = true;
   try {
     const bizSnap = await getDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId));
     if (bizSnap.exists()) {
-      const ctx = bizSnap.data().aiContext || {};
+      const biz = bizSnap.data();
+      // Merge top-level legacy fields with aiContext; aiContext wins on conflict
+      const ctx = { story:'', different:'', awards:'', customer:'', other:'',
+                    ...biz, ...(biz.aiContext || {}) };
       STORY_FIELDS.forEach(f => {
         const el = document.getElementById(f.id);
         if (!el) return;
@@ -6118,14 +6127,18 @@ window._bbLoadStory = async function() {
       const btn = document.getElementById('story-btn-save');
       if (btn) btn.disabled = false;
     }
-    const plan = window.userPlan || 'starter';
+    const plan = userPlan || 'starter';
     if (plan === 'pro' || plan === 'agency') {
       document.getElementById('doc-library-section').style.display = 'block';
       _bbLoadLibraryDocs();
     } else {
       document.getElementById('doc-library-locked').style.display = 'block';
     }
-  } catch(e) { console.error('loadStory:', e); }
+    _storyLoaded = true;
+  } catch(e) {
+    console.error('loadStory:', e);
+    // Do NOT set _storyLoaded — allows retry on next tab click
+  }
 };
 
 window.saveStory = async function() {
@@ -6237,7 +6250,6 @@ let _acctLoaded = false;
 
 window._bbLoadAccount = async function() {
   if (_acctLoaded) return;
-  _acctLoaded = true;
   try {
     const emailEl = document.getElementById('acct-email');
     if (emailEl) emailEl.textContent = currentUser.email || '—';
@@ -6250,7 +6262,8 @@ window._bbLoadAccount = async function() {
     const userSnap = await getDoc(doc(db, 'users', currentUser.uid));
     const userData = userSnap.exists() ? userSnap.data() : {};
     const plan = userData.plan || 'starter';
-    window.userPlan = plan;
+    userPlan = plan;           // update module-scoped var (used by Story tab)
+    window.userPlan = plan;    // keep global in sync for legacy callers
 
     const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
     const planEl = document.getElementById('acct-plan-label'); if (planEl) planEl.textContent = planLabel;
@@ -6265,7 +6278,11 @@ window._bbLoadAccount = async function() {
     const resetAt = userData.aiActionsResetAt?.toDate?.();
     const renewEl = document.getElementById('acct-renewal');
     if (renewEl) renewEl.textContent = resetAt ? resetAt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
-  } catch(e) { console.error('loadAccount:', e); }
+    _acctLoaded = true;
+  } catch(e) {
+    console.error('loadAccount:', e);
+    // Do NOT set _acctLoaded — allows retry on next tab click
+  }
 };
 
 window.handleBilling = async function() {
