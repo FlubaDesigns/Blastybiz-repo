@@ -263,6 +263,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // OB2 quick-form text overrides — public read so onboarding users get live customizations
+    match /config/ob2Steps {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Admin config (admin email list, feature flags, etc.) — admin only
     match /config/{doc} {
       allow read, write: if isAdmin();

@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784570763504">
+  <link rel="stylesheet" href="global-style.css?v=1784579090399">
   <style>
     body { visibility: hidden }
     .ose-wrap { display:grid; grid-template-columns:1fr 230px; gap:26px; align-items:start; }
@@ -118,6 +118,17 @@
     .pb-blasty.s-smoke .smoke-puff:nth-child(2){animation-delay:.18s}
     .pb-blasty.s-smoke .smoke-puff:nth-child(3){animation-delay:.36s}
     @keyframes b-smoke { 0%{opacity:.7;transform:scale(.15) translateY(0)} 35%{opacity:.5;transform:scale(1.5) translateY(-20px)} 100%{opacity:0;transform:scale(2.8) translateY(-55px)} }
+    /* tabs */
+    .ose-tabs { display:flex; gap:8px; margin-bottom:22px; }
+    .ose-tab { background:#f1f5f9; border:1.5px solid #e2e8f0; border-radius:8px; padding:8px 18px; font:600 13px 'DM Sans',sans-serif; color:#64748b; cursor:pointer; transition:all .15s; }
+    .ose-tab:hover { border-color:#2563eb; color:#2563eb; }
+    .ose-tab.active { background:#2563eb; border-color:#2563eb; color:#fff; }
+    /* ob2 field cards */
+    .ob2-field-card { background:#fff; border:1.5px solid #e4e9f0; border-radius:12px; margin-bottom:10px; overflow:hidden; }
+    .ob2-field-card.has-ov { border-color:#2563eb; }
+    .ob2-field-head { display:flex; align-items:center; gap:9px; padding:9px 14px; background:#f8fafc; border-bottom:1px solid #e4e9f0; }
+    .ob2-hint { font-size:11px; color:#94a3b8; margin-left:auto; }
+    .ob2-field-body { padding:14px; }
   </style>
   <script type="module" src="./admin-guard.js"></script>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -130,8 +141,9 @@
     <a class="icon-btn hide-mobile" href="BlastyBiz-Admin.html">Dashboard</a>
     <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a>
     <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Operate.html">Operate</a>
-    <a class="icon-btn hide-mobile" href="BlastyBiz-Onboard2.html" target="_blank">▶ OB1 Live</a>
-    <a class="icon-btn hide-mobile active" href="#">OB1 Steps</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Onboard2.html" target="_blank">▶ OB1</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-CreateBiz.html" target="_blank">▶ OB2</a>
+    <a class="icon-btn hide-mobile active" href="#">Onboard Editor</a>
     <a class="icon-btn" href="BlastyBiz-Login.html">👤</a>
   </div>
 </header>
@@ -139,10 +151,16 @@
 <main><div class="main"><div class="main-inner">
 
   <div class="op-page-header">
-    <h1 class="op-page-title">🚀 Onboard Step Editor</h1>
-    <p class="op-page-sub">Customize Blasty's message text and animation for each OB1 (Obi-Wan) onboarding step. Changes are live immediately. Modified steps show a blue border.</p>
+    <h1 class="op-page-title">🚀 Onboard Editor</h1>
+    <p class="op-page-sub">Customize Blasty's messages and animations. <strong>OB1</strong> = Blasty Wizard (22 steps + animation pickers). <strong>OB2</strong> = Quick Form (header greeting, section titles, button text, success message). Changes go live immediately.</p>
   </div>
 
+  <div class="ose-tabs">
+    <button class="ose-tab active" id="tab-ob1" onclick="oseTab('ob1')">🚀 OB1 — Blasty Wizard</button>
+    <button class="ose-tab" id="tab-ob2" onclick="oseTab('ob2')">📝 OB2 — Quick Form</button>
+  </div>
+
+  <div id="ose-ob1-pane">
   <div id="ose-status" style="text-align:center;padding:32px 0;color:#64748b">Loading steps…</div>
 
   <div class="ose-wrap" id="ose-wrap" style="display:none">
@@ -241,6 +259,12 @@
       </div>
     </div>
   </div>
+  </div><!-- /ose-ob1-pane -->
+
+  <div id="ose-ob2-pane" style="display:none">
+    <div id="ose-ob2-status" style="text-align:center;padding:32px 0;color:#64748b">Loading…</div>
+    <div id="ose-ob2-fields" style="display:none;max-width:700px"></div>
+  </div>
 
 </div></div></main>
 
@@ -285,6 +309,110 @@ const EYES_OPTS  = [{v:'',l:'Default'},{v:'s-eyes-up',l:'Up'},{v:'s-eyes-down',l
 const sel = (opts, val) => opts.map(o=>`<option value="${o.v}"${o.v===val?' selected':''}>${o.l}</option>`).join('');
 
 let overrides = {};
+let ob2Overrides = {};
+
+window.oseTab = function(tab) {
+  ['ob1','ob2'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('ose-'+t+'-pane').style.display = t===tab ? '' : 'none';
+  });
+};
+
+const OB2_FIELDS = [
+  { key:'headerMsg',      label:'Header Greeting',   type:'ta',
+    defaultVal:'<strong>Let\u2019s set up your business!</strong> Fill in what you know \u2014 you can always update later.',
+    hint:'Next to the mini Blasty. HTML allowed (\u003cstrong\u003e).' },
+  { key:'sec1Title',      label:'Section 1 Title',   type:'ta',
+    defaultVal:'🏢 Business Info <span class="cb-sec-badge">Required</span>',
+    hint:'Full innerHTML of the title span. Emoji + text + badge HTML.' },
+  { key:'sec2Title',      label:'Section 2 Title',   type:'ta',
+    defaultVal:'📖 Your Story <span class="cb-sec-badge">Optional — makes AI smarter</span>',
+    hint:'' },
+  { key:'sec3Title',      label:'Section 3 Title',   type:'ta',
+    defaultVal:'🚀 First Campaign <span class="cb-sec-badge">Required</span>',
+    hint:'' },
+  { key:'submitText',     label:'Submit Button Text', type:'tx',
+    defaultVal:'🚀 Create Business & Launch',
+    hint:'Plain text only.' },
+  { key:'successHeading', label:'Success Heading',    type:'tx',
+    defaultVal:'🎉 You\'re Live!',
+    hint:'' },
+  { key:'successBody',    label:'Success Body',       type:'ta',
+    defaultVal:'Your business is set up and your first campaign is ready. Redirecting to your dashboard\u2026',
+    hint:'' },
+];
+
+function renderOb2Fields() {
+  document.getElementById('ose-ob2-fields').innerHTML = OB2_FIELDS.map(f => {
+    const ov = ob2Overrides[f.key] || '';
+    const hasOv = !!ov;
+    const dq = s => s.replace(/"/g,'&quot;');
+    const defEl = f.type === 'ta'
+      ? `<textarea class="mta def" readonly rows="2">${f.defaultVal}</textarea>`
+      : `<input type="text" class="mta def" readonly value="${dq(f.defaultVal)}">`;
+    const ovEl = f.type === 'ta'
+      ? `<textarea class="mta" id="ob2f-${f.key}" rows="2" placeholder="Leave blank to keep default">${ov}</textarea>`
+      : `<input type="text" class="mta" id="ob2f-${f.key}" placeholder="Leave blank to keep default" value="${dq(ov)}">`;
+    return `<div class="ob2-field-card${hasOv?' has-ov':''}" id="ob2-card-${f.key}">
+      <div class="ob2-field-head">
+        <span class="sk">${f.key}</span>
+        <span class="sd">${f.label}</span>
+        ${f.hint ? `<span class="ob2-hint">${f.hint}</span>` : ''}
+        <span class="mod-badge">Modified</span>
+      </div>
+      <div class="ob2-field-body">
+        <div class="msg-row">
+          <div><span class="fl">Default (read-only)</span>${defEl}</div>
+          <div><span class="fl">Override</span>${ovEl}</div>
+        </div>
+        <div class="card-acts">
+          <button class="btn-sv" onclick="window._qfSave('${f.key}')">Save</button>
+          <button class="btn-rst" onclick="window._qfReset('${f.key}')">Reset to default</button>
+          <span class="sts" id="ob2sts-${f.key}"></span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window._qfSave = async function(k) {
+  const btn = document.querySelector(`#ob2-card-${k} .btn-sv`);
+  const sts = document.getElementById('ob2sts-'+k);
+  btn.disabled=true; btn.textContent='Saving…'; sts.textContent='';
+  const val = document.getElementById('ob2f-'+k).value.trim();
+  try {
+    if (val) {
+      await setDoc(doc(db,'config','ob2Steps'), { [k]: val }, { merge:true });
+      ob2Overrides[k] = val;
+      document.getElementById('ob2-card-'+k).classList.add('has-ov');
+    } else {
+      await setDoc(doc(db,'config','ob2Steps'), { [k]: deleteField() }, { merge:true });
+      delete ob2Overrides[k];
+      document.getElementById('ob2-card-'+k).classList.remove('has-ov');
+    }
+    sts.style.color='#22c55e'; sts.textContent='✓ Saved';
+    setTimeout(()=>{ sts.textContent=''; }, 2500);
+  } catch(e) {
+    sts.style.color='#ef4444'; sts.textContent='✗ '+e.message;
+  }
+  btn.disabled=false; btn.textContent='Save';
+};
+
+window._qfReset = async function(k) {
+  if (!confirm('Reset "'+k+'" to default? This removes your override.')) return;
+  const btn = document.querySelector(`#ob2-card-${k} .btn-rst`);
+  btn.disabled=true;
+  try {
+    await setDoc(doc(db,'config','ob2Steps'), { [k]: deleteField() }, { merge:true });
+    delete ob2Overrides[k];
+    document.getElementById('ob2-card-'+k).classList.remove('has-ov');
+    document.getElementById('ob2f-'+k).value='';
+    const sts = document.getElementById('ob2sts-'+k);
+    sts.style.color='#64748b'; sts.textContent='↩ Reset';
+    setTimeout(()=>{ sts.textContent=''; }, 2500);
+  } catch(e) { alert('Error: '+e.message); }
+  btn.disabled=false;
+};
 
 function renderSteps() {
   document.getElementById('ose-steps').innerHTML = STEP_DEFS.map(s => {
@@ -396,13 +524,23 @@ window._oseReset = async function(k) {
 onAuthStateChanged(auth, async user => {
   if (!user) return;
   try {
-    const snap = await getDoc(doc(db,'config','ob1Steps'));
-    overrides = snap.exists() ? snap.data() : {};
+    const [ob1Snap, ob2Snap] = await Promise.all([
+      getDoc(doc(db,'config','ob1Steps')),
+      getDoc(doc(db,'config','ob2Steps'))
+    ]);
+    overrides    = ob1Snap.exists() ? ob1Snap.data() : {};
+    ob2Overrides = ob2Snap.exists() ? ob2Snap.data() : {};
+    // OB1 pane
     document.getElementById('ose-status').style.display='none';
     document.getElementById('ose-wrap').style.display='grid';
     renderSteps();
+    // OB2 pane
+    document.getElementById('ose-ob2-status').style.display='none';
+    document.getElementById('ose-ob2-fields').style.display='block';
+    renderOb2Fields();
   } catch(e) {
     document.getElementById('ose-status').textContent='Error loading: '+e.message;
+    document.getElementById('ose-ob2-status').textContent='Error loading: '+e.message;
   }
 });
 </script>

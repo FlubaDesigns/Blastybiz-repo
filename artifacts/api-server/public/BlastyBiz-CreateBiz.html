@@ -161,7 +161,7 @@
     <!-- Section 1: Business Info -->
     <div class="cb-section open" id="cbs-info">
       <div class="cb-sec-head" onclick="cbToggle('info')">
-        <span class="cb-sec-title">🏢 Business Info <span class="cb-sec-badge">Required</span></span>
+        <span class="cb-sec-title" id="cb-sec1-title">🏢 Business Info <span class="cb-sec-badge">Required</span></span>
         <span class="cb-sec-ic">▾</span>
       </div>
       <div class="cb-sec-body">
@@ -244,7 +244,7 @@
     <!-- Section 2: Your Story -->
     <div class="cb-section" id="cbs-story">
       <div class="cb-sec-head" onclick="cbToggle('story')">
-        <span class="cb-sec-title">📖 Your Story <span class="cb-sec-badge">Optional — makes AI smarter</span></span>
+        <span class="cb-sec-title" id="cb-sec2-title">📖 Your Story <span class="cb-sec-badge">Optional — makes AI smarter</span></span>
         <span class="cb-sec-ic">▾</span>
       </div>
       <div class="cb-sec-body">
@@ -276,7 +276,7 @@
     <!-- Section 3: First Campaign -->
     <div class="cb-section" id="cbs-campaign">
       <div class="cb-sec-head" onclick="cbToggle('campaign')">
-        <span class="cb-sec-title">🚀 First Campaign <span class="cb-sec-badge">Required</span></span>
+        <span class="cb-sec-title" id="cb-sec3-title">🚀 First Campaign <span class="cb-sec-badge">Required</span></span>
         <span class="cb-sec-ic">▾</span>
       </div>
       <div class="cb-sec-body">
@@ -327,8 +327,8 @@
 
   <div class="cb-success" id="cb-success" style="display:none">
     <div id="cb-success-blasty" style="display:inline-block;margin-bottom:16px"></div>
-    <h2>🎉 You're Live!</h2>
-    <p>Your business is set up and your first campaign is ready. Redirecting to your dashboard…</p>
+    <h2 id="cb-success-h">🎉 You're Live!</h2>
+    <p id="cb-success-p">Your business is set up and your first campaign is ready. Redirecting to your dashboard…</p>
   </div>
 </div>
 
@@ -365,6 +365,22 @@ let editBizId   = null;
 
 const urlP = new URLSearchParams(window.location.search);
 editBizId = urlP.get('bizId') || null;
+
+function applyOb2Config(c) {
+  const si = (id, v) => { const el=document.getElementById(id); if(el&&v) el.innerHTML=v; };
+  const st = (id, v) => { const el=document.getElementById(id); if(el&&v) el.textContent=v; };
+  if (c.headerMsg)      si('cb-header-msg', c.headerMsg);
+  if (c.sec1Title)      si('cb-sec1-title', c.sec1Title);
+  if (c.sec2Title)      si('cb-sec2-title', c.sec2Title);
+  if (c.sec3Title)      si('cb-sec3-title', c.sec3Title);
+  if (c.submitText)     st('cb-submit', c.submitText);
+  if (c.successHeading) st('cb-success-h', c.successHeading);
+  if (c.successBody)    st('cb-success-p', c.successBody);
+}
+
+getDoc(doc(db, 'config', 'ob2Steps')).then(snap => {
+  if (snap.exists()) applyOb2Config(snap.data());
+}).catch(() => {});
 
 onAuthStateChanged(auth, async user => {
   if (!user) { window.location.href = 'BlastyBiz-Login.html?next=BlastyBiz-CreateBiz.html'; return; }
