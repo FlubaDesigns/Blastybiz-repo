@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784505470015" />
+<link rel="stylesheet" href="global-style.css?v=1784506448547" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -244,7 +244,7 @@
 
           <!-- RIGHT: decorative image (desktop only) -->
           <div class="col-right hide-mobile">
-            <img src="images/cta-worker.png" alt="Create your blast" class="img-cover">
+            <img src="dashboard-hero.png" alt="Create your blast" class="img-cover">
           </div><!-- /.col-right -->
 
         </div><!-- /.col-2-1 -->
@@ -4006,6 +4006,30 @@ function formatPhone(el) {
 // ══════════════════════════════════════════
 // CAMPAIGNS
 // ══════════════════════════════════════════
+function renderCreateCampList() {
+  const el = document.getElementById('create-camp-list');
+  if (!el) return;
+  if (!campaigns || !campaigns.length) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:4px 0;">No campaigns yet — create your first one above.</div>';
+    return;
+  }
+  const sorted = [...campaigns].sort((a, b) =>
+    new Date(b.lastUsedAt || b.createdAt || 0) - new Date(a.lastUsedAt || a.createdAt || 0)
+  );
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+  el.innerHTML = sorted.map(c => {
+    const isActive = c.id === activeCampaignId;
+    return `<div style="position:relative;border-bottom:1px solid var(--border,#333);">
+      <button type="button" onclick="selectCampaign('${escId(c.id)}','${escId(c.name||'')}');document.getElementById('create-wizard').scrollIntoView({behavior:'smooth'})"
+        style="width:100%;background:none;border:none;text-align:left;padding:14px 40px 14px 0;cursor:pointer;-webkit-tap-highlight-color:rgba(0,200,83,0.12);">
+        <div style="font-size:15px;font-weight:700;color:${isActive?'var(--green,#39ff14)':'var(--light,#fff)'};line-height:1.3;">${escHtml(c.name||'(unnamed)')}</div>
+        <div style="font-size:12px;color:var(--muted,#888);margin-top:3px;">Created ${fmtDate(c.createdAt)} · Last used ${fmtDate(c.lastUsedAt)}</div>
+      </button>
+      <button type="button" class="del-camp-btn" onclick="window.deleteCampaign&&window.deleteCampaign('${escId(c.id)}')" title="Delete" style="position:absolute;right:0;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:8px;">🗑</button>
+    </div>`;
+  }).join('');
+}
+
 function renderCampaignChips() {
   const container = document.getElementById('campaign-chips');
   if (!container) return;
@@ -4033,6 +4057,8 @@ function renderCampaignChips() {
       libRow.classList.add('hidden');
     }
   }
+  // Keep campaign list card in sync
+  renderCreateCampList();
 }
 
 function selectCampaign(id, name) {
