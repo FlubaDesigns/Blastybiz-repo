@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784512331354" />
+<link rel="stylesheet" href="global-style.css?v=1784512666191" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -236,49 +236,44 @@
       </div>
 
 
-      <!-- Row 2: blast form + image — shown once a campaign is selected -->
-      <div class="row">
-        <div class="col-2-1">
-          <div class="col-left">
+      <!-- Row 2: blast form + image — hidden until a campaign is selected -->
+      <div id="campaign-content" class="hidden">
+        <div class="row">
+          <div class="col-2-1">
+            <div class="col-left">
+              <div class="card">
+                <div class="card-title">🚀 Your Blast</div>
 
-          <!-- Campaign content — shown once a campaign is selected -->
-          <div id="campaign-content" class="hidden">
+                <label for="biz-ad-name">Blast name</label>
+                <input type="text" id="biz-ad-name" placeholder="e.g. 50% off chocolate · Free consultation · Holiday special"
+                  oninput="saveDraft();debounceCampaignSave()" class="mb-16" />
 
-            <div class="card">
-              <div class="card-title">🚀 Your Blast</div>
+                <label for="biz-offer">What's the offer?</label>
+                <div class="char-wrap">
+                  <textarea id="biz-offer" placeholder="e.g. 20% off all haircuts this Saturday only · Grand reopening next week · New menu just dropped — come try it..." oninput="countChars(this, 'offer-count', 500);debounceCampaignSave()" class="min-h-90"></textarea>
+                  <span class="char-count" id="offer-count">0 / 500</span>
+                </div>
 
-              <label for="biz-ad-name">Blast name</label>
-              <input type="text" id="biz-ad-name" placeholder="e.g. 50% off chocolate · Free consultation · Holiday special"
-                oninput="saveDraft();debounceCampaignSave()" class="mb-16" />
+                <label for="biz-price">Price <span class="optional">(optional)</span></label>
+                <input type="text" id="biz-price" placeholder="e.g. $25 · Free · Starting at $99" oninput="saveDraft();debounceCampaignSave()" class="max-w-260" />
 
-              <label for="biz-offer">What's the offer?</label>
-              <div class="char-wrap">
-                <textarea id="biz-offer" placeholder="e.g. 20% off all haircuts this Saturday only · Grand reopening next week · New menu just dropped — come try it..." oninput="countChars(this, 'offer-count', 500);debounceCampaignSave()" class="min-h-90"></textarea>
-                <span class="char-count" id="offer-count">0 / 500</span>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;min-height:22px">
+                  <span id="ad-draft-status" style="font-size:12px;color:#4caf50;opacity:0;transition:opacity 0.4s"></span>
+                  <button type="button" id="btn-discard-ad" onclick="discardAdDraft()" style="display:none;background:none;border:none;color:#e57373;font-size:12px;cursor:pointer;padding:0;text-decoration:underline">
+                    × Discard this ad
+                  </button>
+                </div>
               </div>
+            </div><!-- /.col-left -->
 
-              <label for="biz-price">Price <span class="optional">(optional)</span></label>
-              <input type="text" id="biz-price" placeholder="e.g. $25 · Free · Starting at $99" oninput="saveDraft();debounceCampaignSave()" class="max-w-260" />
+            <!-- RIGHT: scribe hero image -->
+            <div class="col-right hide-mobile" style="overflow:hidden;border-radius:14px;align-self:stretch;">
+              <img src="img/scribe-hero.png" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:14px;" />
+            </div><!-- /.col-right -->
 
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;min-height:22px">
-                <span id="ad-draft-status" style="font-size:12px;color:#4caf50;opacity:0;transition:opacity 0.4s"></span>
-                <button type="button" id="btn-discard-ad" onclick="discardAdDraft()" style="display:none;background:none;border:none;color:#e57373;font-size:12px;cursor:pointer;padding:0;text-decoration:underline">
-                  × Discard this ad
-                </button>
-              </div>
-            </div>
-
-          </div><!-- /campaign-content -->
-
-          </div><!-- /.col-left -->
-
-          <!-- RIGHT: scribe hero image -->
-          <div class="col-right hide-mobile" style="overflow:hidden;border-radius:14px;align-self:stretch;">
-            <img src="img/scribe-hero.png" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:14px;" />
-          </div><!-- /.col-right -->
-
-        </div><!-- /.col-2-1 -->
-      </div><!-- /.row -->
+          </div><!-- /.col-2-1 -->
+        </div><!-- /.row -->
+      </div><!-- /campaign-content -->
 
       <!-- Row 3: photos upload (left) + Teach AI (right) -->
       <div class="row">
