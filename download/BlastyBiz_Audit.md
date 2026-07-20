@@ -2,6 +2,7 @@
 
 | Date | File(s) | What was wrong | How it was fixed |
 |------|---------|----------------|-----------------|
+| 2026-07-20 | global-style.css | **Mobile breakpoints bumped from 479px → 767px** for `.col-2-1` (stacking) and `.hide-mobile` (image hiding). Previous 479px threshold was narrower than most modern phones, leaving 2-column layouts and hero images visible on mobile. |
 | 2026-07-20 | BlastyBiz.html | **Scribe hero image added to Create tab.** Futuristic quill-on-circuit-parchment image (`scribe-hero.png`) placed in the right column of Row 2 (blast form row), across from the "Your Blast" card. Hidden on mobile via `hide-mobile`. |
 | 2026-07-20 | BlastyBiz.html | **Businesses and campaigns not showing.** `renderSwitcherBar()` / `renderAgencyBar()` calls in the module's async `onAuthStateChanged` were not wrapped in try/catch — any throw there short-circuits the async function before the campaigns `try` block runs, so campaigns stayed "Loading…". Fixed: wrapped switcher bar calls in try/catch. Also set `window._bbCampaigns = campaigns` in the module after loading, and updated `renderCreateCampList()` to fall back to `window._bbCampaigns` so it works regardless of scope visibility. |
 | 2026-07-20 | BlastyBiz.html | **Left column spacing: each card wrapped in its own row > col-full.** Business and Campaigns cards were flush against each other with no gap. Wrapped each in `row > col-full` so the row gutter provides breathing room between them. |
