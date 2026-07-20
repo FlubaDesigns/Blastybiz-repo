@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784510891516" />
+<link rel="stylesheet" href="global-style.css?v=1784511228608" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -3029,8 +3029,11 @@ function setYN(field, val) {
   const no  = document.getElementById('yn-' + field + '-no');
   if (yes) { yes.classList.toggle('yn-active', val === 'yes'); }
   if (no)  { no.classList.toggle('yn-active',  val === 'no');  }
-  // Persist ynMention* directly to business doc (where _bbSetProfile reads from)
-  if (window._bbSaveYNDirect) window._bbSaveYNDirect();
+  // Write to the active campaign object so _bbSaveCampaigns persists it
+  const _ynCam = (typeof campaigns !== 'undefined') && activeCampaignId &&
+    campaigns.find(c => c.id === activeCampaignId);
+  if (_ynCam) _ynCam['ynMention' + field.charAt(0).toUpperCase() + field.slice(1)] = val;
+  debounceCampaignSave();
 }
 
 function updateCopyPreview() {
@@ -4144,6 +4147,18 @@ function selectCampaign(id, name) {
   const campMemEl = document.getElementById('create-camp-memory-text');
   if (campMemEl) campMemEl.value = cam.campaignMemory || '';
 
+  // Restore Mentions (About You in Copy) toggles from this campaign — no save triggered
+  const _YN_DEFAULTS = { name:'no', role:'no', address:'yes', phone:'yes', email:'yes', website:'yes' };
+  Object.keys(_YN_DEFAULTS).forEach(f => {
+    const key = 'ynMention' + f.charAt(0).toUpperCase() + f.slice(1);
+    const val = cam[key] !== undefined ? cam[key] : _YN_DEFAULTS[f];
+    ynState[f] = val;
+    const yEl = document.getElementById('yn-' + f + '-yes');
+    const nEl = document.getElementById('yn-' + f + '-no');
+    if (yEl) yEl.classList.toggle('yn-active', val === 'yes');
+    if (nEl) nEl.classList.toggle('yn-active',  val === 'no');
+  });
+
   // Load campaign images from subcollection (fall back to cam.photos for old data)
   if (window._bbLoadCampaignImages) {
     window._bbLoadCampaignImages(id).then(images => {
@@ -4558,15 +4573,7 @@ window._bbSetProfile = function(p) {
     }));
   } catch(e) {}
   loadProfile();
-  // Restore About You in Copy pill state from saved profile
-  if (typeof setYN === 'function') {
-    setYN('name', p.ynMentionName || 'no');
-    setYN('role', p.ynMentionRole || 'no');
-    setYN('address', p.ynMentionAddress || 'yes');
-    setYN('phone',   p.ynMentionPhone   || 'yes');
-    setYN('email',   p.ynMentionEmail   || 'yes');
-    setYN('website', p.ynMentionWebsite || 'yes');
-  }
+  // ynMention* is now per-campaign (restored in selectCampaign), not per-business profile
 };
 
 window._bbFirestoreDismissPending = async function(id) {
@@ -5446,25 +5453,6 @@ window.savePlatformUrl = async function(pid, url) {
   } catch(e) { console.error('savePlatformUrl error:', e); }
 };
 
-// Direct, immediate save of ynMention* fields to the business doc.
-// Called by setYN() so toggles persist without waiting for a full saveProfile cycle.
-window._bbSaveYNDirect = async function() {
-  if (!currentUser || !activeBizId) return;
-  // Use window.ynState explicitly — module strict scope cannot assume bare ynState = window.ynState
-  const yn = window.ynState || {};
-  try {
-    await setDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), {
-      ynMentionName:    yn.name    || 'no',
-      ynMentionRole:    yn.role    || 'no',
-      ynMentionAddress: yn.address || 'yes',
-      ynMentionPhone:   yn.phone   || 'yes',
-      ynMentionEmail:   yn.email   || 'yes',
-      ynMentionWebsite: yn.website || 'yes',
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
-  } catch(e) { console.error('_bbSaveYNDirect error:', e); }
-};
-
 const origSaveProfile = window.saveProfile;
 let _saveProfileTimer = null;
 window.saveProfile = function() {
@@ -5491,12 +5479,6 @@ window.saveProfile = function() {
       locationType:   profile.locationType || 'physical',
       region:         profile.region || '',
       tone:           profile.tone   || 'friendly',
-      ynMentionName:    ynState.name,
-      ynMentionRole:    ynState.role,
-      ynMentionAddress: ynState.address,
-      ynMentionPhone:   ynState.phone,
-      ynMentionEmail:   ynState.email,
-      ynMentionWebsite: ynState.website,
       updatedAt:      serverTimestamp(),
     }, { merge: true });
   } catch(e) {
