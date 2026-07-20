@@ -5,7 +5,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1784518514421" />
+  <link rel="stylesheet" href="global-style.css?v=1784519601485" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -524,11 +524,22 @@ function showVerifyView(email) {
 }
 window.showVerifyView = showVerifyView;
 
+async function sendVerificationViaResend(user) {
+  const idToken = await user.getIdToken();
+  const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/sendVerificationEmail', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken })
+  });
+  if (!resp.ok) throw new Error('CF failed');
+}
+
 window.resendVerification = async function() {
   const user = auth.currentUser;
   if (!user) return;
   try {
-    await sendEmailVerification(user);
+    try { await sendVerificationViaResend(user); }
+    catch(_) { await sendEmailVerification(user); }
     showToast('Verification email resent — check your inbox ✓');
   } catch (e) {
     showToast('Could not resend — try again in a moment.', true);
@@ -541,8 +552,6 @@ window.backFromVerify = async function() {
 };
 
 onAuthStateChanged(auth, async (user) => {
-  // If we're processing a password-reset link, don't auto-redirect —
-  // checkResetLink() is already showing the set-password form.
   if (new URLSearchParams(window.location.search).get('mode') === 'resetPassword') return;
 
   if (!user) {
@@ -550,14 +559,17 @@ onAuthStateChanged(auth, async (user) => {
     showLoginForm();
     return;
   }
-  if (!user.emailVerified) {
+  // Reload to get fresh emailVerified status — stale cached token may still show false
+  try { await user.reload(); } catch(_) {}
+  const fresh = auth.currentUser;
+  if (!fresh || !fresh.emailVerified) {
     localStorage.setItem('bb_auth', '0');
     showLoginForm();
-    showVerifyView(user.email);
+    if (fresh) showVerifyView(fresh.email);
     return;
   }
   localStorage.setItem('bb_auth', '1');
-  await afterAuth(user);
+  await afterAuth(fresh);
 });
 
 window.handleSignIn = async function() {
@@ -570,12 +582,15 @@ window.handleSignIn = async function() {
   setLoading('btn-signin', true);
   try {
     const cred = await signInWithEmailAndPassword(auth, email, pass);
-    if (!cred.user.emailVerified) {
+    // Reload to get fresh emailVerified — cached token may lag behind
+    try { await cred.user.reload(); } catch(_) {}
+    const signedIn = auth.currentUser;
+    if (!signedIn.emailVerified) {
       setLoading('btn-signin', false);
-      showVerifyView(cred.user.email);
+      showVerifyView(signedIn.email);
       return;
     }
-    await afterAuth(cred.user);
+    await afterAuth(signedIn);
   } catch (e) {
     setLoading('btn-signin', false);
     const msg = e.code === 'auth/invalid-credential' ? 'Wrong email or password' :
@@ -602,7 +617,9 @@ window.handleSignUp = async function() {
     await setDoc(doc(db, 'users', cred.user.uid), {
       ownerName: name, email, plan: 'starter', onboarded: false, createdAt: serverTimestamp()
     });
-    await sendEmailVerification(cred.user);
+    // Send via Resend (noreply@blastybiz.com) for better deliverability; fall back to Firebase default
+    try { await sendVerificationViaResend(cred.user); }
+    catch(_) { await sendEmailVerification(cred.user); }
     setLoading('btn-signup', false);
     showLoginForm();
     showVerifyView(cred.user.email);

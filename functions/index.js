@@ -4431,3 +4431,40 @@ exports.adminSetAiSettings = onRequest({ invoker: 'public' }, async (req, res) =
     return res.status(500).json({ error: e.message });
   }
 });
+
+// ── Send email verification via Resend (noreply@blastybiz.com) ────────────────
+// Called from the login page instead of Firebase's built-in sendEmailVerification
+// so that verification emails come from blastybiz.com and clear spam filters.
+exports.sendVerificationEmail = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  if (req.method === 'OPTIONS') { res.set('Access-Control-Allow-Headers', 'Content-Type'); return res.status(204).send(''); }
+  try {
+    const { idToken } = req.body || {};
+    if (!idToken) return res.status(400).json({ error: 'idToken required' });
+
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    if (decoded.email_verified) return res.json({ ok: true, skipped: true });
+
+    const actionCodeSettings = { url: `${APP_BASE_URL}/BlastyBiz-Login.html` };
+    const link = await admin.auth().generateEmailVerificationLink(decoded.email, actionCodeSettings);
+
+    const html = `
+      <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#1a1a1a">
+        <h2 style="color:#00c853">Verify your BlastyBiz email</h2>
+        <p>Click the button below to verify your email address and activate your account.</p>
+        <p style="margin:24px 0">
+          <a href="${link}" style="background:#00c853;color:#000;font-weight:700;padding:14px 28px;border-radius:8px;text-decoration:none;display:inline-block">
+            Verify Email →
+          </a>
+        </p>
+        <p style="color:#666;font-size:13px">Or copy and paste this link:<br/><a href="${link}" style="color:#00c853">${link}</a></p>
+        <p style="color:#999;font-size:12px;margin-top:32px">If you didn't create a BlastyBiz account, you can safely ignore this email.</p>
+      </div>`;
+
+    await sendResendEmail({ to: decoded.email, subject: 'Verify your BlastyBiz email', html });
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('[sendVerificationEmail]', e.message);
+    return res.status(500).json({ error: e.message });
+  }
+});
