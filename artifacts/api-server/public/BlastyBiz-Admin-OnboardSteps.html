@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784609268585">
+  <link rel="stylesheet" href="global-style.css?v=1784609532452">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -71,7 +71,7 @@
     .btn-prv:hover { border-color:#7c3aed; color:#7c3aed; }
     .sts { font-size:12px; color:#22c55e; }
     /* preview */
-    .ose-preview { position:sticky; top:80px; }
+    .ose-preview { position:sticky; top:80px; align-self:start; }
     .prev-panel { background:#0d1f3c; border-radius:14px; padding:18px; text-align:center; }
     .prev-lbl { font-size:10px; color:#64748b; text-transform:uppercase; letter-spacing:.1em; margin-bottom:12px; }
     #pb-mascot { display:inline-block; position:relative; }
@@ -150,7 +150,7 @@
     </div>
 
     <!-- right: persistent preview (shared by OB1 and OB2) -->
-    <div class="ose-preview" style="position:sticky;top:80px;align-self:start">
+    <div class="ose-preview">
       <div class="prev-panel">
         <div class="prev-lbl">Live Preview</div>
         <div class="pb-mascot s-wave" id="pb-mascot"></div>
