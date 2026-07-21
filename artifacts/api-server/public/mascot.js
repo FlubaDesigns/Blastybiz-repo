@@ -36,6 +36,15 @@
     '.pb-mascot.s-ask-2    .mouth-happy{opacity:0!important;}.pb-mascot.s-ask-2    .mouth-ask{opacity:1!important;}',
     '.pb-mascot.s-ask-3    .mouth-happy{opacity:0!important;}.pb-mascot.s-ask-3    .mouth-ask{opacity:1!important;}',
 
+    /* Standalone mouth overrides — priority over mood-driven mouth */
+    '.pb-mascot.s-mouth-happy .mouth-working,.pb-mascot.s-mouth-happy .mouth-celebrate,.pb-mascot.s-mouth-happy .mouth-ask{opacity:0!important;}',
+    '.pb-mascot.s-mouth-happy .mouth-happy{opacity:1!important;}',
+    '.pb-mascot.s-mouth-working .mouth-happy,.pb-mascot.s-mouth-working .mouth-celebrate,.pb-mascot.s-mouth-working .mouth-ask{opacity:0!important;}',
+    '.pb-mascot.s-mouth-working .mouth-working{opacity:1!important;}',
+    '.pb-mascot.s-mouth-celebrate .mouth-happy,.pb-mascot.s-mouth-celebrate .mouth-working,.pb-mascot.s-mouth-celebrate .mouth-ask{opacity:0!important;}',
+    '.pb-mascot.s-mouth-celebrate .mouth-celebrate{opacity:1!important;}',
+    '.pb-mascot.s-mouth-ask .mouth-happy,.pb-mascot.s-mouth-ask .mouth-working,.pb-mascot.s-mouth-ask .mouth-celebrate{opacity:0!important;}',
+    '.pb-mascot.s-mouth-ask .mouth-ask{opacity:1!important;}',
     /* Arms */
     '.mascot-arm{transition:opacity .25s ease;opacity:0;}',
     '.pb-mascot.s-wave    .mascot-arm-wave{opacity:1!important;}',
@@ -295,7 +304,8 @@
       merged.flame || '',
       merged.lights || '',
       merged.smoke === true ? 's-smoke-3' : (merged.smoke || ''),
-      merged.noseSpin === true ? 's-nose-spin-r' : (merged.noseSpin || '')
+      merged.noseSpin === true ? 's-nose-spin-r' : (merged.noseSpin || ''),
+      merged.mouth || ''
     ].filter(Boolean);
     var el = document.getElementById('pb-mascot');
     if (!el) return;
