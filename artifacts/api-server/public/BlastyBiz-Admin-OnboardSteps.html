@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784611141969">
+  <link rel="stylesheet" href="global-style.css?v=1784612119616">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -202,6 +202,7 @@ const EYES_OPTS  = [{v:'',l:'Default'},{v:'s-eyes-up',l:'Up'},{v:'s-eyes-down',l
 const SMOKE_OPTS = [{v:'',l:'Off'},{v:'s-smoke-sm',l:'1 small puff'},{v:'s-smoke-lg',l:'1 large puff'},{v:'s-smoke-2',l:'2 puffs'},{v:'s-smoke-3',l:'3 puffs'}];
 const NOSE_OPTS  = [{v:'',l:'Off'},{v:'s-nose-spin-l',l:'Spin left'},{v:'s-nose-spin-r',l:'Spin right'},{v:'s-nose-pop-slow',l:'Pop slow'},{v:'s-nose-pop-fast',l:'Pop fast'}];
 const MOUTH_OPTS = [{v:'',l:'Default (mood)'},{v:'s-mouth-happy',l:'Happy 😄'},{v:'s-mouth-working',l:'Working 😮'},{v:'s-mouth-celebrate',l:'Celebrate 😃'},{v:'s-mouth-ask',l:'Ask 😐'}];
+const LIMBS_OPTS = [{v:'',l:'Pose default'},{v:'s-limb-wave',l:'Arm wave 🫳'},{v:'s-limb-point',l:'Arm point 👉'},{v:'s-limb-both',l:'Arms up 🙌'},{v:'s-limb-none',l:'Arms hidden'},{v:'s-limb-fin-wave',l:'Fin wave (left)'},{v:'s-limb-fin-point',l:'Fin point (right)'},{v:'s-limb-fin-both',l:'Fins up (both)'}];
 
 const sel = (opts, val) => opts.map(o=>`<option value="${o.v}"${o.v===val?' selected':''}>${o.l}</option>`).join('');
 
@@ -437,6 +438,7 @@ function renderSteps() {
           <div class="asg"><label>Eyes</label><select id="ae-${s.key}">${sel(EYES_OPTS,an.eyes||'')}</select></div>
           <div class="asg"><label>Nose</label><select id="an-${s.key}">${sel(NOSE_OPTS, typeof an.noseSpin==='string'?an.noseSpin:(an.noseSpin?'s-nose-spin-r':''))}</select></div>
           <div class="asg"><label>Mouth</label><select id="amou-${s.key}">${sel(MOUTH_OPTS,an.mouth||'')}</select></div>
+          <div class="asg"><label>Limbs</label><select id="alb-${s.key}">${sel(LIMBS_OPTS,an.limbs||'')}</select></div>
           <div class="asg"><label>Smoke</label><select id="as-${s.key}">${sel(SMOKE_OPTS, typeof an.smoke==='string'?an.smoke:(an.smoke?'s-smoke-3':''))}</select></div>
         </div>
         <div class="card-acts">
@@ -459,7 +461,7 @@ function renderSteps() {
         timer = setTimeout(() => window._oseTextSave(s.key), 800);
       });
     }
-    ['am-','af-','al-','ae-','an-','amou-','as-'].forEach(pfx => {
+    ['am-','af-','al-','ae-','an-','amou-','alb-','as-'].forEach(pfx => {
       const el = document.getElementById(pfx+s.key);
       if (el) el.addEventListener('change', () => window._oseAnimChange(s.key));
     });
@@ -498,6 +500,7 @@ window._applyPreset = function(k) {
   if (document.getElementById('ae-'+k))   document.getElementById('ae-'+k).value   = p.eyes    || '';
   if (document.getElementById('an-'+k))   document.getElementById('an-'+k).value   = p.nose    || '';
   if (document.getElementById('amou-'+k)) document.getElementById('amou-'+k).value = p.mouth   || '';
+  if (document.getElementById('alb-'+k))  document.getElementById('alb-'+k).value  = p.limbs   || '';
   window._osePreview(k);
 };
 
@@ -509,9 +512,10 @@ window._osePreview = function(k) {
   const eyes  = document.getElementById('ae-'+k).value;
   const nose  = document.getElementById('an-'+k).value;
   const mouth = document.getElementById('amou-'+k).value;
+  const limbs = document.getElementById('alb-'+k).value;
   const smoke = document.getElementById('as-'+k).value;
   window.PBMascot.setMood({ mood, flame:flame||undefined, lights:lights||undefined,
-    eyes:eyes||undefined, noseSpin:nose||undefined, mouth:mouth||undefined, smoke:smoke||undefined });
+    eyes:eyes||undefined, noseSpin:nose||undefined, mouth:mouth||undefined, limbs:limbs||undefined, smoke:smoke||undefined });
   document.getElementById('prev-cap').textContent = MOOD_OPTS.find(o=>o.v===mood)?.l || mood;
 };
 
@@ -560,6 +564,8 @@ window._oseAnimChange = async function(k) {
   if (eyes)   anim.eyes     = eyes;
   if (nose)   anim.noseSpin = nose;
   if (mouth)  anim.mouth    = mouth;
+  const limbs  = document.getElementById('alb-'+k).value;
+  if (limbs)  anim.limbs    = limbs;
   if (smoke)  anim.smoke    = smoke;
   const sts = document.getElementById('sts-anim-'+k);
   try {

@@ -45,12 +45,26 @@
     '.pb-mascot.s-mouth-celebrate .mouth-celebrate{opacity:1!important;}',
     '.pb-mascot.s-mouth-ask .mouth-happy,.pb-mascot.s-mouth-ask .mouth-working,.pb-mascot.s-mouth-ask .mouth-celebrate{opacity:0!important;}',
     '.pb-mascot.s-mouth-ask .mouth-ask{opacity:1!important;}',
-    /* Arms */
+    /* Arms — pose-driven */
     '.mascot-arm{transition:opacity .25s ease;opacity:0;}',
     '.pb-mascot.s-wave    .mascot-arm-wave{opacity:1!important;}',
     '.pb-mascot.s-wave-2  .mascot-arm-wave{opacity:1!important;}',
     '.pb-mascot.s-working .mascot-arm-point{opacity:1!important;}',
     '.pb-mascot.s-celebrate .mascot-arm-wave{opacity:1!important;}',
+    /* Limbs — standalone overrides (arms, independent of pose) */
+    '.pb-mascot.s-limb-wave  .mascot-arm-wave{opacity:1!important;}',
+    '.pb-mascot.s-limb-point .mascot-arm-point{opacity:1!important;}',
+    '.pb-mascot.s-limb-both  .mascot-arm-wave,.pb-mascot.s-limb-both .mascot-arm-point{opacity:1!important;}',
+    '.pb-mascot.s-limb-none  .mascot-arm-wave,.pb-mascot.s-limb-none .mascot-arm-point{opacity:0!important;}',
+    /* Limbs — fins */
+    '@keyframes b-fin-wave{0%,100%{transform:rotate(0)} 25%{transform:rotate(-22deg)} 55%{transform:rotate(12deg)} 75%{transform:rotate(-18deg)}}',
+    '@keyframes b-fin-point-r{0%{transform:rotate(0)} 100%{transform:rotate(28deg)}}',
+    '@keyframes b-fin-up-l{0%{transform:rotate(0)} 100%{transform:rotate(-32deg)}}',
+    '@keyframes b-fin-up-r{0%{transform:rotate(0)} 100%{transform:rotate(32deg)}}',
+    '.pb-mascot.s-limb-fin-wave  .mascot-fin-l{animation:b-fin-wave 1.1s ease-in-out 3;}',
+    '.pb-mascot.s-limb-fin-point .mascot-fin-r{animation:b-fin-point-r .4s ease-out both;}',
+    '.pb-mascot.s-limb-fin-both  .mascot-fin-l{animation:b-fin-up-l .4s ease-out both;}',
+    '.pb-mascot.s-limb-fin-both  .mascot-fin-r{animation:b-fin-up-r .4s ease-out both;}',
 
     /* s-wave */
     '.pb-mascot.s-wave #mascot-body{animation:b-wave .55s ease-in-out 4,b-float 3.2s ease-in-out infinite 2.2s;}',
@@ -204,11 +218,15 @@
     + '<path d="M180 354 C213 385 207 419 180 446 C153 419 147 385 180 354Z" fill="url(#mc-fo)" stroke="#102957" stroke-width="8" stroke-linejoin="round"/>'
     + '<path d="M180 368 C197 389 194 411 180 428 C166 411 163 389 180 368Z" fill="url(#mc-fi)"/>'
     + '</g>'
-    /* Fins */
+    /* Fins — grouped for independent animation */
+    + '<g class="mascot-fin mascot-fin-l" style="transform-box:fill-box;transform-origin:100% 0%">'
     + '<path d="M103 240 C68 254 46 286 48 327 C74 312 97 298 116 276Z" fill="url(#mc-rf)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>'
-    + '<path d="M257 240 C292 254 314 286 312 327 C286 312 263 298 244 276Z" fill="url(#mc-rf)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>'
     + '<path d="M97 258 C78 271 67 288 61 307" fill="none" stroke="#ff7d72" stroke-width="6" stroke-linecap="round" opacity=".8"/>'
+    + '</g>'
+    + '<g class="mascot-fin mascot-fin-r" style="transform-box:fill-box;transform-origin:0% 0%">'
+    + '<path d="M257 240 C292 254 314 286 312 327 C286 312 263 298 244 276Z" fill="url(#mc-rf)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>'
     + '<path d="M263 258 C282 271 293 288 299 307" fill="none" stroke="#ff7d72" stroke-width="6" stroke-linecap="round" opacity=".8"/>'
+    + '</g>'
     /* Hull */
     + '<path d="M180 42 C117 89 89 163 91 251 C92 309 119 348 180 378 C241 348 268 309 269 251 C271 163 243 89 180 42Z" fill="url(#mc-bf)" stroke="#102957" stroke-width="10" stroke-linejoin="round"/>'
     + '<g clip-path="url(#mc-bc)">'
@@ -305,7 +323,8 @@
       merged.lights || '',
       merged.smoke === true ? 's-smoke-3' : (merged.smoke || ''),
       merged.noseSpin === true ? 's-nose-spin-r' : (merged.noseSpin || ''),
-      merged.mouth || ''
+      merged.mouth || '',
+      merged.limbs || ''
     ].filter(Boolean);
     var el = document.getElementById('pb-mascot');
     if (!el) return;

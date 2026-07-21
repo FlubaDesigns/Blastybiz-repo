@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Mood Presets</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784611141969">
+  <link rel="stylesheet" href="global-style.css?v=1784612119616">
   <style>
     body { visibility:hidden }
     .mp-grid { display:grid; grid-template-columns:1fr 220px; gap:24px; align-items:start; }
@@ -103,6 +103,10 @@
           <label>Mouth</label>
           <select id="mf-mouth" onchange="window._livePreview()"></select>
         </div>
+        <div class="form-fld">
+          <label>Limbs</label>
+          <select id="mf-limbs" onchange="window._livePreview()"></select>
+        </div>
       </div>
       <div class="form-acts">
         <button class="btn-save" onclick="window._savePreset()">Save Preset</button>
@@ -139,15 +143,16 @@ const EXHAUST_OPTS = [{v:'',l:'Normal flame'},{v:'s-flame-blue',l:'Blue flame'},
 const EYES_OPTS    = [{v:'',l:'Default'},{v:'s-eyes-up',l:'Up'},{v:'s-eyes-down',l:'Down'},{v:'s-eyes-left',l:'Left'},{v:'s-eyes-right',l:'Right'},{v:'s-eyes-roll',l:'Roll'},{v:'s-eyes-surprise',l:'Surprise'}];
 const NOSE_OPTS    = [{v:'',l:'Off'},{v:'s-nose-spin-l',l:'Spin left'},{v:'s-nose-spin-r',l:'Spin right'},{v:'s-nose-pop-slow',l:'Pop slow'},{v:'s-nose-pop-fast',l:'Pop fast'}];
 const MOUTH_OPTS   = [{v:'',l:'Default (mood)'},{v:'s-mouth-happy',l:'Happy 😄'},{v:'s-mouth-working',l:'Working 😮'},{v:'s-mouth-celebrate',l:'Celebrate 😃'},{v:'s-mouth-ask',l:'Ask 😐'}];
+const LIMBS_OPTS   = [{v:'',l:'Pose default'},{v:'s-limb-wave',l:'Arm wave 🫳'},{v:'s-limb-point',l:'Arm point 👉'},{v:'s-limb-both',l:'Arms up 🙌'},{v:'s-limb-none',l:'Arms hidden'},{v:'s-limb-fin-wave',l:'Fin wave (left) 🏳️'},{v:'s-limb-fin-point',l:'Fin point (right) 🏳️'},{v:'s-limb-fin-both',l:'Fins up (both) 🏳️'}];
 
 const DEFAULT_PRESETS = [
-  {id:'greeting',  label:'Greeting',    pose:'s-wave',        exhaust:'',             eyes:'',           nose:'',              mouth:''},
-  {id:'asking',    label:'Asking',      pose:'s-ask',         exhaust:'',             eyes:'',           nose:'s-nose-spin-r', mouth:''},
-  {id:'thinking',  label:'Thinking',    pose:'s-ask-3',       exhaust:'',             eyes:'s-eyes-up',  nose:'',              mouth:''},
-  {id:'working',   label:'Working',     pose:'s-working',     exhaust:'',             eyes:'',           nose:'',              mouth:'s-mouth-working'},
-  {id:'happy',     label:'Happy',       pose:'s-happy',       exhaust:'s-flame-blue', eyes:'',           nose:'',              mouth:'s-mouth-happy'},
-  {id:'celebrate', label:'Celebrating', pose:'s-celebrate',   exhaust:'s-smoke-3',    eyes:'',           nose:'',              mouth:'s-mouth-celebrate'},
-  {id:'arrive',    label:'Arriving',    pose:'s-arrive-land', exhaust:'',             eyes:'',           nose:'',              mouth:''},
+  {id:'greeting',  label:'Greeting',    pose:'s-wave',        exhaust:'',             eyes:'',           nose:'',              mouth:'',                   limbs:'s-limb-wave'},
+  {id:'asking',    label:'Asking',      pose:'s-ask',         exhaust:'',             eyes:'',           nose:'s-nose-spin-r', mouth:'',                   limbs:''},
+  {id:'thinking',  label:'Thinking',    pose:'s-ask-3',       exhaust:'',             eyes:'s-eyes-up',  nose:'',              mouth:'',                   limbs:''},
+  {id:'working',   label:'Working',     pose:'s-working',     exhaust:'',             eyes:'',           nose:'',              mouth:'s-mouth-working',     limbs:'s-limb-point'},
+  {id:'happy',     label:'Happy',       pose:'s-happy',       exhaust:'s-flame-blue', eyes:'',           nose:'',              mouth:'s-mouth-happy',       limbs:''},
+  {id:'celebrate', label:'Celebrating', pose:'s-celebrate',   exhaust:'s-smoke-3',    eyes:'',           nose:'',              mouth:'s-mouth-celebrate',   limbs:'s-limb-both'},
+  {id:'arrive',    label:'Arriving',    pose:'s-arrive-land', exhaust:'',             eyes:'',           nose:'',              mouth:'',                   limbs:''},
 ];
 
 const sel = (opts, val='') => opts.map(o=>`<option value="${o.v}"${o.v===val?' selected':''}>${o.l}</option>`).join('');
@@ -158,6 +163,7 @@ function populateForm() {
   document.getElementById('mf-eyes').innerHTML    = sel(EYES_OPTS,    '');
   document.getElementById('mf-nose').innerHTML    = sel(NOSE_OPTS,    '');
   document.getElementById('mf-mouth').innerHTML   = sel(MOUTH_OPTS,   '');
+  document.getElementById('mf-limbs').innerHTML   = sel(LIMBS_OPTS,   '');
 }
 
 let presets = [];
@@ -179,6 +185,7 @@ function renderList() {
       p.eyes    ? tagLabel(p.eyes,    EYES_OPTS)    : null,
       p.nose    ? tagLabel(p.nose,    NOSE_OPTS)    : null,
       p.mouth   ? tagLabel(p.mouth,   MOUTH_OPTS)   : null,
+      p.limbs   ? tagLabel(p.limbs,   LIMBS_OPTS)   : null,
     ].filter(Boolean);
     return `<div class="preset-card">
       <div class="preset-head">
@@ -198,6 +205,7 @@ function toMoodSpec(p) {
   if (p.eyes)  spec.eyes     = p.eyes;
   if (p.nose)  spec.noseSpin = p.nose;
   if (p.mouth) spec.mouth    = p.mouth;
+  if (p.limbs) spec.limbs    = p.limbs;
   return spec;
 }
 
@@ -219,6 +227,7 @@ window._livePreview = function() {
     eyes:    document.getElementById('mf-eyes').value,
     nose:    document.getElementById('mf-nose').value,
     mouth:   document.getElementById('mf-mouth').value,
+    limbs:   document.getElementById('mf-limbs').value,
     label:   document.getElementById('mf-label').value || '…'
   };
   window.PBMascot.setMood(toMoodSpec(p));
@@ -246,6 +255,7 @@ window._savePreset = async function() {
     eyes:    document.getElementById('mf-eyes').value,
     nose:    document.getElementById('mf-nose').value,
     mouth:   document.getElementById('mf-mouth').value,
+    limbs:   document.getElementById('mf-limbs').value,
   };
   fsts.style.color='#64748b'; fsts.textContent='Saving…';
   try {
