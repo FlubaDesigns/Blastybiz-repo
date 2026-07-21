@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784604627225">
+  <link rel="stylesheet" href="global-style.css?v=1784605089715">
   <style>
     body { visibility: hidden }
     .ose-wrap { display:grid; grid-template-columns:1fr 230px; gap:26px; align-items:start; }
@@ -119,6 +119,18 @@
     .pb-blasty.s-smoke .smoke-puff:nth-child(2){animation-delay:.18s}
     .pb-blasty.s-smoke .smoke-puff:nth-child(3){animation-delay:.36s}
     @keyframes b-smoke { 0%{opacity:.7;transform:scale(.15) translateY(0)} 35%{opacity:.5;transform:scale(1.5) translateY(-20px)} 100%{opacity:0;transform:scale(2.8) translateY(-55px)} }
+    .pb-blasty.s-smoke-sm .smoke-puff:nth-child(1) { animation:b-smoke-sm 1.2s ease-out forwards; transform-box:fill-box; transform-origin:center; }
+    .pb-blasty.s-smoke-sm .smoke-puff:nth-child(2), .pb-blasty.s-smoke-sm .smoke-puff:nth-child(3) { animation:none; }
+    @keyframes b-smoke-sm { 0%{opacity:.7;transform:scale(.15) translateY(0)} 40%{opacity:.5;transform:scale(.9) translateY(-12px)} 100%{opacity:0;transform:scale(1.6) translateY(-30px)} }
+    .pb-blasty.s-smoke-lg .smoke-puff:nth-child(1) { animation:b-smoke-lg 1.9s ease-out forwards; transform-box:fill-box; transform-origin:center; }
+    .pb-blasty.s-smoke-lg .smoke-puff:nth-child(2), .pb-blasty.s-smoke-lg .smoke-puff:nth-child(3) { animation:none; }
+    @keyframes b-smoke-lg { 0%{opacity:.85;transform:scale(.15) translateY(0)} 30%{opacity:.6;transform:scale(2.2) translateY(-22px)} 100%{opacity:0;transform:scale(4.2) translateY(-65px)} }
+    .pb-blasty.s-smoke-2 .smoke-puff:nth-child(1) { animation:b-smoke 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; animation-delay:0s; }
+    .pb-blasty.s-smoke-2 .smoke-puff:nth-child(2) { animation:b-smoke 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; animation-delay:.18s; }
+    .pb-blasty.s-smoke-3 .smoke-puff { animation:b-smoke 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; }
+    .pb-blasty.s-smoke-3 .smoke-puff:nth-child(1){animation-delay:0s}
+    .pb-blasty.s-smoke-3 .smoke-puff:nth-child(2){animation-delay:.18s}
+    .pb-blasty.s-smoke-3 .smoke-puff:nth-child(3){animation-delay:.36s}
     /* tabs */
     .ose-tabs { display:flex; gap:8px; margin-bottom:22px; }
     .ose-tab { background:#f1f5f9; border:1.5px solid #e2e8f0; border-radius:8px; padding:8px 18px; font:600 13px 'DM Sans',sans-serif; color:#64748b; cursor:pointer; transition:all .15s; }
@@ -321,6 +333,7 @@ const MOOD_OPTS  = [{v:'s-ask',l:'Ask'},{v:'s-ask-2',l:'Ask 2 (lean right)'},{v:
 const FLAME_OPTS = [{v:'',l:'Orange (default)'},{v:'s-flame-blue',l:'Blue'},{v:'s-flame-green',l:'Green'},{v:'s-flame-red',l:'Red'},{v:'s-flame-purple',l:'Purple'},{v:'s-flame-white',l:'White'}];
 const LIGHTS_OPTS= [{v:'',l:'Off'},{v:'s-lights-pulse',l:'Pulse'},{v:'s-lights-sequence',l:'Sequence'},{v:'s-lights-flash',l:'Flash'}];
 const EYES_OPTS  = [{v:'',l:'Default'},{v:'s-eyes-up',l:'Up'},{v:'s-eyes-down',l:'Down'},{v:'s-eyes-left',l:'Left'},{v:'s-eyes-right',l:'Right'},{v:'s-eyes-roll',l:'Roll'},{v:'s-eyes-surprise',l:'Surprise'}];
+const SMOKE_OPTS = [{v:'',l:'Off'},{v:'s-smoke-sm',l:'1 small puff'},{v:'s-smoke-lg',l:'1 large puff'},{v:'s-smoke-2',l:'2 puffs'},{v:'s-smoke-3',l:'3 puffs'}];
 
 const sel = (opts, val) => opts.map(o=>`<option value="${o.v}"${o.v===val?' selected':''}>${o.l}</option>`).join('');
 
@@ -552,9 +565,9 @@ function renderSteps() {
           <div class="asg"><label>Lights</label><select id="al-${s.key}">${sel(LIGHTS_OPTS,an.lights||'')}</select></div>
           <div class="asg"><label>Eyes</label><select id="ae-${s.key}">${sel(EYES_OPTS,an.eyes||'')}</select></div>
         </div>
-        <div class="anim-chk">
-          <label><input type="checkbox" id="as-${s.key}"${an.smoke?' checked':''}> 💨 Smoke</label>
-          <label><input type="checkbox" id="an-${s.key}"${an.noseSpin?' checked':''}> 🌀 Nose spin</label>
+        <div class="anim-row">
+          <div class="asg"><label>Smoke</label><select id="as-${s.key}">${sel(SMOKE_OPTS, typeof an.smoke==='string'?an.smoke:(an.smoke?'s-smoke-3':''))}</select></div>
+          <div class="asg"><label style="visibility:hidden">x</label><label style="padding-top:6px"><input type="checkbox" id="an-${s.key}"${an.noseSpin?' checked':''}> 🌀 Nose spin</label></div>
         </div>
         <div class="card-acts">
           <button class="btn-prv" onclick="window._osePreview('${s.key}')">▶ Preview</button>
@@ -593,13 +606,13 @@ window._osePreview = function(k) {
   const flame = document.getElementById('af-'+k).value;
   const lights= document.getElementById('al-'+k).value;
   const eyes  = document.getElementById('ae-'+k).value;
-  const smoke = document.getElementById('as-'+k).checked;
+  const smoke = document.getElementById('as-'+k).value;
   const nose  = document.getElementById('an-'+k).checked;
   const el = document.getElementById('pb-blasty');
-  el.className = ['pb-blasty','s-arrive',mood,flame,lights,eyes,smoke?'s-smoke':'',nose?'s-nose-spin':''].filter(Boolean).join(' ');
+  el.className = ['pb-blasty','s-arrive',mood,flame,lights,eyes,smoke,nose?'s-nose-spin':''].filter(Boolean).join(' ');
   void el.offsetWidth;
   setTimeout(()=>{
-    el.className = ['pb-blasty',mood,flame,lights,eyes,smoke?'s-smoke':'',nose?'s-nose-spin':''].filter(Boolean).join(' ');
+    el.className = ['pb-blasty',mood,flame,lights,eyes,smoke,nose?'s-nose-spin':''].filter(Boolean).join(' ');
   }, 500);
   document.getElementById('prev-cap').textContent = MOOD_OPTS.find(o=>o.v===mood)?.l || mood;
 };
@@ -640,13 +653,13 @@ window._oseAnimChange = async function(k) {
   const flame  = document.getElementById('af-'+k).value;
   const lights = document.getElementById('al-'+k).value;
   const eyes   = document.getElementById('ae-'+k).value;
-  const smoke  = document.getElementById('as-'+k).checked;
+  const smoke  = document.getElementById('as-'+k).value;
   const nose   = document.getElementById('an-'+k).checked;
   const anim   = { mood };
   if (flame)  anim.flame    = flame;
   if (lights) anim.lights   = lights;
   if (eyes)   anim.eyes     = eyes;
-  if (smoke)  anim.smoke    = true;
+  if (smoke)  anim.smoke    = smoke;
   if (nose)   anim.noseSpin = true;
   const sts = document.getElementById('sts-anim-'+k);
   try {

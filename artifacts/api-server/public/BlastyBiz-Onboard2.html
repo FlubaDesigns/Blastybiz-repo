@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784604627225"/>
+  <link rel="stylesheet" href="global-style.css?v=1784605089715"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -485,6 +485,19 @@
       35%  { opacity: .5; transform: scale(1.5)  translateY(-20px); }
       100% { opacity: 0;  transform: scale(2.8)  translateY(-55px); }
     }
+    /* smoke variants */
+    .pb-blasty.s-smoke-sm .smoke-puff:nth-child(1) { animation:b-smoke-sm 1.2s ease-out forwards; transform-box:fill-box; transform-origin:center; }
+    .pb-blasty.s-smoke-sm .smoke-puff:nth-child(2), .pb-blasty.s-smoke-sm .smoke-puff:nth-child(3) { animation:none; }
+    @keyframes b-smoke-sm { 0%{opacity:.7;transform:scale(.15) translateY(0)} 40%{opacity:.5;transform:scale(.9) translateY(-12px)} 100%{opacity:0;transform:scale(1.6) translateY(-30px)} }
+    .pb-blasty.s-smoke-lg .smoke-puff:nth-child(1) { animation:b-smoke-lg 1.9s ease-out forwards; transform-box:fill-box; transform-origin:center; }
+    .pb-blasty.s-smoke-lg .smoke-puff:nth-child(2), .pb-blasty.s-smoke-lg .smoke-puff:nth-child(3) { animation:none; }
+    @keyframes b-smoke-lg { 0%{opacity:.85;transform:scale(.15) translateY(0)} 30%{opacity:.6;transform:scale(2.2) translateY(-22px)} 100%{opacity:0;transform:scale(4.2) translateY(-65px)} }
+    .pb-blasty.s-smoke-2 .smoke-puff:nth-child(1) { animation:b-smoke 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; animation-delay:0s; }
+    .pb-blasty.s-smoke-2 .smoke-puff:nth-child(2) { animation:b-smoke 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; animation-delay:.18s; }
+    .pb-blasty.s-smoke-3 .smoke-puff { animation:b-smoke 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; }
+    .pb-blasty.s-smoke-3 .smoke-puff:nth-child(1){animation-delay:0s}
+    .pb-blasty.s-smoke-3 .smoke-puff:nth-child(2){animation-delay:.18s}
+    .pb-blasty.s-smoke-3 .smoke-puff:nth-child(3){animation-delay:.36s}
 
     /* ── Per-message mini Blasty avatar ─────────────────────────── */
     .blasty-msg-row {
@@ -1066,7 +1079,7 @@
     's-ask-3':       { lights: 's-lights-pulse' },
     's-happy':       { flame: 's-flame-green',  noseSpin: true },
     's-working':     { flame: 's-flame-blue',   lights: 's-lights-pulse' },
-    's-celebrate':   { flame: 's-flame-green',  lights: 's-lights-flash', smoke: true },
+    's-celebrate':   { flame: 's-flame-green',  lights: 's-lights-flash', smoke: 's-smoke-3' },
     's-spin':        { flame: 's-flame-purple', noseSpin: true },
     's-tilt-left':   { eyes: 's-eyes-left' },
     's-tilt-right':  { eyes: 's-eyes-right' },
@@ -1098,7 +1111,7 @@
     const merged   = Object.assign({}, DEFAULT_ANIM[mood] || {}, spec);
     const extra = [
       merged.eyes, merged.flame, merged.lights,
-      merged.smoke    ? 's-smoke'     : '',
+      merged.smoke === true ? 's-smoke-3' : (merged.smoke || ''),
       merged.noseSpin ? 's-nose-spin' : ''
     ].filter(Boolean);
     const el = document.getElementById('pb-blasty');
