@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784608117083">
+  <link rel="stylesheet" href="global-style.css?v=1784608375366">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:1fr 200px; gap:24px; align-items:start; }
@@ -77,6 +77,20 @@
     #pb-mascot { display:inline-block; position:relative; }
     #pb-mascot svg { width:160px; height:auto; overflow:visible; }
     .prev-cap { font-size:12px; color:#9ca3af; margin-top:8px; min-height:16px; }
+
+    /* ── Mobile: full-width, no overflow ── */
+    @media (max-width:880px) {
+      body.admin-page .main-inner { padding: 10px 8px !important; }
+      .ose-tabs { flex-wrap:wrap; }
+      .ose-tab  { flex:1; text-align:center; }
+      .msg-row  { grid-template-columns:1fr !important; }
+      .anim-row { gap:6px; }
+      .asg select { max-width:100%; width:auto; }
+      .step-card, .step-head, .step-body,
+      .ob2-field-card, .ob2-field-head, .ob2-field-body {
+        max-width:100%; box-sizing:border-box;
+      }
+    }
   </style>
   <script type="module" src="./admin-guard.js"></script>
   <script src="blastybiz-menu.js?v=3"></script>
