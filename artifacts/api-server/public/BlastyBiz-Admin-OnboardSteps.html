@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784603536331">
+  <link rel="stylesheet" href="global-style.css?v=1784604045710">
   <style>
     body { visibility: hidden }
     .ose-wrap { display:grid; grid-template-columns:1fr 230px; gap:26px; align-items:start; }
@@ -28,9 +28,10 @@
     .msg-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
     @media (max-width:600px) { .msg-row { grid-template-columns:1fr; } }
     .fl { display:block; font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.07em; margin-bottom:3px; }
-    textarea.mta { width:100%; box-sizing:border-box; border:1.5px solid #e2e8f0; border-radius:7px; padding:7px 9px; font:13px/1.5 'DM Sans',sans-serif; color:#0f172a; resize:vertical; min-height:58px; }
+    textarea.mta { width:100%; box-sizing:border-box; border:1.5px solid #e2e8f0; border-radius:7px; padding:7px 9px; font:13px/1.5 'DM Sans',sans-serif; color:#0f172a !important; background:#ffffff !important; resize:vertical; min-height:58px; }
     textarea.mta:focus { border-color:#2563eb; outline:none; }
-    textarea.mta.def { background:#f8fafc; color:#94a3b8; }
+    textarea.mta.def { background:#f8fafc !important; color:#94a3b8 !important; }
+    .asg select { background:#ffffff !important; color:#0f172a !important; }
     .anim-row { display:flex; flex-wrap:wrap; gap:9px; margin-bottom:9px; }
     .asg label { display:block; font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px; }
     .asg select { border:1.5px solid #e2e8f0; border-radius:6px; padding:4px 7px; font:13px 'DM Sans',sans-serif; color:#0f172a; background:#fff; }
@@ -546,14 +547,14 @@ function renderSteps() {
         <textarea class="mta" id="msg-${s.key}" rows="3">${txt.replace(/</g,'&lt;')}</textarea>
         <span class="sts" id="sts-${s.key}" style="font-size:11px;display:block;min-height:16px;margin:3px 0 10px"></span>
         <div class="anim-row">
-          <div class="asg"><label>Mood</label><select id="am-${s.key}" onchange="window._oseAnimChange('${s.key}')">${sel(MOOD_OPTS,an.mood||'s-ask')}</select></div>
-          <div class="asg"><label>Flame</label><select id="af-${s.key}" onchange="window._oseAnimChange('${s.key}')">${sel(FLAME_OPTS,an.flame||'')}</select></div>
-          <div class="asg"><label>Lights</label><select id="al-${s.key}" onchange="window._oseAnimChange('${s.key}')">${sel(LIGHTS_OPTS,an.lights||'')}</select></div>
-          <div class="asg"><label>Eyes</label><select id="ae-${s.key}" onchange="window._oseAnimChange('${s.key}')">${sel(EYES_OPTS,an.eyes||'')}</select></div>
+          <div class="asg"><label>Mood</label><select id="am-${s.key}">${sel(MOOD_OPTS,an.mood||'s-ask')}</select></div>
+          <div class="asg"><label>Flame</label><select id="af-${s.key}">${sel(FLAME_OPTS,an.flame||'')}</select></div>
+          <div class="asg"><label>Lights</label><select id="al-${s.key}">${sel(LIGHTS_OPTS,an.lights||'')}</select></div>
+          <div class="asg"><label>Eyes</label><select id="ae-${s.key}">${sel(EYES_OPTS,an.eyes||'')}</select></div>
         </div>
         <div class="anim-chk">
-          <label><input type="checkbox" id="as-${s.key}"${an.smoke?' checked':''} onchange="window._oseAnimChange('${s.key}')"> 💨 Smoke</label>
-          <label><input type="checkbox" id="an-${s.key}"${an.noseSpin?' checked':''} onchange="window._oseAnimChange('${s.key}')"> 🌀 Nose spin</label>
+          <label><input type="checkbox" id="as-${s.key}"${an.smoke?' checked':''}> 💨 Smoke</label>
+          <label><input type="checkbox" id="an-${s.key}"${an.noseSpin?' checked':''}> 🌀 Nose spin</label>
         </div>
         <div class="card-acts">
           <button class="btn-prv" onclick="window._osePreview('${s.key}')">▶ Preview</button>
@@ -565,13 +566,22 @@ function renderSteps() {
 
   STEP_DEFS.forEach(s => {
     const ta = document.getElementById('msg-'+s.key);
-    if (!ta) return;
-    let timer;
-    ta.addEventListener('input', () => {
-      clearTimeout(timer);
-      const sts = document.getElementById('sts-'+s.key);
-      sts.style.color = '#94a3b8'; sts.textContent = 'Saving…';
-      timer = setTimeout(() => window._oseTextSave(s.key), 800);
+    if (ta) {
+      let timer;
+      ta.addEventListener('input', () => {
+        clearTimeout(timer);
+        const sts = document.getElementById('sts-'+s.key);
+        sts.style.color = '#94a3b8'; sts.textContent = 'Saving…';
+        timer = setTimeout(() => window._oseTextSave(s.key), 800);
+      });
+    }
+    ['am-','af-','al-','ae-'].forEach(pfx => {
+      const el = document.getElementById(pfx+s.key);
+      if (el) el.addEventListener('change', () => window._oseAnimChange(s.key));
+    });
+    ['as-','an-'].forEach(pfx => {
+      const el = document.getElementById(pfx+s.key);
+      if (el) el.addEventListener('change', () => window._oseAnimChange(s.key));
     });
   });
 }
