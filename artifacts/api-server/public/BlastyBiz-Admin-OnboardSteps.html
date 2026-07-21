@@ -6,22 +6,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784609532452">
+  <link rel="stylesheet" href="global-style.css?v=1784609880192">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
     @media (max-width:880px) {
       .ose-outer-grid { grid-template-columns:minmax(0,1fr); }
-      .ose-preview {
-        position:fixed; bottom:0; left:0; right:0;
-        z-index:500; background:#0d1f3c;
-        border-top:2px solid rgba(100,160,255,.18);
-        padding:10px 20px;
-        display:none; align-items:center; gap:16px;
-        justify-content:center;
-      }
-      .ose-preview #pb-mascot svg { width:56px !important; height:auto; }
-      .ose-preview .prev-lbl { display:none; }
+      .ose-preview { display:none; }
+      .card-mob-prev { background:#0d1f3c; border-radius:10px; margin-top:12px;
+        padding:16px; text-align:center; }
+      .card-mob-prev #pb-mascot { display:inline-block; }
+      .card-mob-prev #pb-mascot svg { width:80px !important; height:auto; }
+      .card-mob-prev .prev-cap { font-size:12px; color:#9ca3af; margin-top:6px; }
     }
     /* tabs */
     .ose-tabs { display:flex; gap:8px; margin-bottom:22px; }
@@ -282,13 +278,14 @@ function renderOb2AnimCards() {
           <button class="btn-prv" onclick="window._qfAnimPreview('${ev.key}')">▶ Preview</button>
           <span class="sts" id="ob2asts-${ev.key}"></span>
         </div>
+        <div class="card-mob-prev" id="cmp-${ev.key}" style="display:none"></div>
       </div>
     </div>`;
   }).join('');
 }
 
 window._qfAnimPreview = function(k) {
-  window._showMobilePreview();
+  window._showMobilePreview(k);
   const mood  = document.getElementById('oa2m-'+k).value;
   const flame = document.getElementById('oa2f-'+k).value;
   const lights= document.getElementById('oa2l-'+k).value;
@@ -440,6 +437,7 @@ function renderSteps() {
           <button class="btn-prv" onclick="window._osePreview('${s.key}')">▶ Preview</button>
           <span class="sts" id="sts-anim-${s.key}" style="font-size:11px"></span>
         </div>
+        <div class="card-mob-prev" id="cmp-${s.key}" style="display:none"></div>
       </div>
     </div>`;
   }).join('');
@@ -464,17 +462,23 @@ function renderSteps() {
 
 window._oseToggle = k => document.getElementById('sc-'+k).classList.toggle('open');
 
-window._showMobilePreview = function() {
+window._showMobilePreview = function(k) {
   if (window.innerWidth > 880) return;
-  const panel = document.querySelector('.ose-preview');
-  if (!panel) return;
-  panel.style.display = 'flex';
+  const mascot = document.getElementById('pb-mascot');
+  const slot   = document.getElementById('cmp-' + k);
+  if (!mascot || !slot) return;
+  // hide any currently open mobile preview
+  document.querySelectorAll('.card-mob-prev').forEach(function(el) {
+    el.style.display = 'none';
+  });
+  slot.appendChild(mascot);
+  slot.style.display = 'block';
   clearTimeout(window._previewTimer);
-  window._previewTimer = setTimeout(function() { panel.style.display = ''; }, 3000);
+  window._previewTimer = setTimeout(function() { slot.style.display = 'none'; }, 4000);
 };
 
 window._osePreview = function(k) {
-  window._showMobilePreview();
+  window._showMobilePreview(k);
   const mood  = document.getElementById('am-'+k).value;
   const flame = document.getElementById('af-'+k).value;
   const lights= document.getElementById('al-'+k).value;
