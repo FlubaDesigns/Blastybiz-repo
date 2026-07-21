@@ -63,10 +63,8 @@ Import `auth` and `db` from `./firebase-init-v2.js` only. Do NOT add separate fi
 
 ## Open questions for Dave
 
-1. **Test Console nav link** — should the Test Console (`/BlastyBiz-TestBlasty.html`) be linked in the site nav for admin accounts, or keep it URL-only?
-2. **Test business cleanup** — each "Full Test Run" creates a real business doc in Firestore. Should the Test Console have a button to delete the most recently created test business?
-3. **Multiple businesses** — when an agency user has multiple businesses, should there be a business switcher (e.g. in the dashboard header)? Currently `activeBusiness` is a single pointer on the user doc.
-4. **Story skip** — Profile's fork gives a choice: go to Story or skip straight to Create. If they skip, `aiContext` fields are blank. Should Blasty nudge them to fill Story later from the dashboard?
+1. **Multiple businesses** — when an agency user has multiple businesses, should there be a business switcher (e.g. in the dashboard header)? Currently `activeBusiness` is a single pointer on the user doc.
+2. **Story skip** — Profile's fork gives a choice: go to Story or skip straight to Create. If they skip, `aiContext` fields are blank. Should Blasty nudge them to fill Story later from the dashboard?
 
 ## User preferences
 

@@ -1,3 +1,28 @@
+function _revealAdminNav() {
+  (async function() {
+    try {
+      const { auth, db } = await import('./firebase-init-v2.js');
+      const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      await auth.authStateReady();
+      const user = auth.currentUser;
+      if (!user) return;
+      let isAdmin = user.email === 'info@blastybiz.com';
+      if (!isAdmin) {
+        try {
+          const snap = await getDoc(doc(db, 'config', 'admins'));
+          if (snap.exists()) isAdmin = (snap.data().emails || []).includes(user.email);
+        } catch(e) {}
+      }
+      if (isAdmin) {
+        var d = document.getElementById('header__nav-testconsole');
+        var m = document.getElementById('header__mobile-testconsole');
+        if (d) d.style.display = '';
+        if (m) m.style.display = '';
+      }
+    } catch(e) { /* not logged in or firebase not available */ }
+  })();
+}
+
 window.toggleMenu = function() {
   var m = document.getElementById('header__mobile-menu');
   if (m) m.classList.toggle('open');
@@ -39,6 +64,8 @@ document.addEventListener('DOMContentLoaded', function() {
         requestAnimationFrame(function() {
           requestAnimationFrame(_applyHeaderOffset);
         });
+        // Reveal Test Console link for admins
+        _revealAdminNav();
       }
     });
     obs.observe(injectEl, { childList: true, subtree: true });

@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="stylesheet" href="global-style.css?v=1784655809784"/>
+  <link rel="stylesheet" href="global-style.css?v=1784656858074"/>
   <title>BlastyBiz — Test Console</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <style>body{visibility:hidden}</style>
@@ -248,6 +248,19 @@
       <hr class="tc-sep"/>
 
       <div class="tc-section">
+        <div class="tc-section-label">Cleanup — test businesses</div>
+        <div class="tc-notice" style="margin-bottom:12px">
+          Each test run creates a real business doc. Delete extras here. Your <strong>active business</strong> is protected.
+        </div>
+        <div id="tc-biz-list">
+          <p style="color:var(--muted,#888);font-size:13px;margin:0">Loading…</p>
+        </div>
+        <button class="tc-btn tc-btn-secondary" style="margin-top:10px;font-size:12px" onclick="window._tcLoadBizList && window._tcLoadBizList()">↻ Refresh list</button>
+      </div>
+
+      <hr class="tc-sep"/>
+
+      <div class="tc-section">
         <div class="tc-section-label">Session state</div>
         <div class="tc-card">
           <div class="tc-card-head">
@@ -364,7 +377,7 @@ window._tcDenied = function() {
 
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, getDoc, collection, getDocs, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 await auth.authStateReady();
 const user = auth.currentUser;
@@ -382,7 +395,69 @@ if (!user || !user.emailVerified) {
     } catch(e) { console.error('[tc admin check]', e); }
   }
   if (isAdmin) {
+    // Get active business pointer
+    let activeBizId = null;
+    try {
+      const ud = await getDoc(doc(db, 'users', user.uid));
+      activeBizId = ud.exists() ? (ud.data().activeBusiness || null) : null;
+    } catch(e) {}
+
     window._tcReady();
+
+    // Business cleanup list
+    window._tcLoadBizList = async function() {
+      const el = document.getElementById('tc-biz-list');
+      if (!el) return;
+      el.innerHTML = '<p style="color:var(--muted,#888);font-size:13px;margin:0">Loading…</p>';
+      try {
+        const snap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
+        if (snap.empty) {
+          el.innerHTML = '<p style="color:var(--muted,#888);font-size:13px;margin:0">No businesses found.</p>';
+          return;
+        }
+        const bizzes = [];
+        snap.forEach(d => bizzes.push({ id: d.id, ...d.data() }));
+        bizzes.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        el.innerHTML = bizzes.map(b => {
+          const isActive = b.id === activeBizId;
+          const name = b.bizName || b.name || '(no name)';
+          const created = b.createdAt?.seconds
+            ? new Date(b.createdAt.seconds * 1000).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+            : '?';
+          return `<div class="tc-card" style="margin-bottom:8px" data-biz-id="${b.id}">
+            <div class="tc-card-head">
+              <div class="tc-card-info">
+                <h3>${name}${isActive ? ' <span class="tc-admin-badge" style="color:var(--green,#39ff14);border-color:rgba(57,255,20,.3)">Active</span>' : ''}</h3>
+                <p style="font-family:monospace;font-size:11px;margin-top:2px">${b.id} &nbsp;·&nbsp; ${created}</p>
+              </div>
+              ${isActive
+                ? '<span style="font-size:12px;color:var(--muted,#888);flex-shrink:0">Protected</span>'
+                : `<button class="tc-btn tc-btn-danger" onclick="window._tcDeleteBiz('${b.id}', this)">Delete</button>`
+              }
+            </div>
+          </div>`;
+        }).join('');
+      } catch(e) {
+        el.innerHTML = `<p style="color:#ff6060;font-size:13px;margin:0">Error: ${e.message}</p>`;
+      }
+    };
+
+    window._tcDeleteBiz = async function(bizId, btn) {
+      if (!confirm('Delete this business? This cannot be undone.')) return;
+      btn.disabled = true;
+      btn.textContent = '…';
+      try {
+        await deleteDoc(doc(db, 'users', user.uid, 'businesses', bizId));
+        btn.closest('[data-biz-id]').remove();
+      } catch(e) {
+        btn.disabled = false;
+        btn.textContent = 'Delete';
+        alert('Error: ' + e.message);
+      }
+    };
+
+    window._tcLoadBizList();
+
   } else {
     window._tcDenied();
   }
