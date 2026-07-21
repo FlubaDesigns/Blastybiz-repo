@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784605380874"/>
+  <link rel="stylesheet" href="global-style.css?v=1784606221144"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -193,7 +193,7 @@
     .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
 
     /* ── Blasty zone (right — desktop) ──────────────────────────── */
-    .pb-blasty-zone {
+    .pb-mascot-zone {
       flex-shrink: 0;
       width: 190px;
       order: 2;
@@ -203,9 +203,9 @@
       position: sticky;
       top: calc(var(--main-offset, 55px) + 20px);
     }
-    .pb-blasty { width: 160px; }
-    #blasty-svg { width: 100%; height: auto; overflow: visible; }
-    .pb-blasty-caption {
+    .pb-mascot { width: 160px; }
+    #mascot-svg { width: 100%; height: auto; overflow: visible; }
+    .pb-mascot-caption {
       font-size: 12px;
       color: var(--muted, #666);
       margin-top: 10px;
@@ -216,11 +216,11 @@
     }
 
     /* ── Blasty animations ──────────────────────────────────────── */
-    #blasty-svg {
+    #mascot-svg {
       transform-box: fill-box;
       transform-origin: bottom center;
     }
-    .pb-blasty.s-arrive #blasty-svg {
+    .pb-mascot.s-arrive #mascot-svg {
       animation: b-arrive .45s cubic-bezier(.34,1.56,.64,1) both;
     }
     @keyframes b-arrive {
@@ -229,7 +229,7 @@
     }
 
     /* Idle float — whole rocket */
-    #blasty-body {
+    #mascot-body {
       transform-box: fill-box;
       transform-origin: bottom center;
       animation: b-float 3.2s ease-in-out infinite;
@@ -252,20 +252,20 @@
 
     /* Mouth variants — default happy visible, rest hidden */
     .mouth-working, .mouth-celebrate, .mouth-ask { opacity: 0 !important; }
-    .pb-blasty.s-working  .mouth-happy    { opacity: 0 !important; }
-    .pb-blasty.s-working  .mouth-working  { opacity: 1 !important; }
-    .pb-blasty.s-celebrate .mouth-happy   { opacity: 0 !important; }
-    .pb-blasty.s-celebrate .mouth-celebrate { opacity: 1 !important; }
-    .pb-blasty.s-ask      .mouth-happy    { opacity: 0 !important; }
-    .pb-blasty.s-ask      .mouth-ask      { opacity: 1 !important; }
+    .pb-mascot.s-working  .mouth-happy    { opacity: 0 !important; }
+    .pb-mascot.s-working  .mouth-working  { opacity: 1 !important; }
+    .pb-mascot.s-celebrate .mouth-happy   { opacity: 0 !important; }
+    .pb-mascot.s-celebrate .mouth-celebrate { opacity: 1 !important; }
+    .pb-mascot.s-ask      .mouth-happy    { opacity: 0 !important; }
+    .pb-mascot.s-ask      .mouth-ask      { opacity: 1 !important; }
 
     /* Arms — all hidden by default, CSS shows per mood */
-    .blasty-arm { transition: opacity .25s ease; }
-    .pb-blasty.s-wave    .blasty-arm-wave  { opacity: 1 !important; }
-    .pb-blasty.s-working .blasty-arm-point { opacity: 1 !important; }
+    .mascot-arm { transition: opacity .25s ease; }
+    .pb-mascot.s-wave    .mascot-arm-wave  { opacity: 1 !important; }
+    .pb-mascot.s-working .mascot-arm-point { opacity: 1 !important; }
 
     /* ── s-wave ──────────────────────────────────────────────────── */
-    .pb-blasty.s-wave #blasty-body {
+    .pb-mascot.s-wave #mascot-body {
       animation: b-wave .55s ease-in-out 4, b-float 3.2s ease-in-out infinite 2.2s;
     }
     @keyframes b-wave {
@@ -273,11 +273,11 @@
       25%       { transform: rotate(-22deg) translateY(-8px); }
       65%       { transform: rotate(16deg)  translateY(-4px); }
     }
-    .pb-blasty.s-wave .pupil-group-l { transform: scale(1.1) translateY(-3px); }
-    .pb-blasty.s-wave .pupil-group-r { transform: scale(1.1) translateY(-3px); }
+    .pb-mascot.s-wave .pupil-group-l { transform: scale(1.1) translateY(-3px); }
+    .pb-mascot.s-wave .pupil-group-r { transform: scale(1.1) translateY(-3px); }
 
     /* ── s-happy ─────────────────────────────────────────────────── */
-    .pb-blasty.s-happy #blasty-body {
+    .pb-mascot.s-happy #mascot-body {
       animation: b-bounce .4s ease-in-out 3, b-float 3.2s ease-in-out infinite 1.2s;
     }
     @keyframes b-bounce {
@@ -287,20 +287,20 @@
       85%  { transform: translateY(4px)   scale(1.12,0.88); }
       100% { transform: translateY(0)     scale(1,1); }
     }
-    .pb-blasty.s-happy .pupil-group-l { transform: translateY(4px) scaleY(0.75); }
-    .pb-blasty.s-happy .pupil-group-r { transform: translateY(4px) scaleY(0.75); }
+    .pb-mascot.s-happy .pupil-group-l { transform: translateY(4px) scaleY(0.75); }
+    .pb-mascot.s-happy .pupil-group-r { transform: translateY(4px) scaleY(0.75); }
 
     /* ── s-ask ───────────────────────────────────────────────────── */
-    .pb-blasty.s-ask .pupil-group-l { transform: translateX(-6px) translateY(2px); transition: transform .3s ease; }
-    .pb-blasty.s-ask .pupil-group-r { transform: translateX(-6px) translateY(2px); transition: transform .3s ease; }
-    .pb-blasty.s-ask #blasty-body   { animation: b-lean 3s ease-in-out infinite; }
+    .pb-mascot.s-ask .pupil-group-l { transform: translateX(-6px) translateY(2px); transition: transform .3s ease; }
+    .pb-mascot.s-ask .pupil-group-r { transform: translateX(-6px) translateY(2px); transition: transform .3s ease; }
+    .pb-mascot.s-ask #mascot-body   { animation: b-lean 3s ease-in-out infinite; }
     @keyframes b-lean {
       0%, 100% { transform: translateY(0)    rotate(-9deg); }
       50%       { transform: translateY(-10px) rotate(-9deg); }
     }
 
     /* ── s-working ───────────────────────────────────────────────── */
-    .pb-blasty.s-working #blasty-body {
+    .pb-mascot.s-working #mascot-body {
       animation: b-work .65s ease-in-out infinite;
     }
     @keyframes b-work {
@@ -308,18 +308,18 @@
       25%       { transform: translateY(-9px) rotate(7deg); }
       75%       { transform: translateY(-4px) rotate(-8deg); }
     }
-    .pb-blasty.s-working .flame {
+    .pb-mascot.s-working .flame {
       animation: b-flame-work .32s ease-in-out infinite;
     }
     @keyframes b-flame-work {
       0%, 100% { transform: scaleY(1)   scaleX(1); }
       50%       { transform: scaleY(2.1) scaleX(0.65); }
     }
-    .pb-blasty.s-working .pupil-group-l { transform: translateY(5px); }
-    .pb-blasty.s-working .pupil-group-r { transform: translateY(5px); }
+    .pb-mascot.s-working .pupil-group-l { transform: translateY(5px); }
+    .pb-mascot.s-working .pupil-group-r { transform: translateY(5px); }
 
     /* ── s-celebrate ─────────────────────────────────────────────── */
-    .pb-blasty.s-celebrate #blasty-body {
+    .pb-mascot.s-celebrate #mascot-body {
       animation: b-celebrate .38s ease-in-out 5;
     }
     @keyframes b-celebrate {
@@ -327,7 +327,7 @@
       25%       { transform: translateY(-30px) scale(1.14) rotate(-8deg); }
       75%       { transform: translateY(-22px) scale(1.14) rotate(8deg); }
     }
-    .pb-blasty.s-celebrate .confetti > g {
+    .pb-mascot.s-celebrate .confetti > g {
       transform-box: fill-box;
       transform-origin: center;
       animation: confetti-burst 1.6s ease-out forwards;
@@ -342,18 +342,18 @@
     ══════════════════════════════════════════════════════════════ */
 
     /* ── Flame color system (CSS custom properties) ──────────────── */
-    .pb-blasty {
+    .pb-mascot {
       --flame-top:#ffdc2f; --flame-mid:#ff961f; --flame-bot:#ef3d10;
       --flamein-top:#fffbd7; --flamein-mid:#fff04c; --flamein-bot:#ffac20;
     }
-    .pb-blasty.s-flame-blue   { --flame-top:#b3e5fc; --flame-mid:#0288d1; --flame-bot:#01579b; --flamein-top:#e1f5fe; --flamein-mid:#4fc3f7; --flamein-bot:#0288d1; }
-    .pb-blasty.s-flame-green  { --flame-top:#b9f6ca; --flame-mid:#00c853; --flame-bot:#1b5e20; --flamein-top:#f1fff1; --flamein-mid:#69f0ae; --flamein-bot:#00c853; }
-    .pb-blasty.s-flame-red    { --flame-top:#ff8a80; --flame-mid:#ff1744; --flame-bot:#b71c1c; --flamein-top:#fff;    --flamein-mid:#ff8a80; --flamein-bot:#ff1744; }
-    .pb-blasty.s-flame-purple { --flame-top:#ea80fc; --flame-mid:#aa00ff; --flame-bot:#4a148c; --flamein-top:#fce4ff; --flamein-mid:#e040fb; --flamein-bot:#aa00ff; }
-    .pb-blasty.s-flame-white  { --flame-top:#ffffff; --flame-mid:#e0f7fa; --flame-bot:#b2ebf2; --flamein-top:#fff;    --flamein-mid:#fff;    --flamein-bot:#e0f7fa; }
+    .pb-mascot.s-flame-blue   { --flame-top:#b3e5fc; --flame-mid:#0288d1; --flame-bot:#01579b; --flamein-top:#e1f5fe; --flamein-mid:#4fc3f7; --flamein-bot:#0288d1; }
+    .pb-mascot.s-flame-green  { --flame-top:#b9f6ca; --flame-mid:#00c853; --flame-bot:#1b5e20; --flamein-top:#f1fff1; --flamein-mid:#69f0ae; --flamein-bot:#00c853; }
+    .pb-mascot.s-flame-red    { --flame-top:#ff8a80; --flame-mid:#ff1744; --flame-bot:#b71c1c; --flamein-top:#fff;    --flamein-mid:#ff8a80; --flamein-bot:#ff1744; }
+    .pb-mascot.s-flame-purple { --flame-top:#ea80fc; --flame-mid:#aa00ff; --flame-bot:#4a148c; --flamein-top:#fce4ff; --flamein-mid:#e040fb; --flamein-bot:#aa00ff; }
+    .pb-mascot.s-flame-white  { --flame-top:#ffffff; --flame-mid:#e0f7fa; --flame-bot:#b2ebf2; --flamein-top:#fff;    --flamein-mid:#fff;    --flamein-bot:#e0f7fa; }
 
     /* ── s-arrive-land: descend from above, settle with bounce ──── */
-    .pb-blasty.s-arrive-land #blasty-svg { animation: b-land .7s cubic-bezier(.22,1.4,.64,1) both; }
+    .pb-mascot.s-arrive-land #mascot-svg { animation: b-land .7s cubic-bezier(.22,1.4,.64,1) both; }
     @keyframes b-land {
       0%   { transform: translateY(-80px) scale(.8);   opacity: .2; }
       70%  { transform: translateY(8px)   scale(1.04); opacity: 1;  }
@@ -361,7 +361,7 @@
     }
 
     /* ── s-spin: full 360° and settle ───────────────────────────── */
-    .pb-blasty.s-spin #blasty-body {
+    .pb-mascot.s-spin #mascot-body {
       animation: b-spin-full 1s cubic-bezier(.34,1.56,.64,1) both,
                  b-float 3.2s ease-in-out infinite 1.05s;
     }
@@ -373,33 +373,33 @@
     }
 
     /* ── s-tilt-left / s-tilt-right ─────────────────────────────── */
-    .pb-blasty.s-tilt-left #blasty-body  { animation: b-tilt-l 3.2s ease-in-out infinite; }
+    .pb-mascot.s-tilt-left #mascot-body  { animation: b-tilt-l 3.2s ease-in-out infinite; }
     @keyframes b-tilt-l {
       0%,100% { transform: rotate(-8deg) translateY(0);    }
       50%      { transform: rotate(-8deg) translateY(-10px); }
     }
-    .pb-blasty.s-tilt-right #blasty-body { animation: b-tilt-r 3.2s ease-in-out infinite; }
+    .pb-mascot.s-tilt-right #mascot-body { animation: b-tilt-r 3.2s ease-in-out infinite; }
     @keyframes b-tilt-r {
       0%,100% { transform: rotate(8deg) translateY(0);    }
       50%      { transform: rotate(8deg) translateY(-10px); }
     }
 
     /* ── s-ask-2: lean right, look right ────────────────────────── */
-    .pb-blasty.s-ask-2 .pupil-group-l { transform: translateX(6px) translateY(-2px); }
-    .pb-blasty.s-ask-2 .pupil-group-r { transform: translateX(6px) translateY(-2px); }
-    .pb-blasty.s-ask-2 #blasty-body   { animation: b-lean-r 3s ease-in-out infinite; }
+    .pb-mascot.s-ask-2 .pupil-group-l { transform: translateX(6px) translateY(-2px); }
+    .pb-mascot.s-ask-2 .pupil-group-r { transform: translateX(6px) translateY(-2px); }
+    .pb-mascot.s-ask-2 #mascot-body   { animation: b-lean-r 3s ease-in-out infinite; }
     @keyframes b-lean-r {
       0%,100% { transform: translateY(0)    rotate(8deg); }
       50%      { transform: translateY(-9px) rotate(8deg); }
     }
     /* ── s-ask-3: look up, slow curious bob ─────────────────────── */
-    .pb-blasty.s-ask-3 .pupil-group-l { transform: translateY(-7px); }
-    .pb-blasty.s-ask-3 .pupil-group-r { transform: translateY(-7px); }
-    .pb-blasty.s-ask-3 #blasty-body   { animation: b-float 2.2s ease-in-out infinite; }
+    .pb-mascot.s-ask-3 .pupil-group-l { transform: translateY(-7px); }
+    .pb-mascot.s-ask-3 .pupil-group-r { transform: translateY(-7px); }
+    .pb-mascot.s-ask-3 #mascot-body   { animation: b-float 2.2s ease-in-out infinite; }
 
     /* ── s-wave-2: big enthusiastic wave ────────────────────────── */
-    .pb-blasty.s-wave-2 .blasty-arm-wave { opacity: 1 !important; }
-    .pb-blasty.s-wave-2 #blasty-body {
+    .pb-mascot.s-wave-2 .mascot-arm-wave { opacity: 1 !important; }
+    .pb-mascot.s-wave-2 #mascot-body {
       animation: b-wave-big .45s ease-in-out 5, b-float 3.2s ease-in-out infinite 2.25s;
     }
     @keyframes b-wave-big {
@@ -407,17 +407,17 @@
       25%      { transform: rotate(-28deg) translateY(-12px); }
       65%      { transform: rotate(20deg)  translateY(-6px);  }
     }
-    .pb-blasty.s-wave-2 .pupil-group-l { transform: scale(1.15) translateY(-4px); }
-    .pb-blasty.s-wave-2 .pupil-group-r { transform: scale(1.15) translateY(-4px); }
+    .pb-mascot.s-wave-2 .pupil-group-l { transform: scale(1.15) translateY(-4px); }
+    .pb-mascot.s-wave-2 .pupil-group-r { transform: scale(1.15) translateY(-4px); }
 
     /* ── Eye states ──────────────────────────────────────────────── */
-    .pb-blasty.s-eyes-up    .pupil-group-l, .pb-blasty.s-eyes-up    .pupil-group-r { transform: translateY(-9px); }
-    .pb-blasty.s-eyes-down  .pupil-group-l, .pb-blasty.s-eyes-down  .pupil-group-r { transform: translateY(8px);  }
-    .pb-blasty.s-eyes-left  .pupil-group-l, .pb-blasty.s-eyes-left  .pupil-group-r { transform: translateX(-9px); }
-    .pb-blasty.s-eyes-right .pupil-group-l, .pb-blasty.s-eyes-right .pupil-group-r { transform: translateX(9px);  }
+    .pb-mascot.s-eyes-up    .pupil-group-l, .pb-mascot.s-eyes-up    .pupil-group-r { transform: translateY(-9px); }
+    .pb-mascot.s-eyes-down  .pupil-group-l, .pb-mascot.s-eyes-down  .pupil-group-r { transform: translateY(8px);  }
+    .pb-mascot.s-eyes-left  .pupil-group-l, .pb-mascot.s-eyes-left  .pupil-group-r { transform: translateX(-9px); }
+    .pb-mascot.s-eyes-right .pupil-group-l, .pb-mascot.s-eyes-right .pupil-group-r { transform: translateX(9px);  }
 
-    .pb-blasty.s-eyes-roll .pupil-group-l,
-    .pb-blasty.s-eyes-roll .pupil-group-r { animation: b-eye-roll 1.4s ease-in-out 2 both; }
+    .pb-mascot.s-eyes-roll .pupil-group-l,
+    .pb-mascot.s-eyes-roll .pupil-group-r { animation: b-eye-roll 1.4s ease-in-out 2 both; }
     @keyframes b-eye-roll {
       0%   { transform: translate(0,0);     }
       20%  { transform: translate(8px,-4px);  }
@@ -425,8 +425,8 @@
       75%  { transform: translate(-8px,-4px); }
       100% { transform: translate(0,0);     }
     }
-    .pb-blasty.s-eyes-surprise .pupil-group-l,
-    .pb-blasty.s-eyes-surprise .pupil-group-r { animation: b-eye-surprise 1s ease both; }
+    .pb-mascot.s-eyes-surprise .pupil-group-l,
+    .pb-mascot.s-eyes-surprise .pupil-group-r { animation: b-eye-surprise 1s ease both; }
     @keyframes b-eye-surprise {
       0%   { transform: translateY(0);     }
       15%  { transform: translateY(-12px); }
@@ -435,81 +435,81 @@
     }
 
     /* ── Nose cone spin ──────────────────────────────────────────── */
-    .pb-blasty.s-nose-spin .blasty-nose { animation: b-nose-spin .7s cubic-bezier(.34,1.56,.64,1) 1 both; }
+    .pb-mascot.s-nose-spin .mascot-nose { animation: b-nose-spin .7s cubic-bezier(.34,1.56,.64,1) 1 both; }
     @keyframes b-nose-spin {
       0%   { transform: rotate(0deg);   }
       55%  { transform: rotate(210deg); }
       100% { transform: rotate(360deg); }
     }
     /* nose variants */
-    .pb-blasty.s-nose-spin-l .blasty-nose { animation:b-nose-spin-l 1.1s linear infinite; }
+    .pb-mascot.s-nose-spin-l .mascot-nose { animation:b-nose-spin-l 1.1s linear infinite; }
     @keyframes b-nose-spin-l { 0%{transform:rotate(0deg)} 100%{transform:rotate(-360deg)} }
-    .pb-blasty.s-nose-spin-r .blasty-nose { animation:b-nose-spin-r 1.1s linear infinite; }
+    .pb-mascot.s-nose-spin-r .mascot-nose { animation:b-nose-spin-r 1.1s linear infinite; }
     @keyframes b-nose-spin-r { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-    .pb-blasty.s-nose-pop-slow .blasty-nose { animation:b-nose-pop-slow 1.5s cubic-bezier(.34,1.56,.64,1) 1 both; }
+    .pb-mascot.s-nose-pop-slow .mascot-nose { animation:b-nose-pop-slow 1.5s cubic-bezier(.34,1.56,.64,1) 1 both; }
     @keyframes b-nose-pop-slow { 0%{transform:translateY(0)} 35%{transform:translateY(-32px)} 100%{transform:translateY(0)} }
-    .pb-blasty.s-nose-pop-fast .blasty-nose { animation:b-nose-pop-fast .45s cubic-bezier(.34,1.56,.64,1) 1 both; }
+    .pb-mascot.s-nose-pop-fast .mascot-nose { animation:b-nose-pop-fast .45s cubic-bezier(.34,1.56,.64,1) 1 both; }
     @keyframes b-nose-pop-fast { 0%{transform:translateY(0)} 40%{transform:translateY(-22px)} 100%{transform:translateY(0)} }
 
     /* ── Nose beacon light ───────────────────────────────────────── */
-    .pb-blasty.s-light-nose #blasty-nose-light { opacity:.9; animation: b-beacon 1.8s ease-in-out infinite; }
+    .pb-mascot.s-light-nose #mascot-nose-light { opacity:.9; animation: b-beacon 1.8s ease-in-out infinite; }
     @keyframes b-beacon {
       0%,75%,100% { opacity: .9; }
       40%          { opacity: .1; }
     }
 
     /* ── Waist lights ────────────────────────────────────────────── */
-    .pb-blasty.s-lights-pulse .w-light { animation: b-light-pulse 1.1s ease-in-out infinite; }
+    .pb-mascot.s-lights-pulse .w-light { animation: b-light-pulse 1.1s ease-in-out infinite; }
     @keyframes b-light-pulse {
       0%,100% { opacity: .9;  }
       50%      { opacity: .15; }
     }
-    .pb-blasty.s-lights-sequence .w-light:nth-child(1) { animation: b-light-seq 1.4s 0.0s ease-in-out infinite; }
-    .pb-blasty.s-lights-sequence .w-light:nth-child(2) { animation: b-light-seq 1.4s 0.2s ease-in-out infinite; }
-    .pb-blasty.s-lights-sequence .w-light:nth-child(3) { animation: b-light-seq 1.4s 0.4s ease-in-out infinite; }
-    .pb-blasty.s-lights-sequence .w-light:nth-child(4) { animation: b-light-seq 1.4s 0.6s ease-in-out infinite; }
-    .pb-blasty.s-lights-sequence .w-light:nth-child(5) { animation: b-light-seq 1.4s 0.8s ease-in-out infinite; }
-    .pb-blasty.s-lights-sequence .w-light:nth-child(6) { animation: b-light-seq 1.4s 1.0s ease-in-out infinite; }
-    .pb-blasty.s-lights-sequence .w-light:nth-child(7) { animation: b-light-seq 1.4s 1.2s ease-in-out infinite; }
+    .pb-mascot.s-lights-sequence .w-light:nth-child(1) { animation: b-light-seq 1.4s 0.0s ease-in-out infinite; }
+    .pb-mascot.s-lights-sequence .w-light:nth-child(2) { animation: b-light-seq 1.4s 0.2s ease-in-out infinite; }
+    .pb-mascot.s-lights-sequence .w-light:nth-child(3) { animation: b-light-seq 1.4s 0.4s ease-in-out infinite; }
+    .pb-mascot.s-lights-sequence .w-light:nth-child(4) { animation: b-light-seq 1.4s 0.6s ease-in-out infinite; }
+    .pb-mascot.s-lights-sequence .w-light:nth-child(5) { animation: b-light-seq 1.4s 0.8s ease-in-out infinite; }
+    .pb-mascot.s-lights-sequence .w-light:nth-child(6) { animation: b-light-seq 1.4s 1.0s ease-in-out infinite; }
+    .pb-mascot.s-lights-sequence .w-light:nth-child(7) { animation: b-light-seq 1.4s 1.2s ease-in-out infinite; }
     @keyframes b-light-seq {
       0%,100% { opacity: .1; }
       50%      { opacity: 1;  }
     }
-    .pb-blasty.s-lights-flash .w-light { animation: b-light-flash .28s ease-in-out 6; }
+    .pb-mascot.s-lights-flash .w-light { animation: b-light-flash .28s ease-in-out 6; }
     @keyframes b-light-flash {
       0%,100% { opacity: 0; }
       50%      { opacity: 1; }
     }
 
     /* ── Smoke puff ──────────────────────────────────────────────── */
-    .pb-blasty.s-smoke .smoke-puff {
+    .pb-mascot.s-smoke .smoke-puff {
       animation: b-smoke 1.4s ease-out forwards;
       transform-box: fill-box; transform-origin: center;
     }
-    .pb-blasty.s-smoke .smoke-puff:nth-child(1) { animation-delay:  0s; }
-    .pb-blasty.s-smoke .smoke-puff:nth-child(2) { animation-delay: .18s; }
-    .pb-blasty.s-smoke .smoke-puff:nth-child(3) { animation-delay: .36s; }
+    .pb-mascot.s-smoke .smoke-puff:nth-child(1) { animation-delay:  0s; }
+    .pb-mascot.s-smoke .smoke-puff:nth-child(2) { animation-delay: .18s; }
+    .pb-mascot.s-smoke .smoke-puff:nth-child(3) { animation-delay: .36s; }
     @keyframes b-smoke {
       0%   { opacity: .7; transform: scale(.15) translateY(0);    }
       35%  { opacity: .5; transform: scale(1.5)  translateY(-20px); }
       100% { opacity: 0;  transform: scale(2.8)  translateY(-55px); }
     }
     /* smoke variants */
-    .pb-blasty.s-smoke-sm .smoke-puff:nth-child(1) { animation:b-smoke-sm 1.2s ease-out forwards; transform-box:fill-box; transform-origin:center; }
-    .pb-blasty.s-smoke-sm .smoke-puff:nth-child(2), .pb-blasty.s-smoke-sm .smoke-puff:nth-child(3) { animation:none; }
+    .pb-mascot.s-smoke-sm .smoke-puff:nth-child(1) { animation:b-smoke-sm 1.2s ease-out forwards; transform-box:fill-box; transform-origin:center; }
+    .pb-mascot.s-smoke-sm .smoke-puff:nth-child(2), .pb-mascot.s-smoke-sm .smoke-puff:nth-child(3) { animation:none; }
     @keyframes b-smoke-sm { 0%{opacity:.7;transform:scale(.15) translateY(0)} 40%{opacity:.5;transform:scale(.9) translateY(-12px)} 100%{opacity:0;transform:scale(1.6) translateY(-30px)} }
-    .pb-blasty.s-smoke-lg .smoke-puff:nth-child(1) { animation:b-smoke-lg 1.9s ease-out forwards; transform-box:fill-box; transform-origin:center; }
-    .pb-blasty.s-smoke-lg .smoke-puff:nth-child(2), .pb-blasty.s-smoke-lg .smoke-puff:nth-child(3) { animation:none; }
+    .pb-mascot.s-smoke-lg .smoke-puff:nth-child(1) { animation:b-smoke-lg 1.9s ease-out forwards; transform-box:fill-box; transform-origin:center; }
+    .pb-mascot.s-smoke-lg .smoke-puff:nth-child(2), .pb-mascot.s-smoke-lg .smoke-puff:nth-child(3) { animation:none; }
     @keyframes b-smoke-lg { 0%{opacity:.85;transform:scale(.15) translateY(0)} 30%{opacity:.6;transform:scale(2.2) translateY(-22px)} 100%{opacity:0;transform:scale(4.2) translateY(-65px)} }
-    .pb-blasty.s-smoke-2 .smoke-puff:nth-child(1) { animation:b-smoke 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; animation-delay:0s; }
-    .pb-blasty.s-smoke-2 .smoke-puff:nth-child(2) { animation:b-smoke 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; animation-delay:.18s; }
-    .pb-blasty.s-smoke-3 .smoke-puff { animation:b-smoke 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; }
-    .pb-blasty.s-smoke-3 .smoke-puff:nth-child(1){animation-delay:0s}
-    .pb-blasty.s-smoke-3 .smoke-puff:nth-child(2){animation-delay:.18s}
-    .pb-blasty.s-smoke-3 .smoke-puff:nth-child(3){animation-delay:.36s}
+    .pb-mascot.s-smoke-2 .smoke-puff:nth-child(1) { animation:b-smoke 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; animation-delay:0s; }
+    .pb-mascot.s-smoke-2 .smoke-puff:nth-child(2) { animation:b-smoke 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; animation-delay:.18s; }
+    .pb-mascot.s-smoke-3 .smoke-puff { animation:b-smoke 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; }
+    .pb-mascot.s-smoke-3 .smoke-puff:nth-child(1){animation-delay:0s}
+    .pb-mascot.s-smoke-3 .smoke-puff:nth-child(2){animation-delay:.18s}
+    .pb-mascot.s-smoke-3 .smoke-puff:nth-child(3){animation-delay:.36s}
 
     /* ── Per-message mini Blasty avatar ─────────────────────────── */
-    .blasty-msg-row {
+    .mascot-msg-row {
       display: flex;
       align-items: flex-end;
       align-self: flex-start;   /* LEFT-align — Blasty messages are "incoming" */
@@ -517,14 +517,14 @@
       margin-bottom: 4px;
       max-width: 88%;
     }
-    .blasty-msg-row .bubble-blasty {
+    .mascot-msg-row .bubble-blasty {
       flex: 1;
       min-width: 0;
       max-width: 100%;
       align-self: auto;
     }
     /* Speech bubble tail — shadow layer (slightly larger, behind) */
-    .blasty-msg-row .bubble-blasty::before {
+    .mascot-msg-row .bubble-blasty::before {
       content: '';
       position: absolute;
       left: -15px;
@@ -536,7 +536,7 @@
       border-right: 16px solid rgba(0,0,0,0.22);
     }
     /* Speech bubble tail — bright white layer (on top) */
-    .blasty-msg-row .bubble-blasty::after {
+    .mascot-msg-row .bubble-blasty::after {
       content: '';
       position: absolute;
       left: -11px;
@@ -547,11 +547,11 @@
       border-bottom: 9px solid transparent;
       border-right: 13px solid #f0f5ff;
     }
-    .blasty-msg-avatar {
+    .mascot-msg-avatar {
       width: 48px;
       flex-shrink: 0;
     }
-    .blasty-msg-avatar svg { width: 48px; height: auto; display: block; overflow: visible; }
+    .mascot-msg-avatar svg { width: 48px; height: auto; display: block; overflow: visible; }
 
     /* ── Choice buttons ─────────────────────────────────────────── */
     .ob2-choices {
@@ -619,7 +619,7 @@
         padding: 28px 24px 80px;
         gap: 0;
       }
-      .pb-blasty-zone { display: none; }   /* mini per-bubble Blasty handles this below */
+      .pb-mascot-zone { display: none; }   /* mini per-bubble Blasty handles this below */
     }
 
     /* ── Mobile (< 580px) ───────────────────────────────────────── */
@@ -631,7 +631,7 @@
       .pb-tagline { margin-bottom: 14px; font-size: 13px; }
       .bubble-blasty,
       .bubble-user { max-width: 96%; font-size: 14px; }
-      .blasty-msg-row { max-width: 96%; }
+      .mascot-msg-row { max-width: 96%; }
     }
   </style>
 </head>
@@ -649,9 +649,9 @@
     </div>
 
     <!-- ── Blasty (right) ────────────────────────────────────── -->
-    <div class="pb-blasty-zone" id="pb-blasty-zone">
-      <div class="pb-blasty s-ask" id="pb-blasty">
-        <svg id="blasty-svg" viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg">
+    <div class="pb-mascot-zone" id="pb-mascot-zone">
+      <div class="pb-mascot s-ask" id="pb-mascot">
+        <svg id="mascot-svg" viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="ob2-bodyFill" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0" stop-color="#ffffff"/><stop offset=".48" stop-color="#f8fbff"/><stop offset="1" stop-color="#dbe6f2"/>
@@ -684,7 +684,7 @@
           </defs>
 
           <!-- Confetti effects — burst on s-celebrate -->
-          <g class="confetti" id="blasty-effects">
+          <g class="confetti" id="mascot-effects">
             <g fill="none" stroke="#76b8ff" stroke-width="7" stroke-linecap="round" opacity="0"><path d="M64 272 Q48 294 61 319"/><path d="M47 260 Q24 292 43 329"/></g>
             <g fill="none" stroke="#76b8ff" stroke-width="7" stroke-linecap="round" opacity="0"><path d="M296 272 Q312 294 299 319"/><path d="M313 260 Q336 292 317 329"/></g>
             <g opacity="0"><path d="M53 102 l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#ffd12f"/><path d="M305 94 l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#62dd43"/><circle cx="67" cy="164" r="5" fill="#ff5a4f"/><circle cx="300" cy="168" r="5" fill="#ff9f1c"/></g>
@@ -695,10 +695,10 @@
           <ellipse cx="180" cy="434" rx="72" ry="13" fill="#000" opacity=".18"/>
 
           <!-- Whole rocket — floats via CSS -->
-          <g id="blasty-body">
+          <g id="mascot-body">
 
             <!-- Exhaust / flame -->
-            <g id="blasty-exhaust" class="flame">
+            <g id="mascot-exhaust" class="flame">
               <path d="M180 354 C213 385 207 419 180 446 C153 419 147 385 180 354Z" fill="url(#ob2-flameOut)" stroke="#102957" stroke-width="8" stroke-linejoin="round"/>
               <path d="M180 368 C197 389 194 411 180 428 C166 411 163 389 180 368Z" fill="url(#ob2-flameIn)"/>
             </g>
@@ -718,10 +718,10 @@
               <path d="M105 283 C132 298 156 304 180 304 C204 304 228 298 255 283" fill="none" stroke="#b3ff70" stroke-width="5" opacity=".8"/>
             </g>
             <!-- Nose cone (wrapped for independent spin) -->
-            <g id="blasty-nose" class="blasty-nose" style="transform-box:fill-box;transform-origin:180px 100px">
+            <g id="mascot-nose" class="mascot-nose" style="transform-box:fill-box;transform-origin:180px 100px">
               <path d="M180 42 C151 64 129 88 113 116 C137 105 157 100 180 100 C203 100 223 105 247 116 C231 88 209 64 180 42Z" fill="url(#ob2-redFill)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>
               <path d="M205 56 C220 72 229 85 236 102" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity=".9"/>
-              <circle id="blasty-nose-light" cx="180" cy="50" r="8" fill="#ffdc2f" opacity="0"/>
+              <circle id="mascot-nose-light" cx="180" cy="50" r="8" fill="#ffdc2f" opacity="0"/>
             </g>
 
             <!-- Face -->
@@ -758,7 +758,7 @@
               <path class="mouth-ask" d="M163 260 Q180 268 197 260" fill="none" stroke="#102957" stroke-width="8" stroke-linecap="round"/>
             </g>
             <!-- Green band B-badge -->
-            <g id="blasty-badge">
+            <g id="mascot-badge">
               <circle cx="180" cy="316" r="29" fill="#102957"/>
               <circle cx="180" cy="316" r="23" fill="url(#ob2-greenFill)" stroke="#b9ff78" stroke-width="4"/>
               <path d="M169 299 H183 C198 299 202 314 192 320 C202 325 198 337 183 337 H169Z" fill="#fff"/>
@@ -766,7 +766,7 @@
             </g>
 
             <!-- Waist lights — CSS animates per mood -->
-            <g id="blasty-lights-waist">
+            <g id="mascot-lights-waist">
               <circle class="w-light" cx="122" cy="289" r="5" fill="#39ff14" opacity="0"/>
               <circle class="w-light" cx="140" cy="296" r="5" fill="#39ff14" opacity="0"/>
               <circle class="w-light" cx="160" cy="300" r="5" fill="#39ff14" opacity="0"/>
@@ -777,8 +777,8 @@
             </g>
 
             <!-- Arms — CSS reveals per mood -->
-            <g id="blasty-arms">
-              <g class="blasty-arm blasty-arm-wave" opacity="0">
+            <g id="mascot-arms">
+              <g class="mascot-arm mascot-arm-wave" opacity="0">
                 <path d="M113 261 C84 253 73 229 82 207" fill="none" stroke="#102957" stroke-width="19" stroke-linecap="round"/>
                 <path d="M113 261 C84 253 73 229 82 207" fill="none" stroke="#f8fbff" stroke-width="11" stroke-linecap="round"/>
                 <g transform="translate(78 199) rotate(-18)">
@@ -787,7 +787,7 @@
                   <path d="M-12 -7 L-22 -22 M-4 -13 L-7 -31 M5 -13 L10 -31 M12 -8 L23 -22" fill="none" stroke="#102957" stroke-width="4" stroke-linecap="round"/>
                 </g>
               </g>
-              <g class="blasty-arm blasty-arm-point" opacity="0">
+              <g class="mascot-arm mascot-arm-point" opacity="0">
                 <path d="M247 259 C277 250 292 235 307 220" fill="none" stroke="#102957" stroke-width="19" stroke-linecap="round"/>
                 <path d="M247 259 C277 250 292 235 307 220" fill="none" stroke="#f8fbff" stroke-width="11" stroke-linecap="round"/>
                 <g transform="translate(311 216) rotate(-20)">
@@ -798,17 +798,17 @@
               </g>
             </g>
 
-          </g><!-- end #blasty-body -->
+          </g><!-- end #mascot-body -->
 
           <!-- Smoke puffs — outside float group so they settle independently -->
-          <g id="blasty-smoke">
+          <g id="mascot-smoke">
             <ellipse class="smoke-puff" cx="180" cy="415" rx="2" ry="2" fill="#c8c8c8" opacity="0"/>
             <ellipse class="smoke-puff" cx="158" cy="428" rx="2" ry="2" fill="#b8b8b8" opacity="0"/>
             <ellipse class="smoke-puff" cx="202" cy="422" rx="2" ry="2" fill="#d0d0d0" opacity="0"/>
           </g>
         </svg>
       </div>
-      <div class="pb-blasty-caption" id="pb-blasty-caption"></div>
+      <div class="pb-mascot-caption" id="pb-mascot-caption"></div>
     </div>
 
   </div>
@@ -1123,26 +1123,26 @@
       merged.smoke === true ? 's-smoke-3' : (merged.smoke || ''),
       merged.noseSpin === true ? 's-nose-spin-r' : (merged.noseSpin || '')
     ].filter(Boolean);
-    const el = document.getElementById('pb-blasty');
-    el.className = 'pb-blasty s-arrive';
+    const el = document.getElementById('pb-mascot');
+    el.className = 'pb-mascot s-arrive';
     void el.offsetWidth;
-    el.className = ['pb-blasty', 's-arrive', mood, ...extra].join(' ');
+    el.className = ['pb-mascot', 's-arrive', mood, ...extra].join(' ');
     setTimeout(() => {
       if (el.className.includes(mood))
-        el.className = ['pb-blasty', mood, ...extra].join(' ');
+        el.className = ['pb-mascot', mood, ...extra].join(' ');
     }, 500);
-    const cap = document.getElementById('pb-blasty-caption');
+    const cap = document.getElementById('pb-mascot-caption');
     if (cap) cap.textContent = MOOD_CAPTIONS[mood] || '';
   }
 
   function setPosition(pos) {
-    const zone = document.getElementById('pb-blasty-zone');
+    const zone = document.getElementById('pb-mascot-zone');
     if (!zone) return;
-    zone.classList.remove('blasty-pos-left', 'blasty-pos-right');
-    if (pos) zone.classList.add('blasty-pos-' + pos);
+    zone.classList.remove('mascot-pos-left', 'mascot-pos-right');
+    if (pos) zone.classList.add('mascot-pos-' + pos);
   }
 
-  function _miniBlastySVG(mood) {
+  function _miniMascotSVG(mood) {
     const py = { 's-ask': 204, 's-working': 207, 's-wave': 198, 's-happy': 205, 's-celebrate': 198 }[mood] || 202;
     return `<svg viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg">
       <path d="M180 354 C213 385 207 419 180 446 C153 419 147 385 180 354Z" fill="#ff8c1a"/>
@@ -1165,15 +1165,15 @@
     </svg>`;
   }
 
-  function addBlastyBubble(text) {
+  function addMascotBubble(text) {
     const thread = document.getElementById('pb-thread');
-    const currentMood = (document.getElementById('pb-blasty') || {}).className || '';
+    const currentMood = (document.getElementById('pb-mascot') || {}).className || '';
     const mood = ['s-celebrate','s-working','s-wave-2','s-wave','s-happy','s-ask-2','s-ask-3','s-ask','s-spin','s-tilt-left','s-tilt-right'].find(m => currentMood.includes(m)) || 's-ask';
     const row = document.createElement('div');
-    row.className = 'blasty-msg-row';
+    row.className = 'mascot-msg-row';
     const avatar = document.createElement('div');
-    avatar.className = 'blasty-msg-avatar';
-    avatar.innerHTML = _miniBlastySVG(mood);
+    avatar.className = 'mascot-msg-avatar';
+    avatar.innerHTML = _miniMascotSVG(mood);
     const el = document.createElement('div');
     el.className = 'bubble-blasty';
     el.innerHTML = text;
@@ -1284,7 +1284,7 @@
     const delay = step === 0 ? 700 : 440;
     setTimeout(() => {
       const msg = s.blastyMsgFn ? s.blastyMsgFn(answers) : s.blastyMsg;
-      addBlastyBubble(msg);
+      addMascotBubble(msg);
       setTimeout(() => {
         renderInput(s);
         /* ── AI-suggest: fire fetch after bubble renders ── */
@@ -1296,7 +1296,7 @@
               /* Blasty states the category confidently, then user confirms or fixes */
               setMood('s-happy');
               setTimeout(() => {
-                addBlastyBubble('The best category for ' + answers.bizName + ' on the platforms is <strong>' + suggestion + '</strong> — does that sound right?');
+                addMascotBubble('The best category for ' + answers.bizName + ' on the platforms is <strong>' + suggestion + '</strong> — does that sound right?');
                 const safe = suggestion.replace(/'/g, "\\'");
                 wrap.innerHTML =
                   '<div class="ob2-choices">'
@@ -1374,14 +1374,14 @@
     setMood('s-working');
     setPosition('right');
     setTimeout(() => {
-      addBlastyBubble("On it! Saving everything and firing up your first blast... 🚀");
+      addMascotBubble("On it! Saving everything and firing up your first blast... 🚀");
     }, 440);
     try {
       const { bizId, campId } = await window._ob2Save(answers, toggles);
       // #2 Post-onboarding summary — show "Here's what we built" before redirect
       const safeBizName = (answers.bizName || 'Your business').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       setTimeout(() => {
-        addBlastyBubble(
+        addMascotBubble(
           "Here's what we just built: <strong>" + safeBizName + "</strong> is set up with your first campaign ready to go. " +
           "AI is about to generate your content — let's launch! 🚀"
         );
@@ -1391,7 +1391,7 @@
       }, 600);
     } catch (e) {
       console.error('[ob2 save]', e);
-      addBlastyBubble("Something went wrong saving — let's try again.");
+      addMascotBubble("Something went wrong saving — let's try again.");
       setMood('s-ask');
       const retryBtn = document.createElement('button');
       retryBtn.textContent = '↩ Try again';
@@ -1406,7 +1406,7 @@
     setMood('s-wave');
     if (window._ob2EditBizId) {
       setTimeout(() => {
-        addBlastyBubble("Welcome back! Let's update your business profile. I'll walk through each step — just edit anything that's changed. 👋");
+        addMascotBubble("Welcome back! Let's update your business profile. I'll walk through each step — just edit anything that's changed. 👋");
         setTimeout(showStep, 1400);
       }, 600);
     } else {

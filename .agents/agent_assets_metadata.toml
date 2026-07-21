@@ -227,3 +227,9 @@ id = "M-6eEXlsdidATFsltzV-c"
 uri = "file://download/AnimEngine.md"
 type = "text"
 title = "AnimEngine.md"
+
+[[outputs]]
+id = "aGjtXC3rpJ74aaByq1Nrl"
+uri = "file://mascot/README.md"
+type = "text"
+title = "Mascot README"

@@ -9,6 +9,10 @@ Local business marketing distribution tool. Business owner fills out one form, A
 - `npx firebase-tools deploy --only firestore:rules` — deploy Firestore rules
 - `npx firebase-tools deploy --only functions` — deploy Cloud Functions
 
+## Mascot Component
+
+See `mascot/README.md` for the full guide — SVG anatomy, animation class reference, composition examples, and changelog.
+
 ## Stack
 
 - Static HTML/CSS/JS — no React, no Vite, no build step for the frontend

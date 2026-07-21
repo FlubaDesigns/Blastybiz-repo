@@ -18,29 +18,29 @@
   /* ── Header bar with mini Blasty ──────────────────── */
   .cb-header { background:#0a1409; border-bottom:1px solid var(--border); padding:14px 20px; display:flex; align-items:center; gap:16px; position:sticky; top:0; z-index:50; }
   .cb-header-logo { font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--green); letter-spacing:1px; text-decoration:none; flex-shrink:0; }
-  .cb-blasty-mini { flex-shrink:0; position:relative; }
-  .cb-blasty-mini svg { width:52px; height:auto; overflow:visible; }
+  .cb-mascot-mini { flex-shrink:0; position:relative; }
+  .cb-mascot-mini svg { width:52px; height:auto; overflow:visible; }
   .cb-header-msg { font-size:14px; color:var(--text); flex:1; }
   .cb-header-msg strong { color:var(--green); }
 
   /* ── Blasty animation classes ──────────────────────── */
-  .cb-blasty-mini { --flame-top:#ffdc2f; --flame-mid:#ff961f; --flame-bot:#ef3d10; --flamein-top:#fffbd7; --flamein-mid:#fff04c; --flamein-bot:#ffac20; }
-  .cb-blasty-mini #cb-body { transform-box:fill-box; transform-origin:center 60%; animation:cb-float 3.2s ease-in-out infinite; }
+  .cb-mascot-mini { --flame-top:#ffdc2f; --flame-mid:#ff961f; --flame-bot:#ef3d10; --flamein-top:#fffbd7; --flamein-mid:#fff04c; --flamein-bot:#ffac20; }
+  .cb-mascot-mini #cb-body { transform-box:fill-box; transform-origin:center 60%; animation:cb-float 3.2s ease-in-out infinite; }
   @keyframes cb-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
-  .cb-blasty-mini.s-wave #cb-body { animation:cb-wave .5s ease-in-out 3,cb-float 3.2s ease-in-out infinite 1.6s; }
+  .cb-mascot-mini.s-wave #cb-body { animation:cb-wave .5s ease-in-out 3,cb-float 3.2s ease-in-out infinite 1.6s; }
   @keyframes cb-wave { 0%,100%{transform:rotate(0deg) translateY(0)} 25%{transform:rotate(-20deg) translateY(-5px)} 65%{transform:rotate(12deg) translateY(-3px)} }
-  .cb-blasty-mini.s-working #cb-body { animation:cb-float 2s ease-in-out infinite; }
-  .cb-blasty-mini.s-celebrate #cb-body { animation:cb-cel .38s ease-in-out 5; }
+  .cb-mascot-mini.s-working #cb-body { animation:cb-float 2s ease-in-out infinite; }
+  .cb-mascot-mini.s-celebrate #cb-body { animation:cb-cel .38s ease-in-out 5; }
   @keyframes cb-cel { 0%,100%{transform:translateY(0) scale(1) rotate(0deg)} 25%{transform:translateY(-12px) scale(1.1) rotate(-8deg)} 75%{transform:translateY(-9px) scale(1.1) rotate(8deg)} }
-  .cb-blasty-mini.s-flame-blue { --flame-top:#b3e5fc; --flame-mid:#0288d1; --flame-bot:#01579b; --flamein-top:#e1f5fe; --flamein-mid:#4fc3f7; --flamein-bot:#0288d1; }
-  .cb-blasty-mini.s-flame-green { --flame-top:#b9f6ca; --flame-mid:#00c853; --flame-bot:#1b5e20; --flamein-top:#f1fff1; --flamein-mid:#69f0ae; --flamein-bot:#00c853; }
-  .cb-blasty-mini.s-lights-pulse .cb-wl { animation:cb-lp 1.1s ease-in-out infinite; }
+  .cb-mascot-mini.s-flame-blue { --flame-top:#b3e5fc; --flame-mid:#0288d1; --flame-bot:#01579b; --flamein-top:#e1f5fe; --flamein-mid:#4fc3f7; --flamein-bot:#0288d1; }
+  .cb-mascot-mini.s-flame-green { --flame-top:#b9f6ca; --flame-mid:#00c853; --flame-bot:#1b5e20; --flamein-top:#f1fff1; --flamein-mid:#69f0ae; --flamein-bot:#00c853; }
+  .cb-mascot-mini.s-lights-pulse .cb-wl { animation:cb-lp 1.1s ease-in-out infinite; }
   @keyframes cb-lp { 0%,100%{opacity:.9} 50%{opacity:.1} }
-  .cb-blasty-mini.s-lights-flash .cb-wl { animation:cb-lf .28s ease-in-out 6; }
+  .cb-mascot-mini.s-lights-flash .cb-wl { animation:cb-lf .28s ease-in-out 6; }
   @keyframes cb-lf { 0%,100%{opacity:0} 50%{opacity:1} }
-  .cb-blasty-mini.s-smoke .cb-sp { animation:cb-sm 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; }
-  .cb-blasty-mini.s-smoke .cb-sp:nth-child(1){animation-delay:0s}
-  .cb-blasty-mini.s-smoke .cb-sp:nth-child(2){animation-delay:.18s}
+  .cb-mascot-mini.s-smoke .cb-sp { animation:cb-sm 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; }
+  .cb-mascot-mini.s-smoke .cb-sp:nth-child(1){animation-delay:0s}
+  .cb-mascot-mini.s-smoke .cb-sp:nth-child(2){animation-delay:.18s}
   @keyframes cb-sm { 0%{opacity:.6;transform:scale(.2) translateY(0)} 100%{opacity:0;transform:scale(2.5) translateY(-30px)} }
 
   /* ── Page content ──────────────────────────────────── */
@@ -100,7 +100,7 @@
 
 <header class="cb-header">
   <a class="cb-header-logo" href="BlastyBiz.html">BlastyBiz</a>
-  <div class="cb-blasty-mini s-wave" id="cb-blasty">
+  <div class="cb-mascot-mini s-wave" id="cb-mascot">
     <svg viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="cb-bf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#dce9ff"/><stop offset=".5" stop-color="#b3c8f8"/><stop offset="1" stop-color="#7ea4f0"/></linearGradient>
@@ -326,7 +326,7 @@
   </div>
 
   <div class="cb-success" id="cb-success" style="display:none">
-    <div id="cb-success-blasty" style="display:inline-block;margin-bottom:16px"></div>
+    <div id="cb-success-mascot" style="display:inline-block;margin-bottom:16px"></div>
     <h2 id="cb-success-h">🎉 You're Live!</h2>
     <p id="cb-success-p">Your business is set up and your first campaign is ready. Redirecting to your dashboard…</p>
   </div>
@@ -340,10 +340,10 @@ document.getElementById('f-locationType').addEventListener('change', function() 
   document.getElementById('cb-address-fields').style.display = this.value === 'online' ? 'none' : '';
 });
 function cbSetMood(cls) {
-  const el = document.getElementById('cb-blasty');
-  el.className = 'cb-blasty-mini s-arrive ' + cls;
+  const el = document.getElementById('cb-mascot');
+  el.className = 'cb-mascot-mini s-arrive ' + cls;
   void el.offsetWidth;
-  setTimeout(()=>{ el.className = 'cb-blasty-mini ' + cls; }, 400);
+  setTimeout(()=>{ el.className = 'cb-mascot-mini ' + cls; }, 400);
 }
 document.querySelectorAll('.cb-input,.cb-ta,.cb-select').forEach(el => {
   el.addEventListener('focus', () => cbSetMood((window._ob2Anim&&window._ob2Anim.focus)||'s-ask'));
@@ -549,10 +549,10 @@ window.cbSubmit = async function() {
 };
 
 function cbSetMood(cls) {
-  const el = document.getElementById('cb-blasty');
-  el.className = 'cb-blasty-mini s-arrive ' + cls;
+  const el = document.getElementById('cb-mascot');
+  el.className = 'cb-mascot-mini s-arrive ' + cls;
   void el.offsetWidth;
-  setTimeout(()=>{ el.className = 'cb-blasty-mini ' + cls; }, 400);
+  setTimeout(()=>{ el.className = 'cb-mascot-mini ' + cls; }, 400);
 }
 </script>
 
