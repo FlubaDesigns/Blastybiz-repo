@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784604045710">
+  <link rel="stylesheet" href="global-style.css?v=1784604285539">
   <style>
     body { visibility: hidden }
     .ose-wrap { display:grid; grid-template-columns:1fr 230px; gap:26px; align-items:start; }
@@ -609,6 +609,7 @@ window._oseTextSave = async function(k) {
   const val = document.getElementById('msg-'+k).value.trim();
   const def = STEP_DEFS.find(s=>s.key===k)?.defaultMsg || '';
   try {
+    if (auth.currentUser) await auth.currentUser.getIdToken(true);
     if (val && val !== def) {
       await setDoc(doc(db,'config','ob1Steps'), { [k]: { blastyMsg: val } }, { merge:true });
       if (!overrides[k]) overrides[k] = {};
@@ -649,6 +650,7 @@ window._oseAnimChange = async function(k) {
   if (nose)   anim.noseSpin = true;
   const sts = document.getElementById('sts-anim-'+k);
   try {
+    if (auth.currentUser) await auth.currentUser.getIdToken(true);
     await setDoc(doc(db,'config','ob1Steps'), { [k]: { anim } }, { merge:true });
     if (!overrides[k]) overrides[k] = {};
     overrides[k].anim = anim;
