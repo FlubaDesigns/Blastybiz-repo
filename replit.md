@@ -31,6 +31,44 @@ See `mascot/README.md` for the full guide — SVG anatomy, animation class refer
 - `firestore.rules` — Firestore security rules
 - `firebase.json` — Firebase project config
 
+## Pages
+
+### Onboarding flow (new user journey)
+| Page | URL | What it does |
+|------|-----|--------------|
+| `BlastyBiz-Intro.html` | `/BlastyBiz-Intro.html` | Welcome hub. Greets new vs returning users. Shows plan badge, perks panel (pro/agency), news. CTA: Dashboard / ➕ New business / Update profile. |
+| `BlastyBiz-Profile.html` | `/BlastyBiz-Profile.html` | 12-step Blasty blur-spotlight wizard. Collects owner name, biz name, role, email, phone, location type, address, zip, website. Fork at end: Story or Create. Saves to `users/{uid}/businesses/{bizId}` + writes `displayName`, `email`, `onboarded`, `activeBusiness` to `users/{uid}`. |
+| `BlastyBiz-Story.html` | `/BlastyBiz-Story.html` | 5-step story page (story / different / awards / customer / other). Saves `aiContext` fields to the business doc, then routes to Create. |
+| `BlastyBiz-CreateBiz.html` | `/BlastyBiz-CreateBiz.html` | Quick-form campaign creator. Requires `bb_bizId` in sessionStorage. |
+
+### Admin pages
+| Page | URL | What it does |
+|------|-----|--------------|
+| `BlastyBiz-TestBlasty.html` | `/BlastyBiz-TestBlasty.html` | **Admin-only test console.** Full test run (clears session → Profile), individual stage launchers, session inspector/clear, links to Onboard Step Editor + Mood Presets. |
+| `BlastyBiz-Admin-OnboardSteps.html` | `/BlastyBiz-Admin-OnboardSteps.html` | Edit Blasty messages + animation per step for OB1 (Profile wizard) and OB2 (Quick form). |
+| `BlastyBiz-Admin-Moods.html` | `/BlastyBiz-Admin-Moods.html` | CRUD for named mascot animation presets (Greeting/Asking/Working/Happy/etc.). |
+
+### Auth pattern for all protected pages
+Every protected page must use this pattern in `<head>` — **no exceptions**:
+```html
+<style>body{visibility:hidden}</style>
+<script type="module" src="./auth-guard.js"></script>
+```
+Then in the page's own module script: `await auth.authStateReady(); const user = auth.currentUser;`
+Import `auth` and `db` from `./firebase-init-v2.js` only. Do NOT add separate firebase-auth or firebase-app CDN imports — `firebase-init-v2.js` handles those.
+
+### SessionStorage keys
+- `bb_answers` — JSON blob of Profile wizard answers, passed Profile → Story → Create
+- `bb_bizId` — Firestore business document ID, passed Profile → Story → Create
+
+## Open questions for Dave
+
+1. **Business email typo** — your business profile has `perceys@gmail.come` (extra `e`). Should Rep fix that in Firestore, or will you correct it by running through the Profile wizard again via the Test Console?
+2. **Test Console nav link** — should the Test Console (`/BlastyBiz-TestBlasty.html`) be linked in the site nav for admin accounts, or keep it URL-only?
+3. **Test business cleanup** — each "Full Test Run" creates a real business doc in Firestore. Should the Test Console have a button to delete the most recently created test business?
+4. **Multiple businesses** — when an agency user has multiple businesses, should there be a business switcher (e.g. in the dashboard header)? Currently `activeBusiness` is a single pointer on the user doc.
+5. **Story skip** — Profile's fork gives a choice: go to Story or skip straight to Create. If they skip, `aiContext` fields are blank. Should Blasty nudge them to fill Story later from the dashboard?
+
 ## User preferences
 
 - **User is Dave. I am Rep** (Replit agent). Dave works with both Rep and Anthropic Claude directly; "Rep" is this agent's name.
