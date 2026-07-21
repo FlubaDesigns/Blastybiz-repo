@@ -5,95 +5,212 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784615128245"/>
+  <link rel="stylesheet" href="global-style.css?v=1784617338344"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
-  <style>
-
-    .pb-page {
-      min-height: 100vh;
-      padding-top: var(--main-offset, 55px);
-      display: flex;
-      align-items: flex-start;
-    }
-    .pb-layout {
+    /* ─── OB2 NEW LAYOUT ─────────────────────────────────────── */
+    .ob-page {
       display: flex;
       flex-direction: row;
-      width: 100%;
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 44px 24px 80px;
-      gap: 36px;
-      align-items: flex-start;
+      min-height: calc(100vh - var(--main-offset, 55px));
     }
-
-    .pb-chat {
-      flex: 1;
-      min-width: 0;
-      order: 1;
-    }
-    .pb-logo {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 30px;
-      color: var(--green);
-      letter-spacing: 2px;
-      margin-bottom: 2px;
-    }
-    .pb-tagline {
-      font-size: 14px;
-      color: var(--muted);
-      margin-bottom: 28px;
-    }
-    .pb-thread {
+    /* Left: Blasty sticky column */
+    .ob-blasty-col {
+      width: 228px;
+      min-width: 228px;
+      position: sticky;
+      top: var(--main-offset, 55px);
+      height: calc(100vh - var(--main-offset, 55px));
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      align-items: center;
+      padding: 28px 14px 20px;
+      border-right: 1px solid rgba(255,255,255,.07);
+      box-sizing: border-box;
+      overflow: hidden;
     }
-
-    .bubble-blasty {
-      align-self: flex-start;
-      background: linear-gradient(168deg, #ffffff 0%, #f0f5ff 70%, #e6eeff 100%);
-      border: 1.5px solid rgba(180,205,240,0.55);
-      border-radius: 22px;
-      padding: 14px 17px;
-      max-width: 88%;
-      font-size: 15px;
-      line-height: 1.65;
-      color: #0d1f3c;
-      box-shadow:
-        0 2px 0 rgba(255,255,255,0.90) inset,   /* top gloss highlight */
-        0 -1px 3px rgba(140,170,220,0.18) inset, /* bottom inner shade  */
-        0 10px 28px rgba(0,0,0,0.42),            /* main lift shadow    */
-        0 4px 10px rgba(0,0,0,0.24),             /* mid shadow          */
-        0 1px 3px rgba(0,0,0,0.14);             /* contact shadow      */
-      animation: bb-in .38s ease both;
+    .pb-mascot { width: 190px; flex-shrink: 0; }
+    #mascot-svg { width: 100%; height: auto; overflow: visible; }
+    .pb-mascot-caption {
+      font-size: 11px;
+      color: var(--muted, #555);
+      margin-top: 5px;
+      text-align: center;
+      font-style: italic;
+      min-height: 15px;
+    }
+    /* Blasty question bubble */
+    .ob-q-bubble {
       position: relative;
-    }
-    .bubble-user {
-      align-self: flex-start;
-      background: var(--panel, #111);
-      border: 1.5px solid var(--border, #222);
+      background: linear-gradient(168deg, #ffffff 0%, #f0f5ff 70%, #e6eeff 100%);
+      border: 1.5px solid rgba(180,205,240,.55);
       border-radius: 4px 18px 18px 18px;
-      padding: 13px 16px;
-      max-width: 88%;
+      padding: 13px 15px;
+      margin-top: 14px;
+      font-size: 13px;
+      line-height: 1.58;
+      color: #0d1f3c;
+      box-shadow: 0 6px 22px rgba(0,0,0,.32);
       width: 100%;
       box-sizing: border-box;
-      animation: bb-in .38s ease both;
+      transition: opacity .2s;
     }
-    .bubble-user.locked {
-      background: var(--green);
-      border-color: var(--green);
-      color: #000;
-      font-weight: 700;
-      font-size: 15px;
-      padding: 12px 16px;
+    .ob-q-bubble::before {
+      content: '';
+      position: absolute;
+      top: -9px;
+      left: 20px;
+      border: 9px solid transparent;
+      border-bottom-color: #f0f5ff;
+      border-top: none;
     }
     @keyframes bb-in {
       from { opacity: 0; transform: translateY(9px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-
+    /* Right: Form column */
+    .ob-form-col {
+      flex: 1;
+      min-width: 0;
+      overflow-y: auto;
+      padding: 28px 36px 80px;
+      box-sizing: border-box;
+    }
+    /* Progress bar */
+    .ob-progress-wrap {
+      height: 4px;
+      background: rgba(255,255,255,.07);
+      border-radius: 2px;
+      margin-bottom: 28px;
+      overflow: hidden;
+    }
+    .ob-progress-bar {
+      height: 100%;
+      background: var(--green, #39ff14);
+      border-radius: 2px;
+      transition: width .5s ease;
+    }
+    /* Form sections */
+    .obf-section { margin-bottom: 14px; }
+    .obf-sec-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--muted, #666);
+      margin-bottom: 6px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    /* Field rows */
+    .obf-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      transition: opacity .35s ease, background .35s ease;
+    }
+    .obf-row.future  { opacity: .2; pointer-events: none; }
+    .obf-row.answered { opacity: .62; }
+    .obf-row.active {
+      opacity: 1;
+      background: rgba(57,255,20,.032);
+      border-color: rgba(57,255,20,.11);
+      margin: 2px -10px;
+      padding: 14px 10px;
+    }
+    .obf-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--muted, #888);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      min-width: 96px;
+      flex-shrink: 0;
+      padding-top: 10px;
+      line-height: 1.4;
+    }
+    .obf-slot { flex: 1; min-width: 0; }
+    .obf-dash { color: var(--muted, #444); font-size: 14px; line-height: 2.8; }
+    .obf-answered-val {
+      font-size: 14px;
+      color: var(--text, #c8dbf5);
+      word-break: break-word;
+      line-height: 1.5;
+      padding: 7px 0;
+      display: block;
+    }
+    /* User speech bubble (in active slot) — tail points RIGHT (away from Blasty on the left) */
+    .obf-bubble {
+      position: relative;
+      background: #0c1828;
+      border: 1.5px solid rgba(57,255,20,.2);
+      border-radius: 4px 16px 16px 16px;
+      padding: 12px 14px 10px;
+      box-shadow: 0 4px 18px rgba(0,0,0,.3);
+    }
+    .obf-bubble::after {
+      content: '';
+      position: absolute;
+      top: 14px;
+      right: -9px;
+      border: 9px solid transparent;
+      border-left-color: #0c1828;
+      border-right: none;
+    }
+    /* Fork step prompt */
+    .ob-fork-prompt {
+      background: rgba(57,255,20,.038);
+      border: 1px solid rgba(57,255,20,.14);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+    .ob-fork-prompt .ob2-choices { flex-direction: row; flex-wrap: wrap; }
+    .ob-fork-prompt .ob2-choice-btn { width: auto; flex: 1; min-width: 150px; }
+    /* Status (finish messages) */
+    .ob-status {
+      padding: 24px;
+      text-align: center;
+      color: var(--text, #e0ecff);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    .ob-status p { margin: 8px 0; }
+    /* Flash on commit (mobile) */
+    @keyframes ob-flash {
+      0%   { background: rgba(57,255,20,.26); }
+      100% { background: transparent; }
+    }
+    .obf-row.just-answered { animation: ob-flash .65s ease; }
+    /* Mobile: stacked layout */
+    @media (max-width: 860px) {
+      .ob-page { flex-direction: column; }
+      .ob-blasty-col {
+        width: 100%; min-width: unset; position: static; height: auto;
+        flex-direction: row; align-items: flex-start;
+        padding: 10px 14px; border-right: none;
+        border-bottom: 1px solid rgba(255,255,255,.07);
+        gap: 12px; overflow: visible;
+      }
+      .pb-mascot { width: 64px; flex-shrink: 0; }
+      .ob-q-bubble {
+        margin-top: 0; font-size: 12.5px; flex: 1; min-width: 0;
+        border-radius: 4px 14px 14px 14px; max-width: unset;
+      }
+      .ob-q-bubble::before {
+        top: 12px; left: -9px;
+        border: 9px solid transparent;
+        border-right-color: #f0f5ff;
+        border-top: none; border-bottom: none;
+      }
+      .ob-form-col { padding: 16px 14px 80px; overflow: visible; }
+      .obf-label { min-width: 80px; font-size: 10px; }
+      .obf-bubble::after { display: none; }
+    }
     .bubble-input {
       display: block;
       width: 100%;
@@ -191,29 +308,6 @@
     }
     .toggle-switch input:checked + .toggle-slider { background: var(--green); }
     .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
-
-    /* ── Blasty zone (right — desktop) ──────────────────────────── */
-    .pb-mascot-zone {
-      flex-shrink: 0;
-      width: 190px;
-      order: 2;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      position: sticky;
-      top: calc(var(--main-offset, 55px) + 20px);
-    }
-    .pb-mascot { width: 160px; }
-    #mascot-svg { width: 100%; height: auto; overflow: visible; }
-    .pb-mascot-caption {
-      font-size: 12px;
-      color: var(--muted, #666);
-      margin-top: 10px;
-      text-align: center;
-      font-style: italic;
-      min-height: 18px;
-      transition: opacity .3s;
-    }
 
     /* ── Blasty animations ──────────────────────────────────────── */
     #mascot-svg {
@@ -442,11 +536,8 @@
       100% { transform: rotate(360deg); }
     }
     /* nose variants */
-    .pb-mascot.s-nose-spin-l .mascot-nose { animation:b-nose-spin-l 1.1s linear infinite; }
-    @keyframes b-nose-spin-l { 0%{transform:rotate(0deg)} 100%{transform:rotate(-360deg)} }
-    .pb-mascot.s-nose-spin-r .mascot-nose { animation:b-nose-spin-r 1.1s linear infinite; }
-    @keyframes b-nose-spin-r { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-    .pb-mascot.s-nose-pop-slow .mascot-nose { animation:b-nose-pop-slow 1.5s cubic-bezier(.34,1.56,.64,1) 1 both; }
+    .pb-mascot.s-nose-shake .mascot-nose { animation:b-nose-shake 1.3s ease-in-out infinite; }
+    @keyframes b-nose-shake { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-7deg)} 75%{transform:rotate(7deg)} }
     @keyframes b-nose-pop-slow { 0%{transform:translateY(0)} 35%{transform:translateY(-32px)} 100%{transform:translateY(0)} }
     .pb-mascot.s-nose-pop-fast .mascot-nose { animation:b-nose-pop-fast .45s cubic-bezier(.34,1.56,.64,1) 1 both; }
     @keyframes b-nose-pop-fast { 0%{transform:translateY(0)} 40%{transform:translateY(-22px)} 100%{transform:translateY(0)} }
@@ -611,46 +702,14 @@
       font-weight: 700;
     }
 
-    /* ── Tablet + Mobile (≤ 859px) — hide big Blasty, per-bubble avatars take over ── */
-    @media (max-width: 859px) {
-      .pb-layout {
-        flex-direction: column;
-        max-width: 600px;
-        padding: 28px 24px 80px;
-        gap: 0;
-      }
-      .pb-mascot-zone { display: none; }   /* mini per-bubble Blasty handles this below */
-    }
-
-    /* ── Mobile (< 580px) ───────────────────────────────────────── */
-    @media (max-width: 579px) {
-      .pb-layout {
-        padding: 16px 14px 60px;
-      }
-      .pb-logo    { display: none; }
-      .pb-tagline { margin-bottom: 14px; font-size: 13px; }
-      .bubble-blasty,
-      .bubble-user { max-width: 96%; font-size: 14px; }
-      .mascot-msg-row { max-width: 96%; }
-    }
   </style>
 </head>
 <body class="has-site-header">
 <div id="header__inject"></div>
 
-<div class="pb-page">
-  <div class="pb-layout">
-
-    <!-- ── Chat thread (left) ─────────────────────────────────── -->
-    <div class="pb-chat">
-      <div class="pb-logo">BlastyBiz</div>
-      <div class="pb-tagline">Step 2 — Tell me about your business</div>
-      <div class="pb-thread" id="pb-thread"></div>
-    </div>
-
-    <!-- ── Blasty (right) ────────────────────────────────────── -->
-    <div class="pb-mascot-zone" id="pb-mascot-zone">
-      <div class="pb-mascot s-ask" id="pb-mascot">
+<div class="ob-page">
+  <!-- Blasty: sticky left column (desktop) / top strip (mobile) -->
+  <div class="ob-blasty-col" id="pb-mascot-zone">
         <svg id="mascot-svg" viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="ob2-bodyFill" x1="0" y1="0" x2="1" y2="1">
@@ -808,12 +867,17 @@
           </g>
         </svg>
       </div>
+      <div class="ob-q-bubble" id="ob-q-bubble"><p id="ob-q-text"></p></div>
       <div class="pb-mascot-caption" id="pb-mascot-caption"></div>
-    </div>
+  </div><!-- /ob-blasty-col -->
 
-  </div>
-</div>
-
+  <!-- Form column -->
+  <div class="ob-form-col">
+    <div class="ob-progress-wrap"><div class="ob-progress-bar" id="ob-progress-bar" style="width:0%"></div></div>
+    <div id="ob-form-body"></div>
+    <div class="ob-status" id="ob-status" style="display:none"></div>
+  </div><!-- /ob-form-col -->
+</div><!-- /ob-page -->
 <!-- ── Conversation engine ────────────────────────────────────────── -->
 <script>
 (function() {
@@ -822,6 +886,7 @@
   let step = 0;
   let currentBubble = null;
   let currentInput  = null;
+  let currentStepKey = null;
 
   const STEPS = [
     {
@@ -1131,7 +1196,7 @@
     const extra = [
       merged.eyes, merged.flame, merged.lights,
       merged.smoke === true ? 's-smoke-3' : (merged.smoke || ''),
-      merged.noseSpin === true ? 's-nose-spin-r' : (merged.noseSpin || '')
+      merged.noseSpin === true ? 's-nose-shake' : (merged.noseSpin || '')
     ].filter(Boolean);
     const el = document.getElementById('pb-mascot');
     el.className = 'pb-mascot s-arrive';
@@ -1175,40 +1240,152 @@
     </svg>`;
   }
 
-  function addMascotBubble(text) {
-    const thread = document.getElementById('pb-thread');
-    const currentMood = (document.getElementById('pb-mascot') || {}).className || '';
-    const mood = ['s-celebrate','s-working','s-wave-2','s-wave','s-happy','s-ask-2','s-ask-3','s-ask','s-spin','s-tilt-left','s-tilt-right'].find(m => currentMood.includes(m)) || 's-ask';
-    const row = document.createElement('div');
-    row.className = 'mascot-msg-row';
-    const avatar = document.createElement('div');
-    avatar.className = 'mascot-msg-avatar';
-    avatar.innerHTML = _miniMascotSVG(mood);
-    const el = document.createElement('div');
-    el.className = 'bubble-blasty';
-    el.innerHTML = text;
-    row.appendChild(avatar);
-    row.appendChild(el);
-    thread.appendChild(row);
-    setTimeout(() => row.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
-    return el;
+
+  function buildFormRows() {
+    const LABELS = {
+      ownerName:'Your Name', bizName:'Business Name', role:'Your Title',
+      email:'Email', phone:'Phone', locationType:'Location Type',
+      street:'Street', city:'City', state:'State', zip:'ZIP', website:'Website',
+      story:'Business Story', different:"What's Different",
+      awards:'Awards / Press', customer:'Ideal Customer', other:'Other Info',
+      campaignName:'Campaign Name', campaignAbout:"What It's About",
+      campaignAudience:'Target Audience', campaignOffer:'Offer / CTA',
+      campaignPlatforms:'Platforms', category:'Category'
+    };
+    const SECTIONS = [
+      { title:'Business Info', keys:['ownerName','bizName','role','email','phone','locationType','street','city','state','zip','website'] },
+      { title:'Your Story', keys:['story','different','awards','customer','other'] },
+      { title:'Campaign', keys:['campaignName','campaignAbout','campaignAudience','campaignOffer','campaignPlatforms','category'] }
+    ];
+    const container = document.getElementById('ob-form-body');
+    if (!container) return;
+    container.innerHTML = '';
+    SECTIONS.forEach(sec => {
+      const sd = document.createElement('div');
+      sd.className = 'obf-section';
+      sd.innerHTML = '<div class="obf-sec-title">'+sec.title+'</div>';
+      sec.keys.forEach(key => {
+        const row = document.createElement('div');
+        row.className = 'obf-row future';
+        row.id = 'obfr-'+key;
+        row.dataset.key = key;
+        row.innerHTML = '<div class="obf-label">'+(LABELS[key]||key)+'</div>'
+          +'<div class="obf-slot" id="obfs-'+key+'"><span class="obf-dash">\u2014</span></div>';
+        sd.appendChild(row);
+      });
+      container.appendChild(sd);
+    });
+  }
+
+  function setBlastyBubble(msg) {
+    const el = document.getElementById('ob-q-text');
+    if (!el) return;
+    const bubble = document.getElementById('ob-q-bubble');
+    if (bubble) bubble.style.opacity = '0';
+    setTimeout(() => {
+      el.innerHTML = msg;
+      if (bubble) bubble.style.opacity = '1';
+    }, 160);
+  }
+
+  function lockField(key, text) {
+    const row = document.getElementById('obfr-'+key);
+    if (!row) return;
+    row.classList.remove('active','future');
+    row.classList.add('answered');
+    const slot = document.getElementById('obfs-'+key);
+    if (slot) {
+      const safe = String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      slot.innerHTML = '<span class="obf-answered-val">'+safe+'</span>';
+    }
+    if (window.innerWidth <= 860) {
+      row.classList.add('just-answered');
+      setTimeout(() => row.classList.remove('just-answered'), 800);
+    }
+  }
+
+  function addMascotBubble(msg) {
+    setBlastyBubble(msg);
+    const status = document.getElementById('ob-status');
+    if (status && status.style.display !== 'none') {
+      const p = document.createElement('p'); p.innerHTML = msg; status.appendChild(p);
+    }
+    return { innerHTML: '' };
   }
 
   function addUserBubble(id) {
-    const thread = document.getElementById('pb-thread');
+    const key = currentStepKey;
     const el = document.createElement('div');
-    el.className = 'bubble-user';
+    el.className = key === '_fork' ? 'ob-fork-prompt' : 'obf-bubble';
     if (id) el.id = id;
-    thread.appendChild(el);
+    if (key && key !== '_fork') {
+      const slot = document.getElementById('obfs-'+key);
+      if (slot) { slot.innerHTML = ''; slot.appendChild(el); }
+    } else if (key === '_fork') {
+      const container = document.getElementById('ob-form-body');
+      const existing = document.getElementById('ob-fork-prompt');
+      if (existing) existing.remove();
+      el.id = 'ob-fork-prompt';
+      if (container) container.insertBefore(el, container.firstChild);
+    }
     return el;
   }
 
   function lockBubble(el, text) {
-    el.className = 'bubble-user locked';
-    el.innerHTML = '';
-    el.textContent = text;
+    lockField(currentStepKey, text);
   }
 
+  function showStep() {
+    if (step >= STEPS.length) { finish(); return; }
+    const s = STEPS[step];
+    if (s.skipIf && s.skipIf(answers)) { step++; showStep(); return; }
+    currentStepKey = s.key;
+    setMood(s.anim || s.mood);
+    const msg = s.blastyMsgFn ? s.blastyMsgFn(answers) : interpolate(s.blastyMsg, answers);
+    setBlastyBubble(msg);
+    // Remove stale fork prompt when moving past it
+    const fp = document.getElementById('ob-fork-prompt');
+    if (fp) fp.remove();
+    // Spotlight active field row
+    if (s.key !== '_fork') {
+      document.querySelectorAll('.obf-row').forEach(r => {
+        if (r.id === 'obfr-'+s.key) {
+          r.classList.remove('future','answered','just-answered');
+          r.classList.add('active');
+        } else if (!r.classList.contains('answered')) {
+          r.classList.remove('active'); r.classList.add('future');
+        } else {
+          r.classList.remove('active');
+        }
+      });
+    }
+    // Progress bar
+    const totalSteps = STEPS.filter(st => !st.skipIf || !st.skipIf(answers)).length;
+    const pct = Math.round((step / Math.max(totalSteps, 1)) * 100);
+    const bar = document.getElementById('ob-progress-bar');
+    if (bar) bar.style.width = pct+'%';
+    const delay = step === 0 ? 700 : 380;
+    setTimeout(() => {
+      renderInput(s);
+      if (s.inputType === 'ai-suggest' && s.fetchFn) {
+        s.fetchFn(answers)
+          .then(suggestion => {
+            const wrap = document.getElementById('ob2-ai-suggest-wrap');
+            if (!wrap) return;
+            setMood('s-happy');
+            setTimeout(() => {
+              setBlastyBubble('The best category for '+answers.bizName+' on the platforms is <strong>'+suggestion+'</strong> \u2014 does that sound right?');
+              const safe = suggestion.replace(/'/g, "\\'");
+              wrap.innerHTML = '<div class="ob2-choices">'
+                +'<button type="button" class="ob2-choice-btn" onclick="window._ob2AcceptSuggestion(\''+safe+'\')">✅ Yep, that\'s it</button>'
+                +'<button type="button" class="ob2-choice-btn" onclick="window._ob2ChangeSuggestion()">✏️ Not quite</button>'
+                +'</div>';
+            }, 200);
+          })
+          .catch(() => { window._ob2ChangeSuggestion(); });
+      }
+    }, delay);
+  }
   function renderInput(s) {
     currentBubble = addUserBubble();
     const bubble = currentBubble;
@@ -1291,41 +1468,6 @@
     return msg.replace(/\{(\w+)\}/g, (_, k) => (ans[k] !== undefined ? ans[k] : '{' + k + '}'));
   }
 
-  function showStep() {
-    if (step >= STEPS.length) { finish(); return; }
-    const s = STEPS[step];
-    if (s.skipIf && s.skipIf(answers)) { step++; showStep(); return; }
-    setMood(s.anim || s.mood);
-    setPosition(s.pos || 'right');
-    const delay = step === 0 ? 700 : 440;
-    setTimeout(() => {
-      const msg = s.blastyMsgFn ? s.blastyMsgFn(answers) : interpolate(s.blastyMsg, answers);
-      addMascotBubble(msg);
-      setTimeout(() => {
-        renderInput(s);
-        /* ── AI-suggest: fire fetch after bubble renders ── */
-        if (s.inputType === 'ai-suggest' && s.fetchFn) {
-          s.fetchFn(answers)
-            .then(suggestion => {
-              const wrap = document.getElementById('ob2-ai-suggest-wrap');
-              if (!wrap) return;
-              /* Blasty states the category confidently, then user confirms or fixes */
-              setMood('s-happy');
-              setTimeout(() => {
-                addMascotBubble('The best category for ' + answers.bizName + ' on the platforms is <strong>' + suggestion + '</strong> — does that sound right?');
-                const safe = suggestion.replace(/'/g, "\\'");
-                wrap.innerHTML =
-                  '<div class="ob2-choices">'
-                  + '<button type="button" class="ob2-choice-btn" onclick="window._ob2AcceptSuggestion(\'' + safe + '\')">✅ Yep, that\'s it</button>'
-                  + '<button type="button" class="ob2-choice-btn" onclick="window._ob2ChangeSuggestion()">✏️ Not quite</button>'
-                  + '</div>';
-              }, 200);
-            })
-            .catch(() => { window._ob2ChangeSuggestion(); });
-        }
-      }, 320);
-    }, delay);
-  }
 
   window._ob2AcceptSuggestion = function(value) {
     answers[STEPS[step].key] = value;
@@ -1417,11 +1559,13 @@
       retryBtn.textContent = '↩ Try again';
       retryBtn.style.cssText = 'margin:10px auto;display:block;padding:10px 24px;background:#ff6b00;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;';
       retryBtn.onclick = () => { retryBtn.remove(); finish(); };
-      document.getElementById('pb-thread')?.appendChild(retryBtn);
+      const _st = document.getElementById('ob-status');
+      if (_st) { _st.style.display = 'block'; _st.appendChild(retryBtn); }
     }
   }
 
   window._ob2StartConvo = function() {
+    buildFormRows();
     if (window._ob2Prefill) Object.assign(answers, window._ob2Prefill);
     setMood('s-wave');
     if (window._ob2EditBizId) {
