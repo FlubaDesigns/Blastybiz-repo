@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="stylesheet" href="global-style.css?v=1784653598233"/>
+  <title>BlastyBiz — Welcome</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
+  <script src="blastybiz-menu.js?v=3"></script>
+  <script src="mascot.js?v=3"></script>
+  <style>
+    .intro-wrap {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+    /* ── Blasty hero ───────────────────────────────────────────── */
+    .intro-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .intro-mascot {
+      width: 140px;
+      margin-bottom: 16px;
+    }
+    .intro-mascot .pb-mascot { width: 100%; }
+    .intro-plan-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+    .intro-plan-badge.trial  { background: rgba(57,255,20,.1);  color: var(--green,#39ff14); border: 1px solid rgba(57,255,20,.25); }
+    .intro-plan-badge.pro    { background: rgba(255,196,0,.12); color: #ffd700;              border: 1px solid rgba(255,196,0,.3); }
+    .intro-plan-badge.agency { background: rgba(0,200,255,.1);  color: #00cfff;              border: 1px solid rgba(0,200,255,.28); }
+    .intro-headline {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 38px;
+      letter-spacing: 1px;
+      color: var(--light, #fff);
+      margin: 0 0 8px;
+      line-height: 1.1;
+    }
+    .intro-sub {
+      font-size: 15px;
+      color: var(--muted, #888);
+      line-height: 1.6;
+      max-width: 420px;
+      margin: 0 auto 24px;
+    }
+    /* ── CTA buttons ───────────────────────────────────────────── */
+    .intro-cta-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      max-width: 340px;
+      margin: 0 auto;
+    }
+    .intro-btn-primary {
+      padding: 15px 24px;
+      background: var(--green, #39ff14);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      font: 700 16px 'DM Sans', sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      display: block;
+      transition: opacity .18s;
+    }
+    .intro-btn-primary:hover { opacity: .88; }
+    .intro-btn-secondary {
+      padding: 14px 24px;
+      background: transparent;
+      color: var(--muted, #888);
+      border: 1.5px solid var(--border, #333);
+      border-radius: 10px;
+      font: 500 15px 'DM Sans', sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      display: block;
+      transition: border-color .18s, color .18s;
+    }
+    .intro-btn-secondary:hover { border-color: var(--light,#fff); color: var(--light,#fff); }
+    /* ── News section ──────────────────────────────────────────── */
+    .intro-divider {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,.07);
+      margin: 36px 0 24px;
+    }
+    .intro-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted, #666);
+      margin-bottom: 14px;
+    }
+    .intro-news-card {
+      background: var(--panel, #0a1a0a);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+    .intro-news-date {
+      font-size: 10.5px;
+      color: var(--muted, #666);
+      margin-bottom: 4px;
+    }
+    .intro-news-body {
+      font-size: 13.5px;
+      color: var(--text, #c8dbf5);
+      line-height: 1.55;
+    }
+    .intro-news-body strong { color: var(--green, #39ff14); }
+    /* ── Plan perks ────────────────────────────────────────────── */
+    .intro-perks {
+      background: var(--panel, #0a1a0a);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 10px;
+    }
+    .intro-perk { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; font-size: 13.5px; color: var(--text, #c8dbf5); }
+    .intro-perk-icon { font-size: 16px; flex-shrink: 0; }
+    .intro-loading { text-align:center; color:var(--muted,#888); font-size:14px; padding:40px 0; }
+  </style>
+</head>
+<body class="has-site-header">
+<div id="header__inject"></div>
+
+<div class="main">
+  <div class="main-inner intro-wrap">
+
+    <div id="intro-loading" class="intro-loading">Loading…</div>
+
+    <div id="intro-content" style="display:none">
+      <div class="intro-hero">
+        <div class="intro-mascot">
+          <div class="pb-mascot" id="pb-mascot"></div>
+        </div>
+        <div class="intro-plan-badge" id="intro-plan-badge">Trial</div>
+        <h1 class="intro-headline" id="intro-headline">Hey there!</h1>
+        <p class="intro-sub" id="intro-sub">I'm Blasty — your AI marketing co-pilot. Let's get your business blasting.</p>
+        <div class="intro-cta-wrap" id="intro-cta-wrap">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <!-- Plan perks (shown for pro/agency) -->
+      <div id="intro-perks-wrap" style="display:none">
+        <hr class="intro-divider"/>
+        <div class="intro-section-title">What's unlocked for you</div>
+        <div class="intro-perks" id="intro-perks-list"></div>
+      </div>
+
+      <!-- News / updates -->
+      <hr class="intro-divider"/>
+      <div class="intro-section-title">What's new</div>
+      <div id="intro-news">
+        <div class="intro-news-card">
+          <div class="intro-news-date">July 2026</div>
+          <div class="intro-news-body"><strong>Profile + Story pages live.</strong> Blasty now anchors to each field one at a time — everything else fades back so you can focus.</div>
+        </div>
+        <div class="intro-news-card">
+          <div class="intro-news-date">July 2026</div>
+          <div class="intro-news-body"><strong>AI category suggestion.</strong> Blasty now auto-suggests the best business category for your platforms before you create a campaign.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  var PLAN_PERKS = {
+    pro: [
+      { icon:'📸', text:'Instagram + Twitter/X blasting' },
+      { icon:'💼', text:'LinkedIn content generation' },
+      { icon:'🔄', text:'Unlimited campaigns' },
+      { icon:'🧠', text:'Advanced AI memory across all campaigns' }
+    ],
+    agency: [
+      { icon:'🏢', text:'Multiple business profiles' },
+      { icon:'📸', text:'All platforms unlocked' },
+      { icon:'👥', text:'Client management dashboard' },
+      { icon:'🤝', text:'White-label ready output' },
+      { icon:'🔒', text:'Priority queue & dedicated support' }
+    ]
+  };
+
+  window._introStart = function(uid, plan, ud) {
+    document.getElementById('intro-loading').style.display = 'none';
+    document.getElementById('intro-content').style.display = 'block';
+
+    var isNew = !ud.onboarded || !ud.activeBusiness;
+    var badge = document.getElementById('intro-plan-badge');
+    var headline = document.getElementById('intro-headline');
+    var sub = document.getElementById('intro-sub');
+    var ctaWrap = document.getElementById('intro-cta-wrap');
+
+    badge.className = 'intro-plan-badge ' + (plan||'trial');
+    badge.textContent = plan === 'agency' ? 'Agency' : plan === 'pro' ? 'Pro' : 'Trial';
+
+    if (isNew) {
+      headline.textContent = "Hi! I'm Blasty 👋";
+      sub.textContent = "Your AI marketing co-pilot. Let's set up your business profile so I can blast your business across every platform.";
+      ctaWrap.innerHTML =
+        '<a href="BlastyBiz-Profile.html" class="intro-btn-primary">🚀 Let\'s get started</a>';
+    } else {
+      var name = ud.displayName || '';
+      if (plan === 'pro') {
+        headline.textContent = '🥇 Congrats on Pro' + (name ? ', ' + name.split(' ')[0] : '') + '!';
+        sub.textContent = 'You've unlocked Instagram, Twitter/X, LinkedIn, and unlimited campaigns. Let\'s put it to work.';
+      } else if (plan === 'agency') {
+        headline.textContent = '🏆 You\'re on Agency' + (name ? ', ' + name.split(' ')[0] : '') + '!';
+        sub.textContent = 'Multiple businesses, all platforms, client-ready output. The full arsenal is yours.';
+      } else {
+        headline.textContent = 'Welcome back' + (name ? ', ' + name.split(' ')[0] : '') + '! 👋';
+        sub.textContent = 'Ready to blast? Jump back in or update your profile.';
+      }
+      ctaWrap.innerHTML =
+        '<a href="BlastyBiz.html" class="intro-btn-primary">🚀 Go to dashboard</a>' +
+        '<a href="BlastyBiz-Profile.html" class="intro-btn-secondary">✏️ Update my profile</a>';
+    }
+
+    if (window.PBMascot) {
+      window.PBMascot.setMood(plan === 'agency' ? 's-celebrate' : plan === 'pro' ? 's-happy' : 's-wave');
+    }
+
+    if (plan === 'pro' || plan === 'agency') {
+      var perksWrap = document.getElementById('intro-perks-wrap');
+      var perksList = document.getElementById('intro-perks-list');
+      var perks = PLAN_PERKS[plan] || [];
+      perksList.innerHTML = perks.map(function(p){
+        return '<div class="intro-perk"><span class="intro-perk-icon">' + p.icon + '</span><span>' + p.text + '</span></div>';
+      }).join('');
+      perksWrap.style.display = 'block';
+    }
+  };
+})();
+</script>
+
+<script type="module">
+import { auth } from './firebase-init-v2.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+  getFirestore, doc, getDoc
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+
+const db = getFirestore(getApp());
+
+onAuthStateChanged(auth, async user => {
+  if (!user) { window.location.href = 'BlastyBiz-Login.html'; return; }
+  const snap = await getDoc(doc(db, 'users', user.uid));
+  const ud   = snap.exists() ? snap.data() : {};
+  window._introStart(user.uid, ud.plan || 'trial', ud);
+});
+</script>
+
+<script>
+fetch('blastybiz-header.html').then(r=>r.text()).then(html=>{ document.getElementById('header__inject').innerHTML=html; });
+</script>
+</body>
+</html>
