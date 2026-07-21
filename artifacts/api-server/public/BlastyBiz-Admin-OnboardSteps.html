@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784605089715">
+  <link rel="stylesheet" href="global-style.css?v=1784605380874">
   <style>
     body { visibility: hidden }
     .ose-wrap { display:grid; grid-template-columns:1fr 230px; gap:26px; align-items:start; }
@@ -100,6 +100,14 @@
     @keyframes b-eye-surprise { 0%{transform:translateY(0)} 15%{transform:translateY(-12px)} 65%{transform:translateY(-12px)} 100%{transform:translateY(0)} }
     .pb-blasty.s-nose-spin .blasty-nose { animation:b-nose-spin .7s cubic-bezier(.34,1.56,.64,1) 1 both; }
     @keyframes b-nose-spin { 0%{transform:rotate(0deg)} 55%{transform:rotate(210deg)} 100%{transform:rotate(360deg)} }
+    .pb-blasty.s-nose-spin-l .blasty-nose { animation:b-nose-spin-l 1.1s linear infinite; }
+    @keyframes b-nose-spin-l { 0%{transform:rotate(0deg)} 100%{transform:rotate(-360deg)} }
+    .pb-blasty.s-nose-spin-r .blasty-nose { animation:b-nose-spin-r 1.1s linear infinite; }
+    @keyframes b-nose-spin-r { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+    .pb-blasty.s-nose-pop-slow .blasty-nose { animation:b-nose-pop-slow 1.5s cubic-bezier(.34,1.56,.64,1) 1 both; }
+    @keyframes b-nose-pop-slow { 0%{transform:translateY(0)} 35%{transform:translateY(-32px)} 100%{transform:translateY(0)} }
+    .pb-blasty.s-nose-pop-fast .blasty-nose { animation:b-nose-pop-fast .45s cubic-bezier(.34,1.56,.64,1) 1 both; }
+    @keyframes b-nose-pop-fast { 0%{transform:translateY(0)} 40%{transform:translateY(-22px)} 100%{transform:translateY(0)} }
     .pb-blasty.s-light-nose #blasty-nose-light { opacity:.9; animation:b-beacon 1.8s ease-in-out infinite; }
     @keyframes b-beacon { 0%,75%,100%{opacity:.9} 40%{opacity:.1} }
     .pb-blasty.s-lights-pulse .w-light { animation:b-light-pulse 1.1s ease-in-out infinite; }
@@ -334,6 +342,7 @@ const FLAME_OPTS = [{v:'',l:'Orange (default)'},{v:'s-flame-blue',l:'Blue'},{v:'
 const LIGHTS_OPTS= [{v:'',l:'Off'},{v:'s-lights-pulse',l:'Pulse'},{v:'s-lights-sequence',l:'Sequence'},{v:'s-lights-flash',l:'Flash'}];
 const EYES_OPTS  = [{v:'',l:'Default'},{v:'s-eyes-up',l:'Up'},{v:'s-eyes-down',l:'Down'},{v:'s-eyes-left',l:'Left'},{v:'s-eyes-right',l:'Right'},{v:'s-eyes-roll',l:'Roll'},{v:'s-eyes-surprise',l:'Surprise'}];
 const SMOKE_OPTS = [{v:'',l:'Off'},{v:'s-smoke-sm',l:'1 small puff'},{v:'s-smoke-lg',l:'1 large puff'},{v:'s-smoke-2',l:'2 puffs'},{v:'s-smoke-3',l:'3 puffs'}];
+const NOSE_OPTS  = [{v:'',l:'Off'},{v:'s-nose-spin-l',l:'Spin left'},{v:'s-nose-spin-r',l:'Spin right'},{v:'s-nose-pop-slow',l:'Pop slow'},{v:'s-nose-pop-fast',l:'Pop fast'}];
 
 const sel = (opts, val) => opts.map(o=>`<option value="${o.v}"${o.v===val?' selected':''}>${o.l}</option>`).join('');
 
@@ -567,7 +576,7 @@ function renderSteps() {
         </div>
         <div class="anim-row">
           <div class="asg"><label>Smoke</label><select id="as-${s.key}">${sel(SMOKE_OPTS, typeof an.smoke==='string'?an.smoke:(an.smoke?'s-smoke-3':''))}</select></div>
-          <div class="asg"><label style="visibility:hidden">x</label><label style="padding-top:6px"><input type="checkbox" id="an-${s.key}"${an.noseSpin?' checked':''}> 🌀 Nose spin</label></div>
+          <div class="asg"><label>Nose</label><select id="an-${s.key}">${sel(NOSE_OPTS, typeof an.noseSpin==='string'?an.noseSpin:(an.noseSpin?'s-nose-spin-r':''))}</select></div>
         </div>
         <div class="card-acts">
           <button class="btn-prv" onclick="window._osePreview('${s.key}')">▶ Preview</button>
@@ -607,12 +616,12 @@ window._osePreview = function(k) {
   const lights= document.getElementById('al-'+k).value;
   const eyes  = document.getElementById('ae-'+k).value;
   const smoke = document.getElementById('as-'+k).value;
-  const nose  = document.getElementById('an-'+k).checked;
+  const nose  = document.getElementById('an-'+k).value;
   const el = document.getElementById('pb-blasty');
-  el.className = ['pb-blasty','s-arrive',mood,flame,lights,eyes,smoke,nose?'s-nose-spin':''].filter(Boolean).join(' ');
+  el.className = ['pb-blasty','s-arrive',mood,flame,lights,eyes,smoke,nose].filter(Boolean).join(' ');
   void el.offsetWidth;
   setTimeout(()=>{
-    el.className = ['pb-blasty',mood,flame,lights,eyes,smoke,nose?'s-nose-spin':''].filter(Boolean).join(' ');
+    el.className = ['pb-blasty',mood,flame,lights,eyes,smoke,nose].filter(Boolean).join(' ');
   }, 500);
   document.getElementById('prev-cap').textContent = MOOD_OPTS.find(o=>o.v===mood)?.l || mood;
 };
@@ -654,13 +663,13 @@ window._oseAnimChange = async function(k) {
   const lights = document.getElementById('al-'+k).value;
   const eyes   = document.getElementById('ae-'+k).value;
   const smoke  = document.getElementById('as-'+k).value;
-  const nose   = document.getElementById('an-'+k).checked;
+  const nose   = document.getElementById('an-'+k).value;
   const anim   = { mood };
   if (flame)  anim.flame    = flame;
   if (lights) anim.lights   = lights;
   if (eyes)   anim.eyes     = eyes;
   if (smoke)  anim.smoke    = smoke;
-  if (nose)   anim.noseSpin = true;
+  if (nose)   anim.noseSpin = nose;
   const sts = document.getElementById('sts-anim-'+k);
   try {
     if (auth.currentUser) await auth.currentUser.getIdToken(true);
