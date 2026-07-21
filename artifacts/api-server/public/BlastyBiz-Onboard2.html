@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784600165203"/>
+  <link rel="stylesheet" href="global-style.css?v=1784601494935"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -805,22 +805,22 @@
     {
       mood: 's-wave',   pos: 'right',
       anim: { mood: 's-wave', flame: 's-flame-green', lights: 's-lights-sequence' },
-      blastyMsgFn: () => 'Great' + (window._ob2Name ? ', ' + window._ob2Name : '') + '! First — what\'s the name of your business?',
-      inputType: 'text',
-      key: 'bizName',
-      placeholder: "e.g. Mike's Auto Repair",
-      hint: 'This is how customers will find you everywhere',
-      validate: v => v.trim().length >= 1 ? null : 'Please enter your business name.'
-    },
-    {
-      mood: 's-happy',  pos: 'left',
-      blastyMsgFn: () => 'And what\'s your name?',
+      blastyMsg: "Hi there! 👋 I'm Blasty — your AI marketing co-pilot. I'll help you blast your business across every platform in minutes. First though... what's your name?",
       inputType: 'text',
       key: 'ownerName',
       placeholder: 'e.g. Dave',
       hint: 'Your first name, or full name — your call',
       validate: v => v.trim().length >= 1 ? null : 'Please enter your name.',
       toggle: { stateKey: 'ynMentionName', label: 'Include my name in marketing copy' }
+    },
+    {
+      mood: 's-happy',  pos: 'left',
+      blastyMsgFn: a => 'Nice to meet you, ' + (a.ownerName || 'you') + '! What\'s the name of your business?',
+      inputType: 'text',
+      key: 'bizName',
+      placeholder: "e.g. Mike's Auto Repair",
+      hint: 'This is how customers will find you everywhere',
+      validate: v => v.trim().length >= 1 ? null : 'Please enter your business name.'
     },
     {
       mood: 's-ask',    pos: 'right',

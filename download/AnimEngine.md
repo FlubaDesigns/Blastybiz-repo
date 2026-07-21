@@ -138,8 +138,8 @@ All 22 steps in `BlastyBiz-Onboard2.html`. Each step shows: Blasty's mood, which
 
 | # | Mood | Side | Question / Action | Input Type | Skip If |
 |---|------|------|-------------------|------------|---------|
-| 1 | s-wave | Right | What's the name of your business? | text | — |
-| 2 | s-happy | Left | And what's your name? | text | — |
+| 1 | s-wave | Right | Blasty intro + "What's your name?" | text | — |
+| 2 | s-happy | Left | "Nice to meet you, [ownerName]! What's the name of your business?" | text | — |
 | 3 | s-ask | Right | What's your title at [bizName]? | text | — |
 | 4 | s-happy | Left | Best phone number for [bizName]? | tel | — |
 | 5 | s-ask | Right | Is [bizName] a physical location, online only, or both? | choice | — |
