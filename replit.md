@@ -47,7 +47,7 @@ See `mascot/README.md` for the full guide — SVG anatomy, animation class refer
 2. **Fix** — make the code change.
 3. **Deploy to Firebase** — run `npx firebase-tools deploy --only hosting` for HTML/JS changes; deploy individual functions for Cloud Function changes.
 4. **Confirm** — verify the fix is actually live (e.g. `curl` the deployed file and check the output). Do not assume it worked.
-5. **TEST WITH CURL** — Dave has found Playwright unreliable for this project. Do NOT use `runTest()`/Playwright. Instead verify with `curl` against the live site/functions: confirm the deployed file/response reflects the fix, and where possible exercise the actual behavior (e.g. hit a Cloud Function endpoint, check Firestore state via the REST-API token-refresh technique). This is NOT optional — skipping verification entirely is not allowed. If verification fails, go back to step 1.
+5. **VERIFY** — Use `curl` to confirm the deployed file/response reflects the fix. Use Playwright (`runTest()`) when the bug involves browser-side JavaScript execution, console errors, or UI behavior that curl cannot catch (e.g. SyntaxErrors, module failures, auth-guard redirects). Use the Firestore REST-API token-refresh technique to verify Firestore state. Skipping verification entirely is not allowed. If verification fails, go back to step 1.
 6. **Update `download/BlastyBiz_Audit.md`** — add a row to the 🐛 Bugs Fixed table with date, location, and what was wrong and how it was fixed.
 7. **Rebuild `download/BlastyBiz_Site.zip`** — run the Python zipfile script so the zip always reflects the latest state.
 8. **Present both files** to the user before closing out the fix.

@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="stylesheet" href="global-style.css?v=1784655220397"/>
+  <link rel="stylesheet" href="global-style.css?v=1784655657726"/>
   <title>BlastyBiz — Welcome</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <style>body{visibility:hidden}</style>
@@ -217,26 +217,25 @@
     badge.className = 'intro-plan-badge ' + (plan||'trial');
     badge.textContent = plan === 'agency' ? 'Agency' : plan === 'pro' ? 'Pro' : 'Trial';
 
+    window._startFresh = function() {
+      sessionStorage.removeItem('bb_answers');
+      sessionStorage.removeItem('bb_bizId');
+      window.location.href = 'BlastyBiz-Profile.html';
+    };
+
     if (isNew) {
       headline.textContent = "Hi! I'm Blasty 👋";
       sub.textContent = "Your AI marketing co-pilot. Let's set up your business profile so I can blast your business across every platform.";
       ctaWrap.innerHTML =
         '<a href="BlastyBiz-Profile.html" class="intro-btn-primary">🚀 Let\'s get started</a>';
     } else {
-      var name = ud.displayName || '';
-      if (plan === 'pro') {
-        headline.textContent = '🥇 Congrats on Pro' + (name ? ', ' + name.split(' ')[0] : '') + '!';
-        sub.textContent = 'You\'ve unlocked Instagram, Twitter/X, LinkedIn, and unlimited campaigns. Let\'s put it to work.';
-      } else if (plan === 'agency') {
-        headline.textContent = '🏆 You\'re on Agency' + (name ? ', ' + name.split(' ')[0] : '') + '!';
-        sub.textContent = 'Multiple businesses, all platforms, client-ready output. The full arsenal is yours.';
-      } else {
-        headline.textContent = 'Welcome back' + (name ? ', ' + name.split(' ')[0] : '') + '! 👋';
-        sub.textContent = 'Ready to blast? Jump back in or update your profile.';
-      }
+      var firstName = (ud.displayName || '').split(' ')[0];
+      headline.textContent = 'Welcome back' + (firstName ? ', ' + firstName : '') + '! 👋';
+      sub.textContent = 'Your BlastyBiz hub. Jump into your dashboard, add a new business, or update your profile.';
       ctaWrap.innerHTML =
-        '<a href="BlastyBiz.html" class="intro-btn-primary">🚀 Go to dashboard</a>' +
-        '<a href="BlastyBiz-Profile.html" class="intro-btn-secondary">✏️ Update my profile</a>';
+        '<a href="BlastyBiz.html" class="intro-btn-primary">🚀 Dashboard</a>' +
+        '<a href="#" onclick="window._startFresh();return false;" class="intro-btn-secondary">➕ New business</a>' +
+        '<a href="BlastyBiz-Profile.html" class="intro-btn-secondary">✏️ Update profile</a>';
     }
 
     if (window.PBMascot) {

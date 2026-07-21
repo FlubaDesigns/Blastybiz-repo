@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="stylesheet" href="global-style.css?v=1784655657726"/>
+  <title>BlastyBiz — Test Console</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
+  <style>body{visibility:hidden}</style>
+  <script type="module" src="./auth-guard.js"></script>
+  <script src="blastybiz-menu.js?v=3"></script>
+  <script src="mascot.js?v=3"></script>
+  <style>
+    .tc-wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+    .tc-header {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+    .tc-mascot { width: 72px; flex-shrink: 0; }
+    .tc-title-block h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      color: var(--green, #39ff14);
+      margin: 0 0 4px;
+      letter-spacing: .04em;
+    }
+    .tc-title-block p {
+      font-size: 13px;
+      color: var(--muted, #888);
+      margin: 0;
+    }
+    .tc-admin-badge {
+      display: inline-block;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted, #888);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    .tc-section {
+      margin-bottom: 28px;
+    }
+    .tc-section-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted, #666);
+      margin-bottom: 12px;
+    }
+    .tc-card {
+      background: var(--panel, #0a1a0a);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 10px;
+    }
+    .tc-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .tc-card-info h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text, #c8dbf5);
+      margin: 0 0 4px;
+    }
+    .tc-card-info p {
+      font-size: 12.5px;
+      color: var(--muted, #888);
+      margin: 0;
+      line-height: 1.45;
+    }
+    .tc-btn {
+      padding: 9px 18px;
+      border-radius: 8px;
+      font: 600 13px 'DM Sans', sans-serif;
+      cursor: pointer;
+      border: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: opacity .15s;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+    .tc-btn:hover { opacity: .82; }
+    .tc-btn-primary {
+      background: var(--green, #39ff14);
+      color: #000;
+    }
+    .tc-btn-secondary {
+      background: transparent;
+      color: var(--text, #c8dbf5);
+      border: 1.5px solid rgba(255,255,255,.18);
+    }
+    .tc-btn-danger {
+      background: transparent;
+      color: #ff6060;
+      border: 1.5px solid rgba(255,96,96,.35);
+    }
+    .tc-full-run {
+      width: 100%;
+      padding: 16px;
+      font-size: 16px;
+      border-radius: 12px;
+      background: var(--green, #39ff14);
+      color: #000;
+      border: none;
+      font-weight: 800;
+      cursor: pointer;
+      transition: opacity .15s;
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      letter-spacing: .01em;
+      margin-bottom: 24px;
+    }
+    .tc-full-run:hover { opacity: .88; }
+    .tc-notice {
+      background: rgba(57,255,20,.07);
+      border: 1px solid rgba(57,255,20,.18);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      color: var(--muted, #999);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .tc-notice strong { color: var(--green, #39ff14); }
+    .tc-access-denied {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    .tc-access-denied h2 { color: #ff6060; margin-bottom: 8px; }
+    .tc-access-denied p { color: var(--muted, #888); font-size: 14px; }
+    .tc-sep {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,.06);
+      margin: 24px 0;
+    }
+    #tc-session-status {
+      font-size: 12px;
+      color: var(--muted, #777);
+      background: rgba(255,255,255,.04);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-family: monospace;
+      word-break: break-all;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body class="has-site-header">
+<div id="header__inject"></div>
+
+<div class="main">
+  <div class="main-inner tc-wrap">
+
+    <div id="tc-loading" style="text-align:center;padding:60px 0;color:var(--muted,#888);font-size:14px;">Loading…</div>
+
+    <div id="tc-denied" class="tc-access-denied" style="display:none">
+      <h2>🚫 Admin only</h2>
+      <p>This page is restricted to admin accounts.<br/>
+      <a href="BlastyBiz.html" style="color:var(--green,#39ff14);">← Back to dashboard</a></p>
+    </div>
+
+    <div id="tc-content" style="display:none">
+
+      <div class="tc-header">
+        <div class="tc-mascot">
+          <div class="pb-mascot" id="pb-mascot"></div>
+        </div>
+        <div class="tc-title-block">
+          <h1>Blasty Test Console <span class="tc-admin-badge">Admin</span></h1>
+          <p>Run through any part of the onboarding flow. Test data is saved to your real account.</p>
+        </div>
+      </div>
+
+      <div class="tc-notice">
+        <strong>Note:</strong> Tests use your real Firebase account and save to Firestore. Each "new business" test run creates a real business document — delete extras from your dashboard after testing.
+      </div>
+
+      <button class="tc-full-run" onclick="_tcFullRun()">
+        🚀 Full Test Run — Start Onboarding From Scratch
+      </button>
+
+      <div class="tc-section">
+        <div class="tc-section-label">Individual stages</div>
+
+        <div class="tc-card">
+          <div class="tc-card-head">
+            <div class="tc-card-info">
+              <h3>1 — Welcome / Intro</h3>
+              <p>Welcome hub. New user view: Blasty intro + "Let's get started". Tests badge, perks panel, and news section.</p>
+            </div>
+            <button class="tc-btn tc-btn-secondary" onclick="_tcIntroNew()">Test ↗</button>
+          </div>
+        </div>
+
+        <div class="tc-card">
+          <div class="tc-card-head">
+            <div class="tc-card-info">
+              <h3>2 — Profile (Blasty wizard)</h3>
+              <p>12-step blur-spotlight wizard. Blasty floats beside each field. Tests field locking, progress bar, fork, and Firestore save.</p>
+            </div>
+            <button class="tc-btn tc-btn-primary" onclick="_tcProfile()">Test ↗</button>
+          </div>
+        </div>
+
+        <div class="tc-card">
+          <div class="tc-card-head">
+            <div class="tc-card-info">
+              <h3>3 — Story (5-step AI context)</h3>
+              <p>Story / different / awards / customer / other fields. Requires a bizId in sessionStorage — run Profile first or use the Full Run button.</p>
+            </div>
+            <button class="tc-btn tc-btn-secondary" onclick="_tcStory()">Test ↗</button>
+          </div>
+        </div>
+
+        <div class="tc-card">
+          <div class="tc-card-head">
+            <div class="tc-card-info">
+              <h3>4 — Create / Blast</h3>
+              <p>Quick-form campaign creator. Requires a bizId in sessionStorage — run Profile first or use the Full Run button.</p>
+            </div>
+            <button class="tc-btn tc-btn-secondary" onclick="_tcCreate()">Test ↗</button>
+          </div>
+        </div>
+
+      </div>
+
+      <hr class="tc-sep"/>
+
+      <div class="tc-section">
+        <div class="tc-section-label">Session state</div>
+        <div class="tc-card">
+          <div class="tc-card-head">
+            <div class="tc-card-info">
+              <h3>Clear session storage</h3>
+              <p>Wipes <code>bb_answers</code> and <code>bb_bizId</code> so the next Profile visit starts completely fresh.</p>
+            </div>
+            <button class="tc-btn tc-btn-danger" onclick="_tcClearSession()">Clear</button>
+          </div>
+          <div id="tc-session-status">Checking…</div>
+        </div>
+      </div>
+
+      <div class="tc-section">
+        <div class="tc-section-label">Other tools</div>
+        <div class="tc-card">
+          <div class="tc-card-head">
+            <div class="tc-card-info">
+              <h3>Onboard Step Editor</h3>
+              <p>Edit what Blasty says at each step + animation settings.</p>
+            </div>
+            <a class="tc-btn tc-btn-secondary" href="BlastyBiz-Admin-OnboardSteps.html">Open ↗</a>
+          </div>
+        </div>
+        <div class="tc-card">
+          <div class="tc-card-head">
+            <div class="tc-card-info">
+              <h3>Mood Presets</h3>
+              <p>Create and manage named Blasty animation presets.</p>
+            </div>
+            <a class="tc-btn tc-btn-secondary" href="BlastyBiz-Admin-Moods.html">Open ↗</a>
+          </div>
+        </div>
+        <div class="tc-card">
+          <div class="tc-card-head">
+            <div class="tc-card-info">
+              <h3>Mascot Sandbox</h3>
+              <p>Live Blasty preview — test any mood, flame, eyes, smoke, nose combo directly.</p>
+            </div>
+            <a class="tc-btn tc-btn-secondary" href="BlastyBiz-Admin-OnboardSteps.html#preview">Open ↗</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function _tcRefreshSession() {
+  var ans  = sessionStorage.getItem('bb_answers');
+  var bizId = sessionStorage.getItem('bb_bizId');
+  var el = document.getElementById('tc-session-status');
+  if (!ans && !bizId) {
+    el.textContent = 'Session is clean — no bb_answers or bb_bizId stored.';
+  } else {
+    var parts = [];
+    if (bizId) parts.push('bb_bizId: ' + bizId);
+    if (ans)   parts.push('bb_answers: ' + ans.length + ' chars');
+    el.textContent = parts.join(' | ');
+  }
+}
+
+function _tcClearSession() {
+  sessionStorage.removeItem('bb_answers');
+  sessionStorage.removeItem('bb_bizId');
+  _tcRefreshSession();
+}
+
+function _tcFullRun() {
+  _tcClearSession();
+  window.location.href = 'BlastyBiz-Profile.html';
+}
+
+function _tcIntroNew() {
+  window.location.href = 'BlastyBiz-Intro.html';
+}
+
+function _tcProfile() {
+  _tcClearSession();
+  window.location.href = 'BlastyBiz-Profile.html';
+}
+
+function _tcStory() {
+  var bizId = sessionStorage.getItem('bb_bizId');
+  if (!bizId) {
+    alert('No bizId in session. Run the Profile flow first, or use the Full Test Run button.');
+    return;
+  }
+  window.location.href = 'BlastyBiz-Story.html';
+}
+
+function _tcCreate() {
+  var bizId = sessionStorage.getItem('bb_bizId');
+  if (!bizId) {
+    alert('No bizId in session. Run the Profile flow first, or use the Full Test Run button.');
+    return;
+  }
+  window.location.href = 'BlastyBiz-CreateBiz.html?bizId=' + bizId;
+}
+
+window._tcReady = function() {
+  document.getElementById('tc-loading').style.display = 'none';
+  document.getElementById('tc-content').style.display = 'block';
+  _tcRefreshSession();
+  if (window.PBMascot) window.PBMascot.setMood('s-wave');
+};
+
+window._tcDenied = function() {
+  document.getElementById('tc-loading').style.display = 'none';
+  document.getElementById('tc-denied').style.display = 'block';
+};
+</script>
+
+<script type="module">
+import { auth, db } from './firebase-init-v2.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+await auth.authStateReady();
+const user = auth.currentUser;
+if (!user || !user.emailVerified) {
+  window.location.href = 'BlastyBiz-Login.html';
+} else {
+  let isAdmin = user.email === 'info@blastybiz.com';
+  if (!isAdmin) {
+    try {
+      const snap = await getDoc(doc(db, 'config', 'admins'));
+      if (snap.exists()) {
+        const emails = snap.data().emails || [];
+        isAdmin = emails.includes(user.email);
+      }
+    } catch(e) { console.error('[tc admin check]', e); }
+  }
+  if (isAdmin) {
+    window._tcReady();
+  } else {
+    window._tcDenied();
+  }
+}
+</script>
+
+<script>
+fetch('blastybiz-header.html').then(r=>r.text()).then(html=>{ document.getElementById('header__inject').innerHTML=html; });
+</script>
+</body>
+</html>
