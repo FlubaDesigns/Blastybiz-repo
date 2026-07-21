@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784601494935"/>
+  <link rel="stylesheet" href="global-style.css?v=1784601681534"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -1382,13 +1382,14 @@
   window._ob2StartConvo = function() {
     if (window._ob2Prefill) Object.assign(answers, window._ob2Prefill);
     setMood('s-wave');
-    setTimeout(() => {
-      const greeting = window._ob2EditBizId
-        ? "Welcome back! Let's update your business profile. I'll walk through each step — just edit anything that's changed. 👋"
-        : "Hi! I'm <strong>Blasty</strong> 🚀 I'm your AI marketing assistant — I'll walk you through setting up your BlastyBiz profile. It only takes a few minutes and I'll ask everything I need to start blasting for you!";
-      addBlastyBubble(greeting);
-      setTimeout(showStep, 1400);
-    }, 600);
+    if (window._ob2EditBizId) {
+      setTimeout(() => {
+        addBlastyBubble("Welcome back! Let's update your business profile. I'll walk through each step — just edit anything that's changed. 👋");
+        setTimeout(showStep, 1400);
+      }, 600);
+    } else {
+      setTimeout(showStep, 600);
+    }
   };
   if (window._ob2Ready) window._ob2StartConvo();
 })();
