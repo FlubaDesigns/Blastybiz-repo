@@ -166,6 +166,8 @@
     '@keyframes b-light-seq{0%,100%{opacity:.1}50%{opacity:1}}',
     '.pb-mascot.s-lights-flash .w-light{animation:b-light-flash .28s ease-in-out 6;}',
     '@keyframes b-light-flash{0%,100%{opacity:0}50%{opacity:1}}',
+    /* Glow when any lights class is active */
+    '.pb-mascot.s-lights-pulse .w-light,.pb-mascot.s-lights-sequence .w-light,.pb-mascot.s-lights-flash .w-light{filter:drop-shadow(0 0 9px #fff) drop-shadow(0 0 5px currentColor);}',
 
     /* Smoke (all variants) */
     '.pb-mascot.s-smoke .smoke-puff{animation:b-smoke 1.4s ease-out forwards;transform-box:fill-box;transform-origin:center;}',
@@ -268,7 +270,7 @@
     /* Badge */
     + '<g id="mascot-badge"><circle cx="180" cy="316" r="29" fill="#102957"/><circle cx="180" cy="316" r="23" fill="url(#mc-gf)" stroke="#b9ff78" stroke-width="4"/><path d="M169 299 H183 C198 299 202 314 192 320 C202 325 198 337 183 337 H169Z" fill="#fff"/><path d="M177 306 H184 C191 306 191 314 184 314 H177ZM177 321 H185 C192 321 192 329 185 329 H177Z" fill="#2c9e1d"/></g>'
     /* Waist lights */
-    + '<g id="mascot-lights-waist"><circle class="w-light" cx="122" cy="289" r="5" fill="#39ff14" opacity="0"/><circle class="w-light" cx="140" cy="296" r="5" fill="#39ff14" opacity="0"/><circle class="w-light" cx="160" cy="300" r="5" fill="#39ff14" opacity="0"/><circle class="w-light" cx="180" cy="301" r="5" fill="#39ff14" opacity="0"/><circle class="w-light" cx="200" cy="300" r="5" fill="#39ff14" opacity="0"/><circle class="w-light" cx="220" cy="296" r="5" fill="#39ff14" opacity="0"/><circle class="w-light" cx="238" cy="289" r="5" fill="#39ff14" opacity="0"/></g>'
+    + '<g id="mascot-lights-waist"><circle class="w-light" cx="122" cy="289" r="9" fill="#ff4040" opacity="0"/><circle class="w-light" cx="140" cy="296" r="9" fill="#ff9900" opacity="0"/><circle class="w-light" cx="160" cy="300" r="9" fill="#ffe033" opacity="0"/><circle class="w-light" cx="180" cy="301" r="9" fill="#39ff14" opacity="0"/><circle class="w-light" cx="200" cy="300" r="9" fill="#00cfff" opacity="0"/><circle class="w-light" cx="220" cy="296" r="9" fill="#7b5eff" opacity="0"/><circle class="w-light" cx="238" cy="289" r="9" fill="#ff4db8" opacity="0"/></g>'
     /* Arms */
     + '<g id="mascot-arms">'
     + '<g class="mascot-arm mascot-arm-wave" opacity="0"><path d="M113 261 C84 253 73 229 82 207" fill="none" stroke="#102957" stroke-width="19" stroke-linecap="round"/><path d="M113 261 C84 253 73 229 82 207" fill="none" stroke="#f8fbff" stroke-width="11" stroke-linecap="round"/><g transform="translate(78 199) rotate(-18)"><circle cx="0" cy="0" r="16" fill="#fff" stroke="#102957" stroke-width="6"/><path d="M-12 -7 L-22 -22 M-4 -13 L-7 -31 M5 -13 L10 -31 M12 -8 L23 -22" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/><path d="M-12 -7 L-22 -22 M-4 -13 L-7 -31 M5 -13 L10 -31 M12 -8 L23 -22" fill="none" stroke="#102957" stroke-width="4" stroke-linecap="round"/></g></g>'
