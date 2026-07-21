@@ -142,10 +142,8 @@
     /* Nose variants */
     '.pb-mascot.s-nose-spin   .mascot-nose{animation:b-nose-spin  .7s cubic-bezier(.34,1.56,.64,1) 1 both;}',
     '@keyframes b-nose-spin{0%{transform:rotate(0deg)}55%{transform:rotate(210deg)}100%{transform:rotate(360deg)}}',
-    '.pb-mascot.s-nose-spin-l .mascot-nose{animation:b-nose-spin-l 1.1s linear infinite;}',
-    '@keyframes b-nose-spin-l{0%,100%{transform:rotate(0deg)}30%{transform:rotate(-24deg)}70%{transform:rotate(20deg)}}',
-    '.pb-mascot.s-nose-spin-r .mascot-nose{animation:b-nose-spin-r 1.1s linear infinite;}',
-    '@keyframes b-nose-spin-r{0%,100%{transform:rotate(0deg)}30%{transform:rotate(24deg)}70%{transform:rotate(-20deg)}}',
+    '.pb-mascot.s-nose-shake .mascot-nose{animation:b-nose-shake 1.3s ease-in-out infinite;}',
+    '@keyframes b-nose-shake{0%,100%{transform:rotate(0deg)}25%{transform:rotate(-7deg)}75%{transform:rotate(7deg)}}',
     '.pb-mascot.s-nose-pop-slow .mascot-nose{animation:b-nose-pop-slow 1.5s cubic-bezier(.34,1.56,.64,1) 5 both;}',
     '@keyframes b-nose-pop-slow{0%,100%{transform:translateY(0)}40%{transform:translateY(-85px)}}',
     '.pb-mascot.s-nose-pop-fast .mascot-nose{animation:b-nose-pop-fast .45s cubic-bezier(.34,1.56,.64,1) 5 both;}',
@@ -174,7 +172,7 @@
     '.pb-mascot.s-smoke .smoke-puff:nth-child(1){animation-delay:0s}',
     '.pb-mascot.s-smoke .smoke-puff:nth-child(2){animation-delay:.18s}',
     '.pb-mascot.s-smoke .smoke-puff:nth-child(3){animation-delay:.36s}',
-    '@keyframes b-smoke{0%{opacity:.7;transform:scale(.15) translateY(0)}35%{opacity:.5;transform:scale(1.5) translateY(-20px)}100%{opacity:0;transform:scale(2.8) translateY(-55px)}}',
+    '@keyframes b-smoke{0%{opacity:.8;transform:scale(.3) translateY(0)}40%{opacity:.6;transform:scale(1.4) translateY(-30px)}100%{opacity:0;transform:scale(2.5) translateY(-75px)}}',
     '.pb-mascot.s-smoke-sm .smoke-puff:nth-child(1){animation:b-smoke-sm 1.2s ease-out forwards;transform-box:fill-box;transform-origin:center;}',
     '.pb-mascot.s-smoke-sm .smoke-puff:nth-child(2),.pb-mascot.s-smoke-sm .smoke-puff:nth-child(3){animation:none;}',
     '@keyframes b-smoke-sm{0%{opacity:.7;transform:scale(.15) translateY(0)}40%{opacity:.5;transform:scale(.9) translateY(-12px)}100%{opacity:0;transform:scale(1.6) translateY(-30px)}}',
@@ -184,7 +182,7 @@
     '.pb-mascot.s-smoke-2 .smoke-puff:nth-child(1){animation:b-smoke 1.4s ease-out forwards;transform-box:fill-box;transform-origin:center;animation-delay:0s;}',
     '.pb-mascot.s-smoke-2 .smoke-puff:nth-child(2){animation:b-smoke 1.4s ease-out forwards;transform-box:fill-box;transform-origin:center;animation-delay:.18s;}',
     '.pb-mascot.s-smoke-2 .smoke-puff:nth-child(3){animation:none;}',
-    '.pb-mascot.s-smoke-3 .smoke-puff{animation:b-smoke 1.4s ease-out forwards;transform-box:fill-box;transform-origin:center;}',
+    '.pb-mascot.s-smoke-3 .smoke-puff{animation:b-smoke 1.8s ease-out infinite;transform-box:fill-box;transform-origin:center;}',
     '.pb-mascot.s-smoke-3 .smoke-puff:nth-child(1){animation-delay:0s}',
     '.pb-mascot.s-smoke-3 .smoke-puff:nth-child(2){animation-delay:.18s}',
     '.pb-mascot.s-smoke-3 .smoke-puff:nth-child(3){animation-delay:.36s}',
@@ -278,20 +276,20 @@
     + '</g>'
     + '</g>' /* end #mascot-body */
     /* Smoke (outside float group) */
-    + '<g id="mascot-smoke"><ellipse class="smoke-puff" cx="180" cy="415" rx="2" ry="2" fill="#c8c8c8" opacity="0"/><ellipse class="smoke-puff" cx="158" cy="428" rx="2" ry="2" fill="#b8b8b8" opacity="0"/><ellipse class="smoke-puff" cx="202" cy="422" rx="2" ry="2" fill="#d0d0d0" opacity="0"/></g>'
+    + '<g id="mascot-smoke"><ellipse class="smoke-puff" cx="180" cy="410" rx="14" ry="14" fill="#c8c8c8" opacity="0"/><ellipse class="smoke-puff" cx="156" cy="422" rx="14" ry="14" fill="#b8b8b8" opacity="0"/><ellipse class="smoke-puff" cx="204" cy="418" rx="14" ry="14" fill="#d0d0d0" opacity="0"/></g>'
     + '</svg>';
 
   /* ── DATA ─────────────────────────────────────────────────────────────── */
   var DEFAULT_ANIM = {
     's-wave':        { flame: 's-flame-green',  lights: 's-lights-sequence' },
-    's-wave-2':      { flame: 's-flame-green',  lights: 's-lights-sequence', noseSpin: 's-nose-spin-r' },
+    's-wave-2':      { flame: 's-flame-green',  lights: 's-lights-sequence', noseSpin: 's-nose-shake' },
     's-ask':         {},
     's-ask-2':       {},
     's-ask-3':       { lights: 's-lights-pulse' },
-    's-happy':       { flame: 's-flame-green',  noseSpin: 's-nose-spin-r' },
+    's-happy':       { flame: 's-flame-green',  noseSpin: 's-nose-shake' },
     's-working':     { flame: 's-flame-blue',   lights: 's-lights-pulse' },
     's-celebrate':   { flame: 's-flame-green',  lights: 's-lights-flash',    smoke: 's-smoke-3' },
-    's-spin':        { flame: 's-flame-purple', noseSpin: 's-nose-spin-r' },
+    's-spin':        { flame: 's-flame-purple', noseSpin: 's-nose-shake' },
     's-tilt-left':   { eyes: 's-eyes-left' },
     's-tilt-right':  { eyes: 's-eyes-right' },
     's-arrive-land': { flame: 's-flame-blue',   lights: 's-lights-pulse' }
@@ -328,7 +326,7 @@
       merged.flame || '',
       merged.lights || '',
       merged.smoke === true ? 's-smoke-3' : (merged.smoke || ''),
-      merged.noseSpin === true ? 's-nose-spin-r' : (merged.noseSpin || ''),
+      merged.noseSpin === true ? 's-nose-shake' : (merged.noseSpin || ''),
       merged.mouth || '',
       merged.limbs || ''
     ].filter(Boolean);

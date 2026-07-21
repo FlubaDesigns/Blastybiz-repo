@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Mood Presets</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784614051899">
+  <link rel="stylesheet" href="global-style.css?v=1784614448973">
   <style>
     body { visibility:hidden }
     .mp-grid { display:grid; grid-template-columns:1fr 220px; gap:24px; align-items:start; }
@@ -141,13 +141,13 @@ const db = getFirestore(getApp());
 const POSE_OPTS    = [{v:'s-ask',l:'Ask'},{v:'s-ask-2',l:'Ask 2 (lean right)'},{v:'s-ask-3',l:'Ask 3 (look up)'},{v:'s-wave',l:'Wave'},{v:'s-wave-2',l:'Wave 2 (big)'},{v:'s-happy',l:'Happy'},{v:'s-working',l:'Working'},{v:'s-celebrate',l:'Celebrate'},{v:'s-spin',l:'Spin'},{v:'s-tilt-left',l:'Tilt Left'},{v:'s-tilt-right',l:'Tilt Right'},{v:'s-arrive-land',l:'Arrive Land'}];
 const EXHAUST_OPTS = [{v:'',l:'Normal flame'},{v:'s-flame-blue',l:'Blue flame'},{v:'s-flame-green',l:'Green flame'},{v:'s-flame-red',l:'Red flame'},{v:'s-flame-purple',l:'Purple flame'},{v:'s-flame-white',l:'White flame'},{v:'s-smoke-sm',l:'Smoke — small'},{v:'s-smoke-lg',l:'Smoke — large'},{v:'s-smoke-2',l:'Smoke — 2 puffs'},{v:'s-smoke-3',l:'Smoke — 3 puffs'}];
 const EYES_OPTS    = [{v:'',l:'Default'},{v:'s-eyes-up',l:'Up'},{v:'s-eyes-down',l:'Down'},{v:'s-eyes-left',l:'Left'},{v:'s-eyes-right',l:'Right'},{v:'s-eyes-roll',l:'Roll'},{v:'s-eyes-surprise',l:'Surprise'}];
-const NOSE_OPTS    = [{v:'',l:'Off'},{v:'s-nose-spin-l',l:'Spin left'},{v:'s-nose-spin-r',l:'Spin right'},{v:'s-nose-pop-slow',l:'Pop slow'},{v:'s-nose-pop-fast',l:'Pop fast'}];
+const NOSE_OPTS    = [{v:'',l:'Off'},{v:'s-nose-shake',l:'Shake'},{v:'s-nose-pop-slow',l:'Pop slow'},{v:'s-nose-pop-fast',l:'Pop fast'}];
 const MOUTH_OPTS   = [{v:'',l:'Default (mood)'},{v:'s-mouth-happy',l:'Happy 😄'},{v:'s-mouth-working',l:'Working 😮'},{v:'s-mouth-celebrate',l:'Celebrate 😃'},{v:'s-mouth-ask',l:'Ask 😐'}];
 const LIMBS_OPTS   = [{v:'',l:'Pose default'},{v:'s-limb-wave',l:'Arm wave 🫳'},{v:'s-limb-point',l:'Arm point 👉'},{v:'s-limb-both',l:'Arms up 🙌'},{v:'s-limb-none',l:'Arms hidden'},{v:'s-limb-fin-wave',l:'Fin wave (left) 🏳️'},{v:'s-limb-fin-point',l:'Fin point (right) 🏳️'},{v:'s-limb-fin-both',l:'Fins up (both) 🏳️'}];
 
 const DEFAULT_PRESETS = [
   {id:'greeting',  label:'Greeting',    pose:'s-wave',        exhaust:'',             eyes:'',           nose:'',              mouth:'',                   limbs:'s-limb-wave'},
-  {id:'asking',    label:'Asking',      pose:'s-ask',         exhaust:'',             eyes:'',           nose:'s-nose-spin-r', mouth:'',                   limbs:''},
+  {id:'asking',    label:'Asking',      pose:'s-ask',         exhaust:'',             eyes:'',           nose:'s-nose-shake', mouth:'',                   limbs:''},
   {id:'thinking',  label:'Thinking',    pose:'s-ask-3',       exhaust:'',             eyes:'s-eyes-up',  nose:'',              mouth:'',                   limbs:''},
   {id:'working',   label:'Working',     pose:'s-working',     exhaust:'',             eyes:'',           nose:'',              mouth:'s-mouth-working',     limbs:'s-limb-point'},
   {id:'happy',     label:'Happy',       pose:'s-happy',       exhaust:'s-flame-blue', eyes:'',           nose:'',              mouth:'s-mouth-happy',       limbs:''},
