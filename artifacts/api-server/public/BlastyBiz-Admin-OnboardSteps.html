@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784609880192">
+  <link rel="stylesheet" href="global-style.css?v=1784611141969">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -37,14 +37,16 @@
     .step-head { display:flex; align-items:center; gap:9px; padding:10px 14px; background:#f8fafc; border-bottom:1px solid #e4e9f0; cursor:pointer; user-select:none; }
     .step-num { background:#e2e8f0; color:#475569; font-size:11px; font-weight:700; padding:2px 6px; border-radius:18px; min-width:22px; text-align:center; }
     .step-card.has-ov .step-num { background:#dbeafe; color:#1d4ed8; }
-    .sk { font-size:12px; font-weight:700; color:#0f172a; font-family:monospace; }
-    .sd { font-size:12px; color:#94a3b8; flex:1; }
+    .sk { font-size:12px; font-weight:700; color:#0f172a; font-family:monospace; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .sd { font-size:12px; color:#94a3b8; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .mod-badge { font-size:10px; background:#dbeafe; color:#1d4ed8; padding:1px 6px; border-radius:9px; font-weight:700; display:none; }
     .step-card.has-ov .mod-badge { display:inline; }
     .exp-ic { color:#94a3b8; font-size:12px; margin-left:auto; transition:transform .18s; }
     .step-card.open .exp-ic { transform:rotate(180deg); }
-    .step-body { display:none; padding:14px; }
+    .step-body { display:none; padding:14px; overflow-x:hidden; }
     .step-card.open .step-body { display:block; }
+    .sk { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .sd { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .msg-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
     @media (max-width:600px) { .msg-row { grid-template-columns:1fr; } }
     .fl { display:block; font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.07em; margin-bottom:3px; }
@@ -53,8 +55,9 @@
     textarea.mta.def { background:#f8fafc !important; color:#94a3b8 !important; }
     .asg select { background:#ffffff !important; color:#0f172a !important; }
     .anim-row { display:flex; flex-wrap:wrap; gap:9px; margin-bottom:9px; }
+    .asg { min-width:0; }
     .asg label { display:block; font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px; }
-    .asg select { border:1.5px solid #e2e8f0; border-radius:6px; padding:4px 7px; font:13px 'DM Sans',sans-serif; color:#0f172a; background:#fff; }
+    .asg select { width:100%; box-sizing:border-box; border:1.5px solid #e2e8f0; border-radius:6px; padding:4px 7px; font:13px 'DM Sans',sans-serif; color:#0f172a; background:#fff; }
     .asg select:focus { border-color:#2563eb; outline:none; }
     .anim-chk { display:flex; gap:14px; margin-bottom:12px; }
     .anim-chk label { display:flex; align-items:center; gap:4px; font-size:13px; color:#475569; cursor:pointer; }
@@ -87,7 +90,7 @@
       .ose-tab  { flex:1; text-align:center; }
       .msg-row  { grid-template-columns:1fr !important; }
       .anim-row { gap:6px; }
-      .asg select { max-width:100%; width:auto; }
+      .asg { flex:1 1 140px; }
       .step-card, .step-head, .step-body,
       .ob2-field-card, .ob2-field-head, .ob2-field-body {
         max-width:100%; box-sizing:border-box;
@@ -108,6 +111,7 @@
     <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Operate.html">Operate</a>
     <a class="icon-btn hide-mobile" href="BlastyBiz-Onboard2.html" target="_blank">▶ OB1</a>
     <a class="icon-btn hide-mobile" href="BlastyBiz-CreateBiz.html" target="_blank">▶ OB2</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Moods.html">Moods</a>
     <a class="icon-btn hide-mobile active" href="#">Onboard Editor</a>
     <a class="icon-btn" href="BlastyBiz-Login.html">👤</a>
   </div>
@@ -203,6 +207,7 @@ const sel = (opts, val) => opts.map(o=>`<option value="${o.v}"${o.v===val?' sele
 
 let overrides = {};
 let ob2Overrides = {};
+let moodPresets = [];
 
 window.oseTab = function(tab) {
   ['ob1','ob2'].forEach(t => {
@@ -263,6 +268,7 @@ function renderOb2AnimCards() {
       </div>
       <div class="ob2-field-body">
         <div class="anim-row">
+          ${moodPresets.length ? `<div class="asg" style="flex:2;min-width:160px"><label>Apply Preset ↓</label><select id="aprst-${s.key}" onchange="window._applyPreset('${s.key}')"><option value="">— pick a preset —</option>${moodPresets.map(p=>`<option value="${p.id}">${p.label}</option>`).join('')}</select></div>` : ''}
           <div class="asg"><label>Mood</label><select id="oa2m-${ev.key}">${sel(MOOD_OPTS,a.mood)}</select></div>
           <div class="asg"><label>Flame</label><select id="oa2f-${ev.key}">${sel(FLAME_OPTS,a.flame||'')}</select></div>
           <div class="asg"><label>Lights</label><select id="oa2l-${ev.key}">${sel(LIGHTS_OPTS,a.lights||'')}</select></div>
@@ -477,6 +483,24 @@ window._showMobilePreview = function(k) {
   window._previewTimer = setTimeout(function() { slot.style.display = 'none'; }, 4000);
 };
 
+window._applyPreset = function(k) {
+  const id = document.getElementById('aprst-'+k)?.value;
+  if (!id) return;
+  const p = moodPresets.find(x=>x.id===id);
+  if (!p) return;
+  if (document.getElementById('am-'+k))   document.getElementById('am-'+k).value   = p.pose    || 's-ask';
+  if (document.getElementById('af-'+k)) {
+    const isFlame = p.exhaust?.startsWith('s-flame');
+    const isSmoke = p.exhaust?.startsWith('s-smoke');
+    document.getElementById('af-'+k).value = isFlame ? p.exhaust : '';
+    document.getElementById('as-'+k).value = isSmoke ? p.exhaust : '';
+  }
+  if (document.getElementById('ae-'+k))   document.getElementById('ae-'+k).value   = p.eyes    || '';
+  if (document.getElementById('an-'+k))   document.getElementById('an-'+k).value   = p.nose    || '';
+  if (document.getElementById('amou-'+k)) document.getElementById('amou-'+k).value = p.mouth   || '';
+  window._osePreview(k);
+};
+
 window._osePreview = function(k) {
   window._showMobilePreview(k);
   const mood  = document.getElementById('am-'+k).value;
@@ -556,12 +580,14 @@ window._oseAnimChange = async function(k) {
 onAuthStateChanged(auth, async user => {
   if (!user) return;
   try {
-    const [ob1Snap, ob2Snap] = await Promise.all([
+    const [ob1Snap, ob2Snap, moodsSnap] = await Promise.all([
       getDoc(doc(db,'config','ob1Steps')),
-      getDoc(doc(db,'config','ob2Steps'))
+      getDoc(doc(db,'config','ob2Steps')),
+      getDoc(doc(db,'config','mascotMoods'))
     ]);
     overrides    = ob1Snap.exists() ? ob1Snap.data() : {};
     ob2Overrides = ob2Snap.exists() ? ob2Snap.data() : {};
+    moodPresets  = moodsSnap.exists() ? (moodsSnap.data().presets || []) : [];
     // OB1 pane
     document.getElementById('ose-status').style.display='none';
     document.getElementById('ose-steps').style.display='';
