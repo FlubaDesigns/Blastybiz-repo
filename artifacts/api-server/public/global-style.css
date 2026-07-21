@@ -1590,6 +1590,14 @@ body.onboarding-page textarea     { resize: none; }
 .add-biz-btn:hover   { border-color: var(--green); color: var(--green); }
 .del-biz-btn         { background: transparent; border: 1px solid transparent; border-radius: 8px; color: var(--muted); height: 34px; width: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; transition: all 0.2s; flex-shrink: 0; }
 .del-biz-btn:hover   { border-color: #c0392b; color: #e74c3c; background: rgba(231,76,60,0.08); }
+/* Business tab strip — replaces dropdown when 2+ businesses */
+.biz-tab-strip       { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.biz-tab-bar         { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0; }
+.biz-tab             { background: var(--dark); border: 1px solid var(--border); border-radius: 8px; color: var(--light); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 7px 14px; cursor: pointer; transition: border-color 0.15s, background 0.15s; white-space: nowrap; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.biz-tab:hover       { border-color: var(--silver, #aaa); }
+.biz-tab.active      { background: rgba(57,255,20,.1); border-color: var(--green); color: var(--green); cursor: default; }
+.biz-tab-actions     { display: flex; gap: 6px; flex-shrink: 0; }
+.biz-solo-name       { font-size: 14px; font-weight: 600; color: var(--light); padding: 7px 0; display: block; }
 .camp-open-btn       { display: inline-flex; align-items: center; background: rgba(0,200,83,0.1); border: 1px solid rgba(0,200,83,0.4); color: var(--green); border-radius: 8px; padding: 8px 14px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
 .camp-open-btn:hover { background: rgba(0,200,83,0.18); border-color: var(--green); }
 .del-camp-btn        { background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 2px 4px; border-radius: 4px; transition: color 0.15s; line-height: 1; }
