@@ -124,7 +124,7 @@ title = "generated_image"
 id = "OlLytVLFMpzHayK0XXDkK"
 uri = "file://download/BlastyBiz_Site.zip"
 type = "unspecified"
-title = "BlastyBiz_Site.zip"
+title = "BlastyBiz_Site.zip — updated"
 
 [[outputs]]
 id = "67fGmTkLMAbTADvgVIF6b"
@@ -215,3 +215,9 @@ id = "KRGyaQw-o6czs58iJ6u1Z"
 uri = "file://download/BlastyBiz_Blasty_README.md"
 type = "text"
 title = "BlastyBiz_Blasty_README.md"
+
+[[outputs]]
+id = "f5iiy_EbiZJTr8-kW43KI"
+uri = "file://download/README.md"
+type = "text"
+title = "README.md — new"
