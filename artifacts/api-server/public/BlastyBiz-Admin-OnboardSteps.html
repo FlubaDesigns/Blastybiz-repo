@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784613057313">
+  <link rel="stylesheet" href="global-style.css?v=1784613191832">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -123,6 +123,115 @@
     <h1 class="op-page-title">🚀 Onboard Editor</h1>
     <p class="op-page-sub">Customize Blasty's messages and animations. <strong>OB1</strong> = Blasty Wizard (23 steps + animation pickers). <strong>OB2</strong> = Quick Form (header greeting, section titles, button text, success message). Changes go live immediately.</p>
   </div>
+
+  <!-- ── Message Variables Reference ──────────────────────────────── -->
+  <details id="ref-accordion" style="margin-bottom:18px;border:1.5px solid #e4e9f0;border-radius:10px;background:#fff;overflow:hidden;">
+    <summary style="display:flex;align-items:center;gap:8px;padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:#1e293b;list-style:none;user-select:none;">
+      <span style="font-size:16px">📋</span>
+      Message Variable Reference
+      <span style="margin-left:auto;font-size:12px;color:#64748b;font-weight:400">Use <code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:11px">{variableName}</code> in any custom message</span>
+      <span class="ref-chev" style="font-size:13px;color:#94a3b8;transition:transform .2s">▼</span>
+    </summary>
+    <div style="padding:0 16px 16px">
+      <p style="font-size:12px;color:#64748b;margin:8px 0 12px">These tokens are replaced with live answers as the user moves through the wizard. Only tokens from <em>earlier</em> steps will have a value at the time a message displays.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px;">
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{ownerName}</code>
+          <span style="font-size:12px;color:#475569">Owner's first/full name</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{bizName}</code>
+          <span style="font-size:12px;color:#475569">Business name</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{role}</code>
+          <span style="font-size:12px;color:#475569">Owner's title / role</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{email}</code>
+          <span style="font-size:12px;color:#475569">Business email address</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{phone}</code>
+          <span style="font-size:12px;color:#475569">Business phone number</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{website}</code>
+          <span style="font-size:12px;color:#475569">Website URL</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{locationType}</code>
+          <span style="font-size:12px;color:#475569">brick / online / both</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{street}</code>
+          <span style="font-size:12px;color:#475569">Street address</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{city}</code>
+          <span style="font-size:12px;color:#475569">City</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{state}</code>
+          <span style="font-size:12px;color:#475569">State</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{zip}</code>
+          <span style="font-size:12px;color:#475569">ZIP code</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{story}</code>
+          <span style="font-size:12px;color:#475569">Business origin story</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{different}</code>
+          <span style="font-size:12px;color:#475569">What makes them different</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{awards}</code>
+          <span style="font-size:12px;color:#475569">Awards / press coverage</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{customer}</code>
+          <span style="font-size:12px;color:#475569">Ideal customer description</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{other}</code>
+          <span style="font-size:12px;color:#475569">Other info to always know</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{campaignName}</code>
+          <span style="font-size:12px;color:#475569">Campaign name</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{campaignAbout}</code>
+          <span style="font-size:12px;color:#475569">What the campaign is promoting</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{campaignAudience}</code>
+          <span style="font-size:12px;color:#475569">Target audience for the campaign</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{campaignOffer}</code>
+          <span style="font-size:12px;color:#475569">Special offer or call to action</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{category}</code>
+          <span style="font-size:12px;color:#475569">AI-detected business category</span>
+        </div>
+      </div>
+    </div>
+  </details>
+  <script>
+    (function(){
+      var d = document.getElementById('ref-accordion');
+      if(!d) return;
+      d.addEventListener('toggle', function(){
+        var chev = d.querySelector('.ref-chev');
+        if(chev) chev.style.transform = d.open ? 'rotate(180deg)' : '';
+      });
+    })();
+  </script>
 
   <div class="ose-outer-grid">
 
