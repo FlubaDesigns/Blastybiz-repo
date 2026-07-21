@@ -2,10 +2,12 @@ function _revealAdminNav() {
   (async function() {
     try {
       const { auth, db } = await import('./firebase-init-v2.js');
-      const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      const { doc, getDoc, collection, getDocs, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
       await auth.authStateReady();
       const user = auth.currentUser;
       if (!user) return;
+
+      // ── Admin nav link ──────────────────────────────
       let isAdmin = user.email === 'info@blastybiz.com';
       if (!isAdmin) {
         try {
@@ -19,6 +21,43 @@ function _revealAdminNav() {
         if (d) d.style.display = '';
         if (m) m.style.display = '';
       }
+
+      // ── Business tab strip (pro/agency, 2+ businesses) ─
+      try {
+        const ud = await getDoc(doc(db, 'users', user.uid));
+        if (!ud.exists()) return;
+        const plan = ud.data().plan || 'starter';
+        const activeBizId = ud.data().activeBusiness || null;
+        if (plan !== 'pro' && plan !== 'agency') return;
+
+        const bizSnap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
+        const bizzes = [];
+        bizSnap.forEach(function(d) { bizzes.push({ id: d.id, bizName: d.data().bizName, name: d.data().name, businessName: d.data().businessName }); });
+        if (bizzes.length < 2) return;
+
+        var tabBar = document.getElementById('header__biz-tabs');
+        if (!tabBar) return;
+
+        tabBar.innerHTML = bizzes.map(function(b) {
+          var isActive = b.id === activeBizId;
+          var name = b.bizName || b.name || b.businessName || '(unnamed)';
+          return isActive
+            ? '<span class="header__biz-tab active">' + name + '</span>'
+            : '<button type="button" class="header__biz-tab" onclick="window._bbHeaderSwitchBiz(\'' + b.id + '\')">' + name + '</button>';
+        }).join('');
+        tabBar.style.display = 'flex';
+
+        // Switch handler — update activeBusiness then reload the current page
+        window._bbHeaderSwitchBiz = function(bizId) {
+          setDoc(doc(db, 'users', user.uid), { activeBusiness: bizId }, { merge: true })
+            .then(function() { window.location.reload(); })
+            .catch(function(e) { alert('Error switching business: ' + e.message); });
+        };
+
+        // Header grew — recalculate offset
+        requestAnimationFrame(_applyHeaderOffset);
+      } catch(e) { /* not pro/agency or Firestore unavailable */ }
+
     } catch(e) { /* not logged in or firebase not available */ }
   })();
 }

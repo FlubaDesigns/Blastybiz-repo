@@ -1590,6 +1590,11 @@ body.onboarding-page textarea     { resize: none; }
 .add-biz-btn:hover   { border-color: var(--green); color: var(--green); }
 .del-biz-btn         { background: transparent; border: 1px solid transparent; border-radius: 8px; color: var(--muted); height: 34px; width: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; transition: all 0.2s; flex-shrink: 0; }
 .del-biz-btn:hover   { border-color: #c0392b; color: #e74c3c; background: rgba(231,76,60,0.08); }
+/* Business tab strip in nav header — shown for pro/agency with 2+ businesses */
+.header__biz-tabs        { display: none; align-items: center; gap: 6px; padding: 5px 20px; background: rgba(0,0,0,.3); border-top: 1px solid rgba(255,255,255,.06); flex-wrap: wrap; }
+.header__biz-tab         { background: transparent; border: 1px solid rgba(255,255,255,.12); border-radius: 20px; color: var(--muted, #888); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; padding: 3px 13px; cursor: pointer; transition: border-color .15s, color .15s; white-space: nowrap; line-height: 1.6; }
+.header__biz-tab:hover   { border-color: rgba(57,255,20,.4); color: var(--light, #c8dbf5); }
+.header__biz-tab.active  { background: rgba(57,255,20,.1); border-color: var(--green, #39ff14); color: var(--green, #39ff14); cursor: default; }
 /* Business tab strip — replaces dropdown when 2+ businesses */
 .biz-tab-strip       { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .biz-tab-bar         { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0; }
