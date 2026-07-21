@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1784613191832"/>
+  <link rel="stylesheet" href="global-style.css?v=1784613380341"/>
   <title>BlastyBiz — Your Business</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -1248,7 +1248,8 @@
       if (s.hint) html += '<div class="bubble-hint">' + s.hint + '</div>';
       html += '<button type="button" class="bubble-action-btn" id="ob2-btn" onclick="window._ob2Continue()">Continue →</button>';
     } else {
-      html += '<input id="ob2-input" type="' + s.inputType + '" class="bubble-input" placeholder="' + (s.placeholder || '') + '" autocomplete="off"/>';
+      var urlBlur = s.inputType === 'url' ? ' onblur="var v=this.value.trim();if(v){if(!/^https?:\/\//i.test(v))v=\'https://\'+v;v=v.replace(/^(https?:\/\/)(?!www\.)/i,\'$1www.\');this.value=v;}" ' : '';
+      html += '<input id="ob2-input" type="' + s.inputType + '" class="bubble-input" placeholder="' + (s.placeholder || '') + '" autocomplete="off"' + urlBlur + '/>';
       if (s.hint) html += '<div class="bubble-hint">' + s.hint + '</div>';
       const toggleDefs = s.toggles || (s.toggle ? [s.toggle] : []);
       toggleDefs.forEach((t, i) => {
@@ -1365,6 +1366,10 @@
 
   window._ob2Continue = function() {
     const s = STEPS[step];
+    if (s.inputType === 'url' && currentInput) {
+      var rv = currentInput.value.trim();
+      if (rv) { if (!/^https?:\/\//i.test(rv)) rv = 'https://' + rv; rv = rv.replace(/^(https?:\/\/)(?!www\.)/i, '$1www.'); currentInput.value = rv; }
+    }
     const val = currentInput ? currentInput.value : '';
     const errEl = currentBubble ? currentBubble.querySelector('#ob2-err') : null;
     if (s.validate) {

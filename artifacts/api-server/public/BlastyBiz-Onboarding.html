@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<link rel="stylesheet" href="global-style.css?v=1784613191832" />
+<link rel="stylesheet" href="global-style.css?v=1784613380341" />
 <title>BlastyBiz — Let's Get You Set Up</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
 <style>html { height: 100%; overflow: hidden; }</style>
@@ -95,7 +95,7 @@
       <div class="field">
         <label>Website (optional)</label>
         <input type="text" id="s-website" placeholder="yourbusiness.com"
-          onblur="var v=this.value.trim();if(v&&!/^https?:\/\//i.test(v)){this.value='https://'+v;}" />
+          onblur="var v=this.value.trim();if(v){if(!/^https?:\/\//i.test(v))v='https://'+v;v=v.replace(/^(https?:\/\/)(?!www\.)/i,'$1www.');this.value=v;}" />
       </div>
     </div>
 
