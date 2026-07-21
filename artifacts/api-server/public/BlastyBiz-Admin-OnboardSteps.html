@@ -6,12 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784608375366">
+  <link rel="stylesheet" href="global-style.css?v=1784608863303">
   <style>
     body { visibility: hidden }
-    .ose-outer-grid { display:grid; grid-template-columns:1fr 200px; gap:24px; align-items:start; }
+    .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
     @media (max-width:880px) {
-      .ose-outer-grid { grid-template-columns:1fr; }
+      .ose-outer-grid { grid-template-columns:minmax(0,1fr); }
       .ose-preview {
         position:fixed; bottom:0; left:0; right:0;
         z-index:500; background:#0d1f3c;
@@ -78,6 +78,12 @@
     #pb-mascot svg { width:160px; height:auto; overflow:visible; }
     .prev-cap { font-size:12px; color:#9ca3af; margin-top:8px; min-height:16px; }
 
+
+    /* Grid overflow fix — step list must not blow out the 1fr column */
+    .ose-outer-grid > div { min-width: 0; overflow-x: hidden; }
+    .step-card { max-width: 100%; }
+    .asg select { max-width: 100%; }
+    .msg-row { max-width: 100%; }
     /* ── Mobile: full-width, no overflow ── */
     @media (max-width:880px) {
       body.admin-page .main-inner { padding: 10px 8px !important; }
