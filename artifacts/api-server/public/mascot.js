@@ -141,11 +141,11 @@
 
     /* Nose variants */
     '.pb-mascot.s-nose-spin   .mascot-nose{animation:b-nose-spin  .7s cubic-bezier(.34,1.56,.64,1) 1 both;}',
-    '@keyframes b-nose-spin{0%{transform:rotateY(0deg)}55%{transform:rotateY(210deg)}100%{transform:rotateY(360deg)}}',
+    '@keyframes b-nose-spin{0%{transform:rotate(0deg)}55%{transform:rotate(210deg)}100%{transform:rotate(360deg)}}',
     '.pb-mascot.s-nose-spin-l .mascot-nose{animation:b-nose-spin-l 1.1s linear infinite;}',
-    '@keyframes b-nose-spin-l{0%{transform:rotateY(0deg)}100%{transform:rotateY(-360deg)}}',
+    '@keyframes b-nose-spin-l{0%,100%{transform:rotate(0deg)}30%{transform:rotate(-24deg)}70%{transform:rotate(20deg)}}',
     '.pb-mascot.s-nose-spin-r .mascot-nose{animation:b-nose-spin-r 1.1s linear infinite;}',
-    '@keyframes b-nose-spin-r{0%{transform:rotateY(0deg)}100%{transform:rotateY(360deg)}}',
+    '@keyframes b-nose-spin-r{0%,100%{transform:rotate(0deg)}30%{transform:rotate(24deg)}70%{transform:rotate(-20deg)}}',
     '.pb-mascot.s-nose-pop-slow .mascot-nose{animation:b-nose-pop-slow 1.5s cubic-bezier(.34,1.56,.64,1) 5 both;}',
     '@keyframes b-nose-pop-slow{0%,100%{transform:translateY(0)}40%{transform:translateY(-85px)}}',
     '.pb-mascot.s-nose-pop-fast .mascot-nose{animation:b-nose-pop-fast .45s cubic-bezier(.34,1.56,.64,1) 5 both;}',
