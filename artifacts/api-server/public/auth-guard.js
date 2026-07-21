@@ -14,17 +14,22 @@ auth.authStateReady()
   .catch(() => {})
   .then(() => {
     onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // Authenticated — show page
+      if (user && user.emailVerified) {
+        // Fully authenticated and verified — show page
         clearTimeout(_safetyTimer);
         document.body.classList.add('logged-in');
         document.body.style.visibility = 'visible';
+      } else if (user && !user.emailVerified) {
+        // Signed in but email not verified — redirect to Login where verify-view shows
+        clearTimeout(_safetyTimer);
+        window.location.href = 'BlastyBiz-Login.html';
       } else {
         // No user — wait for any in-flight OAuth redirect or token refresh before evicting.
         // Magic-link completions need more time (network round-trip to Firebase).
         clearTimeout(_safetyTimer);
         setTimeout(() => {
-          if (auth.currentUser) {
+          const current = auth.currentUser;
+          if (current && current.emailVerified) {
             document.body.style.visibility = 'visible';
           } else {
             window.location.href = 'BlastyBiz-Login.html';
