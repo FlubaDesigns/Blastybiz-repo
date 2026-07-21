@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784601681534">
+  <link rel="stylesheet" href="global-style.css?v=1784603536331">
   <style>
     body { visibility: hidden }
     .ose-wrap { display:grid; grid-template-columns:1fr 230px; gap:26px; align-items:start; }
@@ -292,8 +292,8 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/f
 const db = getFirestore(getApp());
 
 const STEP_DEFS = [
-  { idx:1,  key:'bizName',           label:'Business Name',              defaultMsg:"Great! First — what's the name of your business?" },
-  { idx:2,  key:'ownerName',         label:'Owner Name',                 defaultMsg:"And what's your name?" },
+  { idx:1,  key:'ownerName',         label:'Owner Name',                 defaultMsg:"Hi! I'm Blasty. What's your name?" },
+  { idx:2,  key:'bizName',           label:'Business Name',              defaultMsg:"Nice to meet you! What's the name of your business?" },
   { idx:3,  key:'role',              label:'Owner Title / Role',         defaultMsg:"What's your title at the business?" },
   { idx:4,  key:'phone',             label:'Phone Number',               defaultMsg:"What's the best phone number?" },
   { idx:5,  key:'locationType',      label:'Location Type',              defaultMsg:"Physical, online only, or both?" },
@@ -530,47 +530,50 @@ window._qfReset = async function(k) {
 
 function renderSteps() {
   document.getElementById('ose-steps').innerHTML = STEP_DEFS.map(s => {
-    const ov = overrides[s.key] || {};
-    const an = ov.anim || {};
-    const hasOv = !!(ov.blastyMsg || ov.anim);
-    return `<div class="step-card${hasOv?' has-ov':''}" id="sc-${s.key}">
+    const ov  = overrides[s.key] || {};
+    const an  = ov.anim || {};
+    const txt = ov.blastyMsg !== undefined ? ov.blastyMsg : s.defaultMsg;
+    const hasData = !!(ov.blastyMsg !== undefined || ov.anim);
+    return `<div class="step-card${hasData?' has-ov':''}" id="sc-${s.key}">
       <div class="step-head" onclick="window._oseToggle('${s.key}')">
         <span class="step-num">${s.idx}</span>
         <span class="sk">${s.key}</span>
         <span class="sd">${s.label}</span>
-        <span class="mod-badge">Modified</span>
         <span class="exp-ic">▾</span>
       </div>
       <div class="step-body">
-        <div class="msg-row">
-          <div>
-            <span class="fl">Default (read-only)</span>
-            <textarea class="mta def" readonly>${s.defaultMsg}</textarea>
-          </div>
-          <div>
-            <span class="fl">Override text <span style="font-weight:400;text-transform:none">(use {bizName} {ownerName})</span></span>
-            <textarea class="mta" id="msg-${s.key}" placeholder="Leave blank to keep default">${ov.blastyMsg||''}</textarea>
-          </div>
-        </div>
+        <span class="fl">What Blasty says <span style="font-weight:400;text-transform:none;font-size:10px">(use {bizName} {ownerName})</span></span>
+        <textarea class="mta" id="msg-${s.key}" rows="3">${txt.replace(/</g,'&lt;')}</textarea>
+        <span class="sts" id="sts-${s.key}" style="font-size:11px;display:block;min-height:16px;margin:3px 0 10px"></span>
         <div class="anim-row">
-          <div class="asg"><label>Mood</label><select id="am-${s.key}">${sel(MOOD_OPTS,an.mood||'s-ask')}</select></div>
-          <div class="asg"><label>Flame</label><select id="af-${s.key}">${sel(FLAME_OPTS,an.flame||'')}</select></div>
-          <div class="asg"><label>Lights</label><select id="al-${s.key}">${sel(LIGHTS_OPTS,an.lights||'')}</select></div>
-          <div class="asg"><label>Eyes</label><select id="ae-${s.key}">${sel(EYES_OPTS,an.eyes||'')}</select></div>
+          <div class="asg"><label>Mood</label><select id="am-${s.key}" onchange="window._oseAnimChange('${s.key}')">${sel(MOOD_OPTS,an.mood||'s-ask')}</select></div>
+          <div class="asg"><label>Flame</label><select id="af-${s.key}" onchange="window._oseAnimChange('${s.key}')">${sel(FLAME_OPTS,an.flame||'')}</select></div>
+          <div class="asg"><label>Lights</label><select id="al-${s.key}" onchange="window._oseAnimChange('${s.key}')">${sel(LIGHTS_OPTS,an.lights||'')}</select></div>
+          <div class="asg"><label>Eyes</label><select id="ae-${s.key}" onchange="window._oseAnimChange('${s.key}')">${sel(EYES_OPTS,an.eyes||'')}</select></div>
         </div>
         <div class="anim-chk">
-          <label><input type="checkbox" id="as-${s.key}"${an.smoke?' checked':''}> 💨 Smoke</label>
-          <label><input type="checkbox" id="an-${s.key}"${an.noseSpin?' checked':''}> 🌀 Nose spin</label>
+          <label><input type="checkbox" id="as-${s.key}"${an.smoke?' checked':''} onchange="window._oseAnimChange('${s.key}')"> 💨 Smoke</label>
+          <label><input type="checkbox" id="an-${s.key}"${an.noseSpin?' checked':''} onchange="window._oseAnimChange('${s.key}')"> 🌀 Nose spin</label>
         </div>
         <div class="card-acts">
-          <button class="btn-sv" onclick="window._oseSave('${s.key}')">Save</button>
-          <button class="btn-rst" onclick="window._oseReset('${s.key}')">Reset to default</button>
           <button class="btn-prv" onclick="window._osePreview('${s.key}')">▶ Preview</button>
-          <span class="sts" id="sts-${s.key}"></span>
+          <span class="sts" id="sts-anim-${s.key}" style="font-size:11px"></span>
         </div>
       </div>
     </div>`;
   }).join('');
+
+  STEP_DEFS.forEach(s => {
+    const ta = document.getElementById('msg-'+s.key);
+    if (!ta) return;
+    let timer;
+    ta.addEventListener('input', () => {
+      clearTimeout(timer);
+      const sts = document.getElementById('sts-'+s.key);
+      sts.style.color = '#94a3b8'; sts.textContent = 'Saving…';
+      timer = setTimeout(() => window._oseTextSave(s.key), 800);
+    });
+  });
 }
 
 window._oseToggle = k => document.getElementById('sc-'+k).classList.toggle('open');
@@ -591,48 +594,60 @@ window._osePreview = function(k) {
   document.getElementById('prev-cap').textContent = MOOD_OPTS.find(o=>o.v===mood)?.l || mood;
 };
 
-window._oseSave = async function(k) {
-  const btn = document.querySelector(`#sc-${k} .btn-sv`);
+window._oseTextSave = async function(k) {
   const sts = document.getElementById('sts-'+k);
-  btn.disabled=true; btn.textContent='Saving…';
-  sts.style.color='#22c55e'; sts.textContent='';
-  const msg   = document.getElementById('msg-'+k).value.trim();
-  const mood  = document.getElementById('am-'+k).value;
-  const flame = document.getElementById('af-'+k).value;
-  const lights= document.getElementById('al-'+k).value;
-  const eyes  = document.getElementById('ae-'+k).value;
-  const smoke = document.getElementById('as-'+k).checked;
-  const nose  = document.getElementById('an-'+k).checked;
-  const animRaw = { mood, flame:flame||undefined, lights:lights||undefined, eyes:eyes||undefined, smoke:smoke||undefined, noseSpin:nose||undefined };
-  const anim = Object.fromEntries(Object.entries(animRaw).filter(([,v])=>v!==undefined&&v!==false&&v!==''));
-  const data = { anim };
-  if (msg) data.blastyMsg = msg;
+  const val = document.getElementById('msg-'+k).value.trim();
+  const def = STEP_DEFS.find(s=>s.key===k)?.defaultMsg || '';
   try {
-    await setDoc(doc(db,'config','ob1Steps'), { [k]: data }, { merge:true });
-    overrides[k] = data;
-    document.getElementById('sc-'+k).classList.add('has-ov');
-    sts.textContent = '✓ Saved';
+    if (val && val !== def) {
+      await setDoc(doc(db,'config','ob1Steps'), { [k]: { blastyMsg: val } }, { merge:true });
+      if (!overrides[k]) overrides[k] = {};
+      overrides[k].blastyMsg = val;
+      document.getElementById('sc-'+k).classList.add('has-ov');
+    } else if (!val || val === def) {
+      // back to default — remove blastyMsg override, keep anim if any
+      const existing = overrides[k] || {};
+      if (existing.anim) {
+        await setDoc(doc(db,'config','ob1Steps'), { [k]: { anim: existing.anim } }, { merge:true });
+        overrides[k] = { anim: existing.anim };
+      } else {
+        await setDoc(doc(db,'config','ob1Steps'), { [k]: deleteField() }, { merge:true });
+        delete overrides[k];
+        document.getElementById('sc-'+k).classList.remove('has-ov');
+      }
+      if (overrides[k]) delete overrides[k].blastyMsg;
+    }
+    sts.style.color='#22c55e'; sts.textContent='✓ Saved';
     setTimeout(()=>{ sts.textContent=''; }, 2500);
   } catch(e) {
     sts.style.color='#ef4444'; sts.textContent='✗ '+e.message;
   }
-  btn.disabled=false; btn.textContent='Save';
 };
 
-window._oseReset = async function(k) {
-  if (!confirm('Reset "'+k+'" to default? This removes all overrides for this step.')) return;
-  const btn = document.querySelector(`#sc-${k} .btn-rst`);
-  btn.disabled=true;
+window._oseAnimChange = async function(k) {
+  const mood   = document.getElementById('am-'+k).value;
+  const flame  = document.getElementById('af-'+k).value;
+  const lights = document.getElementById('al-'+k).value;
+  const eyes   = document.getElementById('ae-'+k).value;
+  const smoke  = document.getElementById('as-'+k).checked;
+  const nose   = document.getElementById('an-'+k).checked;
+  const anim   = { mood };
+  if (flame)  anim.flame    = flame;
+  if (lights) anim.lights   = lights;
+  if (eyes)   anim.eyes     = eyes;
+  if (smoke)  anim.smoke    = true;
+  if (nose)   anim.noseSpin = true;
+  const sts = document.getElementById('sts-anim-'+k);
   try {
-    await setDoc(doc(db,'config','ob1Steps'), { [k]: deleteField() }, { merge:true });
-    delete overrides[k];
-    document.getElementById('sc-'+k).classList.remove('has-ov');
-    document.getElementById('msg-'+k).value='';
-    const sts = document.getElementById('sts-'+k);
-    sts.style.color='#64748b'; sts.textContent='↩ Reset';
-    setTimeout(()=>{ sts.textContent=''; }, 2500);
-  } catch(e) { alert('Error: '+e.message); }
-  btn.disabled=false;
+    await setDoc(doc(db,'config','ob1Steps'), { [k]: { anim } }, { merge:true });
+    if (!overrides[k]) overrides[k] = {};
+    overrides[k].anim = anim;
+    document.getElementById('sc-'+k).classList.add('has-ov');
+    sts.style.color='#22c55e'; sts.textContent='✓';
+    setTimeout(()=>{ sts.textContent=''; }, 1500);
+  } catch(e) {
+    sts.style.color='#ef4444'; sts.textContent='✗ '+e.message;
+  }
 };
 
 onAuthStateChanged(auth, async user => {

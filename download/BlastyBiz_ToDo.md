@@ -3,9 +3,13 @@
 These are not bugs. They are engineering debt items to action when time allows.
 None of them block shipping.
 
-## HIGH — Admin step editor: single editable field per step (no default/override split)
-Each step card in the admin currently shows a read-only "default" label plus a separate override input — two parallel sources of truth. Replace with one editable text field per step. On first load, pre-fill with the hardcoded JS default as a starting point. On save, that text becomes the truth written to Firestore. The JS hardcoded message becomes a last-resort fallback only (first paint before Firestore loads). Eventually: pull all step text out of JS entirely and load from Firestore at start.
-Applies to both OB1 (BlastyBiz-Admin-OnboardSteps.html OB1 tab) and OB2 (OB2 tab).
+## HIGH — Admin step editor: full redesign (text + mood + animations, auto-save, Firebase as truth)
+Complete overhaul of the OB1 step cards in BlastyBiz-Admin-OnboardSteps.html:
+- **Single editable text field per step** — no separate "default" label + "override" input. One box. Auto-saves on change (debounce ~800ms). No Save or Clear buttons.
+- **Firebase is the source of truth** — admin reads the current value from Firestore on load (config/ob1Steps). JS hardcoded text in OB1 page is a cold-start fallback only, never shown in admin.
+- **Mood + animation controls per step** — every step card gets: Mood dropdown, Flame dropdown, Lights dropdown, Eyes dropdown, Smoke checkbox, Nose-spin checkbox. Same controls as OB2 event cards. All auto-save.
+- **OB1 and OB2 share the same admin pattern** — same card design, same auto-save wiring, same Firebase structure.
+- OB1 page (BlastyBiz-Onboard2.html) already reads anim overrides via _ob2ApplyOverrides — extend to also apply text overrides from Firebase at load.
 
 ## HIGH — Shared service modules
 Do this alongside the BlastyBiz.html modularization (full-site handoff, Finding 17).
