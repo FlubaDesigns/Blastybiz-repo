@@ -146,10 +146,10 @@
     '@keyframes b-nose-spin-l{0%{transform:rotate(0deg)}100%{transform:rotate(-360deg)}}',
     '.pb-mascot.s-nose-spin-r .mascot-nose{animation:b-nose-spin-r 1.1s linear infinite;}',
     '@keyframes b-nose-spin-r{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}',
-    '.pb-mascot.s-nose-pop-slow .mascot-nose{animation:b-nose-pop-slow 1.5s cubic-bezier(.34,1.56,.64,1) 1 both;}',
-    '@keyframes b-nose-pop-slow{0%{transform:translateY(0)}35%{transform:translateY(-32px)}100%{transform:translateY(0)}}',
-    '.pb-mascot.s-nose-pop-fast .mascot-nose{animation:b-nose-pop-fast .45s cubic-bezier(.34,1.56,.64,1) 1 both;}',
-    '@keyframes b-nose-pop-fast{0%{transform:translateY(0)}40%{transform:translateY(-22px)}100%{transform:translateY(0)}}',
+    '.pb-mascot.s-nose-pop-slow .mascot-nose{animation:b-nose-pop-slow 1.5s cubic-bezier(.34,1.56,.64,1) 5 both;}',
+    '@keyframes b-nose-pop-slow{0%,100%{transform:translateY(0)}40%{transform:translateY(-85px)}}',
+    '.pb-mascot.s-nose-pop-fast .mascot-nose{animation:b-nose-pop-fast .45s cubic-bezier(.34,1.56,.64,1) 5 both;}',
+    '@keyframes b-nose-pop-fast{0%,100%{transform:translateY(0)}40%{transform:translateY(-65px)}}',
 
     /* Nose beacon */
     '.pb-mascot.s-light-nose #mascot-nose-light{opacity:.9;animation:b-beacon 1.8s ease-in-out infinite;}',
@@ -242,7 +242,7 @@
     + '<path d="M105 283 C132 298 156 304 180 304 C204 304 228 298 255 283" fill="none" stroke="#b3ff70" stroke-width="5" opacity=".8"/>'
     + '</g>'
     /* Nose (independent spin) */
-    + '<g id="mascot-nose" class="mascot-nose" style="transform-box:fill-box;transform-origin:180px 100px">'
+    + '<g id="mascot-nose" class="mascot-nose" style="transform-box:fill-box;transform-origin:50% 50%">'
     + '<path d="M180 42 C151 64 129 88 113 116 C137 105 157 100 180 100 C203 100 223 105 247 116 C231 88 209 64 180 42Z" fill="url(#mc-rf)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>'
     + '<path d="M205 56 C220 72 229 85 236 102" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity=".9"/>'
     + '<circle id="mascot-nose-light" cx="180" cy="50" r="8" fill="#ffdc2f" opacity="0"/>'
