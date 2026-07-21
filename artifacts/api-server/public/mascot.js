@@ -187,7 +187,13 @@
     '.pb-mascot.s-smoke-3 .smoke-puff{animation:b-smoke 1.4s ease-out forwards;transform-box:fill-box;transform-origin:center;}',
     '.pb-mascot.s-smoke-3 .smoke-puff:nth-child(1){animation-delay:0s}',
     '.pb-mascot.s-smoke-3 .smoke-puff:nth-child(2){animation-delay:.18s}',
-    '.pb-mascot.s-smoke-3 .smoke-puff:nth-child(3){animation-delay:.36s}'
+    '.pb-mascot.s-smoke-3 .smoke-puff:nth-child(3){animation-delay:.36s}',
+    /* Hide flame when any smoke class is active */
+    '.pb-mascot.s-smoke    #mascot-exhaust{opacity:0!important;}',
+    '.pb-mascot.s-smoke-sm #mascot-exhaust{opacity:0!important;}',
+    '.pb-mascot.s-smoke-lg #mascot-exhaust{opacity:0!important;}',
+    '.pb-mascot.s-smoke-2  #mascot-exhaust{opacity:0!important;}',
+    '.pb-mascot.s-smoke-3  #mascot-exhaust{opacity:0!important;}'
   ].join('\n');
 
   /* ── SVG ──────────────────────────────────────────────────────────────── */

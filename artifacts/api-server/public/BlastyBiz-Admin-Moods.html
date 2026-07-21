@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Mood Presets</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784612119616">
+  <link rel="stylesheet" href="global-style.css?v=1784612447082">
   <style>
     body { visibility:hidden }
     .mp-grid { display:grid; grid-template-columns:1fr 220px; gap:24px; align-items:start; }
@@ -200,8 +200,8 @@ function renderList() {
 
 function toMoodSpec(p) {
   const spec = { mood: p.pose || 's-ask' };
-  if (p.exhaust?.startsWith('s-flame')) spec.flame   = p.exhaust;
-  else if (p.exhaust?.startsWith('s-smoke')) spec.smoke = p.exhaust;
+  if (p.exhaust?.startsWith('s-flame')) { spec.flame = p.exhaust; spec.smoke = ''; }
+  else if (p.exhaust?.startsWith('s-smoke')) { spec.smoke = p.exhaust; spec.flame = ''; }
   if (p.eyes)  spec.eyes     = p.eyes;
   if (p.nose)  spec.noseSpin = p.nose;
   if (p.mouth) spec.mouth    = p.mouth;
