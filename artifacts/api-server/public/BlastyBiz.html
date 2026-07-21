@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784656858074" />
+<link rel="stylesheet" href="global-style.css?v=1784657241525" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -170,13 +170,14 @@
                 <div class="biz-custom-dd" id="biz-custom-dd">
                   <button type="button" class="biz-dd-trigger" id="biz-dd-trigger" onclick="toggleBizDropdown()">
                     <span id="biz-dd-label">Loading…</span>
-                    <span class="biz-dd-chevron">▾</span>
+                    <span class="biz-dd-chevron" id="biz-dd-chevron">▾</span>
                   </button>
                   <div class="biz-dd-list" id="biz-dd-list"></div>
                 </div>
                 <button type="button" class="add-biz-btn" onclick="window.addBusiness&&window.addBusiness()" title="Add business">＋</button>
                 <button type="button" class="del-biz-btn" onclick="window.deleteBusiness&&window.deleteBusiness(window.activeBizId)" title="Delete selected business">🗑</button>
               </div>
+              <a id="biz-manage-link" href="BlastyBiz-Businesses.html" style="display:none;font-size:12px;color:var(--green,#39ff14);margin-top:4px">Manage all businesses →</a>
               <select id="biz-select" style="display:none"></select>
               <div class="agency-bar">
                 <span id="agency-usage-text" class="agency-usage-text"></span>
@@ -4785,22 +4786,39 @@ window._bbFirestoreDismissPending = async function(id) {
 function getBizLimit() { return window._bizLimit || 1; }
 
 function renderSwitcherBar() {
-  const bizList  = window.BUSINESSES || [];
+  const bizList   = window.BUSINESSES || [];
   const currentId = window.activeBizId;
+  const active    = bizList.find(b => b.id === currentId);
+  const activeName = active ? (active.name || active.businessName || 'Business') : 'Select business';
+  const isMulti   = bizList.length > 1;
+
+  // Keep hidden select in sync (used elsewhere)
   const select = document.getElementById('biz-select');
   if (select) select.innerHTML = bizList.map(b => `<option value="${b.id}"${b.id===currentId?' selected':''}>${b.name||b.businessName||''}</option>`).join('');
-  const active = bizList.find(b => b.id === currentId);
-  const label  = document.getElementById('biz-dd-label');
-  if (label) label.textContent = active ? (active.name||active.businessName||'Business') : 'Select business';
-  // #4 Persistent header — keep workspace info bar in sync
+
+  // Keep workspace info bar in sync
   const wbName = document.getElementById('wb-biz-name');
-  if (wbName) wbName.textContent = active ? (active.name||active.businessName||'Business') : 'Select business';
+  if (wbName) wbName.textContent = activeName;
+
+  // Label always shows active name
+  const label = document.getElementById('biz-dd-label');
+  if (label) label.textContent = activeName;
+
+  // Chevron — only show when multiple businesses exist
+  const chevron = document.getElementById('biz-dd-chevron');
+  if (chevron) chevron.style.display = isMulti ? '' : 'none';
+
+  // Dropdown list — only populate when multiple businesses exist
   const list = document.getElementById('biz-dd-list');
-  if (list) list.innerHTML = bizList.map(b => `
+  if (list) list.innerHTML = isMulti ? bizList.map(b => `
     <button type="button" class="biz-dd-item${b.id===currentId?' active':''}" onclick="selectBizOption('${b.id}')">
       <span class="biz-dd-item-name">${b.name||b.businessName||'(unnamed)'}</span>
       ${b.id===currentId?'<span class="biz-dd-check">✓</span>':''}
-    </button>`).join('');
+    </button>`).join('') : '';
+
+  // "Manage all" link — only when multiple businesses exist
+  const manageLink = document.getElementById('biz-manage-link');
+  if (manageLink) manageLink.style.display = isMulti ? '' : 'none';
 }
 
 function renderAgencyBar() {
@@ -4821,6 +4839,7 @@ function renderAgencyBar() {
 }
 
 function toggleBizDropdown() {
+  if ((window.BUSINESSES || []).length <= 1) return; // single business — no dropdown needed
   const list    = document.getElementById('biz-dd-list');
   const trigger = document.getElementById('biz-dd-trigger');
   if (!list) return;
