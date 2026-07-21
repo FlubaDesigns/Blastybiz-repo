@@ -346,8 +346,8 @@ function cbSetMood(cls) {
   setTimeout(()=>{ el.className = 'cb-blasty-mini ' + cls; }, 400);
 }
 document.querySelectorAll('.cb-input,.cb-ta,.cb-select').forEach(el => {
-  el.addEventListener('focus', () => cbSetMood('s-ask'));
-  el.addEventListener('blur',  () => cbSetMood('s-wave'));
+  el.addEventListener('focus', () => cbSetMood((window._ob2Anim&&window._ob2Anim.focus)||'s-ask'));
+  el.addEventListener('blur',  () => cbSetMood((window._ob2Anim&&window._ob2Anim.load)||'s-wave'));
 });
 </script>
 
@@ -376,6 +376,17 @@ function applyOb2Config(c) {
   if (c.submitText)     st('cb-submit', c.submitText);
   if (c.successHeading) st('cb-success-h', c.successHeading);
   if (c.successBody)    st('cb-success-p', c.successBody);
+  const ba = a => {
+    if (!a || typeof a !== 'object') return null;
+    return [a.mood||'s-wave',a.flame||'',a.lights||'',a.eyes||'',a.smoke?'s-smoke':'',a.noseSpin?'s-nose-spin':''].filter(Boolean).join(' ');
+  };
+  window._ob2Anim = {
+    load:    ba(c.animLoad)    || null,
+    focus:   ba(c.animFocus)   || null,
+    submit:  ba(c.animSubmit)  || null,
+    success: ba(c.animSuccess) || null,
+  };
+  if (window._ob2Anim.load && window.cbSetMood) window.cbSetMood(window._ob2Anim.load);
 }
 
 getDoc(doc(db, 'config', 'ob2Steps')).then(snap => {
@@ -430,7 +441,7 @@ window.cbSubmit = async function() {
 
   const btn = document.getElementById('cb-submit');
   btn.disabled=true; btn.textContent='Saving…';
-  cbSetMood('s-working s-flame-blue s-lights-pulse');
+  cbSetMood((window._ob2Anim&&window._ob2Anim.submit)||'s-working s-flame-blue s-lights-pulse');
 
   const platforms = [...document.querySelectorAll('.plat-chk input:checked')].map(c=>c.value);
   const toggles = {
@@ -521,7 +532,7 @@ window.cbSubmit = async function() {
 
     await batch.commit();
 
-    cbSetMood('s-celebrate s-flame-green s-lights-flash s-smoke');
+    cbSetMood((window._ob2Anim&&window._ob2Anim.success)||'s-celebrate s-flame-green s-lights-flash s-smoke');
     document.getElementById('cb-form').style.display   = 'none';
     document.getElementById('cb-success').style.display = 'block';
 

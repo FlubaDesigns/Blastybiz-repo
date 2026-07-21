@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784579090399">
+  <link rel="stylesheet" href="global-style.css?v=1784599182620">
   <style>
     body { visibility: hidden }
     .ose-wrap { display:grid; grid-template-columns:1fr 230px; gap:26px; align-items:start; }
@@ -129,6 +129,11 @@
     .ob2-field-head { display:flex; align-items:center; gap:9px; padding:9px 14px; background:#f8fafc; border-bottom:1px solid #e4e9f0; }
     .ob2-hint { font-size:11px; color:#94a3b8; margin-left:auto; }
     .ob2-field-body { padding:14px; }
+    /* outer grid — content left, sticky preview right */
+    .ose-outer-grid { display:grid; grid-template-columns:1fr 200px; gap:24px; align-items:start; }
+    /* section labels inside OB2 pane */
+    .ose-sec-lbl { font:600 12px/1 'DM Sans',sans-serif; color:#475569; text-transform:uppercase; letter-spacing:.06em; margin:20px 0 10px; }
+    .ose-sec-lbl:first-child { margin-top:0; }
   </style>
   <script type="module" src="./admin-guard.js"></script>
   <script src="blastybiz-menu.js?v=3"></script>
@@ -155,18 +160,33 @@
     <p class="op-page-sub">Customize Blasty's messages and animations. <strong>OB1</strong> = Blasty Wizard (22 steps + animation pickers). <strong>OB2</strong> = Quick Form (header greeting, section titles, button text, success message). Changes go live immediately.</p>
   </div>
 
-  <div class="ose-tabs">
-    <button class="ose-tab active" id="tab-ob1" onclick="oseTab('ob1')">🚀 OB1 — Blasty Wizard</button>
-    <button class="ose-tab" id="tab-ob2" onclick="oseTab('ob2')">📝 OB2 — Quick Form</button>
-  </div>
+  <div class="ose-outer-grid">
 
-  <div id="ose-ob1-pane">
-  <div id="ose-status" style="text-align:center;padding:32px 0;color:#64748b">Loading steps…</div>
+    <!-- left: tabs + pane content -->
+    <div>
+      <div class="ose-tabs">
+        <button class="ose-tab active" id="tab-ob1" onclick="oseTab('ob1')">🚀 OB1 — Blasty Wizard</button>
+        <button class="ose-tab" id="tab-ob2" onclick="oseTab('ob2')">📝 OB2 — Quick Form</button>
+      </div>
 
-  <div class="ose-wrap" id="ose-wrap" style="display:none">
-    <div id="ose-steps"></div>
+      <div id="ose-ob1-pane">
+        <div id="ose-status" style="text-align:center;padding:32px 0;color:#64748b">Loading steps…</div>
+        <div id="ose-steps" style="display:none"></div>
+      </div>
 
-    <div class="ose-preview">
+      <div id="ose-ob2-pane" style="display:none">
+        <div id="ose-ob2-status" style="text-align:center;padding:32px 0;color:#64748b">Loading…</div>
+        <div id="ose-ob2-content" style="display:none">
+          <p class="ose-sec-lbl">📝 Text &amp; Labels</p>
+          <div id="ose-ob2-fields"></div>
+          <p class="ose-sec-lbl">🚀 Blasty Animations</p>
+          <div id="ose-ob2-anims"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- right: persistent preview (shared by OB1 and OB2) -->
+    <div class="ose-preview" style="position:sticky;top:80px;align-self:start">
       <div class="prev-panel">
         <div class="prev-lbl">Live Preview</div>
         <div class="pb-blasty s-wave" id="pb-blasty">
@@ -258,13 +278,8 @@
         <div class="prev-cap" id="prev-cap">Wave</div>
       </div>
     </div>
-  </div>
-  </div><!-- /ose-ob1-pane -->
 
-  <div id="ose-ob2-pane" style="display:none">
-    <div id="ose-ob2-status" style="text-align:center;padding:32px 0;color:#64748b">Loading…</div>
-    <div id="ose-ob2-fields" style="display:none;max-width:700px"></div>
-  </div>
+  </div><!-- /ose-outer-grid -->
 
 </div></div></main>
 
@@ -341,6 +356,105 @@ const OB2_FIELDS = [
     defaultVal:'Your business is set up and your first campaign is ready. Redirecting to your dashboard\u2026',
     hint:'' },
 ];
+
+const OB2_ANIM_EVENTS = [
+  { key:'animLoad',    label:'Idle / Page Load',   icon:'😴',
+    def:{ mood:'s-wave',      flame:'',             lights:'',               eyes:'', smoke:false, noseSpin:false } },
+  { key:'animFocus',   label:'Field Focused',       icon:'💬',
+    def:{ mood:'s-ask',       flame:'',             lights:'',               eyes:'', smoke:false, noseSpin:false } },
+  { key:'animSubmit',  label:'Saving / Submitting', icon:'⏳',
+    def:{ mood:'s-working',   flame:'s-flame-blue', lights:'s-lights-pulse', eyes:'', smoke:false, noseSpin:false } },
+  { key:'animSuccess', label:'Success',             icon:'🎉',
+    def:{ mood:'s-celebrate', flame:'s-flame-green',lights:'s-lights-flash',  eyes:'', smoke:true,  noseSpin:false } },
+];
+
+function buildAnimClassStr(a) {
+  return [a.mood||'s-wave',a.flame||'',a.lights||'',a.eyes||'',a.smoke?'s-smoke':'',a.noseSpin?'s-nose-spin':''].filter(Boolean).join(' ');
+}
+
+function renderOb2AnimCards() {
+  document.getElementById('ose-ob2-anims').innerHTML = OB2_ANIM_EVENTS.map(ev => {
+    const saved = ob2Overrides[ev.key] && typeof ob2Overrides[ev.key]==='object' ? ob2Overrides[ev.key] : {};
+    const a = { ...ev.def, ...saved };
+    const hasOv = !!ob2Overrides[ev.key];
+    return `<div class="ob2-field-card${hasOv?' has-ov':''}" id="ob2-anim-card-${ev.key}">
+      <div class="ob2-field-head">
+        <span class="sk">${ev.key}</span>
+        <span class="sd">${ev.icon} ${ev.label}</span>
+        <span class="mod-badge">Modified</span>
+      </div>
+      <div class="ob2-field-body">
+        <div class="anim-row">
+          <div class="asg"><label>Mood</label><select id="oa2m-${ev.key}">${sel(MOOD_OPTS,a.mood)}</select></div>
+          <div class="asg"><label>Flame</label><select id="oa2f-${ev.key}">${sel(FLAME_OPTS,a.flame||'')}</select></div>
+          <div class="asg"><label>Lights</label><select id="oa2l-${ev.key}">${sel(LIGHTS_OPTS,a.lights||'')}</select></div>
+          <div class="asg"><label>Eyes</label><select id="oa2e-${ev.key}">${sel(EYES_OPTS,a.eyes||'')}</select></div>
+        </div>
+        <div class="anim-chk">
+          <label><input type="checkbox" id="oa2s-${ev.key}"${a.smoke?' checked':''}> 💨 Smoke</label>
+          <label><input type="checkbox" id="oa2n-${ev.key}"${a.noseSpin?' checked':''}> 🌀 Nose spin</label>
+        </div>
+        <div class="card-acts">
+          <button class="btn-sv" onclick="window._qfAnimSave('${ev.key}')">Save</button>
+          <button class="btn-rst" onclick="window._qfAnimReset('${ev.key}')">Reset to default</button>
+          <button class="btn-prv" onclick="window._qfAnimPreview('${ev.key}')">▶ Preview</button>
+          <span class="sts" id="ob2asts-${ev.key}"></span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window._qfAnimPreview = function(k) {
+  const mood  = document.getElementById('oa2m-'+k).value;
+  const flame = document.getElementById('oa2f-'+k).value;
+  const lights= document.getElementById('oa2l-'+k).value;
+  const eyes  = document.getElementById('oa2e-'+k).value;
+  const smoke = document.getElementById('oa2s-'+k).checked;
+  const nose  = document.getElementById('oa2n-'+k).checked;
+  const cls   = buildAnimClassStr({ mood, flame, lights, eyes, smoke, noseSpin:nose });
+  const el    = document.getElementById('pb-blasty');
+  el.className = 'pb-blasty s-arrive ' + cls;
+  void el.offsetWidth;
+  setTimeout(()=>{ el.className = 'pb-blasty ' + cls; }, 500);
+  document.getElementById('prev-cap').textContent = MOOD_OPTS.find(o=>o.v===mood)?.l || mood;
+};
+
+window._qfAnimSave = async function(k) {
+  const btn = document.querySelector(`#ob2-anim-card-${k} .btn-sv`);
+  const sts = document.getElementById('ob2asts-'+k);
+  btn.disabled=true; btn.textContent='Saving…'; sts.textContent='';
+  const mood  = document.getElementById('oa2m-'+k).value;
+  const flame = document.getElementById('oa2f-'+k).value;
+  const lights= document.getElementById('oa2l-'+k).value;
+  const eyes  = document.getElementById('oa2e-'+k).value;
+  const smoke = document.getElementById('oa2s-'+k).checked;
+  const nose  = document.getElementById('oa2n-'+k).checked;
+  const raw   = { mood, flame:flame||undefined, lights:lights||undefined, eyes:eyes||undefined, smoke:smoke||undefined, noseSpin:nose||undefined };
+  const anim  = Object.fromEntries(Object.entries(raw).filter(([,v])=>v!==undefined&&v!==false&&v!==''));
+  try {
+    await setDoc(doc(db,'config','ob2Steps'), { [k]: anim }, { merge:true });
+    ob2Overrides[k] = anim;
+    document.getElementById('ob2-anim-card-'+k).classList.add('has-ov');
+    sts.style.color='#22c55e'; sts.textContent='✓ Saved';
+    setTimeout(()=>{ sts.textContent=''; }, 2500);
+  } catch(e) {
+    sts.style.color='#ef4444'; sts.textContent='✗ '+e.message;
+  }
+  btn.disabled=false; btn.textContent='Save';
+};
+
+window._qfAnimReset = async function(k) {
+  if (!confirm('Reset "'+k+'" to default?')) return;
+  const btn = document.querySelector(`#ob2-anim-card-${k} .btn-rst`);
+  btn.disabled=true;
+  try {
+    await setDoc(doc(db,'config','ob2Steps'), { [k]: deleteField() }, { merge:true });
+    delete ob2Overrides[k];
+    renderOb2AnimCards();
+  } catch(e) { alert('Error: '+e.message); }
+  btn.disabled=false;
+};
 
 function renderOb2Fields() {
   document.getElementById('ose-ob2-fields').innerHTML = OB2_FIELDS.map(f => {
@@ -532,12 +646,13 @@ onAuthStateChanged(auth, async user => {
     ob2Overrides = ob2Snap.exists() ? ob2Snap.data() : {};
     // OB1 pane
     document.getElementById('ose-status').style.display='none';
-    document.getElementById('ose-wrap').style.display='grid';
+    document.getElementById('ose-steps').style.display='';
     renderSteps();
     // OB2 pane
     document.getElementById('ose-ob2-status').style.display='none';
-    document.getElementById('ose-ob2-fields').style.display='block';
+    document.getElementById('ose-ob2-content').style.display='';
     renderOb2Fields();
+    renderOb2AnimCards();
   } catch(e) {
     document.getElementById('ose-status').textContent='Error loading: '+e.message;
     document.getElementById('ose-ob2-status').textContent='Error loading: '+e.message;
