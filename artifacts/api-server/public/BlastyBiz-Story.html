@@ -4,9 +4,11 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="stylesheet" href="global-style.css?v=1784654016270"/>
+  <link rel="stylesheet" href="global-style.css?v=1784654689389"/>
   <title>BlastyBiz — Your Story</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
+  <style>body{visibility:hidden}</style>
+  <script type="module" src="./auth-guard.js"></script>
   <script src="blastybiz-menu.js?v=3"></script>
   <script src="mascot.js?v=3"></script>
   <style>
@@ -266,14 +268,8 @@
 </script>
 
 <script type="module">
-import { auth } from './firebase-init-v2.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import {
-  getFirestore, doc, getDoc, setDoc, serverTimestamp
-} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-
-const db = getFirestore(getApp());
+import { auth, db } from './firebase-init-v2.js';
+import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 window._bbSaveStory = async function(storyAnswers) {
   try {
@@ -294,15 +290,18 @@ window._bbSaveStory = async function(storyAnswers) {
   window.location.href = 'BlastyBiz-CreateBiz.html?bizId=' + (sessionStorage.getItem('bb_bizId')||'');
 };
 
-onAuthStateChanged(auth, async user => {
-  if (!user) { window.location.href = 'BlastyBiz-Login.html'; return; }
+await auth.authStateReady();
+const user = auth.currentUser;
+if (!user || !user.emailVerified) {
+  window.location.href = 'BlastyBiz-Login.html';
+} else {
   let ud = {};
   try {
     const snap = await getDoc(doc(db, 'users', user.uid));
     if (snap.exists()) ud = snap.data();
-  } catch(e) { console.error('[story getDoc]', e); }
+  } catch(e) { console.error('[story]', e); }
   window._bbStart(user.uid, ud.plan || 'trial', ud);
-});
+}
 </script>
 
 <script>

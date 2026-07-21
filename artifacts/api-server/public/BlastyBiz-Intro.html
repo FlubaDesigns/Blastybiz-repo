@@ -4,9 +4,11 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="stylesheet" href="global-style.css?v=1784654016270"/>
+  <link rel="stylesheet" href="global-style.css?v=1784654689389"/>
   <title>BlastyBiz — Welcome</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
+  <style>body{visibility:hidden}</style>
+  <script type="module" src="./auth-guard.js"></script>
   <script src="blastybiz-menu.js?v=3"></script>
   <script src="mascot.js?v=3"></script>
   <style>
@@ -255,24 +257,21 @@
 </script>
 
 <script type="module">
-import { auth } from './firebase-init-v2.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import {
-  getFirestore, doc, getDoc
-} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { auth, db } from './firebase-init-v2.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-const db = getFirestore(getApp());
-
-onAuthStateChanged(auth, async user => {
-  if (!user) { window.location.href = 'BlastyBiz-Login.html'; return; }
+await auth.authStateReady();
+const user = auth.currentUser;
+if (!user || !user.emailVerified) {
+  window.location.href = 'BlastyBiz-Login.html';
+} else {
   let ud = {};
   try {
     const snap = await getDoc(doc(db, 'users', user.uid));
     if (snap.exists()) ud = snap.data();
-  } catch(e) { console.error('[intro getDoc]', e); }
+  } catch(e) { console.error('[intro]', e); }
   window._introStart(user.uid, ud.plan || 'trial', ud);
-});
+}
 </script>
 
 <script>
