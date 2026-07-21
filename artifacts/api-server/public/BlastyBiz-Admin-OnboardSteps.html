@@ -6,12 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784607715417">
+  <link rel="stylesheet" href="global-style.css?v=1784608117083">
   <style>
     body { visibility: hidden }
-    .ose-wrap { display:grid; grid-template-columns:1fr 230px; gap:26px; align-items:start; }
+    .ose-outer-grid { display:grid; grid-template-columns:1fr 200px; gap:24px; align-items:start; }
     @media (max-width:880px) {
-      .ose-wrap { grid-template-columns:1fr; }
+      .ose-outer-grid { grid-template-columns:1fr; }
       .ose-preview {
         position:fixed; bottom:0; left:0; right:0;
         z-index:500; background:#0d1f3c;
@@ -23,6 +23,18 @@
       .ose-preview #pb-mascot svg { width:56px !important; height:auto; }
       .ose-preview .prev-lbl { display:none; }
     }
+    /* tabs */
+    .ose-tabs { display:flex; gap:8px; margin-bottom:22px; }
+    .ose-tab { background:#f1f5f9; border:1.5px solid #e2e8f0; border-radius:8px; padding:8px 18px; font:600 13px 'DM Sans',sans-serif; color:#64748b; cursor:pointer; transition:all .15s; }
+    .ose-tab:hover { border-color:#2563eb; color:#2563eb; }
+    .ose-tab.active { background:#2563eb; border-color:#2563eb; color:#fff; }
+    /* OB2 field cards */
+    .ob2-field-card { background:#fff; border:1.5px solid #e4e9f0; border-radius:12px; margin-bottom:10px; overflow:hidden; }
+    .ob2-field-card.has-ov { border-color:#2563eb; }
+    .ob2-field-head { display:flex; align-items:center; gap:9px; padding:9px 14px; background:#f8fafc; border-bottom:1px solid #e4e9f0; }
+    .ob2-field-body { padding:14px; }
+    .ose-sec-lbl { font:600 12px/1 'DM Sans',sans-serif; color:#475569; text-transform:uppercase; letter-spacing:.06em; margin:20px 0 10px; }
+    .ose-sec-lbl:first-child { margin-top:0; }
     /* step cards */
     .step-card { background:#fff; border:1.5px solid #e4e9f0; border-radius:12px; margin-bottom:12px; overflow:hidden; }
     .step-card.has-ov { border-color:#2563eb; }
