@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1784607215379">
+  <link rel="stylesheet" href="global-style.css?v=1784607456527">
   <style>
     body { visibility: hidden }
     .ose-wrap { display:grid; grid-template-columns:1fr 230px; gap:26px; align-items:start; }
@@ -16,14 +16,12 @@
         position:fixed; bottom:0; left:0; right:0;
         z-index:500; background:#0d1f3c;
         border-top:2px solid rgba(100,160,255,.18);
-        padding:8px 16px;
-        display:flex !important; align-items:center; gap:16px;
+        padding:10px 20px;
+        display:none; align-items:center; gap:16px;
         justify-content:center;
       }
-      .ose-preview #pb-mascot { display:inline-block; }
-      .ose-preview #pb-mascot svg { width:52px !important; height:auto; }
+      .ose-preview #pb-mascot svg { width:56px !important; height:auto; }
       .ose-preview .prev-lbl { display:none; }
-      body { padding-bottom:90px; }
     }
     /* step cards */
     .step-card { background:#fff; border:1.5px solid #e4e9f0; border-radius:12px; margin-bottom:12px; overflow:hidden; }
@@ -257,6 +255,7 @@ function renderOb2AnimCards() {
 }
 
 window._qfAnimPreview = function(k) {
+  window._showMobilePreview();
   const mood  = document.getElementById('oa2m-'+k).value;
   const flame = document.getElementById('oa2f-'+k).value;
   const lights= document.getElementById('oa2l-'+k).value;
@@ -435,7 +434,17 @@ function renderSteps() {
 
 window._oseToggle = k => document.getElementById('sc-'+k).classList.toggle('open');
 
+window._showMobilePreview = function() {
+  if (window.innerWidth > 880) return;
+  const panel = document.querySelector('.ose-preview');
+  if (!panel) return;
+  panel.style.display = 'flex';
+  clearTimeout(window._previewTimer);
+  window._previewTimer = setTimeout(function() { panel.style.display = ''; }, 3000);
+};
+
 window._osePreview = function(k) {
+  window._showMobilePreview();
   const mood  = document.getElementById('am-'+k).value;
   const flame = document.getElementById('af-'+k).value;
   const lights= document.getElementById('al-'+k).value;
