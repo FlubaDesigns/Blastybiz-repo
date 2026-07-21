@@ -3,6 +3,10 @@
 These are not bugs. They are engineering debt items to action when time allows.
 None of them block shipping.
 
+## HIGH — Admin step editor: single editable field per step (no default/override split)
+Each step card in the admin currently shows a read-only "default" label plus a separate override input — two parallel sources of truth. Replace with one editable text field per step. On first load, pre-fill with the hardcoded JS default as a starting point. On save, that text becomes the truth written to Firestore. The JS hardcoded message becomes a last-resort fallback only (first paint before Firestore loads). Eventually: pull all step text out of JS entirely and load from Firestore at start.
+Applies to both OB1 (BlastyBiz-Admin-OnboardSteps.html OB1 tab) and OB2 (OB2 tab).
+
 ## HIGH — Shared service modules
 Do this alongside the BlastyBiz.html modularization (full-site handoff, Finding 17).
 Create four thin service modules that every page imports:
