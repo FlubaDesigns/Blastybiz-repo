@@ -4553,3 +4553,56 @@ exports.scoreFact = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'
     res.json({ score: 5 }); // graceful fallback — scoring is non-critical
   }
 });
+
+// ── adminSetPlan — change a user's subscription plan (admin only) ─────────────
+// Replaces the client-side setDoc() in Admin.html — the server independently
+// verifies the caller is an admin before writing to Firestore.
+exports.adminSetPlan = onRequest(async (req, res) => {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).send('');
+  try {
+    await requireAdmin(req);
+    const { targetUid, plan } = req.body;
+    const VALID_PLANS = ['starter', 'pro', 'agency'];
+    if (!targetUid || !VALID_PLANS.includes(plan)) {
+      return res.status(400).json({ error: 'Invalid targetUid or plan' });
+    }
+    await db.collection('users').doc(targetUid).set({ plan }, { merge: true });
+    res.json({ ok: true });
+  } catch(e) {
+    console.error('[adminSetPlan]', e.message);
+    res.status(e.status || 500).json({ error: e.message });
+  }
+});
+
+// ── adminDeleteBusiness — cascade-delete a business (admin only) ──────────────
+// Replaces the client-side cascade deleteDoc() chain in Admin.html — the server
+// independently verifies admin status before touching any documents.
+exports.adminDeleteBusiness = onRequest(async (req, res) => {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).send('');
+  try {
+    await requireAdmin(req);
+    const { ownerUid, bizId } = req.body;
+    if (!ownerUid || !bizId) {
+      return res.status(400).json({ error: 'Missing ownerUid or bizId' });
+    }
+    const bizRef = db.collection('users').doc(ownerUid).collection('businesses').doc(bizId);
+    const subcollections = ['listingDrafts', 'publishJobs', 'platformConnections', 'pendingPosts', 'campaigns'];
+    for (const sub of subcollections) {
+      const snap = await bizRef.collection(sub).get();
+      for (const d of snap.docs) await d.ref.delete();
+    }
+    await bizRef.delete();
+    // Also clean up flat collections (migration safety)
+    const flatCollections = [['copyLibrary', 'businessId'], ['activityLogs', 'businessId']];
+    for (const [col, field] of flatCollections) {
+      const snap = await db.collection(col).where(field, '==', bizId).get();
+      for (const d of snap.docs) await d.ref.delete();
+    }
+    res.json({ ok: true });
+  } catch(e) {
+    console.error('[adminDeleteBusiness]', e.message);
+    res.status(e.status || 500).json({ error: e.message });
+  }
+});

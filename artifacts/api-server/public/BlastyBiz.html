@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785799739119" />
+<link rel="stylesheet" href="global-style.css?v=1785800895072" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -103,7 +103,7 @@
 .step5-url-save{padding:9px 12px;border-radius:8px;background:var(--green,#39ff14);border:none;color:#000;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;}
 </style>
 <script type="module" src="./auth-guard.js"></script>
-<script src="blastybiz-menu.js?v=3"></script>
+<script src="blastybiz-menu.js?v=5"></script>
 </head>
 <body class="has-site-header create-page">
 <div id="header__inject"></div>
@@ -4070,9 +4070,7 @@ function renderEnrichmentQuestions() {
   if (moreBtn) { if (unanswered.length === 0) moreBtn.classList.remove('hidden'); else moreBtn.classList.add('hidden'); }
 }
 
-function escHtml(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); /* canonical — see escape-utils.js */ }
 
 function saveInsightAnswer(idx, answer) {
   answer = (answer||'').trim();
@@ -5456,6 +5454,11 @@ onAuthStateChanged(auth, async (user) => {
 
   // ── Photo upload (scope-aware: campaign subcollection or global images) ───────
   window._bbUploadPhoto = async function(file) {
+    // Guard: validate file type before touching canvas or storage
+    if (!file || !file.type.startsWith('image/')) {
+      if (window.showToast) window.showToast('Only image files can be uploaded here.');
+      return;
+    }
     const scope = photoScope || 'campaign';
     // Guard: campaign upload requires an active campaign
     if (scope === 'campaign' && !activeCampaignId) {
@@ -6532,6 +6535,7 @@ window.confirmDeleteAccount = async function() {
 
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 
+<script src="escape-utils.js?v=1"></script>
 <script src="header-loader.js?v=1"></script>
 
 <!-- ── Create-Business choice modal ─────────────────────────── -->

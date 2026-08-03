@@ -4,12 +4,12 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="global-style.css?v=1785799739119" />
+  <link rel="stylesheet" href="global-style.css?v=1785800895072" />
   <title>BlastyBiz — Publish Your Blast</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>body{visibility:hidden}</style>
   <script type="module" src="./auth-guard.js"></script>
-  <script src="blastybiz-menu.js?v=3"></script>
+  <script src="blastybiz-menu.js?v=5"></script>
   <style>
 /* ── Page layout ────────────────────────────── */
 .pub-page-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted,#888);margin-bottom:8px;}
@@ -81,6 +81,7 @@
 </head>
 <body class="app-page listing-preview-page has-site-header">
 <div id="header__inject"></div>
+<script src="escape-utils.js?v=1"></script>
 <script src="header-loader.js?v=1"></script>
 
 <main class="main">
@@ -347,14 +348,7 @@ function populateFromDraftData(draftData) {
   renderManualPanel();
 }
 
-function escHtmlPub(str) {
-  return String(str)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;')
-    .replace(/\n/g,'<br/>');
-}
+function escHtmlPub(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); /* canonical — see escape-utils.js */ }
 
 function renderManualPanel() {
   var manualKeys = Object.keys(drafts).filter(function(k){

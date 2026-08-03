@@ -6,11 +6,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>BlastyBiz — Admin Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="global-style.css?v=1785799739119">
+<link rel="stylesheet" href="global-style.css?v=1785800895072">
 
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
-<script src="blastybiz-menu.js?v=3"></script>
+<script src="blastybiz-menu.js?v=5"></script>
 </head>
 <body class="admin-page">
 <header>
@@ -300,30 +300,35 @@ onAuthStateChanged(auth, async (user) => {
     if (cur) cur.textContent = 'Current: ' + plan.charAt(0).toUpperCase() + plan.slice(1);
   }
   window.setPlan = async function(plan) {
-    await setDoc(doc(db, 'users', user.uid), { plan }, { merge: true });
-    highlightPlan(plan);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(CF_BASE + '/adminSetPlan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ targetUid: user.uid, plan })
+      });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || 'Server error'); }
+      highlightPlan(plan);
+    } catch(e) {
+      alert('Plan change failed: ' + e.message);
+    }
   };
   const userSnap = await getDoc(doc(db, 'users', user.uid));
   highlightPlan(userSnap.exists() ? (userSnap.data().plan || 'starter') : 'starter');
 
-  // Delete a business doc and all related records — admin only
+  // Delete a business doc and all related records — admin only via Cloud Function
   window._adminDeleteBiz = async function(docId, name, ownerUid) {
     if (!confirm('Delete "' + (name || docId) + '" and all related records? This cannot be undone.')) return;
     try {
-      // Cascade: delete all subcollection records for this business
-      if (ownerUid) {
-        const bizSubcollections = ['listingDrafts', 'publishJobs', 'platformConnections', 'pendingPosts', 'campaigns'];
-        for (const sub of bizSubcollections) {
-          const snap = await getDocs(collection(db, 'users', ownerUid, 'businesses', docId, sub));
-          for (const d of snap.docs) await deleteDoc(d.ref);
-        }
-        await deleteDoc(doc(db, 'users', ownerUid, 'businesses', docId));
-      }
-      // Also clean up flat collections that may still have old records (migration safety)
-      const flatCollections = [['copyLibrary', 'businessId'], ['activityLogs', 'businessId']];
-      for (const [col, field] of flatCollections) {
-        const snap = await getDocs(query(collection(db, col), where(field, '==', docId)));
-        for (const d of snap.docs) await deleteDoc(d.ref);
+      const token = await user.getIdToken();
+      const res = await fetch(CF_BASE + '/adminDeleteBusiness', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ ownerUid, bizId: docId })
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        alert('Delete failed: ' + (e.error || 'Unknown error'));
       }
     } catch(e) {
       alert('Delete failed: ' + e.message);
@@ -348,7 +353,7 @@ onAuthStateChanged(auth, async (user) => {
     const billingTr = el('admin-billing-trials');
     if (billingTr) billingTr.querySelector('.row-title').textContent = trial + ' trials active';
 
-    const _esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const _esc = window._esc || (s => String(s == null ? '' : s).replace(/[&<>"']/g, function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];})); // canonical — see escape-utils.js').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     const SUB_BADGE = { active:'live', trial:'info', past_due:'error', canceled:'off' };
     const SAFE_PLANS = new Set(['starter','pro','agency','free']);
 

@@ -25,6 +25,11 @@ BACKEND = [
     pathlib.Path('firebase.json'),
 ]
 
+# Scripts — tooling that aids release quality checks
+SCRIPTS = [
+    pathlib.Path('scripts/check-release.cjs'),
+]
+
 README = """\
 # BlastyBiz — Site Package
 
@@ -87,6 +92,10 @@ with zipfile.ZipFile(DEST, 'w', zipfile.ZIP_DEFLATED) as zf:
     for bf in BACKEND:
         if bf.exists():
             zf.write(bf, 'backend/' + str(bf))
+    # Scripts — tooling bundled under scripts/ for easy reference
+    for sf in SCRIPTS:
+        if sf.exists():
+            zf.write(sf, str(sf))
     # Docs
     for doc in DOCS:
         if doc.exists():

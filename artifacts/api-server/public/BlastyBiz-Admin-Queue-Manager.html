@@ -6,11 +6,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>BlastyBiz Admin — Queue Manager</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="global-style.css?v=1785799739119">
+<link rel="stylesheet" href="global-style.css?v=1785800895072">
 
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
-<script src="blastybiz-menu.js?v=3"></script>
+<script src="blastybiz-menu.js?v=5"></script>
 </head>
 <body class="admin-page">
 <header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Queue Manager</span></a><div class="top-actions"><a class="icon-btn hide-mobile" href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile active" href="#">Queue</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Logs.html">Logs</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Operate.html">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header>
@@ -209,7 +209,7 @@ onAuthStateChanged(auth, (user) => {
     }
     let queued = 0, posting = 0, attention = 0, completed = 0;
     snap.docs.forEach(d => { jobRefMap[d.id] = d.ref; jobDataMap[d.id] = d.data(); });
-    const _esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const _esc = window._esc || (s => String(s == null ? '' : s).replace(/[&<>"']/g, function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];})); // canonical — see escape-utils.js').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     const VALID_STATUS = new Set(['pending','retry_pending','running','success','manual_completed','failed','manual_required','customer_reconnect_required','paused','closed']);
     const rows = snap.docs.map(d => {
       const j = d.data();
