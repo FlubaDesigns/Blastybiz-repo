@@ -131,6 +131,7 @@ id = "67fGmTkLMAbTADvgVIF6b"
 uri = "file://download/BlastyBiz_Audit.md"
 type = "text"
 title = "BlastyBiz_Audit.md"
+description = "Updated audit log — 5 new entries for this session's fixes"
 
 [[outputs]]
 id = "OrxuqDZbFKPyGWS2Um6-L"
@@ -233,3 +234,10 @@ id = "aGjtXC3rpJ74aaByq1Nrl"
 uri = "file://mascot/README.md"
 type = "text"
 title = "Mascot README"
+
+[[outputs]]
+id = "j6z9f7bXAEqI-pay4N3SP"
+uri = "file://download/download/BlastyBiz_Site.zip"
+type = "unspecified"
+title = "BlastyBiz_Site.zip"
+description = "Rebuilt zip with backend source files now included"

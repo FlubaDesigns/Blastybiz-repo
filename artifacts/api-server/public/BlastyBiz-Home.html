@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="stylesheet" href="global-style.css?v=1784658860888" />
+<link rel="stylesheet" href="global-style.css?v=1785799739119" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <meta name="description" content="BlastyBiz is an online software platform (SaaS) for local businesses. No physical location. Fill out one form, AI adapts your listing for every major platform, then auto-posts or generates copy-paste content." />
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
@@ -305,25 +305,6 @@ getDoc(doc(db,'settings','pricing')).then(snap => {
   if (agencyMonthly) document.getElementById('price-agency').textContent = '$' + agencyMonthly;
 }).catch(()=>{});
 </script>
-<script>
-fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){
-  document.getElementById('header__inject').innerHTML=html;
-  function _setHeaderOffset(){
-    var h=document.querySelector('.header');
-    if(!h)return;
-    var px=h.offsetHeight+'px';
-    document.body.style.paddingTop=px;
-    document.documentElement.style.setProperty('--header-h',px);
-  }
-
-  _setHeaderOffset();
-  window.addEventListener('load',_setHeaderOffset);
-  window.addEventListener('resize',_setHeaderOffset);
-  function playSound(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)();function ck(t,f){var b=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.03),ctx.sampleRate),D=b.getChannelData(0);for(var i=0;i<D.length;i++){var s=i/ctx.sampleRate;D[i]=(Math.random()*2-1)*Math.exp(-s/0.004)*1.2+Math.sin(2*Math.PI*f*s)*Math.exp(-s/0.005)*0.3;}var src=ctx.createBufferSource();src.buffer=b;var g=ctx.createGain();g.gain.setValueAtTime(1,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.03);src.connect(g);g.connect(ctx.destination);src.start(t);}ctx.resume().then(function(){var n=ctx.currentTime;ck(n+0.01,220);ck(n+0.30,160);}).catch(function(){});}catch(e){}}
-  function runAnim(){var tl=document.getElementById('header__logo-tagline');if(tl){tl.style.animation='none';void tl.offsetWidth;tl.style.animation='tagline-bolt 0.55s cubic-bezier(0.25,0.46,0.45,0.94) 0s both';}}
-  runAnim();
-  document.addEventListener('pointerdown',function onPD(){document.removeEventListener('pointerdown',onPD);playSound();runAnim();},{once:true});
-});
-</script>
+<script src="header-loader.js?v=1"></script>
 </body>
 </html>

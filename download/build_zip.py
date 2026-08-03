@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Rebuilds download/BlastyBiz_Site.zip from artifacts/api-server/public/.
+Also bundles backend source files so the package is self-contained.
 Run after any HTML/CSS/JS change: python3 download/build_zip.py
 """
 import zipfile, hashlib, pathlib
@@ -15,11 +16,30 @@ DOCS = [
     pathlib.Path('download/BlastyBiz_Runbooks.md'),
 ]
 
+# Backend source files — included so the package is complete and self-verifiable
+BACKEND = [
+    pathlib.Path('functions/index.js'),
+    pathlib.Path('functions/package.json'),
+    pathlib.Path('firestore.rules'),
+    pathlib.Path('storage.rules'),
+    pathlib.Path('firebase.json'),
+]
+
 README = """\
 # BlastyBiz — Site Package
 
 ## Live Site
 https://blastybiz-9523e.web.app
+
+## What's in this package
+| Folder / File | What it is |
+|---------------|-----------|
+| `*.html`, `*.js`, `*.css`, `img/`, `images/` | Static frontend — deployed to Firebase Hosting |
+| `backend/functions/index.js` | All Cloud Functions source |
+| `backend/functions/package.json` | Cloud Functions dependencies |
+| `backend/firestore.rules` | Firestore security rules |
+| `backend/storage.rules` | Firebase Storage security rules |
+| `backend/firebase.json` | Firebase project configuration |
 
 ## Documentation
 | File | What it is |
@@ -33,7 +53,7 @@ https://blastybiz-9523e.web.app
 - Firebase Hosting — blastybiz-9523e.web.app
 - Firebase Auth — Email/Password + Google
 - Firestore — primary database (us-east1)
-- Cloud Functions — functions/index.js
+- Cloud Functions — backend/functions/index.js
 - Anthropic Claude — AI content adaptation
 
 ## Key Pages
@@ -42,21 +62,31 @@ https://blastybiz-9523e.web.app
 | BlastyBiz-Home.html | Public landing page |
 | BlastyBiz-Login.html | Sign in / sign up |
 | BlastyBiz-Trial.html | Magic-link free trial signup |
-| BlastyBiz.html | Main app dashboard |
-| BlastyBiz-Onboard2.html | OB1 — Blasty Wizard onboarding |
+| BlastyBiz.html | Main app (Create / Blast / Connect tabs) |
+| BlastyBiz-Dashboard.html | Command dashboard |
+| BlastyBiz-Onboard2.html | OB1 — Blasty Wizard onboarding (canonical) |
 | BlastyBiz-CreateBiz.html | OB2 — Quick Form onboarding |
+| BlastyBiz-Businesses.html | Multi-business management (pro/agency) |
 | BlastyBiz-Admin-OnboardSteps.html | Admin — edit OB1/OB2 text and Blasty animations |
 | BlastyBiz-Admin.html | Admin dashboard |
+
+## Retired pages (redirect to Onboard2)
+- BlastyBiz-Onboarding.html — old wizard, now redirects
+- BlastyBiz-Chat-Onboarding.html — old chat flow, now redirects
 
 ## Deploy
 npx firebase-tools deploy --only hosting
 """
 
 with zipfile.ZipFile(DEST, 'w', zipfile.ZIP_DEFLATED) as zf:
-    # Site files
+    # Frontend / site files
     for f in sorted(SRC.rglob('*')):
         if f.is_file():
             zf.write(f, f.relative_to(SRC))
+    # Backend source files — nested under backend/ to keep them separate
+    for bf in BACKEND:
+        if bf.exists():
+            zf.write(bf, 'backend/' + str(bf))
     # Docs
     for doc in DOCS:
         if doc.exists():

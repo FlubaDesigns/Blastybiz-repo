@@ -5,7 +5,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1784658860888" />
+  <link rel="stylesheet" href="global-style.css?v=1785799739119" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -658,9 +658,7 @@ window.handleReset = async function() {
 };
 </script>
 
-<script>
-fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('header__inject').innerHTML=html;(function(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)();function ck(t,f){var b=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.03),ctx.sampleRate),D=b.getChannelData(0);for(var i=0;i<D.length;i++){var s=i/ctx.sampleRate;D[i]=(Math.random()*2-1)*Math.exp(-s/0.004)*1.2+Math.sin(2*Math.PI*f*s)*Math.exp(-s/0.005)*0.3;}var src=ctx.createBufferSource();src.buffer=b;var g=ctx.createGain();g.gain.setValueAtTime(1,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.03);src.connect(g);g.connect(ctx.destination);src.start(t);}var n=ctx.currentTime;ck(n+0.01,220);ck(n+0.30,160);}catch(e){}var tl=document.getElementById('header__logo-tagline');if(tl){tl.style.animation='tagline-bolt 0.55s cubic-bezier(0.25,0.46,0.45,0.94) 0s both';}})();});
-</script>
+<script src="header-loader.js?v=1"></script>
 
 </body>
 </html>

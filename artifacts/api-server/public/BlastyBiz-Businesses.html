@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="stylesheet" href="global-style.css?v=1784658860888"/>
+  <link rel="stylesheet" href="global-style.css?v=1785799739119"/>
   <title>BlastyBiz — My Businesses</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <style>body{visibility:hidden}</style>
@@ -216,6 +216,14 @@ if (!user || !user.emailVerified) {
   const ud = await getDoc(doc(db, 'users', user.uid)).catch(() => null);
   const plan = ud?.data()?.plan || 'starter';
   const activeBizId = ud?.data()?.activeBusiness || null;
+  // Fetch effective limit from Firestore (admin can override in settings/bizLimits)
+  const _defLimits = { starter: 1, pro: 3, agency: 10 };
+  let _bizLimit = _defLimits[plan] || 1;
+  try {
+    const limSnap = await getDoc(doc(db, 'settings', 'bizLimits')).catch(() => null);
+    const limData = limSnap?.data() || {};
+    if (limData[plan + 'Max'] != null) _bizLimit = Number(limData[plan + 'Max']);
+  } catch (_) {}
 
   // Require pro or agency
   if (plan !== 'pro' && plan !== 'agency') {
@@ -235,9 +243,8 @@ if (!user || !user.emailVerified) {
       return;
     }
 
-    // Plan limits
-    const defLimits = { starter: 1, pro: 3, agency: 10 };
-    const limit = defLimits[plan] || 1;
+    // Use the limit resolved from Firestore above (falls back to _defLimits)
+    const limit = _bizLimit;
     window._bbBizList  = bizzes;
     window._bbBizLimit = limit;
 
@@ -284,8 +291,6 @@ if (!user || !user.emailVerified) {
 }
 </script>
 
-<script>
-fetch('blastybiz-header.html').then(r=>r.text()).then(html=>{ document.getElementById('header__inject').innerHTML=html; });
-</script>
+<script src="header-loader.js?v=1"></script>
 </body>
 </html>

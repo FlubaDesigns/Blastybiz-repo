@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1784658860888" />
+<link rel="stylesheet" href="global-style.css?v=1785799739119" />
 <title>BlastyBiz — Command Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -42,6 +42,7 @@ body{visibility:hidden}
     <div class="agency-bar">
       <span id="agency-usage-text" class="agency-usage-text"></span>
       <div class="agency-pips" id="agency-pips"></div>
+      <a id="manage-biz-link" href="BlastyBiz-Businesses.html" style="display:none;font-size:11px;color:var(--green,#39ff14);text-decoration:none;margin-left:10px;opacity:.75;">Manage →</a>
     </div>
     <!-- kept for legacy JS refs -->
     <div style="display:none">
@@ -183,8 +184,8 @@ body{visibility:hidden}
 let BUSINESSES = [];
 let userPlan = 'starter';
 
-const BIZ_LIMITS = { starter: 1, pro: 3, agency: 10 };
-function getBizLimit() { return BIZ_LIMITS[window.userPlan || userPlan || 'starter'] || 1; }
+const BIZ_LIMITS = { starter: 1, pro: 3, agency: 10 }; // fallback only — runtime reads from Firestore
+function getBizLimit() { return window._bizLimit || BIZ_LIMITS[window.userPlan || userPlan || 'starter'] || 1; }
 let activeBizId = null;
 
 // ══════════════════════════════════════════
@@ -357,6 +358,9 @@ function renderAgencyBar() {
   const used = BUSINESSES.length;
   const bizLimit = getBizLimit();
   document.getElementById('agency-usage-text').textContent = `${used} of ${bizLimit} businesses used`;
+  // Show "Manage →" link once the user has more than one business
+  const manageLink = document.getElementById('manage-biz-link');
+  if (manageLink) manageLink.style.display = used > 1 ? 'inline' : 'none';
   const pips = document.getElementById('agency-pips');
   pips.innerHTML = '';
   for (let i = 0; i < bizLimit; i++) {
@@ -539,6 +543,16 @@ onAuthStateChanged(auth, async (user) => {
 
   userPlan = userData.plan || 'starter';
   window.userPlan = userPlan;
+  // Fetch effective limit from Firestore (admin can override in settings/bizLimits)
+  try {
+    const limSnap = await getDoc(doc(db, 'settings', 'bizLimits'));
+    const limData = limSnap.exists() ? limSnap.data() : {};
+    window._bizLimit = limData[userPlan + 'Max'] != null
+      ? Number(limData[userPlan + 'Max'])
+      : (BIZ_LIMITS[userPlan] || 1);
+  } catch (_) {
+    window._bizLimit = BIZ_LIMITS[userPlan] || 1;
+  }
   const planLabel = userPlan.charAt(0).toUpperCase() + userPlan.slice(1);
   const planEl = document.getElementById('active-plan');
   if (planEl) planEl.textContent = `${planLabel} plan`;
@@ -891,8 +905,6 @@ async function startCheckout(plan) {
 }
 
 </script>
-<script>
-fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('header__inject').innerHTML=html;});
-</script>
+<script src="header-loader.js?v=1"></script>
 </body>
 </html>

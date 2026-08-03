@@ -4,11 +4,13 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<link rel="stylesheet" href="global-style.css?v=1784658860888" />
+<link rel="stylesheet" href="global-style.css?v=1785799739119" />
 <title>BlastyBiz — Let's Get You Set Up</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
 <style>html { height: 100%; overflow: hidden; }</style>
 <style>body{visibility:hidden}</style>
+<!-- This onboarding flow is retired — redirect to the current Blasty wizard -->
+<script>window.location.replace('BlastyBiz-Onboard2.html');</script>
 <script type="module" src="./auth-guard.js"></script>
 <script src="blastybiz-menu.js?v=3"></script>
 </head>
@@ -1369,7 +1371,7 @@ window.nextStep = async function() {
   if (origNextStep) origNextStep();
 };
 </script>
-<script>fetch('blastybiz-header.html').then(r=>r.text()).then(function(html){document.getElementById('header__inject').innerHTML=html;});</script>
+<script src="header-loader.js?v=1"></script>
 <div id="site-footer-inject"></div>
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 </body>
