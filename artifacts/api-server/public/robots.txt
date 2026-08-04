@@ -9,6 +9,26 @@ Allow: /BlastyBiz-Plan-Pro.html
 Allow: /BlastyBiz-Plan-Agency.html
 Allow: /BlastyBiz-Privacy.html
 Allow: /BlastyBiz-Terms.html
+Allow: /BlastyBiz-Be-Johnny.html
+Allow: /BlastyBiz-Stop-Paying-Johnny.html
+
+# Platform info pages — allow indexing (SEO value)
+Allow: /BlastyBiz-Platform-alignable.html
+Allow: /BlastyBiz-Platform-angi.html
+Allow: /BlastyBiz-Platform-applemaps.html
+Allow: /BlastyBiz-Platform-bing.html
+Allow: /BlastyBiz-Platform-craigslist.html
+Allow: /BlastyBiz-Platform-facebook.html
+Allow: /BlastyBiz-Platform-fbmarket.html
+Allow: /BlastyBiz-Platform-google.html
+Allow: /BlastyBiz-Platform-instagram.html
+Allow: /BlastyBiz-Platform-linkedin.html
+Allow: /BlastyBiz-Platform-nextdoor.html
+Allow: /BlastyBiz-Platform-pinterest.html
+Allow: /BlastyBiz-Platform-thumbtack.html
+Allow: /BlastyBiz-Platform-x.html
+Allow: /BlastyBiz-Platform-yelp.html
+Allow: /BlastyBiz-Platforms.html
 
 # Authenticated app routes — do not index
 Disallow: /BlastyBiz.html
@@ -27,17 +47,21 @@ Disallow: /BlastyBiz-AI.html
 Disallow: /BlastyBiz-Account.html
 Disallow: /BlastyBiz-Intro.html
 Disallow: /BlastyBiz-Trial.html
+Disallow: /BlastyBiz-Login.html
+Disallow: /BlastyBiz-Businesses.html
 
 # Admin routes — do not index
 Disallow: /BlastyBiz-Admin.html
 Disallow: /BlastyBiz-Admin-
 
-# Retired pages — do not index
+# Retired / internal pages — do not index
 Disallow: /BlastyBiz-Onboarding.html
+Disallow: /BlastyBiz-TestBlasty.html
+Disallow: /BlastyBiz-Be-Johnny.html
 
 # Shared partials and tooling
 Disallow: /blastybiz-header.html
 Disallow: /blastybiz-footer.html
-Disallow: /BlastyBiz-TestBlasty.html
+Disallow: /404.html
 
 Sitemap: https://blastybiz-9523e.web.app/sitemap.xml
