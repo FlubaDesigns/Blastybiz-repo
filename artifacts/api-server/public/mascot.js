@@ -325,15 +325,15 @@
   var MOOD_CAPTIONS = {
     's-wave':        'Hey there! 👋',
     's-wave-2':      'So great to meet you! 🚀',
-    's-ask':         'Tell me more...',
-    's-ask-2':       'Hmm, interesting...',
+    's-ask':         'Tell me more…',
+    's-ask-2':       'Hmm, interesting…',
     's-ask-3':       'I have a question!',
     's-happy':       'Looking good! 🎉',
-    's-working':     'On it...',
+    's-working':     'On it…',
     's-celebrate':   "Let's blast! 🚀",
     's-spin':        'Woohoo! 🌀',
-    's-tilt-left':   'Thinking...',
-    's-tilt-right':  'Almost there...',
+    's-tilt-left':   'Thinking…',
+    's-tilt-right':  'Almost there…',
     's-arrive-land': 'Landed! 🛬'
   };
 
@@ -387,7 +387,7 @@
   /* miniSVG(mood) — simplified inline avatar for chat bubbles */
   function miniSVG(mood) {
     var py = { 's-ask': 204, 's-working': 207, 's-wave': 198, 's-happy': 205, 's-celebrate': 198 }[mood] || 202;
-    return '<svg viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg">'
+    return '<svg viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">'
       + '<path d="M180 354 C213 385 207 419 180 446 C153 419 147 385 180 354Z" fill="#ff8c1a"/>'
       + '<path d="M103 240 C68 254 46 286 48 327 C74 312 97 298 116 276Z" fill="#ff2f2f" stroke="#102957" stroke-width="9"/>'
       + '<path d="M257 240 C292 254 314 286 312 327 C286 312 263 298 244 276Z" fill="#ff2f2f" stroke="#102957" stroke-width="9"/>'

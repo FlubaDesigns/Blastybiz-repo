@@ -3,6 +3,7 @@
 <head>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8"/>
+  <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <link rel="stylesheet" href="global-style.css?v=1785854091866" />
 <title>BlastyBiz — AI Social Media Posts for Local Businesses</title>
@@ -11,6 +12,9 @@
 <meta property="og:title" content="BlastyBiz — AI Social Media Posts for Local Businesses"/>
 <meta property="og:description" content="Fill out one form. AI adapts your listing for every major platform. Post everywhere in minutes, not hours."/>
 <meta property="og:type" content="website"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
 <script type="application/ld+json">
 {
@@ -41,8 +45,9 @@
 <script src="blastybiz-menu.js?v=6"></script>
 </head>
 <body class="has-site-header home-page">
+<a class="skip-link" href="#main-content">Skip to main content</a>
 <div id="header__inject"></div>
-<main class="home main"><div class="main-inner">
+<main class="home main" id="main-content"><div class="main-inner">
 
 <header class="hero">
   <div class="hero-glow"></div>
@@ -78,7 +83,7 @@
       </div>
     </div>
     <div class="hero-img-col">
-      <img src="img/hero-blast-new.png" alt="BlastyBiz — blast your message to every major platform" />
+      <img src="img/hero-blast-new.png" alt="BlastyBiz — blast your message to every major platform" width="1024" height="1024" />
     </div>
   </div>
   </div>
@@ -260,23 +265,23 @@
   <div class="row">
     <div class="faq__list">
       <div class="faq__item">
-        <button class="faq__q" onclick="toggleFaq(this)">Do I need a website to use BlastyBiz?<span class="faq__arrow">▾</span></button>
+        <button class="faq__q" onclick="toggleFaq(this)" aria-expanded="false">Do I need a website to use BlastyBiz?<span class="faq__arrow">▾</span></button>
         <div class="faq__a">Not at all. BlastyBiz posts directly to platforms where official integrations are available — Google, Facebook, Instagram, and more. For manual platforms like Craigslist and Nextdoor, BlastyBiz prepares your listing so you can copy and paste in seconds. A website is optional.</div>
       </div>
       <div class="faq__item">
-        <button class="faq__q" onclick="toggleFaq(this)">How does the AI adapt my listing?<span class="faq__arrow">▾</span></button>
+        <button class="faq__q" onclick="toggleFaq(this)" aria-expanded="false">How does the AI adapt my listing?<span class="faq__arrow">▾</span></button>
         <div class="faq__a">Each platform has different rules — character limits, tone, hashtag usage, keyword preferences. Our AI knows all of these and rewrites your listing appropriately for each one automatically. You write it once, it handles the rest.</div>
       </div>
       <div class="faq__item">
-        <button class="faq__q" onclick="toggleFaq(this)">What's the difference between auto-post and copy & paste?<span class="faq__arrow">▾</span></button>
+        <button class="faq__q" onclick="toggleFaq(this)" aria-expanded="false">What's the difference between auto-post and copy & paste?<span class="faq__arrow">▾</span></button>
         <div class="faq__a">BlastyBiz auto-posts directly to Google Business Profile, Facebook, and Instagram when you connect those accounts. For every other platform — Craigslist, Nextdoor, Yelp, and more — BlastyBiz formats your copy perfectly and it's ready to paste in yourself in seconds. Platforms like Craigslist and Nextdoor don't allow any third-party automation at all, so BlastyBiz will always give you paste-ready copy for those.</div>
       </div>
       <div class="faq__item">
-        <button class="faq__q" onclick="toggleFaq(this)">Is my business information safe?<span class="faq__arrow">▾</span></button>
+        <button class="faq__q" onclick="toggleFaq(this)" aria-expanded="false">Is my business information safe?<span class="faq__arrow">▾</span></button>
         <div class="faq__a">Yes. Your data is stored securely and never shared or sold. We only use it to generate your listings. You can delete your account and all data at any time.</div>
       </div>
       <div class="faq__item">
-        <button class="faq__q" onclick="toggleFaq(this)">Can I cancel anytime?<span class="faq__arrow">▾</span></button>
+        <button class="faq__q" onclick="toggleFaq(this)" aria-expanded="false">Can I cancel anytime?<span class="faq__arrow">▾</span></button>
         <div class="faq__a">Absolutely. No contracts, no cancellation fees. Cancel with one tap from your account settings. You keep access until the end of your billing period.</div>
       </div>
     </div>
@@ -293,7 +298,7 @@
         <p class="hero-note">No credit card · 2 minute setup · Cancel anytime</p>
       </div>
       <div class="cta__img-wrap">
-        <img src="images/cta-worker.png" alt="Local business owner using BlastyBiz on their phone" class="cta__img" />
+        <img src="images/cta-worker.png" alt="Local business owner using BlastyBiz on their phone" class="cta__img" width="896" height="1280" />
       </div>
     </div>
   </div>
@@ -309,8 +314,8 @@ function toggleFaq(btn) {
   const answer = btn.nextElementSibling;
   const isOpen = answer.classList.contains('open');
   document.querySelectorAll('.faq__a').forEach(a => a.classList.remove('open'));
-  document.querySelectorAll('.faq__q').forEach(b => b.classList.remove('open'));
-  if (!isOpen) { answer.classList.add('open'); btn.classList.add('open'); }
+  document.querySelectorAll('.faq__q').forEach(b => { b.classList.remove('open'); b.setAttribute('aria-expanded','false'); });
+  if (!isOpen) { answer.classList.add('open'); btn.classList.add('open'); btn.setAttribute('aria-expanded','true'); }
 }
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });

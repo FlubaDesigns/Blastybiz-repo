@@ -27,7 +27,7 @@
        Per-field pointer blocking (OB2 rows) is the page's own responsibility. */
     '.fg-future{',
     '  filter:blur(3px);opacity:.4;',
-    '  transition:filter .4s ease,opacity .4s ease;}',
+    '  transition:opacity .4s ease,transform .4s ease;}',
 
     /* Active: full visibility + neon spotlight ring */
     '.fg-active{',
@@ -35,12 +35,12 @@
     '  outline:2px solid rgba(57,255,20,.65)!important;outline-offset:6px;',
     '  box-shadow:0 0 0 8px rgba(57,255,20,.07),0 0 22px rgba(57,255,20,.18)!important;',
     '  border-radius:12px;',
-    '  transition:filter .4s ease,opacity .4s ease,outline .3s ease,box-shadow .3s ease;}',
+    '  transition:opacity .4s ease,box-shadow .3s ease;}',
 
     /* Done: full visibility, no ring */
     '.fg-done{',
     '  filter:none!important;opacity:1!important;pointer-events:auto;',
-    '  transition:filter .4s ease,opacity .4s ease;}',
+    '  transition:opacity .4s ease;}',
 
     /* Mobile (<620px): no blur (too aggressive on small screens);
        spotlight ring also suppressed so the layout stays clean */

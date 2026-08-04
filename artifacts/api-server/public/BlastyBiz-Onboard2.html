@@ -2,11 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
+  <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
   <link rel="stylesheet" href="global-style.css?v=1785854091866"/>
   <title>BlastyBiz — Your Business</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
   <script src="blastybiz-menu.js?v=6"></script>
   <style>
@@ -228,10 +232,9 @@
       font-size: 15px;
       color: var(--light, #fff);
       font-family: 'DM Sans', sans-serif;
-      outline: none;
       transition: border-color .18s;
     }
-    .bubble-input:focus { border-color: var(--green); }
+    .bubble-input:focus-visible { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,200,83,.12); }
     .bubble-input::placeholder { color: var(--muted, #555); }
 
     .bubble-hint {
@@ -681,7 +684,7 @@
       border: 1px solid var(--border, #333); border-radius: 10px;
       padding: 10px 12px; box-sizing: border-box; margin-bottom: 2px;
     }
-    .bubble-textarea:focus { border-color: var(--green); outline: none; }
+    .bubble-textarea:focus-visible { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,200,83,.12); }
     .bubble-textarea::placeholder { color: var(--muted, #555); }
 
     /* ── Multiselect (platforms) ─────────────────────────────────── */
@@ -1036,7 +1039,7 @@
       blastyMsgFn: a => 'Love it! How did ' + a.bizName + ' get started? What\'s the story?',
       inputType: 'textarea',
       key: 'story',
-      placeholder: 'e.g. We opened in 1987 after my father emigrated from Mexico with nothing but a family recipe and a dream...',
+      placeholder: 'e.g. We opened in 1987 after my father emigrated from Mexico with nothing but a family recipe and a dream…',
       hint: 'As much or as little as you like',
       skipIf: a => a._fork === 'blast',
       validate: () => null
@@ -1046,7 +1049,7 @@
       blastyMsgFn: a => 'Good stuff! What makes ' + a.bizName + ' different from the competition?',
       inputType: 'textarea',
       key: 'different',
-      placeholder: 'e.g. Everything is made from scratch daily. Our head chef trained in Lyon for 3 years...',
+      placeholder: 'e.g. Everything is made from scratch daily. Our head chef trained in Lyon for 3 years…',
       hint: 'Why should someone choose you?',
       skipIf: a => a._fork === 'blast',
       validate: () => null
@@ -1056,7 +1059,7 @@
       blastyMsg: 'Any awards, press coverage, or milestones worth mentioning?',
       inputType: 'textarea',
       key: 'awards',
-      placeholder: 'e.g. Best Pizza 3 years running. Featured in the Tribune. 4.9 stars across 600+ reviews...',
+      placeholder: 'e.g. Best Pizza 3 years running. Featured in the Tribune. 4.9 stars across 600+ reviews…',
       hint: 'Leave blank if none — totally fine!',
       skipIf: a => a._fork === 'blast',
       validate: () => null
@@ -1066,7 +1069,7 @@
       blastyMsgFn: a => 'Who\'s your ideal customer for ' + a.bizName + '?',
       inputType: 'textarea',
       key: 'customer',
-      placeholder: 'e.g. Homeowners aged 35–60 who value quality over price and have been burned by cheap contractors before...',
+      placeholder: 'e.g. Homeowners aged 35–60 who value quality over price and have been burned by cheap contractors before…',
       hint: 'Who gets the most value from what you do?',
       skipIf: a => a._fork === 'blast',
       validate: () => null
@@ -1076,7 +1079,7 @@
       blastyMsg: 'Anything else I should always know about your business?',
       inputType: 'textarea',
       key: 'other',
-      placeholder: 'e.g. Free estimates. Loyalty program. Family-owned since 1995. We sponsor the local little league...',
+      placeholder: 'e.g. Free estimates. Loyalty program. Family-owned since 1995. We sponsor the local little league…',
       hint: 'Special services, team, community involvement — anything',
       skipIf: a => a._fork === 'blast',
       validate: () => null
@@ -1098,7 +1101,7 @@
       blastyMsg: 'What\'s this campaign about? What are you promoting?',
       inputType: 'textarea',
       key: 'campaignAbout',
-      placeholder: 'e.g. Grand reopening after renovations. New fall menu just dropped. Announcing our second location...',
+      placeholder: 'e.g. Grand reopening after renovations. New fall menu just dropped. Announcing our second location…',
       hint: 'The more detail, the better the copy',
       validate: v => v.trim().length >= 3 ? null : 'Tell me a bit more!'
     },
@@ -1107,7 +1110,7 @@
       blastyMsg: 'Who is this campaign targeting?',
       inputType: 'textarea',
       key: 'campaignAudience',
-      placeholder: 'e.g. Local families, young professionals, pet owners in the area...',
+      placeholder: 'e.g. Local families, young professionals, pet owners in the area…',
       hint: 'Who do you want to reach with this one?',
       validate: v => v.trim().length >= 3 ? null : 'Tell me about your audience!'
     },
@@ -1116,7 +1119,7 @@
       blastyMsg: 'Any special offer or call to action for this campaign?',
       inputType: 'textarea',
       key: 'campaignOffer',
-      placeholder: 'e.g. 20% off this weekend only · Free consultation · Book now and save $50...',
+      placeholder: 'e.g. 20% off this weekend only · Free consultation · Book now and save $50…',
       hint: 'Leave blank for pure awareness — totally fine!',
       validate: () => null
     },
@@ -1499,7 +1502,7 @@
     const wrap = document.getElementById('ob2-ai-suggest-wrap');
     if (!wrap) return;
     wrap.innerHTML =
-      '<input id="ob2-input-cat" type="text" class="bubble-input" placeholder="e.g. Hair Salon, Mexican Restaurant..." autocomplete="off"/>'
+      '<input id="ob2-input-cat" type="text" class="bubble-input" placeholder="e.g. Hair Salon, Mexican Restaurant…" autocomplete="off"/>'
       + '<button type="button" class="bubble-action-btn" style="margin-top:8px" '
       + 'onclick="window._ob2AcceptSuggestion(document.getElementById(\'ob2-input-cat\').value.trim()||\'Local Business\')">Looks good →</button>';
     const inp = document.getElementById('ob2-input-cat');

@@ -3,9 +3,13 @@
 <head>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
+  <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="stylesheet" href="global-style.css?v=1785854091866" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
 @media (max-width:768px){.dash-img-col{display:none}}
@@ -32,7 +36,7 @@
 .create-progress-track{height:3px;background:var(--border,#333);border-radius:2px;margin-bottom:10px;}
 .create-progress-fill{height:3px;background:var(--green,#39ff14);border-radius:2px;transition:width 0.3s ease;}
 .create-step-dots{display:flex;gap:8px;justify-content:center;margin-bottom:16px;}
-.cwiz-dot{width:7px;height:7px;border-radius:50%;background:var(--border,#333);transition:all 0.22s;flex-shrink:0;}
+.cwiz-dot{width:7px;height:7px;border-radius:50%;background:var(--border,#333);transition:background-color 0.22s,width 0.22s;flex-shrink:0;}
 .cwiz-dot.cwiz-done{background:rgba(57,255,20,0.35);}
 .cwiz-dot.cwiz-active{background:var(--green,#39ff14);width:20px;border-radius:4px;}
 .create-slide{display:none;}
@@ -54,7 +58,7 @@
 /* ── Stage 2: Step 5 per-platform review ── */
 .step5-subhead{font-size:12px;font-weight:700;color:var(--muted,#888);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-bottom:10px;}
 .step5-plat-dots{display:flex;gap:6px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;}
-.step5-plat-dot{width:7px;height:7px;border-radius:50%;background:var(--border,#333);transition:all 0.22s;flex-shrink:0;cursor:pointer;}
+.step5-plat-dot{width:7px;height:7px;border-radius:50%;background:var(--border,#333);transition:background-color 0.22s,width 0.22s;flex-shrink:0;cursor:pointer;}
 .step5-plat-dot.s5-active{background:var(--green,#39ff14);width:20px;border-radius:4px;}
 .step5-plat-dot.s5-done{background:rgba(57,255,20,0.45);}
 .step5-plat-dot.s5-approved{background:rgba(57,255,20,0.55);}
@@ -70,11 +74,11 @@
 .step5-status-pill.needs-review{background:rgba(255,168,0,.12);color:var(--warn,#ffa800);}
 .step5-status-pill.approved{background:rgba(57,255,20,.12);color:var(--green,#39ff14);}
 .step5-status-pill.failed{background:rgba(255,59,59,.12);color:#ff3b3b;}
-.step5-copy-text{width:100%;min-height:130px;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:10px;padding:12px;font-size:14px;color:var(--text,#ccc);line-height:1.6;resize:vertical;font-family:inherit;box-sizing:border-box;outline:none;white-space:pre-wrap;}
+.step5-copy-text{width:100%;min-height:130px;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:10px;padding:12px;font-size:14px;color:var(--text,#ccc);line-height:1.6;resize:vertical;font-family:inherit;box-sizing:border-box;white-space:pre-wrap;}.step5-copy-text:focus-visible{outline:none;box-shadow:0 0 0 2px var(--green,#39ff14);}
 .step5-copy-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
 .step5-action-btn{font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;border:1px solid var(--border,#333);background:transparent;color:var(--muted,#888);cursor:pointer;font-family:inherit;white-space:nowrap;}
 .step5-action-btn:active{opacity:.7;}
-.step5-looks-good-btn{width:100%;padding:14px;font-size:15px;font-weight:700;border-radius:12px;border:2px solid var(--green,#39ff14);background:var(--green,#39ff14);color:#000;cursor:pointer;font-family:inherit;letter-spacing:.2px;margin-top:8px;transition:all .2s;}
+.step5-looks-good-btn{width:100%;padding:14px;font-size:15px;font-weight:700;border-radius:12px;border:2px solid var(--green,#39ff14);background:var(--green,#39ff14);color:#000;cursor:pointer;font-family:inherit;letter-spacing:.2px;margin-top:8px;transition:opacity .2s,background-color .2s;}
 .step5-looks-good-btn.approved{background:transparent;color:var(--green,#39ff14);}
 .step5-looks-good-btn:active{opacity:.85;}
 .step5-nav{display:flex;gap:12px;margin:4px 0;}
@@ -112,14 +116,14 @@
 
 <div class="tabs-row">
   <button class="tabs-arrow tabs-arrow--left" id="tabs-arrow-left" aria-label="Scroll tabs left" onclick="_tabsScroll(-1)">&#8249;</button>
-  <div class="tabs" id="tabs-scroll">
-    <div class="tab active" onclick="showTab('profile')" id="tab-profile"><span class="tab-icon">⚙️ </span>Profile</div>
-    <div class="tab" onclick="showTab('story')" id="tab-story"><span class="tab-icon">📖 </span>Story</div>
-    <div class="tab" onclick="showTab('create')" id="tab-create"><span class="tab-icon">✏️ </span>Create</div>
-    <div class="tab" onclick="showTab('platforms')" id="tab-platforms"><span class="tab-icon">📡 </span>Platforms</div>
-    <div class="tab" onclick="showTab('schedule')" id="tab-schedule"><span class="tab-icon">🗓️ </span>Schedule</div>
-    <div class="tab" onclick="showTab('history')" id="tab-history"><span class="tab-icon">📋 </span>History</div>
-    <div class="tab" onclick="showTab('account')" id="tab-account"><span class="tab-icon">💼 </span>Account</div>
+  <div class="tabs" id="tabs-scroll" role="tablist" aria-label="App navigation">
+    <button type="button" class="tab active" role="tab" aria-selected="true" onclick="showTab('profile')" id="tab-profile"><span class="tab-icon">⚙️ </span>Profile</button>
+    <button type="button" class="tab" role="tab" aria-selected="false" onclick="showTab('story')" id="tab-story"><span class="tab-icon">📖 </span>Story</button>
+    <button type="button" class="tab" role="tab" aria-selected="false" onclick="showTab('create')" id="tab-create"><span class="tab-icon">✏️ </span>Create</button>
+    <button type="button" class="tab" role="tab" aria-selected="false" onclick="showTab('platforms')" id="tab-platforms"><span class="tab-icon">📡 </span>Platforms</button>
+    <button type="button" class="tab" role="tab" aria-selected="false" onclick="showTab('schedule')" id="tab-schedule"><span class="tab-icon">🗓️ </span>Schedule</button>
+    <button type="button" class="tab" role="tab" aria-selected="false" onclick="showTab('history')" id="tab-history"><span class="tab-icon">📋 </span>History</button>
+    <button type="button" class="tab" role="tab" aria-selected="false" onclick="showTab('account')" id="tab-account"><span class="tab-icon">💼 </span>Account</button>
   </div>
   <button class="tabs-arrow tabs-arrow--right" id="tabs-arrow-right" aria-label="Scroll tabs right" onclick="_tabsScroll(1)">&#8250;</button>
 </div>
@@ -171,8 +175,8 @@
               <div class="biz-tab-strip">
                 <div class="biz-tab-bar" id="biz-tab-bar">Loading…</div>
                 <div class="biz-tab-actions">
-                  <button type="button" class="add-biz-btn" onclick="window.addBusiness&&window.addBusiness()" title="Add business">＋</button>
-                  <button type="button" class="del-biz-btn" onclick="window.deleteBusiness&&window.deleteBusiness(window.activeBizId)" title="Delete selected business">🗑</button>
+                  <button type="button" class="add-biz-btn" onclick="window.addBusiness&&window.addBusiness()" title="Add business" aria-label="Add business">＋</button>
+                  <button type="button" class="del-biz-btn" onclick="window.deleteBusiness&&window.deleteBusiness(window.activeBizId)" title="Delete selected business" aria-label="Delete selected business">🗑</button>
                 </div>
               </div>
               <select id="biz-select" style="display:none"></select>
