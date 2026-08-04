@@ -5,7 +5,7 @@
 <meta charset="UTF-8"/>
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<link rel="stylesheet" href="global-style.css?v=1785859899740" />
+<link rel="stylesheet" href="global-style.css?v=1785863058939" />
 <title>BlastyBiz — Let's Get You Set Up</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -827,7 +827,7 @@ function _renderCategorySelects(aiCats, contextDesc, contextName) {
 
     const header = document.createElement('div');
     header.className = 'pcat-header';
-    header.innerHTML = `<span class="pcat-icon">${p.icon}</span><span class="pcat-name">${p.name}</span>` +
+    header.innerHTML = `<span class="pcat-icon">${window.escHtml(p.icon)}</span><span class="pcat-name">${window.escHtml(p.name)}</span>` +
       (maxCats > 1 ? `<span class="pcat-limit-badge">up to ${maxCats}</span>` : '');
     row.appendChild(header);
 
@@ -1352,7 +1352,7 @@ window.nextStep = async function() {
     _clearDraft();
     const bizName = data.businessName || 'Your business';
     const successTitle = document.querySelector('#slide-6 .success-title');
-    if (successTitle) successTitle.innerHTML = `${bizName}<br/><span>is Ready!</span>`;
+    if (successTitle) successTitle.innerHTML = `${window.escHtml(bizName)}<br/><span>is Ready!</span>`;
     const successSub = document.getElementById('success-sub');
     if (successSub) successSub.innerHTML = `Your business profile is complete.<br/>Now let\u2019s create your first AI-powered campaign.`;
     if (btn) { btn.disabled = false; btn.textContent = 'Create First Campaign \u2192'; }

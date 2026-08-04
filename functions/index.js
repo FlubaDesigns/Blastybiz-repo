@@ -76,6 +76,18 @@ function userBizJobsRef(uid, bizId)   { return userBizRef(uid, bizId).collection
 function userBizPostsRef(uid, bizId)  { return userBizRef(uid, bizId).collection('pendingPosts'); }
 function userBizConnsRef(uid, bizId)  { return userBizRef(uid, bizId).collection('platformConnections'); }
 
+// ── Private token subcollection helpers ───────────────────────────────────────
+// OAuth access/refresh tokens live in platformConnections/{id}/private/tokens,
+// a subcollection denied to ALL browser clients in Firestore rules (server-only).
+// Never store accessToken or refreshToken on the parent platformConnections doc.
+async function _getConnTokens(connRef) {
+  const snap = await connRef.collection('private').doc('tokens').get();
+  return snap.exists ? snap.data() : {};
+}
+async function _setConnTokens(connRef, tokens) {
+  await connRef.collection('private').doc('tokens').set(tokens, { merge: true });
+}
+
 // ── AI cost tracking ──────────────────────────────────────────────────────────
 // Prices per million tokens (update as provider pricing changes)
 const AI_COSTS = {
@@ -1086,9 +1098,9 @@ async function _publishGoogleJob(job, conn) {
   } catch(e) {
     if (e.response?.status === 401 && conn.refreshToken) {
       const newToken = await _googleRefreshToken(conn.refreshToken);
-      await userBizConnsRef(job.uid, job.businessId).doc('google').update({
-        accessToken: newToken, updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
+      const gConnRef = userBizConnsRef(job.uid, job.businessId).doc('google');
+      await _setConnTokens(gConnRef, { accessToken: newToken });
+      await gConnRef.update({ updatedAt: admin.firestore.FieldValue.serverTimestamp() });
       const r = await tryPost(newToken);
       return { postId: r.data.name };
     }
@@ -1249,11 +1261,33 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
   const hmac = crypto.createHmac('sha256', signatureKey);
   hmac.update(notificationUrl + body);
   const expected = hmac.digest('base64');
-  if (expected !== req.headers['x-square-hmacsha256-signature']) {
-    return res.status(403).json({ error: 'Invalid signature' });
-  }
+  const incoming = req.headers['x-square-hmacsha256-signature'] || '';
+  try {
+    const expBuf = Buffer.from(expected);
+    const incBuf = Buffer.from(incoming);
+    if (expBuf.length !== incBuf.length || !crypto.timingSafeEqual(expBuf, incBuf)) {
+      return res.status(403).json({ error: 'Invalid signature' });
+    }
+  } catch { return res.status(403).json({ error: 'Invalid signature' }); }
 
   const event = req.body;
+
+  // Idempotency guard — Square retries on non-2xx; reject replays at the doc level.
+  const eventId = event.event_id;
+  if (eventId) {
+    try {
+      await db.collection('webhookEvents').doc(eventId).create({
+        receivedAt: admin.firestore.FieldValue.serverTimestamp(),
+        type: event.type || ''
+      });
+    } catch(e) {
+      if (e.code === 6) { // ALREADY_EXISTS
+        console.log(`[squareWebhook] Duplicate event ${eventId} — skipping`);
+        return res.json({ received: true });
+      }
+      throw e;
+    }
+  }
 
   // Square's actual webhook API only emits `payment.created` / `payment.updated`
   // (there is no `payment.completed` or `payment.failed` event). Completion and
@@ -1682,13 +1716,14 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', region: 'us-central
       }
     } catch(e) { /* accounts/locations can be resolved on first use */ }
 
-    await userBizConnsRef(uid, businessId).doc('google').set({
+    const googleConnRef = userBizConnsRef(uid, businessId).doc('google');
+    await googleConnRef.set({
       businessId, uid, platform: 'google', status: 'connected',
-      accessToken: access_token, refreshToken: refresh_token || '',
       accountId, locationId,
       connectedAt: admin.firestore.FieldValue.serverTimestamp(),
       expiresAt: new Date(Date.now() + (expires_in || 3600) * 1000)
     }, { merge: true });
+    await _setConnTokens(googleConnRef, { accessToken: access_token, refreshToken: refresh_token || '' });
 
     res.redirect(connectedRedirect);
   } catch(e) {
@@ -1818,33 +1853,39 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-centr
       } catch(e) { /* ignore — absence is fine */ }
     }
 
+    const fbConnRef = userBizConnsRef(uid, businessId).doc('facebook');
+    const igConnRef = userBizConnsRef(uid, businessId).doc('instagram');
     const batch = db.batch();
-    batch.set(userBizConnsRef(uid, businessId).doc('facebook'), {
+    // Public fields only — tokens go to private/tokens subcollection
+    batch.set(fbConnRef, {
       businessId, uid, platform: 'facebook', status: 'connected',
-      accessToken: pageToken, pageId: page?.id || '',
+      pageId: page?.id || '',
       pageName: page?.name || '',
       allPages: pages.map(p => ({ id: p.id, name: p.name })),
       expiresAt,
       connectedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
+    batch.set(fbConnRef.collection('private').doc('tokens'), { accessToken: pageToken }, { merge: true });
 
     if (igUserId) {
       // Fresh igUserId from the API — write the full Instagram doc.
-      batch.set(userBizConnsRef(uid, businessId).doc('instagram'), {
+      batch.set(igConnRef, {
         businessId, uid, platform: 'instagram', status: 'connected',
-        accessToken: pageToken, igUserId, pageId: page?.id || '',
+        igUserId, pageId: page?.id || '',
         expiresAt,
         connectedAt: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
+      batch.set(igConnRef.collection('private').doc('tokens'), { accessToken: pageToken }, { merge: true });
     } else if (existingIgDoc) {
       // No igUserId returned this time, but a paired Instagram doc exists
       // (possibly expired). Refresh its token and reset to connected so it
       // doesn't remain stale after the Facebook reconnect.
-      batch.set(userBizConnsRef(uid, businessId).doc('instagram'), {
-        accessToken: pageToken, status: 'connected',
+      batch.set(igConnRef, {
+        status: 'connected',
         expiresAt,
         connectedAt: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
+      batch.set(igConnRef.collection('private').doc('tokens'), { accessToken: pageToken }, { merge: true });
     }
 
     await batch.commit();
@@ -1922,11 +1963,20 @@ exports.dispatchPublishJob = onDocumentCreated(
     if (job.status !== 'pending') return;
     if (job.planGated) return; // starter plan — user sees copy-paste content instead
 
-    // Idempotency guard: claim the job by moving to 'processing'
-    await jobRef.update({
-      status: 'processing',
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
+    // Atomic idempotency guard — Firestore triggers are at-least-once; a transaction
+    // re-reads the doc so duplicate deliveries cannot both proceed to publish.
+    try {
+      await db.runTransaction(async (tx) => {
+        const fresh = await tx.get(jobRef);
+        if (fresh.data().status !== 'pending') {
+          throw Object.assign(new Error('already-claimed'), { code: 'ALREADY_CLAIMED' });
+        }
+        tx.update(jobRef, { status: 'processing', updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+      });
+    } catch(txErr) {
+      if (txErr.code === 'ALREADY_CLAIMED') return; // another invocation got here first
+      throw txErr;
+    }
 
     try {
       const connSnap = await userBizConnsRef(job.uid, job.businessId).doc(job.platform).get();
@@ -1941,7 +1991,9 @@ exports.dispatchPublishJob = onDocumentCreated(
         return;
       }
 
-      const conn = connSnap.data();
+      // Tokens live in the private subcollection — merge into conn for publishers
+      const tokens = await _getConnTokens(connSnap.ref);
+      const conn = { ...connSnap.data(), ...tokens };
       let result;
 
       switch (job.platform) {
@@ -2425,62 +2477,9 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
   }
 });
 
-// ── ADMIN: Browser-based secret manager ─────────────────────────────────────
-exports.setOperatorSecret = onRequest({ invoker: 'public', cors: true }, async (req, res) => {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  try { await requireAdmin(req); }
-  catch (e) { return res.status(e.status || 403).json({ error: e.message }); }
-
-  const { name, value } = req.body;
-  if (!name || !value) return res.status(400).json({ error: 'Missing name or value' });
-
-  const ALLOWED = [
-    'ANTHROPIC_API_KEY',
-    'SQUARE_ACCESS_TOKEN','SQUARE_LOCATION_ID',
-    'SQUARE_PRO_PLAN_ID','SQUARE_AGENCY_PLAN_ID','SQUARE_WEBHOOK_SIGNATURE_KEY',
-    'GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET',
-    'FACEBOOK_APP_ID','FACEBOOK_APP_SECRET',
-    'RESEND_API_KEY','YELP_API_KEY'
-  ];
-  if (!ALLOWED.includes(name)) return res.status(400).json({ error: 'Unknown secret name' });
-
-  try {
-    const tokenResp = await fetch(
-      'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token',
-      { headers: { 'Metadata-Flavor': 'Google' } }
-    );
-    const { access_token } = await tokenResp.json();
-    const project = process.env.GCLOUD_PROJECT || 'blastybiz-9523e';
-    const base = `https://secretmanager.googleapis.com/v1/projects/${project}`;
-    const hdrs = { 'Authorization': `Bearer ${access_token}`, 'Content-Type': 'application/json' };
-
-    // Create secret if it doesn't exist (409 = already exists — fine)
-    const createResp = await fetch(`${base}/secrets?secretId=${name}`, {
-      method: 'POST', headers: hdrs,
-      body: JSON.stringify({ replication: { automatic: {} } })
-    });
-    if (!createResp.ok && createResp.status !== 409) {
-      console.warn('createSecret non-fatal:', await createResp.text());
-    }
-
-    // Add new version
-    const addResp = await fetch(`${base}/secrets/${name}:addVersion`, {
-      method: 'POST', headers: hdrs,
-      body: JSON.stringify({ payload: { data: Buffer.from(value).toString('base64') } })
-    });
-    if (!addResp.ok) {
-      const err = await addResp.text();
-      console.error('addVersion error:', err);
-      return res.status(500).json({ error: 'Save failed: ' + err });
-    }
-
-    res.json({ success: true });
-  } catch (e) {
-    console.error('setOperatorSecret error:', e);
-    res.status(500).json({ error: e.message });
-  }
-});
+// setOperatorSecret removed — Secret Manager is writable over HTTP from a browser
+// is a security finding regardless of auth checks. Use the CLI instead:
+//   firebase functions:secrets:set SECRET_NAME
 
 // ══════════════════════════════════════════
 // Admin endpoints — all require requireAdmin()
@@ -4292,38 +4291,41 @@ exports.checkPlatformTokenExpiry = onSchedule(
 
       if (expiresAt > cutoff) { skipped++; continue; } // still fresh
 
+      // Tokens are in the private subcollection — fetch once per doc before any API call
+      const privTokens = await _getConnTokens(docSnap.ref);
+
       // Navigate to the paired Instagram doc in the same biz subcollection
       const igRef = docSnap.ref.parent.parent.collection('platformConnections').doc('instagram');
 
       // Facebook connections: attempt proactive token exchange (extends another ~60 days)
-      if (conn.platform === 'facebook' && conn.accessToken) {
+      if (conn.platform === 'facebook' && privTokens.accessToken) {
         try {
           const resp = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
             params: {
               grant_type:       'fb_exchange_token',
               client_id:        process.env.FACEBOOK_APP_ID,
               client_secret:    process.env.FACEBOOK_APP_SECRET,
-              fb_exchange_token: conn.accessToken,
+              fb_exchange_token: privTokens.accessToken,
             },
           });
           const { access_token, expires_in } = resp.data;
           const newExpiresAt = new Date(Date.now() + (expires_in || 60 * 24 * 3600) * 1000);
 
-          // Update the Facebook doc
+          // Write new token to private subcollection; update expiresAt on main doc
+          await _setConnTokens(docSnap.ref, { accessToken: access_token });
           await docSnap.ref.update({
-            accessToken: access_token,
-            expiresAt:   newExpiresAt,
-            updatedAt:   admin.firestore.FieldValue.serverTimestamp(),
+            expiresAt: newExpiresAt,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           });
           console.log(`[checkPlatformTokenExpiry] Refreshed Facebook token for biz ${conn.businessId}`);
 
           // Mirror to the Instagram doc if it exists (same page token)
           const igSnap  = await igRef.get();
           if (igSnap.exists && igSnap.data().status === 'connected') {
+            await _setConnTokens(igRef, { accessToken: access_token });
             await igRef.update({
-              accessToken: access_token,
-              expiresAt:   newExpiresAt,
-              updatedAt:   admin.firestore.FieldValue.serverTimestamp(),
+              expiresAt: newExpiresAt,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             });
             console.log(`[checkPlatformTokenExpiry] Mirrored refreshed token to instagram for biz ${conn.businessId}`);
           }
@@ -4334,7 +4336,6 @@ exports.checkPlatformTokenExpiry = onSchedule(
           console.warn(`[checkPlatformTokenExpiry] Facebook refresh failed for biz ${conn.businessId}:`,
             e.response?.data || e.message);
           // Also mark the paired Instagram doc expired — it shares the same dead token.
-          // Do this before falling through so the FB doc handler below marks both consistently.
           try {
             const igSnap  = await igRef.get();
             if (igSnap.exists && igSnap.data().status === 'connected') {
@@ -4356,21 +4357,21 @@ exports.checkPlatformTokenExpiry = onSchedule(
       if (conn.platform === 'instagram') { skipped++; continue; }
 
       // Google connections: attempt proactive token refresh
-      if (conn.platform === 'google' && conn.refreshToken) {
+      if (conn.platform === 'google' && privTokens.refreshToken) {
         try {
           const resp = await axios.post('https://oauth2.googleapis.com/token', null, {
             params: {
               client_id:     process.env.GOOGLE_CLIENT_ID,
               client_secret: process.env.GOOGLE_CLIENT_SECRET,
-              refresh_token: conn.refreshToken,
+              refresh_token: privTokens.refreshToken,
               grant_type:    'refresh_token',
             },
           });
           const { access_token, expires_in } = resp.data;
+          await _setConnTokens(docSnap.ref, { accessToken: access_token });
           await docSnap.ref.update({
-            accessToken: access_token,
-            expiresAt:   new Date(Date.now() + (expires_in || 3600) * 1000),
-            updatedAt:   admin.firestore.FieldValue.serverTimestamp(),
+            expiresAt: new Date(Date.now() + (expires_in || 3600) * 1000),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           });
           console.log(`[checkPlatformTokenExpiry] Refreshed Google token for ${docSnap.id}`);
           refreshed++;
@@ -4672,7 +4673,9 @@ exports.disconnectPlatform = onRequest(async (req, res) => {
       .collection('platformConnections').doc(platformId);
     const connSnap = await connRef.get();
     if (!connSnap.exists) return res.status(404).json({ error: 'Connection not found' });
-    const conn = connSnap.data();
+    // Merge private tokens for revocation — tokens are never on the main doc
+    const privTokens = await _getConnTokens(connRef);
+    const conn = { ...connSnap.data(), ...privTokens };
 
     // ── Best-effort OAuth revocation ──────────────────────────────────────────
     if (platformId === 'google') {

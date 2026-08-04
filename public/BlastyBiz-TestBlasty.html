@@ -5,7 +5,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="stylesheet" href="global-style.css?v=1785859899740"/>
+  <link rel="stylesheet" href="global-style.css?v=1785863058939"/>
   <title>BlastyBiz — Test Console</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -442,7 +442,7 @@ if (!user || !user.emailVerified) {
           </div>`;
         }).join('');
       } catch(e) {
-        el.innerHTML = `<p style="color:#ff6060;font-size:13px;margin:0">Error: ${e.message}</p>`;
+        el.innerHTML = `<p style="color:#ff6060;font-size:13px;margin:0">Error: ${window.escHtml(e.message)}</p>`;
       }
     };
 

@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="global-style.css?v=1785859899740">
+<link rel="stylesheet" href="global-style.css?v=1785863058939">
 
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
@@ -473,7 +473,7 @@
           adminListPlatformConnections · adminListPublishJobs · adminMarkManualFollowup · adminOnboardingFunnel ·
           adminRetryJob ·
           adminSubscriptionSummary · adminUpdateAdminEmails · adminUpdatePricing · refreshYelpCategories ·
-          sendTestEmail · setOperatorSecret
+          sendTestEmail
         </p>
       </div>
     </div>
@@ -767,43 +767,13 @@ const auth = getAuth(app);
     }
   };
 
-window.saveSecret = async function(name, inputId, statusId, btn) {
-  const value = document.getElementById(inputId).value.trim();
+// saveSecret removed — browser-to-Secret-Manager writes are a security finding.
+// Use the Firebase CLI to rotate secrets:
+//   firebase functions:secrets:set SECRET_NAME
+window.saveSecret = function(name, inputId, statusId, btn) {
   const statusEl = document.getElementById(statusId);
-
-  if (!value) {
-    statusEl.textContent = 'Please enter a value first.';
-    statusEl.className = 'save-status err';
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = 'Saving…';
-  statusEl.textContent = 'Saving…';
-  statusEl.className = 'save-status';
-
-  try {
-    const token = await auth.currentUser?.getIdToken();
-    if (!token) throw new Error('Not signed in — reload the page');
-    const resp = await fetch(`${CF_BASE}/setOperatorSecret`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, value })
-    });
-    const data = await resp.json();
-    if (!resp.ok || !data.success) throw new Error(data.error || 'Save failed');
-
-    statusEl.textContent = '✓ Saved to Secret Manager';
-    statusEl.className = 'save-status ok';
-    document.getElementById(inputId).value = '';
-    document.getElementById('redeploy-banner').classList.add('visible');
-  } catch (e) {
-    statusEl.textContent = '✗ ' + e.message;
-    statusEl.className = 'save-status err';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Save';
-  }
+  statusEl.textContent = '⚠ Browser-based secret saving has been disabled for security. Use: firebase functions:secrets:set ' + name;
+  statusEl.className = 'save-status err';
 };
 
 // ── Admin email management ────────────────────────────────────────────────────
@@ -994,7 +964,7 @@ async function toggleStepUsers(stepIndex, stepLabel, rowEl) {
   });
 
   detailEl.style.display = 'block';
-  detailEl.innerHTML = `<div style="font-size:13px;color:#888;padding:10px 0;">Loading users for "${stepLabel}"…</div>`;
+  detailEl.innerHTML = `<div style="font-size:13px;color:#888;padding:10px 0;">Loading users for "${window.escHtml(stepLabel)}"…</div>`;
 
   try {
     const token = await auth.currentUser.getIdToken();
@@ -1050,7 +1020,7 @@ async function toggleStepUsers(stepIndex, stepLabel, rowEl) {
         </table>
       </div>`;
   } catch(e) {
-    detailEl.innerHTML = `<p style="font-size:13px;color:#f87171;padding:10px 0;">✗ ${e.message}</p>`;
+    detailEl.innerHTML = `<p style="font-size:13px;color:#f87171;padding:10px 0;">✗ ${window.escHtml(e.message)}</p>`;
   }
 }
 
