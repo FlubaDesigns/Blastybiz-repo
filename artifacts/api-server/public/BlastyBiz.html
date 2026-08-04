@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785851697889" />
+<link rel="stylesheet" href="global-style.css?v=1785851964040" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -897,23 +897,6 @@
                 <button type="button" class="sched-chip"        id="sched-time-evening"   onclick="setSchedTime('evening')">🌙 6pm</button>
               </div>
               <div id="sched-next-preview" class="sched-next-preview"></div>
-              <div class="sched-camp-row">
-                <div class="sched-camp-title">Which campaign?</div>
-                <div class="sched-camp-hint">Auto-posts will use this campaign's offer and ad details.</div>
-                <select id="sched-campaign-select" onchange="setSchedCampaign(this.value, this.options[this.selectedIndex].text)" class="sched-select">
-                  <option value="">— No campaign selected (use business profile) —</option>
-                </select>
-              </div>
-              <div class="sched-review-row">
-                <div>
-                  <div class="sched-label">Require approval for future scheduled posts</div>
-                  <div class="sched-sublabel">AI drafts for recurring auto-posts land in a queue — you approve before they go live. This does not affect the blast you are creating now.</div>
-                </div>
-                <label class="sched-toggle-wrap sched-toggle-ml">
-                  <input type="checkbox" id="sched-review" onchange="toggleSchedReview()" />
-                  <span class="sched-toggle-track"></span>
-                </label>
-              </div>
             </div>
           </div>
         </div>
@@ -3173,8 +3156,6 @@ function loadProfile() {
   renderPlatformCats(profile.platformCats || {});
   document.getElementById('profile-biz-cat').textContent  = profile.category || 'Set up your profile below';
   if (profile.locationType) setProfileLocationType(profile.locationType);
-  loadSchedule(profile.postingSchedule || null);
-
   // Pre-fill main create form with business data (only if fields are empty)
   if (!document.getElementById('biz-name').value && profile.name)         document.getElementById('biz-name').value     = profile.name;
   if (!document.getElementById('biz-phone').value && profile.phone)       document.getElementById('biz-phone').value    = profile.phone;
@@ -3334,16 +3315,6 @@ function _updateQuickSchedPreview() {
     el.textContent = '📅 Next post: ' + label + ' at ' + slot;
   } catch(_) {}
 }
-
-// Legacy no-ops so old HTML refs don't crash
-function loadSchedule() {}
-function saveSchedule() {}
-function toggleSchedReview() {}
-function setSchedCampaign() {}
-function _syncSchedCampaign() {}
-function _renderSchedCampaignSelect() {}
-function _renderSchedChips() {}
-function _updateSchedPreview() {}
 
 // ── Schedule tab — comprehensive per-blast view ─────────────────────────────
 // _draftSchedules map is populated by window._bbLoadDraftSchedules (module script)
@@ -3592,16 +3563,6 @@ function _computeNextRunDate(sched) {
   const tzLocalMs = Date.UTC(tgp('year'), tgp('month') - 1, tgp('day'), tgp('hour'), tgp('minute'), 0);
   return new Date(approx.getTime() + (approx.getTime() - tzLocalMs));
 }
-
-// Legacy stubs — kept so existing accordion references don't crash on call
-function loadSchedule() {}
-function saveSchedule() {}
-function toggleSchedReview() {}
-function _renderSchedChips() {}
-function _renderSchedCampaignSelect() {}
-function setSchedCampaign() {}
-function _syncSchedCampaign() {}
-function _updateSchedPreview() {}
 
 // ══════════════════════════════════════════
 // PENDING POSTS (review queue)
@@ -4459,7 +4420,6 @@ function selectCampaign(id, name) {
 
   renderCampaignChips();
   renderPlatformHistory();
-  _syncSchedCampaign(id, name);
   _updateAdDiscardBtn();
   checkAdaptBtn();
 }
@@ -4521,7 +4481,6 @@ async function saveNewCampaign() {
   if (ctxEl) ctxEl.value = story;
 
   renderCampaignChips();
-  _syncSchedCampaign(id, name);
   showToast('Campaign "' + name + '" created');
 
   if (window._bbFirstRun) {
@@ -6374,7 +6333,6 @@ async function ccCreateCampaign(aiData) {
   setTimeout(() => {
     closeCampaignChat();
     if (typeof renderCampaignChips === 'function') renderCampaignChips();
-    if (typeof _syncSchedCampaign  === 'function') _syncSchedCampaign(id, name);
     if (typeof document.getElementById('new-campaign-row')?.classList?.add === 'function') document.getElementById('new-campaign-row').classList.add('hidden');
     document.getElementById('campaign-content')?.classList.remove('hidden');
     const ctxEl = document.getElementById('campaign-context');
