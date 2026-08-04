@@ -4,10 +4,40 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="stylesheet" href="global-style.css?v=1785802864721" />
-<title>BlastyBiz — Lock. Load. Blast.</title>
-<meta name="description" content="BlastyBiz is an online software platform (SaaS) for local businesses. No physical location. Fill out one form, AI adapts your listing for every major platform, then auto-posts or generates copy-paste content." />
+<link rel="stylesheet" href="global-style.css?v=1785803716568" />
+<title>BlastyBiz — AI Social Media Posts for Local Businesses</title>
+<meta name="description" content="Fill out one form — AI writes your listing for Google, Facebook, Instagram, Craigslist, Yelp, and 8 more platforms. Auto-posts where possible, copy-paste ready everywhere else. Start free." />
+<meta name="robots" content="index, follow"/>
+<meta property="og:title" content="BlastyBiz — AI Social Media Posts for Local Businesses"/>
+<meta property="og:description" content="Fill out one form. AI adapts your listing for every major platform. Post everywhere in minutes, not hours."/>
+<meta property="og:type" content="website"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "name": "BlastyBiz",
+      "url": "https://blastybiz-9523e.web.app",
+      "description": "AI-powered social media and business listing platform for local businesses. Fill out one form and get AI-adapted copy for every major platform.",
+      "sameAs": []
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "BlastyBiz",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "description": "Fill out one form, AI adapts your listing for every major platform — Google Business Profile, Facebook, Instagram, Craigslist, Yelp, and more. Auto-posts where platform APIs allow, copy-paste ready everywhere else.",
+      "offers": [
+        { "@type": "Offer", "name": "Starter", "price": "0", "priceCurrency": "USD", "url": "https://blastybiz-9523e.web.app/BlastyBiz-Plan-Free.html" },
+        { "@type": "Offer", "name": "Pro", "price": "19", "priceCurrency": "USD", "priceSpecification": { "@type": "UnitPriceSpecification", "price": "19", "priceCurrency": "USD", "unitCode": "MON" }, "url": "https://blastybiz-9523e.web.app/BlastyBiz-Plan-Pro.html" },
+        { "@type": "Offer", "name": "Agency", "price": "99", "priceCurrency": "USD", "priceSpecification": { "@type": "UnitPriceSpecification", "price": "99", "priceCurrency": "USD", "unitCode": "MON" }, "url": "https://blastybiz-9523e.web.app/BlastyBiz-Plan-Agency.html" }
+      ]
+    }
+  ]
+}
+</script>
 <script src="blastybiz-menu.js?v=5"></script>
 </head>
 <body class="has-site-header home-page">
@@ -23,6 +53,7 @@
         Fill It Once.
         <span>Blast Everywhere.</span>
       </h1>
+      <p class="hero-kw-sub" style="font-size:16px;color:var(--muted,#aaa);margin-top:-8px;margin-bottom:4px;font-weight:400;">AI-Written Social Media &amp; Business Listing Posts for Local Businesses</p>
       <p><strong>Stop spending hours posting your business to <span class="text--green">every major platform.</span></strong></p>
       <p>Write it once — AI adapts it for every surface. One tap and your copy is created!</p>
       <div class="hero-actions center">
@@ -189,7 +220,7 @@
       <div class="reviews__card">
         <p class="reviews__quote">"I used to spend Sunday afternoons posting to Google, Facebook, Craigslist — every week. Now I do it in 5 minutes and I'm back with my family."</p>
         <div class="reviews__author">
-          <div class="reviews__avatar">🍕</div>
+          <div class="reviews__avatar" style="font-size:15px;font-weight:700;letter-spacing:-0.5px;">MR</div>
           <div>
             <strong class="reviews__name">Maria R.</strong>
             <p class="reviews__biz">Pizzeria Owner · Naples, FL</p>
@@ -199,7 +230,7 @@
       <div class="reviews__card">
         <p class="reviews__quote">"I had no idea what to write for Instagram vs Craigslist. BlastyBiz just handles it. My phone started ringing more within a week."</p>
         <div class="reviews__author">
-          <div class="reviews__avatar">🔧</div>
+          <div class="reviews__avatar" style="font-size:15px;font-weight:700;letter-spacing:-0.5px;">JT</div>
           <div>
             <strong class="reviews__name">James T.</strong>
             <p class="reviews__biz">AC & Plumbing · Fort Myers, FL</p>
@@ -209,7 +240,7 @@
       <div class="reviews__card">
         <p class="reviews__quote">"I don't have a website, don't want one. BlastyBiz puts me everywhere people are looking. That's all I need."</p>
         <div class="reviews__author">
-          <div class="reviews__avatar">✂️</div>
+          <div class="reviews__avatar" style="font-size:15px;font-weight:700;letter-spacing:-0.5px;">SM</div>
           <div>
             <strong class="reviews__name">Sandra M.</strong>
             <p class="reviews__biz">Hair Salon · Cape Coral, FL</p>
@@ -297,7 +328,12 @@ function setAuthUI(loggedIn) {
 }
 setAuthUI(localStorage.getItem('bb_auth')==='1');
 onAuthStateChanged(auth, user => { document.body.classList.toggle('logged-in',!!user); localStorage.setItem('bb_auth',user?'1':'0'); setAuthUI(!!user); });
-window.doSignOut = () => { localStorage.setItem('bb_auth','0'); signOut(auth).finally(()=>{ window.location.href='BlastyBiz-Login.html'; }); };
+window.doSignOut = () => {
+  localStorage.setItem('bb_auth','0');
+  try { localStorage.removeItem('bb_profile'); }           catch(e) {}
+  try { localStorage.removeItem('bb_platforms_enabled'); } catch(e) {}
+  signOut(auth).finally(()=>{ window.location.href='BlastyBiz-Login.html'; });
+};
 getDoc(doc(db,'settings','pricing')).then(snap => {
   if (!snap.exists()) return;
   const { proMonthly, agencyMonthly } = snap.data();
