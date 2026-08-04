@@ -520,6 +520,12 @@ main.home                { width: 100%; }
 .layout__split-wide{ display: grid; grid-template-columns: 1.5fr 1fr;         gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 .layout__split-2-1 { display: grid; grid-template-columns: 2fr 1fr;           gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 .layout__split-1-2 { display: grid; grid-template-columns: 1fr 2fr;           gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
+/* Grid items default to min-width:auto which lets content overflow its track */
+.layout__split-3 > *,
+.layout__split-4 > *,
+.layout__split-wide > *,
+.layout__split-2-1 > *,
+.layout__split-1-2 > * { min-width: 0; }
 
 @media (max-width: 599px) {
   .layout__split-3,
@@ -1952,7 +1958,7 @@ body.connect-page .section-label { color: var(--silver); margin: 0 0 10px; }
 .platform-name           { font-size: 15px; font-weight: 700; color: var(--light); }
 .platform-mode           { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 2px; font-weight: 600; }
 .platform-status         { font-size: 13px; color: var(--muted); margin-top: 4px; }
-.platform-actions        { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; align-items: flex-end; }
+.platform-actions        { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; align-items: flex-end; max-width: 140px; }
 .btn-connect             { padding: 9px 18px; background: var(--green); color: var(--dark); border: none; font-size: 13px; font-weight: 700; white-space: nowrap; }
 .btn-connect:hover       { background: var(--green2); transform: translateY(-1px); }
 .btn-reconnect           { padding: 9px 18px; background: transparent; color: var(--warn); border: 1px solid var(--warn); font-size: 13px; font-weight: 700; white-space: nowrap; }
