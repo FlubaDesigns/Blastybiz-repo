@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785818542657" />
+<link rel="stylesheet" href="global-style.css?v=1785819209074" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -750,6 +750,8 @@
           oninput="saveProfile();var e=document.getElementById('profile-website-err');if(e)e.textContent='';"
           onblur="(function(inp){var v=inp.value.trim();if(v&&!/^https?:\/\//i.test(v)){inp.value='https://'+v;saveProfile();}var e=document.getElementById('profile-website-err');if(e)e.textContent=inp.value&&!/^https?:\/\/[^\s.]+\.[^\s]/.test(inp.value)?'That doesn\u2019t look like a valid website URL':''; })(this)" />
         <div id="profile-website-err" style="color:#ff4c4c;font-size:12px;margin-top:4px;min-height:16px;"></div>
+
+        <hr class="divider" />
 
         <label for="profile-hours">Hours</label>
         <input type="text" id="profile-hours" placeholder="Mon–Sat 9am–8pm" oninput="saveProfile()" />
