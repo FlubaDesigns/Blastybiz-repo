@@ -272,7 +272,7 @@
       <div class="bbf-label">Website</div>
       <div class="bbf-input-zone">
         <input type="url" class="bbf-input" id="bfi-website" placeholder="e.g. https://www.yourbiz.com" autocomplete="off"
-          onblur="var v=this.value.trim();if(v&&!/^https?:\/\//i.test(v))v='https://'+v;if(v&&!/^https?:\/\/www\./i.test(v))v=v.replace(/^(https?:\/\/)/i,'$1www.');this.value=v;"/>
+          onblur="var v=this.value.trim();if(v&&!/^https?:\/\//i.test(v))v='https://'+v;this.value=v;"/>
         <div class="bbf-hint">Leave blank if you don't have one — no worries!</div>
         <button class="bbf-btn" onclick="_bbContinue('website')">Continue →</button>
         <div class="bbf-err" id="bfe-website"></div>

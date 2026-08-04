@@ -737,7 +737,7 @@
         </div>
 
         <label for="profile-website">Website</label>
-        <input type="url" id="profile-website" placeholder="https://yourbusiness.com" oninput="saveProfile()" />
+        <input type="url" id="profile-website" placeholder="https://yourbusiness.com" oninput="saveProfile()" onblur="var v=this.value.trim();if(v&&!/^https?:\/\//i.test(v)){this.value='https://'+v;saveProfile();}" />
 
         <label for="profile-hours">Hours</label>
         <input type="text" id="profile-hours" placeholder="Mon–Sat 9am–8pm" oninput="saveProfile()" />
