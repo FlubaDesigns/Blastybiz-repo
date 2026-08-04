@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta charset="UTF-8" />
+  <meta name="theme-color" content="#000000"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="global-style.css?v=1785858635994" />
+  <title>BlastyBiz — Publish Your Blast</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>body{visibility:hidden}</style>
+  <script type="module" src="./auth-guard.js"></script>
+  <script src="blastybiz-menu.js?v=6"></script>
+  <style>
+/* ── Page layout ────────────────────────────── */
+.pub-page-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted,#888);margin-bottom:8px;}
+.pub-hero{padding:20px 18px 18px;}
+.pub-hero .big-title{font-size:clamp(26px,6vw,36px);line-height:1.15;margin:0 0 8px;}
+.pub-hero .sub{font-size:14px;color:var(--muted,#888);margin:0;}
+
+/* ── Summary grid ───────────────────────────── */
+.pub-summary-grid{display:flex;flex-direction:column;gap:8px;}
+.pub-row{display:flex;align-items:baseline;gap:10px;}
+.pub-row .label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted,#888);flex-shrink:0;min-width:72px;}
+.pub-row .val{font-size:14px;color:var(--light,#fff);word-break:break-word;}
+
+/* ── Platform list rows ─────────────────────── */
+.pub-plat-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border,#333);}
+.pub-plat-row:last-child{border-bottom:none;padding-bottom:0;}
+.pub-plat-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;background:rgba(255,255,255,.06);}
+.pub-plat-info{flex:1;min-width:0;}
+.pub-plat-name{font-size:14px;font-weight:600;color:var(--light,#fff);}
+.pub-plat-type{font-size:11px;color:var(--muted,#888);margin-top:1px;}
+
+/* ── Copy preview accordions ────────────────── */
+.pub-preview-item{border:1px solid var(--border,#333);border-radius:12px;margin-bottom:10px;overflow:hidden;}
+.pub-preview-header{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;background:transparent;border:none;width:100%;text-align:left;font-family:inherit;}
+.pub-preview-header:active{background:rgba(255,255,255,.03);}
+.pub-preview-hdr-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;background:rgba(255,255,255,.06);}
+.pub-preview-hdr-name{font-size:14px;font-weight:600;color:var(--light,#fff);flex:1;text-align:left;}
+.pub-preview-chevron{font-size:14px;color:var(--muted,#888);transition:transform .2s;flex-shrink:0;}
+.pub-preview-body{padding:0 14px 14px;display:none;}
+.pub-preview-body.open{display:block;}
+.pub-preview-text{font-size:14px;color:var(--text,#ccc);line-height:1.65;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:9px;padding:12px;white-space:pre-wrap;word-break:break-word;}
+.pub-copy-btn{margin-top:10px;font-size:13px;font-weight:700;padding:9px 16px;border-radius:9px;border:1px solid var(--border,#333);background:transparent;color:var(--light,#fff);cursor:pointer;font-family:inherit;}
+.pub-copy-btn:active{opacity:.7;}
+
+/* ── Schedule ───────────────────────────────── */
+.pub-sched-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+.sched-input{width:100%;padding:10px 12px;background:var(--input-bg,#111);border:1px solid var(--border,#333);border-radius:9px;color:var(--light,#fff);font-size:14px;font-family:inherit;box-sizing:border-box;}
+.sched-input:focus{outline:none;border-color:var(--green,#39ff14);}
+.sched-status-text{font-size:13px;color:var(--muted,#888);margin-left:8px;}
+.sched-saved{font-size:13px;color:var(--text,#ccc);background:rgba(57,255,20,.06);border:1px solid rgba(57,255,20,.2);border-radius:9px;padding:10px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.clear-btn{font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid var(--border,#333);background:transparent;color:var(--muted,#888);cursor:pointer;font-family:inherit;flex-shrink:0;}
+
+/* ── Publish action ─────────────────────────── */
+.pub-action-card{text-align:center;}
+.pub-publish-btn{width:100%;max-width:340px;padding:16px;font-size:16px;font-weight:700;letter-spacing:.3px;border-radius:14px;border:none;background:var(--green,#39ff14);color:#000;cursor:pointer;font-family:inherit;transition:opacity .15s;}
+.pub-publish-btn:active{opacity:.8;}
+.pub-publish-btn:disabled{opacity:.45;cursor:default;}
+.pub-warn{background:rgba(255,168,0,.08);border:1px solid rgba(255,168,0,.3);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--warn,#ffa800);margin-top:14px;text-align:left;}
+
+/* ── Copy-paste panel ───────────────────────── */
+.manual-card{border:1px solid var(--border,#333);border-radius:12px;padding:14px;margin-bottom:12px;}
+.manual-card:last-child{margin-bottom:0;}
+.manual-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.manual-icon{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;margin-right:10px;}
+.manual-name{font-size:14px;font-weight:600;color:var(--light,#fff);}
+.manual-mode{font-size:11px;color:var(--muted,#888);margin-top:1px;}
+.manual-textarea{width:100%;min-height:110px;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:9px;padding:10px 12px;font-size:13px;color:var(--text,#ccc);line-height:1.6;resize:vertical;font-family:inherit;box-sizing:border-box;}
+.manual-note{font-size:12px;color:var(--muted,#888);line-height:1.5;}
+.copy-platform-btn{font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;border:1px solid var(--border,#333);background:transparent;color:var(--light,#fff);cursor:pointer;font-family:inherit;flex-shrink:0;}
+.copy-platform-btn:active{opacity:.7;}
+
+/* ── Section spacing ────────────────────────── */
+.section-mt{margin-top:16px;}
+
+/* ── Loading / no-draft state ───────────────── */
+.pub-no-draft{text-align:center;padding:32px 16px;color:var(--muted,#888);font-size:14px;}
+.pub-no-draft strong{display:block;color:var(--light,#fff);font-size:16px;margin-bottom:8px;}
+  </style>
+</head>
+<body class="app-page listing-preview-page has-site-header">
+<div id="header__inject"></div>
+<script src="escape-utils.js?v=1"></script>
+<script src="header-loader.js?v=1"></script>
+
+<main class="main">
+<div class="main-inner">
+
+  <!-- ── HERO ─────────────────────────────────────── -->
+  <section class="card pub-hero">
+    <div class="pub-page-eyebrow">Step 6 of 6</div>
+    <h1 class="big-title">Publish your blast</h1>
+    <p class="sub" id="pub-sub">Review your copy below, set a send time if needed, then tap Publish.</p>
+  </section>
+
+  <!-- ── BLAST SUMMARY ──────────────────────────── -->
+  <section class="card section-mt" id="pub-summary-card">
+    <div class="card-title">🧾 Blast Summary</div>
+    <div class="pub-summary-grid">
+      <div class="pub-row"><span class="label">Business</span><span class="val" id="sb-name">—</span></div>
+      <div class="pub-row"><span class="label">Category</span><span class="val" id="sb-category">—</span></div>
+      <div class="pub-row"><span class="label">Offer</span><span class="val" id="sb-offer">—</span></div>
+      <div class="pub-row"><span class="label">Phone</span><span class="val" id="sb-phone">—</span></div>
+      <div class="pub-row"><span class="label">Area</span><span class="val" id="sb-area">—</span></div>
+    </div>
+  </section>
+
+  <!-- ── PLATFORMS IN THIS BLAST ────────────────── -->
+  <section class="card section-mt">
+    <div class="card-title">📣 Platforms in this blast</div>
+    <div id="pub-platform-list">
+      <div class="queue-loading" style="padding:10px 0;color:var(--muted,#888);font-size:14px;">Loading…</div>
+    </div>
+  </section>
+
+  <!-- ── CONTENT PREVIEWS ──────────────────────── -->
+  <section class="card section-mt" id="pub-previews-card" style="display:none;">
+    <div class="card-title">✍️ Your AI-written copy</div>
+    <p class="helper mb-14" style="font-size:13px;color:var(--muted,#888);">Tap any platform to expand the copy. This is what BlastyBiz will post.</p>
+    <div id="pub-previews-list"></div>
+  </section>
+
+  <!-- ── SCHEDULE THIS BLAST ─────────────────────── -->
+  <section class="card section-mt">
+    <div class="card-title">🗓 Schedule this blast</div>
+    <p class="helper mb-14" style="font-size:13px;color:var(--muted,#888);">Optional — set a future send time for this blast only. Your account-level auto-post schedule is a separate setting.</p>
+    <div class="pub-sched-grid">
+      <div>
+        <label class="field-label mb-6" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted,#888);">Send Date</label>
+        <input type="datetime-local" id="sched-date" class="sched-input"/>
+      </div>
+      <div>
+        <label class="field-label mb-6" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted,#888);">Refire Every</label>
+        <select id="sched-recur" class="sched-input">
+          <option value="">None (one-time)</option>
+          <option value="weekly">Weekly</option>
+          <option value="biweekly">Every 2 weeks</option>
+          <option value="monthly">Monthly</option>
+          <option value="quarterly">Quarterly</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label mb-6" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted,#888);">Stop After</label>
+        <select id="sched-stop" class="sched-input">
+          <option value="">Never</option>
+          <option value="4">4 posts</option>
+          <option value="8">8 posts</option>
+          <option value="12">12 posts</option>
+          <option value="26">26 posts</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;margin-top:14px;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="saveSchedule()" id="sched-btn" style="padding:10px 20px;">💾 Save Schedule</button>
+      <span id="sched-status" class="sched-status-text"></span>
+    </div>
+    <div id="sched-saved" class="sched-saved mt-14 hidden">
+      <strong class="text-green">⏱ Schedule saved</strong> — <span id="sched-summary"></span>
+      <button onclick="clearSchedule()" class="clear-btn">Clear</button>
+    </div>
+  </section>
+
+  <!-- ── PUBLISH ACTION ──────────────────────────── -->
+  <section class="card section-mt pub-action-card">
+    <div class="card-title">🚀 Ready to go</div>
+    <p id="pub-action-sub" class="helper mb-16" style="font-size:14px;color:var(--muted,#888);">Tap to publish your blast to all selected platforms.</p>
+    <button class="pub-publish-btn" id="publish-btn" onclick="publishBlast()">🚀 Publish Blast</button>
+    <div id="pub-warn" class="pub-warn hidden"></div>
+  </section>
+
+  <!-- ── COPY-PASTE PLATFORMS ────────────────────── -->
+  <section class="card section-mt hidden" id="manual-panel">
+    <div class="card-title">📋 Copy-Paste Platforms</div>
+    <p class="helper mb-14" style="font-size:13px;color:var(--muted,#888);">These platforms don't allow any app to post on your behalf — that's their policy, not a BlastyBiz limitation. Your copy is written. Tap Copy and paste it in.</p>
+    <div id="manual-platform-list"></div>
+  </section>
+
+</div><!-- /.main-inner -->
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var PLATFORM_META = {
+  google:     { icon:'G',  name:'Google Business Profile', capabilityLevel:'full_auto',       badge:'Auto',       badgeClass:'badge auto',   hint:'Keep it clear and local. Google posts should be direct, service-based, and not overstuffed with keywords.' },
+  facebook:   { icon:'f',  name:'Facebook Page',           capabilityLevel:'partial_auto',    badge:'Auto',       badgeClass:'badge auto',   hint:'Facebook can be warmer and more conversational than Google.' },
+  instagram:  { icon:'◎', name:'Instagram',               capabilityLevel:'partial_auto',    badge:'Auto',       badgeClass:'badge auto',   hint:'Instagram should stay shorter and image-friendly. Hashtags are okay, but keep them local.' },
+  bing:       { icon:'B',  name:'Bing Places',             capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to bingplaces.com → sign in → add or edit listing → paste your text.' },
+  applemaps:  { icon:'🍎', name:'Apple Maps',              capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to mapsconnect.apple.com → sign in → add or edit your business → paste your text.' },
+  yelp:       { icon:'Y',  name:'Yelp',                   capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to biz.yelp.com → sign in → edit your business info or post an update → paste your text.' },
+  nextdoor:   { icon:'N',  name:'Nextdoor',               capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to nextdoor.com → Post → For Sale & Free → paste your listing.' },
+  craigslist: { icon:'C',  name:'Craigslist',             capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to craigslist.org → your city → Services → paste your listing.' },
+  fbmarket:   { icon:'M',  name:'FB Marketplace',         capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to facebook.com/marketplace → Create listing → paste your text.' },
+  alignable:  { icon:'A',  name:'Alignable',              capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to alignable.com → sign in → Post an Update → paste your text.' },
+  thumbtack:  { icon:'T',  name:'Thumbtack',              capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to thumbtack.com/pro → sign in → edit your profile or services → paste your text.' },
+  angi:       { icon:'🔧', name:'Angi',                   capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to pro.angi.com → sign in → edit your business profile → paste your text.' },
+  linkedin:   { icon:'in', name:'LinkedIn',               capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to linkedin.com → sign in → create a post from your business page → paste your text.' },
+  x:          { icon:'𝕏',  name:'X (Twitter)',            capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to x.com → sign in → compose a new post → paste your text.' },
+  pinterest:  { icon:'P',  name:'Pinterest',              capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to pinterest.com → sign in → create a pin → paste your text.' },
+};
+
+var drafts         = {};
+var draftDocId     = null;
+var currentUser    = null;
+var businessId     = null;
+var currentDraftData = {};
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2500);
+}
+
+function saveSchedule() {
+  var dateVal = document.getElementById('sched-date').value;
+  var recur   = document.getElementById('sched-recur').value;
+  var stop    = document.getElementById('sched-stop').value;
+  if (!dateVal) { showToast('Pick a send date first'); return; }
+
+  var selectedMs = new Date(dateVal).getTime();
+
+  // Reject past dates
+  if (selectedMs <= Date.now()) {
+    showToast('Schedule must be in the future'); return;
+  }
+  // Reject dates more than 1 year out
+  if (selectedMs > Date.now() + 365 * 24 * 60 * 60 * 1000) {
+    showToast('Schedule must be within the next year'); return;
+  }
+
+  // Store an unambiguous UTC timestamp and the browser timezone alongside
+  // the raw local string — the backend should use sendAtUtc, never sendAt,
+  // to avoid timezone guessing (Finding 1, Production Pass 3).
+  var tz        = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  var sendAtUtc = new Date(dateVal).toISOString();
+  var sched = {
+    sendAt:    dateVal,      // local string kept for display purposes only
+    sendAtUtc: sendAtUtc,    // canonical: use this to schedule the actual send
+    timezone:  tz,           // browser tz, e.g. "America/Los_Angeles"
+    recur:     recur || null,
+    stopAfter: stop ? parseInt(stop) : null
+  };
+  window._saveSchedule && window._saveSchedule(sched);
+
+  var saved   = document.getElementById('sched-saved');
+  var summary = document.getElementById('sched-summary');
+  var dt  = new Date(dateVal).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+  var txt = 'First post: ' + dt + ' (' + tz + ')';
+  if (recur)  txt += ' · repeats ' + recur;
+  if (stop)   txt += ' · stops after ' + stop + ' posts';
+  summary.textContent = txt;
+  saved.classList.remove('hidden');
+  showToast('⏱ Schedule saved');
+}
+
+function clearSchedule() {
+  document.getElementById('sched-date').value  = '';
+  document.getElementById('sched-recur').value = '';
+  document.getElementById('sched-stop').value  = '';
+  document.getElementById('sched-saved').classList.add('hidden');
+  window._saveSchedule && window._saveSchedule(null);
+  showToast('Schedule cleared');
+}
+
+function togglePreview(pid) {
+  var body    = document.getElementById('pub-prev-body-' + pid);
+  var chevron = document.getElementById('pub-prev-chev-' + pid);
+  if (!body) return;
+  var isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(90deg)';
+}
+
+function copyPreviewText(pid) {
+  var d = drafts[pid];
+  if (!d) return;
+  var text = [d.headline, d.text, d.cta].filter(Boolean).join('\n\n');
+  navigator.clipboard.writeText(text).then(function(){
+    showToast('📋 Copied — paste it into ' + (PLATFORM_META[pid] ? PLATFORM_META[pid].name : pid));
+  });
+}
+
+function populateFromDraftData(draftData) {
+  currentDraftData = draftData;
+  window._draftRevision = draftData.revision || 0; // F8: track revision for stale-publish guard
+  var adaptations = draftData.adaptations || {};
+  Object.entries(adaptations).forEach(function(entry){
+    var pid = entry[0], text = entry[1];
+    drafts[pid] = { text: text, headline: '', cta: '' };
+  });
+
+  var sbName     = document.getElementById('sb-name');
+  var sbCategory = document.getElementById('sb-category');
+  var sbPhone    = document.getElementById('sb-phone');
+  var sbArea     = document.getElementById('sb-area');
+  var sbOffer    = document.getElementById('sb-offer');
+  if (sbName)     sbName.textContent     = draftData.name     || '—';
+  if (sbCategory) sbCategory.textContent = draftData.category || '—';
+  if (sbPhone)    sbPhone.textContent    = draftData.phone    || '—';
+  if (sbArea)     sbArea.textContent     = draftData.region   || draftData.address || '—';
+  if (sbOffer)    sbOffer.textContent    = draftData.offer    || '—';
+
+  var platformStatus = draftData.platformStatus || {};
+  var platformIds   = Object.keys(adaptations).filter(function(pid){ return platformStatus[pid] !== 'excluded'; });
+  var autoCount     = platformIds.filter(function(k){ var m = PLATFORM_META[k]; return m && m.capabilityLevel !== 'manual_assisted'; }).length;
+  var manualCount   = platformIds.filter(function(k){ var m = PLATFORM_META[k]; return m && m.capabilityLevel === 'manual_assisted'; }).length;
+
+  var subEl = document.getElementById('pub-sub');
+  if (subEl) {
+    var parts = [];
+    if (autoCount)   parts.push(autoCount   + ' platform' + (autoCount   > 1 ? 's' : '') + ' will auto-post');
+    if (manualCount) parts.push(manualCount + ' platform' + (manualCount > 1 ? 's' : '') + ' need' + (manualCount === 1 ? 's' : '') + ' a quick paste');
+    subEl.textContent = parts.length ? parts.join(' · ') + '.' : 'Your blast is ready to publish.';
+  }
+
+  // Platform list
+  var listEl = document.getElementById('pub-platform-list');
+  if (listEl) {
+    if (platformIds.length) {
+      listEl.innerHTML = platformIds.map(function(pid){
+        var meta    = PLATFORM_META[pid] || { icon: pid[0].toUpperCase(), name: pid, capabilityLevel: 'manual_assisted', badge: 'Copy-Ready', badgeClass: 'badge manual' };
+        var isAuto  = meta.capabilityLevel !== 'manual_assisted';
+        var typeStr = isAuto ? '⚡ Auto-post' : '✋ Copy &amp; paste';
+        return '<div class="pub-plat-row">'
+          + '<div class="pub-plat-icon">' + meta.icon + '</div>'
+          + '<div class="pub-plat-info"><div class="pub-plat-name">' + meta.name + '</div><div class="pub-plat-type">' + typeStr + '</div></div>'
+          + '<span class="' + (meta.badgeClass || (isAuto ? 'badge auto' : 'badge manual')) + '">' + (meta.badge || (isAuto ? 'Auto' : 'Copy-Ready')) + '</span>'
+          + '</div>';
+      }).join('');
+    } else {
+      listEl.innerHTML = '<div style="font-size:14px;color:var(--muted,#888);padding:10px 0;">No platforms in this draft.</div>';
+    }
+  }
+
+  // Content previews
+  var previewsCard = document.getElementById('pub-previews-card');
+  var previewsList = document.getElementById('pub-previews-list');
+  if (previewsList && platformIds.length) {
+    if (previewsCard) previewsCard.style.display = '';
+    previewsList.innerHTML = platformIds.map(function(pid){
+      var meta = PLATFORM_META[pid] || { icon: pid[0].toUpperCase(), name: pid };
+      var d    = drafts[pid] || {};
+      var text = d.text || '';
+      return '<div class="pub-preview-item">'
+        + '<button class="pub-preview-header" onclick="togglePreview(\'' + pid + '\')">'
+        +   '<div class="pub-preview-hdr-icon">' + meta.icon + '</div>'
+        +   '<span class="pub-preview-hdr-name">' + meta.name + '</span>'
+        +   '<span class="pub-preview-chevron" id="pub-prev-chev-' + pid + '">›</span>'
+        + '</button>'
+        + '<div class="pub-preview-body" id="pub-prev-body-' + pid + '">'
+        +   '<div class="pub-preview-text">' + escHtml(text) + '</div>'
+        +   '<button class="pub-copy-btn" onclick="copyPreviewText(\'' + pid + '\')">📋 Copy this copy</button>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  // Publish action sub-text
+  var actionSub = document.getElementById('pub-action-sub');
+  if (actionSub) {
+    if (manualCount > 0 && autoCount > 0) {
+      actionSub.textContent = autoCount + ' platform' + (autoCount > 1 ? 's' : '') + ' will auto-post. ' + manualCount + ' platform' + (manualCount > 1 ? 's' : '') + ' need' + (manualCount === 1 ? 's' : '') + ' a manual paste — copy-ready text is below.';
+    } else if (manualCount > 0) {
+      actionSub.textContent = 'These platforms need a manual paste — your copy is ready in the section below.';
+    } else {
+      actionSub.textContent = 'All ' + autoCount + ' platform' + (autoCount > 1 ? 's' : '') + ' will auto-post. No manual steps needed.';
+    }
+  }
+
+  renderManualPanel();
+}
+
+// escHtml provided by escape-utils.js
+
+function renderManualPanel() {
+  var manualKeys = Object.keys(drafts).filter(function(k){
+    var m = PLATFORM_META[k];
+    return m && m.capabilityLevel === 'manual_assisted';
+  });
+  var panel = document.getElementById('manual-platform-list');
+  var section = document.getElementById('manual-panel');
+  if (!panel || !section) return;
+  if (!manualKeys.length) { section.classList.add('hidden'); return; }
+  section.classList.remove('hidden');
+  panel.innerHTML = manualKeys.map(function(k){
+    var meta = PLATFORM_META[k];
+    var d    = drafts[k] || {};
+    var text = [d.headline, d.text, d.cta].filter(Boolean).join('\n\n');
+    return '<div class="manual-card">'
+      + '<div class="manual-card-header">'
+      +   '<div style="display:flex;align-items:center;">'
+      +     '<div class="manual-icon">' + meta.icon + '</div>'
+      +     '<div><div class="manual-name">' + meta.name + '</div><div class="manual-mode">Copy-paste required</div></div>'
+      +   '</div>'
+      +   '<button onclick="copyPlatformText(\'' + k + '\')" class="copy-platform-btn">📋 Copy</button>'
+      + '</div>'
+      + '<textarea id="manual-text-' + k + '" readonly class="manual-textarea">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</textarea>'
+      + (meta.manualInstructions ? '<div class="manual-note mt-8">👉 ' + meta.manualInstructions + '</div>' : '')
+      + '</div>';
+  }).join('');
+}
+
+function copyPlatformText(key) {
+  var el = document.getElementById('manual-text-' + key);
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(function(){
+    showToast('📋 Copied — paste it into ' + (PLATFORM_META[key] ? PLATFORM_META[key].name : key));
+  });
+}
+
+function publishBlast() {
+  var keys = Object.keys(drafts);
+  if (!keys.length) { showToast('No platforms to publish'); return; }
+  window._firestoreApprove && window._firestoreApprove(keys);
+}
+</script>
+
+<script type="module">
+import { auth, db } from './firebase-init-v2.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+auth.authStateReady().then(() => {
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+  window.currentUser = user;
+
+  const userSnap = await getDoc(doc(db, 'users', user.uid));
+  const userData = userSnap.exists() ? userSnap.data() : {};
+  window.businessId = userData.activeBusiness || user.uid;
+
+  const params    = new URLSearchParams(window.location.search);
+  const draftIdParam = params.get('draftId');
+
+  let draftData = null;
+  if (draftIdParam) {
+    window.draftDocId = draftIdParam;
+    const snap = await getDoc(doc(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts', draftIdParam));
+    if (snap.exists()) draftData = snap.data();
+  }
+
+  if (draftData) {
+    window.populateFromDraftData(draftData);
+  } else {
+    // No draft — show placeholder state
+    const subEl = document.getElementById('pub-sub');
+    if (subEl) subEl.textContent = 'No draft found. Go back to the Create page and generate a blast first.';
+    const listEl = document.getElementById('pub-platform-list');
+    if (listEl) listEl.innerHTML = '<div style="font-size:14px;color:var(--muted,#888);padding:10px 0;">No draft loaded.</div>';
+    const publishBtn = document.getElementById('publish-btn');
+    if (publishBtn) { publishBtn.disabled = true; }
+  }
+
+  // Restore saved schedule
+  if (draftData?.schedule) {
+    const s = draftData.schedule;
+    if (s.sendAt) document.getElementById('sched-date').value = s.sendAt;
+    if (s.recur)  document.getElementById('sched-recur').value = s.recur;
+    if (s.stopAfter) document.getElementById('sched-stop').value = String(s.stopAfter);
+    const saved   = document.getElementById('sched-saved');
+    const summary = document.getElementById('sched-summary');
+    const dt = new Date(s.sendAt).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+    let txt = 'First post: ' + dt;
+    if (s.recur)     txt += ' · repeats ' + s.recur;
+    if (s.stopAfter) txt += ' · stops after ' + s.stopAfter + ' posts';
+    summary.textContent = txt;
+    saved.classList.remove('hidden');
+  }
+
+  window._saveSchedule = async function(sched) {
+    const draftId = window.draftDocId;
+    if (!draftId) return;
+    await updateDoc(doc(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts', draftId), {
+      schedule:  sched,
+      updatedAt: serverTimestamp(),
+    });
+  };
+
+  window._firestoreApprove = async function(platformKeys) {
+    const btn = document.getElementById('publish-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Publishing…'; }
+    try {
+      let draftId = window.draftDocId;
+      if (!draftId) {
+        const adaptations = {};
+        Object.entries(window.drafts).forEach(([pid, d]) => { adaptations[pid] = d.text; });
+        const newRef = await addDoc(collection(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts'), {
+          uid:          user.uid,
+          businessId:   window.businessId,
+          adaptations,
+          status:       'draft',
+          revision:     0,
+          createdAt:    serverTimestamp(),
+        });
+        draftId = newRef.id;
+        window.draftDocId = draftId;
+        window._draftRevision = 0;
+      }
+
+      // F8: Stale-revision guard — re-fetch draft to catch any re-generations since page load
+      const freshSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts', draftId));
+      if (freshSnap.exists()) {
+        const freshRev = freshSnap.data().revision || 0;
+        if (freshRev !== (window._draftRevision || 0)) {
+          if (btn) { btn.disabled = false; btn.textContent = '🚀 Publish Blast'; }
+          const warn = document.getElementById('pub-warn');
+          if (warn) { warn.textContent = '⚠️ This blast was updated after you opened this page — the copy may have changed. Please go back and re-review before publishing.'; warn.classList.remove('hidden'); }
+          return;
+        }
+      }
+
+      // F9: Send only platformKeys — the CF reads adaptations from Firestore (don't trust client)
+      const idToken = await user.getIdToken();
+      const resp = await fetch(
+        'https://us-central1-blastybiz-9523e.cloudfunctions.net/approveDraft',
+        {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+          body:    JSON.stringify({ draftId, businessId: window.businessId, platformKeys }),
+        }
+      );
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || 'Approval failed (' + resp.status + ')');
+      }
+      if (btn) btn.textContent = '✅ Published!';
+      window.location.href = `BlastyBiz-Publishing-Status.html?draftId=${draftId}`;
+    } catch(e) {
+      console.error('publishBlast error:', e);
+      if (btn) { btn.disabled = false; btn.textContent = '🚀 Publish Blast'; }
+      const warn = document.getElementById('pub-warn');
+      if (warn) { warn.textContent = '⚠️ Error publishing: ' + e.message; warn.classList.remove('hidden'); }
+    }
+  };
+});
+});
+</script>
+
+<div id="site-footer-inject"></div>
+<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
+</body>
+</html>

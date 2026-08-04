@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+<meta charset="UTF-8" />
+  <meta name="theme-color" content="#000000"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BlastyBiz — Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="global-style.css?v=1785858635994">
+
+<style>body{visibility:hidden}</style>
+<script type="module" src="./admin-guard.js"></script>
+<script src="blastybiz-menu.js?v=6"></script>
+</head>
+<body class="admin-page">
+<header>
+  <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Admin Command</span></a>
+  <div class="top-actions">
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Dashboard.html">Customer View</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue Manager</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Users.html">Users</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Subscriptions.html">Money</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platform-Health.html">Health</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Logs.html">Logs</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Operate.html">⚙️ Operate</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-TestBlasty.html">🧪 Test Blasty</a>
+    <a class="icon-btn" href="BlastyBiz-Login.html">👤</a>
+  </div>
+</header>
+
+<main><div class="main"><div class="main-inner">
+
+  <!-- ── OPERATE QUICK ACCESS ── -->
+  <a href="BlastyBiz-Admin-Operate.html" class="card" style="display:flex;align-items:center;gap:14px;margin-bottom:20px;border-left:4px solid #00C853;text-decoration:none;color:inherit;">
+    <div style="font-size:28px;line-height:1;">⚙️</div>
+    <div style="flex:1;">
+      <div style="font-weight:700;font-size:16px;">Operate — To-Do List</div>
+      <div class="row-sub" style="opacity:.75;">Daily admin checklist &amp; setup tasks</div>
+    </div>
+    <div style="font-size:20px;opacity:.6;">›</div>
+  </a>
+
+  <!-- ── PLAN SWITCHER ── -->
+  <section class="card" id="plan-switcher" style="margin-bottom:20px;border-left:4px solid #00C853;">
+    <div class="card-title" style="margin-bottom:6px;">⚙️ My Plan Override</div>
+    <p style="font-size:13px;color:#666;margin:0 0 14px;">Switch your account between tiers for testing. A real Square payment event will overwrite this.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <button id="plan-btn-starter" onclick="window.setPlan('starter')" class="btn">Starter</button>
+      <button id="plan-btn-pro"     onclick="window.setPlan('pro')"     class="btn">Pro</button>
+      <button id="plan-btn-agency"  onclick="window.setPlan('agency')"  class="btn">Agency</button>
+      <span id="plan-current" style="font-size:13px;color:#888;margin-left:6px;"></span>
+    </div>
+  </section>
+
+  <section class="hero">
+    <div class="card">
+      <div class="eyebrow">Owner/admin dashboard</div>
+      <h1 class="big-title">Run the business. <span>Keep it clean.</span></h1>
+      <p class="sub">This page is for Dave/admin only. Customers should never see AI cost, backend failures, API language, margin, prompts, or operating logs. This page tracks the health of BlastyBiz as a SaaS business.</p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️ Review Failed Jobs</a>
+        <a class="btn" href="#users">👥 Check Users</a>
+        <a class="btn" href="BlastyBiz-Admin-Subscriptions.html">💵 Check Margin</a>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🟢 System Health</div>
+      <div class="health-box">
+        <div class="health-main">92%</div>
+        <div class="health-label">Overall operating health. Watch failed jobs, OAuth expirations, AI spend, and payment failures.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid" id="finance">
+    <div class="stat"><div class="stat-num" id="stat-mrr">$0</div><div class="stat-label">MRR</div><div class="stat-note money">Paying subscriptions only</div></div>
+    <div class="stat"><div class="stat-num" id="stat-ai-spend">$0.00</div><div class="stat-label">AI Spend</div><div class="stat-note warn">This month · owner-only</div></div>
+    <div class="stat"><div class="stat-num">~86%</div><div class="stat-label">Margin Target</div><div class="stat-note money">Est. after AI + platform costs</div></div>
+    <div class="stat"><div class="stat-num" id="stat-failed">0</div><div class="stat-label">Failed Jobs</div><div class="stat-note bad">Needs review</div></div>
+  </section>
+
+  <section class="grid">
+    <div class="stat"><div class="stat-num" id="stat-biz">0</div><div class="stat-label">Businesses</div><div class="stat-note" id="stat-biz-note">— active / — trial</div></div>
+    <div class="stat"><div class="stat-num" id="stat-pastdue">0</div><div class="stat-label">Past Due</div><div class="stat-note warn">Square follow-up</div></div>
+    <div class="stat"><div class="stat-num" id="stat-posts">0</div><div class="stat-label">Posts Generated</div><div class="stat-note">This month</div></div>
+    <div class="stat"><div class="stat-num" id="stat-manual">0</div><div class="stat-label">Manual Tasks</div><div class="stat-note blue">Copy/paste platforms</div></div>
+  </section>
+
+  <!-- ── ONBOARDING FUNNEL WIDGET ── -->
+  <section class="card mb-16" id="onboarding-funnel-widget" style="border-left:4px solid #FF6D00;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+      <div class="card-title" style="margin:0;">🚧 Onboarding Funnel</div>
+      <a href="BlastyBiz-Admin-Operate.html#onboarding-funnel" style="font-size:13px;color:#FF6D00;text-decoration:none;white-space:nowrap;">View full funnel →</a>
+    </div>
+    <div id="funnel-widget-body">
+      <div style="font-size:13px;color:#888;">Loading…</div>
+    </div>
+  </section>
+
+  <section class="two-col">
+    <div class="card" id="failed">
+      <div class="card-title">⚠️ Failed Job Queue</div>
+      <div class="list" id="admin-failed-list"><div class="list-item"><div class="icon">…</div><div class="row-main"><div class="row-title">Loading…</div></div></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📡 Platform Health</div>
+      <div class="list">
+        <div class="list-item"><div class="icon">G</div><div class="row-main"><div class="row-title">Google Business Profile</div><div class="row-sub">API available • 4 token refreshes today</div></div><span class="badge live">Good</span></div>
+        <div class="list-item"><div class="icon">M</div><div class="row-main"><div class="row-title">Meta / Facebook / Instagram</div><div class="row-sub">API available • 1 rate-limit warning</div></div><span class="badge needs">Watch</span></div>
+        <div class="list-item"><div class="icon">Y</div><div class="row-main"><div class="row-title">Yelp</div><div class="row-sub">Partial automation • category review often needed</div></div><span class="badge needs">Partial</span></div>
+        <div class="list-item"><div class="icon">N</div><div class="row-main"><div class="row-title">Nextdoor / Craigslist</div><div class="row-sub">Manual copy-paste workflow only</div></div><span class="badge off">Manual</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card mb-16" id="users">
+    <div class="card-title">👥 All Accounts</div>
+    <table>
+      <thead><tr><th>Business</th><th>Plan</th><th>Status</th><th>Joined</th></tr></thead>
+      <tbody id="admin-all-accounts-tbody"><tr><td colspan="4" class="td-empty">Loading…</td></tr></tbody>
+    </table>
+  </section>
+
+  <section class="two-col">
+    <div class="card">
+      <div class="card-title">⚠️ Accounts To Watch</div>
+      <table>
+        <thead><tr><th>Business</th><th>Plan</th><th>Status</th><th>Issue</th><th></th></tr></thead>
+        <tbody id="admin-accounts-tbody"><tr><td colspan="5" class="td-empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🤖 AI Usage / Margin</div>
+      <table>
+        <thead><tr><th>Metric</th><th>This Month</th><th>Target</th></tr></thead>
+        <tbody id="admin-ai-tbody">
+          <tr><td colspan="3" class="td-empty">Loading…</td></tr>
+        </tbody>
+      </table>
+      <div class="ai-note-text" id="admin-ai-note">Tracking live AI calls. Historical data available once calls are logged.</div>
+    </div>
+  </section>
+
+  <!-- ── AI SETTINGS ── -->
+  <section class="card mb-16" id="ai-settings-card" style="border-left:4px solid #6200EA;">
+    <div class="card-title">🤖 AI Provider &amp; Models</div>
+    <p style="font-size:13px;color:#666;margin:0 0 16px;">Controls which AI runs all copy generation, chat onboarding, and platform suggestions. Changes take effect within 60 seconds — no redeploy needed.</p>
+    <div id="ai-settings-status" style="font-size:13px;color:#888;margin-bottom:12px;">Loading current settings…</div>
+    <div style="display:grid;gap:12px;grid-template-columns:1fr 1fr 1fr;margin-bottom:14px;" id="ai-selects-grid">
+      <label style="font-size:12px;font-weight:600;color:#555;">
+        Provider
+        <select id="ai-provider" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="openai">OpenAI (GPT)</option>
+          <option value="gemini">Google Gemini</option>
+          <option value="grok">xAI Grok</option>
+        </select>
+      </label>
+      <label style="font-size:12px;font-weight:600;color:#555;">
+        Fast Model <span style="font-weight:400;color:#aaa;">(chat, questions)</span>
+        <select id="ai-fast-model" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;"></select>
+      </label>
+      <label style="font-size:12px;font-weight:600;color:#555;">
+        Smart Model <span style="font-weight:400;color:#aaa;">(copy generation)</span>
+        <select id="ai-smart-model" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;"></select>
+      </label>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button onclick="window.saveAiSettings()" class="btn btn-primary" style="background:#6200EA;border-color:#6200EA;">Save AI Settings</button>
+      <span id="ai-save-msg" style="font-size:13px;color:#888;"></span>
+    </div>
+    <p style="font-size:12px;color:#aaa;margin:12px 0 0;">⚠️ Switching to a non-Anthropic provider also requires setting that provider's API key as a Firebase secret (<code>firebase functions:secrets:set OPENAI_API_KEY</code> etc.) and redeploying functions once.</p>
+  </section>
+
+  <!-- ── YELP CATEGORY CACHE ── -->
+  <section class="card mb-16" id="yelp-cache-card" style="border-left:4px solid #D32323;">
+    <div class="card-title">🔍 Yelp Category Cache</div>
+    <p style="font-size:13px;color:#666;margin:0 0 16px;">Force-fetches the full Yelp category list and stores it in Firestore. Required before category suggestions will work for users. Requires <code>YELP_API_KEY</code> to be set as a Firebase secret.</p>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button id="yelp-refresh-btn" onclick="window.refreshYelpCategories()" class="btn" style="background:#D32323;border-color:#D32323;color:#fff;">🔄 Refresh Yelp Categories</button>
+      <span id="yelp-refresh-msg" style="font-size:13px;color:#888;"></span>
+    </div>
+  </section>
+
+  <section class="three-col">
+    <div class="card">
+      <div class="card-title">💳 Billing</div>
+      <div class="list">
+        <div class="list-item" id="admin-billing-pastdue"><div class="icon">$</div><div class="row-main"><div class="row-title">0 past due</div><div class="row-sub">Send billing recovery email or downgrade after grace period.</div></div></div>
+        <div class="list-item" id="admin-billing-trials"><div class="icon">↗</div><div class="row-main"><div class="row-title">0 trials active</div><div class="row-sub">Prioritize users with completed profiles and live listings.</div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🧾 Logs</div>
+      <div class="list">
+        <div class="list-item"><div class="icon">🟢</div><div class="row-main"><div class="row-title">System log clean</div><div class="row-sub">No fatal errors in last 24 hours.</div></div></div>
+        <div class="list-item"><div class="icon">⚠️</div><div class="row-main"><div class="row-title">3 warnings</div><div class="row-sub">Mostly platform delay and category matching issues.</div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🧭 Admin Rules</div>
+      <div class="list">
+        <div class="list-item"><div class="icon">1</div><div class="row-main"><div class="row-title">Customer pages stay simple</div><div class="row-sub">No backend language. No AI cost. No confusing metrics.</div></div></div>
+        <div class="list-item"><div class="icon">2</div><div class="row-main"><div class="row-title">Admin sees the machine</div><div class="row-sub">Costs, failures, margins, logs, retries, and customer risk.</div></div></div>
+      </div>
+    </div>
+  </section>
+</div></div></main>
+
+<nav class="mobile-nav">
+  <a class="active" href="#">🏠<br>Admin</a>
+  <a href="BlastyBiz-Admin-Operate.html">⚙️<br>Operate</a>
+  <a href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Failed</a>
+  <a href="BlastyBiz-Admin-Subscriptions.html">💵<br>Money</a>
+  <a href="BlastyBiz-TestBlasty.html">🧪<br>Test</a>
+</nav>
+<script type="module">
+import { auth, db } from './firebase-init-v2.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { collection, collectionGroup, query, where, orderBy, limit, onSnapshot, deleteDoc, getDocs, getDoc, setDoc, doc, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const CF_BASE = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
+const AI_PROVIDER_MODELS = {
+  anthropic: [
+    { id: 'claude-haiku-4-5',           label: 'Claude Haiku 4.5 (fast/cheap)' },
+    { id: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet 4.5 (recommended)' },
+    { id: 'claude-opus-4-5',            label: 'Claude Opus 4.5 (powerful/expensive)' },
+  ],
+  openai: [
+    { id: 'gpt-4o-mini', label: 'GPT-4o Mini (fast/cheap)' },
+    { id: 'gpt-4o',      label: 'GPT-4o (recommended)' },
+    { id: 'gpt-5',       label: 'GPT-5 (powerful)' },
+  ],
+  gemini: [
+    { id: 'gemini-3.1-flash-lite',    label: 'Gemini 3.1 Flash Lite (cheapest)' },
+    { id: 'gemini-flash-lite-latest', label: 'Gemini Flash Lite Latest (cheap/auto-updated)' },
+    { id: 'gemini-flash-latest',      label: 'Gemini Flash Latest (mid-tier)' },
+    { id: 'gemini-pro-latest',        label: 'Gemini Pro Latest (most powerful)' },
+  ],
+  grok: [
+    { id: 'grok-3-mini', label: 'Grok 3 Mini (fast/cheap)' },
+    { id: 'grok-3',      label: 'Grok 3 (recommended)' },
+  ],
+};
+
+function populateModelSelects(provider, fastModel, smartModel) {
+  const models = AI_PROVIDER_MODELS[provider] || AI_PROVIDER_MODELS.anthropic;
+  ['ai-fast-model', 'ai-smart-model'].forEach((selId, idx) => {
+    const sel = document.getElementById(selId);
+    if (!sel) return;
+    const current = idx === 0 ? fastModel : smartModel;
+    sel.innerHTML = models.map(m => `<option value="${m.id}" ${m.id === current ? 'selected' : ''}>${m.label}</option>`).join('');
+  });
+}
+
+document.getElementById('ai-provider')?.addEventListener('change', function() {
+  populateModelSelects(this.value, null, null);
+});
+
+window.refreshYelpCategories = async function() {
+  const btn = document.getElementById('yelp-refresh-btn');
+  const msg = document.getElementById('yelp-refresh-msg');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Refreshing…'; }
+  msg.style.color = '#888';
+  msg.textContent = 'Calling refreshYelpCategories…';
+  try {
+    const token = await window._adminUser?.getIdToken();
+    if (!token) throw new Error('Not authenticated');
+    const resp = await fetch(`${CF_BASE}/refreshYelpCategories`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
+    msg.style.color = '#00C853';
+    msg.textContent = `✓ ${data.count != null ? data.count + ' categories cached' : 'Cache refreshed successfully'}`;
+  } catch(e) {
+    msg.style.color = '#e53935';
+    msg.textContent = '✗ ' + e.message;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Refresh Yelp Categories'; }
+  }
+};
+
+window.saveAiSettings = async function() {
+  const provider   = document.getElementById('ai-provider')?.value;
+  const fastModel  = document.getElementById('ai-fast-model')?.value;
+  const smartModel = document.getElementById('ai-smart-model')?.value;
+  const msg = document.getElementById('ai-save-msg');
+  if (!provider || !fastModel || !smartModel) return;
+  msg.textContent = 'Saving…';
+  try {
+    const token = await window._adminUser?.getIdToken();
+    if (!token) throw new Error('Not authenticated');
+    const resp = await fetch(`${CF_BASE}/adminSetAiSettings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ provider, fastModel, smartModel }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Save failed');
+    msg.style.color = '#00C853';
+    msg.textContent = `✓ Saved — ${provider} / ${fastModel} / ${smartModel}`;
+    document.getElementById('ai-settings-status').textContent = `Active: ${provider} · Fast: ${fastModel} · Smart: ${smartModel}`;
+  } catch(e) {
+    msg.style.color = '#e53935';
+    msg.textContent = '✗ ' + e.message;
+  }
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+  window._adminUser = user;
+  const el = id => document.getElementById(id);
+  // Load live pricing from Firestore (set via adminUpdatePricing)
+  let PRICES = { pro: 19, agency: 99 }; // fallback defaults
+  try {
+    const pricingSnap = await getDoc(doc(db, 'settings', 'pricing'));
+    if (pricingSnap.exists()) {
+      const pd = pricingSnap.data();
+      PRICES = {
+        pro:    pd.proMonthly    || 19,
+        agency: pd.agencyMonthly || 99,
+      };
+    }
+  } catch(e) { console.warn('[admin] pricing load failed, using defaults:', e.message); }
+
+  // Canonical plan display names
+  const PLAN_DISPLAY = { starter: 'Starter', free: 'Free', pro: 'Pro', agency: 'Agency' };
+
+  // ── Load current AI settings ──
+  (async () => {
+    try {
+      const token = await user.getIdToken();
+      const resp = await fetch(`${CF_BASE}/adminGetAiSettings`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (resp.ok) {
+        const { provider, fastModel, smartModel } = await resp.json();
+        const provSel = el('ai-provider');
+        if (provSel) provSel.value = provider || 'anthropic';
+        populateModelSelects(provider || 'anthropic', fastModel, smartModel);
+        const statusEl = el('ai-settings-status');
+        if (statusEl) statusEl.textContent = `Active: ${provider || 'anthropic'} · Fast: ${fastModel} · Smart: ${smartModel}`;
+      }
+    } catch(e) { console.warn('[ai-settings] load failed:', e.message); }
+  })();
+
+  // ── Plan switcher ──
+  function highlightPlan(plan) {
+    ['starter','pro','agency'].forEach(p => {
+      const btn = el('plan-btn-' + p);
+      if (!btn) return;
+      btn.style.background   = p === plan ? '#00C853' : '';
+      btn.style.color        = p === plan ? '#000'    : '';
+      btn.style.borderColor  = p === plan ? '#00C853' : '';
+      btn.style.fontWeight   = p === plan ? '700'     : '';
+    });
+    const cur = el('plan-current');
+    if (cur) cur.textContent = 'Current: ' + plan.charAt(0).toUpperCase() + plan.slice(1);
+  }
+  window.setPlan = async function(plan) {
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(CF_BASE + '/adminSetPlan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ targetUid: user.uid, plan })
+      });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || 'Server error'); }
+      highlightPlan(plan);
+    } catch(e) {
+      alert('Plan change failed: ' + e.message);
+    }
+  };
+  const userSnap = await getDoc(doc(db, 'users', user.uid));
+  highlightPlan(userSnap.exists() ? (userSnap.data().plan || 'starter') : 'starter');
+
+  // Delete a business doc and all related records — admin only via Cloud Function
+  window._adminDeleteBiz = async function(docId, name, ownerUid) {
+    if (!confirm('Delete "' + (name || docId) + '" and all related records? This cannot be undone.')) return;
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(CF_BASE + '/adminDeleteBusiness', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ ownerUid, bizId: docId })
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        alert('Delete failed: ' + (e.error || 'Unknown error'));
+      }
+    } catch(e) {
+      alert('Delete failed: ' + e.message);
+    }
+  };
+
+  // Businesses snapshot
+  onSnapshot(query(collectionGroup(db, 'businesses'), limit(200)), (snap) => {
+    const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Active = explicit 'active' OR no status set (pre-subscription records)
+    const active  = all.filter(b => !b.subscriptionStatus || b.subscriptionStatus === 'active').length;
+    const trial   = all.filter(b => b.subscriptionStatus === 'trial').length;
+    const pastDue = all.filter(b => b.subscriptionStatus === 'past_due').length;
+    // MRR: only count subscriptions that are paying (active or trial); canceled/past-due excluded
+    const mrr = all
+      .filter(b => ['active', 'trial'].includes(b.subscriptionStatus || ''))
+      .reduce((s, b) => s + (PRICES[(b.currentPlan||'').toLowerCase()] || 0), 0);
+
+    if (el('stat-mrr'))      el('stat-mrr').textContent      = '$' + mrr.toLocaleString();
+    if (el('stat-biz'))      el('stat-biz').textContent      = all.length;
+    if (el('stat-biz-note')) el('stat-biz-note').textContent = active + ' active / ' + trial + ' trial';
+    if (el('stat-pastdue'))  el('stat-pastdue').textContent  = pastDue;
+
+    const billingPD = el('admin-billing-pastdue');
+    if (billingPD) billingPD.querySelector('.row-title').textContent = pastDue + ' past due';
+    const billingTr = el('admin-billing-trials');
+    if (billingTr) billingTr.querySelector('.row-title').textContent = trial + ' trials active';
+
+    const _esc = window._esc || (s => String(s == null ? '' : s).replace(/[&<>"']/g, function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];})); // canonical — see escape-utils.js').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const SUB_BADGE = { active:'live', trial:'info', past_due:'error', canceled:'off' };
+    const SAFE_PLANS = new Set(['starter','pro','agency','free']);
+
+    // All Accounts table — every business with a name, sorted by join date desc
+    const allTbody = el('admin-all-accounts-tbody');
+    if (allTbody) {
+      const named = all.filter(b => b.businessName).sort((a,b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+      allTbody.innerHTML = named.length
+        ? named.map(b => {
+            const s = b.subscriptionStatus || 'unknown';
+            const plan = PLAN_DISPLAY[(b.currentPlan||'').toLowerCase()] || 'Free';
+            const joined = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+            return '<tr><td class="biz-name-cell"></td><td>' + _esc(plan) + '</td><td><span class="badge ' + (SUB_BADGE[s]||'live') + '">' + _esc(s) + '</span></td><td class="muted">' + _esc(joined) + '</td></tr>';
+          }).join('')
+        : '<tr><td colspan="4" class="td-empty">No accounts yet.</td></tr>';
+      allTbody.querySelectorAll('.biz-name-cell').forEach((td, i) => { td.textContent = named[i]?.businessName || '—'; });
+    }
+
+    // A business is considered onboarded if it has a businessName — the flag is unreliable
+    const isOnboarded = b => !!(b.onboarded || b.businessName);
+    // Show all accounts needing attention, including ghost docs (no name = empty signup)
+    const attn = all.filter(b => ['past_due','canceled','trial'].includes(b.subscriptionStatus) || !isOnboarded(b));
+    const tbody = el('admin-accounts-tbody');
+    if (tbody) {
+      tbody.innerHTML = attn.length
+        ? attn.slice(0,20).map(b => {
+            const s = b.subscriptionStatus || 'unknown';
+            const plan = PLAN_DISPLAY[(b.currentPlan||'').toLowerCase()] || 'Free';
+            const issue = !isOnboarded(b) ? 'Empty signup — no profile'
+              : s === 'past_due' ? 'Square payment failed'
+              : s === 'trial'    ? 'Trial — needs upgrade'
+              : s === 'canceled' ? 'Canceled' : '—';
+            return '<tr><td class="attn-name-cell" data-id="' + b.id + '"></td><td>' + _esc(plan) + '</td><td><span class="badge ' + (SUB_BADGE[s]||'live') + '">' + _esc(s) + '</span></td><td class="muted">' + _esc(issue) + '</td><td><button class="del-btn" data-id="' + b.id + '" data-uid="' + _esc(b.uid) + '" title="Delete">🗑</button></td></tr>';
+          }).join('')
+        : '<tr><td colspan="5" class="td-empty">All accounts healthy.</td></tr>';
+      tbody.querySelectorAll('.attn-name-cell').forEach(td => {
+        const b = attn.find(x => x.id === td.dataset.id);
+        if (b && b.businessName) { td.textContent = b.businessName; }
+        else { const sp = document.createElement('span'); sp.className = 'name-na'; sp.textContent = 'No name · ' + (b?.id||'').slice(0,8); td.appendChild(sp); }
+      });
+      tbody.querySelectorAll('.del-btn[data-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const b = attn.find(x => x.id === btn.dataset.id);
+          _adminDeleteBiz(btn.dataset.id, b?.businessName || '', btn.dataset.uid);
+        });
+      });
+    }
+  }, (err) => { console.error('[admin] businesses snapshot error:', err.message); });
+
+  // AI usage logs — live cost from Firestore
+  const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+  onSnapshot(
+    query(collection(db, 'aiUsageLogs'), where('ts', '>=', Timestamp.fromDate(monthStart)), orderBy('ts','desc'), limit(1000)),
+    (snap) => {
+      const logs = snap.docs.map(d => d.data());
+      const totalCost    = logs.reduce((s, l) => s + (l.costUsd || 0), 0);
+      if (el('stat-ai-spend')) el('stat-ai-spend').textContent = '$' + totalCost.toFixed(2);
+      const totalTokensIn  = logs.reduce((s, l) => s + (l.inputTokens  || 0), 0);
+      const totalTokensOut = logs.reduce((s, l) => s + (l.outputTokens || 0), 0);
+      const callCounts   = {};
+      logs.forEach(l => { callCounts[l.fn] = (callCounts[l.fn] || 0) + 1; });
+      const tbody = el('admin-ai-tbody');
+      if (tbody) {
+        const fmt = n => '$' + n.toFixed(4);
+        const fmtK = n => n >= 1000 ? (n/1000).toFixed(1) + 'k' : n.toString();
+        const rows = [
+          ['AI spend this month',    '<span class="' + (totalCost > 50 ? 'warn' : 'money') + '">' + fmt(totalCost) + '</span>', '< $50/mo'],
+          ['Total AI calls',         logs.length,       '—'],
+          ['Input tokens',           fmtK(totalTokensIn),  '—'],
+          ['Output tokens',          fmtK(totalTokensOut), '—'],
+          ...Object.entries(callCounts).map(([fn, n]) => [fn, n + ' calls', '—']),
+        ];
+        tbody.innerHTML = rows.map(([m, v, t]) =>
+          '<tr><td>' + m + '</td><td>' + v + '</td><td class="muted">' + t + '</td></tr>'
+        ).join('');
+        const note = el('admin-ai-note');
+        if (note) note.textContent = logs.length
+          ? 'Live data · tracking started when calls were instrumented'
+          : 'No AI calls logged yet this month — data accumulates as users run the tool';
+      }
+    },
+    (err) => { console.error('[admin] aiUsageLogs snapshot error:', err.message); }
+  );
+
+  // ── Onboarding funnel widget ──
+  (async () => {
+    const funnelBody = document.getElementById('funnel-widget-body');
+    if (!funnelBody) return;
+    try {
+      const token = await user.getIdToken();
+      const resp = await fetch(`${CF_BASE}/adminOnboardingFunnel`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const { steps = [], totalStuck = 0 } = await resp.json();
+
+      if (totalStuck === 0) {
+        funnelBody.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:#00C853;font-size:14px;font-weight:600;">✓ All users onboarded — nobody stuck right now.</div>';
+        return;
+      }
+
+      const top3 = steps.slice(0, 3);
+      const maxCount = top3[0]?.count || 1;
+
+      const rows = top3.map(s => {
+        const pct = Math.round((s.count / maxCount) * 100);
+        return `<div style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+            <span style="font-size:13px;font-weight:600;color:#111;">${s.label}</span>
+            <span style="font-size:13px;font-weight:700;color:#FF6D00;min-width:32px;text-align:right;">${s.count}</span>
+          </div>
+          <div style="height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:#FF6D00;border-radius:3px;transition:width .4s;"></div>
+          </div>
+        </div>`;
+      }).join('');
+
+      const more = steps.length > 3
+        ? `<div style="font-size:12px;color:#888;margin-top:6px;">+ ${steps.length - 3} more step${steps.length - 3 === 1 ? '' : 's'} with drop-off</div>`
+        : '';
+
+      funnelBody.innerHTML = `
+        <div style="font-size:13px;color:#555;margin-bottom:12px;">
+          <strong style="font-size:16px;color:#111;">${totalStuck}</strong> user${totalStuck === 1 ? '' : 's'} stuck mid-onboarding — top drop-off steps:
+        </div>
+        ${rows}${more}`;
+    } catch(e) {
+      if (funnelBody) funnelBody.innerHTML = '<div style="font-size:13px;color:#aaa;">Could not load funnel data.</div>';
+      console.warn('[funnel-widget]', e.message);
+    }
+  })();
+
+  // Failed jobs snapshot
+  onSnapshot(query(collectionGroup(db, 'publishJobs'), where('status','in',['failed','manual_required']), orderBy('updatedAt','desc'), limit(50)), (snap) => {
+    const failed = snap.docs.filter(d => d.data().status === 'failed');
+    const manual = snap.docs.filter(d => d.data().status === 'manual_required');
+    if (el('stat-failed')) el('stat-failed').textContent = failed.length;
+    if (el('stat-manual')) el('stat-manual').textContent = manual.length;
+    const list = el('admin-failed-list');
+    if (list) {
+      const icons = { google:'G', facebook:'f', instagram:'IG', yelp:'Y', nextdoor:'N', craigslist:'CL' };
+      list.innerHTML = failed.length
+        ? failed.slice(0,5).map(d => {
+            const j = d.data();
+            const ic = icons[j.platform] || (j.platform||'?')[0].toUpperCase();
+            return '<div class="list-item"><div class="icon">' + ic + '</div><div class="row-main"><div class="row-title">' + (j.platform||'Unknown') + ' failed</div><div class="row-sub">' + (j.businessName||j.uid||'—') + ' • ' + (j.customerVisibleMessage||j.error||'See logs') + '</div></div><span class="badge error">Failed</span></div>';
+          }).join('')
+        : '<div class="list-item"><div class="icon">✓</div><div class="row-main"><div class="row-title">No failed jobs</div><div class="row-sub">All clear.</div></div><span class="badge live">Good</span></div>';
+    }
+  }, (err) => { console.error('[admin] publishJobs snapshot error:', err.message); });
+
+  // Successful posts count
+  onSnapshot(
+    query(collectionGroup(db, 'publishJobs'), where('status','==','success'), limit(500)),
+    (snap) => { if (el('stat-posts')) el('stat-posts').textContent = snap.size; },
+    (err) => { console.error('[admin] publishJobs success snapshot error:', err.message); }
+  );
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="theme-color" content="#000000"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="stylesheet" href="global-style.css?v=1785858635994"/>
+  <title>BlastyBiz — Your Story</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
+  <style>body{visibility:hidden}</style>
+  <script type="module" src="./auth-guard.js"></script>
+  <script src="blastybiz-menu.js?v=6"></script>
+  <script src="mascot.js?v=4"></script>
+  <style>
+    #bb-float {
+      position:fixed; z-index:500; pointer-events:none; display:none;
+      flex-direction:column; align-items:center; width:100px;
+      transition:top .52s cubic-bezier(.34,1.2,.64,1),left .52s cubic-bezier(.34,1.2,.64,1);
+    }
+    #bb-float .pb-mascot { width:100%; }
+    .bb-q-bubble {
+      position:relative; background:linear-gradient(168deg,#fff 0%,#f0f5ff 70%,#e6eeff 100%);
+      border:1.5px solid rgba(180,205,240,.55); border-radius:4px 16px 16px 16px;
+      padding:10px 13px; font-size:12px; line-height:1.52; color:#0d1f3c;
+      box-shadow:0 6px 22px rgba(0,0,0,.38); margin-top:8px; width:160px; text-align:center;
+    }
+    .bb-progress-wrap { height:4px; background:rgba(255,255,255,.07); border-radius:2px; margin-bottom:28px; overflow:hidden; }
+    .bb-progress-bar  { height:100%; background:var(--green,#39ff14); border-radius:2px; transition:width .5s ease; width:0%; }
+    .bb-page-title { font-family:'Bebas Neue',sans-serif; font-size:30px; color:var(--green,#39ff14); letter-spacing:1px; margin:0 0 2px; }
+    .bb-page-sub   { color:var(--muted,#888); font-size:13px; margin:0 0 24px; }
+    .bbf {
+      background:var(--panel,#0a1a0a); border:1.5px solid transparent;
+      border-radius:12px; padding:14px 16px; margin-bottom:10px;
+      transition:filter .38s ease,opacity .38s ease,border-color .28s ease,background .28s ease;
+    }
+    .bbf.future  { filter:blur(3.5px); opacity:.2; pointer-events:none; user-select:none; }
+    .bbf.active  { filter:none; opacity:1; border-color:rgba(57,255,20,.28); background:rgba(57,255,20,.03); }
+    .bbf.answered{ filter:none; opacity:.6; pointer-events:none; }
+    .bbf-label   { font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted,#888); margin-bottom:8px; }
+    .bbf-answer  { font-size:14px; color:var(--text,#c8dbf5); padding:2px 0; word-break:break-word; white-space:pre-wrap; }
+    .bbf-textarea {
+      width:100%; background:var(--dark,#060f1e); border:1.5px solid var(--border,#333);
+      border-radius:8px; padding:10px 13px; color:var(--light,#fff);
+      font:15px 'DM Sans',sans-serif; transition:border-color .2s; box-sizing:border-box;
+      resize:vertical; min-height:100px;
+    }
+    .bbf-textarea:focus { border-color:var(--green,#39ff14); outline:none; }
+    .bbf-hint { font-size:11.5px; color:var(--muted,#888); margin:4px 0 8px; }
+    .bbf-btn  { margin-top:10px; padding:11px 24px; background:var(--green,#39ff14); color:#000; border:none; border-radius:8px; font:700 14px 'DM Sans',sans-serif; cursor:pointer; }
+    .bbf-btn:hover { opacity:.86; }
+    .bbf-err  { color:#ff4c4c; font-size:12px; margin-top:5px; min-height:16px; }
+    @media (max-width:640px) {
+      #bb-float { width:72px !important; }
+      .bb-q-bubble { font-size:11px; width:140px; padding:8px 10px; }
+    }
+  </style>
+</head>
+<body class="has-site-header">
+<div id="header__inject"></div>
+
+<div id="bb-float">
+  <div class="pb-mascot" id="pb-mascot"></div>
+  <div class="bb-q-bubble" id="bb-q-bubble"><p id="bb-q-text" style="margin:0"></p></div>
+</div>
+
+<div class="main">
+  <div class="main-inner">
+    <h1 class="bb-page-title">Your Story</h1>
+    <p class="bb-page-sub">This is what Blasty always knows about you — every campaign gets sharper.</p>
+    <div class="bb-progress-wrap"><div class="bb-progress-bar" id="bb-progress-bar"></div></div>
+
+    <!-- story -->
+    <div class="bbf future" id="bbf-story">
+      <div class="bbf-label">Business Story</div>
+      <div class="bbf-input-zone">
+        <textarea class="bbf-textarea" id="bfi-story" placeholder="e.g. We opened in 1987 after my father emigrated from Mexico with nothing but a family recipe and a dream..." rows="4"></textarea>
+        <div class="bbf-hint">As much or as little as you like</div>
+        <button class="bbf-btn" onclick="_bbContinue('story')">Continue →</button>
+        <div class="bbf-err" id="bfe-story"></div>
+      </div>
+      <div class="bbf-answer" id="bfa-story"></div>
+    </div>
+
+    <!-- different -->
+    <div class="bbf future" id="bbf-different">
+      <div class="bbf-label">What Makes You Different</div>
+      <div class="bbf-input-zone">
+        <textarea class="bbf-textarea" id="bfi-different" placeholder="e.g. Everything is made from scratch daily. Our head chef trained in Lyon for 3 years..." rows="4"></textarea>
+        <div class="bbf-hint">Why should someone choose you over the competition?</div>
+        <button class="bbf-btn" onclick="_bbContinue('different')">Continue →</button>
+        <div class="bbf-err" id="bfe-different"></div>
+      </div>
+      <div class="bbf-answer" id="bfa-different"></div>
+    </div>
+
+    <!-- awards -->
+    <div class="bbf future" id="bbf-awards">
+      <div class="bbf-label">Awards &amp; Press</div>
+      <div class="bbf-input-zone">
+        <textarea class="bbf-textarea" id="bfi-awards" placeholder="e.g. Best Pizza 3 years running. Featured in the Tribune. 4.9 stars across 600+ reviews..." rows="3"></textarea>
+        <div class="bbf-hint">Leave blank if none — totally fine!</div>
+        <button class="bbf-btn" onclick="_bbContinue('awards')">Continue →</button>
+        <div class="bbf-err" id="bfe-awards"></div>
+      </div>
+      <div class="bbf-answer" id="bfa-awards"></div>
+    </div>
+
+    <!-- customer -->
+    <div class="bbf future" id="bbf-customer">
+      <div class="bbf-label">Ideal Customer</div>
+      <div class="bbf-input-zone">
+        <textarea class="bbf-textarea" id="bfi-customer" placeholder="e.g. Homeowners aged 35–60 who value quality over price and have been burned by cheap contractors before..." rows="3"></textarea>
+        <div class="bbf-hint">Who gets the most value from what you do?</div>
+        <button class="bbf-btn" onclick="_bbContinue('customer')">Continue →</button>
+        <div class="bbf-err" id="bfe-customer"></div>
+      </div>
+      <div class="bbf-answer" id="bfa-customer"></div>
+    </div>
+
+    <!-- other -->
+    <div class="bbf future" id="bbf-other">
+      <div class="bbf-label">Anything Else</div>
+      <div class="bbf-input-zone">
+        <textarea class="bbf-textarea" id="bfi-other" placeholder="e.g. Free estimates. Loyalty program. Family-owned since 1995. We sponsor the local little league..." rows="3"></textarea>
+        <div class="bbf-hint">Special services, team, community involvement — anything</div>
+        <button class="bbf-btn" onclick="_bbContinue('other')">Continue →</button>
+        <div class="bbf-err" id="bfe-other"></div>
+      </div>
+      <div class="bbf-answer" id="bfa-other"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  var answers  = {};
+  var stepKeys = ['story','different','awards','customer','other'];
+  var currentKey = null;
+
+  var MESSAGES = {
+    story:     function(a){ return 'Love it! How did ' + (a.bizName||'your business') + ' get started? What\'s the story?'; },
+    different: function(a){ return 'Good stuff! What makes ' + (a.bizName||'your business') + ' different from the competition?'; },
+    awards:    function(a){ return 'Any awards, press coverage, or milestones worth mentioning?'; },
+    customer:  function(a){ return 'Who\'s your ideal customer for ' + (a.bizName||'your business') + '?'; },
+    other:     function(a){ return 'Anything else I should always know about your business?'; }
+  };
+
+  var MOODS = { story:'s-ask', different:'s-happy', awards:'s-ask', customer:'s-happy', other:'s-ask' };
+
+  function setBlasty(key) {
+    var el = document.getElementById('bb-q-text');
+    if (el) {
+      el.style.opacity = '0';
+      setTimeout(function(){ el.innerHTML = (MESSAGES[key]||function(){ return ''; })(answers); el.style.opacity = '1'; }, 150);
+    }
+    if (window.PBMascot) window.PBMascot.setMood(MOODS[key]||'s-ask');
+  }
+
+  function anchorBlasty(key) {
+    var fieldEl = document.getElementById('bbf-'+key);
+    var floatEl = document.getElementById('bb-float');
+    if (!fieldEl || !floatEl) return;
+    var rect = fieldEl.getBoundingClientRect();
+    var isMob = window.innerWidth <= 640;
+    var fw = isMob ? 72 : 100;
+    var fh = isMob ? 130 : 165;
+    var viewW = window.innerWidth;
+    var left, top;
+    if (!isMob && rect.left > fw + 28) {
+      left = rect.left - fw - 18; top = rect.top + rect.height/2 - fh/2;
+    } else if (!isMob && viewW - rect.right > fw + 28) {
+      left = rect.right + 18; top = rect.top + rect.height/2 - fh/2;
+    } else {
+      left = Math.max(8, rect.left + rect.width/2 - fw/2);
+      top  = rect.top - fh - 14;
+      if (top < 64) top = rect.bottom + 14;
+    }
+    left = Math.max(8, Math.min(left, viewW - fw - 8));
+    top  = Math.max(64, Math.min(top, window.innerHeight - fh - 8));
+    floatEl.style.left  = left + 'px';
+    floatEl.style.top   = top  + 'px';
+    floatEl.style.width = fw   + 'px';
+  }
+
+  function updateProgress() {
+    var done = stepKeys.filter(function(k){ var el=document.getElementById('bbf-'+k); return el && el.classList.contains('answered'); }).length;
+    var bar  = document.getElementById('bb-progress-bar');
+    if (bar) bar.style.width = Math.round(done/stepKeys.length*100) + '%';
+  }
+
+  function showField(key) {
+    currentKey = key;
+    document.querySelectorAll('.bbf').forEach(function(el){
+      el.classList.remove('active');
+      if (!el.classList.contains('answered')) el.classList.add('future');
+    });
+    var fieldEl = document.getElementById('bbf-'+key);
+    if (fieldEl) {
+      fieldEl.classList.remove('future','answered');
+      fieldEl.classList.add('active');
+      setTimeout(function(){
+        fieldEl.scrollIntoView({ behavior:'smooth', block:'center' });
+        setTimeout(function(){ anchorBlasty(key); }, 320);
+      }, 60);
+    }
+    setBlasty(key);
+    updateProgress();
+    setTimeout(function(){
+      var inp = document.getElementById('bfi-'+key);
+      if (inp) inp.focus();
+    }, 480);
+  }
+
+  function lockField(key, val) {
+    var fieldEl = document.getElementById('bbf-'+key);
+    if (!fieldEl) return;
+    fieldEl.classList.remove('active','future');
+    fieldEl.classList.add('answered');
+    var iz = fieldEl.querySelector('.bbf-input-zone');
+    var az = document.getElementById('bfa-'+key);
+    if (iz) iz.style.display = 'none';
+    if (az) az.textContent = val || '—';
+    updateProgress();
+  }
+
+  window._bbContinue = function(key) {
+    var inp = document.getElementById('bfi-'+key);
+    var val = inp ? inp.value.trim() : '';
+    var errEl = document.getElementById('bfe-'+key);
+    if (errEl) errEl.textContent = '';
+    answers[key] = val;
+    try {
+      var saved = JSON.parse(sessionStorage.getItem('bb_answers')||'{}');
+      Object.assign(saved, answers);
+      sessionStorage.setItem('bb_answers', JSON.stringify(saved));
+    } catch(e){}
+    var displayVal = val.length > 80 ? val.slice(0,80)+'…' : (val || '(skipped)');
+    lockField(key, displayVal);
+    var idx  = stepKeys.indexOf(key);
+    var next = idx + 1;
+    if (next < stepKeys.length) {
+      showField(stepKeys[next]);
+    } else {
+      if (window._bbSaveStory) window._bbSaveStory(answers);
+    }
+  };
+
+  window._bbStart = function(uid, plan, userData) {
+    window._bbUid  = uid;
+    window._bbPlan = plan;
+    try {
+      var saved = JSON.parse(sessionStorage.getItem('bb_answers')||'{}');
+      Object.assign(answers, saved);
+    } catch(e){}
+    var floatEl = document.getElementById('bb-float');
+    if (floatEl) floatEl.style.display = 'flex';
+    if (window.PBMascot) window.PBMascot.setMood('s-wave');
+    setTimeout(function(){ showField('story'); }, 700);
+  };
+
+  window.addEventListener('resize', function(){
+    if (currentKey) setTimeout(function(){ anchorBlasty(currentKey); }, 60);
+  });
+})();
+</script>
+
+<script type="module">
+import { auth, db } from './firebase-init-v2.js';
+import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+window._bbSaveStory = async function(storyAnswers) {
+  try {
+    const uid   = window._bbUid;
+    const bizId = sessionStorage.getItem('bb_bizId');
+    if (!uid || !bizId) { window.location.href = 'BlastyBiz-CreateBiz.html'; return; }
+    await setDoc(doc(db, 'users', uid, 'businesses', bizId), {
+      aiContext: {
+        story:     storyAnswers.story     || '',
+        different: storyAnswers.different || '',
+        awards:    storyAnswers.awards    || '',
+        customer:  storyAnswers.customer  || '',
+        other:     storyAnswers.other     || ''
+      },
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  } catch(e) { console.error('[story save]', e); }
+  window.location.href = 'BlastyBiz-CreateBiz.html?bizId=' + (sessionStorage.getItem('bb_bizId')||'');
+};
+
+await auth.authStateReady();
+const user = auth.currentUser;
+if (!user || !user.emailVerified) {
+  window.location.href = 'BlastyBiz-Login.html';
+} else {
+  let ud = {};
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    if (snap.exists()) ud = snap.data();
+  } catch(e) { console.error('[story]', e); }
+  window._bbStart(user.uid, ud.plan || 'trial', ud);
+}
+</script>
+
+<script src="header-loader.js?v=1"></script>
+</body>
+</html>

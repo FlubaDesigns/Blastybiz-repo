@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta charset="UTF-8"/>
+  <meta name="theme-color" content="#000000"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Memory — BlastyBiz</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="global-style.css?v=1785858635994"/>
+  <style>
+    body { visibility: hidden; }
+    .mem-wrap { padding: 28px 0 60px; }
+    .mem-inner { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+    .mem-toggle { display: flex; gap: 8px; margin-bottom: 20px; }
+    .mem-toggle-btn { flex: 1; padding: 10px 18px; border-radius: 10px; border: 1px solid var(--border,#333); background: var(--dark,#1a1a1a); color: var(--muted,#888); font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; }
+    .mem-toggle-btn.active { background: var(--green,#39ff14); border-color: var(--green,#39ff14); color: #000; }
+    .mem-select { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border,#333); background: var(--dark,#1a1a1a); color: var(--text,#fff); font-size: 14px; margin-bottom: 16px; font-family: inherit; }
+    .mem-fact-list { list-style: none; padding: 0; margin: 0 0 24px; }
+    .mem-fact-item { display: flex; align-items: flex-start; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--border,#333); }
+    .mem-fact-num { font-size: 12px; color: var(--muted,#888); font-weight: 700; min-width: 22px; padding-top: 3px; text-align: right; flex-shrink: 0; }
+    .mem-score { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 22px; border-radius: 6px; font-size: 11px; font-weight: 800; padding: 0 6px; flex-shrink: 0; margin-top: 1px; }
+    .score-high { background: #16a34a; color: #fff; }
+    .score-mid  { background: #d97706; color: #fff; }
+    .score-low  { background: #6b7280; color: #fff; }
+    .score-none { background: var(--border,#333); color: var(--muted,#888); }
+    .mem-fact-text { flex: 1; font-size: 14px; color: var(--text,#fff); line-height: 1.5; word-break: break-word; }
+    .mem-fact-del { background: none; border: none; color: var(--muted,#666); cursor: pointer; font-size: 14px; padding: 3px 8px; border-radius: 6px; transition: color .15s; flex-shrink: 0; line-height: 1; }
+    .mem-fact-del:hover { color: #ef4444; }
+    .mem-section-head { font-size: 11px; font-weight: 700; color: var(--muted,#888); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border,#333); }
+    .mem-add-area { display: flex; gap: 10px; align-items: flex-end; }
+    .mem-add-textarea { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border,#333); background: var(--dark,#1a1a1a); color: var(--text,#fff); font-size: 14px; font-family: inherit; resize: vertical; min-height: 62px; }
+    .mem-add-btn { padding: 10px 20px; border-radius: 10px; border: none; background: var(--green,#39ff14); color: #000; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; height: 42px; }
+    .mem-add-btn:disabled { opacity: 0.5; cursor: default; }
+    .mem-hint { font-size: 12px; color: var(--muted,#888); margin-top: 8px; }
+    .mem-empty { color: var(--muted,#888); font-size: 14px; padding: 28px 0; text-align: center; }
+    .mem-label { font-size: 12px; color: var(--muted,#888); margin-bottom: 6px; display: block; }
+    .mem-loading { color: var(--muted,#888); font-size: 14px; padding: 20px 0; }
+    .mem-score-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+    .mem-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted,#888); }
+    .toast-m { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--dark,#1a1a1a); color: var(--text,#fff); border: 1px solid var(--border,#333); border-radius: 10px; padding: 10px 20px; font-size: 14px; font-weight: 600; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity .25s; white-space: nowrap; }
+    .toast-m.show { opacity: 1; }
+    @media (max-width: 500px) { .mem-add-area { flex-direction: column; } .mem-add-btn { width: 100%; } }
+  </style>
+  <script type="module" src="./auth-guard.js"></script>
+  <script src="blastybiz-menu.js?v=6"></script>
+</head>
+<body class="has-site-header app-page">
+
+<div id="header__inject"></div>
+<script src="header-loader.js?v=1"></script>
+
+<div class="mem-wrap main"><div class="mem-inner main-inner">
+
+  <nav class="breadcrumb" aria-label="Breadcrumb" style="margin-bottom:18px;">
+    <a href="BlastyBiz.html">Workspace</a>
+    <span class="bc-sep">›</span>
+    <span class="bc-current">AI Memory</span>
+  </nav>
+
+  <h1 class="page-title" style="margin-bottom:4px;">AI <span>Memory</span></h1>
+  <p class="page-sub" style="margin-bottom:6px;">Facts the AI knows about your business, ranked by importance. Higher score = used more often in copy.</p>
+
+  <!-- Score legend -->
+  <div class="mem-score-legend" style="margin-bottom:20px;">
+    <div class="mem-legend-item"><span class="mem-score score-high">7–10</span> Core identity</div>
+    <div class="mem-legend-item"><span class="mem-score score-mid">4–6</span> Useful context</div>
+    <div class="mem-legend-item"><span class="mem-score score-low">1–3</span> Occasional detail</div>
+    <div class="mem-legend-item"><span class="mem-score score-none">?</span> Scoring…</div>
+  </div>
+
+  <!-- Business selector (shown when user has 2+ businesses) -->
+  <div id="mem-biz-wrap" style="display:none;margin-bottom:4px;">
+    <label class="mem-label">Business</label>
+    <select id="mem-biz-select" class="mem-select" onchange="onBizChange()"></select>
+  </div>
+
+  <!-- Global / Campaign toggle -->
+  <div class="mem-toggle">
+    <button type="button" id="mem-btn-global" class="mem-toggle-btn active" onclick="switchMemScope('global')">🌐 Global Facts</button>
+    <button type="button" id="mem-btn-campaign" class="mem-toggle-btn" onclick="switchMemScope('campaign')">🎯 Campaign Facts</button>
+  </div>
+
+  <!-- Campaign picker -->
+  <div id="mem-camp-wrap" style="display:none;">
+    <select id="mem-camp-select" class="mem-select" onchange="onCampChange()">
+      <option value="">— Select a campaign —</option>
+    </select>
+  </div>
+
+  <!-- Fact list -->
+  <div id="mem-list-area">
+    <p class="mem-loading" id="mem-loading">Loading…</p>
+    <ul id="mem-fact-list" class="mem-fact-list" style="display:none;"></ul>
+    <p class="mem-empty" id="mem-empty" style="display:none;">No facts added yet. Add one below.</p>
+  </div>
+
+  <!-- Add new fact -->
+  <div class="mem-section-head" style="margin-top:8px;">Add a Fact</div>
+  <div class="mem-add-area">
+    <textarea id="mem-add-text" class="mem-add-textarea" placeholder="e.g. We've been family-owned since 1987…"></textarea>
+    <button type="button" id="mem-add-btn" class="mem-add-btn" onclick="addMemFact()">Save</button>
+  </div>
+  <p class="mem-hint">AI automatically scores importance 1–10 after you save.</p>
+
+</div></div>
+
+<div id="site-footer-inject"></div>
+<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
+
+<div id="toast-m" class="toast-m"></div>
+
+<script type="module">
+import { auth, db } from './firebase-init-v2.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+  collection, getDocs, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, getDoc
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
+
+let currentUser = null;
+let businesses  = [];
+let activeBizId = null;
+let activeCampId = null;
+let memScope    = 'global';
+let facts       = [];
+let campaigns   = [];
+
+function toast(msg, err) {
+  const el = document.getElementById('toast-m');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.borderColor = err ? '#ef4444' : 'var(--border,#333)';
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+function scoreClass(s) {
+  if (s == null) return 'score-none';
+  if (s >= 7)   return 'score-high';
+  if (s >= 4)   return 'score-mid';
+  return 'score-low';
+}
+
+function renderFacts() {
+  const list    = document.getElementById('mem-fact-list');
+  const empty   = document.getElementById('mem-empty');
+  const loading = document.getElementById('mem-loading');
+  if (!list) return;
+  if (loading) loading.style.display = 'none';
+  const sorted = [...facts].sort((a, b) =>
+    (b.importance != null ? b.importance : 5) - (a.importance != null ? a.importance : 5)
+  );
+  if (!sorted.length) {
+    list.style.display = 'none';
+    if (empty) empty.style.display = '';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  list.style.display = '';
+  list.innerHTML = sorted.map((f, i) => {
+    const s  = f.importance != null ? f.importance : null;
+    const sc = scoreClass(s);
+    const lbl = s != null ? s : '?';
+    const txt = (f.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<li class="mem-fact-item">
+      <span class="mem-fact-num">${i + 1}.</span>
+      <span class="mem-score ${sc}">${lbl}</span>
+      <span class="mem-fact-text">${txt}</span>
+      <button class="mem-fact-del" onclick="window._memDelete('${f.id}')" title="Delete this fact">✕</button>
+    </li>`;
+  }).join('');
+}
+
+async function loadFacts() {
+  const loading = document.getElementById('mem-loading');
+  const list    = document.getElementById('mem-fact-list');
+  const empty   = document.getElementById('mem-empty');
+  if (loading) loading.style.display = '';
+  if (list)    list.style.display = 'none';
+  if (empty)   empty.style.display = 'none';
+  if (!currentUser || !activeBizId) { if (loading) loading.style.display = 'none'; return; }
+  try {
+    if (memScope === 'global') {
+      const snap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'facts'));
+      facts = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+    } else {
+      if (!activeCampId) { facts = []; renderFacts(); return; }
+      const snap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', activeCampId, 'facts'));
+      facts = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+    }
+    renderFacts();
+  } catch(e) {
+    if (loading) loading.style.display = 'none';
+    toast('Could not load facts', true);
+  }
+}
+
+window.switchMemScope = function(scope) {
+  memScope = scope;
+  document.getElementById('mem-btn-global').classList.toggle('active', scope === 'global');
+  document.getElementById('mem-btn-campaign').classList.toggle('active', scope === 'campaign');
+  document.getElementById('mem-camp-wrap').style.display = scope === 'campaign' ? '' : 'none';
+  facts = [];
+  loadFacts();
+};
+
+window.onBizChange = function() {
+  const sel = document.getElementById('mem-biz-select');
+  activeBizId = sel.value;
+  activeCampId = null;
+  loadCampaigns();
+  loadFacts();
+};
+
+window.onCampChange = function() {
+  const sel = document.getElementById('mem-camp-select');
+  activeCampId = sel.value || null;
+  loadFacts();
+};
+
+async function loadCampaigns() {
+  const campSel = document.getElementById('mem-camp-select');
+  campSel.innerHTML = '<option value="">— Select a campaign —</option>';
+  activeCampId = null;
+  if (!currentUser || !activeBizId) return;
+  try {
+    const bizDoc = await getDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId));
+    campaigns = bizDoc.exists() ? (bizDoc.data().campaigns || []) : [];
+    campaigns.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name || c.id;
+      campSel.appendChild(opt);
+    });
+    const urlCamp = new URLSearchParams(window.location.search).get('camp');
+    if (urlCamp && campaigns.find(c => c.id === urlCamp)) {
+      campSel.value = urlCamp;
+      activeCampId = urlCamp;
+    }
+  } catch(e) { /* ignore */ }
+}
+
+window._memDelete = async function(factId) {
+  if (!currentUser || !activeBizId) return;
+  try {
+    if (memScope === 'global') {
+      await deleteDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'facts', factId));
+    } else if (activeCampId) {
+      await deleteDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', activeCampId, 'facts', factId));
+    }
+    facts = facts.filter(f => f.id !== factId);
+    renderFacts();
+    toast('Fact removed');
+  } catch(e) {
+    toast('Delete failed', true);
+  }
+};
+
+window.addMemFact = async function() {
+  const textarea = document.getElementById('mem-add-text');
+  const text = (textarea.value || '').trim();
+  if (!text) { textarea.focus(); return; }
+  if (!currentUser || !activeBizId) return;
+  if (memScope === 'campaign' && !activeCampId) { toast('Select a campaign first', true); return; }
+  const btn = document.getElementById('mem-add-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  const entry = { text, addedAt: new Date().toISOString() };
+  try {
+    let ref;
+    if (memScope === 'global') {
+      ref = await addDoc(
+        collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'facts'),
+        { ...entry, uid: currentUser.uid, bizId: activeBizId, createdAt: serverTimestamp() }
+      );
+    } else {
+      ref = await addDoc(
+        collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', activeCampId, 'facts'),
+        { ...entry, uid: currentUser.uid, bizId: activeBizId, campaignId: activeCampId, createdAt: serverTimestamp() }
+      );
+    }
+    const newFact = { ...entry, id: ref.id, importance: null };
+    facts.push(newFact);
+    renderFacts();
+    textarea.value = '';
+    toast('✓ Saved — scoring importance…');
+
+    // Score asynchronously — non-blocking
+    try {
+      const token = await currentUser.getIdToken();
+      const resp = await fetch(`${CF}/scoreFact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ text })
+      });
+      if (resp.ok) {
+        const { score } = await resp.json();
+        if (score != null) {
+          const docPath = memScope === 'global'
+            ? doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'facts', ref.id)
+            : doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', activeCampId, 'facts', ref.id);
+          await updateDoc(docPath, { importance: score });
+          const f = facts.find(x => x.id === ref.id);
+          if (f) { f.importance = score; renderFacts(); }
+          toast(`✓ Saved — importance ${score}/10`);
+        }
+      }
+    } catch(_) { /* silent — scoring is non-critical */ }
+
+  } catch(e) {
+    toast('Save failed', true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save';
+  }
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+  currentUser = user;
+
+  try {
+    const snap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
+    businesses = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  } catch(e) { businesses = []; }
+
+  if (!businesses.length) {
+    document.getElementById('mem-list-area').innerHTML = '<p style="color:var(--muted,#888);font-size:14px;padding:20px 0;">No business found. Set up your profile first.</p>';
+    document.getElementById('mem-loading').style.display = 'none';
+    return;
+  }
+
+  // Prefer biz from URL param, else first biz
+  const urlBiz = new URLSearchParams(window.location.search).get('biz');
+  const matched = urlBiz && businesses.find(b => b.id === urlBiz);
+  activeBizId = matched ? matched.id : businesses[0].id;
+
+  if (businesses.length > 1) {
+    const sel = document.getElementById('mem-biz-select');
+    businesses.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.id;
+      opt.textContent = b.businessName || b.name || b.id;
+      if (b.id === activeBizId) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    document.getElementById('mem-biz-wrap').style.display = '';
+  }
+
+  await loadCampaigns();
+
+  const urlScope = new URLSearchParams(window.location.search).get('scope');
+  if (urlScope === 'campaign') {
+    window.switchMemScope('campaign');
+  } else {
+    loadFacts();
+  }
+});
+</script>
+</body>
+</html>

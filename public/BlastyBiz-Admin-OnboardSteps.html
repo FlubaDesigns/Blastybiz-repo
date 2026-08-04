@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta charset="UTF-8"/>
+  <meta name="theme-color" content="#000000"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BlastyBiz — Onboard Step Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="global-style.css?v=1785858635994">
+  <style>
+    body { visibility: hidden }
+    .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
+    @media (max-width:880px) {
+      .ose-outer-grid { grid-template-columns:minmax(0,1fr); }
+      .ose-preview { display:none; }
+      .card-mob-prev { background:#0d1f3c; border-radius:10px; margin-top:12px;
+        padding:16px; text-align:center; }
+      .card-mob-prev #pb-mascot { display:inline-block; }
+      .card-mob-prev #pb-mascot svg { width:80px !important; height:auto; }
+      .card-mob-prev .prev-cap { font-size:12px; color:#9ca3af; margin-top:6px; }
+    }
+    /* tabs */
+    .ose-tabs { display:flex; gap:8px; margin-bottom:22px; }
+    .ose-tab { background:#f1f5f9; border:1.5px solid #e2e8f0; border-radius:8px; padding:8px 18px; font:600 13px 'DM Sans',sans-serif; color:#64748b; cursor:pointer; transition:all .15s; }
+    .ose-tab:hover { border-color:#2563eb; color:#2563eb; }
+    .ose-tab.active { background:#2563eb; border-color:#2563eb; color:#fff; }
+    /* OB2 field cards */
+    .ob2-field-card { background:#fff; border:1.5px solid #e4e9f0; border-radius:12px; margin-bottom:10px; overflow:hidden; }
+    .ob2-field-card.has-ov { border-color:#2563eb; }
+    .ob2-field-head { display:flex; align-items:center; gap:9px; padding:9px 14px; background:#f8fafc; border-bottom:1px solid #e4e9f0; }
+    .ob2-field-body { padding:14px; }
+    .ose-sec-lbl { font:600 12px/1 'DM Sans',sans-serif; color:#475569; text-transform:uppercase; letter-spacing:.06em; margin:20px 0 10px; }
+    .ose-sec-lbl:first-child { margin-top:0; }
+    /* step cards */
+    .step-card { background:#fff; border:1.5px solid #e4e9f0; border-radius:12px; margin-bottom:12px; overflow:hidden; }
+    .step-card.has-ov { border-color:#2563eb; }
+    .step-head { display:flex; align-items:center; gap:9px; padding:10px 14px; background:#f8fafc; border-bottom:1px solid #e4e9f0; cursor:pointer; user-select:none; }
+    .step-num { background:#e2e8f0; color:#475569; font-size:11px; font-weight:700; padding:2px 6px; border-radius:18px; min-width:22px; text-align:center; }
+    .step-card.has-ov .step-num { background:#dbeafe; color:#1d4ed8; }
+    .sk { font-size:12px; font-weight:700; color:#0f172a; font-family:monospace; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .sd { font-size:12px; color:#94a3b8; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .mod-badge { font-size:10px; background:#dbeafe; color:#1d4ed8; padding:1px 6px; border-radius:9px; font-weight:700; display:none; }
+    .step-card.has-ov .mod-badge { display:inline; }
+    .exp-ic { color:#94a3b8; font-size:12px; margin-left:auto; transition:transform .18s; }
+    .step-card.open .exp-ic { transform:rotate(180deg); }
+    .step-body { display:none; padding:14px; overflow-x:hidden; }
+    .step-card.open .step-body { display:block; }
+    .sk { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .sd { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .msg-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+    @media (max-width:600px) { .msg-row { grid-template-columns:1fr; } }
+    .fl { display:block; font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.07em; margin-bottom:3px; }
+    textarea.mta { width:100%; box-sizing:border-box; border:1.5px solid #e2e8f0; border-radius:7px; padding:7px 9px; font:13px/1.5 'DM Sans',sans-serif; color:#0f172a !important; background:#ffffff !important; resize:vertical; min-height:58px; }
+    textarea.mta:focus { border-color:#2563eb; outline:none; }
+    textarea.mta.def { background:#f8fafc !important; color:#94a3b8 !important; }
+    .asg select { background:#ffffff !important; color:#0f172a !important; }
+    .anim-row { display:flex; flex-wrap:wrap; gap:9px; margin-bottom:9px; }
+    .asg { min-width:0; }
+    .asg label { display:block; font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px; }
+    .asg select { width:100%; box-sizing:border-box; border:1.5px solid #e2e8f0; border-radius:6px; padding:4px 7px; font:13px 'DM Sans',sans-serif; color:#0f172a; background:#fff; }
+    .asg select:focus { border-color:#2563eb; outline:none; }
+    .anim-chk { display:flex; gap:14px; margin-bottom:12px; }
+    .anim-chk label { display:flex; align-items:center; gap:4px; font-size:13px; color:#475569; cursor:pointer; }
+    .card-acts { display:flex; gap:7px; align-items:center; flex-wrap:wrap; }
+    .btn-sv { background:#2563eb; color:#fff; border:none; border-radius:7px; padding:6px 15px; font:600 13px 'DM Sans',sans-serif; cursor:pointer; }
+    .btn-sv:hover { background:#1d4ed8; } .btn-sv:disabled { opacity:.5; cursor:default; }
+    .btn-rst { background:none; border:1.5px solid #e2e8f0; border-radius:7px; padding:5px 11px; font:13px 'DM Sans',sans-serif; cursor:pointer; color:#64748b; }
+    .btn-rst:hover { border-color:#ef4444; color:#ef4444; }
+    .btn-prv { background:none; border:1.5px solid #e2e8f0; border-radius:7px; padding:5px 11px; font:13px 'DM Sans',sans-serif; cursor:pointer; color:#64748b; }
+    .btn-prv:hover { border-color:#7c3aed; color:#7c3aed; }
+    .sts { font-size:12px; color:#22c55e; }
+    /* preview */
+    .ose-preview { position:sticky; top:80px; align-self:start; }
+    .prev-panel { background:#0d1f3c; border-radius:14px; padding:18px; text-align:center; }
+    .prev-lbl { font-size:10px; color:#64748b; text-transform:uppercase; letter-spacing:.1em; margin-bottom:12px; }
+    #pb-mascot { display:inline-block; position:relative; }
+    #pb-mascot svg { width:160px; height:auto; overflow:visible; }
+    .prev-cap { font-size:12px; color:#9ca3af; margin-top:8px; min-height:16px; }
+
+
+    /* Grid overflow fix — step list must not blow out the 1fr column */
+    .ose-outer-grid > div { min-width: 0; overflow-x: hidden; }
+    .step-card { max-width: 100%; }
+    .asg select { max-width: 100%; }
+    .msg-row { max-width: 100%; }
+    /* ── Mobile: full-width, no overflow ── */
+    @media (max-width:880px) {
+      body.admin-page .main-inner { padding: 10px 8px !important; }
+      .ose-tabs { flex-wrap:wrap; }
+      .ose-tab  { flex:1; text-align:center; }
+      .msg-row  { grid-template-columns:1fr !important; }
+      .anim-row { gap:6px; }
+      .asg { flex:1 1 140px; }
+      .step-card, .step-head, .step-body,
+      .ob2-field-card, .ob2-field-head, .ob2-field-body {
+        max-width:100%; box-sizing:border-box;
+      }
+    }
+  </style>
+  <script type="module" src="./admin-guard.js"></script>
+  <script src="blastybiz-menu.js?v=6"></script>
+  <script src="/mascot.js"></script>
+</head>
+<body class="admin-page">
+
+<header>
+  <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Onboard Editor</span></a>
+  <div class="top-actions">
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin.html">Dashboard</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Operate.html">Operate</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Onboard2.html" target="_blank">▶ OB1</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-CreateBiz.html" target="_blank">▶ OB2</a>
+    <a class="icon-btn" href="BlastyBiz-Admin-Moods.html">🎭 Moods</a>
+    <a class="icon-btn hide-mobile active" href="#">Onboard Editor</a>
+    <a class="icon-btn" href="BlastyBiz-Login.html">👤</a>
+  </div>
+</header>
+
+<main><div class="main"><div class="main-inner">
+
+  <div class="op-page-header">
+    <h1 class="op-page-title">🚀 Onboard Editor</h1>
+    <p class="op-page-sub">Customize Blasty's messages and animations. <strong>OB1</strong> = Blasty Wizard (23 steps + animation pickers). <strong>OB2</strong> = Quick Form (header greeting, section titles, button text, success message). Changes go live immediately.</p>
+  </div>
+
+  <!-- ── Message Variables Reference ──────────────────────────────── -->
+  <details id="ref-accordion" style="margin-bottom:18px;border:1.5px solid #e4e9f0;border-radius:10px;background:#fff;overflow:hidden;">
+    <summary style="display:flex;align-items:center;gap:8px;padding:12px 16px;cursor:pointer;font-weight:600;font-size:14px;color:#1e293b;list-style:none;user-select:none;">
+      <span style="font-size:16px">📋</span>
+      Message Variable Reference
+      <span style="margin-left:auto;font-size:12px;color:#64748b;font-weight:400">Use <code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:11px">{variableName}</code> in any custom message</span>
+      <span class="ref-chev" style="font-size:13px;color:#94a3b8;transition:transform .2s">▼</span>
+    </summary>
+    <div style="padding:0 16px 16px">
+      <p style="font-size:12px;color:#64748b;margin:8px 0 12px">These tokens are replaced with live answers as the user moves through the wizard. Only tokens from <em>earlier</em> steps will have a value at the time a message displays.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px;">
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{ownerName}</code>
+          <span style="font-size:12px;color:#475569">Owner's first/full name</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{bizName}</code>
+          <span style="font-size:12px;color:#475569">Business name</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{role}</code>
+          <span style="font-size:12px;color:#475569">Owner's title / role</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{email}</code>
+          <span style="font-size:12px;color:#475569">Business email address</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{phone}</code>
+          <span style="font-size:12px;color:#475569">Business phone number</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{website}</code>
+          <span style="font-size:12px;color:#475569">Website URL</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{locationType}</code>
+          <span style="font-size:12px;color:#475569">brick / online / both</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{street}</code>
+          <span style="font-size:12px;color:#475569">Street address</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{city}</code>
+          <span style="font-size:12px;color:#475569">City</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{state}</code>
+          <span style="font-size:12px;color:#475569">State</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{zip}</code>
+          <span style="font-size:12px;color:#475569">ZIP code</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{story}</code>
+          <span style="font-size:12px;color:#475569">Business origin story</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{different}</code>
+          <span style="font-size:12px;color:#475569">What makes them different</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{awards}</code>
+          <span style="font-size:12px;color:#475569">Awards / press coverage</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{customer}</code>
+          <span style="font-size:12px;color:#475569">Ideal customer description</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{other}</code>
+          <span style="font-size:12px;color:#475569">Other info to always know</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{campaignName}</code>
+          <span style="font-size:12px;color:#475569">Campaign name</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{campaignAbout}</code>
+          <span style="font-size:12px;color:#475569">What the campaign is promoting</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{campaignAudience}</code>
+          <span style="font-size:12px;color:#475569">Target audience for the campaign</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{campaignOffer}</code>
+          <span style="font-size:12px;color:#475569">Special offer or call to action</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:7px;padding:8px 11px;display:flex;gap:10px;align-items:flex-start;">
+          <code style="background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0">{category}</code>
+          <span style="font-size:12px;color:#475569">AI-detected business category</span>
+        </div>
+      </div>
+    </div>
+  </details>
+  <script>
+    (function(){
+      var d = document.getElementById('ref-accordion');
+      if(!d) return;
+      d.addEventListener('toggle', function(){
+        var chev = d.querySelector('.ref-chev');
+        if(chev) chev.style.transform = d.open ? 'rotate(180deg)' : '';
+      });
+    })();
+  </script>
+
+  <div class="ose-outer-grid">
+
+    <!-- left: tabs + pane content -->
+    <div>
+      <div class="ose-tabs">
+        <button class="ose-tab active" id="tab-ob1" onclick="oseTab('ob1')">🚀 OB1 — Blasty Wizard</button>
+        <button class="ose-tab" id="tab-ob2" onclick="oseTab('ob2')">📝 OB2 — Quick Form</button>
+      </div>
+
+      <div id="ose-ob1-pane">
+        <div id="ose-status" style="text-align:center;padding:32px 0;color:#64748b">Loading steps…</div>
+        <div id="ose-steps" style="display:none"></div>
+      </div>
+
+      <div id="ose-ob2-pane" style="display:none">
+        <div id="ose-ob2-status" style="text-align:center;padding:32px 0;color:#64748b">Loading…</div>
+        <div id="ose-ob2-content" style="display:none">
+          <p class="ose-sec-lbl">📝 Text &amp; Labels</p>
+          <div id="ose-ob2-fields"></div>
+          <p class="ose-sec-lbl">🚀 Blasty Animations</p>
+          <div id="ose-ob2-anims"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- right: persistent preview (shared by OB1 and OB2) -->
+    <div class="ose-preview">
+      <div class="prev-panel">
+        <div class="prev-lbl">Live Preview</div>
+        <div class="pb-mascot s-wave" id="pb-mascot"></div>
+        <div class="prev-cap" id="prev-cap">Wave</div>
+      </div>
+    </div>
+
+  </div><!-- /ose-outer-grid -->
+
+</div></div></main>
+
+<script type="module">
+import { auth } from './firebase-init-v2.js';
+import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, deleteField } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const db = getFirestore(getApp());
+
+const STEP_DEFS = [
+  { idx:1,  key:'ownerName',         label:'Owner Name',                 defaultMsg:"Hi! I'm Blasty. What's your name?" },
+  { idx:2,  key:'createPassword',    label:'Create Password (signup)', defaultMsg:"Almost there, {ownerName}! 🔐 Create a password and you're in — we'll send a quick verification to your email." },
+  { idx:3,  key:'bizName',           label:'Business Name',              defaultMsg:"Nice to meet you! What's the name of your business?" },
+  { idx:4,  key:'role',              label:'Owner Title / Role',         defaultMsg:"What's your title at the business?" },
+  { idx:5,  key:'email',             label:'Email Address',              defaultMsg:"What's the best email address?" },
+  { idx:6,  key:'phone',             label:'Phone Number',               defaultMsg:"What's the best phone number?" },
+  { idx:7,  key:'locationType',      label:'Location Type',              defaultMsg:"Physical, online only, or both?" },
+  { idx:8,  key:'street',            label:'Street Address',             defaultMsg:"What's the street address?" },
+  { idx:9,  key:'city',              label:'City',                       defaultMsg:"City?" },
+  { idx:10, key:'state',             label:'State',                      defaultMsg:"State?" },
+  { idx:11, key:'zip',               label:'ZIP Code',                   defaultMsg:"ZIP code?" },
+  { idx:12, key:'website',           label:'Website',                    defaultMsg:"What's the website?" },
+  { idx:13, key:'_fork',             label:'Path Fork (story vs blast)', defaultMsg:"You're all set! Blast now, or tell me your story first?" },
+  { idx:14, key:'story',             label:'Business Story',             defaultMsg:"How did the business get started? What's the story?" },
+  { idx:15, key:'different',         label:'What Makes You Different',   defaultMsg:"What makes you different from the competition?" },
+  { idx:16, key:'awards',            label:'Awards / Press',             defaultMsg:"Any awards, press coverage, or milestones?" },
+  { idx:17, key:'customer',          label:'Ideal Customer',             defaultMsg:"Who's your ideal customer?" },
+  { idx:18, key:'other',             label:'Other Info',                 defaultMsg:"Anything else I should always know?" },
+  { idx:19, key:'campaignName',      label:'Campaign Name',              defaultMsg:"Let's build your first campaign. What to call it?" },
+  { idx:20, key:'campaignAbout',     label:'Campaign About',             defaultMsg:"What's this campaign about? What are you promoting?" },
+  { idx:21, key:'campaignAudience',  label:'Campaign Audience',          defaultMsg:"Who is this campaign targeting?" },
+  { idx:22, key:'campaignOffer',     label:'Campaign Offer / CTA',       defaultMsg:"Any special offer or call to action?" },
+  { idx:23, key:'campaignPlatforms', label:'Platforms',                  defaultMsg:"Last one — which platforms do you want to blast on?" },
+  { idx:24, key:'category',          label:'Business Category (AI)',     defaultMsg:"Almost done! Let me figure out the right category..." },
+];
+
+const MOOD_OPTS  = [{v:'s-ask',l:'Ask'},{v:'s-ask-2',l:'Ask 2 (lean right)'},{v:'s-ask-3',l:'Ask 3 (look up)'},{v:'s-wave',l:'Wave'},{v:'s-wave-2',l:'Wave 2 (big)'},{v:'s-happy',l:'Happy'},{v:'s-working',l:'Working'},{v:'s-celebrate',l:'Celebrate'},{v:'s-spin',l:'Spin'},{v:'s-tilt-left',l:'Tilt Left'},{v:'s-tilt-right',l:'Tilt Right'},{v:'s-arrive-land',l:'Arrive Land'}];
+const FLAME_OPTS = [{v:'',l:'Orange (default)'},{v:'s-flame-blue',l:'Blue'},{v:'s-flame-green',l:'Green'},{v:'s-flame-red',l:'Red'},{v:'s-flame-purple',l:'Purple'},{v:'s-flame-white',l:'White'}];
+const LIGHTS_OPTS= [{v:'',l:'Off'},{v:'s-lights-pulse',l:'Pulse'},{v:'s-lights-sequence',l:'Sequence'},{v:'s-lights-flash',l:'Flash'}];
+const EYES_OPTS  = [{v:'',l:'Default'},{v:'s-eyes-up',l:'Up'},{v:'s-eyes-down',l:'Down'},{v:'s-eyes-left',l:'Left'},{v:'s-eyes-right',l:'Right'},{v:'s-eyes-roll',l:'Roll'},{v:'s-eyes-surprise',l:'Surprise'}];
+const SMOKE_OPTS = [{v:'',l:'Off'},{v:'s-smoke-sm',l:'1 small puff'},{v:'s-smoke-lg',l:'1 large puff'},{v:'s-smoke-2',l:'2 puffs'},{v:'s-smoke-3',l:'3 puffs'}];
+const NOSE_OPTS  = [{v:'',l:'Off'},{v:'s-nose-shake',l:'Shake'},{v:'s-nose-pop-slow',l:'Pop slow'},{v:'s-nose-pop-fast',l:'Pop fast'}];
+const MOUTH_OPTS = [{v:'',l:'Default (mood)'},{v:'s-mouth-happy',l:'Happy 😄'},{v:'s-mouth-working',l:'Working 😮'},{v:'s-mouth-celebrate',l:'Celebrate 😃'},{v:'s-mouth-ask',l:'Ask 😐'}];
+const LIMBS_OPTS = [{v:'',l:'Pose default'},{v:'s-limb-wave',l:'Arm wave 🫳'},{v:'s-limb-point',l:'Arm point 👉'},{v:'s-limb-both',l:'Arms up 🙌'},{v:'s-limb-none',l:'Arms hidden'},{v:'s-limb-fin-wave',l:'Fin wave (left)'},{v:'s-limb-fin-point',l:'Fin point (right)'},{v:'s-limb-fin-both',l:'Fins up (both)'}];
+
+const sel = (opts, val) => opts.map(o=>`<option value="${o.v}"${o.v===val?' selected':''}>${o.l}</option>`).join('');
+
+let overrides = {};
+let ob2Overrides = {};
+let moodPresets = [];
+
+window.oseTab = function(tab) {
+  ['ob1','ob2'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('ose-'+t+'-pane').style.display = t===tab ? '' : 'none';
+  });
+};
+
+const OB2_FIELDS = [
+  { key:'headerMsg',      label:'Header Greeting',   type:'ta',
+    defaultVal:'<strong>Let\u2019s set up your business!</strong> Fill in what you know \u2014 you can always update later.',
+    hint:'Next to the mini Blasty. HTML allowed (\u003cstrong\u003e).' },
+  { key:'sec1Title',      label:'Section 1 Title',   type:'ta',
+    defaultVal:'🏢 Business Info <span class="cb-sec-badge">Required</span>',
+    hint:'Full innerHTML of the title span. Emoji + text + badge HTML.' },
+  { key:'sec2Title',      label:'Section 2 Title',   type:'ta',
+    defaultVal:'📖 Your Story <span class="cb-sec-badge">Optional — makes AI smarter</span>',
+    hint:'' },
+  { key:'sec3Title',      label:'Section 3 Title',   type:'ta',
+    defaultVal:'🚀 First Campaign <span class="cb-sec-badge">Required</span>',
+    hint:'' },
+  { key:'submitText',     label:'Submit Button Text', type:'tx',
+    defaultVal:'🚀 Create Business & Launch',
+    hint:'Plain text only.' },
+  { key:'successHeading', label:'Success Heading',    type:'tx',
+    defaultVal:'🎉 You\'re Live!',
+    hint:'' },
+  { key:'successBody',    label:'Success Body',       type:'ta',
+    defaultVal:'Your business is set up and your first campaign is ready. Redirecting to your dashboard\u2026',
+    hint:'' },
+];
+
+const OB2_ANIM_EVENTS = [
+  { key:'animLoad',    label:'Idle / Page Load',   icon:'😴',
+    def:{ mood:'s-wave',      flame:'',             lights:'',               eyes:'', smoke:false, noseSpin:false } },
+  { key:'animFocus',   label:'Field Focused',       icon:'💬',
+    def:{ mood:'s-ask',       flame:'',             lights:'',               eyes:'', smoke:false, noseSpin:false } },
+  { key:'animSubmit',  label:'Saving / Submitting', icon:'⏳',
+    def:{ mood:'s-working',   flame:'s-flame-blue', lights:'s-lights-pulse', eyes:'', smoke:false, noseSpin:false } },
+  { key:'animSuccess', label:'Success',             icon:'🎉',
+    def:{ mood:'s-celebrate', flame:'s-flame-green',lights:'s-lights-flash',  eyes:'', smoke:true,  noseSpin:false } },
+];
+
+function renderOb2AnimCards() {
+  document.getElementById('ose-ob2-anims').innerHTML = OB2_ANIM_EVENTS.map(ev => {
+    const saved = ob2Overrides[ev.key] && typeof ob2Overrides[ev.key]==='object' ? ob2Overrides[ev.key] : {};
+    const a = { ...ev.def, ...saved };
+    const hasOv = !!ob2Overrides[ev.key];
+    return `<div class="ob2-field-card${hasOv?' has-ov':''}" id="ob2-anim-card-${ev.key}">
+      <div class="ob2-field-head">
+        <span class="sk">${ev.key}</span>
+        <span class="sd">${ev.icon} ${ev.label}</span>
+        <span class="mod-badge">Modified</span>
+      </div>
+      <div class="ob2-field-body">
+        <div class="anim-row">
+          ${moodPresets.length ? `<div class="asg" style="flex:2;min-width:160px"><label>Apply Preset ↓</label><select id="aprst-${ev.key}" onchange="window._applyPreset('${ev.key}')"><option value="">— pick a preset —</option>${moodPresets.map(p=>`<option value="${p.id}">${p.label}</option>`).join('')}</select></div>` : ''}
+          <div class="asg"><label>Mood</label><select id="oa2m-${ev.key}">${sel(MOOD_OPTS,a.mood)}</select></div>
+          <div class="asg"><label>Flame</label><select id="oa2f-${ev.key}">${sel(FLAME_OPTS,a.flame||'')}</select></div>
+          <div class="asg"><label>Lights</label><select id="oa2l-${ev.key}">${sel(LIGHTS_OPTS,a.lights||'')}</select></div>
+          <div class="asg"><label>Eyes</label><select id="oa2e-${ev.key}">${sel(EYES_OPTS,a.eyes||'')}</select></div>
+        </div>
+        <div class="anim-chk">
+          <label><input type="checkbox" id="oa2s-${ev.key}"${a.smoke?' checked':''}> 💨 Smoke</label>
+          <label><input type="checkbox" id="oa2n-${ev.key}"${a.noseSpin?' checked':''}> 🌀 Nose spin</label>
+        </div>
+        <div class="card-acts">
+          <button class="btn-sv" onclick="window._qfAnimSave('${ev.key}')">Save</button>
+          <button class="btn-rst" onclick="window._qfAnimReset('${ev.key}')">Reset to default</button>
+          <button class="btn-prv" onclick="window._qfAnimPreview('${ev.key}')">▶ Preview</button>
+          <span class="sts" id="ob2asts-${ev.key}"></span>
+        </div>
+        <div class="card-mob-prev" id="cmp-${ev.key}" style="display:none"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window._qfAnimPreview = function(k) {
+  window._showMobilePreview(k);
+  const mood  = document.getElementById('oa2m-'+k).value;
+  const flame = document.getElementById('oa2f-'+k).value;
+  const lights= document.getElementById('oa2l-'+k).value;
+  const eyes  = document.getElementById('oa2e-'+k).value;
+  const smoke = document.getElementById('oa2s-'+k).checked;
+  const nose  = document.getElementById('oa2n-'+k).checked;
+  window.PBMascot.setMood({ mood, flame:flame||undefined, lights:lights||undefined,
+    eyes:eyes||undefined, smoke:smoke||undefined, noseSpin:nose||undefined });
+  document.getElementById('prev-cap').textContent = MOOD_OPTS.find(o=>o.v===mood)?.l || mood;
+};
+
+window._qfAnimSave = async function(k) {
+  const btn = document.querySelector(`#ob2-anim-card-${k} .btn-sv`);
+  const sts = document.getElementById('ob2asts-'+k);
+  btn.disabled=true; btn.textContent='Saving…'; sts.textContent='';
+  const mood  = document.getElementById('oa2m-'+k).value;
+  const flame = document.getElementById('oa2f-'+k).value;
+  const lights= document.getElementById('oa2l-'+k).value;
+  const eyes  = document.getElementById('oa2e-'+k).value;
+  const smoke = document.getElementById('oa2s-'+k).checked;
+  const nose  = document.getElementById('oa2n-'+k).checked;
+  const raw   = { mood, flame:flame||undefined, lights:lights||undefined, eyes:eyes||undefined, smoke:smoke||undefined, noseSpin:nose||undefined };
+  const anim  = Object.fromEntries(Object.entries(raw).filter(([,v])=>v!==undefined&&v!==false&&v!==''));
+  try {
+    await setDoc(doc(db,'config','ob2Steps'), { [k]: anim }, { merge:true });
+    ob2Overrides[k] = anim;
+    document.getElementById('ob2-anim-card-'+k).classList.add('has-ov');
+    sts.style.color='#22c55e'; sts.textContent='✓ Saved';
+    setTimeout(()=>{ sts.textContent=''; }, 2500);
+  } catch(e) {
+    sts.style.color='#ef4444'; sts.textContent='✗ '+e.message;
+  }
+  btn.disabled=false; btn.textContent='Save';
+};
+
+window._qfAnimReset = async function(k) {
+  if (!confirm('Reset "'+k+'" to default?')) return;
+  const btn = document.querySelector(`#ob2-anim-card-${k} .btn-rst`);
+  btn.disabled=true;
+  try {
+    await setDoc(doc(db,'config','ob2Steps'), { [k]: deleteField() }, { merge:true });
+    delete ob2Overrides[k];
+    renderOb2AnimCards();
+  } catch(e) { alert('Error: '+e.message); }
+  btn.disabled=false;
+};
+
+function renderOb2Fields() {
+  document.getElementById('ose-ob2-fields').innerHTML = OB2_FIELDS.map(f => {
+    const ov = ob2Overrides[f.key] || '';
+    const hasOv = !!ov;
+    const dq = s => s.replace(/"/g,'&quot;');
+    const defEl = f.type === 'ta'
+      ? `<textarea class="mta def" readonly rows="2">${f.defaultVal}</textarea>`
+      : `<input type="text" class="mta def" readonly value="${dq(f.defaultVal)}">`;
+    const ovEl = f.type === 'ta'
+      ? `<textarea class="mta" id="ob2f-${f.key}" rows="2" placeholder="Leave blank to keep default">${ov}</textarea>`
+      : `<input type="text" class="mta" id="ob2f-${f.key}" placeholder="Leave blank to keep default" value="${dq(ov)}">`;
+    return `<div class="ob2-field-card${hasOv?' has-ov':''}" id="ob2-card-${f.key}">
+      <div class="ob2-field-head">
+        <span class="sk">${f.key}</span>
+        <span class="sd">${f.label}</span>
+        ${f.hint ? `<span class="ob2-hint">${f.hint}</span>` : ''}
+        <span class="mod-badge">Modified</span>
+      </div>
+      <div class="ob2-field-body">
+        <div class="msg-row">
+          <div><span class="fl">Default (read-only)</span>${defEl}</div>
+          <div><span class="fl">Override</span>${ovEl}</div>
+        </div>
+        <div class="card-acts">
+          <button class="btn-sv" onclick="window._qfSave('${f.key}')">Save</button>
+          <button class="btn-rst" onclick="window._qfReset('${f.key}')">Reset to default</button>
+          <span class="sts" id="ob2sts-${f.key}"></span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window._qfSave = async function(k) {
+  const btn = document.querySelector(`#ob2-card-${k} .btn-sv`);
+  const sts = document.getElementById('ob2sts-'+k);
+  btn.disabled=true; btn.textContent='Saving…'; sts.textContent='';
+  const val = document.getElementById('ob2f-'+k).value.trim();
+  try {
+    if (val) {
+      await setDoc(doc(db,'config','ob2Steps'), { [k]: val }, { merge:true });
+      ob2Overrides[k] = val;
+      document.getElementById('ob2-card-'+k).classList.add('has-ov');
+    } else {
+      await setDoc(doc(db,'config','ob2Steps'), { [k]: deleteField() }, { merge:true });
+      delete ob2Overrides[k];
+      document.getElementById('ob2-card-'+k).classList.remove('has-ov');
+    }
+    sts.style.color='#22c55e'; sts.textContent='✓ Saved';
+    setTimeout(()=>{ sts.textContent=''; }, 2500);
+  } catch(e) {
+    sts.style.color='#ef4444'; sts.textContent='✗ '+e.message;
+  }
+  btn.disabled=false; btn.textContent='Save';
+};
+
+window._qfReset = async function(k) {
+  if (!confirm('Reset "'+k+'" to default? This removes your override.')) return;
+  const btn = document.querySelector(`#ob2-card-${k} .btn-rst`);
+  btn.disabled=true;
+  try {
+    await setDoc(doc(db,'config','ob2Steps'), { [k]: deleteField() }, { merge:true });
+    delete ob2Overrides[k];
+    document.getElementById('ob2-card-'+k).classList.remove('has-ov');
+    document.getElementById('ob2f-'+k).value='';
+    const sts = document.getElementById('ob2sts-'+k);
+    sts.style.color='#64748b'; sts.textContent='↩ Reset';
+    setTimeout(()=>{ sts.textContent=''; }, 2500);
+  } catch(e) { alert('Error: '+e.message); }
+  btn.disabled=false;
+};
+
+function renderSteps() {
+  document.getElementById('ose-steps').innerHTML = STEP_DEFS.map(s => {
+    const ov  = overrides[s.key] || {};
+    const an  = ov.anim || {};
+    const txt = ov.blastyMsg !== undefined ? ov.blastyMsg : s.defaultMsg;
+    const hasData = !!(ov.blastyMsg !== undefined || ov.anim);
+    return `<div class="step-card${hasData?' has-ov':''}" id="sc-${s.key}">
+      <div class="step-head" onclick="window._oseToggle('${s.key}')">
+        <span class="step-num">${s.idx}</span>
+        <span class="sk">${s.key}</span>
+        <span class="sd">${s.label}</span>
+        <span class="exp-ic">▾</span>
+      </div>
+      <div class="step-body">
+        <span class="fl">What Blasty says <span style="font-weight:400;text-transform:none;font-size:10px">(use {bizName} {ownerName})</span></span>
+        <textarea class="mta" id="msg-${s.key}" rows="3">${txt.replace(/</g,'&lt;')}</textarea>
+        <span class="sts" id="sts-${s.key}" style="font-size:11px;display:block;min-height:16px;margin:3px 0 10px"></span>
+        <div class="anim-row">
+          <div class="asg"><label>Mood</label><select id="am-${s.key}">${sel(MOOD_OPTS,an.mood||'s-ask')}</select></div>
+          <div class="asg"><label>Flame</label><select id="af-${s.key}">${sel(FLAME_OPTS,an.flame||'')}</select></div>
+          <div class="asg"><label>Lights</label><select id="al-${s.key}">${sel(LIGHTS_OPTS,an.lights||'')}</select></div>
+        </div>
+        <div class="anim-row">
+          <div class="asg"><label>Eyes</label><select id="ae-${s.key}">${sel(EYES_OPTS,an.eyes||'')}</select></div>
+          <div class="asg"><label>Nose</label><select id="an-${s.key}">${sel(NOSE_OPTS, typeof an.noseSpin==='string'?an.noseSpin:(an.noseSpin?'s-nose-spin-r':''))}</select></div>
+          <div class="asg"><label>Mouth</label><select id="amou-${s.key}">${sel(MOUTH_OPTS,an.mouth||'')}</select></div>
+          <div class="asg"><label>Limbs</label><select id="alb-${s.key}">${sel(LIMBS_OPTS,an.limbs||'')}</select></div>
+          <div class="asg"><label>Smoke</label><select id="as-${s.key}">${sel(SMOKE_OPTS, typeof an.smoke==='string'?an.smoke:(an.smoke?'s-smoke-3':''))}</select></div>
+        </div>
+        <div class="card-acts">
+          <button class="btn-prv" onclick="window._osePreview('${s.key}')">▶ Preview</button>
+          <span class="sts" id="sts-anim-${s.key}" style="font-size:11px"></span>
+        </div>
+        <div class="card-mob-prev" id="cmp-${s.key}" style="display:none"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  STEP_DEFS.forEach(s => {
+    const ta = document.getElementById('msg-'+s.key);
+    if (ta) {
+      let timer;
+      ta.addEventListener('input', () => {
+        clearTimeout(timer);
+        const sts = document.getElementById('sts-'+s.key);
+        sts.style.color = '#94a3b8'; sts.textContent = 'Saving…';
+        timer = setTimeout(() => window._oseTextSave(s.key), 800);
+      });
+    }
+    ['am-','af-','al-','ae-','an-','amou-','alb-','as-'].forEach(pfx => {
+      const el = document.getElementById(pfx+s.key);
+      if (el) el.addEventListener('change', () => window._oseAnimChange(s.key));
+    });
+  });
+}
+
+window._oseToggle = k => document.getElementById('sc-'+k).classList.toggle('open');
+
+window._showMobilePreview = function(k) {
+  if (window.innerWidth > 880) return;
+  const mascot = document.getElementById('pb-mascot');
+  const slot   = document.getElementById('cmp-' + k);
+  if (!mascot || !slot) return;
+  // hide any currently open mobile preview
+  document.querySelectorAll('.card-mob-prev').forEach(function(el) {
+    el.style.display = 'none';
+  });
+  slot.appendChild(mascot);
+  slot.style.display = 'block';
+  clearTimeout(window._previewTimer);
+  window._previewTimer = setTimeout(function() { slot.style.display = 'none'; }, 4000);
+};
+
+window._applyPreset = function(k) {
+  const id = document.getElementById('aprst-'+k)?.value;
+  if (!id) return;
+  const p = moodPresets.find(x=>x.id===id);
+  if (!p) return;
+  if (document.getElementById('am-'+k))   document.getElementById('am-'+k).value   = p.pose    || 's-ask';
+  if (document.getElementById('af-'+k)) {
+    const isFlame = p.exhaust?.startsWith('s-flame');
+    const isSmoke = p.exhaust?.startsWith('s-smoke');
+    document.getElementById('af-'+k).value = isFlame ? p.exhaust : '';
+    document.getElementById('as-'+k).value = isSmoke ? p.exhaust : '';
+  }
+  if (document.getElementById('ae-'+k))   document.getElementById('ae-'+k).value   = p.eyes    || '';
+  if (document.getElementById('an-'+k))   document.getElementById('an-'+k).value   = p.nose    || '';
+  if (document.getElementById('amou-'+k)) document.getElementById('amou-'+k).value = p.mouth   || '';
+  if (document.getElementById('alb-'+k))  document.getElementById('alb-'+k).value  = p.limbs   || '';
+  window._osePreview(k);
+};
+
+window._osePreview = function(k) {
+  window._showMobilePreview(k);
+  const mood  = document.getElementById('am-'+k).value;
+  const flame = document.getElementById('af-'+k).value;
+  const lights= document.getElementById('al-'+k).value;
+  const eyes  = document.getElementById('ae-'+k).value;
+  const nose  = document.getElementById('an-'+k).value;
+  const mouth = document.getElementById('amou-'+k).value;
+  const limbs = document.getElementById('alb-'+k).value;
+  const smoke = document.getElementById('as-'+k).value;
+  window.PBMascot.setMood({ mood, flame:flame||undefined, lights:lights||undefined,
+    eyes:eyes||undefined, noseSpin:nose||undefined, mouth:mouth||undefined, limbs:limbs||undefined, smoke:smoke||undefined });
+  document.getElementById('prev-cap').textContent = MOOD_OPTS.find(o=>o.v===mood)?.l || mood;
+};
+
+window._oseTextSave = async function(k) {
+  const sts = document.getElementById('sts-'+k);
+  const val = document.getElementById('msg-'+k).value.trim();
+  const def = STEP_DEFS.find(s=>s.key===k)?.defaultMsg || '';
+  try {
+    if (auth.currentUser) await auth.currentUser.getIdToken(true);
+    if (val && val !== def) {
+      await setDoc(doc(db,'config','ob1Steps'), { [k]: { blastyMsg: val } }, { merge:true });
+      if (!overrides[k]) overrides[k] = {};
+      overrides[k].blastyMsg = val;
+      document.getElementById('sc-'+k).classList.add('has-ov');
+    } else if (!val || val === def) {
+      // back to default — remove blastyMsg override, keep anim if any
+      const existing = overrides[k] || {};
+      if (existing.anim) {
+        await setDoc(doc(db,'config','ob1Steps'), { [k]: { anim: existing.anim } }, { merge:true });
+        overrides[k] = { anim: existing.anim };
+      } else {
+        await setDoc(doc(db,'config','ob1Steps'), { [k]: deleteField() }, { merge:true });
+        delete overrides[k];
+        document.getElementById('sc-'+k).classList.remove('has-ov');
+      }
+      if (overrides[k]) delete overrides[k].blastyMsg;
+    }
+    sts.style.color='#22c55e'; sts.textContent='✓ Saved';
+    setTimeout(()=>{ sts.textContent=''; }, 2500);
+  } catch(e) {
+    sts.style.color='#ef4444'; sts.textContent='✗ '+e.message;
+  }
+};
+
+window._oseAnimChange = async function(k) {
+  const mood   = document.getElementById('am-'+k).value;
+  const flame  = document.getElementById('af-'+k).value;
+  const lights = document.getElementById('al-'+k).value;
+  const eyes   = document.getElementById('ae-'+k).value;
+  const nose   = document.getElementById('an-'+k).value;
+  const mouth  = document.getElementById('amou-'+k).value;
+  const smoke  = document.getElementById('as-'+k).value;
+  const anim   = { mood };
+  if (flame)  anim.flame    = flame;
+  if (lights) anim.lights   = lights;
+  if (eyes)   anim.eyes     = eyes;
+  if (nose)   anim.noseSpin = nose;
+  if (mouth)  anim.mouth    = mouth;
+  const limbs  = document.getElementById('alb-'+k).value;
+  if (limbs)  anim.limbs    = limbs;
+  if (smoke)  anim.smoke    = smoke;
+  const sts = document.getElementById('sts-anim-'+k);
+  try {
+    if (auth.currentUser) await auth.currentUser.getIdToken(true);
+    await setDoc(doc(db,'config','ob1Steps'), { [k]: { anim } }, { merge:true });
+    if (!overrides[k]) overrides[k] = {};
+    overrides[k].anim = anim;
+    document.getElementById('sc-'+k).classList.add('has-ov');
+    sts.style.color='#22c55e'; sts.textContent='✓';
+    setTimeout(()=>{ sts.textContent=''; }, 1500);
+  } catch(e) {
+    const u = auth.currentUser;
+    sts.style.color='#ef4444';
+    sts.textContent='✗ '+e.message+' ['+( u ? u.email : 'not signed in')+']';
+  }
+};
+
+onAuthStateChanged(auth, async user => {
+  if (!user) return;
+  try {
+    const [ob1Snap, ob2Snap, moodsSnap] = await Promise.all([
+      getDoc(doc(db,'config','ob1Steps')),
+      getDoc(doc(db,'config','ob2Steps')),
+      getDoc(doc(db,'config','mascotMoods'))
+    ]);
+    overrides    = ob1Snap.exists() ? ob1Snap.data() : {};
+    ob2Overrides = ob2Snap.exists() ? ob2Snap.data() : {};
+    moodPresets  = moodsSnap.exists() ? (moodsSnap.data().presets || []) : [];
+    // OB1 pane
+    document.getElementById('ose-status').style.display='none';
+    document.getElementById('ose-steps').style.display='';
+    renderSteps();
+    // OB2 pane
+    document.getElementById('ose-ob2-status').style.display='none';
+    document.getElementById('ose-ob2-content').style.display='';
+    renderOb2Fields();
+    renderOb2AnimCards();
+  } catch(e) {
+    document.getElementById('ose-status').textContent='Error loading: '+e.message;
+    document.getElementById('ose-ob2-status').textContent='Error loading: '+e.message;
+  }
+});
+</script>
+
+</body>
+</html>

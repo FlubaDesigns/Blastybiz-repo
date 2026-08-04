@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+<meta charset="UTF-8" />
+  <meta name="theme-color" content="#000000"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BlastyBiz Admin — Logs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="global-style.css?v=1785858635994">
+
+<style>body{visibility:hidden}</style>
+<script src="escape-utils.js?v=1"></script>
+<script type="module" src="./admin-guard.js"></script>
+<script src="blastybiz-menu.js?v=6"></script>
+</head>
+<body class="admin-page">
+<header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Admin Logs</span></a><div class="top-actions"><a class="icon-btn hide-mobile" href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile active" href="#">Logs</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Operate.html">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header>
+<main><div class="main"><div class="main-inner">
+
+  <section class="card">
+    <h3>Find Logs</h3>
+    <div class="filters">
+      <input type="text" placeholder="Search business, user, platform, message..." />
+      <select>
+        <option>All Types</option>
+        <option>Auth</option>
+        <option>Business</option>
+        <option>Draft</option>
+        <option>Publish Job</option>
+        <option>Billing</option>
+        <option>Platform</option>
+        <option>System</option>
+      </select>
+      <select>
+        <option>All Levels</option>
+        <option>Info</option>
+        <option>Success</option>
+        <option>Warning</option>
+        <option>Error</option>
+      </select>
+      <button class="primary">Search</button>
+      <button class="light">Reset</button>
+    </div>
+  </section>
+
+  <section>
+    <h3>Recent Activity</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Level</th>
+          <th>Type</th>
+          <th>Business/User</th>
+          <th>Message</th>
+          <th>Related Record</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Today 12:18 AM</td>
+          <td><span class="badge success">Success</span></td>
+          <td>Publish Job</td>
+          <td>Harbor Dental</td>
+          <td>Apple Maps listing update completed.</td>
+          <td class="muted">publishJobs</td>
+        </tr>
+        <tr>
+          <td>Today 12:11 AM</td>
+          <td><span class="badge error">Error</span></td>
+          <td>Platform</td>
+          <td>ABC Roofing</td>
+          <td>Facebook token expired. Reconnect required.</td>
+          <td class="muted">platformConnections</td>
+        </tr>
+        <tr>
+          <td>Today 12:04 AM</td>
+          <td><span class="badge info">Info</span></td>
+          <td>Draft</td>
+          <td>Joe's Plumbing</td>
+          <td>Listing draft generated and saved for approval.</td>
+          <td class="muted">listingDrafts</td>
+        </tr>
+        <tr>
+          <td>Yesterday 11:52 PM</td>
+          <td><span class="badge warn">Warning</span></td>
+          <td>Manual</td>
+          <td>Sunset Lawn Care</td>
+          <td>Nextdoor requires manual posting instructions.</td>
+          <td class="muted">publishJobs</td>
+        </tr>
+        <tr>
+          <td>Yesterday 11:40 PM</td>
+          <td><span class="badge success">Success</span></td>
+          <td>Auth</td>
+          <td>newowner@example.com</td>
+          <td>User account created successfully.</td>
+          <td class="muted">users</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h3>Implementation Notes</h3>
+    <p class="impl-note">Use this page to display records from <strong>activityLogs</strong>. This is an admin-only page. Customers should never see raw system logs, internal errors, payloads, tokens, or stack traces.</p>
+  </section>
+
+</div></div></main>
+<nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Queue-Manager.html">📋<br>Queue</a><a class="" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="active" href="#">🧾<br>Logs</a><a class="" href="BlastyBiz-Admin-Operate.html">⚙️<br>Operate</a></nav>
+<script type="module">
+import { auth, db } from './firebase-init-v2.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { collection, query, orderBy, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const escHtml = window.escHtml; // escape-utils.js
+}
+
+function fmtTime(ts) {
+  if (!ts) return '—';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString();
+}
+
+onAuthStateChanged(auth, (user) => {
+  if (!user) return;
+  const q = query(collection(db, 'activityLogs'), orderBy('createdAt', 'desc'), limit(50));
+  onSnapshot(q, (snap) => {
+    if (snap.empty) return;
+    const rows = snap.docs.map(d => {
+      const l = d.data();
+      const lc = escHtml({ info:'info', success:'success', warning:'warn', error:'error' }[l.level] || 'info');
+      return `<tr>
+        <td>${fmtTime(l.createdAt)}</td>
+        <td><span class="badge ${lc}">${escHtml(l.level || 'Info')}</span></td>
+        <td>${escHtml(l.type || '—')}</td>
+        <td>${escHtml(l.businessName || l.uid || '—')}</td>
+        <td>${escHtml(l.message || '—')}</td>
+        <td class="muted">${escHtml(l.relatedCollection || '—')}</td>
+      </tr>`;
+    }).join('');
+    document.querySelector('tbody').innerHTML = rows;
+  });
+});
+</script>
+</body>
+</html>

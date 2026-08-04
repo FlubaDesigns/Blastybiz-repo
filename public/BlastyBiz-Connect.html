@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+<meta charset="UTF-8"/>
+  <meta name="theme-color" content="#000000"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="stylesheet" href="global-style.css?v=1785858635994" />
+<title>BlastyBiz — Connect Platforms</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+body{visibility:hidden}
+@media (max-width:768px){.dash-img-col{display:none}}
+</style>
+<script type="module" src="./auth-guard.js"></script>
+<script src="blastybiz-menu.js?v=6"></script>
+</head>
+<body class="app-page connect-page has-site-header">
+
+<div id="header__inject"></div>
+<script src="header-loader.js?v=1"></script>
+
+<main class="main w-form">
+<div class="main-inner">
+<div class="layout__split-2-1">
+<div>
+  <div class="page-eyebrow">Platform Connections</div>
+  <h1 class="page-title">Connect <span>Your Platforms</span></h1>
+  <p class="page-sub">Connect once. BlastyBiz adapts your listing for every platform — and auto-posts directly to Google Business, Facebook, and Instagram when connected.</p>
+
+  <div id="setup-note" class="setup-note hidden">
+    <strong>Setup Required</strong>
+    Google and Facebook OAuth require API credentials set up in Firebase Secret Manager.
+    Contact your developer to configure <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, <code>FACEBOOK_APP_ID</code>, and <code>FACEBOOK_APP_SECRET</code>.
+  </div>
+
+  <div class="section-label">Auto-Post Platforms</div>
+
+  <div class="platform-card" id="card-google">
+    <div class="platform-icon pi-google">G</div>
+    <div class="platform-info">
+      <div class="platform-name">Google Business Profile</div>
+      <div class="platform-mode">Auto-Post · API/OAuth</div>
+      <div class="platform-status" id="status-google">Checking…</div>
+    </div>
+    <div class="platform-actions" id="actions-google">
+      <div class="status-badge badge-none">Loading…</div>
+    </div>
+  </div>
+
+  <div class="explainer" id="explainer-google">
+    <div class="explainer-title">What happens when you connect Google</div>
+    <div class="explainer-steps">
+      <div class="explainer-step"><div class="explainer-step-num">1</div>Google asks you to sign in and give BlastyBiz permission to manage your Business Profile.</div>
+      <div class="explainer-step"><div class="explainer-step-num">2</div>You click "Allow" — BlastyBiz stores a secure token (never your password).</div>
+      <div class="explainer-step"><div class="explainer-step-num">3</div>Nothing posts yet. BlastyBiz only posts when you review and approve a listing.</div>
+    </div>
+    <div class="explainer-note"><strong>Need a Google Business Profile first?</strong> Go to <a href="https://business.google.com" target="_blank" rel="noopener" class="link-blue">business.google.com</a> → Add your business → come back here to connect.</div>
+    <button class="btn-proceed" id="btn-proceed-google" onclick="proceedGoogleConnect()">I have a Business Profile — Connect Google →</button>
+  </div>
+
+  <div class="platform-card" id="card-facebook">
+    <div class="platform-icon pi-fb">f</div>
+    <div class="platform-info">
+      <div class="platform-name">Facebook Pages</div>
+      <div class="platform-mode">Auto-Post · API/OAuth</div>
+      <div class="platform-status" id="status-facebook">Checking…</div>
+    </div>
+    <div class="platform-actions" id="actions-facebook">
+      <div class="status-badge badge-none">Loading…</div>
+    </div>
+  </div>
+
+  <div class="platform-card" id="card-instagram">
+    <div class="platform-icon pi-ig">📸</div>
+    <div class="platform-info">
+      <div class="platform-name">Instagram Business</div>
+      <div class="platform-mode">Auto-Post · Via Facebook OAuth</div>
+      <div class="platform-status" id="status-instagram">Connected automatically when you link Facebook.</div>
+    </div>
+    <div class="platform-actions" id="actions-instagram">
+      <div class="status-badge badge-none">Loading…</div>
+    </div>
+  </div>
+
+  <div class="divider">Copy-Ready Platforms</div>
+
+  <div class="setup-note">
+    <strong>Their rule, not ours.</strong>
+    These platforms have chosen not to let any app post on your behalf — not BlastyBiz, not anyone. It's a deliberate decision by each platform. So we do the next best thing: BlastyBiz writes the perfectly formatted text for each one, you paste it in under 2 minutes.
+    <br/><br/>
+    <strong>Wondering exactly what's automatic vs. copy-paste — and why?</strong> <a href="BlastyBiz-Stop-Paying-Johnny.html" style="color:var(--green,#39ff14);text-decoration:none;font-weight:500;">See what BlastyBiz actually handles →</a>
+  </div>
+
+  <div class="manual-card">
+    <div class="platform-icon pi-bing">B</div>
+    <div class="platform-info">
+      <div class="platform-name">Bing Places for Business</div>
+      <div class="platform-mode">Copy-Ready · Bing blocks third-party posting</div>
+      <div class="manual-instructions">BlastyBiz writes your Bing listing — paste it at <a class="manual-link" href="https://www.bingplaces.com" target="_blank" rel="noopener">bingplaces.com</a>.</div>
+    </div>
+    <span class="status-badge badge-manual">Copy-Ready</span>
+  </div>
+
+  <div class="manual-card">
+    <div class="platform-icon pi-apple">🍎</div>
+    <div class="platform-info">
+      <div class="platform-name">Apple Maps Connect</div>
+      <div class="platform-mode">Copy-Ready · Apple has no partner posting API</div>
+      <div class="manual-instructions">BlastyBiz writes your listing — submit it at <a class="manual-link" href="https://mapsconnect.apple.com" target="_blank" rel="noopener">mapsconnect.apple.com</a>.</div>
+    </div>
+    <span class="status-badge badge-manual">Copy-Ready</span>
+  </div>
+
+  <div class="manual-card">
+    <div class="platform-icon pi-nd">N</div>
+    <div class="platform-info">
+      <div class="platform-name">Nextdoor</div>
+      <div class="platform-mode">Copy-Ready · Nextdoor blocks all third-party apps</div>
+      <div class="manual-instructions">BlastyBiz writes your post — paste it at <a class="manual-link" href="https://nextdoor.com" target="_blank" rel="noopener">nextdoor.com</a> → Post → For Sale &amp; Free.</div>
+    </div>
+    <span class="status-badge badge-manual">Copy-Ready</span>
+  </div>
+
+  <div class="manual-card">
+    <div class="platform-icon pi-cl">C</div>
+    <div class="platform-info">
+      <div class="platform-name">Craigslist</div>
+      <div class="platform-mode">Copy-Ready · Craigslist has banned all posting APIs</div>
+      <div class="manual-instructions">BlastyBiz writes your ad — paste it at <a class="manual-link" href="https://craigslist.org" target="_blank" rel="noopener">craigslist.org</a> → your city → Services.</div>
+    </div>
+    <span class="status-badge badge-manual">Copy-Ready</span>
+  </div>
+
+  <div class="manual-card">
+    <div class="platform-icon pi-fbm">M</div>
+    <div class="platform-info">
+      <div class="platform-name">Facebook Marketplace</div>
+      <div class="platform-mode">Copy-Ready · Meta closed Marketplace to all apps in 2018</div>
+      <div class="manual-instructions">BlastyBiz writes your listing — paste it at <a class="manual-link" href="https://facebook.com/marketplace" target="_blank" rel="noopener">facebook.com/marketplace</a> → Create listing.</div>
+    </div>
+    <span class="status-badge badge-manual">Copy-Ready</span>
+  </div>
+
+  <div class="info-card">
+    <div class="info-card-title">Ready to distribute?</div>
+    <p>Once your platforms are connected, create a Blast and BlastyBiz adapts your copy for every platform. Google Business, Facebook, and Instagram post automatically when connected — every other platform delivers copy-ready text in seconds.</p>
+    <a class="btn-primary" href="BlastyBiz.html">⚡ Create a Blast</a>
+  </div>
+</div><!-- left col -->
+<div class="dash-img-col">
+  <img src="connect-hero.png" alt="Platform network connections" style="width:100%;height:100%;object-fit:cover;border-radius:12px;display:block;" />
+</div>
+</div><!-- /.layout__split-2-1 -->
+</div><!-- /.main-inner -->
+</main>
+
+<!-- Facebook Gate Modal -->
+<div class="modal-overlay" id="fb-gate-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+
+    <!-- Step 1: Do you have a Page? -->
+    <div id="fb-gate-step1">
+      <div class="modal-title">Before we connect Facebook…</div>
+      <p class="modal-sub">BlastyBiz posts to your <strong class="text-light">Facebook Business Page</strong> — not your personal profile. Do you have a Business Page set up?</p>
+      <div class="modal-choice-group">
+        <div class="modal-choice yes" onclick="fbGateYes()">
+          <div class="modal-choice-icon">✅</div>
+          <div class="modal-choice-body">
+            <div class="modal-choice-title">Yes, I have a Facebook Business Page</div>
+            <div class="modal-choice-desc">I'm ready — take me to connect it.</div>
+          </div>
+        </div>
+        <div class="modal-choice" onclick="fbGateNo()">
+          <div class="modal-choice-icon">❓</div>
+          <div class="modal-choice-body">
+            <div class="modal-choice-title">No, I don't have one yet</div>
+            <div class="modal-choice-desc">Show me how to create one first — it only takes a few minutes.</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn-cancel-modal" onclick="closeFbGate()">Cancel</button>
+    </div>
+
+    <!-- Step 2: No-page guide -->
+    <div class="no-page-guide" id="fb-gate-step2">
+      <div class="modal-title">Create your Page first</div>
+      <p class="modal-sub">It takes about 5 minutes. Once it's live, come back here to connect.</p>
+      <div class="guide-steps">
+        <div class="guide-step">
+          <div class="guide-step-num">1</div>
+          <div class="guide-step-body">Go to <a href="https://www.facebook.com/pages/create" target="_blank" rel="noopener">facebook.com/pages/create</a> and sign in with your Facebook account.</div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-step-num">2</div>
+          <div class="guide-step-body">Choose <strong>Business or Brand</strong> → enter your business name and category.</div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-step-num">3</div>
+          <div class="guide-step-body">Add a profile photo and cover image (your logo works great). Click <strong>Save</strong>.</div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-step-num">4</div>
+          <div class="guide-step-body">Come back here and click <strong>Connect</strong> on Facebook — BlastyBiz will find your new Page automatically.</div>
+        </div>
+      </div>
+      <p class="guide-note">Want Instagram too? Link your Instagram Business account to the Page inside Meta Business Suite after creating it.</p>
+      <a href="https://www.facebook.com/pages/create" target="_blank" rel="noopener" class="btn-proceed btn-create-page">Open Facebook → Create Page</a>
+      <button class="btn-cancel-modal" onclick="closeFbGate()">I'll come back later</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
+let _fbConnectUrl = '';
+let _googleConnectUrl = '';
+
+// ── Meta App Review gate ──────────────────────────────────────────────────────
+// Set to false once Meta approves the app in App Review → Requests.
+// When true: un-connected Facebook/Instagram cards show a "pending" notice
+// instead of the Connect button. Already-connected users see their normal state.
+const META_PENDING = true;
+
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.toggle('error-toast', !!isError);
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000)}
+
+// ── Google explainer toggle ──
+window.openGoogleExplainer = function() {
+  document.getElementById('explainer-google').classList.add('open')};
+window.proceedGoogleConnect = async function() {
+  if (!_googleConnectUrl || !window._bbGetToken) return;
+  try {
+    const token = await window._bbGetToken();
+    const r = await fetch(_googleConnectUrl, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await r.json();
+    if (data.url) { window.location.href = data.url; }
+    else { showToast('Could not start Google connection. Try again.', true); }
+  } catch(e) { showToast('Could not start Google connection. Try again.', true); }
+};
+
+// ── Facebook gate ──
+window.openFbGate = function() {
+  document.getElementById('fb-gate-step1').style.display = '';
+  document.getElementById('fb-gate-step2').classList.remove('open');
+  document.getElementById('fb-gate-modal').classList.add('open')};
+window.closeFbGate = function() {
+  document.getElementById('fb-gate-modal').classList.remove('open')};
+window.fbGateYes = async function() {
+  if (!_fbConnectUrl || !window._bbGetToken) return;
+  try {
+    const token = await window._bbGetToken();
+    const r = await fetch(_fbConnectUrl, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await r.json();
+    if (data.url) { window.location.href = data.url; }
+    else { showToast('Could not start Facebook connection. Try again.', true); }
+  } catch(e) { showToast('Could not start Facebook connection. Try again.', true); }
+};
+window.fbGateNo = function() {
+  document.getElementById('fb-gate-step1').style.display = 'none';
+  document.getElementById('fb-gate-step2').classList.add('open')};
+
+window.reconnectPlatform = async function(platformId) {
+  const url = platformId === 'google' ? _googleConnectUrl : _fbConnectUrl;
+  if (!url || !window._bbGetToken) {
+    showToast('Please wait and try again.', true);
+    return;
+  }
+  try {
+    const token = await window._bbGetToken();
+    const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await r.json();
+    if (data.url) { window.location.href = data.url; }
+    else { showToast('Could not reconnect. Try again.', true); }
+  } catch(e) {
+    showToast('Could not reconnect. Try again.', true);
+  }
+};
+
+// Close modal on backdrop click
+document.getElementById('fb-gate-modal')?.addEventListener('click', function(e) {
+  if (e.target === this) closeFbGate()});
+
+function renderPlatform(platformId, conn, bizId, uid) {
+  const actionsEl = document.getElementById('actions-' + platformId);
+  const statusEl  = document.getElementById('status-' + platformId);
+  const cardEl    = document.getElementById('card-' + platformId);
+  if (!actionsEl) return;
+
+  if (platformId === 'instagram') {
+    if (conn && conn.status === 'connected') {
+      cardEl.classList.add('connected');
+      statusEl.textContent = 'Connected through Facebook · IG: ' + (conn.igUserId || 'linked');
+      actionsEl.innerHTML = '<span class="status-badge badge-live">Connected</span>';
+    } else if (META_PENDING) {
+      statusEl.textContent = 'Connects automatically once Facebook is linked.';
+      actionsEl.innerHTML = '<span class="status-badge badge-pending">Approval pending</span>';
+    } else {
+      statusEl.textContent = 'Connects automatically when you link Facebook.';
+      actionsEl.innerHTML = '<span class="status-badge badge-none">Via Facebook</span>';
+    }
+    return;
+  }
+
+  const initiateFn = platformId === 'google' ? 'initiateGoogleOAuth' : 'initiateFacebookOAuth';
+  const returnToParam = new URLSearchParams(window.location.search).get('returnTo') || '';
+  const connectUrl = `${CF}/${initiateFn}?businessId=${encodeURIComponent(bizId)}&uid=${encodeURIComponent(uid)}${returnToParam ? '&returnTo=' + encodeURIComponent(returnToParam) : ''}`;
+
+  if (platformId === 'google') _googleConnectUrl = connectUrl;
+  if (platformId === 'facebook') _fbConnectUrl = connectUrl;
+
+  if (!conn || !conn.status || conn.status === 'disconnected') {
+    cardEl.classList.remove('connected','error');
+    if (platformId === 'facebook' && META_PENDING) {
+      statusEl.textContent = 'Meta App Review in progress — available soon.';
+      actionsEl.innerHTML = `<span class="status-badge badge-pending">Approval pending</span>`;
+    } else {
+      statusEl.textContent = platformId === 'google'
+        ? 'Auto-posts to your Google Business Profile when you approve a listing.'
+        : 'Auto-posts to your Facebook Page (and Instagram) when you approve a listing.';
+      if (platformId === 'google') {
+        actionsEl.innerHTML = `<button class="btn-connect" onclick="openGoogleExplainer()">Connect</button>`;
+      } else {
+        actionsEl.innerHTML = `<button class="btn-connect" onclick="openFbGate()">Connect</button>`;
+      }
+    }
+  } else if (conn.status === 'connected') {
+    cardEl.classList.add('connected');
+    if (platformId === 'google') document.getElementById('explainer-google')?.classList.remove('open');
+    const detail = platformId === 'google'
+      ? (conn.accountId ? 'Account: ' + conn.accountId : 'Connected')
+      : (conn.pageName ? 'Page: ' + conn.pageName : 'Connected');
+    let expiryWarnMs = null;
+    if (conn.expiresAt) {
+      const expMs = conn.expiresAt.toDate ? conn.expiresAt.toDate().getTime() : (conn.expiresAt.seconds || 0) * 1000;
+      const remainingMs = expMs - Date.now();
+      if (remainingMs > 0 && remainingMs <= 7 * 86400000) expiryWarnMs = remainingMs}
+    if (expiryWarnMs !== null) {
+      const daysLeft = Math.ceil(expiryWarnMs / 86400000);
+      const daysLabel = daysLeft <= 1 ? 'less than 1 day' : daysLeft + ' days';
+      cardEl.classList.remove('error');
+      statusEl.textContent = detail + ' · Expiring in ' + daysLabel + ' — reconnect now to avoid interruption';
+      actionsEl.innerHTML = `
+        <span class="status-badge badge--warn">Expiring soon — ${daysLeft <= 1 ? '<1d' : daysLeft + 'd'} left</span>
+        <button class="btn-reconnect" onclick="reconnectPlatform('${platformId}')">Reconnect</button>
+      `} else {
+      statusEl.textContent = detail + ' · Posts go here when you approve';
+      actionsEl.innerHTML = `
+        <span class="status-badge badge-live">Connected</span>
+        <button class="btn-disconnect" onclick="disconnectPlatform('${platformId}')">Disconnect</button>
+      `}
+  } else if (conn.status === 'expired' || conn.status === 'error') {
+    cardEl.classList.add('error');
+    statusEl.textContent = 'Token expired — reconnect to resume auto-posting.';
+    actionsEl.innerHTML = `
+      <span class="status-badge badge-error">Expired</span>
+      <button class="btn-reconnect" onclick="reconnectPlatform('${platformId}')">Reconnect</button>
+    `}
+}
+
+window.disconnectPlatform = async function(platformId) {
+  window._disconnectPlatform(platformId)};
+</script>
+
+<script type="module">
+import { auth, db } from './firebase-init-v2.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+  collection, query, where, getDocs, getDoc, doc, deleteDoc, updateDoc
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const params = new URLSearchParams(window.location.search);
+const connectedParam = params.get('connected');
+const errorParam     = params.get('error');
+
+if (connectedParam) {
+  const names = { google: 'Google Business Profile', facebook: 'Facebook Pages' };
+  setTimeout(() => showToast('✅ ' + (names[connectedParam] || connectedParam) + ' connected!'), 300);
+  history.replaceState({}, '', window.location.pathname)}
+if (errorParam) {
+  const names = { google: 'Google', facebook: 'Facebook' };
+  setTimeout(() => showToast('Connection failed for ' + (names[errorParam] || errorParam) + '. Try again.', true), 300);
+  history.replaceState({}, '', window.location.pathname)}
+
+auth.authStateReady().then(() => {
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return; // auth-guard.js handles redirect
+
+  const userSnap = await getDoc(doc(db, 'users', user.uid));
+  const userData = userSnap.exists() ? userSnap.data() : {};
+  const bizId = userData.activeBusiness || user.uid;
+
+  const q = query(collection(db, 'users', user.uid, 'businesses', bizId, 'platformConnections'));
+  const snap = await getDocs(q);
+  const connMap = {};
+  snap.docs.forEach(d => { connMap[d.id] = { ...d.data(), _id: d.id }});
+
+  ['google', 'facebook', 'instagram'].forEach(pid => {
+    renderPlatform(pid, connMap[pid] || null, bizId, user.uid)});
+
+  const hasOAuthCreds = true;
+  if (!hasOAuthCreds) {
+    document.getElementById('setup-note').classList.remove('hidden');
+    document.querySelectorAll('.btn-connect').forEach(b => b.disabled = true)}
+
+  window._bbGetToken = () => user.getIdToken();
+
+  const CF_BASE = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
+
+  window._disconnectPlatform = async function(platformId) {
+    const conn = connMap[platformId];
+    if (!conn) return;
+    if (!confirm('Disconnect ' + platformId + '? Auto-posting will stop until you reconnect.')) return;
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(CF_BASE + '/disconnectPlatform', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ bizId, platformId })
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        showToast('Disconnect failed: ' + (e.error || 'Unknown error'), true);
+        return;
+      }
+      // Update local UI state to match what the CF wrote to Firestore
+      connMap[platformId] = { ...conn, status: 'disconnected' };
+      renderPlatform(platformId, connMap[platformId], bizId, user.uid);
+      if (platformId === 'facebook') {
+        const igConn = connMap['instagram'];
+        if (igConn) {
+          connMap['instagram'] = { ...igConn, status: 'disconnected' };
+          renderPlatform('instagram', connMap['instagram'], bizId, user.uid);
+        }
+      }
+      showToast(platformId.charAt(0).toUpperCase() + platformId.slice(1) + ' disconnected.');
+    } catch(e) {
+      showToast('Disconnect failed: ' + e.message, true);
+    }
+  };
+})})
+</script>
+<div id="site-footer-inject"></div>
+<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html});</script>
+</body>
+</html>

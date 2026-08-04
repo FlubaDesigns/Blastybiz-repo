@@ -1,0 +1,1912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="theme-color" content="#000000"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta name="description" content="Set up your BlastyBiz business profile."/>
+  <link rel="stylesheet" href="global-style.css?v=1785858635994"/>
+  <title>BlastyBiz — Your Business</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
+  <script src="blastybiz-menu.js?v=6"></script>
+  <style>
+    /* ─── OB2 NEW LAYOUT ─────────────────────────────────────── */
+    .ob-page {
+      display: flex;
+      flex-direction: row;
+      min-height: calc(100vh - var(--main-offset, 55px));
+    }
+    /* Right: Blasty sticky column */
+    .ob-blasty-col {
+      width: 228px;
+      min-width: 228px;
+      position: sticky;
+      top: var(--main-offset, 55px);
+      height: calc(100vh - var(--main-offset, 55px));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 28px 14px 20px;
+      border-left: 1px solid rgba(255,255,255,.07);
+      box-sizing: border-box;
+      overflow: hidden;
+      order: 2;
+    }
+    .pb-mascot { width: 190px; flex-shrink: 0; }
+    #mascot-svg { width: 100%; height: auto; overflow: visible; }
+    .pb-mascot-caption {
+      font-size: 11px;
+      color: var(--muted, #555);
+      margin-top: 5px;
+      text-align: center;
+      font-style: italic;
+      min-height: 15px;
+    }
+    /* Blasty question bubble */
+    .ob-q-bubble {
+      position: relative;
+      background: linear-gradient(168deg, #ffffff 0%, #f0f5ff 70%, #e6eeff 100%);
+      border: 1.5px solid rgba(180,205,240,.55);
+      border-radius: 4px 18px 18px 18px;
+      padding: 13px 15px;
+      margin-top: 14px;
+      font-size: 13px;
+      line-height: 1.58;
+      color: #0d1f3c;
+      box-shadow: 0 6px 22px rgba(0,0,0,.32);
+      width: 100%;
+      box-sizing: border-box;
+      transition: opacity .2s;
+    }
+    .ob-q-bubble::before {
+      content: '';
+      position: absolute;
+      top: -9px;
+      left: 20px;
+      border: 9px solid transparent;
+      border-bottom-color: #f0f5ff;
+      border-top: none;
+    }
+    @keyframes bb-in {
+      from { opacity: 0; transform: translateY(9px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    /* Left: Form column */
+    .ob-form-col {
+      flex: 1;
+      min-width: 0;
+      overflow-y: auto;
+      padding: 28px 36px 80px;
+      box-sizing: border-box;
+      background: var(--bg, #000);
+      order: 1;
+    }
+    /* Progress bar */
+    .ob-progress-wrap {
+      height: 4px;
+      background: rgba(255,255,255,.07);
+      border-radius: 2px;
+      margin-bottom: 28px;
+      overflow: hidden;
+    }
+    .ob-progress-bar {
+      height: 100%;
+      background: var(--green, #39ff14);
+      border-radius: 2px;
+      transition: width .5s ease;
+    }
+    /* Form sections */
+    .obf-section { margin-bottom: 14px; }
+    .obf-sec-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--muted, #666);
+      margin-bottom: 6px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    /* Field rows */
+    .obf-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      transition: opacity .35s ease, background .35s ease;
+    }
+    .obf-row.future  { opacity: .2; pointer-events: none; }
+    .obf-row.answered { opacity: .62; }
+    .obf-row.active {
+      opacity: 1;
+      background: rgba(57,255,20,.032);
+      border-color: rgba(57,255,20,.11);
+      margin: 2px -10px;
+      padding: 14px 10px;
+    }
+    .obf-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--muted, #888);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      min-width: 96px;
+      flex-shrink: 0;
+      padding-top: 10px;
+      line-height: 1.4;
+    }
+    .obf-slot { flex: 1; min-width: 0; }
+    .obf-dash { color: var(--muted, #444); font-size: 14px; line-height: 2.8; }
+    .obf-answered-val {
+      font-size: 14px;
+      color: var(--text, #c8dbf5);
+      word-break: break-word;
+      line-height: 1.5;
+      padding: 7px 0;
+      display: block;
+    }
+    /* User speech bubble (in active slot) — tail points RIGHT (away from Blasty on the left) */
+    .obf-bubble {
+      position: relative;
+      background: #0c1828;
+      border: 1.5px solid rgba(57,255,20,.2);
+      border-radius: 4px 16px 16px 16px;
+      padding: 12px 14px 10px;
+      box-shadow: 0 4px 18px rgba(0,0,0,.3);
+    }
+    .obf-bubble::after {
+      content: '';
+      position: absolute;
+      top: 14px;
+      right: -9px;
+      border: 9px solid transparent;
+      border-left-color: #0c1828;
+      border-right: none;
+    }
+    /* Fork step prompt */
+    .ob-fork-prompt {
+      background: rgba(57,255,20,.038);
+      border: 1px solid rgba(57,255,20,.14);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+    .ob-fork-prompt .ob2-choices { flex-direction: row; flex-wrap: wrap; }
+    .ob-fork-prompt .ob2-choice-btn { width: auto; flex: 1; min-width: 150px; }
+    /* Status (finish messages) */
+    .ob-status {
+      padding: 24px;
+      text-align: center;
+      color: var(--text, #e0ecff);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    .ob-status p { margin: 8px 0; }
+    /* Flash on commit (mobile) */
+    @keyframes ob-flash {
+      0%   { background: rgba(57,255,20,.26); }
+      100% { background: transparent; }
+    }
+    .obf-row.just-answered { animation: ob-flash .65s ease; }
+    /* Mobile: stacked layout — restore DOM order so mascot stays on top */
+    @media (max-width: 860px) {
+      .ob-page { flex-direction: column; }
+      .ob-blasty-col {
+        width: 100%; min-width: unset; position: static; height: auto;
+        flex-direction: row; align-items: flex-start;
+        padding: 10px 14px; border-left: none; border-right: none;
+        border-bottom: 1px solid rgba(255,255,255,.07);
+        gap: 12px; overflow: visible;
+        order: 0;
+      }
+      .ob-form-col { order: 0; }
+      .pb-mascot { width: 64px; flex-shrink: 0; }
+      .ob-q-bubble {
+        margin-top: 0; font-size: 12.5px; flex: 1; min-width: 0;
+        border-radius: 4px 14px 14px 14px; max-width: unset;
+      }
+      .ob-q-bubble::before {
+        top: 12px; left: -9px;
+        border: 9px solid transparent;
+        border-right-color: #f0f5ff;
+        border-top: none; border-bottom: none;
+      }
+      .ob-form-col { padding: 16px 14px 80px; overflow: visible; }
+      .obf-label { min-width: 80px; font-size: 10px; }
+      .obf-bubble::after { display: none; }
+    }
+    .bubble-input {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      background: var(--panel, #111);
+      border: 1.5px solid var(--border, #222);
+      border-radius: 8px;
+      padding: 11px 14px;
+      font-size: 15px;
+      color: var(--light, #fff);
+      font-family: 'DM Sans', sans-serif;
+      transition: border-color .18s;
+    }
+    .bubble-input:focus-visible { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,200,83,.12); }
+    .bubble-input::placeholder { color: var(--muted, #555); }
+
+    .bubble-hint {
+      font-size: 12px;
+      color: var(--muted, #555);
+      margin-top: 7px;
+    }
+    .bubble-action-btn {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      padding: 12px;
+      background: var(--green);
+      color: #000;
+      font-weight: 700;
+      font-size: 14px;
+      border: none;
+      border-radius: 9px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: opacity .18s, transform .1s;
+    }
+    .bubble-action-btn:hover  { opacity: .88; }
+    .bubble-action-btn:active { transform: scale(.98); }
+    .bubble-action-btn:disabled { opacity: .42; cursor: not-allowed; }
+
+    .pb-err {
+      font-size: 13px;
+      color: #e57373;
+      margin-top: 7px;
+      display: none;
+    }
+
+    /* ── Toggle switch ──────────────────────────────────────────── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 11px;
+      padding: 9px 12px;
+      background: rgba(255,255,255,.04);
+      border-radius: 8px;
+    }
+    .toggle-label {
+      font-size: 13px;
+      color: var(--muted, #888);
+      flex: 1;
+      line-height: 1.4;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 42px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #333;
+      border-radius: 24px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform .2s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--green); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+    /* ── Blasty animations ──────────────────────────────────────── */
+    #mascot-svg {
+      transform-box: fill-box;
+      transform-origin: bottom center;
+    }
+    .pb-mascot.s-arrive #mascot-svg {
+      animation: b-arrive .45s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes b-arrive {
+      0%   { transform: scale(0.6) translateY(18px); opacity: 0; }
+      100% { transform: scale(1)   translateY(0);    opacity: 1; }
+    }
+
+    /* Idle float — whole rocket */
+    #mascot-body {
+      transform-box: fill-box;
+      transform-origin: bottom center;
+      animation: b-float 3.2s ease-in-out infinite;
+    }
+    @keyframes b-float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-11px); }
+    }
+
+    /* Flame pulse */
+    .flame {
+      transform-box: fill-box;
+      transform-origin: top center;
+      animation: b-flame-pulse 0.5s ease-in-out infinite;
+    }
+    @keyframes b-flame-pulse {
+      0%, 100% { transform: scaleY(1)   scaleX(1); }
+      50%       { transform: scaleY(1.35) scaleX(0.8); }
+    }
+
+    /* Mouth variants — default happy visible, rest hidden */
+    .mouth-working, .mouth-celebrate, .mouth-ask { opacity: 0 !important; }
+    .pb-mascot.s-working  .mouth-happy    { opacity: 0 !important; }
+    .pb-mascot.s-working  .mouth-working  { opacity: 1 !important; }
+    .pb-mascot.s-celebrate .mouth-happy   { opacity: 0 !important; }
+    .pb-mascot.s-celebrate .mouth-celebrate { opacity: 1 !important; }
+    .pb-mascot.s-ask      .mouth-happy    { opacity: 0 !important; }
+    .pb-mascot.s-ask      .mouth-ask      { opacity: 1 !important; }
+
+    /* Arms — all hidden by default, CSS shows per mood */
+    .mascot-arm { transition: opacity .25s ease; }
+    .pb-mascot.s-wave    .mascot-arm-wave  { opacity: 1 !important; }
+    .pb-mascot.s-working .mascot-arm-point { opacity: 1 !important; }
+
+    /* ── s-wave ──────────────────────────────────────────────────── */
+    .pb-mascot.s-wave #mascot-body {
+      animation: b-wave .55s ease-in-out 4, b-float 3.2s ease-in-out infinite 2.2s;
+    }
+    @keyframes b-wave {
+      0%, 100% { transform: rotate(0deg)   translateY(0); }
+      25%       { transform: rotate(-22deg) translateY(-8px); }
+      65%       { transform: rotate(16deg)  translateY(-4px); }
+    }
+    .pb-mascot.s-wave .pupil-group-l { transform: scale(1.1) translateY(-3px); }
+    .pb-mascot.s-wave .pupil-group-r { transform: scale(1.1) translateY(-3px); }
+
+    /* ── s-happy ─────────────────────────────────────────────────── */
+    .pb-mascot.s-happy #mascot-body {
+      animation: b-bounce .4s ease-in-out 3, b-float 3.2s ease-in-out infinite 1.2s;
+    }
+    @keyframes b-bounce {
+      0%   { transform: translateY(0)     scale(1,1); }
+      35%  { transform: translateY(-28px) scale(0.9,1.15); }
+      65%  { transform: translateY(-22px) scale(0.9,1.15); }
+      85%  { transform: translateY(4px)   scale(1.12,0.88); }
+      100% { transform: translateY(0)     scale(1,1); }
+    }
+    .pb-mascot.s-happy .pupil-group-l { transform: translateY(4px) scaleY(0.75); }
+    .pb-mascot.s-happy .pupil-group-r { transform: translateY(4px) scaleY(0.75); }
+
+    /* ── s-ask ───────────────────────────────────────────────────── */
+    .pb-mascot.s-ask .pupil-group-l { transform: translateX(-6px) translateY(2px); transition: transform .3s ease; }
+    .pb-mascot.s-ask .pupil-group-r { transform: translateX(-6px) translateY(2px); transition: transform .3s ease; }
+    .pb-mascot.s-ask #mascot-body   { animation: b-lean 3s ease-in-out infinite; }
+    @keyframes b-lean {
+      0%, 100% { transform: translateY(0)    rotate(-9deg); }
+      50%       { transform: translateY(-10px) rotate(-9deg); }
+    }
+
+    /* ── s-working ───────────────────────────────────────────────── */
+    .pb-mascot.s-working #mascot-body {
+      animation: b-work .65s ease-in-out infinite;
+    }
+    @keyframes b-work {
+      0%, 100% { transform: translateY(0)   rotate(-5deg); }
+      25%       { transform: translateY(-9px) rotate(7deg); }
+      75%       { transform: translateY(-4px) rotate(-8deg); }
+    }
+    .pb-mascot.s-working .flame {
+      animation: b-flame-work .32s ease-in-out infinite;
+    }
+    @keyframes b-flame-work {
+      0%, 100% { transform: scaleY(1)   scaleX(1); }
+      50%       { transform: scaleY(2.1) scaleX(0.65); }
+    }
+    .pb-mascot.s-working .pupil-group-l { transform: translateY(5px); }
+    .pb-mascot.s-working .pupil-group-r { transform: translateY(5px); }
+
+    /* ── s-celebrate ─────────────────────────────────────────────── */
+    .pb-mascot.s-celebrate #mascot-body {
+      animation: b-celebrate .38s ease-in-out 5;
+    }
+    @keyframes b-celebrate {
+      0%, 100% { transform: translateY(0)    scale(1)    rotate(0deg); }
+      25%       { transform: translateY(-30px) scale(1.14) rotate(-8deg); }
+      75%       { transform: translateY(-22px) scale(1.14) rotate(8deg); }
+    }
+    .pb-mascot.s-celebrate .confetti > g {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: confetti-burst 1.6s ease-out forwards;
+    }
+    @keyframes confetti-burst {
+      0%   { opacity: 1; transform: translateY(0)    scale(1); }
+      100% { opacity: 0; transform: translateY(80px) scale(1.8); }
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       BLASTY ANIMATION LIBRARY — extended states
+    ══════════════════════════════════════════════════════════════ */
+
+    /* ── Flame color system (CSS custom properties) ──────────────── */
+    .pb-mascot {
+      --flame-top:#ffdc2f; --flame-mid:#ff961f; --flame-bot:#ef3d10;
+      --flamein-top:#fffbd7; --flamein-mid:#fff04c; --flamein-bot:#ffac20;
+    }
+    .pb-mascot.s-flame-blue   { --flame-top:#b3e5fc; --flame-mid:#0288d1; --flame-bot:#01579b; --flamein-top:#e1f5fe; --flamein-mid:#4fc3f7; --flamein-bot:#0288d1; }
+    .pb-mascot.s-flame-green  { --flame-top:#b9f6ca; --flame-mid:#00c853; --flame-bot:#1b5e20; --flamein-top:#f1fff1; --flamein-mid:#69f0ae; --flamein-bot:#00c853; }
+    .pb-mascot.s-flame-red    { --flame-top:#ff8a80; --flame-mid:#ff1744; --flame-bot:#b71c1c; --flamein-top:#fff;    --flamein-mid:#ff8a80; --flamein-bot:#ff1744; }
+    .pb-mascot.s-flame-purple { --flame-top:#ea80fc; --flame-mid:#aa00ff; --flame-bot:#4a148c; --flamein-top:#fce4ff; --flamein-mid:#e040fb; --flamein-bot:#aa00ff; }
+    .pb-mascot.s-flame-white  { --flame-top:#ffffff; --flame-mid:#e0f7fa; --flame-bot:#b2ebf2; --flamein-top:#fff;    --flamein-mid:#fff;    --flamein-bot:#e0f7fa; }
+
+    /* ── s-arrive-land: descend from above, settle with bounce ──── */
+    .pb-mascot.s-arrive-land #mascot-svg { animation: b-land .7s cubic-bezier(.22,1.4,.64,1) both; }
+    @keyframes b-land {
+      0%   { transform: translateY(-80px) scale(.8);   opacity: .2; }
+      70%  { transform: translateY(8px)   scale(1.04); opacity: 1;  }
+      100% { transform: translateY(0)     scale(1);    opacity: 1;  }
+    }
+
+    /* ── s-spin: full 360° and settle ───────────────────────────── */
+    .pb-mascot.s-spin #mascot-body {
+      animation: b-spin-full 1s cubic-bezier(.34,1.56,.64,1) both,
+                 b-float 3.2s ease-in-out infinite 1.05s;
+    }
+    @keyframes b-spin-full {
+      0%   { transform: rotate(0deg)   scale(1);   }
+      50%  { transform: rotate(200deg) scale(1.1); }
+      85%  { transform: rotate(355deg) scale(1);   }
+      100% { transform: rotate(360deg) scale(1);   }
+    }
+
+    /* ── s-tilt-left / s-tilt-right ─────────────────────────────── */
+    .pb-mascot.s-tilt-left #mascot-body  { animation: b-tilt-l 3.2s ease-in-out infinite; }
+    @keyframes b-tilt-l {
+      0%,100% { transform: rotate(-8deg) translateY(0);    }
+      50%      { transform: rotate(-8deg) translateY(-10px); }
+    }
+    .pb-mascot.s-tilt-right #mascot-body { animation: b-tilt-r 3.2s ease-in-out infinite; }
+    @keyframes b-tilt-r {
+      0%,100% { transform: rotate(8deg) translateY(0);    }
+      50%      { transform: rotate(8deg) translateY(-10px); }
+    }
+
+    /* ── s-ask-2: lean right, look right ────────────────────────── */
+    .pb-mascot.s-ask-2 .pupil-group-l { transform: translateX(6px) translateY(-2px); }
+    .pb-mascot.s-ask-2 .pupil-group-r { transform: translateX(6px) translateY(-2px); }
+    .pb-mascot.s-ask-2 #mascot-body   { animation: b-lean-r 3s ease-in-out infinite; }
+    @keyframes b-lean-r {
+      0%,100% { transform: translateY(0)    rotate(8deg); }
+      50%      { transform: translateY(-9px) rotate(8deg); }
+    }
+    /* ── s-ask-3: look up, slow curious bob ─────────────────────── */
+    .pb-mascot.s-ask-3 .pupil-group-l { transform: translateY(-7px); }
+    .pb-mascot.s-ask-3 .pupil-group-r { transform: translateY(-7px); }
+    .pb-mascot.s-ask-3 #mascot-body   { animation: b-float 2.2s ease-in-out infinite; }
+
+    /* ── s-wave-2: big enthusiastic wave ────────────────────────── */
+    .pb-mascot.s-wave-2 .mascot-arm-wave { opacity: 1 !important; }
+    .pb-mascot.s-wave-2 #mascot-body {
+      animation: b-wave-big .45s ease-in-out 5, b-float 3.2s ease-in-out infinite 2.25s;
+    }
+    @keyframes b-wave-big {
+      0%,100% { transform: rotate(0deg)   translateY(0);    }
+      25%      { transform: rotate(-28deg) translateY(-12px); }
+      65%      { transform: rotate(20deg)  translateY(-6px);  }
+    }
+    .pb-mascot.s-wave-2 .pupil-group-l { transform: scale(1.15) translateY(-4px); }
+    .pb-mascot.s-wave-2 .pupil-group-r { transform: scale(1.15) translateY(-4px); }
+
+    /* ── Eye states ──────────────────────────────────────────────── */
+    .pb-mascot.s-eyes-up    .pupil-group-l, .pb-mascot.s-eyes-up    .pupil-group-r { transform: translateY(-9px); }
+    .pb-mascot.s-eyes-down  .pupil-group-l, .pb-mascot.s-eyes-down  .pupil-group-r { transform: translateY(8px);  }
+    .pb-mascot.s-eyes-left  .pupil-group-l, .pb-mascot.s-eyes-left  .pupil-group-r { transform: translateX(-9px); }
+    .pb-mascot.s-eyes-right .pupil-group-l, .pb-mascot.s-eyes-right .pupil-group-r { transform: translateX(9px);  }
+
+    .pb-mascot.s-eyes-roll .pupil-group-l,
+    .pb-mascot.s-eyes-roll .pupil-group-r { animation: b-eye-roll 1.4s ease-in-out 2 both; }
+    @keyframes b-eye-roll {
+      0%   { transform: translate(0,0);     }
+      20%  { transform: translate(8px,-4px);  }
+      50%  { transform: translate(0,-10px);   }
+      75%  { transform: translate(-8px,-4px); }
+      100% { transform: translate(0,0);     }
+    }
+    .pb-mascot.s-eyes-surprise .pupil-group-l,
+    .pb-mascot.s-eyes-surprise .pupil-group-r { animation: b-eye-surprise 1s ease both; }
+    @keyframes b-eye-surprise {
+      0%   { transform: translateY(0);     }
+      15%  { transform: translateY(-12px); }
+      65%  { transform: translateY(-12px); }
+      100% { transform: translateY(0);     }
+    }
+
+    /* ── Nose cone spin ──────────────────────────────────────────── */
+    .pb-mascot.s-nose-spin .mascot-nose { animation: b-nose-spin .7s cubic-bezier(.34,1.56,.64,1) 1 both; }
+    @keyframes b-nose-spin {
+      0%   { transform: rotate(0deg);   }
+      55%  { transform: rotate(210deg); }
+      100% { transform: rotate(360deg); }
+    }
+    /* nose variants */
+    .pb-mascot.s-nose-shake .mascot-nose { animation:b-nose-shake 1.3s ease-in-out infinite; }
+    @keyframes b-nose-shake { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-7deg)} 75%{transform:rotate(7deg)} }
+    @keyframes b-nose-pop-slow { 0%{transform:translateY(0)} 35%{transform:translateY(-32px)} 100%{transform:translateY(0)} }
+    .pb-mascot.s-nose-pop-fast .mascot-nose { animation:b-nose-pop-fast .45s cubic-bezier(.34,1.56,.64,1) 1 both; }
+    @keyframes b-nose-pop-fast { 0%{transform:translateY(0)} 40%{transform:translateY(-22px)} 100%{transform:translateY(0)} }
+
+    /* ── Nose beacon light ───────────────────────────────────────── */
+    .pb-mascot.s-light-nose #mascot-nose-light { opacity:.9; animation: b-beacon 1.8s ease-in-out infinite; }
+    @keyframes b-beacon {
+      0%,75%,100% { opacity: .9; }
+      40%          { opacity: .1; }
+    }
+
+    /* ── Waist lights ────────────────────────────────────────────── */
+    .pb-mascot.s-lights-pulse .w-light { animation: b-light-pulse 1.1s ease-in-out infinite; }
+    @keyframes b-light-pulse {
+      0%,100% { opacity: .9;  }
+      50%      { opacity: .15; }
+    }
+    .pb-mascot.s-lights-sequence .w-light:nth-child(1) { animation: b-light-seq 1.4s 0.0s ease-in-out infinite; }
+    .pb-mascot.s-lights-sequence .w-light:nth-child(2) { animation: b-light-seq 1.4s 0.2s ease-in-out infinite; }
+    .pb-mascot.s-lights-sequence .w-light:nth-child(3) { animation: b-light-seq 1.4s 0.4s ease-in-out infinite; }
+    .pb-mascot.s-lights-sequence .w-light:nth-child(4) { animation: b-light-seq 1.4s 0.6s ease-in-out infinite; }
+    .pb-mascot.s-lights-sequence .w-light:nth-child(5) { animation: b-light-seq 1.4s 0.8s ease-in-out infinite; }
+    .pb-mascot.s-lights-sequence .w-light:nth-child(6) { animation: b-light-seq 1.4s 1.0s ease-in-out infinite; }
+    .pb-mascot.s-lights-sequence .w-light:nth-child(7) { animation: b-light-seq 1.4s 1.2s ease-in-out infinite; }
+    @keyframes b-light-seq {
+      0%,100% { opacity: .1; }
+      50%      { opacity: 1;  }
+    }
+    .pb-mascot.s-lights-flash .w-light { animation: b-light-flash .28s ease-in-out 6; }
+    @keyframes b-light-flash {
+      0%,100% { opacity: 0; }
+      50%      { opacity: 1; }
+    }
+
+    /* ── Smoke puff ──────────────────────────────────────────────── */
+    .pb-mascot.s-smoke .smoke-puff {
+      animation: b-smoke 1.4s ease-out forwards;
+      transform-box: fill-box; transform-origin: center;
+    }
+    .pb-mascot.s-smoke .smoke-puff:nth-child(1) { animation-delay:  0s; }
+    .pb-mascot.s-smoke .smoke-puff:nth-child(2) { animation-delay: .18s; }
+    .pb-mascot.s-smoke .smoke-puff:nth-child(3) { animation-delay: .36s; }
+    @keyframes b-smoke {
+      0%   { opacity: .7; transform: scale(.15) translateY(0);    }
+      35%  { opacity: .5; transform: scale(1.5)  translateY(-20px); }
+      100% { opacity: 0;  transform: scale(2.8)  translateY(-55px); }
+    }
+    /* smoke variants */
+    .pb-mascot.s-smoke-sm .smoke-puff:nth-child(1) { animation:b-smoke-sm 1.2s ease-out forwards; transform-box:fill-box; transform-origin:center; }
+    .pb-mascot.s-smoke-sm .smoke-puff:nth-child(2), .pb-mascot.s-smoke-sm .smoke-puff:nth-child(3) { animation:none; }
+    @keyframes b-smoke-sm { 0%{opacity:.7;transform:scale(.15) translateY(0)} 40%{opacity:.5;transform:scale(.9) translateY(-12px)} 100%{opacity:0;transform:scale(1.6) translateY(-30px)} }
+    .pb-mascot.s-smoke-lg .smoke-puff:nth-child(1) { animation:b-smoke-lg 1.9s ease-out forwards; transform-box:fill-box; transform-origin:center; }
+    .pb-mascot.s-smoke-lg .smoke-puff:nth-child(2), .pb-mascot.s-smoke-lg .smoke-puff:nth-child(3) { animation:none; }
+    @keyframes b-smoke-lg { 0%{opacity:.85;transform:scale(.15) translateY(0)} 30%{opacity:.6;transform:scale(2.2) translateY(-22px)} 100%{opacity:0;transform:scale(4.2) translateY(-65px)} }
+    .pb-mascot.s-smoke-2 .smoke-puff:nth-child(1) { animation:b-smoke 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; animation-delay:0s; }
+    .pb-mascot.s-smoke-2 .smoke-puff:nth-child(2) { animation:b-smoke 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; animation-delay:.18s; }
+    .pb-mascot.s-smoke-3 .smoke-puff { animation:b-smoke 1.4s ease-out forwards; transform-box:fill-box; transform-origin:center; }
+    .pb-mascot.s-smoke-3 .smoke-puff:nth-child(1){animation-delay:0s}
+    .pb-mascot.s-smoke-3 .smoke-puff:nth-child(2){animation-delay:.18s}
+    .pb-mascot.s-smoke-3 .smoke-puff:nth-child(3){animation-delay:.36s}
+
+    /* ── Per-message mini Blasty avatar ─────────────────────────── */
+    .mascot-msg-row {
+      display: flex;
+      align-items: flex-end;
+      align-self: flex-start;   /* LEFT-align — Blasty messages are "incoming" */
+      gap: 10px;
+      margin-bottom: 4px;
+      max-width: 88%;
+    }
+    .mascot-msg-row .bubble-blasty {
+      flex: 1;
+      min-width: 0;
+      max-width: 100%;
+      align-self: auto;
+    }
+    /* Speech bubble tail — shadow layer (slightly larger, behind) */
+    .mascot-msg-row .bubble-blasty::before {
+      content: '';
+      position: absolute;
+      left: -15px;
+      bottom: 12px;
+      width: 0;
+      height: 0;
+      border-top: 11px solid transparent;
+      border-bottom: 11px solid transparent;
+      border-right: 16px solid rgba(0,0,0,0.22);
+    }
+    /* Speech bubble tail — bright white layer (on top) */
+    .mascot-msg-row .bubble-blasty::after {
+      content: '';
+      position: absolute;
+      left: -11px;
+      bottom: 14px;
+      width: 0;
+      height: 0;
+      border-top: 9px solid transparent;
+      border-bottom: 9px solid transparent;
+      border-right: 13px solid #f0f5ff;
+    }
+    .mascot-msg-avatar {
+      width: 48px;
+      flex-shrink: 0;
+    }
+    .mascot-msg-avatar svg { width: 48px; height: auto; display: block; overflow: visible; }
+
+    /* ── Choice buttons ─────────────────────────────────────────── */
+    .ob2-choices {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .ob2-choice-btn {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--panel, #111);
+      border: 1.5px solid var(--border, #333);
+      border-radius: 10px;
+      color: var(--light, #fff);
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color .18s, background .18s, transform .1s;
+    }
+    .ob2-choice-btn:hover   { border-color: var(--green); background: rgba(0,200,83,.06); }
+    .ob2-choice-btn:active  { transform: scale(.98); }
+    /* ── Textarea input ─────────────────────────────────────────── */
+    .bubble-textarea {
+      width: 100%; min-height: 80px; resize: vertical;
+      font-family: inherit; font-size: 15px; line-height: 1.55;
+      background: var(--bg-input, #1a1a1a); color: var(--light, #fff);
+      border: 1px solid var(--border, #333); border-radius: 10px;
+      padding: 10px 12px; box-sizing: border-box; margin-bottom: 2px;
+    }
+    .bubble-textarea:focus-visible { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,200,83,.12); }
+    .bubble-textarea::placeholder { color: var(--muted, #555); }
+
+    /* ── Multiselect (platforms) ─────────────────────────────────── */
+    .ob2-multiselect { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 8px; }
+    .ob2-ms-label {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 15px; cursor: pointer; padding: 10px 12px;
+      background: var(--bg-input, #1a1a1a); border: 1px solid var(--border, #333);
+      border-radius: 10px; transition: border-color .2s;
+    }
+    .ob2-ms-label:hover { border-color: var(--green); }
+    .ob2-ms-label input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--green); cursor: pointer; }
+    .ob2-ms-locked { opacity: 0.42; cursor: default; }
+    .ob2-ms-locked:hover { border-color: var(--border, #333); }
+    .ob2-pro-badge {
+      font-size: 10px; font-weight: 700; background: var(--green, #39ff14);
+      color: #000; border-radius: 4px; padding: 1px 6px; margin-left: auto;
+    }
+
+    .ob2-choice-btn.selected {
+      border-color: var(--green);
+      background: rgba(0,200,83,.14);
+      color: var(--green);
+      font-weight: 700;
+    }
+
+  </style>
+</head>
+<body class="has-site-header">
+<div id="header__inject"></div>
+
+<div class="ob-page">
+  <!-- Blasty: sticky left column (desktop) / top strip (mobile) -->
+  <div class="ob-blasty-col" id="pb-mascot-zone">
+    <div class="pb-mascot" id="pb-mascot">
+        <svg id="mascot-svg" viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="ob2-bodyFill" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ffffff"/><stop offset=".48" stop-color="#f8fbff"/><stop offset="1" stop-color="#dbe6f2"/>
+            </linearGradient>
+            <linearGradient id="ob2-bodyShade" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#ffffff" stop-opacity=".94"/><stop offset=".64" stop-color="#ffffff" stop-opacity=".08"/><stop offset="1" stop-color="#8ea4bc" stop-opacity=".34"/>
+            </linearGradient>
+            <linearGradient id="ob2-redFill" x1="0" y1="0" x2=".8" y2="1">
+              <stop offset="0" stop-color="#ff5a4f"/><stop offset=".48" stop-color="#ff2f2f"/><stop offset="1" stop-color="#d70f22"/>
+            </linearGradient>
+            <linearGradient id="ob2-greenFill" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#8ee33f"/><stop offset=".5" stop-color="#49bf24"/><stop offset="1" stop-color="#238b19"/>
+            </linearGradient>
+            <radialGradient id="ob2-eyeFill" cx=".35" cy=".25" r=".9">
+              <stop offset="0" stop-color="#ffffff"/><stop offset=".15" stop-color="#deffd8"/><stop offset=".58" stop-color="#65d84a"/><stop offset="1" stop-color="#1b8e2b"/>
+            </radialGradient>
+            <linearGradient id="ob2-flameOut" x1=".5" y1="0" x2=".5" y2="1">
+              <stop offset="0"   style="stop-color:var(--flame-top,#ffdc2f)"/>
+              <stop offset=".46" style="stop-color:var(--flame-mid,#ff961f)"/>
+              <stop offset="1"   style="stop-color:var(--flame-bot,#ef3d10)"/>
+            </linearGradient>
+            <linearGradient id="ob2-flameIn" x1=".5" y1="0" x2=".5" y2="1">
+              <stop offset="0"   style="stop-color:var(--flamein-top,#fffbd7)"/>
+              <stop offset=".55" style="stop-color:var(--flamein-mid,#fff04c)"/>
+              <stop offset="1"   style="stop-color:var(--flamein-bot,#ffac20)"/>
+            </linearGradient>
+            <clipPath id="ob2-bodyClip">
+              <path d="M180 42 C117 89 89 163 91 251 C92 309 119 348 180 378 C241 348 268 309 269 251 C271 163 243 89 180 42Z"/>
+            </clipPath>
+          </defs>
+
+          <!-- Confetti effects — burst on s-celebrate -->
+          <g class="confetti" id="mascot-effects">
+            <g fill="none" stroke="#76b8ff" stroke-width="7" stroke-linecap="round" opacity="0"><path d="M64 272 Q48 294 61 319"/><path d="M47 260 Q24 292 43 329"/></g>
+            <g fill="none" stroke="#76b8ff" stroke-width="7" stroke-linecap="round" opacity="0"><path d="M296 272 Q312 294 299 319"/><path d="M313 260 Q336 292 317 329"/></g>
+            <g opacity="0"><path d="M53 102 l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#ffd12f"/><path d="M305 94 l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#62dd43"/><circle cx="67" cy="164" r="5" fill="#ff5a4f"/><circle cx="300" cy="168" r="5" fill="#ff9f1c"/></g>
+            <g opacity="0"><rect x="30" y="160" width="9" height="20" rx="3" fill="#ff3c35" transform="rotate(-26 34 170)"/><rect x="313" y="179" width="9" height="20" rx="3" fill="#52ce34" transform="rotate(22 317 189)"/><rect x="56" y="226" width="9" height="20" rx="3" fill="#ffc228" transform="rotate(32 60 236)"/><rect x="294" y="232" width="9" height="20" rx="3" fill="#44a9ff" transform="rotate(-28 298 242)"/><circle cx="37" cy="285" r="6" fill="#43d355"/><circle cx="325" cy="287" r="6" fill="#ff4b3e"/></g>
+          </g>
+
+          <!-- Ground shadow (stays put, outside float group) -->
+          <ellipse cx="180" cy="434" rx="72" ry="13" fill="#000" opacity=".18"/>
+
+          <!-- Whole rocket — floats via CSS -->
+          <g id="mascot-body">
+
+            <!-- Exhaust / flame -->
+            <g id="mascot-exhaust" class="flame">
+              <path d="M180 354 C213 385 207 419 180 446 C153 419 147 385 180 354Z" fill="url(#ob2-flameOut)" stroke="#102957" stroke-width="8" stroke-linejoin="round"/>
+              <path d="M180 368 C197 389 194 411 180 428 C166 411 163 389 180 368Z" fill="url(#ob2-flameIn)"/>
+            </g>
+
+            <!-- Fins -->
+            <path d="M103 240 C68 254 46 286 48 327 C74 312 97 298 116 276Z" fill="url(#ob2-redFill)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>
+            <path d="M257 240 C292 254 314 286 312 327 C286 312 263 298 244 276Z" fill="url(#ob2-redFill)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>
+            <path d="M97 258 C78 271 67 288 61 307" fill="none" stroke="#ff7d72" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+            <path d="M263 258 C282 271 293 288 299 307" fill="none" stroke="#ff7d72" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+
+            <!-- Body hull -->
+            <path d="M180 42 C117 89 89 163 91 251 C92 309 119 348 180 378 C241 348 268 309 269 251 C271 163 243 89 180 42Z" fill="url(#ob2-bodyFill)" stroke="#102957" stroke-width="10" stroke-linejoin="round"/>
+            <g clip-path="url(#ob2-bodyClip)">
+              <path d="M184 36 C138 106 128 245 149 342 C126 329 107 307 98 278 C77 209 103 104 180 42Z" fill="#fff" opacity=".88"/>
+              <path d="M231 76 C265 135 278 240 246 315 C232 340 210 359 180 377 C207 285 214 168 184 43Z" fill="url(#ob2-bodyShade)" opacity=".75"/>
+              <path d="M93 269 C121 289 148 299 180 299 C212 299 239 289 267 269 L265 301 C239 319 211 327 180 327 C149 327 121 319 95 301Z" fill="url(#ob2-greenFill)" stroke="#102957" stroke-width="8"/>
+              <path d="M105 283 C132 298 156 304 180 304 C204 304 228 298 255 283" fill="none" stroke="#b3ff70" stroke-width="5" opacity=".8"/>
+            </g>
+            <!-- Nose cone (wrapped for independent spin) -->
+            <g id="mascot-nose" class="mascot-nose" style="transform-box:fill-box;transform-origin:180px 100px">
+              <path d="M180 42 C151 64 129 88 113 116 C137 105 157 100 180 100 C203 100 223 105 247 116 C231 88 209 64 180 42Z" fill="url(#ob2-redFill)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>
+              <path d="M205 56 C220 72 229 85 236 102" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity=".9"/>
+              <circle id="mascot-nose-light" cx="180" cy="50" r="8" fill="#ffdc2f" opacity="0"/>
+            </g>
+
+            <!-- Face -->
+            <!-- Eyelid arcs -->
+            <path d="M126 161 Q145 146 160 158" fill="none" stroke="#102957" stroke-width="8" stroke-linecap="round"/>
+            <path d="M200 158 Q216 146 234 161" fill="none" stroke="#102957" stroke-width="8" stroke-linecap="round"/>
+            <!-- Left eye -->
+            <ellipse cx="145" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>
+            <g class="pupil-group-l" style="transition:transform .3s ease">
+              <ellipse cx="148" cy="200" rx="18" ry="24" fill="url(#ob2-eyeFill)" stroke="#102957" stroke-width="5"/>
+              <ellipse cx="151" cy="202" rx="8" ry="13" fill="#071329"/>
+              <circle cx="143" cy="190" r="6" fill="#fff"/>
+              <circle cx="155" cy="211" r="3" fill="#fff" opacity=".8"/>
+            </g>
+            <!-- Right eye -->
+            <ellipse cx="215" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>
+            <g class="pupil-group-r" style="transition:transform .3s ease">
+              <ellipse cx="212" cy="200" rx="18" ry="24" fill="url(#ob2-eyeFill)" stroke="#102957" stroke-width="5"/>
+              <ellipse cx="209" cy="202" rx="8" ry="13" fill="#071329"/>
+              <circle cx="204" cy="190" r="6" fill="#fff"/>
+              <circle cx="216" cy="211" r="3" fill="#fff" opacity=".8"/>
+            </g>
+            <!-- Cheeks -->
+            <ellipse cx="121" cy="244" rx="15" ry="8" fill="#ff7272" opacity=".55"/>
+            <ellipse cx="239" cy="244" rx="15" ry="8" fill="#ff7272" opacity=".55"/>
+            <!-- Mouths — CSS toggles visibility per mood -->
+            <g id="mouths">
+              <path class="mouth-happy" d="M145 238 Q180 270 215 238 Q208 286 180 291 Q152 286 145 238Z" fill="#102957"/>
+              <path class="mouth-happy" d="M162 273 Q180 287 198 273 Q187 269 180 270 Q173 269 162 273Z" fill="#ff4d57"/>
+              <ellipse class="mouth-working" cx="180" cy="259" rx="17" ry="21" fill="#102957"/>
+              <ellipse class="mouth-working" cx="180" cy="268" rx="10" ry="6" fill="#ff4d57"/>
+              <ellipse class="mouth-celebrate" cx="180" cy="258" rx="26" ry="32" fill="#102957"/>
+              <path class="mouth-celebrate" d="M161 274 Q180 289 199 274 Q180 267 161 274Z" fill="#ff4d57"/>
+              <path class="mouth-ask" d="M163 260 Q180 268 197 260" fill="none" stroke="#102957" stroke-width="8" stroke-linecap="round"/>
+            </g>
+            <!-- Green band B-badge -->
+            <g id="mascot-badge">
+              <circle cx="180" cy="316" r="29" fill="#102957"/>
+              <circle cx="180" cy="316" r="23" fill="url(#ob2-greenFill)" stroke="#b9ff78" stroke-width="4"/>
+              <path d="M169 299 H183 C198 299 202 314 192 320 C202 325 198 337 183 337 H169Z" fill="#fff"/>
+              <path d="M177 306 H184 C191 306 191 314 184 314 H177ZM177 321 H185 C192 321 192 329 185 329 H177Z" fill="#2c9e1d"/>
+            </g>
+
+            <!-- Waist lights — CSS animates per mood -->
+            <g id="mascot-lights-waist">
+              <circle class="w-light" cx="122" cy="289" r="5" fill="#39ff14" opacity="0"/>
+              <circle class="w-light" cx="140" cy="296" r="5" fill="#39ff14" opacity="0"/>
+              <circle class="w-light" cx="160" cy="300" r="5" fill="#39ff14" opacity="0"/>
+              <circle class="w-light" cx="180" cy="301" r="5" fill="#39ff14" opacity="0"/>
+              <circle class="w-light" cx="200" cy="300" r="5" fill="#39ff14" opacity="0"/>
+              <circle class="w-light" cx="220" cy="296" r="5" fill="#39ff14" opacity="0"/>
+              <circle class="w-light" cx="238" cy="289" r="5" fill="#39ff14" opacity="0"/>
+            </g>
+
+            <!-- Arms — CSS reveals per mood -->
+            <g id="mascot-arms">
+              <g class="mascot-arm mascot-arm-wave" opacity="0">
+                <path d="M113 261 C84 253 73 229 82 207" fill="none" stroke="#102957" stroke-width="19" stroke-linecap="round"/>
+                <path d="M113 261 C84 253 73 229 82 207" fill="none" stroke="#f8fbff" stroke-width="11" stroke-linecap="round"/>
+                <g transform="translate(78 199) rotate(-18)">
+                  <circle cx="0" cy="0" r="16" fill="#fff" stroke="#102957" stroke-width="6"/>
+                  <path d="M-12 -7 L-22 -22 M-4 -13 L-7 -31 M5 -13 L10 -31 M12 -8 L23 -22" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/>
+                  <path d="M-12 -7 L-22 -22 M-4 -13 L-7 -31 M5 -13 L10 -31 M12 -8 L23 -22" fill="none" stroke="#102957" stroke-width="4" stroke-linecap="round"/>
+                </g>
+              </g>
+              <g class="mascot-arm mascot-arm-point" opacity="0">
+                <path d="M247 259 C277 250 292 235 307 220" fill="none" stroke="#102957" stroke-width="19" stroke-linecap="round"/>
+                <path d="M247 259 C277 250 292 235 307 220" fill="none" stroke="#f8fbff" stroke-width="11" stroke-linecap="round"/>
+                <g transform="translate(311 216) rotate(-20)">
+                  <circle cx="0" cy="0" r="15" fill="#fff" stroke="#102957" stroke-width="6"/>
+                  <path d="M9 -3 L34 -11" fill="none" stroke="#102957" stroke-width="11" stroke-linecap="round"/>
+                  <path d="M9 -3 L34 -11" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+                </g>
+              </g>
+            </g>
+
+          </g><!-- end #mascot-body -->
+
+          <!-- Smoke puffs — outside float group so they settle independently -->
+          <g id="mascot-smoke">
+            <ellipse class="smoke-puff" cx="180" cy="415" rx="2" ry="2" fill="#c8c8c8" opacity="0"/>
+            <ellipse class="smoke-puff" cx="158" cy="428" rx="2" ry="2" fill="#b8b8b8" opacity="0"/>
+            <ellipse class="smoke-puff" cx="202" cy="422" rx="2" ry="2" fill="#d0d0d0" opacity="0"/>
+          </g>
+        </svg>
+      </div>
+      <div class="ob-q-bubble" id="ob-q-bubble"><p id="ob-q-text"></p></div>
+      <div class="pb-mascot-caption" id="pb-mascot-caption"></div>
+  </div><!-- /ob-blasty-col -->
+
+  <!-- Form column -->
+  <div class="ob-form-col">
+    <div class="ob-progress-wrap"><div class="ob-progress-bar" id="ob-progress-bar" style="width:0%"></div></div>
+    <div id="ob-form-body"></div>
+    <div class="ob-status" id="ob-status" style="display:none"></div>
+  </div><!-- /ob-form-col -->
+</div><!-- /ob-page -->
+<!-- ── Form guide + mascot v2 ─────────────────────────────────────── -->
+<script src="form-guide.js?v=2"></script>
+<!-- ── Conversation engine ────────────────────────────────────────── -->
+<script>
+(function() {
+  const answers = {};
+  const toggles = { ynMentionName: false, ynMentionRole: false, ynMentionAddress: true, ynMentionPhone: true };
+  let step = 0;
+  let currentBubble = null;
+  let currentInput  = null;
+  let currentStepKey = null;
+
+  const STEPS = [
+    {
+      mood: 's-wave',   pos: 'right',
+      anim: { mood: 's-wave', flame: 's-flame-green', lights: 's-lights-sequence' },
+      blastyMsg: "Hi there! 👋 I'm Blasty — your AI marketing co-pilot. I'll help you blast your business across every platform in minutes. First though... what's your name?",
+      inputType: 'text',
+      key: 'ownerName',
+      placeholder: 'e.g. Dave',
+      hint: 'Your first name, or full name — your call',
+      validate: v => v.trim().length >= 1 ? null : 'Please enter your name.',
+      toggle: { stateKey: 'ynMentionName', label: 'Include my name in marketing copy' }
+    },
+    {
+      mood: 's-happy',  pos: 'left',
+      blastyMsgFn: a => 'Nice to meet you, ' + (a.ownerName || 'you') + '! What\'s the name of your business?',
+      inputType: 'text',
+      key: 'bizName',
+      placeholder: "e.g. Mike's Auto Repair",
+      hint: 'This is how customers will find you everywhere',
+      validate: v => v.trim().length >= 1 ? null : 'Please enter your business name.'
+    },
+    {
+      mood: 's-ask',    pos: 'right',
+      blastyMsgFn: a => 'Great, ' + (a.ownerName || 'you') + '! What\'s your title at ' + a.bizName + '?',
+      inputType: 'text',
+      key: 'role',
+      placeholder: 'e.g. Owner, Marketing Director, GM',
+      hint: 'How you\'d introduce yourself to a customer',
+      validate: v => v.trim().length >= 1 ? null : 'Please enter your title.',
+      toggle: { stateKey: 'ynMentionRole', label: 'Include my title in marketing copy' }
+    },
+    {
+      mood: 's-ask',    pos: 'right',
+      blastyMsgFn: a => 'Great! What\'s the best email address for ' + a.bizName + '?',
+      inputType: 'email',
+      key: 'email',
+      placeholder: 'you@yourbusiness.com',
+      hint: 'Used for customer inquiries and marketing',
+      validate: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? null : 'Please enter a valid email address.',
+      toggle: { stateKey: 'ynMentionEmail', label: 'Include email in marketing copy' }
+    },
+    {
+      mood: 's-happy',  pos: 'left',
+      blastyMsgFn: a => 'Perfect. What\'s the best phone number for ' + a.bizName + '?',
+      inputType: 'tel',
+      key: 'phone',
+      placeholder: '555-867-5309',
+      hint: 'Customers can call or text this number',
+      validate: v => v.replace(/\D/g,'').length >= 7 ? null : 'Please enter a phone number.',
+      toggle: { stateKey: 'ynMentionPhone', label: 'Include phone number in marketing copy' }
+    },
+    {
+      mood: 's-ask',    pos: 'right',
+      blastyMsgFn: a => 'Got it! Is ' + a.bizName + ' a physical location, online only, or both?',
+      inputType: 'choice',
+      key: 'locationType',
+      choices: [
+        { value: 'brick',  label: '🏪  Physical Location' },
+        { value: 'online', label: '🌐  Online Only' },
+        { value: 'both',   label: '🏪🌐  Both' }
+      ],
+      validate: v => v ? null : 'Please choose one.'
+    },
+    {
+      mood: 's-ask',    pos: 'left',
+      blastyMsgFn: () => 'What\'s the street address?',
+      inputType: 'text',
+      key: 'street',
+      placeholder: 'e.g. 123 Main St',
+      hint: 'Street number and street name',
+      skipIf: a => a.locationType === 'online',
+      validate: v => v.trim().length >= 2 ? null : 'Please enter a street address.',
+      toggle: { stateKey: 'ynMentionAddress', label: 'Mention address in marketing copy' }
+    },
+    {
+      mood: 's-happy',  pos: 'right',
+      blastyMsgFn: () => 'City?',
+      inputType: 'text',
+      key: 'city',
+      placeholder: 'e.g. Springfield',
+      hint: '',
+      skipIf: a => a.locationType === 'online',
+      validate: v => v.trim().length >= 2 ? null : 'Please enter a city.'
+    },
+    {
+      mood: 's-ask',    pos: 'left',
+      blastyMsgFn: () => 'State?',
+      inputType: 'text',
+      key: 'state',
+      placeholder: 'e.g. IL',
+      hint: 'Two-letter abbreviation or full name',
+      skipIf: a => a.locationType === 'online',
+      validate: v => v.trim().length >= 2 ? null : 'Please enter a state.'
+    },
+    {
+      mood: 's-happy',  pos: 'right',
+      blastyMsgFn: () => 'ZIP code?',
+      inputType: 'text',
+      key: 'zip',
+      placeholder: 'e.g. 62701',
+      hint: '',
+      skipIf: a => a.locationType === 'online',
+      validate: v => /^\d{5}(-\d{4})?$/.test(v.trim()) ? null : 'Please enter a valid ZIP code.'
+    },
+    {
+      mood: 's-working', pos: 'left',
+      blastyMsgFn: a => 'Almost there! What\'s the website for ' + a.bizName + '?',
+      inputType: 'url',
+      key: 'website',
+      placeholder: 'e.g. https://qrgear.com',
+      hint: 'Leave blank if you don\'t have one yet — no worries!',
+      skipIf: a => a.locationType === 'brick',
+      validate: v => {
+        if (!v.trim()) return null;
+        return /\.\S{2,}/.test(v.trim())
+          ? null
+          : 'Please include the full address — e.g. yourbusiness.com.';
+      }
+    },
+
+    /* ══════════════════════════════════════════════════════════
+       PHASE 2 — Fork: memory explanation + path choice
+    ══════════════════════════════════════════════════════════ */
+    {
+      mood: 's-celebrate', pos: 'right',
+      anim: { mood: 's-celebrate', flame: 's-flame-green', lights: 's-lights-flash', smoke: true },
+      blastyMsg: "You're set up! Quick note — I use two kinds of memory. 📖 Your Story is what I always know about you: your vibe, what makes you different, your ideal customer. Every campaign gets sharper the more I know you. 🚀 Campaign memory is specific to one blast — the offer, goal, and audience. Want to blast right now, or tell me your story first?",
+      inputType: 'choice',
+      key: '_fork',
+      choices: [
+        { value: 'blast', label: '🚀 Let\'s blast!' },
+        { value: 'story', label: '💬 Tell me your story first' }
+      ],
+      validate: v => v ? null : 'Pick one!'
+    },
+
+    /* ══════════════════════════════════════════════════════════
+       PHASE 2B — Story questions (skip if blast chosen)
+    ══════════════════════════════════════════════════════════ */
+    {
+      mood: 's-ask', pos: 'left',
+      blastyMsgFn: a => 'Love it! How did ' + a.bizName + ' get started? What\'s the story?',
+      inputType: 'textarea',
+      key: 'story',
+      placeholder: 'e.g. We opened in 1987 after my father emigrated from Mexico with nothing but a family recipe and a dream…',
+      hint: 'As much or as little as you like',
+      skipIf: a => a._fork === 'blast',
+      validate: () => null
+    },
+    {
+      mood: 's-happy', pos: 'right',
+      blastyMsgFn: a => 'Good stuff! What makes ' + a.bizName + ' different from the competition?',
+      inputType: 'textarea',
+      key: 'different',
+      placeholder: 'e.g. Everything is made from scratch daily. Our head chef trained in Lyon for 3 years…',
+      hint: 'Why should someone choose you?',
+      skipIf: a => a._fork === 'blast',
+      validate: () => null
+    },
+    {
+      mood: 's-ask', pos: 'left',
+      blastyMsg: 'Any awards, press coverage, or milestones worth mentioning?',
+      inputType: 'textarea',
+      key: 'awards',
+      placeholder: 'e.g. Best Pizza 3 years running. Featured in the Tribune. 4.9 stars across 600+ reviews…',
+      hint: 'Leave blank if none — totally fine!',
+      skipIf: a => a._fork === 'blast',
+      validate: () => null
+    },
+    {
+      mood: 's-happy', pos: 'right',
+      blastyMsgFn: a => 'Who\'s your ideal customer for ' + a.bizName + '?',
+      inputType: 'textarea',
+      key: 'customer',
+      placeholder: 'e.g. Homeowners aged 35–60 who value quality over price and have been burned by cheap contractors before…',
+      hint: 'Who gets the most value from what you do?',
+      skipIf: a => a._fork === 'blast',
+      validate: () => null
+    },
+    {
+      mood: 's-ask', pos: 'left',
+      blastyMsg: 'Anything else I should always know about your business?',
+      inputType: 'textarea',
+      key: 'other',
+      placeholder: 'e.g. Free estimates. Loyalty program. Family-owned since 1995. We sponsor the local little league…',
+      hint: 'Special services, team, community involvement — anything',
+      skipIf: a => a._fork === 'blast',
+      validate: () => null
+    },
+
+    /* ══════════════════════════════════════════════════════════
+       PHASE 2A — Campaign questions (always run)
+    ══════════════════════════════════════════════════════════ */
+    {
+      mood: 's-working', pos: 'right',
+      blastyMsgFn: a => (a._fork === 'story' ? 'Perfect — I know you so much better now! ' : '') + 'Let\'s build your first campaign. What do you want to call it?',
+      inputType: 'text',
+      key: 'campaignName',
+      placeholder: 'e.g. Summer Sale, Grand Opening, New Menu Drop',
+      validate: v => v.trim().length >= 1 ? null : 'Give this campaign a name!'
+    },
+    {
+      mood: 's-ask', pos: 'left',
+      blastyMsg: 'What\'s this campaign about? What are you promoting?',
+      inputType: 'textarea',
+      key: 'campaignAbout',
+      placeholder: 'e.g. Grand reopening after renovations. New fall menu just dropped. Announcing our second location…',
+      hint: 'The more detail, the better the copy',
+      validate: v => v.trim().length >= 3 ? null : 'Tell me a bit more!'
+    },
+    {
+      mood: 's-happy', pos: 'right',
+      blastyMsg: 'Who is this campaign targeting?',
+      inputType: 'textarea',
+      key: 'campaignAudience',
+      placeholder: 'e.g. Local families, young professionals, pet owners in the area…',
+      hint: 'Who do you want to reach with this one?',
+      validate: v => v.trim().length >= 3 ? null : 'Tell me about your audience!'
+    },
+    {
+      mood: 's-ask', pos: 'left',
+      blastyMsg: 'Any special offer or call to action for this campaign?',
+      inputType: 'textarea',
+      key: 'campaignOffer',
+      placeholder: 'e.g. 20% off this weekend only · Free consultation · Book now and save $50…',
+      hint: 'Leave blank for pure awareness — totally fine!',
+      validate: () => null
+    },
+    {
+      mood: 's-working', pos: 'right',
+      blastyMsg: 'Last one — which platforms do you want to blast on?',
+      inputType: 'multiselect',
+      key: 'campaignPlatforms',
+      choices: [
+        { value: 'google_business', label: '📍 Google Business' },
+        { value: 'facebook_page',   label: '📘 Facebook Page' },
+        { value: 'instagram',       label: '📸 Instagram',  proOnly: true },
+        { value: 'twitter',         label: '𝕏 Twitter / X', proOnly: true },
+        { value: 'linkedin',        label: '💼 LinkedIn',    proOnly: true }
+      ],
+      validate: v => (v && v.length) ? null : 'Pick at least one platform!'
+    },
+    {
+      mood: 's-working', pos: 'left',
+      anim: { mood: 's-working', flame: 's-flame-blue', lights: 's-lights-pulse' },
+      blastyMsgFn: a => 'Almost done! Let me figure out the right <strong>category</strong> for ' + a.bizName + ' — the right one gets you found on every platform...',
+      inputType: 'ai-suggest',
+      key: 'category',
+      fetchFn: async a => {
+        const res = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/suggestCategory', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bizName: a.bizName })
+        });
+        const data = await res.json();
+        return data.category || 'Local Business';
+      }
+    }
+  ];
+
+  /* Expose override applicator — called by module script after loading config/ob1Steps */
+  window._ob2ApplyOverrides = function(ov) {
+    if (!ov) return;
+    STEPS.forEach(function(s) {
+      if (s.key && ov[s.key]) {
+        var o = ov[s.key];
+        if (o.blastyMsg) { s.blastyMsg = o.blastyMsg; delete s.blastyMsgFn; }
+        if (o.anim)      s.anim = o.anim;
+      }
+    });
+  };
+
+  const DEFAULT_ANIM = {
+    's-wave':        { flame: 's-flame-green',  lights: 's-lights-sequence' },
+    's-wave-2':      { flame: 's-flame-green',  lights: 's-lights-sequence', noseSpin: 's-nose-spin-r' },
+    's-ask':         {},
+    's-ask-2':       {},
+    's-ask-3':       { lights: 's-lights-pulse' },
+    's-happy':       { flame: 's-flame-green',  noseSpin: 's-nose-spin-r' },
+    's-working':     { flame: 's-flame-blue',   lights: 's-lights-pulse' },
+    's-celebrate':   { flame: 's-flame-green',  lights: 's-lights-flash', smoke: 's-smoke-3' },
+    's-spin':        { flame: 's-flame-purple', noseSpin: 's-nose-spin-r' },
+    's-tilt-left':   { eyes: 's-eyes-left' },
+    's-tilt-right':  { eyes: 's-eyes-right' },
+    's-arrive-land': { flame: 's-flame-blue',   lights: 's-lights-pulse' },
+  };
+
+  const MOOD_CAPTIONS = {
+    's-wave':        'Hey there! 👋',
+    's-wave-2':      'So great to meet you! 🚀',
+    's-ask':         'Tell me more...',
+    's-ask-2':       'Hmm, interesting...',
+    's-ask-3':       'I have a question!',
+    's-happy':       'Looking good! 🎉',
+    's-working':     'On it...',
+    's-celebrate':   'Let\'s blast! 🚀',
+    's-spin':        'Woohoo! 🌀',
+    's-tilt-left':   'Thinking...',
+    's-tilt-right':  'Almost there...',
+    's-arrive-land': 'Landed! 🛬',
+  };
+
+  /* setMood accepts a plain string OR a composition object:
+     { mood, eyes, flame, lights, smoke, noseSpin }           */
+  function setMood(moodOrSpec) {
+    const spec  = typeof moodOrSpec === 'string'
+                  ? { mood: moodOrSpec }
+                  : (moodOrSpec || { mood: 's-ask' });
+    const mood     = spec.mood || 's-ask';
+    const merged   = Object.assign({}, DEFAULT_ANIM[mood] || {}, spec);
+    const extra = [
+      merged.eyes, merged.flame, merged.lights,
+      merged.smoke === true ? 's-smoke-3' : (merged.smoke || ''),
+      merged.noseSpin === true ? 's-nose-shake' : (merged.noseSpin || '')
+    ].filter(Boolean);
+    const el = document.getElementById('pb-mascot');
+    el.className = 'pb-mascot s-arrive';
+    void el.offsetWidth;
+    el.className = ['pb-mascot', 's-arrive', mood, ...extra].join(' ');
+    setTimeout(() => {
+      if (el.className.includes(mood))
+        el.className = ['pb-mascot', mood, ...extra].join(' ');
+    }, 500);
+    const cap = document.getElementById('pb-mascot-caption');
+    if (cap) cap.textContent = MOOD_CAPTIONS[mood] || '';
+  }
+
+  function setPosition(pos) {
+    const zone = document.getElementById('pb-mascot-zone');
+    if (!zone) return;
+    zone.classList.remove('mascot-pos-left', 'mascot-pos-right');
+    if (pos) zone.classList.add('mascot-pos-' + pos);
+  }
+
+  /* ── PBMascot shim ───────────────────────────────────────────────── *
+   * Exposes the minimal PBMascot API expected by FormGuide's mascot
+   * option without loading the full mascot.js.  pointTo() scrolls the
+   * newly-active section into view and adds a temporary spotlight ring.
+   * setMood is available in this closure for future gesture hooks.
+   * ────────────────────────────────────────────────────────────────── */
+  (function() {
+    if (!document.getElementById('pb-spotlight-css')) {
+      var st = document.createElement('style');
+      st.id = 'pb-spotlight-css';
+      st.textContent =
+        '.pb-spotlight{outline:3px solid rgba(57,255,20,.85)!important;outline-offset:4px;' +
+        'box-shadow:0 0 0 8px rgba(57,255,20,.15),0 0 24px rgba(57,255,20,.25)!important;' +
+        'border-radius:10px;transition:outline .25s ease,box-shadow .25s ease;}' +
+        '@media(prefers-reduced-motion:reduce){.pb-spotlight{transition:none;}}';
+      document.head.appendChild(st);
+    }
+  }());
+  window.PBMascot = {
+    pointTo: function(el, opts) {
+      if (!el) return;
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' });
+      el.classList.add('pb-spotlight');
+      setTimeout(function() { el.classList.remove('pb-spotlight'); }, (opts && opts.duration) || 2400);
+      /* Show the pointing-arm mood briefly; showStep() will override with the
+         per-step mood ~5 ms later via its own setMood() call, so this fires
+         during the s-arrive pop and the arm is visible for the pop duration. */
+      setMood({ mood: 's-working', flame: 's-flame-blue', lights: 's-lights-pulse' });
+    }
+  };
+
+  function _miniMascotSVG(mood) {
+    const py = { 's-ask': 204, 's-working': 207, 's-wave': 198, 's-happy': 205, 's-celebrate': 198 }[mood] || 202;
+    return `<svg viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg">
+      <path d="M180 354 C213 385 207 419 180 446 C153 419 147 385 180 354Z" fill="#ff8c1a"/>
+      <path d="M103 240 C68 254 46 286 48 327 C74 312 97 298 116 276Z" fill="#ff2f2f" stroke="#102957" stroke-width="9"/>
+      <path d="M257 240 C292 254 314 286 312 327 C286 312 263 298 244 276Z" fill="#ff2f2f" stroke="#102957" stroke-width="9"/>
+      <path d="M180 42 C117 89 89 163 91 251 C92 309 119 348 180 378 C241 348 268 309 269 251 C271 163 243 89 180 42Z" fill="#f0f6ff" stroke="#102957" stroke-width="10"/>
+      <path d="M93 269 C121 289 148 299 180 299 C212 299 239 289 267 269 L265 301 C239 319 211 327 180 327 C149 327 121 319 95 301Z" fill="#49bf24" stroke="#102957" stroke-width="8"/>
+      <path d="M180 42 C151 64 129 88 113 116 C137 105 157 100 180 100 C203 100 223 105 247 116 C231 88 209 64 180 42Z" fill="#ff2f2f" stroke="#102957" stroke-width="9"/>
+      <ellipse cx="145" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>
+      <ellipse cx="148" cy="${py-2}" rx="16" ry="22" fill="#49d834"/>
+      <ellipse cx="151" cy="${py}" rx="8" ry="13" fill="#071329"/>
+      <circle cx="143" cy="190" r="5" fill="#fff"/>
+      <ellipse cx="215" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>
+      <ellipse cx="212" cy="${py-2}" rx="16" ry="22" fill="#49d834"/>
+      <ellipse cx="209" cy="${py}" rx="8" ry="13" fill="#071329"/>
+      <circle cx="204" cy="190" r="5" fill="#fff"/>
+      <ellipse cx="121" cy="244" rx="15" ry="8" fill="#ff7272" opacity=".55"/>
+      <ellipse cx="239" cy="244" rx="15" ry="8" fill="#ff7272" opacity=".55"/>
+      <path d="M155 248 Q180 265 205 248" stroke="#102957" stroke-width="9" fill="none" stroke-linecap="round"/>
+    </svg>`;
+  }
+
+
+  function buildFormRows() {
+    const LABELS = {
+      ownerName:'Your Name', bizName:'Business Name', role:'Your Title',
+      email:'Email', phone:'Phone', locationType:'Location Type',
+      street:'Street', city:'City', state:'State', zip:'ZIP', website:'Website',
+      story:'Business Story', different:"What's Different",
+      awards:'Awards / Press', customer:'Ideal Customer', other:'Other Info',
+      campaignName:'Campaign Name', campaignAbout:"What It's About",
+      campaignAudience:'Target Audience', campaignOffer:'Offer / CTA',
+      campaignPlatforms:'Platforms', category:'Category'
+    };
+    const SECTIONS = [
+      { title:'Business Info', keys:['ownerName','bizName','role','email','phone','locationType','street','city','state','zip','website'] },
+      { title:'Your Story', keys:['story','different','awards','customer','other'] },
+      { title:'Campaign', keys:['campaignName','campaignAbout','campaignAudience','campaignOffer','campaignPlatforms','category'] }
+    ];
+    const container = document.getElementById('ob-form-body');
+    if (!container) return;
+    container.innerHTML = '';
+    SECTIONS.forEach((sec, secIdx) => {
+      const sd = document.createElement('div');
+      sd.className = 'obf-section';
+      sd.dataset.guideStep = String(secIdx + 1);
+      sd.innerHTML = '<div class="obf-sec-title">'+sec.title+'</div>';
+      sec.keys.forEach(key => {
+        const row = document.createElement('div');
+        row.className = 'obf-row future';
+        row.id = 'obfr-'+key;
+        row.dataset.key = key;
+        row.innerHTML = '<div class="obf-label">'+(LABELS[key]||key)+'</div>'
+          +'<div class="obf-slot" id="obfs-'+key+'"><span class="obf-dash">\u2014</span></div>';
+        sd.appendChild(row);
+      });
+      container.appendChild(sd);
+    });
+  }
+
+  function setBlastyBubble(msg) {
+    const el = document.getElementById('ob-q-text');
+    if (!el) return;
+    const bubble = document.getElementById('ob-q-bubble');
+    if (bubble) bubble.style.opacity = '0';
+    setTimeout(() => {
+      el.innerHTML = msg;
+      if (bubble) bubble.style.opacity = '1';
+    }, 160);
+  }
+
+  function lockField(key, text) {
+    const row = document.getElementById('obfr-'+key);
+    if (!row) return;
+    row.classList.remove('active','future');
+    row.classList.add('answered');
+    const slot = document.getElementById('obfs-'+key);
+    if (slot) {
+      const safe = String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      slot.innerHTML = '<span class="obf-answered-val">'+safe+'</span>';
+    }
+    if (window.innerWidth <= 860) {
+      row.classList.add('just-answered');
+      setTimeout(() => row.classList.remove('just-answered'), 800);
+    }
+  }
+
+  function addMascotBubble(msg) {
+    setBlastyBubble(msg);
+    const status = document.getElementById('ob-status');
+    if (status && status.style.display !== 'none') {
+      const p = document.createElement('p'); p.innerHTML = msg; status.appendChild(p);
+    }
+    return { innerHTML: '' };
+  }
+
+  function addUserBubble(id) {
+    const key = currentStepKey;
+    const el = document.createElement('div');
+    el.className = key === '_fork' ? 'ob-fork-prompt' : 'obf-bubble';
+    if (id) el.id = id;
+    if (key && key !== '_fork') {
+      const slot = document.getElementById('obfs-'+key);
+      if (slot) { slot.innerHTML = ''; slot.appendChild(el); }
+    } else if (key === '_fork') {
+      const container = document.getElementById('ob-form-body');
+      const existing = document.getElementById('ob-fork-prompt');
+      if (existing) existing.remove();
+      el.id = 'ob-fork-prompt';
+      if (container) container.insertBefore(el, container.firstChild);
+    }
+    return el;
+  }
+
+  function lockBubble(el, text) {
+    lockField(currentStepKey, text);
+  }
+
+  function showStep() {
+    if (step >= STEPS.length) { finish(); return; }
+    const s = STEPS[step];
+    if (s.skipIf && s.skipIf(answers)) { step++; showStep(); return; }
+    currentStepKey = s.key;
+    // Set per-step mood first so the shim's s-working flash (pointing arm)
+    // is not immediately squashed by a subsequent setMood() call.
+    setMood(s.anim || s.mood);
+    // Advance form guide to the section that contains this key.
+    // The shim calls setMood('s-working') inside setActiveEl(), showing the
+    // pointing arm; we restore the step's own mood after ~600 ms so the arm
+    // is visible for roughly half a second during the section transition.
+    if (s.key !== '_fork' && window._ob2Guide) {
+      const activeRow = document.getElementById('obfr-' + s.key);
+      if (activeRow) {
+        const sec = activeRow.closest('[data-guide-step]');
+        if (sec) {
+          window._ob2Guide.setActiveEl(sec);
+          const _stepMood = s.anim || s.mood;
+          setTimeout(function() { setMood(_stepMood); }, 600);
+        }
+      }
+    }
+    const msg = s.blastyMsgFn ? s.blastyMsgFn(answers) : interpolate(s.blastyMsg, answers);
+    setBlastyBubble(msg);
+    // Remove stale fork prompt when moving past it
+    const fp = document.getElementById('ob-fork-prompt');
+    if (fp) fp.remove();
+    // Hide story rows when "blast" path was chosen — they're skipped and shouldn't clutter the form
+    if (answers._fork === 'blast') {
+      ['story','different','awards','customer','other'].forEach(k => {
+        const r = document.getElementById('obfr-'+k);
+        if (r) r.style.display = 'none';
+      });
+    }
+    // Spotlight active field row
+    if (s.key !== '_fork') {
+      document.querySelectorAll('.obf-row').forEach(r => {
+        if (r.id === 'obfr-'+s.key) {
+          r.classList.remove('future','answered','just-answered');
+          r.classList.add('active');
+        } else if (!r.classList.contains('answered')) {
+          r.classList.remove('active'); r.classList.add('future');
+        } else {
+          r.classList.remove('active');
+        }
+      });
+    }
+    // Progress bar
+    const totalSteps = STEPS.filter(st => !st.skipIf || !st.skipIf(answers)).length;
+    const pct = Math.round((step / Math.max(totalSteps, 1)) * 100);
+    const bar = document.getElementById('ob-progress-bar');
+    if (bar) bar.style.width = pct+'%';
+    const delay = step === 0 ? 700 : 380;
+    setTimeout(() => {
+      renderInput(s);
+      if (s.inputType === 'ai-suggest' && s.fetchFn) {
+        s.fetchFn(answers)
+          .then(suggestion => {
+            const wrap = document.getElementById('ob2-ai-suggest-wrap');
+            if (!wrap) return;
+            setMood('s-happy');
+            setTimeout(() => {
+              setBlastyBubble('The best category for '+answers.bizName+' on the platforms is <strong>'+suggestion+'</strong> \u2014 does that sound right?');
+              const safe = suggestion.replace(/'/g, "\\'");
+              wrap.innerHTML = '<div class="ob2-choices">'
+                +'<button type="button" class="ob2-choice-btn" onclick="window._ob2AcceptSuggestion(\''+safe+'\')">✅ Yep, that\'s it</button>'
+                +'<button type="button" class="ob2-choice-btn" onclick="window._ob2ChangeSuggestion()">✏️ Not quite</button>'
+                +'</div>';
+            }, 200);
+          })
+          .catch(() => { window._ob2ChangeSuggestion(); });
+      }
+    }, delay);
+  }
+  function renderInput(s) {
+    currentBubble = addUserBubble();
+    const bubble = currentBubble;
+    let html = '';
+
+    if (s.inputType === 'choice') {
+      html += '<div class="ob2-choices" id="ob2-choices">';
+      s.choices.forEach(c => {
+        html += '<button type="button" class="ob2-choice-btn" data-val="' + c.value + '" onclick="window._ob2PickChoice(this)">' + c.label + '</button>';
+      });
+      html += '</div>';
+      html += '<input type="hidden" id="ob2-input" value=""/>';
+    } else if (s.inputType === 'multiselect') {
+      const plan = window._ob2Plan || 'trial';
+      const isPro = plan === 'pro' || plan === 'agency';
+      html += '<div class="ob2-multiselect" id="ob2-multiselect">';
+      s.choices.forEach(c => {
+        const locked = c.proOnly && !isPro;
+        html += '<label class="ob2-ms-label' + (locked ? ' ob2-ms-locked' : '') + '">'
+          + '<input type="checkbox" class="ob2-ms-check" value="' + c.value + '"'
+          + (locked ? ' disabled' : '') + ' onchange="window._ob2MsChange()"/>'
+          + c.label
+          + (locked ? ' <span class="ob2-pro-badge">PRO</span>' : '')
+          + '</label>';
+      });
+      html += '</div>';
+      html += '<input type="hidden" id="ob2-input" value=""/>';
+      html += '<button type="button" class="bubble-action-btn" id="ob2-btn" onclick="window._ob2Continue()">Blast! 🚀</button>';
+    } else if (s.inputType === 'ai-suggest') {
+      html += '<div id="ob2-ai-suggest-wrap" style="padding:4px 0">'
+        + '<div style="color:var(--muted,#888);font-size:13px;display:flex;align-items:center;gap:8px">'
+        + '<span style="display:inline-block;animation:spin 1s linear infinite;font-size:16px">⚙️</span> Thinking...</div>'
+        + '</div>'
+        + '<input type="hidden" id="ob2-input" value=""/>';
+    } else if (s.inputType === 'textarea') {
+      html += '<textarea id="ob2-input" class="bubble-textarea" placeholder="' + (s.placeholder || '') + '" rows="3"></textarea>';
+      if (s.hint) html += '<div class="bubble-hint">' + s.hint + '</div>';
+      html += '<button type="button" class="bubble-action-btn" id="ob2-btn" onclick="window._ob2Continue()">Continue →</button>';
+    } else {
+      var urlBlur = s.inputType === 'url' ? ' onblur="var v=this.value.trim();if(v){if(!/^https?:\/\//i.test(v))v=\'https://\'+v;this.value=v;}" ' : '';
+      html += '<input id="ob2-input" type="' + s.inputType + '" class="bubble-input" placeholder="' + (s.placeholder || '') + '" autocomplete="off"' + urlBlur + '/>';
+      if (s.hint) html += '<div class="bubble-hint">' + s.hint + '</div>';
+      const toggleDefs = s.toggles || (s.toggle ? [s.toggle] : []);
+      toggleDefs.forEach((t, i) => {
+        html += '<div class="toggle-row">'
+              + '<span class="toggle-label">' + t.label + '</span>'
+              + '<label class="toggle-switch">'
+              + '<input type="checkbox" id="ob2-toggle-' + i + '"' + (toggles[t.stateKey] ? ' checked' : '')
+              + ' onchange="window._ob2ToggleChange(\'' + t.stateKey + '\',this.checked)"/>'
+              + '<span class="toggle-slider"></span>'
+              + '</label>'
+              + '</div>';
+      });
+      html += '<button type="button" class="bubble-action-btn" id="ob2-btn" onclick="window._ob2Continue()">Continue →</button>';
+    }
+
+    html += '<div class="pb-err" id="ob2-err"></div>';
+    bubble.innerHTML = html;
+
+    currentInput = document.getElementById('ob2-input');
+    if (currentInput && s.inputType !== 'choice') {
+      currentInput.focus();
+      if (s.inputType !== 'textarea') {
+        currentInput.addEventListener('keydown', e => { if (e.key === 'Enter') window._ob2Continue(); });
+      }
+    }
+    if (s.inputType === 'tel' && currentInput) {
+      currentInput.addEventListener('input', function() {
+        let digits = this.value.replace(/\D/g, '').slice(0, 10);
+        if (digits.length >= 7)      this.value = digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6);
+        else if (digits.length >= 4) this.value = digits.slice(0,3) + '-' + digits.slice(3);
+        else                         this.value = digits;
+      });
+    }
+    setTimeout(() => bubble.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
+  }
+
+  function interpolate(msg, ans) {
+    if (!msg || !ans) return msg;
+    return msg.replace(/\{(\w+)\}/g, (_, k) => (ans[k] !== undefined ? ans[k] : '{' + k + '}'));
+  }
+
+
+  window._ob2AcceptSuggestion = function(value) {
+    answers[STEPS[step].key] = value;
+    if (currentBubble) lockBubble(currentBubble, value);
+    step++;
+    if (window._ob2SaveProgress) window._ob2SaveProgress(answers, toggles, step);
+    setTimeout(showStep, 380);
+  };
+
+  window._ob2ChangeSuggestion = function() {
+    const wrap = document.getElementById('ob2-ai-suggest-wrap');
+    if (!wrap) return;
+    wrap.innerHTML =
+      '<input id="ob2-input-cat" type="text" class="bubble-input" placeholder="e.g. Hair Salon, Mexican Restaurant…" autocomplete="off"/>'
+      + '<button type="button" class="bubble-action-btn" style="margin-top:8px" '
+      + 'onclick="window._ob2AcceptSuggestion(document.getElementById(\'ob2-input-cat\').value.trim()||\'Local Business\')">Looks good →</button>';
+    const inp = document.getElementById('ob2-input-cat');
+    if (inp) { inp.focus(); inp.addEventListener('keydown', e => { if (e.key === 'Enter') window._ob2AcceptSuggestion(inp.value.trim() || 'Local Business'); }); }
+  };
+
+  window._ob2MsChange = function() {
+    const checked = [...document.querySelectorAll('.ob2-ms-check:checked')].map(c => c.value);
+    const inp = document.getElementById('ob2-input');
+    if (inp) inp.value = checked.join(',');
+  };
+
+  window._ob2ToggleChange = function(stateKey, checked) {
+    toggles[stateKey] = checked;
+  };
+
+  window._ob2PickChoice = function(btn) {
+    document.querySelectorAll('.ob2-choice-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const choiceVal = btn.dataset.val || '';
+    // Primary: set via currentInput. Fallback: find hidden input within the same bubble.
+    if (currentInput) {
+      currentInput.value = choiceVal;
+    } else {
+      const bubble = btn.closest('.ob-fork-prompt, .obf-bubble');
+      const inp = bubble ? bubble.querySelector('input[type="hidden"]') : null;
+      if (inp) inp.value = choiceVal;
+    }
+    const errEl = currentBubble ? currentBubble.querySelector('#ob2-err') : null;
+    if (errEl) errEl.style.display = 'none';
+    setTimeout(() => window._ob2Continue(), 220);
+  };
+
+  window._ob2Continue = function() {
+    const s = STEPS[step];
+    if (s.inputType === 'url' && currentInput) {
+      var rv = currentInput.value.trim();
+      if (rv) { if (!/^https?:\/\//i.test(rv)) rv = 'https://' + rv; currentInput.value = rv; }
+    }
+    let val = currentInput ? currentInput.value : '';
+    // Fallback for choice steps: if hidden input is stale/empty, read from selected button
+    if (!val && s.inputType === 'choice' && currentBubble) {
+      const sel = currentBubble.querySelector('.ob2-choice-btn.selected');
+      if (sel) val = sel.dataset.val || '';
+    }
+    const errEl = currentBubble ? currentBubble.querySelector('#ob2-err') : null;
+    if (s.validate) {
+      const err = s.validate(val);
+      if (err) {
+        if (errEl) { errEl.textContent = err; errEl.style.display = 'block'; }
+        return;
+      }
+    }
+    if (s.inputType === 'multiselect') {
+      answers[s.key] = val.split(',').filter(Boolean);
+      if (currentBubble) lockBubble(currentBubble, answers[s.key].join(', ') || '(none selected)');
+    } else {
+      answers[s.key] = val.trim();
+      if (currentBubble) lockBubble(currentBubble, val.trim());
+    }
+    step++;
+    if (window._ob2SaveProgress) window._ob2SaveProgress(answers, toggles, step);
+    setTimeout(showStep, 380);
+  };
+
+  async function finish() {
+    setMood('s-working');
+    setPosition('right');
+    setTimeout(() => {
+      addMascotBubble("On it! Saving everything and firing up your first blast... 🚀");
+    }, 440);
+    try {
+      const { bizId, campId } = await window._ob2Save(answers, toggles);
+      // Clear saved progress now that onboarding is fully committed
+      if (window._ob2ClearProgress) window._ob2ClearProgress();
+      // #2 Post-onboarding summary — show "Here's what we built" before redirect
+      const safeBizName = (answers.bizName || 'Your business').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      setTimeout(() => {
+        addMascotBubble(
+          "Here's what we just built: <strong>" + safeBizName + "</strong> is set up with your first campaign ready to go. " +
+          "AI is about to generate your content — let's launch! 🚀"
+        );
+        setTimeout(() => {
+          window.location.href = 'BlastyBiz.html?bizId=' + bizId + '&cid=' + campId + '&autogenerate=1';
+        }, 2400);
+      }, 600);
+    } catch (e) {
+      console.error('[ob2 save]', e);
+      addMascotBubble("Something went wrong saving — let's try again.");
+      setMood('s-ask');
+      const retryBtn = document.createElement('button');
+      retryBtn.textContent = '↩ Try again';
+      retryBtn.style.cssText = 'margin:10px auto;display:block;padding:10px 24px;background:#ff6b00;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;';
+      retryBtn.onclick = () => { retryBtn.remove(); finish(); };
+      const _st = document.getElementById('ob-status');
+      if (_st) { _st.style.display = 'block'; _st.appendChild(retryBtn); }
+    }
+  }
+
+  window._ob2StartConvo = function() {
+    buildFormRows();
+    // Initialise section-level form guide (requires form-guide.js + mascot.js v2)
+    window._ob2Guide = new FormGuide({
+      steps:  document.querySelectorAll('[data-guide-step]'),
+      mascot: window.PBMascot || null
+    });
+    // Restore saved progress (from email-verification resume) before prefill
+    const resume = window._ob2ResumeData;
+    if (resume && resume.answers) {
+      Object.assign(answers, resume.answers);
+      if (resume.toggles) Object.assign(toggles, resume.toggles);
+    }
+    if (window._ob2Prefill) Object.assign(answers, window._ob2Prefill);
+
+    const savedStep = resume && resume.stepIndex > 0 ? resume.stepIndex : 0;
+
+    if (savedStep > 0) {
+      // Lock all rows that were already answered before the saved step
+      step = savedStep;
+      STEPS.slice(0, savedStep).forEach(function(s) {
+        if (!s.key || s.key === '_fork') return;
+        var val = answers[s.key];
+        if (val === undefined || val === '') return;
+        var display = Array.isArray(val) ? val.join(', ') : String(val);
+        lockField(s.key, display);
+      });
+      setMood('s-arrive-land');
+      setTimeout(function() {
+        setBlastyBubble("Welcome back! I saved your progress — let's pick up right where we left off 🚀");
+        setTimeout(showStep, 1800);
+      }, 600);
+    } else if (window._ob2EditBizId) {
+      setMood('s-wave');
+      setTimeout(() => {
+        addMascotBubble("Welcome back! Let's update your business profile. I'll walk through each step — just edit anything that's changed. 👋");
+        setTimeout(showStep, 1400);
+      }, 600);
+    } else {
+      setMood('s-wave');
+      setTimeout(showStep, 600);
+    }
+  };
+  if (window._ob2Ready) window._ob2StartConvo();
+})();
+</script>
+
+<!-- ── Firebase ───────────────────────────────────────────────────── -->
+<script type="module">
+import { auth } from './firebase-init-v2.js';
+import {
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+  onAuthStateChanged
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+  getFirestore, doc, getDoc, setDoc, updateDoc, deleteField, collection, serverTimestamp, writeBatch
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+
+const db = getFirestore(getApp());
+
+// ── Onboarding progress persistence ────────────────────────────────────────
+// Saves current answers/toggles/step to users/{uid}.onboardingProgress so
+// the user can resume after email verification on a different tab or device.
+window._ob2SaveProgress = async function(answersSnap, togglesSnap, stepIndex) {
+  if (!window._ob2Uid) return;
+  try {
+    // Deep-copy arrays/objects so Firestore doesn't get live references
+    const safeAnswers = JSON.parse(JSON.stringify(answersSnap));
+    await setDoc(doc(db, 'users', window._ob2Uid), {
+      onboardingProgress: { answers: safeAnswers, toggles: togglesSnap, stepIndex, savedAt: new Date().toISOString() }
+    }, { merge: true });
+  } catch(e) { console.warn('[ob2] save progress failed:', e.message); }
+};
+
+window._ob2ClearProgress = async function() {
+  if (!window._ob2Uid) return;
+  try {
+    await updateDoc(doc(db, 'users', window._ob2Uid), { onboardingProgress: deleteField() });
+  } catch(e) { console.warn('[ob2] clear progress failed:', e.message); }
+};
+
+window._ob2Save = async function(answers, toggles) {
+  const isEdit = !!window._ob2EditBizId;
+  const bizRef = isEdit
+    ? doc(db, 'users', window._ob2Uid, 'businesses', window._ob2EditBizId)
+    : doc(collection(db, 'users', window._ob2Uid, 'businesses'));
+  const bizId  = bizRef.id;
+  const campId = 'c_' + Date.now();
+
+  const campaignStory = [
+    answers.campaignAbout    ? 'About this campaign: ' + answers.campaignAbout    : '',
+    answers.campaignAudience ? 'Target audience: '     + answers.campaignAudience : ''
+  ].filter(Boolean).join('\n');
+
+  const batch = writeBatch(db);
+
+  /* ── Business document — canonical schema ─────────────────── */
+  batch.set(bizRef, {
+    name:               answers.bizName      || '',
+    businessName:       answers.bizName      || '',
+    category:           answers.category     || '',
+    ownerName:          answers.ownerName    || '',
+    ownerRole:          answers.role         || '',
+    email:              answers.email        || '',
+    phone:              answers.phone        || '',
+    street:             answers.street       || '',
+    city:               answers.city         || '',
+    state:              answers.state        || '',
+    zip:                answers.zip          || '',
+    website:            answers.website      || '',
+    locationType:       answers.locationType || '',
+    ynMentionName:      toggles.ynMentionName    ? 'yes' : 'no',
+    ynMentionRole:      toggles.ynMentionRole    ? 'yes' : 'no',
+    ynMentionAddress:   toggles.ynMentionAddress ? 'yes' : 'no',
+    ynMentionPhone:     toggles.ynMentionPhone   ? 'yes' : 'no',
+    ynMentionWebsite:   'yes',
+    ynMentionEmail:     'yes',
+    aiContext: {
+      story:     answers.story     || '',
+      different: answers.different || '',
+      awards:    answers.awards    || '',
+      customer:  answers.customer  || '',
+      other:     answers.other     || '',
+    },
+    createdAt: serverTimestamp()
+  }, isEdit ? { merge: true } : {});
+
+  /* ── Mark user as onboarded — only for new businesses ─────── */
+  if (!isEdit) {
+    batch.set(doc(db, 'users', window._ob2Uid), {
+      onboarded:           true,
+      activeBusiness:      bizId,
+      onboardingVersion:   1,
+      onboardingCompleted: serverTimestamp()
+    }, { merge: true });
+  }
+
+  /* ── First campaign document ──────────────────────────────── */
+  batch.set(
+    doc(db, 'users', window._ob2Uid, 'businesses', bizId, 'campaigns', campId),
+    {
+      id:                  campId,
+      name:                answers.campaignName || 'My First Campaign',
+      offer:               answers.campaignOffer || '',
+      campaignStory,
+      onboardingPlatforms: Array.isArray(answers.campaignPlatforms) ? answers.campaignPlatforms : [],
+      createdAt:           serverTimestamp(),
+      lastUsedAt:          '',
+      photos:              [],
+      adName:              '',
+      price:               '',
+      factoids:            [],
+      platformHistory:     {}
+    }
+  );
+
+  /* ── Atomic commit — all three or none ────────────────────── */
+  await batch.commit();
+
+  return { bizId, campId };
+};
+
+function _ready(uid, name, plan) {
+  window._ob2Uid   = uid;
+  window._ob2Name  = name || '';
+  window._ob2Plan  = plan || 'trial';
+  window._ob2Ready = true;
+  if (window._ob2StartConvo) window._ob2StartConvo();
+}
+
+if (isSignInWithEmailLink(auth, window.location.href)) {
+  const email = localStorage.getItem('bb_trial_email') || prompt('Please confirm your email address:') || '';
+  const name  = localStorage.getItem('bb_trial_name')  || '';
+  localStorage.removeItem('bb_trial_email');
+  localStorage.removeItem('bb_trial_name');
+  if (email) {
+    signInWithEmailLink(auth, email, window.location.href)
+      .then(async result => {
+        await setDoc(doc(db, 'users', result.user.uid), {
+          plan: 'trial', displayName: name, email, createdAt: serverTimestamp()
+        }, { merge: true });
+        const clean = new URL(window.location.href);
+        ['oobCode','apiKey','mode','lang'].forEach(p => clean.searchParams.delete(p));
+        history.replaceState(null, '', clean.toString());
+        _ready(result.user.uid, name, 'trial');
+      })
+      .catch(() => { window.location.href = 'BlastyBiz-Trial.html'; });
+  } else {
+    window.location.href = 'BlastyBiz-Trial.html';
+  }
+} else {
+  onAuthStateChanged(auth, async user => {
+    if (!user) { window.location.href = 'BlastyBiz-Trial.html'; return; }
+    const urlP      = new URLSearchParams(window.location.search);
+    const editBizId = urlP.get('bizId') || null;
+    const isNew     = urlP.has('new');
+    const userSnap  = await getDoc(doc(db, 'users', user.uid));
+    const ud        = userSnap.exists() ? userSnap.data() : {};
+    // Redirect already-onboarded users back to the app UNLESS they explicitly
+    // chose to add a new business (?new=1) or edit an existing one (?bizId=...)
+    if (ud.onboarded && ud.onboardingVersion && ud.activeBusiness && !isNew && !editBizId) {
+      window.location.href = 'BlastyBiz.html';
+      return;
+    }
+    // Resume onboarding progress saved before email verification
+    if (ud.onboardingProgress && ud.onboardingProgress.stepIndex > 0 && !editBizId) {
+      window._ob2ResumeData = ud.onboardingProgress;
+      window._ob2Prefill = ud.onboardingProgress.answers || {};
+    }
+    // Return-visit: load existing biz data for pre-population
+    if (editBizId) {
+      window._ob2EditBizId = editBizId;
+      try {
+        const bizSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', editBizId));
+        if (bizSnap.exists()) {
+          const d = bizSnap.data();
+          window._ob2Prefill = {
+            bizName:      d.name || d.businessName || '',
+            ownerName:    d.ownerName    || '',
+            role:         d.ownerRole   || '',
+            email:        d.email        || '',
+            phone:        d.phone       || '',
+            locationType: d.locationType|| '',
+            street:       (d.address && d.address.street) || d.street || '',
+            city:         (d.address && d.address.city)   || d.city   || '',
+            state:        (d.address && d.address.state)  || d.state  || '',
+            zip:          (d.address && d.address.zip)    || d.zip    || '',
+            website:      d.website     || '',
+            story:        (d.aiContext && d.aiContext.story)     || d.story     || '',
+            different:    (d.aiContext && d.aiContext.different) || d.different || '',
+            awards:       (d.aiContext && d.aiContext.awards)    || d.awards    || '',
+            customer:     (d.aiContext && d.aiContext.customer)  || d.customer  || '',
+            other:        (d.aiContext && d.aiContext.other)     || d.otherInfo || '',
+          };
+        }
+      } catch(e) { console.warn('[ob2 prefill]', e); }
+    }
+    // Load step overrides from Firestore (non-fatal)
+    try {
+      const ovSnap = await getDoc(doc(db, 'config', 'ob1Steps'));
+      if (ovSnap.exists() && window._ob2ApplyOverrides) {
+        window._ob2ApplyOverrides(ovSnap.data());
+      }
+    } catch(e) { /* use defaults if unavailable */ }
+    const plan = ud.plan || 'trial';
+    _ready(user.uid, user.displayName || '', plan);
+  });
+}
+</script>
+
+<script src="header-loader.js?v=1"></script>
+</body>
+</html>

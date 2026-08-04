@@ -2,12 +2,15 @@
 
 Local business marketing distribution tool. Business owner fills out one form, AI adapts the listing for every platform, then auto-posts or generates copy-paste content.
 
-## Run & Operate
+## Deploy — MANDATORY AFTER EVERY CHANGE, NO EXCEPTIONS
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `npx firebase-tools deploy --only hosting` — deploy static HTML to Firebase Hosting
-- `npx firebase-tools deploy --only firestore:rules` — deploy Firestore rules
-- `npx firebase-tools deploy --only functions` — deploy Cloud Functions
+```
+firebase deploy --only hosting          # HTML/CSS/JS changes → always run this
+firebase deploy --only functions        # Cloud Function changes
+firebase deploy --only firestore:rules  # Firestore rules changes
+```
+
+**There is no dev server. Firebase IS the server. Deploy every time.**
 
 ## Mascot Component
 
@@ -19,15 +22,13 @@ See `mascot/README.md` for the full guide — SVG anatomy, animation class refer
 - Firebase Hosting — serves all static files (blastybiz-9523e.web.app)
 - Firebase Auth — Email/Password + Google
 - Firestore — primary database (us-east1, production mode)
-- Cloud Functions — 9 functions in `functions/index.js`
-- Express (API server) — `/api` routes only; runs on Replit for development
+- Cloud Functions — all functions in `functions/index.js`
 - Anthropic Claude — AI adaptation via `ANTHROPIC_API_KEY`
 
 ## Where things live
 
-- `artifacts/api-server/public/` — all HTML pages (source of truth for static files)
-- `artifacts/api-server/src/routes/` — Express API routes
-- `functions/index.js` — all 9 Cloud Functions
+- `public/` — all HTML/CSS/JS pages (source of truth; deployed to Firebase Hosting)
+- `functions/index.js` — all Cloud Functions
 - `firestore.rules` — Firestore security rules
 - `firebase.json` — Firebase project config
 
@@ -70,9 +71,8 @@ Import `auth` and `db` from `./firebase-init-v2.js` only. Do NOT add separate fi
 - **User is Dave. I am Rep** (Replit agent). Dave works with both Rep and Anthropic Claude directly; "Rep" is this agent's name.
 
 - **This is a Firebase + Cloud Functions build. Do NOT create Vite apps, React apps, dev servers, or any Replit-hosted frontend artifacts. Ever.**
-- All frontend work goes directly to `artifacts/api-server/public/` and is deployed to Firebase Hosting.
-- The only thing running on Replit is the Express API server (`artifacts/api-server`).
-- Deploy with `npx firebase-tools deploy --only hosting` after any HTML changes.
+- All frontend work goes directly to `public/` and is deployed to Firebase Hosting. There is no dev server.
+- Deploy with `firebase deploy --only hosting` after ANY HTML/CSS/JS change. No exceptions. Deploy immediately — do not wait, do not batch.
 - Admin pages (Queue Manager, Logs) use light/white theme — do NOT apply dark theme.
 
 ## Fix Workflow (mandatory — every fix, every time, NO EXCEPTIONS)

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="theme-color" content="#000000"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="stylesheet" href="global-style.css?v=1785858635994"/>
+  <title>BlastyBiz — My Businesses</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
+  <style>body{visibility:hidden}</style>
+  <script type="module" src="./auth-guard.js"></script>
+  <script src="blastybiz-menu.js?v=6"></script>
+  <style>
+    .bb-wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+    .bb-page-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      color: var(--green, #39ff14);
+      letter-spacing: .04em;
+      margin: 0 0 4px;
+    }
+    .bb-page-sub {
+      font-size: 13px;
+      color: var(--muted, #888);
+      margin: 0 0 28px;
+    }
+    .biz-card {
+      background: var(--panel, #0a1a0a);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .biz-card.is-active {
+      border-color: rgba(57,255,20,.35);
+      background: rgba(57,255,20,.04);
+    }
+    .biz-card-info h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text, #c8dbf5);
+      margin: 0 0 4px;
+    }
+    .biz-card-info p {
+      font-size: 12px;
+      color: var(--muted, #888);
+      font-family: monospace;
+      margin: 0;
+    }
+    .biz-active-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(57,255,20,.12);
+      border: 1px solid rgba(57,255,20,.3);
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--green, #39ff14);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .biz-switch-btn {
+      padding: 9px 18px;
+      border-radius: 8px;
+      font: 600 13px 'DM Sans', sans-serif;
+      cursor: pointer;
+      border: 1.5px solid rgba(255,255,255,.18);
+      background: transparent;
+      color: var(--text, #c8dbf5);
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: opacity .15s;
+    }
+    .biz-switch-btn:hover { opacity: .8; }
+    .biz-switch-btn:disabled { opacity: .4; cursor: default; }
+    .bb-add-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding: 11px 20px;
+      border-radius: 10px;
+      background: var(--green, #39ff14);
+      color: #000;
+      font: 700 14px 'DM Sans', sans-serif;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity .15s;
+    }
+    .bb-add-btn:hover { opacity: .88; }
+    .bb-add-btn.at-limit {
+      background: rgba(255,255,255,.08);
+      color: var(--muted, #888);
+      cursor: default;
+    }
+    .bb-usage-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      font-size: 12.5px;
+      color: var(--muted, #888);
+    }
+    .bb-pips {
+      display: flex;
+      gap: 5px;
+    }
+    .bb-pip {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.12);
+    }
+    .bb-pip.used { background: rgba(57,255,20,.4); }
+    .bb-pip.is-active { background: var(--green, #39ff14); }
+    #bb-loading { text-align:center; padding:60px 0; color:var(--muted,#888); font-size:14px; }
+    #bb-denied  { text-align:center; padding:60px 20px; }
+    #bb-denied h2 { color:#ff6060; margin-bottom:8px; }
+    #bb-denied p  { color:var(--muted,#888); font-size:14px; }
+  </style>
+</head>
+<body class="has-site-header">
+<div id="header__inject"></div>
+
+<div class="main">
+  <div class="main-inner bb-wrap">
+
+    <div id="bb-loading">Loading…</div>
+
+    <div id="bb-denied" style="display:none">
+      <h2>⚡ Pro or Agency plan required</h2>
+      <p>Multiple business management is a Pro feature.<br/>
+      <a href="BlastyBiz-Plan-Pro.html" style="color:var(--green,#39ff14);">Upgrade →</a>
+      &nbsp;·&nbsp;
+      <a href="BlastyBiz.html" style="color:var(--muted,#888);">← Back to dashboard</a></p>
+    </div>
+
+    <div id="bb-content" style="display:none">
+      <h1 class="bb-page-title">My Businesses</h1>
+      <p class="bb-page-sub" id="bb-sub">Managing your businesses</p>
+
+      <div class="bb-usage-bar">
+        <span id="bb-usage-text"></span>
+        <div class="bb-pips" id="bb-pips"></div>
+      </div>
+
+      <div id="bb-biz-list"></div>
+
+      <button class="bb-add-btn" id="bb-add-btn" onclick="_bbAddBusiness()">＋ Add business</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function _bbRenderPips(used, limit, activeIdx) {
+  const el = document.getElementById('bb-pips');
+  if (!el) return;
+  el.innerHTML = '';
+  for (let i = 0; i < limit; i++) {
+    const pip = document.createElement('div');
+    pip.className = 'bb-pip' + (i < used ? (i === activeIdx ? ' is-active' : ' used') : '');
+    el.appendChild(pip);
+  }
+}
+
+window._bbSwitchTo = async function(bizId, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Switching…';
+  try {
+    if (window._bbDoSwitch) {
+      await window._bbDoSwitch(bizId);
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Switch →';
+    alert('Error switching business: ' + e.message);
+  }
+};
+
+window._bbAddBusiness = function() {
+  const list  = window._bbBizList || [];
+  const limit = window._bbBizLimit || 1;
+  if (list.length >= limit) {
+    alert('You\'ve reached your ' + limit + '-business limit. Upgrade your plan to add more.');
+    return;
+  }
+  sessionStorage.removeItem('bb_answers');
+  sessionStorage.removeItem('bb_bizId');
+  window.location.href = 'BlastyBiz-Profile.html';
+};
+</script>
+
+<script type="module">
+import { auth, db } from './firebase-init-v2.js';
+import { doc, getDoc, setDoc, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+await auth.authStateReady();
+const user = auth.currentUser;
+if (!user || !user.emailVerified) {
+  window.location.href = 'BlastyBiz-Login.html';
+} else {
+  const ud = await getDoc(doc(db, 'users', user.uid)).catch(() => null);
+  const plan = ud?.data()?.plan || 'starter';
+  const activeBizId = ud?.data()?.activeBusiness || null;
+  // Fetch effective limit from Firestore (admin can override in settings/bizLimits)
+  const _defLimits = { starter: 1, pro: 3, agency: 10 };
+  let _bizLimit = _defLimits[plan] || 1;
+  try {
+    const limSnap = await getDoc(doc(db, 'settings', 'bizLimits')).catch(() => null);
+    const limData = limSnap?.data() || {};
+    if (limData[plan + 'Max'] != null) _bizLimit = Number(limData[plan + 'Max']);
+  } catch (_) {}
+
+  // Require pro or agency
+  if (plan !== 'pro' && plan !== 'agency') {
+    document.getElementById('bb-loading').style.display = 'none';
+    document.getElementById('bb-denied').style.display  = 'block';
+    document.body.style.visibility = 'visible';
+  } else {
+    // Load businesses
+    const snap = await getDocs(collection(db, 'users', user.uid, 'businesses')).catch(() => null);
+    const bizzes = [];
+    snap?.forEach(d => bizzes.push({ id: d.id, ...d.data() }));
+    bizzes.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+    // If only 1 business, redirect back to dashboard (this page only makes sense with >1)
+    if (bizzes.length <= 1) {
+      window.location.href = 'BlastyBiz.html';
+      return;
+    }
+
+    // Use the limit resolved from Firestore above (falls back to _defLimits)
+    const limit = _bizLimit;
+    window._bbBizList  = bizzes;
+    window._bbBizLimit = limit;
+
+    const activeIdx = bizzes.findIndex(b => b.id === activeBizId);
+    document.getElementById('bb-usage-text').textContent = `${bizzes.length} of ${limit} businesses`;
+    _bbRenderPips(bizzes.length, limit, activeIdx);
+    document.getElementById('bb-sub').textContent = plan === 'agency'
+      ? `Agency — ${bizzes.length} of ${limit} businesses`
+      : `Pro — ${bizzes.length} of ${limit} businesses`;
+
+    // Add button state
+    const addBtn = document.getElementById('bb-add-btn');
+    if (bizzes.length >= limit) {
+      addBtn.classList.add('at-limit');
+      addBtn.textContent = `At limit (${limit}/${limit})`;
+    }
+
+    // Render business cards
+    document.getElementById('bb-biz-list').innerHTML = bizzes.map(b => {
+      const isActive = b.id === activeBizId;
+      const name = b.bizName || b.name || b.businessName || '(no name)';
+      return `<div class="biz-card${isActive ? ' is-active' : ''}">
+        <div class="biz-card-info">
+          <h3>${name}</h3>
+          <p>${b.id}</p>
+        </div>
+        ${isActive
+          ? '<span class="biz-active-badge">✓ Active</span>'
+          : `<button class="biz-switch-btn" onclick="window._bbSwitchTo('${b.id}', this)">Switch →</button>`
+        }
+      </div>`;
+    }).join('');
+
+    // Switch business handler
+    window._bbDoSwitch = async function(bizId) {
+      await setDoc(doc(db, 'users', user.uid), { activeBusiness: bizId }, { merge: true });
+      window.location.href = 'BlastyBiz.html';
+    };
+
+    document.getElementById('bb-loading').style.display  = 'none';
+    document.getElementById('bb-content').style.display  = 'block';
+    document.body.style.visibility = 'visible';
+  }
+}
+</script>
+
+<script src="header-loader.js?v=1"></script>
+</body>
+</html>

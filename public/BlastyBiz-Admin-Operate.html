@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+<meta charset="UTF-8"/>
+  <meta name="theme-color" content="#000000"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BlastyBiz — Operator Setup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="global-style.css?v=1785858635994">
+
+<style>body{visibility:hidden}</style>
+<script type="module" src="./admin-guard.js"></script>
+<script src="blastybiz-menu.js?v=6"></script>
+</head>
+<body class="admin-page operate-page">
+
+<header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Operator Setup</span></a><div class="top-actions"><a class="icon-btn hide-mobile" href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Logs.html">Logs</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a class="icon-btn hide-mobile active" href="#">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header>
+
+<main><div class="main"><div class="main-inner">
+
+  <div class="op-page-header">
+    <h1 class="op-page-title">Operator Setup</h1>
+    <p class="op-page-sub">Paste each key into the field and hit Save — no terminal needed. Check items off as you complete them.</p>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-block">
+    <div class="progress-title">Setup Progress</div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="prog-bar" style="width:0%"></div></div>
+    <div class="progress-label" id="prog-label">0 / 0 done</div>
+  </div>
+
+  <!-- REDEPLOY BANNER — shown after first secret is saved -->
+  <div id="redeploy-banner">
+    <div class="redeploy-title">⚠️ One more step after saving secrets</div>
+    <div class="redeploy-sub">Secrets are saved to Firebase Secret Manager, but Cloud Functions pin their secrets at deploy time. After you've saved all your keys, run this <strong>one command</strong> in the Replit Shell to activate them:</div>
+    <div class="code-block">
+      <span class="code-text">npx firebase-tools deploy --only functions</span>
+      <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions')">Copy</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       BLASTYBIZ AS FIRST CLIENT
+  ══════════════════════════════════════════ -->
+  <div class="op-section">
+    <div class="section-header">
+      <span class="section-icon">🏢</span>
+      <span class="section-title">BlastyBiz as First Client</span>
+      <span class="section-badge warn" id="badge-client">Setup required</span>
+    </div>
+
+    <!-- Google Business Profile -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-google" onclick="toggleCheck(event,'client-google')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">🔍 Google Business Profile</div>
+          <div class="op-card-sub">Auto-post — set this up before connecting Google OAuth below</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://business.google.com" target="_blank">business.google.com</a> and sign in with your Google account</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Click <strong>Add your business to Google</strong> → enter <strong>BlastyBiz</strong> as the business name</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Choose category: <strong>Software Company</strong> or <strong>Marketing Agency</strong></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Select <strong>No physical location</strong> (service-area business) → add your service area (city/state)</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Add phone number, website (<strong>blastybiz.com</strong>), and business hours</div></div>
+          <div class="step"><div class="step-num">6</div><div class="step-text">Verify the listing — Google will call or text to confirm. Once verified, the profile goes live</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Facebook Page -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-facebook" onclick="toggleCheck(event,'client-facebook')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">📘 Facebook Page</div>
+          <div class="op-card-sub">Auto-post — set this up before connecting Facebook OAuth below</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://www.facebook.com/pages/create" target="_blank">facebook.com/pages/create</a></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Choose <strong>Business or Brand</strong> → Page name: <strong>BlastyBiz</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Category: <strong>Software</strong> or <strong>Marketing Agency</strong></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Add profile photo (logo), cover photo, website (<strong>blastybiz.com</strong>), and bio</div></div>
+        </div>
+        <div class="note mt-12">Facebook Marketplace posts come from this same Page — no separate account needed.</div>
+      </div>
+    </div>
+
+    <!-- Instagram -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-instagram" onclick="toggleCheck(event,'client-instagram')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">📸 Instagram Business</div>
+          <div class="op-card-sub">Auto-post — requires the Facebook Page above to be linked first</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Create an Instagram account at <a href="https://www.instagram.com" target="_blank">instagram.com</a> — username: <strong>blastybiz</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Go to <strong>Settings → Account → Switch to Professional Account</strong> → choose <strong>Business</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">When prompted, link it to the <strong>BlastyBiz Facebook Page</strong> — this is required for API posting</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Add website (<strong>blastybiz.com</strong>), bio, and contact email (<strong>info@blastybiz.com</strong>)</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Yelp -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-yelp" onclick="toggleCheck(event,'client-yelp')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">⭐ Yelp</div>
+          <div class="op-card-sub">Copy-paste — BlastyBiz generates the text, you paste it in</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://biz.yelp.com" target="_blank">biz.yelp.com</a> and click <strong>Manage my free listing</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Search for <strong>BlastyBiz</strong> — if it exists, claim it. If not, click <strong>Add your business</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Category: <strong>Marketing</strong> or <strong>Software Development</strong></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Add address (use your city), phone, website, and business description</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Yelp will send a verification call or postcard — complete verification to unlock the full listing</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nextdoor -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-nextdoor" onclick="toggleCheck(event,'client-nextdoor')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">🏘️ Nextdoor</div>
+          <div class="op-card-sub">Copy-paste — community-focused business page</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://business.nextdoor.com" target="_blank">business.nextdoor.com</a> and click <strong>Get started for free</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Business name: <strong>BlastyBiz</strong> · Category: <strong>Advertising & Marketing</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Add your service area by zip code — use your local area to start</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Add website (<strong>blastybiz.com</strong>), phone, and a short description</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Verify via postcard or phone call — Nextdoor sends a confirmation to the business address</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Apple Maps -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-apple" onclick="toggleCheck(event,'client-apple')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">🗺️ Apple Maps</div>
+          <div class="op-card-sub">Copy-paste — via Apple Business Connect (free)</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://businessconnect.apple.com" target="_blank">businessconnect.apple.com</a> — sign in with an Apple ID</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Click <strong>Add a place</strong> → search for BlastyBiz (probably won't exist yet, so add new)</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Business name: <strong>BlastyBiz</strong> · Category: <strong>Software Company</strong></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Add phone, website, hours, and mark as <strong>service-area business</strong> (no storefront)</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Apple verifies via SMS or email — usually approved within 1–3 days</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bing Places -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-bing" onclick="toggleCheck(event,'client-bing')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">🔵 Bing Places</div>
+          <div class="op-card-sub">Copy-paste — Microsoft's business directory</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://www.bingplaces.com" target="_blank">bingplaces.com</a> and sign in with a Microsoft account</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Click <strong>Get started</strong> → search for BlastyBiz → if not found, click <strong>Create new business</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Pro tip: you can <strong>import directly from your Google Business Profile</strong> — saves re-entering everything</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Verify via phone PIN or email — takes a few minutes</div></div>
+        </div>
+        <div class="note mt-12">Set up Google Business Profile first — Bing's import feature makes this a 2-minute job.</div>
+      </div>
+    </div>
+
+    <!-- Thumbtack -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-client-thumbtack" onclick="toggleCheck(event,'client-thumbtack')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">📌 Thumbtack</div>
+          <div class="op-card-sub">Copy-paste — local professional services marketplace</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://www.thumbtack.com/pro" target="_blank">thumbtack.com/pro</a> and click <strong>Join as a pro</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Select service type: <strong>Marketing Consultant</strong> or <strong>Social Media Manager</strong></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Set your service area, hourly rate, and a profile description</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Add photos, certifications, and respond to a few quote requests early on to build your rating</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Note: Thumbtack charges per lead (not a flat fee) — set a monthly budget to control spend</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       GOOGLE OAUTH VERIFICATION
+  ══════════════════════════════════════════ -->
+  <div class="op-section">
+    <div class="section-header">
+      <span class="section-icon">🔍</span>
+      <span class="section-title">Google OAuth Consent Screen Verification</span>
+      <span class="section-badge info">Not required — no action</span>
+    </div>
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-google-logo" onclick="toggleCheck(event,'google-logo')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">✅ Logo uploaded, app is live in production</div>
+          <div class="op-card-sub">The 120×120 BlastyBiz logo is uploaded in Branding, and the OAuth consent screen is already published (Publishing status: In production).</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-step-label">Confirmed via Google Cloud Console</p>
+        <ol class="op-list">
+          <li>App logo: uploaded ✅</li>
+          <li>Publishing status: <strong>In production</strong> ✅</li>
+          <li>Data Access status: "Verification is not required since your app is not requesting any sensitive or restricted scopes." ✅</li>
+        </ol>
+      </div>
+    </div>
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-google-verify" onclick="toggleCheck(event,'google-verify')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">Nothing to submit — only matters if you cross 100 users</div>
+          <div class="op-card-sub">There is no "Rejected" status and no submit-for-review button anywhere in the console right now. Google only requires full verification if BlastyBiz starts requesting sensitive scopes or exceeds the 100-user OAuth cap.</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-step-label">What this means today</p>
+        <ol class="op-list">
+          <li>Real users connecting Google Business Profile will see a "Google hasn't verified this app" screen, but can click <strong>Advanced → Go to BlastyBiz (unsafe)</strong> to continue — this works fine</li>
+          <li>Check <span class="cf-url">console.cloud.google.com → OAuth consent screen → Audience</span> occasionally to watch the user count (currently 1 / 100 cap)</li>
+          <li>Only revisit this once you're approaching 100 connected Google accounts — at that point come back and we'll start the real verification submission</li>
+        </ol>
+        <div class="op-note">ℹ️ This was previously marked "Rejected — Resubmit" on this page, which was inaccurate. Confirmed directly in Google Cloud Console on Jul 9, 2026 that no rejection or pending review exists.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       META APP REVIEW
+  ══════════════════════════════════════════ -->
+  <div class="op-section">
+    <div class="section-header">
+      <span class="section-icon">📋</span>
+      <span class="section-title">Meta App Review</span>
+      <span class="section-badge info">Submitted — In Review</span>
+    </div>
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-meta-review" onclick="toggleCheck(event,'meta-review')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">Waiting on Meta's decision — switch app to Live once approved</div>
+          <div class="op-card-sub">Submission is done. Facebook &amp; Instagram OAuth currently works for test accounts only (Development mode) until Meta approves.</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-step-label">What to do</p>
+        <ol class="op-list">
+          <li>✅ Already submitted with permissions: <strong>pages_manage_posts</strong>, <strong>pages_read_engagement</strong>, <strong>instagram_basic</strong>, <strong>instagram_content_publish</strong> — screencast included</li>
+          <li>Nothing to do until Meta responds by email — review typically takes 5–7 business days</li>
+          <li>Once approved, go to <span class="cf-url">developers.facebook.com → BlastyBiz app → App Settings → Basic → App Mode</span> and switch from Development to <strong>Live</strong></li>
+          <li>If rejected, Meta's email explains why — come back here and we'll fix the specific issue before resubmitting</li>
+        </ol>
+        <div class="op-note">⚠️ Until Meta approves, only Facebook test accounts you've manually added can connect Facebook or Instagram through BlastyBiz.</div>
+      </div>
+    </div>
+
+    <!-- Facebook Sign-In reminder -->
+    <div class="card" style="border-left:4px solid #e65100;">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-fb-signin" onclick="toggleCheck(event,'fb-signin')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">🔐 Verify Facebook sign-in is enabled in Firebase Console</div>
+          <div class="op-card-sub">The login page is wired up — but Firebase needs the App ID &amp; Secret entered before it will work for real users</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-step-label">What to check</p>
+        <ol class="op-list">
+          <li>Go to <span class="cf-url">console.firebase.google.com → blastybiz-9523e → Authentication → Sign-in method</span></li>
+          <li>Find <strong>Facebook</strong> — confirm it's enabled and your <strong>App ID</strong> and <strong>App Secret</strong> from developers.facebook.com are entered</li>
+          <li>Copy the <strong>OAuth redirect URI</strong> shown in Firebase and confirm it's listed in your Facebook app under <span class="cf-url">developers.facebook.com → BlastyBiz app → Facebook Login → Settings → Valid OAuth Redirect URIs</span></li>
+          <li>Test it: open the login page in an incognito tab and try "Continue with Facebook"</li>
+        </ol>
+        <div class="op-note">⚠️ Without this, the Facebook sign-in button will throw an error for all users.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       PLANNED PLATFORM APIS
+  ══════════════════════════════════════════ -->
+  <div class="op-section">
+    <div class="section-header">
+      <span class="section-icon">🔗</span>
+      <span class="section-title">Planned Platform APIs</span>
+      <span class="section-badge pending">To Build</span>
+    </div>
+
+    <!-- LinkedIn API -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-linkedin-api" onclick="toggleCheck(event,'linkedin-api')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">💼 LinkedIn Posts API</div>
+          <div class="op-card-sub">Upgrade LinkedIn from copy-paste to auto-post</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-sub-text">LinkedIn has a full Posts API and allows third-party apps to post on behalf of business pages. Implementation steps:</p>
+        <ul class="op-list">
+          <li><strong>Create a LinkedIn App</strong> — go to <a href="https://www.linkedin.com/developers/apps" target="_blank">linkedin.com/developers/apps</a>, create an app, and request the <code>w_member_social</code> and <code>r_basicprofile</code> OAuth scopes.</li>
+          <li><strong>Get LinkedIn Page Access</strong> — request the <code>w_organization_social</code> scope for posting to Company Pages (not just personal profiles). This requires a company page to be linked to your app.</li>
+          <li><strong>Add OAuth Connect flow</strong> — follow the same pattern used for Google/Facebook in <code>artifacts/api-server/public/connect.html</code>. LinkedIn uses standard OAuth 2.0 with auth code + token exchange.</li>
+          <li><strong>Store tokens in Firestore</strong> — save <code>accessToken</code>, <code>refreshToken</code>, <code>expiresAt</code>, and <code>linkedinOrgId</code> (the company page URN) in the user's <code>platformConnections/linkedin</code> doc.</li>
+          <li><strong>Add Cloud Function: <code>postToLinkedIn</code></strong> — call the LinkedIn Posts API endpoint <code>POST https://api.linkedin.com/v2/ugcPosts</code> with the org URN and the AI-generated content. LinkedIn tokens expire in 60 days — implement token refresh.</li>
+          <li><strong>Switch platform type to <code>api</code></strong> — update the <code>linkedin</code> entry in <code>BlastyBiz.html</code> platforms array and <code>SCHED_PLATFORMS</code> in <code>functions/index.js</code>.</li>
+        </ul>
+        <p class="op-note">Note: LinkedIn's API does not require an app review process like Meta — you can go live once your app is approved (usually same day). Token lifespan is 60 days; plan for refresh logic.</p>
+      </div>
+    </div>
+
+    <!-- X (Twitter) API -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-x-api" onclick="toggleCheck(event,'x-api')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">✖️ X (Twitter) Posts API</div>
+          <div class="op-card-sub">Upgrade X from copy-paste to auto-post — requires per-user developer accounts</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-sub-text">X has a working Posts API but the auth model is different — each business user must have their own X Developer account. Steps:</p>
+        <ul class="op-list">
+          <li><strong>Understand the constraint</strong> — X does not allow a single app to post to unlimited third-party accounts without each user having a developer account or going through the Elevated API tier. Free tier: 1,500 posts/month per app. This is fine for BlastyBiz at current scale.</li>
+          <li><strong>Create an X Developer App</strong> — go to <a href="https://developer.x.com/en/portal/dashboard" target="_blank">developer.x.com</a>, create a project + app, and enable OAuth 2.0 with PKCE. Request <code>tweet.write</code> and <code>users.read</code> scopes.</li>
+          <li><strong>Add OAuth Connect flow</strong> — add X to <code>connect.html</code> with the same OAuth pattern. X uses OAuth 2.0 with PKCE (no client secret needed on the redirect). Store the auth code server-side and exchange for tokens via your Express API.</li>
+          <li><strong>Store tokens in Firestore</strong> — save <code>accessToken</code>, <code>refreshToken</code>, <code>expiresAt</code>, and <code>xUserId</code> in the user's <code>platformConnections/x</code> doc.</li>
+          <li><strong>Add Cloud Function: <code>postToX</code></strong> — call <code>POST https://api.twitter.com/2/tweets</code> with the Bearer token and the AI-generated text (max 280 chars). Tokens expire in 2 hours — implement refresh using the refresh token.</li>
+          <li><strong>Switch platform type to <code>api</code></strong> — update the <code>x</code> entry in <code>BlastyBiz.html</code> platforms array and <code>SCHED_PLATFORMS</code> in <code>functions/index.js</code>.</li>
+        </ul>
+        <p class="op-note">Note: Keep the copy-paste fallback available. If a user does not connect X, the card still generates a 280-char post they can paste manually. X API access at the Basic tier ($100/mo) removes the 1,500-post cap if needed at scale.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       ONGOING
+  ══════════════════════════════════════════ -->
+  <div class="op-section">
+    <div class="section-header">
+      <span class="section-icon">🔧</span>
+      <span class="section-title">Ongoing Operator Commands</span>
+      <span class="section-badge ok">Reference</span>
+    </div>
+
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box check-hidden"></div>
+        <div class="flex-1">
+          <div class="op-card-title">Deploy commands cheat sheet</div>
+          <div class="op-card-sub">Run in Replit Shell whenever you make changes</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-sub-text">Run these from the Replit Shell tab:</p>
+
+        <p class="op-cmd-label">Deploy HTML pages (hosting)</p>
+        <div class="code-block">
+          <span class="code-text">npx firebase-tools deploy --only hosting</span>
+          <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only hosting')">Copy</button>
+        </div>
+
+        <p class="op-cmd-label-12">Deploy all functions (after saving secrets)</p>
+        <div class="code-block">
+          <span class="code-text">npx firebase-tools deploy --only functions</span>
+          <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions')">Copy</button>
+        </div>
+
+        <p class="op-cmd-label-12">Deploy Firestore security rules</p>
+        <div class="code-block">
+          <span class="code-text">npx firebase-tools deploy --only firestore:rules</span>
+          <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only firestore:rules')">Copy</button>
+        </div>
+
+        <p class="op-cmd-label-12">Deploy a specific function</p>
+        <div class="code-block">
+          <span class="code-text">npx firebase-tools deploy --only functions:functionName</span>
+          <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:functionName')">Copy</button>
+        </div>
+
+        <p class="op-cmd-label-12">View function logs</p>
+        <div class="code-block">
+          <span class="code-text">npx firebase-tools functions:log --only functionName</span>
+          <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools functions:log --only functionName')">Copy</button>
+        </div>
+
+        <hr>
+        <p class="op-cmd-label-hd">All deployed functions (34 total — v2, us-central1)</p>
+        <p class="op-fn-group mt-10">AI</p>
+        <p class="op-fn-list">
+          adaptListing · generateEnrichmentQuestions · resolveCategories · suggestPlatforms
+        </p>
+        <p class="op-fn-group">Publishing</p>
+        <p class="op-fn-list">
+          approveDraft · approvePendingPost · dispatchPublishJob · postToAppleMaps · postToBing
+        </p>
+        <p class="op-fn-group">Platform OAuth</p>
+        <p class="op-fn-list">
+          facebookOAuthCallback · googleOAuthCallback · initiateFacebookOAuth · initiateGoogleOAuth
+        </p>
+        <p class="op-fn-group">Payments</p>
+        <p class="op-fn-list">
+          createCheckoutSession · createPortalSession · squareWebhook
+        </p>
+        <p class="op-fn-group">Scheduled</p>
+        <p class="op-fn-list">
+          scheduledPostingCheck · scheduledYelpCategoryRefresh
+        </p>
+        <p class="op-fn-group">Triggers</p>
+        <p class="op-fn-list">
+          jobFailedTrigger · userCreatedTrigger
+        </p>
+        <p class="op-fn-group">Account</p>
+        <p class="op-fn-list">
+          createBusiness · deleteAccount · uploadImage
+        </p>
+        <p class="op-fn-group">Admin</p>
+        <p class="op-fn-list">
+          adminGetAdminEmails · adminListActivityLogs · adminListBusinesses · adminListFailedJobs ·
+          adminListPlatformConnections · adminListPublishJobs · adminMarkManualFollowup · adminOnboardingFunnel ·
+          adminRetryJob ·
+          adminSubscriptionSummary · adminUpdateAdminEmails · adminUpdatePricing · refreshYelpCategories ·
+          sendTestEmail · setOperatorSecret
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Yelp Category Cache -->
+  <div class="op-section">
+    <div class="op-card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <span>⭐ Yelp Category Cache</span>
+        <span class="op-chevron">▶</span>
+      </div>
+      <div class="op-card-body">
+        <p style="font-size:13px;color:#888;margin:0 0 12px;line-height:1.6;">
+          Forces a live pull from the Yelp Fusion API and repopulates <code>platformCategoryCache/yelp</code> in Firestore.
+          The scheduled refresh runs weekly — use this button after first configuring <code>YELP_API_KEY</code>,
+          or any time the cache seems stale.
+        </p>
+        <div id="yelp-refresh-status" style="font-size:13px;color:#888;margin-bottom:12px;min-height:20px;"></div>
+        <button type="button" id="yelp-refresh-btn" onclick="refreshYelpCategoriesNow()"
+          style="padding:10px 20px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+          🔄 Refresh Yelp Categories Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Access management -->
+  <div class="op-section">
+    <div class="op-card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <span>Admin Access</span>
+        <span class="op-chevron">▶</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-cmd-label-hd">Admin email addresses</p>
+        <p style="font-size:13px;color:#555;margin:0 0 12px;">
+          These accounts can access all Admin pages and Cloud Function admin endpoints.
+          <strong>info@blastybiz.com</strong> is the permanent bootstrap admin and cannot be removed.
+        </p>
+        <div id="admin-email-list" style="margin-bottom:12px;"></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="new-admin-email" type="email" placeholder="new@example.com"
+            style="flex:1;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+          <button type="button" onclick="addAdminEmail()"
+            style="padding:8px 14px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">
+            Add
+          </button>
+        </div>
+        <p id="admin-email-status" style="font-size:12px;color:#6b7280;margin:8px 0 0;"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       LIVE E2E VERIFICATION
+  ══════════════════════════════════════════ -->
+  <div class="op-section">
+    <div class="section-header">
+      <span class="section-icon">🧪</span>
+      <span class="section-title">Live End-to-End Verification</span>
+      <span class="section-badge warn" id="badge-e2e">Browser test required</span>
+    </div>
+    <p style="font-size:13px;color:#555;margin:0 0 12px 4px;">These four flows require a real logged-in session and can't be tested from the shell. Do them in the browser on the live site and check each one off when it passes.</p>
+
+    <!-- Leg 1: Onboarding -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-e2e-onboard" onclick="toggleCheck(event,'e2e-onboard')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">🦵 Leg 1 — Trial Signup + Blasty Onboarding</div>
+          <div class="op-card-sub">Sign up → magic link → complete all 22 Blasty steps → confirm business saved</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://blastybiz-9523e.web.app/BlastyBiz-Trial.html" target="_blank">BlastyBiz-Trial.html</a> — enter an email and request the magic link</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Click the magic link in the email — confirm it lands on Onboard2 and Blasty appears with <strong>s-wave</strong> greeting</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Complete all 22 steps — name, address, story, platforms (step 21), AI category (step 22)</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Confirm Blasty hits <strong>s-celebrate</strong> and redirects to the dashboard with <code>?autogenerate=1</code></div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Check Firestore → <code>users/{uid}/businesses</code> — confirm the business doc is written with all fields including <code>category</code></div></div>
+        </div>
+        <div class="note mt-12">Tests: Firebase Auth magic link, <code>suggestCategory</code> CF (AI), <code>createBusiness</code> CF (with Firestore biz limits), Firestore write.</div>
+      </div>
+    </div>
+
+    <!-- Leg 2: Blast / AI -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-e2e-blast" onclick="toggleCheck(event,'e2e-blast')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">🦵 Leg 2 — Blast + AI Draft Generation</div>
+          <div class="op-card-sub">Trigger a blast from the dashboard → confirm AI drafts appear for each platform</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">On the dashboard (<a href="https://blastybiz-9523e.web.app/BlastyBiz.html" target="_blank">BlastyBiz.html</a>), open a business and click <strong>Blast</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Confirm the spinner fires and <code>adaptListing</code> CF is called — watch the network tab or wait for drafts to appear</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Confirm AI-generated draft content appears for each selected platform card</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Click <strong>Approve</strong> on one draft — confirm <code>approveDraft</code> CF runs and the post enters the queue</div></div>
+        </div>
+        <div class="note mt-12">Tests: <code>adaptListing</code> CF (Anthropic/Gemini AI), <code>approveDraft</code> CF, Firestore draft write, publish job creation.</div>
+      </div>
+    </div>
+
+    <!-- Leg 3: Admin Subscriptions / Business Limits -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-e2e-limits" onclick="toggleCheck(event,'e2e-limits')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">🦵 Leg 3 — Admin Business Limits</div>
+          <div class="op-card-sub">Confirm the "Business Limits per Plan" section loads, saves, and is enforced by createBusiness</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://blastybiz-9523e.web.app/BlastyBiz-Admin-Subscriptions.html" target="_blank">Admin Subscriptions</a> — scroll to the <strong>Business Limits per Plan</strong> section</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Confirm the current saved limits load into the Starter / Pro / Agency fields</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Change a limit (e.g. Starter → 2), hit <strong>Save Limits</strong>, confirm the success toast</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Have a Starter-plan test account try to create a second business — confirm it's blocked at the limit</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Change Starter back to 1 and save</div></div>
+        </div>
+        <div class="note mt-12">Tests: <code>settings/bizLimits</code> Firestore doc, admin Firestore write, <code>createBusiness</code> CF limit enforcement.</div>
+      </div>
+    </div>
+
+    <!-- Leg 4: Admin Queue -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-e2e-queue" onclick="toggleCheck(event,'e2e-queue')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">🦵 Leg 4 — Admin Queue + Platform Health</div>
+          <div class="op-card-sub">Confirm queue manager shows live jobs and platform health reads real connection data</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://blastybiz-9523e.web.app/BlastyBiz-Admin-Queue-Manager.html" target="_blank">Admin Queue Manager</a> — confirm it loads and shows any pending or completed jobs from Leg 2</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Go to <a href="https://blastybiz-9523e.web.app/BlastyBiz-Admin-Platform-Health.html" target="_blank">Admin Platform Health</a> — confirm it loads and shows platform connection statuses</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Go to <a href="https://blastybiz-9523e.web.app/BlastyBiz-Admin-Users.html" target="_blank">Admin Users</a> — confirm the test user from Leg 1 appears with correct plan and business count</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Go to <a href="https://blastybiz-9523e.web.app/BlastyBiz-Admin-Logs.html" target="_blank">Admin Logs</a> — confirm activity from the blast in Leg 2 appears</div></div>
+        </div>
+        <div class="note mt-12">Tests: <code>adminListPublishJobs</code>, <code>adminPlatformHealth</code>, <code>adminListBusinesses</code>, <code>adminListActivityLogs</code> CFs — all authenticated admin endpoints.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       ONBOARDING FUNNEL
+  ══════════════════════════════════════════ -->
+  <div class="op-section">
+    <div class="op-card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <span>📊 Onboarding Funnel — Where Users Drop Off</span>
+        <span class="op-chevron">▶</span>
+      </div>
+      <div class="op-card-body">
+        <p style="font-size:13px;color:#888;margin:0 0 14px;line-height:1.6;">
+          Users who signed up but haven't finished onboarding, grouped by the step where they stopped.
+          Highest bar = biggest friction point. Click any bar to see exactly who's stuck there.
+        </p>
+        <div id="funnel-status" style="font-size:13px;color:#888;min-height:18px;margin-bottom:10px;"></div>
+        <div id="funnel-chart"></div>
+        <div id="funnel-meta" style="font-size:12px;color:#9ca3af;margin-top:14px;"></div>
+        <div id="funnel-detail" style="margin-top:18px;display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+</div></div></main>
+
+<script>
+const STORAGE_KEY = 'blastybiz_operate_checks';
+
+function loadChecks() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { return {}; }
+}
+function saveChecks(checks) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(checks));
+}
+
+function toggleCheck(e, key) {
+  e.stopPropagation();
+  const checks = loadChecks();
+  checks[key] = !checks[key];
+  saveChecks(checks);
+  renderChecks();
+}
+
+function renderChecks() {
+  const checks = loadChecks();
+  const checkable = ['client-google','client-facebook','client-instagram',
+                     'client-yelp','client-nextdoor','client-apple',
+                     'client-bing','client-thumbtack',
+                     'google-verify','google-logo',
+                     'meta-review',
+                     'linkedin-api','x-api',
+                     'e2e-onboard','e2e-blast','e2e-limits','e2e-queue'];
+  checkable.forEach(key => {
+    const box = document.getElementById('chk-' + key);
+    if (!box) return;
+    if (checks[key]) box.classList.add('done');
+    else box.classList.remove('done');
+  });
+
+  const done = checkable.filter(k => checks[k]).length;
+  const total = checkable.length;
+  document.getElementById('prog-bar').style.width = (done/total*100) + '%';
+  document.getElementById('prog-label').textContent = `${done} / ${total} done`;
+
+  const clientKeys = ['client-google','client-facebook','client-instagram',
+                      'client-yelp','client-nextdoor','client-apple',
+                      'client-bing','client-thumbtack'];
+  updateBadge('badge-client', clientKeys, checks);
+  updateBadge('badge-e2e', ['e2e-onboard','e2e-blast','e2e-limits','e2e-queue'], checks);
+
+}
+
+function updateBadge(badgeId, keys, checks) {
+  const done = keys.filter(k => checks[k]).length;
+  const badge = document.getElementById(badgeId);
+  if (!badge) return;
+  if (done === keys.length) { badge.textContent = 'Complete ✓'; badge.className = 'section-badge ok'; }
+  else if (done > 0) { badge.textContent = `${done}/${keys.length} done`; badge.className = 'section-badge warn'; }
+  else { badge.textContent = 'Setup required'; badge.className = 'section-badge warn'; }
+}
+
+function toggleCard(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.op-chevron');
+  body.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+
+function copyCode(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+renderChecks();
+</script>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const app = initializeApp({
+  apiKey: 'AIzaSyCyEwA6jGHp0xjAJO3NOXHblYfpajtFXGM',
+  authDomain: 'blastybiz-9523e.firebaseapp.com',
+  projectId: 'blastybiz-9523e'
+});
+const auth = getAuth(app);
+
+// ── Send test email ──────────────────────────────────────────────────────
+  window.sendTestEmail = async function(btn) {
+    const to = document.getElementById('inp-test-email').value.trim();
+    const st = document.getElementById('st-test-email');
+    if (!to) { st.textContent = 'Enter a recipient address first.'; st.style.color='#c0392b'; return; }
+    btn.disabled = true; btn.textContent = 'Sending…'; st.textContent = ''; st.style.color='#4a604a';
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not signed in — refresh and sign in first');
+      const token = await user.getIdToken();
+      const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/sendTestEmail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({
+          to,
+          subject: '✅ BlastyBiz Resend Connection Test',
+          html: '<div style="font-family:sans-serif;padding:24px;color:#111"><h2>Resend OK</h2><p>This confirms email delivery from <strong>info@blastybiz.com</strong> is working.</p></div>'
+        })
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Send failed');
+      st.textContent = '✅ Sent! Check ' + to;
+      st.style.color = '#1a6630';
+    } catch(e) {
+      st.textContent = '✗ ' + e.message;
+      st.style.color = '#c0392b';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Send Test';
+    }
+  };
+
+window.saveSecret = async function(name, inputId, statusId, btn) {
+  const value = document.getElementById(inputId).value.trim();
+  const statusEl = document.getElementById(statusId);
+
+  if (!value) {
+    statusEl.textContent = 'Please enter a value first.';
+    statusEl.className = 'save-status err';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  statusEl.textContent = 'Saving…';
+  statusEl.className = 'save-status';
+
+  try {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Not signed in — reload the page');
+    const resp = await fetch(`${CF_BASE}/setOperatorSecret`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, value })
+    });
+    const data = await resp.json();
+    if (!resp.ok || !data.success) throw new Error(data.error || 'Save failed');
+
+    statusEl.textContent = '✓ Saved to Secret Manager';
+    statusEl.className = 'save-status ok';
+    document.getElementById(inputId).value = '';
+    document.getElementById('redeploy-banner').classList.add('visible');
+  } catch (e) {
+    statusEl.textContent = '✗ ' + e.message;
+    statusEl.className = 'save-status err';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save';
+  }
+};
+
+// ── Admin email management ────────────────────────────────────────────────────
+const CF_BASE = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
+let _adminEmailsCache = { bootstrap: [], extra: [] };
+
+async function _cfGet(path) {
+  const token = await auth.currentUser.getIdToken();
+  const r = await fetch(CF_BASE + path, { headers: { 'Authorization': 'Bearer ' + token } });
+  return r.json();
+}
+async function _cfPost(path, body) {
+  const token = await auth.currentUser.getIdToken();
+  const r = await fetch(CF_BASE + path, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return r.json();
+}
+
+function renderAdminEmails() {
+  const { bootstrap, extra } = _adminEmailsCache;
+  const el = document.getElementById('admin-email-list');
+  if (!el) return;
+  el.innerHTML = '';
+  const all = [
+    ...bootstrap.map(e => ({ email: e, permanent: true })),
+    ...extra.map(e => ({ email: e, permanent: false })),
+  ];
+  if (!all.length) { el.innerHTML = '<p style="font-size:13px;color:#9ca3af;">No extra admins yet.</p>'; return; }
+  all.forEach(({ email, permanent }) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0f0f0;';
+    const span = document.createElement('span');
+    span.style.cssText = 'flex:1;font-size:13px;';
+    span.textContent = email;
+    row.appendChild(span);
+    if (permanent) {
+      const badge = document.createElement('span');
+      badge.style.cssText = 'font-size:11px;color:#9ca3af;padding:2px 6px;background:#f3f4f6;border-radius:10px;';
+      badge.textContent = 'permanent';
+      row.appendChild(badge);
+    } else {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.style.cssText = 'font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;padding:2px 6px;';
+      btn.textContent = '✕ Remove';
+      btn.addEventListener('click', () => removeAdminEmail(email));
+      row.appendChild(btn);
+    }
+    el.appendChild(row);
+  });
+}
+
+async function loadAdminEmails() {
+  const statusEl = document.getElementById('admin-email-status');
+  try {
+    const data = await _cfGet('/adminGetAdminEmails');
+    _adminEmailsCache = { bootstrap: data.bootstrap || [], extra: data.extra || [] };
+    renderAdminEmails();
+    statusEl.textContent = '';
+  } catch(e) {
+    statusEl.textContent = '✗ Failed to load: ' + e.message;
+  }
+}
+
+async function addAdminEmail() {
+  const input = document.getElementById('new-admin-email');
+  const statusEl = document.getElementById('admin-email-status');
+  const email = (input.value || '').trim().toLowerCase();
+  if (!email || !email.includes('@')) { statusEl.textContent = 'Enter a valid email.'; return; }
+  if (_adminEmailsCache.bootstrap.includes(email) || _adminEmailsCache.extra.includes(email)) {
+    statusEl.textContent = 'Already in the list.'; return;
+  }
+  statusEl.textContent = 'Saving…';
+  const newList = [..._adminEmailsCache.extra, email];
+  try {
+    await _cfPost('/adminUpdateAdminEmails', { emails: newList });
+    _adminEmailsCache.extra = newList;
+    input.value = '';
+    renderAdminEmails();
+    statusEl.textContent = '✓ Added';
+  } catch(e) { statusEl.textContent = '✗ ' + e.message; }
+}
+
+async function removeAdminEmail(email) {
+  const statusEl = document.getElementById('admin-email-status');
+  statusEl.textContent = 'Removing…';
+  const newList = _adminEmailsCache.extra.filter(e => e !== email);
+  try {
+    await _cfPost('/adminUpdateAdminEmails', { emails: newList });
+    _adminEmailsCache.extra = newList;
+    renderAdminEmails();
+    statusEl.textContent = '✓ Removed';
+  } catch(e) { statusEl.textContent = '✗ ' + e.message; }
+}
+
+// ── Onboarding Funnel ────────────────────────────────────────────────────────
+let _funnelOpenStep = null; // currently expanded step index
+
+async function loadOnboardingFunnel() {
+  const statusEl = document.getElementById('funnel-status');
+  const chartEl  = document.getElementById('funnel-chart');
+  const metaEl   = document.getElementById('funnel-meta');
+  if (!statusEl || !chartEl) return;
+  statusEl.textContent = 'Loading…';
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res   = await fetch(CF_BASE + '/adminOnboardingFunnel', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Server error ' + res.status);
+
+    statusEl.textContent = '';
+
+    if (!data.steps || data.steps.length === 0) {
+      chartEl.innerHTML = '<p style="font-size:13px;color:#9ca3af;margin:0;">No users are currently stuck mid-onboarding. 🎉</p>';
+      metaEl.textContent = `Total not yet onboarded: ${data.totalNotOnboarded ?? 0} · As of: ${new Date(data.asOf).toLocaleString()}`;
+      return;
+    }
+
+    const maxCount = data.steps[0].count;
+    const rows = data.steps.map(s => {
+      const pct = maxCount > 0 ? Math.max(4, Math.round((s.count / maxCount) * 100)) : 4;
+      const stepNum = s.stepIndex + 1;
+      return `<div data-step="${s.stepIndex}" onclick="toggleStepUsers(${s.stepIndex},'${s.label.replace(/'/g,"\\'")}',this)"
+        style="display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer;border-radius:6px;padding:3px 6px;transition:background .15s;"
+        onmouseenter="this.style.background='#f0f4ff'" onmouseleave="this.style.background=''">
+        <div style="width:26px;text-align:right;font-size:11px;color:#9ca3af;flex-shrink:0;">s${stepNum}</div>
+        <div style="flex:1;background:#f3f4f6;border-radius:4px;height:22px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:#2563eb;border-radius:4px;transition:width .3s;"></div>
+        </div>
+        <div style="width:28px;text-align:right;font-size:12px;font-weight:700;color:#111;flex-shrink:0;">${s.count}</div>
+        <div style="min-width:160px;font-size:12px;color:#555;">${s.label}</div>
+        <div style="font-size:11px;color:#9ca3af;flex-shrink:0;">▸</div>
+      </div>`;
+    }).join('');
+
+    chartEl.innerHTML = rows;
+    metaEl.textContent = `${data.totalStuck} user${data.totalStuck === 1 ? '' : 's'} stuck · ${data.totalNotOnboarded} total not yet onboarded · As of ${new Date(data.asOf).toLocaleString()}`;
+  } catch(e) {
+    statusEl.style.color = '#f87171';
+    statusEl.textContent = '✗ ' + e.message;
+  }
+}
+
+function _fmtAgo(isoStr) {
+  if (!isoStr) return '—';
+  const ms = Date.now() - new Date(isoStr).getTime();
+  const mins  = Math.floor(ms / 60000);
+  const hours = Math.floor(ms / 3600000);
+  const days  = Math.floor(ms / 86400000);
+  if (days > 0)  return days  + 'd ago';
+  if (hours > 0) return hours + 'h ago';
+  if (mins > 0)  return mins  + 'm ago';
+  return 'just now';
+}
+
+function _fmtDate(isoStr) {
+  if (!isoStr) return '—';
+  return new Date(isoStr).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
+}
+
+async function toggleStepUsers(stepIndex, stepLabel, rowEl) {
+  const detailEl = document.getElementById('funnel-detail');
+  if (!detailEl) return;
+
+  // If clicking the already-open step, close it
+  if (_funnelOpenStep === stepIndex) {
+    _funnelOpenStep = null;
+    detailEl.style.display = 'none';
+    detailEl.innerHTML = '';
+    // Reset all row indicators
+    document.querySelectorAll('#funnel-chart [data-step]').forEach(r => {
+      const ind = r.querySelector('div:last-child');
+      if (ind) ind.textContent = '▸';
+    });
+    return;
+  }
+
+  // Update open state and indicator
+  _funnelOpenStep = stepIndex;
+  document.querySelectorAll('#funnel-chart [data-step]').forEach(r => {
+    const ind = r.querySelector('div:last-child');
+    if (ind) ind.textContent = r.dataset.step == stepIndex ? '▾' : '▸';
+  });
+
+  detailEl.style.display = 'block';
+  detailEl.innerHTML = `<div style="font-size:13px;color:#888;padding:10px 0;">Loading users for "${stepLabel}"…</div>`;
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res   = await fetch(`${CF_BASE}/adminOnboardingFunnel?stepIndex=${stepIndex}`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Server error ' + res.status);
+
+    const users = data.users || [];
+    if (!users.length) {
+      detailEl.innerHTML = `<p style="font-size:13px;color:#9ca3af;padding:10px 0;">No users found at this step.</p>`;
+      return;
+    }
+
+    const tableRows = users.map(u => {
+      const stuckFor = _fmtAgo(u.lastProgressAt || u.createdAt);
+      const started  = _fmtDate(u.createdAt);
+      const nudgeLabel = u.nudgeCount > 0
+        ? `Nudged ${u.nudgeCount}× (last ${_fmtAgo(u.lastNudgeAt)})`
+        : 'Send nudge';
+      const nudgeStyle = u.nudgeCount > 0
+        ? 'font-size:11px;color:#6b7280;background:#f9fafb;border:1px solid #e5e7eb;padding:4px 10px;border-radius:4px;cursor:pointer;white-space:nowrap;'
+        : 'font-size:11px;color:#fff;background:#2563eb;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;white-space:nowrap;';
+      return `<tr>
+        <td style="padding:7px 10px 7px 0;font-size:12px;color:#111;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.email || '<em style="color:#9ca3af">no email</em>'}</td>
+        <td style="padding:7px 8px;font-size:11px;color:#9ca3af;font-family:monospace;white-space:nowrap;">${u.uid.slice(0,10)}…</td>
+        <td style="padding:7px 8px;font-size:12px;color:#555;white-space:nowrap;">${started}</td>
+        <td style="padding:7px 8px;font-size:12px;color:#555;white-space:nowrap;">${stuckFor}</td>
+        <td style="padding:7px 0 7px 8px;white-space:nowrap;">
+          <button type="button" id="nudge-btn-${u.uid}" style="${nudgeStyle}"
+            onclick="sendOnboardingNudge('${u.uid}','${(u.email||'').replace(/'/g,"\\'")}',this)">${nudgeLabel}</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    detailEl.innerHTML = `
+      <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:8px;">
+        ${users.length} user${users.length===1?'':'s'} stuck at <em>${stepLabel}</em>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;min-width:460px;">
+          <thead>
+            <tr style="border-bottom:1px solid #e5e7eb;">
+              <th style="text-align:left;font-size:11px;color:#6b7280;font-weight:600;padding:0 10px 6px 0;">Email</th>
+              <th style="text-align:left;font-size:11px;color:#6b7280;font-weight:600;padding:0 8px 6px;">UID</th>
+              <th style="text-align:left;font-size:11px;color:#6b7280;font-weight:600;padding:0 8px 6px;">Started</th>
+              <th style="text-align:left;font-size:11px;color:#6b7280;font-weight:600;padding:0 8px 6px;">Stuck for</th>
+              <th style="text-align:left;font-size:11px;color:#6b7280;font-weight:600;padding:0 0 6px 8px;">Action</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>`;
+  } catch(e) {
+    detailEl.innerHTML = `<p style="font-size:13px;color:#f87171;padding:10px 0;">✗ ${e.message}</p>`;
+  }
+}
+
+async function sendOnboardingNudge(uid, email, btn) {
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch(CF_BASE + '/adminSendOnboardingNudge', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Server error ' + res.status);
+    btn.textContent = '✓ Sent';
+    btn.style.background = '#dcfce7';
+    btn.style.color = '#166534';
+    btn.style.border = '1px solid #bbf7d0';
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = original;
+    alert('Failed to send nudge: ' + e.message);
+  }
+}
+
+// Load admin emails once Firebase auth is ready
+onAuthStateChanged(auth, user => {
+  if (user) {
+    loadAdminEmails();
+    loadOnboardingFunnel();
+  }
+});
+
+async function refreshYelpCategoriesNow() {
+  const btn    = document.getElementById('yelp-refresh-btn');
+  const status = document.getElementById('yelp-refresh-status');
+  btn.disabled = true;
+  btn.textContent = '⏳ Refreshing…';
+  status.style.color = '#888';
+  status.textContent = 'Calling refreshYelpCategories…';
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res   = await fetch(CF_BASE + '/refreshYelpCategories', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data  = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Server error ' + res.status);
+    status.style.color = '#00C853';
+    status.textContent = '✓ ' + (data.message || 'Cache refreshed');
+  } catch(e) {
+    status.style.color = '#f87171';
+    status.textContent = '✗ ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 Refresh Yelp Categories Now';
+  }
+}
+</script>
+<nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Queue-Manager.html">📋<br>Queue</a><a class="" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a><a class="active" href="#">⚙️<br>Operate</a></nav>
+</body>
+</html>

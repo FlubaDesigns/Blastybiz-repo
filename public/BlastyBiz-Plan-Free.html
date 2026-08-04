@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta charset="UTF-8"/>
+  <meta name="theme-color" content="#000000"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Free Plan — Post to Every Major Platform Free — BlastyBiz</title>
+  <meta name="description" content="Start BlastyBiz for free. Get AI-adapted marketing copy across every major platform, 3 times a month, with no credit card required. Upgrade to Pro anytime for $19/month."/>
+  <meta name="robots" content="index, follow"/>
+  <meta property="og:title" content="Free Plan — BlastyBiz"/>
+  <meta property="og:description" content="Post AI-adapted listings to every major platform for free. 3 listings per month, no credit card required."/>
+  <meta property="og:type" content="website"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="global-style.css?v=1785858635994"/>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "BlastyBiz Free Plan",
+    "description": "AI-adapted marketing listings posted across every major platform. 3 listings per month at no cost.",
+    "brand": { "@type": "Brand", "name": "BlastyBiz" },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock",
+      "url": "https://blastybiz-9523e.web.app/BlastyBiz-Plan-Free.html"
+    }
+  }
+  </script>
+<script src="blastybiz-menu.js?v=6"></script>
+</head>
+<body class="has-site-header">
+<div id="header__inject"></div>
+<div class="plan-free main"><div class="main-inner">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="BlastyBiz-Home.html">Home</a>
+  <span class="bc-sep">›</span>
+  <a href="BlastyBiz-Home.html#pricing">Pricing</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Free Plan</span>
+</nav>
+
+<header class="page-hero">
+  <div class="row">
+    <div class="pricing__tier">Starter</div>
+    <h1>Start For <span>Free</span></h1>
+    <p>No credit card. No catch. Describe your business once — BlastyBiz writes AI-adapted copy for every platform and gets you ready to post in minutes.</p>
+    <div class="pricing__amount">
+      <div class="pricing__num">$0</div>
+      <div class="pricing__per">/ forever</div>
+    </div>
+  </div>
+</header>
+
+<section class="reveal">
+  <div class="row">
+    <h2>What's <span>Included</span></h2>
+    <ul class="pricing__features">
+      <li>3 listings per month</li>
+      <li>AI-adapted copy for every platform</li>
+      <li>Photo uploads</li>
+      <li>Copy &amp; paste to any platform</li>
+      <li>Works for any type of business</li>
+      <li class="off">Auto-posting — Pro only</li>
+      <li class="off">Unlimited listings — Pro only</li>
+      <li class="off">Saved business profile — Pro only</li>
+      <li class="off">Full post history — Pro only</li>
+      <li class="off">All major platforms — Pro only</li>
+    </ul>
+  </div>
+</section>
+
+<section class="reveal">
+  <div class="row">
+    <h2>Want <span>More?</span></h2>
+    <p>Pro removes every limit. Unlimited listings, auto-posting for connected platforms so they go live while you're with a customer, every major platform, and your business profile saved so you never fill in the same details twice. All for $19 a month.</p>
+    <a href="BlastyBiz-Plan-Pro.html" class="pricing__btn pricing__btn--outline">See Pro Plan — $19/month →</a>
+    <p style="margin-top:16px;font-size:14px;color:var(--muted,#aaa);">Currently paying someone to manage your social media? <a href="BlastyBiz-Stop-Paying-Johnny.html" style="color:var(--green,#39ff14);text-decoration:none;font-weight:500;">See the honest math →</a></p>
+  </div>
+</section>
+
+<section class="reveal">
+  <div class="row">
+    <a href="BlastyBiz-Login.html" class="pricing__btn pricing__btn--primary">Continue Setup — Free →</a>
+    <p class="plan-sub-note">You'll create your account on the next screen.</p>
+    <p class="plan-sub-note" style="margin-top:10px;">Not ready to sign up? <a href="BlastyBiz-Trial.html" style="color:var(--green,#00e676);text-decoration:none;font-weight:500;">Try it first →</a></p>
+  </div>
+</section>
+
+</div></div>
+
+<div id="site-footer-inject"></div>
+<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+const app = initializeApp({ apiKey:"AIzaSyCyEwA6jGHp0xjAJO3NOXHblYfpajtFXGM",authDomain:"blastybiz-9523e.firebaseapp.com",projectId:"blastybiz-9523e" });
+const auth = getAuth(app);
+function setAuthUI(loggedIn) {
+  ['header__nav-login','header__mobile-login'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'none':''; });
+  ['header__nav-logout','header__mobile-logout'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'':'none'; });
+}
+setAuthUI(localStorage.getItem('bb_auth')==='1');
+onAuthStateChanged(auth, user => { document.body.classList.toggle('logged-in',!!user); localStorage.setItem('bb_auth',user?'1':'0'); setAuthUI(!!user); });
+window.doSignOut = () => { localStorage.setItem('bb_auth','0'); signOut(auth).finally(()=>{ window.location.href='BlastyBiz-Login.html'; }); };
+</script>
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+<script src="header-loader.js?v=1"></script>
+</body>
+</html>

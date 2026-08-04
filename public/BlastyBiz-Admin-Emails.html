@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+<meta charset="UTF-8"/>
+  <meta name="theme-color" content="#000000"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BlastyBiz — Email Templates</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="global-style.css?v=1785858635994">
+<style>body{visibility:hidden}</style>
+<script type="module" src="./admin-guard.js"></script>
+<script src="blastybiz-menu.js?v=6"></script>
+<script src="escape-utils.js?v=1"></script>
+</head>
+<body class="admin-page">
+
+<header>
+  <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Email Templates</span></a>
+  <div class="top-actions">
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin.html">Dashboard</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Users.html">Users</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Subscriptions.html">Money</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Logs.html">Logs</a>
+    <a class="icon-btn hide-mobile active" href="#">✉️ Emails</a>
+    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Operate.html">⚙️ Operate</a>
+    <a class="icon-btn" href="BlastyBiz-Login.html">👤</a>
+  </div>
+</header>
+
+<main><div class="main"><div class="main-inner">
+
+  <div style="margin-bottom:24px">
+    <div class="eyebrow">Admin · Communications</div>
+    <h1 style="font-size:26px;font-weight:800;color:#111;margin:4px 0 6px">Email Templates</h1>
+    <p style="font-size:14px;color:#555;margin:0">Edit, preview, and version-control every automated email BlastyBiz sends. Changes take effect on the next send.</p>
+  </div>
+
+  <!-- Email type tabs -->
+  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+    <button id="tab-welcome" onclick="switchType('welcome')" style="background:#111;color:#fff;border:1px solid #111;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">✉️ Welcome</button>
+    <button id="tab-paid-welcome" onclick="switchType('paid-welcome')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">🎉 Pro/Agency Welcome</button>
+    <button id="tab-job-completed" onclick="switchType('job-completed')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">🚀 Job Completed</button>
+    <button id="tab-job-failed" onclick="switchType('job-failed')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">⚠️ Job Failed</button>
+    <button id="tab-payment-failed" onclick="switchType('payment-failed')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">💳 Payment Failed</button>
+    <button id="tab-cancellation" onclick="switchType('cancellation')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">👋 Cancellation</button>
+    <button id="tab-upgrade-nudge" onclick="switchType('upgrade-nudge')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">👀 Upgrade Nudge</button>
+    <button id="tab-weekly-digest" onclick="switchType('weekly-digest')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">📊 Weekly Digest</button>
+    <button id="tab-setup-nudge" onclick="switchType('setup-nudge')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">🔧 Setup Nudge</button>
+    <button id="tab-platform-expired" onclick="switchType('platform-expired')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">🔌 Platform Expired</button>
+  </div>
+
+  <!-- Editor card -->
+  <div class="card" style="background:#fff;border:1px solid #e8e8e8;color:#111;padding:20px;margin-bottom:20px">
+
+    <!-- Version row -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+      <label style="font-size:13px;font-weight:600;color:#444;white-space:nowrap">Version:</label>
+      <select id="version-select" onchange="onVersionChange()" style="border:1px solid #ddd;border-radius:7px;padding:7px 12px;font-size:14px;background:#fafafa;color:#111;flex:1;min-width:180px"></select>
+      <span id="active-badge" style="display:none;background:#d4edda;color:#155724;border:1px solid #c3e6cb;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;white-space:nowrap">✓ Active</span>
+      <button id="btn-set-active" onclick="setThisVersionActive()" style="display:none;background:#fff;border:1px solid #ddd;border-radius:7px;padding:7px 14px;font-size:13px;cursor:pointer;color:#555;white-space:nowrap">Set as Active</button>
+    </div>
+
+    <!-- Subject -->
+    <div style="margin-bottom:16px">
+      <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px">Subject Line</label>
+      <input id="subject-input" type="text" placeholder="Email subject…" oninput="markDirty()" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:10px 14px;font-size:15px;background:#fafafa;color:#111;box-sizing:border-box"/>
+    </div>
+
+    <!-- Merge tags -->
+    <div style="margin-bottom:16px;padding:12px 14px;background:#f8f8f8;border:1px solid #eee;border-radius:8px">
+      <div style="font-size:12px;font-weight:700;color:#666;margin-bottom:8px;letter-spacing:0.5px">MERGE TAGS — click to copy</div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px">
+        <code onclick="copyTag('{{name}}')" title="Recipient's first name" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{name}}</code>
+        <code onclick="copyTag('{{businessName}}')" title="Their business name" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{businessName}}</code>
+        <code onclick="copyTag('{{dashboardUrl}}')" title="Link to their dashboard" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{dashboardUrl}}</code>
+        <code onclick="copyTag('{{upgradeUrl}}')" title="Link to upgrade page" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{upgradeUrl}}</code>
+        <code onclick="copyTag('{{appUrl}}')" title="App base URL" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{appUrl}}</code>
+        <code onclick="copyTag('{{planName}}')" title="Pro or Agency (paid-welcome only)" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{planName}}</code>
+        <code onclick="copyTag('{{platform}}')" title="Platform name (job emails only)" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{platform}}</code>
+        <code onclick="copyTag('{{jobCount}}')" title="Number of jobs (weekly digest only)" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{jobCount}}</code>
+        <code onclick="copyTag('{{platformList}}')" title="Comma-separated platform list (weekly digest only)" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{platformList}}</code>
+        <code onclick="copyTag('{{connectUrl}}')" title="Link to the Connect page (platform-expired only)" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{connectUrl}}</code>
+        <code onclick="copyTag('{{onboardingUrl}}')" title="Link to onboarding (setup-nudge only)" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{onboardingUrl}}</code>
+        <code onclick="copyTag('{{unsubscribeUrl}}')" title="Unsubscribe link (scheduled emails)" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{unsubscribeUrl}}</code>
+        <span id="copy-confirm" style="font-size:12px;color:#00873a;align-self:center;display:none">Copied!</span>
+      </div>
+    </div>
+
+    <!-- HTML editor -->
+    <div style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label style="font-size:13px;font-weight:600;color:#444">HTML Body</label>
+        <button onclick="togglePreview()" style="background:#fff;border:1px solid #ddd;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;color:#555" id="preview-toggle-btn">👁 Preview</button>
+      </div>
+      <textarea id="html-editor" oninput="markDirty();updatePreview()" rows="20" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:12px 14px;font-size:13px;font-family:monospace;background:#fafafa;color:#111;line-height:1.6;resize:vertical;box-sizing:border-box"></textarea>
+    </div>
+
+    <!-- Preview frame -->
+    <div id="preview-wrap" style="display:none;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#666;margin-bottom:8px;letter-spacing:0.5px">PREVIEW — using sample data (Alex Johnson · Sunrise Café)</div>
+      <iframe id="preview-frame" style="width:100%;height:520px;border:1px solid #ddd;border-radius:8px;background:#f5f5f5"></iframe>
+    </div>
+
+    <!-- Action buttons -->
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding-top:4px">
+      <button id="btn-save" onclick="saveTemplate()" style="background:#111;color:#fff;border:none;border-radius:8px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer">Save Changes</button>
+      <button onclick="saveAsNewVersion()" style="background:#fff;color:#111;border:1px solid #ccc;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer">Save as New Version</button>
+      <button onclick="sendTest()" style="background:#fff;color:#111;border:1px solid #ccc;border-radius:8px;padding:11px 20px;font-size:14px;cursor:pointer">📨 Send Test to Dave</button>
+      <span id="save-status" style="font-size:13px;color:#555;margin-left:4px"></span>
+    </div>
+  </div>
+
+  <!-- Version history -->
+  <div class="card" style="background:#fff;border:1px solid #e8e8e8;color:#111;padding:20px">
+    <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:14px">Version History</div>
+    <div id="version-history"></div>
+  </div>
+
+</div></div></main>
+
+<nav class="mobile-nav">
+  <a href="BlastyBiz-Admin.html">🏠<br>Admin</a>
+  <a href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Failed</a>
+  <a class="active" href="#">✉️<br>Emails</a>
+  <a href="BlastyBiz-Admin-Operate.html">⚙️<br>Operate</a>
+</nav>
+
+<script type="module">
+import { auth, db } from './firebase-init-v2.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { collection, query, where, orderBy, getDocs, addDoc, updateDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+const escHtml = window.escHtml; // escape-utils.js
+
+let currentType = 'welcome';
+let versions = [];
+let selectedVersionId = null;
+let isDirty = false;
+
+const SEED = {
+  'paid-welcome': {
+    subject: 'Welcome aboard, {{name}} — you\'re now BlastyBiz {{planName}}! 🎉',
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:32px 32px 24px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:26px;color:#00C853;letter-spacing:-0.5px">BlastyBiz {{planName}}</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:36px 32px 28px">
+    <h1 style="font-size:24px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Welcome aboard, {{name}}. You&#39;re {{planName}}. &#127881;</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">Your payment went through and <strong>{{businessName}}</strong> is now on BlastyBiz {{planName}}. Every feature is unlocked. Let&#39;s get blasting.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">This is where things get real. One form, AI-written copy, blasted across every platform — automatically. No more copy-pasting. No more hours lost. Just more customers finding {{businessName}}.</p>
+    <a href="{{dashboardUrl}}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px;margin-bottom:32px">Go to Your Dashboard &#8594;</a>
+    <div style="background:#f0fff4;border-left:4px solid #00C853;border-radius:0 8px 8px 0;padding:20px 24px;margin-bottom:24px">
+      <div style="font-size:12px;font-weight:800;color:#00873a;letter-spacing:2px;margin-bottom:10px">&#9889; WHAT&#39;S UNLOCKED FOR YOU</div>
+      <ul style="color:#444;font-size:14px;line-height:2.1;padding-left:18px;margin:0">
+        <li>Blast to all <strong>major platforms</strong> with one click</li>
+        <li><strong>Business Library</strong> &#8212; upload your menu or service sheet, AI reads it every time</li>
+        <li>Priority posting queue &#8212; your jobs go first</li>
+        <li>Full campaign history and copy library</li>
+      </ul>
+    </div>
+    <p style="font-size:14px;color:#666;line-height:1.6">Questions? Reply to this email &#8212; real people read it. We&#39;re rooting for <strong>{{businessName}}</strong>.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:20px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0;line-height:1.7">&#169; BlastyBiz &#183; Local business marketing, automated.<br><a href="{{appUrl}}" style="color:#999">blastybiz.com</a> &#183; You received this because you upgraded your account.</p>
+  </div>
+</div>`
+  },
+  'job-completed': {
+    subject: 'Your listing is live on {{platform}}, {{name}}! 🚀',
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:32px 32px 24px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:26px;color:#00C853;letter-spacing:-0.5px">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:36px 32px 28px">
+    <div style="display:inline-block;background:#e8f5e9;border-radius:100px;padding:8px 18px;font-size:13px;font-weight:700;color:#00873a;margin-bottom:20px">&#10003; Posted successfully</div>
+    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">{{businessName}} is live on {{platform}}. &#128640;</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">Hey {{name}} — BlastyBiz just published your listing to <strong>{{platform}}</strong>. It&#39;s out there right now, working for you.</p>
+    <a href="{{dashboardUrl}}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px;margin-bottom:24px">View Your Dashboard &#8594;</a>
+    <p style="font-size:14px;color:#666;line-height:1.6;margin:0">Keep the momentum going &#8212; blast to another platform or schedule your next post from the dashboard.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:20px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="{{appUrl}}" style="color:#999">blastybiz.com</a></p>
+  </div>
+</div>`
+  },
+  'job-failed': {
+    subject: 'Heads up, {{name}} — your {{platform}} post needs attention',
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:32px 32px 24px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:26px;color:#00C853;letter-spacing:-0.5px">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:36px 32px 28px">
+    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Heads up, {{name}} &#8212; your {{platform}} post hit a snag.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">We tried to publish <strong>{{businessName}}</strong>&#39;s content to <strong>{{platform}}</strong> automatically, but ran into an issue.</p>
+    <div style="background:#fff3cd;border-left:4px solid #ffc107;border-radius:0 8px 8px 0;padding:16px 20px;margin-bottom:24px">
+      <div style="font-size:13px;font-weight:700;color:#856404;margin-bottom:4px">What happened</div>
+      <div style="font-size:14px;color:#6b5300">Your post could not be published automatically. Please check your platform connection in the dashboard.</div>
+    </div>
+    <a href="{{dashboardUrl}}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px;margin-bottom:20px">Go to Dashboard &#8594;</a>
+    <p style="font-size:13px;color:#888;line-height:1.6;margin:0">Your AI-written copy is saved &#8212; nothing is lost. You can post it manually or reply to this email if you need help.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:20px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="{{appUrl}}" style="color:#999">blastybiz.com</a></p>
+  </div>
+</div>`
+  },
+  'payment-failed': {
+    subject: 'Action needed, {{name}} — your BlastyBiz payment didn\'t go through',
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:32px 32px 24px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:26px;color:#00C853;letter-spacing:-0.5px">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:36px 32px 28px">
+    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Hi {{name}} &#8212; your payment didn&#39;t go through.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">We weren&#39;t able to process your BlastyBiz subscription payment for <strong>{{businessName}}</strong>. This can happen when a card expires or a bank blocks a recurring charge.</p>
+    <div style="background:#fff3cd;border-left:4px solid #ffc107;border-radius:0 8px 8px 0;padding:16px 20px;margin-bottom:24px">
+      <div style="font-size:13px;font-weight:700;color:#856404;margin-bottom:4px">&#9888; Your account may be paused</div>
+      <div style="font-size:14px;color:#6b5300">Update your payment method to keep your Pro features active and avoid any interruption.</div>
+    </div>
+    <a href="{{dashboardUrl}}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px;margin-bottom:20px">Update Payment Method &#8594;</a>
+    <p style="font-size:13px;color:#888;line-height:1.6;margin:0">Questions? Reply to this email &#8212; a real person reads every reply. We want to keep <strong>{{businessName}}</strong> on BlastyBiz Pro.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:20px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="{{appUrl}}" style="color:#999">blastybiz.com</a></p>
+  </div>
+</div>`
+  },
+  'cancellation': {
+    subject: 'Your BlastyBiz subscription has ended, {{name}}',
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:32px 32px 24px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:26px;color:#00C853;letter-spacing:-0.5px">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:36px 32px 28px">
+    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re on the free plan now, {{name}}.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">Your BlastyBiz Pro subscription for <strong>{{businessName}}</strong> has ended. We&#39;ve moved you to the free plan &#8212; your account and all your data are still here.</p>
+    <div style="background:#f7f7f7;border-radius:8px;padding:20px 24px;margin-bottom:24px">
+      <div style="font-size:12px;font-weight:800;color:#888;letter-spacing:2px;margin-bottom:10px">WHAT YOU&#39;VE LOST ACCESS TO</div>
+      <ul style="color:#555;font-size:14px;line-height:2;padding-left:18px;margin:0">
+        <li>Auto-posting to every major platform</li>
+        <li>Business Library AI context</li>
+        <li>Priority queue &amp; posting history</li>
+      </ul>
+    </div>
+    <a href="{{upgradeUrl}}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px;margin-bottom:20px">Come Back to Pro &#8594;</a>
+    <p style="font-size:13px;color:#888;line-height:1.6;margin:0">Changed your mind? Upgrade anytime &#8212; everything picks up right where you left off. We&#39;re sorry to see you go, {{name}}. We hope to see {{businessName}} back soon.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:20px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="{{appUrl}}" style="color:#999">blastybiz.com</a></p>
+  </div>
+</div>`
+  },
+  'upgrade-nudge': {
+    subject: '{{name}}, BlastyBiz is ready to blast for {{businessName}} 👀',
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:32px 32px 24px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:26px;color:#00C853;letter-spacing:-0.5px">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:36px 32px 28px">
+    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Hey {{name}} &#8212; it&#39;s been a week. Let&#39;s talk.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">You signed up 7 days ago, and <strong>{{businessName}}</strong> is still on the free plan. That means you&#39;re doing the copy, the posting, the formatting &#8212; all of it by hand, for every platform, every time.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">BlastyBiz Pro does all of that in one click. Here&#39;s what you&#39;re leaving on the table:</p>
+    <div style="background:#f0fff4;border-left:4px solid #00C853;border-radius:0 8px 8px 0;padding:20px 24px;margin-bottom:24px">
+      <ul style="color:#444;font-size:14px;line-height:2.1;padding-left:18px;margin:0">
+        <li>AI-written copy adapted for every major platform automatically</li>
+        <li>Auto-posting &#8212; no login, no paste, no repeat</li>
+        <li>Business Library &#8212; upload once, AI uses it every time</li>
+        <li>Campaign history and copy archive</li>
+      </ul>
+    </div>
+    <a href="{{upgradeUrl}}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px;margin-bottom:20px">Go Pro &#8212; Unlock Everything &#8594;</a>
+    <p style="font-size:13px;color:#888;line-height:1.6;margin:0">Questions before you upgrade? Reply to this email &#8212; we&#39;re real people who want to see {{businessName}} succeed.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:20px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0;line-height:1.7">&#169; BlastyBiz &#183; <a href="{{appUrl}}" style="color:#999">blastybiz.com</a> &#183; You received this because you signed up 7 days ago.</p>
+  </div>
+</div>`
+  },
+  'weekly-digest': {
+    subject: '{{businessName}}\'s BlastyBiz recap — {{jobCount}} posts this week 📊',
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:32px 32px 24px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:26px;color:#00C853;letter-spacing:-0.5px">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:36px 32px 28px">
+    <div style="font-size:12px;font-weight:700;color:#888;letter-spacing:2px;margin-bottom:8px">WEEKLY RECAP</div>
+    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 8px">{{businessName}}</h1>
+    <p style="font-size:15px;color:#555;margin:0 0 24px">Here&#39;s what BlastyBiz published for you this week, {{name}}.</p>
+    <div style="background:#f0fff4;border-radius:8px;padding:24px 20px;margin-bottom:24px;text-align:center">
+      <div style="font-size:48px;font-weight:800;color:#00873a;line-height:1">{{jobCount}}</div>
+      <div style="font-size:14px;color:#555;margin-top:6px">posts published across {{platformList}}</div>
+    </div>
+    <a href="{{dashboardUrl}}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px;margin-bottom:20px">View Full History &#8594;</a>
+    <p style="font-size:14px;color:#666;line-height:1.6;margin:0">Keep the momentum going &#8212; blast to more platforms from your dashboard and let BlastyBiz do the heavy lifting for {{businessName}} every week.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:20px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0;line-height:1.7">&#169; BlastyBiz &#183; <a href="{{appUrl}}" style="color:#999">blastybiz.com</a> &#183; Sent every Monday to Pro &amp; Agency subscribers.</p>
+  </div>
+</div>`
+  },
+  'setup-nudge': {
+    subject: '{{name}}, your BlastyBiz profile is almost ready',
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:28px 32px 22px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:32px">
+    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Hey {{name}} &#8212; your profile is almost ready.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">You created your BlastyBiz account but haven&#39;t finished setting up your business profile yet. It only takes a few minutes &#8212; and once it&#39;s done, BlastyBiz writes the copy for every platform automatically.</p>
+    <a href="{{onboardingUrl}}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Finish Setup &#8594;</a>
+    <p style="font-size:13px;color:#888;margin-top:20px;line-height:1.6">Questions? Reply to this email &#8212; a real person reads every reply.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz, a Fluba Designs LLC brand. &bull; <a href="{{unsubscribeUrl}}" style="color:#999">Unsubscribe</a></p>
+  </div>
+</div>`
+  },
+  'platform-expired': {
+    subject: 'Action needed &#8212; your {{platform}} connection expired',
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:28px 32px 22px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:32px">
+    <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Your {{platform}} connection needs a quick reconnect, {{name}}.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">Your <strong>{{platform}}</strong> authorization for <strong>{{businessName}}</strong> has expired. Auto-posting to {{platform}} is paused until you reconnect.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">It only takes a few seconds &#8212; click below and authorize BlastyBiz again.</p>
+    <a href="{{connectUrl}}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Reconnect {{platform}} &#8594;</a>
+    <p style="font-size:13px;color:#888;margin-top:20px;line-height:1.6">Your content and campaigns are all still saved &#8212; nothing is lost.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz, a Fluba Designs LLC brand. &bull; <a href="{{unsubscribeUrl}}" style="color:#999">Unsubscribe</a></p>
+  </div>
+</div>`
+  },
+  welcome: {
+    subject: 'Welcome to BlastyBiz, {{name}}! 🚀',
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:32px 32px 24px">
+    <div style="font-family:'Arial Black',sans-serif;font-size:26px;color:#00C853;letter-spacing:-0.5px">BlastyBiz</div>
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:36px 32px 28px">
+    <h1 style="font-size:24px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re in, {{name}}.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 16px">Welcome to BlastyBiz — and welcome to the end of copy-paste marketing. <strong>{{businessName}}</strong> is set up and ready to blast.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">Fill out your business profile once. The AI writes tailored copy for Google, Facebook, Instagram, Yelp, and 8 more platforms — automatically. No more spending hours rewriting the same message for every channel.</p>
+    <!-- Two CTA buttons -->
+    <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:32px">
+      <tr>
+        <td style="padding-right:12px">
+          <a href="{{dashboardUrl}}" style="display:inline-block;background:#0d1a0d;color:#00C853;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px;white-space:nowrap">Try It Free &#8594;</a>
+        </td>
+        <td>
+          <a href="{{upgradeUrl}}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px;white-space:nowrap">Go Pro &#8594;</a>
+        </td>
+      </tr>
+    </table>
+    <div style="background:#f0fff4;border-left:4px solid #00C853;border-radius:0 8px 8px 0;padding:20px 24px;margin-bottom:24px">
+      <div style="font-size:12px;font-weight:800;color:#00873a;letter-spacing:2px;margin-bottom:8px">&#9889; WHY GO PRO? &#8212; $19/mo</div>
+      <p style="font-size:15px;color:#1a1a1a;font-weight:700;margin:0 0 10px">Save 10+ hours a month. Get found on more platforms. Make more money.</p>
+      <ul style="color:#444;font-size:14px;line-height:2.1;padding-left:18px;margin:0 0 8px">
+        <li>Blast to all <strong>major platforms</strong> simultaneously</li>
+        <li><strong>Business Library</strong> &#8212; upload your menu or service sheet, AI reads it every time it writes for you</li>
+        <li>Priority posting queue &#8212; your jobs go first</li>
+        <li>More customers, less work &#8212; that&#39;s the deal</li>
+      </ul>
+    </div>
+    <p style="font-size:14px;color:#666;line-height:1.6">Questions? Reply to this email &#8212; real people read it. We want <strong>{{businessName}}</strong> to grow.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:20px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0;line-height:1.7">&#169; BlastyBiz &#183; Local business marketing, automated.<br><a href="{{appUrl}}" style="color:#999">blastybiz.com</a> &#183; You received this because you created an account.</p>
+  </div>
+</div>`
+  }
+};
+
+const SAMPLE = {
+  name: 'Alex Johnson',
+  businessName: 'Sunrise Café',
+  planName: 'Pro',
+  platform: 'Google Business Profile',
+  jobCount: '5',
+  platformList: 'Google Business, Facebook, Instagram',
+  dashboardUrl: 'https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html',
+  upgradeUrl: 'https://blastybiz-9523e.web.app/BlastyBiz-Dashboard.html#upgrade',
+  connectUrl: 'https://blastybiz-9523e.web.app/BlastyBiz-Connect.html',
+  onboardingUrl: 'https://blastybiz-9523e.web.app/BlastyBiz-Onboarding.html',
+  unsubscribeUrl: 'https://blastybiz-9523e.web.app/',
+  appUrl: 'https://blastybiz-9523e.web.app'
+};
+
+function applyMergeTags(str, data) {
+  return str.replace(/\{\{(\w+)\}\}/g, (_, k) => data[k] || '');
+}
+
+let previewVisible = false;
+window.togglePreview = function() {
+  previewVisible = !previewVisible;
+  document.getElementById('preview-wrap').style.display = previewVisible ? 'block' : 'none';
+  document.getElementById('preview-toggle-btn').textContent = previewVisible ? '✕ Hide Preview' : '👁 Preview';
+  if (previewVisible) updatePreview();
+};
+
+function updatePreview() {
+  if (!previewVisible) return;
+  const html = document.getElementById('html-editor').value;
+  const rendered = applyMergeTags(html, SAMPLE);
+  document.getElementById('preview-frame').srcdoc =
+    '<!DOCTYPE html><html><body style="margin:20px;background:#f0f0f0">' + rendered + '</body></html>';
+}
+window.updatePreview = updatePreview;
+
+window.markDirty = function() { isDirty = true; };
+
+window.copyTag = function(tag) {
+  navigator.clipboard.writeText(tag).catch(() => {});
+  const c = document.getElementById('copy-confirm');
+  c.style.display = 'inline';
+  setTimeout(() => { c.style.display = 'none'; }, 1500);
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+  const tokenResult = await user.getIdTokenResult();
+  if (!tokenResult.claims.admin) {
+    document.body.style.visibility = 'visible';
+    document.body.innerHTML = '<p style="padding:40px;color:red">Access denied.</p>';
+    return;
+  }
+  document.body.style.visibility = 'visible';
+  await loadTemplates();
+});
+
+async function loadTemplates() {
+  try {
+    const snap = await getDocs(query(
+      collection(db, 'emailTemplates'),
+      where('type', '==', currentType),
+      orderBy('version', 'desc')
+    ));
+
+    if (snap.empty) {
+      await seedTemplate(currentType);
+      await loadTemplates();
+      return;
+    }
+
+    versions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    populateVersionSelect();
+    const active = versions.find(v => v.active) || versions[0];
+    loadVersion(active.id);
+    renderHistory();
+  } catch(e) {
+    showStatus('❌ ' + e.message);
+  }
+}
+
+async function seedTemplate(type) {
+  const seed = SEED[type];
+  if (!seed) return;
+  await addDoc(collection(db, 'emailTemplates'), {
+    type,
+    subject: seed.subject,
+    html: seed.html,
+    version: 1,
+    active: true,
+    label: 'v1 — Initial',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+}
+
+function populateVersionSelect() {
+  const sel = document.getElementById('version-select');
+  sel.innerHTML = versions.map(v =>
+    `<option value="${v.id}">${escHtml(v.label || ('v' + v.version))}${v.active ? ' ✓ Active' : ''}</option>`
+  ).join('');
+  if (selectedVersionId) sel.value = selectedVersionId;
+}
+
+function loadVersion(id) {
+  selectedVersionId = id;
+  const v = versions.find(v => v.id === id);
+  if (!v) return;
+  document.getElementById('version-select').value = id;
+  document.getElementById('subject-input').value = v.subject || '';
+  document.getElementById('html-editor').value = v.html || '';
+  const badge = document.getElementById('active-badge');
+  const setBtn = document.getElementById('btn-set-active');
+  if (v.active) {
+    badge.style.display = 'inline';
+    setBtn.style.display = 'none';
+  } else {
+    badge.style.display = 'none';
+    setBtn.style.display = 'inline';
+  }
+  isDirty = false;
+  updatePreview();
+}
+
+window.onVersionChange = function() {
+  const id = document.getElementById('version-select').value;
+  loadVersion(id);
+};
+
+function renderHistory() {
+  const container = document.getElementById('version-history');
+  if (!versions.length) { container.innerHTML = '<p style="color:#888;font-size:13px">No versions yet.</p>'; return; }
+  container.innerHTML = versions.map(v => {
+    const date = v.createdAt?.toDate ? v.createdAt.toDate().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+    const activePill = v.active
+      ? '<span style="background:#d4edda;color:#155724;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;margin-left:8px">Active</span>'
+      : '';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0">
+      <div>
+        <span style="font-size:14px;font-weight:600;color:#111">${escHtml(v.label || ('v' + v.version))}</span>${activePill}
+        <div style="font-size:12px;color:#888;margin-top:2px">${date}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="loadVersion('${v.id}')" style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;color:#333">Edit</button>
+        ${!v.active ? `<button onclick="setVersionActive('${v.id}')" style="background:#fff;border:1px solid #c3e6cb;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;color:#155724">Set Active</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.saveTemplate = async function() {
+  const subject = document.getElementById('subject-input').value.trim();
+  const html = document.getElementById('html-editor').value.trim();
+  if (!subject || !html) { showStatus('❌ Subject and HTML are required'); return; }
+  showStatus('💾 Saving…');
+  try {
+    await updateDoc(doc(db, 'emailTemplates', selectedVersionId), {
+      subject, html, updatedAt: serverTimestamp()
+    });
+    const v = versions.find(v => v.id === selectedVersionId);
+    if (v) { v.subject = subject; v.html = html; }
+    isDirty = false;
+    showStatus('✅ Saved');
+  } catch(e) {
+    showStatus('❌ ' + e.message);
+  }
+};
+
+window.saveAsNewVersion = async function() {
+  const subject = document.getElementById('subject-input').value.trim();
+  const html = document.getElementById('html-editor').value.trim();
+  if (!subject || !html) { showStatus('❌ Subject and HTML are required'); return; }
+  showStatus('💾 Creating new version…');
+  try {
+    const maxVer = Math.max(...versions.map(v => v.version || 1));
+    const newVer = maxVer + 1;
+    const label = 'v' + newVer + ' — ' + new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    for (const v of versions) {
+      if (v.active) await updateDoc(doc(db, 'emailTemplates', v.id), { active: false });
+    }
+    const ref = await addDoc(collection(db, 'emailTemplates'), {
+      type: currentType, subject, html,
+      version: newVer, active: true, label,
+      createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+    });
+    isDirty = false;
+    showStatus('✅ Version ' + newVer + ' saved and set active');
+    selectedVersionId = ref.id;
+    await loadTemplates();
+  } catch(e) {
+    showStatus('❌ ' + e.message);
+  }
+};
+
+window.setVersionActive = async function(id) {
+  showStatus('Activating…');
+  try {
+    for (const v of versions) {
+      await updateDoc(doc(db, 'emailTemplates', v.id), { active: v.id === id });
+    }
+    showStatus('✅ Active version updated');
+    await loadTemplates();
+  } catch(e) {
+    showStatus('❌ ' + e.message);
+  }
+};
+
+window.setThisVersionActive = function() {
+  setVersionActive(selectedVersionId);
+};
+
+window.sendTest = async function() {
+  const subject = document.getElementById('subject-input').value.trim();
+  const html = document.getElementById('html-editor').value.trim();
+  if (!subject || !html) { showStatus('❌ Fill in subject and HTML first'); return; }
+  showStatus('📨 Sending test…');
+  try {
+    const user = auth.currentUser;
+    if (!user) { showStatus('❌ Not signed in'); return; }
+    const token = await user.getIdToken();
+    const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/sendTestEmail', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ subject, html, to: 'perceys@gmail.com' })
+    });
+    const data = await resp.json();
+    showStatus(resp.ok ? '✅ Test sent to perceys@gmail.com' : '❌ ' + (data.error || 'Send failed'));
+  } catch(e) {
+    showStatus('❌ ' + e.message);
+  }
+};
+
+window.switchType = function(type) {
+  currentType = type;
+  document.querySelectorAll('[id^="tab-"]').forEach(b => {
+    b.style.background = '#fff';
+    b.style.color = '#555';
+    b.style.border = '1px solid #ddd';
+  });
+  const tab = document.getElementById('tab-' + type);
+  if (tab) { tab.style.background = '#111'; tab.style.color = '#fff'; tab.style.border = '1px solid #111'; }
+  selectedVersionId = null;
+  versions = [];
+  loadTemplates();
+};
+
+function showStatus(msg) {
+  const el = document.getElementById('save-status');
+  el.textContent = msg;
+  if (msg.startsWith('✅')) setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 3000);
+}
+</script>
+</body>
+</html>

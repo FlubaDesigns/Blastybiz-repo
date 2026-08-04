@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+<meta charset="UTF-8"/>
+  <meta name="theme-color" content="#000000"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="BlastyBiz is the AI-powered marketing tool built for local business owners. Fill out one form and get AI-adapted copy for every major platform instantly."/>
+<title>About — BlastyBiz</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="global-style.css?v=1785858635994"/>
+<script src="blastybiz-menu.js?v=6"></script>
+</head>
+<body class="has-site-header">
+<div id="header__inject"></div>
+<div class="about main"><div class="main-inner">
+
+<div class="breadcrumb"><a href="BlastyBiz-Home.html">Home</a> <span class="bc-sep">›</span> <span class="bc-current">About</span></div>
+
+<header class="page-hero">
+  <div class="about__hero-glow"></div>
+  <div class="row">
+    <h1>Built For<br/><span>Business Owners</span></h1>
+    <p>BlastyBiz was built because business owners work too hard to spend their evenings copy-pasting listings into dozens of different tabs.</p>
+  </div>
+</header>
+
+<section class="reveal">
+  <div class="row">
+    <p class="about__label">Why We Built This</p>
+    <h2>The Problem <span>We Solved</span></h2>
+    <p>Business owners work harder than anyone. But when it comes to getting found online, they're expected to become social media managers on top of everything else — the plumber who answers on weekends, the salon that knows every customer by name, the restaurant that's been in the same spot for 20 years.</p>
+    <p>BlastyBiz was built to solve one specific problem: you should be able to describe your business once and have it show up everywhere that matters. No rewriting. No logging into a dozen platforms. No guessing what to say on Instagram vs. Craigslist vs. Google.</p>
+    <p>One form. AI does the rest. That's the whole idea.</p>
+  </div>
+</section>
+
+<section class="reveal">
+  <div class="row">
+    <div class="layout__split-2-1">
+      <div>
+        <p class="about__label">What We Believe</p>
+        <h2>Our <span>Values</span></h2>
+        <ul>
+          <li><span>🏘️</span><div><strong>Built for owners and agencies</strong> Whether you're running one location or managing marketing for a dozen clients, BlastyBiz fits the job. Simple enough to use on a phone between jobs, powerful enough to run an agency on.</div></li>
+          <li><span>⚡</span><div><strong>Time is money</strong> Every minute spent posting is a minute not spent on your actual business. We take that seriously.</div></li>
+          <li><span>🔒</span><div><strong>No tech skills required</strong> If you can fill out a form, you can use BlastyBiz. We handle the complexity so you don't have to.</div></li>
+          <li><span>⏱️</span><div><strong>We optimize your time</strong> Everyone gets the same 24 hours. BlastyBiz is built to give yours back — fill it once, show up everywhere, and get back to actually running your business.</div></li>
+        </ul>
+      </div>
+      <div class="img-col">
+        <img src="img/about-office.png" alt="BlastyBiz team at work" class="about-values-img">
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="reveal">
+  <div class="row">
+    <p class="about__label">The Team</p>
+    <h2>Who's <span>Behind This</span></h2>
+    <p>BlastyBiz is a product of Fluba Designs LLC — a software studio focused on building practical tools for businesses and organizations of all kinds.</p>
+  </div>
+  <div class="row">
+    <figure class="about__team-card">
+      <img src="img/dave-profile.jpg" alt="Dave Percey" />
+      <div class="about__team-info">
+        <h3>Dave Percey</h3>
+        <em>Founder · Fluba Designs LLC</em>
+        <p>Builder, designer, and software maker. Dave has been building web tools and SaaS products for over a decade and started BlastyBiz after watching too many great businesses struggle to stay visible online.</p>
+      </div>
+    </figure>
+  </div>
+  <div class="row">
+    <p>🌐 <strong>100% Online</strong> — Serving businesses everywhere — if you have an internet connection, BlastyBiz works for you.</p>
+  </div>
+</section>
+
+<aside class="reveal">
+  <div class="row">
+    <p class="about__label">A product by</p>
+    <h3><span>Fluba</span> Designs LLC</h3>
+    <p>Fluba Designs builds practical software for businesses, nonprofits, and organizations. BlastyBiz is one of several products in our growing portfolio. Questions? Reach us at <a href="mailto:info@flubadesigns.com">info@flubadesigns.com</a>.</p>
+  </div>
+</aside>
+
+</div><!-- /.main-inner -->
+</div><!-- /.main -->
+<div id="site-footer-inject"></div>
+<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+const auth = getAuth(initializeApp({ apiKey:"AIzaSyCyEwA6jGHp0xjAJO3NOXHblYfpajtFXGM",authDomain:"blastybiz-9523e.firebaseapp.com",projectId:"blastybiz-9523e" }));
+function setAuthUI(loggedIn) {
+  ['header__nav-login','header__mobile-login'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'none':''; });
+  ['header__nav-logout','header__mobile-logout'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'':'none'; });
+}
+setAuthUI(localStorage.getItem('bb_auth')==='1');
+onAuthStateChanged(auth, user => { document.body.classList.toggle('logged-in',!!user); localStorage.setItem('bb_auth',user?'1':'0'); setAuthUI(!!user); });
+window.doSignOut = () => { localStorage.setItem('bb_auth','0'); signOut(auth).finally(()=>{ window.location.href='BlastyBiz-Login.html'; }); };
+</script>
+<script src="header-loader.js?v=1"></script>
+</body>
+</html>

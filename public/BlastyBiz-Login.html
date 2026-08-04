@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta charset="UTF-8"/>
+  <meta name="theme-color" content="#000000"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
+  <link rel="stylesheet" href="global-style.css?v=1785858635994" />
+  <title>BlastyBiz — Sign In</title>
+<style>
+.verify-view{display:none;padding:8px 0}
+.verify-view h2{margin:0 0 10px;font-size:1.25rem}
+.verify-view p{color:#555;font-size:.95rem;margin:0 0 20px;line-height:1.5}
+.verify-view .btn-submit{width:100%;margin-bottom:10px}
+#auth-card-wrap.verify-mode .auth-tabs,
+#auth-card-wrap.verify-mode .auth-form,
+#auth-card-wrap.verify-mode .back-home{display:none!important}
+#auth-card-wrap.verify-mode .verify-view{display:block}
+
+/* Email verification landing view */
+.email-confirmed-view{display:none;padding:8px 0;text-align:center}
+.email-confirmed-view .confirmed-logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:.04em;color:#0d1a0d;margin-bottom:16px;display:block}
+.email-confirmed-view .confirmed-logo span{color:#00C853}
+.email-confirmed-view .confirmed-icon{font-size:3rem;margin-bottom:12px;display:block}
+.email-confirmed-view h2{margin:0 0 10px;font-size:1.25rem;color:#0d1a0d}
+.email-confirmed-view p{color:#555;font-size:.95rem;margin:0 0 22px;line-height:1.5}
+.email-confirmed-view .btn-submit{width:100%;margin-bottom:10px}
+.email-confirmed-view .reset-back{display:inline-block;margin-top:4px}
+#auth-card-wrap.email-confirm-mode .auth-tabs,
+#auth-card-wrap.email-confirm-mode .auth-form,
+#auth-card-wrap.email-confirm-mode .back-home{display:none!important}
+#auth-card-wrap.email-confirm-mode .email-confirmed-view{display:block}
+</style>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="blastybiz-menu.js?v=6"></script>
+</head>
+<body class="login-page has-site-header">
+
+<div id="header__inject"></div>
+
+<main class="login-page main">
+  <div class="main-inner">
+    <div class="row">
+      <div class="layout__split-2-1">
+
+        <!-- FORM PANEL -->
+        <div class="login-form-col">
+
+          <div id="auth-loading">
+            <div class="ring"></div>
+          </div>
+
+          <div id="auth-card-wrap">
+            <div class="auth-card">
+              <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Sign In or Create a BlastyBiz Account</h1>
+
+              <!-- TABS -->
+              <div class="auth-tabs">
+                <button type="button" class="auth-tab active" id="tab-signin" onclick="switchTab('signin')">Sign In</button>
+                <button type="button" class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Create Account</button>
+              </div>
+
+              <!-- SIGN IN FORM -->
+              <div class="auth-form active" id="form-signin">
+
+                <div class="field">
+                  <label for="si-email">Email</label>
+                  <input type="email" id="si-email" placeholder="you@yourbusiness.com" oninput="clearErr('si-email')" />
+                  <div class="field-error" id="si-email-err">Please enter a valid email</div>
+                </div>
+
+                <div class="field">
+                  <label for="si-password">Password</label>
+                  <div class="pw-wrap">
+                    <input type="password" id="si-password" placeholder="Your password" oninput="clearErr('si-password')" />
+                    <button class="pw-toggle" onclick="togglePw('si-password', this)" type="button">👁️</button>
+                  </div>
+                  <div class="field-error" id="si-password-err">Password is required</div>
+                </div>
+
+                <div class="forgot">
+                  <a href="#" onclick="showReset(); return false;">Forgot password?</a>
+                </div>
+
+                <button type="button" class="btn-submit" id="btn-signin" onclick="handleSignIn()" disabled>
+                  <div class="spinner"></div>
+                  <span class="btn-text">Sign In →</span>
+                </button>
+
+                <div class="or-divider">
+                  <div class="or-line"></div>
+                  <div class="or-text">OR</div>
+                  <div class="or-line"></div>
+                </div>
+
+                <div class="social-btns">
+                  <button type="button" class="btn-social" onclick="handleGoogle()">
+                    <span class="btn-social-icon">🔍</span>
+                    Continue with Google
+                  </button>
+                  <button type="button" class="btn-social" onclick="handleFacebook()">
+                    <span class="btn-social-icon">📘</span>
+                    Continue with Facebook
+                  </button>
+                </div>
+
+              </div>
+
+              <!-- SIGN UP FORM -->
+              <div class="auth-form" id="form-signup">
+
+                <div class="field">
+                  <label class="section-label" style="margin-bottom:10px">Choose your plan</label>
+
+                  <!-- Billing period toggle -->
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+                    <button type="button" id="toggle-monthly" onclick="selectBilling('monthly')"
+                      style="flex:1;padding:7px 0;border-radius:8px;border:1px solid var(--border,#2a3a2a);background:#00C853;color:#0d1a0d;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">
+                      Monthly
+                    </button>
+                    <button type="button" id="toggle-annual" onclick="selectBilling('annual')"
+                      style="flex:1;padding:7px 0;border-radius:8px;border:1px solid var(--border,#2a3a2a);background:transparent;color:#aaa;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">
+                      Annual &nbsp;<span style="font-size:11px;font-weight:600;color:#00C853">Save $29/year</span>
+                    </button>
+                  </div>
+
+                  <div class="plan-picker" id="plan-picker">
+                    <button type="button" class="plan-pick-btn" data-plan="starter" onclick="selectPlan('starter')">
+                      <span class="plan-pick-name">Starter</span>
+                      <span class="plan-pick-price">Free</span>
+                    </button>
+                    <button type="button" class="plan-pick-btn" data-plan="pro" onclick="selectPlan('pro')">
+                      <span class="plan-pick-name">Pro</span>
+                      <span class="plan-pick-price" id="price-pro">$19/mo</span>
+                    </button>
+                    <button type="button" class="plan-pick-btn" data-plan="agency" onclick="selectPlan('agency')">
+                      <span class="plan-pick-name">Agency</span>
+                      <span class="plan-pick-price" id="price-agency">$99/mo</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="su-name">Full Name</label>
+                  <input type="text" id="su-name" placeholder="Your name" oninput="clearErr('su-name')" />
+                  <div class="field-error" id="su-name-err">Name is required</div>
+                </div>
+
+                <div class="field">
+                  <label for="su-email">Email</label>
+                  <input type="email" id="su-email" placeholder="you@yourbusiness.com" oninput="clearErr('su-email')" />
+                  <div class="field-error" id="su-email-err">Please enter a valid email</div>
+                </div>
+
+                <div class="field">
+                  <label for="su-password">Password</label>
+                  <div class="pw-wrap">
+                    <input type="password" id="su-password" placeholder="Create a password" oninput="checkStrength(this.value)" />
+                    <button class="pw-toggle" onclick="togglePw('su-password', this)" type="button">👁️</button>
+                  </div>
+                  <div class="strength-wrap" id="strength-wrap">
+                    <div class="strength-track">
+                      <div class="strength-fill" id="strength-fill"></div>
+                    </div>
+                    <div class="strength-label" id="strength-label">Too short</div>
+                  </div>
+                  <div class="field-error" id="su-password-err">Password must be at least 8 characters</div>
+                </div>
+
+                <div class="field">
+                  <label for="su-password2">Re-enter Password</label>
+                  <div class="pw-wrap">
+                    <input type="password" id="su-password2" placeholder="Confirm your password" oninput="clearErr('su-password2')" />
+                    <button class="pw-toggle" onclick="togglePw('su-password2', this)" type="button">👁️</button>
+                  </div>
+                  <div class="field-error" id="su-password2-err">Passwords don't match</div>
+                </div>
+
+                <button type="button" class="btn-submit" id="btn-signup" onclick="handleSignUp()" disabled>
+                  <div class="spinner"></div>
+                  <span class="btn-text">Create Account →</span>
+                </button>
+
+                <div class="or-divider">
+                  <div class="or-line"></div>
+                  <div class="or-text">OR</div>
+                  <div class="or-line"></div>
+                </div>
+
+                <div class="social-btns">
+                  <button type="button" class="btn-social" onclick="handleGoogle()">
+                    <span class="btn-social-icon">🔍</span>
+                    Continue with Google
+                  </button>
+                  <button type="button" class="btn-social" onclick="handleFacebook()">
+                    <span class="btn-social-icon">📘</span>
+                    Continue with Facebook
+                  </button>
+                </div>
+
+                <div class="terms-note">
+                  By creating an account you agree to our
+                  <a href="BlastyBiz-Terms.html">Terms of Service</a> and <a href="BlastyBiz-Privacy.html">Privacy Policy</a>
+                </div>
+
+              </div>
+
+              <!-- RESET PASSWORD (request form) -->
+              <div class="reset-view" id="reset-view">
+                <button type="button" class="reset-back" onclick="hideReset()">← Back to Sign In</button>
+                <h2>Reset Password</h2>
+                <p>Enter your email and we'll send you a reset link.</p>
+
+                <div class="field">
+                  <label>Email</label>
+                  <input type="email" id="reset-email" placeholder="you@yourbusiness.com" />
+                </div>
+
+                <button type="button" class="btn-submit" onclick="handleReset()">
+                  <div class="spinner"></div>
+                  <span class="btn-text">Send Reset Link →</span>
+                </button>
+              </div>
+
+              <!-- SET NEW PASSWORD (arrived via reset link in email) -->
+              <div class="reset-view" id="set-password-view">
+                <h2>Set New Password</h2>
+                <p>Resetting password for <strong id="set-pw-email"></strong></p>
+
+                <div class="field">
+                  <label>New Password</label>
+                  <div class="pw-wrap">
+                    <input type="password" id="set-pw-new" placeholder="New password (8+ characters)" oninput="clearErr('set-pw-new')" />
+                    <button class="pw-toggle" onclick="togglePw('set-pw-new', this)" type="button">👁️</button>
+                  </div>
+                  <div class="field-error" id="set-pw-new-err">Password must be at least 8 characters</div>
+                </div>
+
+                <div class="field">
+                  <label>Confirm New Password</label>
+                  <div class="pw-wrap">
+                    <input type="password" id="set-pw-confirm" placeholder="Repeat your new password" oninput="clearErr('set-pw-confirm')" />
+                    <button class="pw-toggle" onclick="togglePw('set-pw-confirm', this)" type="button">👁️</button>
+                  </div>
+                  <div class="field-error" id="set-pw-confirm-err">Passwords don't match</div>
+                </div>
+
+                <button type="button" class="btn-submit" id="btn-set-pw" onclick="handleSetPassword()">
+                  <div class="spinner"></div>
+                  <span class="btn-text">Save New Password →</span>
+                </button>
+              </div>
+
+              <!-- EMAIL VERIFIED LANDING (arrived via verification link in email) -->
+              <div class="email-confirmed-view" id="email-confirmed-view">
+                <strong class="confirmed-logo">Blasty<span>Biz</span></strong>
+                <!-- success state -->
+                <div id="ecv-success">
+                  <span class="confirmed-icon">✅</span>
+                  <h2>Your email is verified!</h2>
+                  <p>You're all set — sign in to get started.</p>
+                  <button class="btn-submit" type="button" onclick="showNormalLogin()">
+                    <span class="btn-text">Sign In to Get Started →</span>
+                  </button>
+                </div>
+                <!-- error state -->
+                <div id="ecv-error" style="display:none">
+                  <span class="confirmed-icon">⚠️</span>
+                  <h2>Link expired or already used</h2>
+                  <p id="ecv-error-msg">This verification link has expired or was already used. Sign in and we'll give you the option to resend it.</p>
+                  <button class="btn-submit" type="button" onclick="showNormalLogin()">
+                    <span class="btn-text">Back to Sign In</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- EMAIL VERIFICATION -->
+              <div class="verify-view" id="verify-view">
+                <div style="font-size:2.5rem;text-align:center;margin-bottom:12px">📧</div>
+                <h2>Check your inbox</h2>
+                <p>We sent a verification link to <strong id="verify-email"></strong>. Click it to activate your account, then come back here to sign in.</p>
+                <button class="btn-submit" onclick="resendVerification()" type="button">
+                  <div class="spinner"></div>
+                  <span class="btn-text">Resend Verification Email</span>
+                </button>
+                <button class="reset-back" onclick="backFromVerify()" type="button">← Back to Sign In</button>
+              </div>
+
+            </div><!-- /auth-card -->
+
+            <div class="back-home">
+              <a href="BlastyBiz-Home.html">← Back to BlastyBiz.com</a>
+            </div>
+
+          </div><!-- /auth-card-wrap -->
+
+        </div><!-- /login-form-col -->
+
+        <!-- IMAGE PANEL — desktop only via .hero-img-col -->
+        <div class="hero-img-col login-img-col">
+          <img src="img/people-login-new.png" alt="Business owner smiling" />
+          <div class="login-img-overlay">
+            <strong class="login-panel-logo">Blasty<span>Biz</span></strong>
+            <p class="login-panel-tag">Fill It Once. Blast Everywhere.</p>
+            <blockquote class="login-panel-quote">"I used to spend my whole Sunday posting. Now it takes 5 minutes." — Maria R., Pizzeria Owner</blockquote>
+          </div>
+        </div>
+
+      </div><!-- /layout__split-2-1 -->
+    </div><!-- /row -->
+  </div><!-- /main-inner -->
+</main>
+
+<div class="toast" id="toast"></div>
+
+<div id="site-footer-inject"></div>
+<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('form-' + tab).classList.add('active');
+  hideReset();
+}
+
+function togglePw(inputId, btn) {
+  const input = document.getElementById(inputId);
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  btn.textContent = isHidden ? '🙈' : '👁️';
+}
+
+function checkStrength(val) {
+  const wrap = document.getElementById('strength-wrap');
+  const fill = document.getElementById('strength-fill');
+  const lbl  = document.getElementById('strength-label');
+  if (!val) { wrap.classList.remove('visible'); return; }
+  wrap.classList.add('visible');
+  let score = 0;
+  if (val.length >= 8)  score++;
+  if (val.length >= 12) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const levels = [
+    { w: '20%', c: '#FF4444', t: 'Too weak' },
+    { w: '40%', c: '#FF9800', t: 'Weak' },
+    { w: '60%', c: '#FFC107', t: 'Fair' },
+    { w: '80%', c: '#8BC34A', t: 'Good' },
+    { w: '100%', c: '#00C853', t: 'Strong ✓' },
+  ];
+  const level = levels[Math.min(score, 4)];
+  fill.style.width = level.w;
+  fill.style.background = level.c;
+  lbl.textContent = level.t;
+  lbl.style.color = level.c;
+}
+
+function clearErr(inputId) {
+  const input = document.getElementById(inputId);
+  const err = document.getElementById(inputId + '-err');
+  if (input) input.classList.remove('error');
+  if (err) err.classList.remove('visible');
+}
+
+function showErr(inputId, msg) {
+  const input = document.getElementById(inputId);
+  const err = document.getElementById(inputId + '-err');
+  if (input) input.classList.add('error');
+  if (err) { if (msg) err.textContent = msg; err.classList.add('visible'); }
+  return false;
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function showReset() {
+  document.getElementById('form-signin').style.display = 'none';
+  document.getElementById('reset-view').classList.add('visible');
+}
+
+function hideReset() {
+  document.getElementById('form-signin').style.display = '';
+  document.getElementById('reset-view').classList.remove('visible');
+}
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.classList.toggle('loading', loading);
+  btn.disabled = loading;
+}
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error-toast' : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function handleSignIn() {}
+function handleSignUp() {}
+function handleGoogle() {}
+function handleReset() {}
+function handleSetPassword() {}
+</script>
+
+<script type="module">
+import { auth, db } from './firebase-init-v2.js';
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  FacebookAuthProvider,
+  signInWithPopup,
+  sendPasswordResetEmail,
+  sendEmailVerification,
+  verifyPasswordResetCode,
+  confirmPasswordReset,
+  applyActionCode
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+['btn-signin','btn-signup'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.disabled = false;
+});
+
+// ── Password-reset link handler ───────────────────────────────────────────────
+// When the user clicks the reset link in their email, Firebase redirects back
+// to this page with ?mode=resetPassword&oobCode=...  Detect that here, verify
+// the code, and show the "Set New Password" form instead of the login form.
+let _resetOobCode = null;
+
+(async function checkResetLink() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('mode') !== 'resetPassword') return;
+  const oobCode = params.get('oobCode');
+  if (!oobCode) return;
+  try {
+    const email = await verifyPasswordResetCode(auth, oobCode);
+    _resetOobCode = oobCode;
+    document.getElementById('set-pw-email').textContent = email;
+    document.getElementById('auth-loading').style.display = 'none';
+    document.getElementById('auth-card-wrap').classList.add('ready');
+    document.getElementById('set-password-view').classList.add('visible');
+  } catch (e) {
+    showToast('This reset link has expired or already been used. Please request a new one.', true);
+    document.getElementById('auth-loading').style.display = 'none';
+    document.getElementById('auth-card-wrap').classList.add('ready');
+  }
+})();
+
+window.handleSetPassword = async function() {
+  if (!_resetOobCode) return;
+  const newPw      = document.getElementById('set-pw-new').value;
+  const confirmPw  = document.getElementById('set-pw-confirm').value;
+  let valid = true;
+  if (newPw.length < 8)      { showErr('set-pw-new', 'Password must be at least 8 characters'); valid = false; }
+  if (newPw !== confirmPw)   { showErr('set-pw-confirm', "Passwords don't match"); valid = false; }
+  if (!valid) return;
+  setLoading('btn-set-pw', true);
+  try {
+    await confirmPasswordReset(auth, _resetOobCode, newPw);
+    showToast('Password updated! Sign in with your new password ✓');
+    _resetOobCode = null;
+    // Clear the oobCode from the URL, then show normal sign-in form
+    history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => {
+      document.getElementById('set-password-view').classList.remove('visible');
+      document.getElementById('form-signin').style.display = '';
+    }, 1800);
+  } catch (e) {
+    setLoading('btn-set-pw', false);
+    const msg = e.code === 'auth/expired-action-code'  ? 'This link has expired — request a new one.' :
+                e.code === 'auth/invalid-action-code'  ? 'Invalid link — please request a new reset email.' :
+                e.code === 'auth/weak-password'        ? 'Password is too weak — use 8+ characters.' :
+                'Could not save password — try again.';
+    showToast(msg, true);
+  }
+};
+
+// ── Email-verification link handler ──────────────────────────────────────────
+// When the user clicks the "Verify Email" link, Firebase redirects back here
+// with ?mode=verifyEmail&oobCode=...  Detect that, apply the code, and show a
+// branded confirmation instead of the normal sign-in tabs.
+(async function checkVerifyEmailLink() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('mode') !== 'verifyEmail') return;
+  const oobCode = params.get('oobCode');
+  // Always show the confirmation card (not the loading spinner) first
+  document.getElementById('auth-loading').style.display = 'none';
+  document.getElementById('auth-card-wrap').classList.add('ready', 'email-confirm-mode');
+  if (!oobCode) {
+    document.getElementById('ecv-error-msg').textContent =
+      'Missing verification code. Please use the link from your email.';
+    document.getElementById('ecv-success').style.display = 'none';
+    document.getElementById('ecv-error').style.display = '';
+    return;
+  }
+  try {
+    await applyActionCode(auth, oobCode);
+    // Success — if a session already exists, reload the user so emailVerified
+    // reflects the just-applied code, then skip the "Sign In" button entirely.
+    if (auth.currentUser) {
+      try {
+        await auth.currentUser.reload();
+        if (auth.currentUser.emailVerified) {
+          afterAuth(auth.currentUser);
+          return;
+        }
+      } catch (_) {
+        // reload failed (e.g. network) — fall through to show the button
+      }
+    }
+    // No live session (different browser / tab) — show the normal button
+  } catch (e) {
+    const msg =
+      e.code === 'auth/expired-action-code'  ? 'This verification link has expired. Sign in and request a new one.' :
+      e.code === 'auth/invalid-action-code'  ? 'This verification link has already been used or is invalid.' :
+      e.code === 'auth/user-disabled'        ? 'This account has been disabled.' :
+      'Verification failed — please try signing in or request a new link.';
+    document.getElementById('ecv-error-msg').textContent = msg;
+    document.getElementById('ecv-success').style.display = 'none';
+    document.getElementById('ecv-error').style.display = '';
+  }
+})();
+
+window.showNormalLogin = function() {
+  document.getElementById('auth-card-wrap').classList.remove('email-confirm-mode');
+  history.replaceState({}, '', window.location.pathname);
+};
+
+window.selectPlan = function(plan) {
+  document.querySelectorAll('.plan-pick-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.plan === plan)
+  );
+  localStorage.setItem('bb_selected_plan', plan);
+};
+
+window.selectBilling = function(period) {
+  const isAnnual = period === 'annual';
+  localStorage.setItem('bb_billing_period', period);
+  // Toggle button styles
+  const mBtn = document.getElementById('toggle-monthly');
+  const aBtn = document.getElementById('toggle-annual');
+  if (mBtn) { mBtn.style.background = isAnnual ? 'transparent' : '#00C853'; mBtn.style.color = isAnnual ? '#aaa' : '#0d1a0d'; }
+  if (aBtn) { aBtn.style.background = isAnnual ? '#00C853' : 'transparent'; aBtn.style.color = isAnnual ? '#0d1a0d' : '#aaa'; }
+  // Update price labels
+  const proPriceEl    = document.getElementById('price-pro');
+  const agencyPriceEl = document.getElementById('price-agency');
+  if (proPriceEl)    proPriceEl.textContent    = isAnnual ? '$199/yr' : '$19/mo';
+  if (agencyPriceEl) agencyPriceEl.textContent = isAnnual ? '$999/yr' : '$99/mo';
+};
+
+(function initPlanPicker() {
+  const urlPlan    = new URLSearchParams(window.location.search).get('plan');
+  const urlBilling = new URLSearchParams(window.location.search).get('billing');
+  const saved      = localStorage.getItem('bb_selected_plan');
+  const savedBill  = localStorage.getItem('bb_billing_period');
+  const valid      = ['starter','pro','agency'];
+  const pick       = valid.includes(urlPlan) ? urlPlan : valid.includes(saved) ? saved : 'starter';
+  const billing    = (urlBilling === 'annual' || savedBill === 'annual') ? 'annual' : 'monthly';
+  selectPlan(pick);
+  selectBilling(billing);
+})();
+
+async function afterAuth(user) {
+  try {
+    const picked  = localStorage.getItem('bb_selected_plan');
+    const billing = localStorage.getItem('bb_billing_period') || 'monthly';
+
+    // Paid plan selected → go to checkout first; Dashboard sends to onboarding after payment
+    if (picked && ['pro', 'agency'].includes(picked)) {
+      window.location.href = `BlastyBiz.html?checkout=${encodeURIComponent(picked)}&billing=${encodeURIComponent(billing)}`;
+      return;
+    }
+
+    const snap     = await getDoc(doc(db, 'users', user.uid));
+    const userData = snap.exists() ? snap.data() : {};
+    if (userData.onboarded) {
+      window.location.href = 'BlastyBiz.html';
+    } else {
+      window.location.href = 'BlastyBiz-Onboard2.html';
+    }
+  } catch (e) {
+    localStorage.setItem('bb_auth', '0');
+    window.showToast('Error loading account: ' + (e.code || e.message), true);
+  }
+}
+
+function showLoginForm() {
+  document.getElementById('auth-loading').style.display = 'none';
+  document.getElementById('auth-card-wrap').classList.add('ready');
+}
+
+function showVerifyView(email) {
+  document.getElementById('verify-email').textContent = email || '';
+  // Wizard-style: replace entire card with just the verify screen
+  document.getElementById('auth-card-wrap').classList.add('verify-mode');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.showVerifyView = showVerifyView;
+
+async function sendVerificationViaResend(user) {
+  const idToken = await user.getIdToken();
+  const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/sendVerificationEmail', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken })
+  });
+  if (!resp.ok) throw new Error('CF failed');
+}
+
+window.resendVerification = async function() {
+  const user = auth.currentUser;
+  if (!user) return;
+  try {
+    try { await sendVerificationViaResend(user); }
+    catch(_) { await sendEmailVerification(user); }
+    showToast('Verification email resent — check your inbox ✓');
+  } catch (e) {
+    showToast('Could not resend — try again in a moment.', true);
+  }
+};
+
+window.backFromVerify = async function() {
+  document.getElementById('auth-card-wrap').classList.remove('verify-mode');
+  try { await auth.signOut(); } catch (_) {}
+};
+
+onAuthStateChanged(auth, async (user) => {
+  const _mode = new URLSearchParams(window.location.search).get('mode');
+  if (_mode === 'resetPassword' || _mode === 'verifyEmail') return;
+
+  if (!user) {
+    localStorage.setItem('bb_auth', '0');
+    showLoginForm();
+    return;
+  }
+  // Reload to get fresh emailVerified status — stale cached token may still show false
+  try { await user.reload(); } catch(_) {}
+  const fresh = auth.currentUser;
+  if (!fresh || !fresh.emailVerified) {
+    localStorage.setItem('bb_auth', '0');
+    showLoginForm();
+    if (fresh) showVerifyView(fresh.email);
+    return;
+  }
+  localStorage.setItem('bb_auth', '1');
+  await afterAuth(fresh);
+});
+
+window.handleSignIn = async function() {
+  const email = document.getElementById('si-email').value.trim();
+  const pass  = document.getElementById('si-password').value;
+  let valid = true;
+  if (!isValidEmail(email)) valid = showErr('si-email');
+  if (!pass) valid = showErr('si-password');
+  if (!valid) return;
+  setLoading('btn-signin', true);
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+    // Reload to get fresh emailVerified — cached token may lag behind
+    try { await cred.user.reload(); } catch(_) {}
+    const signedIn = auth.currentUser;
+    if (!signedIn.emailVerified) {
+      setLoading('btn-signin', false);
+      showVerifyView(signedIn.email);
+      return;
+    }
+    await afterAuth(signedIn);
+  } catch (e) {
+    setLoading('btn-signin', false);
+    const msg = e.code === 'auth/invalid-credential' ? 'Wrong email or password' :
+                e.code === 'auth/too-many-requests'  ? 'Too many attempts — try again later' :
+                e.message;
+    showToast(msg, true);
+  }
+};
+
+window.handleSignUp = async function() {
+  const name  = document.getElementById('su-name').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const pass  = document.getElementById('su-password').value;
+  const pass2 = document.getElementById('su-password2').value;
+  let valid = true;
+  if (!name)               valid = showErr('su-name', 'Name is required');
+  if (!isValidEmail(email))valid = showErr('su-email', 'Please enter a valid email');
+  if (pass.length < 8)     valid = showErr('su-password', 'Password must be at least 8 characters');
+  if (pass !== pass2)      valid = showErr('su-password2', "Passwords don't match");
+  if (!valid) return;
+  setLoading('btn-signup', true);
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      ownerName: name, email, plan: 'starter', onboarded: false, createdAt: serverTimestamp()
+    });
+    // Account created — attempt verification email.
+    // If BOTH paths fail, still show verify view (account exists); user can Resend from there.
+    let emailSent = true;
+    try {
+      try { await sendVerificationViaResend(cred.user); }
+      catch(_) { await sendEmailVerification(cred.user); }
+    } catch(_) {
+      emailSent = false;
+    }
+    setLoading('btn-signup', false);
+    showLoginForm();
+    showVerifyView(cred.user.email);
+    if (!emailSent) {
+      showToast("Account created! We couldn't send the verification email right now — sign in to request a new one.", false);
+    }
+  } catch (e) {
+    setLoading('btn-signup', false);
+    const msg = e.code === 'auth/email-already-in-use' ? 'Account already exists — sign in instead' : e.message;
+    showToast(msg, true);
+  }
+};
+
+window.handleGoogle = async function() {
+  const provider = new GoogleAuthProvider();
+  try {
+    const cred = await signInWithPopup(auth, provider);
+    const snap = await getDoc(doc(db, 'users', cred.user.uid));
+    if (!snap.exists()) {
+      await setDoc(doc(db, 'users', cred.user.uid), {
+        ownerName: cred.user.displayName || '', email: cred.user.email,
+        plan: 'starter', onboarded: false, createdAt: serverTimestamp()
+      });
+    }
+    await afterAuth(cred.user);
+  } catch (e) {
+    if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+      showToast('Google sign-in failed: ' + (e.code || e.message), true);
+    }
+  }
+};
+
+window.handleFacebook = async function() {
+  const provider = new FacebookAuthProvider();
+  try {
+    const cred = await signInWithPopup(auth, provider);
+    const snap = await getDoc(doc(db, 'users', cred.user.uid));
+    if (!snap.exists()) {
+      await setDoc(doc(db, 'users', cred.user.uid), {
+        ownerName: cred.user.displayName || '', email: cred.user.email,
+        plan: 'starter', onboarded: false, createdAt: serverTimestamp()
+      });
+    }
+    await afterAuth(cred.user);
+  } catch (e) {
+    if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+      showToast('Facebook sign-in failed: ' + (e.code || e.message), true);
+    }
+  }
+};
+
+
+window.handleReset = async function() {
+  const email = document.getElementById('reset-email').value.trim();
+  if (!isValidEmail(email)) { showToast('Enter a valid email', true); return; }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    showToast('Reset link sent! Check your inbox ✓');
+    setTimeout(hideReset, 2000);
+  } catch (e) {
+    showToast('Could not send reset email', true);
+  }
+};
+</script>
+
+<script src="header-loader.js?v=1"></script>
+
+</body>
+</html>

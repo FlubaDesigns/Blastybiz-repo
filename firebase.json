@@ -3,7 +3,7 @@
     "predeploy": [
       "node scripts/bump-css-version.cjs"
     ],
-    "public": "artifacts/api-server/public",
+    "public": "public",
     "ignore": [
       "firebase.json",
       "**/.*",

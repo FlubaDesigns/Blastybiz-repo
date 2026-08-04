@@ -1,7 +1,7 @@
 const fs   = require('fs');
 const path = require('path');
 
-const publicDir = 'artifacts/api-server/public';
+const publicDir = 'public';
 const version   = Date.now();
 
 const files = fs.readdirSync(publicDir).filter(f => f.endsWith('.html'));
