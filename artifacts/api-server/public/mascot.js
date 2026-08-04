@@ -1,7 +1,9 @@
-/* mascot.js — Portable self-contained rocket mascot component v1.0
+/* mascot.js — Portable self-contained rocket mascot component v2.0
    Usage: <script src="/mascot.js"></script>
    Place an empty <div class="pb-mascot" id="pb-mascot"></div> anywhere.
-   API: window.PBMascot.setMood(moodOrSpec) | .setPosition(pos) | .miniSVG(mood)
+   API (v1): window.PBMascot.setMood(moodOrSpec) | .setPosition(pos) | .miniSVG(mood)
+   API (v2): .startGaze() | .stopGaze() | .pointTo(el,opts) | .confetti()
+             .setDraggable(bool) | .autoPark(delayMs)
 */
 (function () {
   'use strict';
@@ -36,7 +38,7 @@
     '.pb-mascot.s-ask-2    .mouth-happy{opacity:0!important;}.pb-mascot.s-ask-2    .mouth-ask{opacity:1!important;}',
     '.pb-mascot.s-ask-3    .mouth-happy{opacity:0!important;}.pb-mascot.s-ask-3    .mouth-ask{opacity:1!important;}',
 
-    /* Standalone mouth overrides — priority over mood-driven mouth */
+    /* Standalone mouth overrides */
     '.pb-mascot.s-mouth-happy .mouth-working,.pb-mascot.s-mouth-happy .mouth-celebrate,.pb-mascot.s-mouth-happy .mouth-ask{opacity:0!important;}',
     '.pb-mascot.s-mouth-happy .mouth-happy{opacity:1!important;}',
     '.pb-mascot.s-mouth-working .mouth-happy,.pb-mascot.s-mouth-working .mouth-celebrate,.pb-mascot.s-mouth-working .mouth-ask{opacity:0!important;}',
@@ -45,18 +47,19 @@
     '.pb-mascot.s-mouth-celebrate .mouth-celebrate{opacity:1!important;}',
     '.pb-mascot.s-mouth-ask .mouth-happy,.pb-mascot.s-mouth-ask .mouth-working,.pb-mascot.s-mouth-ask .mouth-celebrate{opacity:0!important;}',
     '.pb-mascot.s-mouth-ask .mouth-ask{opacity:1!important;}',
+
     /* Arms — pose-driven */
     '.mascot-arm{transition:opacity .25s ease;opacity:0;}',
     '.pb-mascot.s-wave    .mascot-arm-wave{opacity:1!important;}',
     '.pb-mascot.s-wave-2  .mascot-arm-wave{opacity:1!important;}',
     '.pb-mascot.s-working .mascot-arm-point{opacity:1!important;}',
     '.pb-mascot.s-celebrate .mascot-arm-wave{opacity:1!important;}',
-    /* Limbs — standalone overrides (arms, independent of pose) */
+    /* Limbs — standalone overrides */
     '.pb-mascot.s-limb-wave  .mascot-arm-wave{opacity:1!important;}',
     '.pb-mascot.s-limb-point .mascot-arm-point{opacity:1!important;}',
     '.pb-mascot.s-limb-both  .mascot-arm-wave,.pb-mascot.s-limb-both .mascot-arm-point{opacity:1!important;}',
     '.pb-mascot.s-limb-none  .mascot-arm-wave,.pb-mascot.s-limb-none .mascot-arm-point{opacity:0!important;}',
-    /* Limbs — fins */
+    /* Fins */
     '@keyframes b-fin-wave{0%,100%{transform:rotate(0)} 25%{transform:rotate(-22deg)} 55%{transform:rotate(12deg)} 75%{transform:rotate(-18deg)}}',
     '@keyframes b-fin-point-r{0%{transform:rotate(0)} 100%{transform:rotate(28deg)}}',
     '@keyframes b-fin-up-l{0%{transform:rotate(0)} 100%{transform:rotate(-32deg)}}',
@@ -166,10 +169,9 @@
     '@keyframes b-light-seq{0%,100%{opacity:.1}50%{opacity:1}}',
     '.pb-mascot.s-lights-flash .w-light{animation:b-light-flash .28s ease-in-out 6;}',
     '@keyframes b-light-flash{0%,100%{opacity:0}50%{opacity:1}}',
-    /* Glow when any lights class is active */
     '.pb-mascot.s-lights-pulse .w-light,.pb-mascot.s-lights-sequence .w-light,.pb-mascot.s-lights-flash .w-light{filter:drop-shadow(0 0 9px #fff) drop-shadow(0 0 5px currentColor);}',
 
-    /* Smoke (all variants) */
+    /* Smoke */
     '.pb-mascot.s-smoke .smoke-puff{animation:b-smoke 1.4s ease-out forwards;transform-box:fill-box;transform-origin:center;}',
     '.pb-mascot.s-smoke .smoke-puff:nth-child(1){animation-delay:0s}',
     '.pb-mascot.s-smoke .smoke-puff:nth-child(2){animation-delay:.18s}',
@@ -188,12 +190,35 @@
     '.pb-mascot.s-smoke-3 .smoke-puff:nth-child(1){animation-delay:0s}',
     '.pb-mascot.s-smoke-3 .smoke-puff:nth-child(2){animation-delay:.18s}',
     '.pb-mascot.s-smoke-3 .smoke-puff:nth-child(3){animation-delay:.36s}',
-    /* Hide flame when any smoke class is active */
     '.pb-mascot.s-smoke    #mascot-exhaust{opacity:0!important;}',
     '.pb-mascot.s-smoke-sm #mascot-exhaust{opacity:0!important;}',
     '.pb-mascot.s-smoke-lg #mascot-exhaust{opacity:0!important;}',
     '.pb-mascot.s-smoke-2  #mascot-exhaust{opacity:0!important;}',
-    '.pb-mascot.s-smoke-3  #mascot-exhaust{opacity:0!important;}'
+    '.pb-mascot.s-smoke-3  #mascot-exhaust{opacity:0!important;}',
+
+    /* ── v2 additions ─────────────────────────────────────────────────── */
+
+    /* pointTo spotlight ring — applied to the target element, not the mascot */
+    '.pb-spotlight{outline:3px solid rgba(57,255,20,.85)!important;outline-offset:4px;',
+    '  box-shadow:0 0 0 8px rgba(57,255,20,.15),0 0 24px rgba(57,255,20,.25)!important;',
+    '  border-radius:10px;transition:outline .25s ease,box-shadow .25s ease;}',
+    '@media(prefers-reduced-motion:reduce){.pb-spotlight{transition:none;}}',
+
+    /* Programmatic confetti — reuses existing SVG confetti group */
+    '.pb-mascot.pb-confetti-active .confetti>g{transform-box:fill-box;transform-origin:center;',
+    '  animation:confetti-burst 1.6s ease-out forwards!important;}',
+
+    /* Drag — applied to the zone when setDraggable(true) */
+    '.pb-mascot-zone.is-fixed{position:fixed!important;z-index:9990;}',
+    '.pb-mascot-zone.is-draggable{cursor:grab;user-select:none;}',
+    '.pb-mascot-zone.is-dragging{cursor:grabbing!important;}',
+    '.pb-mascot-zone.is-dragging *{pointer-events:none;}',
+
+    /* Park — compact pill shown when auto-parked */
+    '.pb-mascot-zone.is-parked .pb-mascot{width:56px!important;}',
+    '.pb-mascot-zone.is-parked .pb-mascot-caption{opacity:0;pointer-events:none;}',
+    '.pb-mascot-zone.is-parked{cursor:pointer;opacity:.7;transition:opacity .2s;}',
+    '.pb-mascot-zone.is-parked:hover{opacity:1;}'
   ].join('\n');
 
   /* ── SVG ──────────────────────────────────────────────────────────────── */
@@ -224,7 +249,7 @@
     + '<path d="M180 354 C213 385 207 419 180 446 C153 419 147 385 180 354Z" fill="url(#mc-fo)" stroke="#102957" stroke-width="8" stroke-linejoin="round"/>'
     + '<path d="M180 368 C197 389 194 411 180 428 C166 411 163 389 180 368Z" fill="url(#mc-fi)"/>'
     + '</g>'
-    /* Fins — grouped for independent animation */
+    /* Fins */
     + '<g class="mascot-fin mascot-fin-l" style="transform-box:fill-box;transform-origin:100% 0%">'
     + '<path d="M103 240 C68 254 46 286 48 327 C74 312 97 298 116 276Z" fill="url(#mc-rf)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>'
     + '<path d="M97 258 C78 271 67 288 61 307" fill="none" stroke="#ff7d72" stroke-width="6" stroke-linecap="round" opacity=".8"/>'
@@ -241,7 +266,7 @@
     + '<path d="M93 269 C121 289 148 299 180 299 C212 299 239 289 267 269 L265 301 C239 319 211 327 180 327 C149 327 121 319 95 301Z" fill="url(#mc-gf)" stroke="#102957" stroke-width="8"/>'
     + '<path d="M105 283 C132 298 156 304 180 304 C204 304 228 298 255 283" fill="none" stroke="#b3ff70" stroke-width="5" opacity=".8"/>'
     + '</g>'
-    /* Nose (independent spin) */
+    /* Nose */
     + '<g id="mascot-nose" class="mascot-nose" style="transform-box:fill-box;transform-origin:50% 0%">'
     + '<path d="M180 42 C151 64 129 88 113 116 C137 105 157 100 180 100 C203 100 223 105 247 116 C231 88 209 64 180 42Z" fill="url(#mc-rf)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>'
     + '<path d="M205 56 C220 72 229 85 236 102" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity=".9"/>'
@@ -277,7 +302,7 @@
     + '<g class="mascot-arm mascot-arm-point" opacity="0"><path d="M247 259 C277 250 292 235 307 220" fill="none" stroke="#102957" stroke-width="19" stroke-linecap="round"/><path d="M247 259 C277 250 292 235 307 220" fill="none" stroke="#f8fbff" stroke-width="11" stroke-linecap="round"/><g transform="translate(311 216) rotate(-20)"><circle cx="0" cy="0" r="15" fill="#fff" stroke="#102957" stroke-width="6"/><path d="M9 -3 L34 -11" fill="none" stroke="#102957" stroke-width="11" stroke-linecap="round"/><path d="M9 -3 L34 -11" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/></g></g>'
     + '</g>'
     + '</g>' /* end #mascot-body */
-    /* Smoke (outside float group) */
+    /* Smoke */
     + '<g id="mascot-smoke"><ellipse class="smoke-puff" cx="180" cy="410" rx="14" ry="14" fill="#c8c8c8" opacity="0"/><ellipse class="smoke-puff" cx="156" cy="422" rx="14" ry="14" fill="#b8b8b8" opacity="0"/><ellipse class="smoke-puff" cx="204" cy="418" rx="14" ry="14" fill="#d0d0d0" opacity="0"/></g>'
     + '</svg>';
 
@@ -312,13 +337,18 @@
     's-arrive-land': 'Landed! 🛬'
   };
 
-  /* ── API ──────────────────────────────────────────────────────────────── */
+  /* ── v2 internal state ─────────────────────────────────────────────── */
+  var _gazeActive   = false;
+  var _gazeHandler  = null;
+  var _parkTimer    = null;
+  var _parkDelay    = 0;
+  var _dragging     = null;
+  var _lastPos      = null;
+  var _isDraggable  = false;
 
-  /* setMood(moodOrSpec)
-     moodOrSpec: string like 's-wave'
-              OR object { mood, flame, lights, eyes, smoke, noseSpin }
-     Applies arrive animation, then settles into final state.
-  */
+  /* ── API v1 ───────────────────────────────────────────────────────────── */
+
+  /* setMood(moodOrSpec) */
   function setMood(moodOrSpec) {
     var spec   = typeof moodOrSpec === 'string' ? { mood: moodOrSpec } : (moodOrSpec || { mood: 's-ask' });
     var mood   = spec.mood || 's-ask';
@@ -343,6 +373,7 @@
     }, 500);
     var cap = document.getElementById('pb-mascot-caption');
     if (cap) cap.textContent = MOOD_CAPTIONS[mood] || '';
+    _resetParkTimer(); /* activity — reset auto-park countdown */
   }
 
   /* setPosition(pos) — 'left' | 'right' | null */
@@ -377,6 +408,209 @@
       + '</svg>';
   }
 
+  /* ── API v2 ───────────────────────────────────────────────────────────── */
+
+  /* pointTo(element, { duration })
+     Scrolls to the element and briefly spotlights it with a ring glow.
+     Works on any selector string or DOM element. */
+  function pointTo(el, opts) {
+    var target = typeof el === 'string' ? document.querySelector(el) : el;
+    if (!target) return;
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' });
+    target.classList.add('pb-spotlight');
+    setTimeout(function () {
+      target.classList.remove('pb-spotlight');
+    }, (opts && opts.duration) || 2400);
+  }
+
+  /* startGaze() / stopGaze()
+     Pupils lean subtly toward the cursor by translating #mascot-svg slightly.
+     This approach doesn't fight the mood-driven pupil CSS classes. */
+  function startGaze() {
+    if (_gazeActive) return;
+    _gazeActive = true;
+    _gazeHandler = function (e) {
+      var svgEl = document.getElementById('mascot-svg');
+      if (!svgEl) return;
+      var r = svgEl.getBoundingClientRect();
+      /* Eye center: ~39% across, ~36% down within the SVG bounding box */
+      var cx = r.left + r.width * 0.39;
+      var cy = r.top + r.height * 0.36;
+      var dx = Math.max(-2.5, Math.min(2.5, (e.clientX - cx) / 130));
+      var dy = Math.max(-1.5, Math.min(1.5, (e.clientY - cy) / 130));
+      svgEl.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+    };
+    document.addEventListener('pointermove', _gazeHandler, { passive: true });
+  }
+
+  function stopGaze() {
+    if (!_gazeActive) return;
+    _gazeActive = false;
+    if (_gazeHandler) document.removeEventListener('pointermove', _gazeHandler);
+    _gazeHandler = null;
+    var svgEl = document.getElementById('mascot-svg');
+    if (svgEl) svgEl.style.transform = '';
+  }
+
+  /* confetti()
+     Triggers a one-shot confetti burst using the SVG's built-in confetti group.
+     No-op when prefers-reduced-motion is set. */
+  function confetti() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var el = document.getElementById('pb-mascot');
+    if (!el) return;
+    el.classList.remove('pb-confetti-active');
+    void el.offsetWidth; /* force reflow so re-triggering replays the animation */
+    el.classList.add('pb-confetti-active');
+    setTimeout(function () { el.classList.remove('pb-confetti-active'); }, 1800);
+  }
+
+  /* setDraggable(enabled)
+     Makes #pb-mascot-zone position:fixed and drag-repositionable.
+     Position is saved to localStorage and restored on next load.
+     Only activate for pages where the mascot is used as a floating overlay. */
+  function _removeDragListeners(zone) {
+    if (zone) zone.removeEventListener('pointerdown', _onDragStart);
+    window.removeEventListener('pointermove',   _onDragMove);
+    window.removeEventListener('pointerup',     _onDragEnd);
+    window.removeEventListener('pointercancel', _onDragEnd);
+    window.removeEventListener('resize',        _constrainToViewport);
+  }
+
+  function setDraggable(enabled) {
+    var zone = document.getElementById('pb-mascot-zone');
+    if (!zone) return;
+    /* Always tear down first — ensures idempotent enable and clean disable */
+    _removeDragListeners(zone);
+    _isDraggable = Boolean(enabled);
+    if (!enabled) {
+      zone.classList.remove('is-fixed', 'is-draggable', 'is-dragging');
+      _dragging = null;
+      return;
+    }
+    zone.classList.add('is-fixed', 'is-draggable');
+
+    /* Restore saved position */
+    try {
+      var saved = JSON.parse(localStorage.getItem('pb-mascot-pos') || 'null');
+      if (saved && saved.position) {
+        zone.style.left   = saved.position.left + 'px';
+        zone.style.top    = saved.position.top  + 'px';
+        zone.style.right  = 'auto';
+        zone.style.bottom = 'auto';
+      }
+    } catch (e) {}
+
+    zone.addEventListener('pointerdown', _onDragStart);
+    window.addEventListener('pointermove',   _onDragMove,   { passive: false });
+    window.addEventListener('pointerup',     _onDragEnd);
+    window.addEventListener('pointercancel', _onDragEnd);
+    window.addEventListener('resize',        _constrainToViewport);
+  }
+
+  function _onDragStart(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    var zone = document.getElementById('pb-mascot-zone');
+    if (!zone) return;
+    /* Tap on parked mascot unparks it */
+    if (zone.classList.contains('is-parked')) { _unpark(); return; }
+    var r = zone.getBoundingClientRect();
+    _dragging = { id: e.pointerId, startX: e.clientX, startY: e.clientY, left: r.left, top: r.top, moved: false };
+    if (zone.setPointerCapture) zone.setPointerCapture(e.pointerId);
+    zone.classList.add('is-dragging');
+    _clearParkTimer();
+  }
+
+  function _onDragMove(e) {
+    if (!_dragging || e.pointerId !== _dragging.id) return;
+    var dx = e.clientX - _dragging.startX;
+    var dy = e.clientY - _dragging.startY;
+    if (Math.abs(dx) + Math.abs(dy) > 4) _dragging.moved = true;
+    var zone = document.getElementById('pb-mascot-zone');
+    if (!zone) return;
+    var r      = zone.getBoundingClientRect();
+    var margin = 8;
+    var left = Math.min(Math.max(margin, _dragging.left + dx), Math.max(margin, window.innerWidth  - r.width  - margin));
+    var top  = Math.min(Math.max(margin, _dragging.top  + dy), Math.max(margin, window.innerHeight - r.height - margin));
+    zone.style.left   = left + 'px';
+    zone.style.top    = top  + 'px';
+    zone.style.right  = 'auto';
+    zone.style.bottom = 'auto';
+    e.preventDefault();
+  }
+
+  function _onDragEnd(e) {
+    if (!_dragging || e.pointerId !== _dragging.id) return;
+    var zone = document.getElementById('pb-mascot-zone');
+    if (!zone) return;
+    if (zone.releasePointerCapture) zone.releasePointerCapture(e.pointerId);
+    zone.classList.remove('is-dragging');
+    if (_dragging.moved) {
+      var r = zone.getBoundingClientRect();
+      _lastPos = { left: r.left, top: r.top };
+      try { localStorage.setItem('pb-mascot-pos', JSON.stringify({ position: _lastPos })); } catch (err) {}
+    }
+    _dragging = null;
+    _resetParkTimer();
+  }
+
+  function _constrainToViewport() {
+    var zone = document.getElementById('pb-mascot-zone');
+    if (!zone || !_isDraggable) return;
+    var r      = zone.getBoundingClientRect();
+    var margin = 8;
+    var left = Math.min(Math.max(margin, r.left), Math.max(margin, window.innerWidth  - r.width  - margin));
+    var top  = Math.min(Math.max(margin, r.top),  Math.max(margin, window.innerHeight - r.height - margin));
+    zone.style.left   = left + 'px';
+    zone.style.top    = top  + 'px';
+    zone.style.right  = 'auto';
+    zone.style.bottom = 'auto';
+  }
+
+  /* autoPark(delayMs)
+     Collapses the mascot to a compact state after the given idle period.
+     Any setMood() call or drag resets the timer.
+     Only meaningful when setDraggable(true) has also been called. */
+  function autoPark(delayMs) {
+    _parkDelay = delayMs || 12000;
+    _resetParkTimer();
+  }
+
+  function _park() {
+    var zone = document.getElementById('pb-mascot-zone');
+    if (!zone || zone.classList.contains('is-parked') || !_isDraggable) return;
+    var r = zone.getBoundingClientRect();
+    _lastPos = { left: r.left, top: r.top };
+    zone.classList.add('is-parked');
+    zone.setAttribute('aria-label', 'Blasty is parked. Tap to reopen.');
+    try { localStorage.setItem('pb-mascot-pos', JSON.stringify({ position: _lastPos, parked: true })); } catch (err) {}
+  }
+
+  function _unpark() {
+    var zone = document.getElementById('pb-mascot-zone');
+    if (!zone || !zone.classList.contains('is-parked')) return;
+    zone.classList.remove('is-parked');
+    zone.setAttribute('aria-label', 'Blasty onboarding assistant.');
+    if (_lastPos) {
+      zone.style.left   = _lastPos.left + 'px';
+      zone.style.top    = _lastPos.top  + 'px';
+      zone.style.right  = 'auto';
+      zone.style.bottom = 'auto';
+    }
+    _resetParkTimer();
+  }
+
+  function _resetParkTimer() {
+    _clearParkTimer();
+    if (!_parkDelay) return;
+    _parkTimer = setTimeout(_park, _parkDelay);
+  }
+
+  function _clearParkTimer() {
+    if (_parkTimer) { clearTimeout(_parkTimer); _parkTimer = null; }
+  }
+
   /* ── INJECT ───────────────────────────────────────────────────────────── */
   function injectCSS() {
     if (document.getElementById('pb-mascot-css')) return;
@@ -405,12 +639,20 @@
 
   /* ── EXPORT ───────────────────────────────────────────────────────────── */
   window.PBMascot = {
-    setMood: setMood,
-    setPosition: setPosition,
-    miniSVG: miniSVG,
+    /* v1 */
+    setMood:      setMood,
+    setPosition:  setPosition,
+    miniSVG:      miniSVG,
     DEFAULT_ANIM: DEFAULT_ANIM,
     MOOD_CAPTIONS: MOOD_CAPTIONS,
-    injectSVG: injectSVG
+    injectSVG:    injectSVG,
+    /* v2 */
+    pointTo:      pointTo,
+    startGaze:    startGaze,
+    stopGaze:     stopGaze,
+    confetti:     confetti,
+    setDraggable: setDraggable,
+    autoPark:     autoPark
   };
 
 })();
