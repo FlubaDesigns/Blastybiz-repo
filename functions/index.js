@@ -215,7 +215,8 @@ async function reserveAiAction(uid) {
     const snap    = await tx.get(userRef);
     const data    = snap.exists ? snap.data() : {};
     const plan    = data.plan || 'starter';
-    const cap     = AI_LIMITS[plan] || AI_LIMITS.starter;
+    const cfg     = await getPlanConfig();
+    const cap     = cfg.aiLimits[plan] || cfg.aiLimits.starter;
     const resetAt = data.aiActionsResetAt?.toDate?.() || null;
     const now     = new Date();
     const needsReset = !resetAt || now > resetAt;
@@ -323,14 +324,34 @@ function withAuth(fn, opts = {}) {
     if (!opts.public) {
       if (opts.admin) {
         try { decoded = await requireAdmin(req); }
-        catch (e) { return res.status(e.status || 403).json({ error: e.message }); }
+        catch (e) {
+          bbLog('WARNING', 'withAuth', { event: 'admin_auth_failed', status: e.status || 403, msg: e.message });
+          return res.status(e.status || 403).json({ error: e.message });
+        }
       } else {
         try { decoded = await verifyBearer(req); }
-        catch (e) { return res.status(401).json({ error: 'Unauthorized' }); }
+        catch (e) {
+          bbLog('WARNING', 'withAuth', { event: 'user_auth_failed', status: 401 });
+          return res.status(401).json({ error: 'Unauthorized' });
+        }
       }
     }
     return fn(req, res, decoded);
   };
+}
+
+// ── bbLog — structured logging helper (4.8) ───────────────────────────────────
+// Emits JSON-structured log entries that GCP Cloud Logging parses into
+// queryable fields. Use for auth failures, billing events, and errors.
+// Plain console.log() is still fine for quick debug lines inside handlers.
+// Fields: severity (DEBUG/INFO/WARNING/ERROR), fn (function name), + any extras.
+function bbLog(severity, fn, data = {}) {
+  const entry = JSON.stringify({ severity, fn, ...data });
+  if (severity === 'ERROR' || severity === 'WARNING') {
+    console.error(entry);
+  } else {
+    console.log(entry);
+  }
 }
 
 
@@ -381,9 +402,42 @@ function _unsubSecret() {
   return process.env.UNSUB_SIGNING_KEY || process.env.RESEND_API_KEY;
 }
 
-// ── AI usage limits (actions per month by plan) ──────────────────────────────
-// 4.5: trial added — previously fell through silently to starter cap
-const AI_LIMITS = { trial: 10, starter: 10, pro: 100, agency: 500 };
+// ── getPlanConfig — single source of truth for all plan entitlements (4.4) ───
+// Reads config/plans from Firestore; falls back to hardcoded defaults.
+// Cached for 5 minutes so every endpoint doesn't pay a Firestore read.
+// To change limits without a redeploy: update config/plans in Firestore.
+// Schema: { aiLimits: {trial,starter,pro,agency}, bizLimits: {…}, prices: {…} }
+const _PLAN_CONFIG_DEFAULTS = {
+  aiLimits:  { trial: 10, starter: 10, pro: 100, agency: 500 },
+  bizLimits: { trial: 1,  starter: 1,  pro: 3,   agency: 10  },
+  prices:    { proMonthly: null, agencyMonthly: null, proAnnual: null, agencyAnnual: null },
+};
+let _planConfigCache = null;
+let _planConfigCachedAt = 0;
+const _PLAN_CONFIG_TTL = 5 * 60 * 1000;
+
+async function getPlanConfig() {
+  const now = Date.now();
+  if (_planConfigCache && now - _planConfigCachedAt < _PLAN_CONFIG_TTL) return _planConfigCache;
+  try {
+    const snap = await db.collection('config').doc('plans').get();
+    const d = snap.exists ? snap.data() : {};
+    _planConfigCache = {
+      aiLimits:  { ..._PLAN_CONFIG_DEFAULTS.aiLimits,  ...(d.aiLimits  || {}) },
+      bizLimits: { ..._PLAN_CONFIG_DEFAULTS.bizLimits, ...(d.bizLimits || {}) },
+      prices:    { ..._PLAN_CONFIG_DEFAULTS.prices,    ...(d.prices    || {}) },
+    };
+  } catch(e) {
+    console.warn('[getPlanConfig] Firestore read failed, using defaults:', e.message);
+    _planConfigCache = {
+      aiLimits:  { ..._PLAN_CONFIG_DEFAULTS.aiLimits  },
+      bizLimits: { ..._PLAN_CONFIG_DEFAULTS.bizLimits },
+      prices:    { ..._PLAN_CONFIG_DEFAULTS.prices    },
+    };
+  }
+  _planConfigCachedAt = now;
+  return _planConfigCache;
+}
 
 // ── Canonical job status values ───────────────────────────────────────────────
 const JOB_STATUS = {
@@ -2782,21 +2836,12 @@ exports.createBusiness = onRequest({ invoker: 'public' }, withAuth(async (req, r
   if (!profileData || typeof profileData !== 'object') {
     return res.status(400).json({ error: 'Missing profileData' });
   }
-  const BIZ_LIMITS = { trial: 1, starter: 1, pro: 3, agency: 10 }; // 4.5: trial added
-  try {
-    const limSnap = await db.collection('settings').doc('bizLimits').get();
-    if (limSnap.exists) {
-      const d = limSnap.data();
-      if (d.proMax    != null) BIZ_LIMITS.pro     = d.proMax;
-      if (d.agencyMax != null) BIZ_LIMITS.agency  = d.agencyMax;
-      if (d.starterMax!= null) BIZ_LIMITS.starter = d.starterMax;
-    }
-  } catch(e) { /* use hardcoded defaults */ }
+  const planCfg = await getPlanConfig(); // 4.4: single source of truth
   try {
     const userSnap = await db.collection('users').doc(uid).get();
     const userData = userSnap.exists ? userSnap.data() : {};
     const plan = userData.plan || 'starter';
-    const cap = BIZ_LIMITS[plan] || 1;
+    const cap = planCfg.bizLimits[plan] ?? 1;
     // Guard against duplicate businesses: if the incoming name+address already
     // matches one of this user's existing businesses, treat this as an edit
     // of that business instead of creating a new one (even if isNew was passed).
@@ -4667,6 +4712,61 @@ exports.adminSetPlan = onRequest(async (req, res) => {
   } catch(e) {
     console.error('[adminSetPlan]', e.message);
     res.status(e.status || 500).json({ error: e.message });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// scheduledFirestoreExport — weekly Firestore backup to GCS (4.9)
+// Triggers every Sunday at 02:00 America/Los_Angeles.
+//
+// ⚠ REQUIRED OPS STEPS (one-time, console/CLI):
+//   1. Create bucket:  gsutil mb -l us-east1 gs://blastybiz-9523e-backups
+//   2. Grant export role to the Firebase service account:
+//      gcloud projects add-iam-policy-binding blastybiz-9523e \
+//        --member="serviceAccount:firebase-adminsdk-1p8t7@blastybiz-9523e.iam.gserviceaccount.com" \
+//        --role="roles/datastore.importExportAdmin"
+//      gcloud storage buckets add-iam-policy-binding gs://blastybiz-9523e-backups \
+//        --member="serviceAccount:firebase-adminsdk-1p8t7@blastybiz-9523e.iam.gserviceaccount.com" \
+//        --role="roles/storage.admin"
+//   3. Enable Firestore PITR (7-day window) in Firebase Console → Firestore → Settings.
+//   4. Perform one restore into a dev project and record the duration (your RTO answer).
+// ══════════════════════════════════════════════════════════════════════════════
+exports.scheduledFirestoreExport = onSchedule({
+  schedule: 'every sunday 02:00',
+  timeZone: 'America/Los_Angeles',
+  region: 'us-central1',
+}, async () => {
+  const projectId = 'blastybiz-9523e';
+  const bucket    = `gs://${projectId}-backups`;
+  try {
+    // Obtain an access token from the GCE metadata server (available in all CFs)
+    const tokenResp = await fetch(
+      'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token',
+      { headers: { 'Metadata-Flavor': 'Google' } }
+    );
+    if (!tokenResp.ok) throw new Error(`Metadata token fetch failed: ${tokenResp.status}`);
+    const { access_token } = await tokenResp.json();
+
+    const timestamp       = new Date().toISOString().replace(/[:.]/g, '-');
+    const outputUriPrefix = `${bucket}/firestore/${timestamp}`;
+
+    const exportResp = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default):exportDocuments`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ outputUriPrefix }),
+      }
+    );
+    if (!exportResp.ok) {
+      const body = await exportResp.text();
+      throw new Error(`Export API ${exportResp.status}: ${body.slice(0, 300)}`);
+    }
+    const op = await exportResp.json();
+    bbLog('INFO', 'scheduledFirestoreExport', { event: 'export_started', operation: op.name, outputUriPrefix });
+  } catch(e) {
+    bbLog('ERROR', 'scheduledFirestoreExport', { event: 'export_failed', msg: e.message });
+    throw e; // rethrow so Cloud Scheduler marks it failed
   }
 });
 

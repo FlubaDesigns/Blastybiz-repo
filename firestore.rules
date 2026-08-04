@@ -15,45 +15,55 @@ service cloud.firestore {
 
     // Users can only read/write their own user doc; admin can read any.
     // plan, planActive, and aiUsage are server-only — blocked from client writes.
+    //
+    // ✅ ALLOWLIST (2.10) — new fields fail CLOSED. If you add a client-writable
+    //    field to user docs, you MUST add it to BOTH hasOnly() lists below.
+    //    Server-only fields (plan, planActive, aiUsage*, etc.) must NOT be added.
     match /users/{userId} {
       allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
       // Admin can write any field (plan override tool, support, etc.)
       allow write: if isAdmin();
       allow create: if request.auth != null && request.auth.uid == userId
         && request.resource.data.plan in ['starter', 'trial']
-        && !('planActive' in request.resource.data)
-        && !('aiUsage' in request.resource.data)
-        && !('aiActionsUsed' in request.resource.data)
-        && !('aiActionsResetAt' in request.resource.data);
-      // ⚠️  MAINTAINED DENYLIST — if you add a new billing/entitlement field to users docs
-      //     (e.g. squareCustomerId, subscriptionId, usageCounters) you MUST add it here too,
-      //     or it will be client-writable by default.
+        && request.resource.data.keys().hasOnly([
+            'ownerName', 'email', 'displayName', 'plan', 'onboarded', 'createdAt',
+            'activeBusiness', 'onboardingVersion', 'onboardingProgress'
+          ]);
       allow update: if request.auth != null && request.auth.uid == userId
-        && !('plan'           in request.resource.data.diff(resource.data).affectedKeys())
-        && !('planActive'     in request.resource.data.diff(resource.data).affectedKeys())
-        && !('aiUsage'        in request.resource.data.diff(resource.data).affectedKeys())
-        && !('aiActionsUsed'  in request.resource.data.diff(resource.data).affectedKeys())
-        && !('aiActionsResetAt' in request.resource.data.diff(resource.data).affectedKeys());
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'ownerName', 'email', 'displayName', 'onboarded', 'activeBusiness',
+            'updatedAt', 'onboardingProgress', 'onboardingVersion'
+          ]);
 
       // Businesses — nested under users/{uid}/businesses/{bizId}
       // Owner check: uid field matches the parent user doc path segment.
-      // ⚠️  MAINTAINED DENYLIST — billing fields written by Square webhook must be listed here.
-      //     If you add squareOrderId, trialEndsAt, etc. to business docs, add them below too.
+      //
+      // ✅ ALLOWLIST (2.10) — new fields fail CLOSED. If you add a client-writable
+      //    field to business docs, add it to BOTH hasOnly() lists below.
+      //    Server-only fields (currentPlan, subscriptionStatus, squareCustomerId,
+      //    squareSubscriptionId) must NOT be added.
       match /businesses/{bizId} {
         allow read: if request.auth != null &&
           (request.auth.uid == userId || isAdmin());
         allow create: if request.auth != null &&
           request.auth.uid == userId &&
-          !('currentPlan' in request.resource.data) &&
-          !('subscriptionStatus' in request.resource.data) &&
-          !('squareCustomerId' in request.resource.data) &&
-          !('squareSubscriptionId' in request.resource.data);
+          request.resource.data.keys().hasOnly([
+              'businessName', 'name', 'ownerName', 'ownerRole', 'category',
+              'phone', 'email', 'street', 'city', 'state', 'zip', 'address',
+              'website', 'hours', 'locationType', 'region', 'tone',
+              'globalMemory', 'featuredPhoto', 'aiContext', 'bizInsights',
+              'platformCats', 'postingSchedule',
+              'businessId', 'uid', 'status', 'createdAt', 'updatedAt'
+            ]);
         allow update: if request.auth != null &&
-          request.auth.uid == userId
-          && !('currentPlan'          in request.resource.data.diff(resource.data).affectedKeys())
-          && !('subscriptionStatus'   in request.resource.data.diff(resource.data).affectedKeys())
-          && !('squareCustomerId'     in request.resource.data.diff(resource.data).affectedKeys())
-          && !('squareSubscriptionId' in request.resource.data.diff(resource.data).affectedKeys());
+          request.auth.uid == userId &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'businessName', 'name', 'ownerName', 'ownerRole', 'category',
+              'phone', 'email', 'street', 'city', 'state', 'zip', 'address',
+              'website', 'hours', 'locationType', 'region', 'tone',
+              'globalMemory', 'featuredPhoto', 'aiContext', 'bizInsights',
+              'platformCats', 'postingSchedule', 'updatedAt'
+            ]);
         allow delete: if request.auth != null &&
           (request.auth.uid == userId || isAdmin());
 
@@ -275,7 +285,7 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Admin config (admin email list, feature flags, etc.) — admin only
+    // Admin config (admin email list, feature flags, plans, etc.) — admin only
     match /config/{doc} {
       allow read, write: if isAdmin();
     }
