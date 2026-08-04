@@ -241,3 +241,10 @@ uri = "file://download/download/BlastyBiz_Site.zip"
 type = "unspecified"
 title = "BlastyBiz_Site.zip"
 description = "Rebuilt zip with backend source files now included"
+
+[[outputs]]
+id = "AC9t-LT8udRSNHIzxIBHQ"
+uri = "file://downloads/BlastyBiz.zip"
+type = "unspecified"
+title = "BlastyBiz.zip"
+description = "129 files — public/, functions/, scripts/, firebase.json, firestore.rules, storage.rules. No node_modules, no libraries."
