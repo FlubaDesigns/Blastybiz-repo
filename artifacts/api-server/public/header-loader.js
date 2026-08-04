@@ -43,9 +43,42 @@
       window.addEventListener('load', _updateHeaderOffset);
       window.addEventListener('resize', _updateHeaderOffset);
       _runTaglineAnim();
+      // Pre-warm: build click buffers now so there's nothing left to compute on first tap
+      var _ac = null, _bufs = [];
+      try {
+        _ac = new (window.AudioContext || window.webkitAudioContext)();
+        var _mkBuf = function(f) {
+          var b = _ac.createBuffer(1, Math.floor(_ac.sampleRate * 0.03), _ac.sampleRate);
+          var D = b.getChannelData(0);
+          for (var i = 0; i < D.length; i++) {
+            var s = i / _ac.sampleRate;
+            D[i] = (Math.random() * 2 - 1) * Math.exp(-s / 0.004) * 1.2
+                  + Math.sin(2 * Math.PI * f * s) * Math.exp(-s / 0.005) * 0.3;
+          }
+          return b;
+        };
+        _bufs = [_mkBuf(220), _mkBuf(160)];
+      } catch(e) {}
+
       document.addEventListener('pointerdown', function onPD() {
         document.removeEventListener('pointerdown', onPD);
         _runTaglineAnim();
+        // Buffers already built — just resume and fire immediately
+        if (_ac && _bufs.length) {
+          _ac.resume().then(function() {
+            var n = _ac.currentTime;
+            var offsets = [0.005, 0.30];
+            _bufs.forEach(function(buf, i) {
+              var src = _ac.createBufferSource();
+              src.buffer = buf;
+              var g = _ac.createGain();
+              g.gain.setValueAtTime(1, n + offsets[i]);
+              g.gain.exponentialRampToValueAtTime(0.001, n + offsets[i] + 0.03);
+              src.connect(g); g.connect(_ac.destination);
+              src.start(n + offsets[i]);
+            });
+          }).catch(function(){});
+        }
       }, { once: true });
     });
 })();
