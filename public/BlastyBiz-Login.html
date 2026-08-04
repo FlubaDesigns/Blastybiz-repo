@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1785881065277" />
+  <link rel="stylesheet" href="global-style.css?v=1785881928854" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -66,6 +66,7 @@
 
               <!-- SIGN IN FORM -->
               <div class="auth-form active" id="form-signin">
+              <form autocomplete="on" onsubmit="handleSignIn(); return false;">
 
                 <div class="field">
                   <label for="si-email">Email</label>
@@ -86,11 +87,12 @@
                   <a href="#" onclick="showReset(); return false;">Forgot password?</a>
                 </div>
 
-                <button type="button" class="btn-submit" id="btn-signin" onclick="handleSignIn()" disabled>
+                <button type="submit" class="btn-submit" id="btn-signin" disabled>
                   <div class="spinner"></div>
                   <span class="btn-text">Sign In →</span>
                 </button>
 
+              </form>
                 <div class="or-divider">
                   <div class="or-line"></div>
                   <div class="or-text">OR</div>
@@ -112,6 +114,7 @@
 
               <!-- SIGN UP FORM -->
               <div class="auth-form" id="form-signup">
+              <form autocomplete="on" onsubmit="handleSignUp(); return false;">
 
                 <div class="field">
                   <label class="section-label" style="margin-bottom:10px">Choose your plan</label>
@@ -180,11 +183,17 @@
                   <div class="field-error" id="su-password2-err">Passwords don't match</div>
                 </div>
 
-                <button type="button" class="btn-submit" id="btn-signup" onclick="handleSignUp()" disabled>
+                <button type="submit" class="btn-submit" id="btn-signup" disabled>
                   <div class="spinner"></div>
                   <span class="btn-text">Create Account →</span>
                 </button>
 
+                <div class="terms-note">
+                  By creating an account you agree to our
+                  <a href="BlastyBiz-Terms.html">Terms of Service</a> and <a href="BlastyBiz-Privacy.html">Privacy Policy</a>
+                </div>
+
+              </form>
                 <div class="or-divider">
                   <div class="or-line"></div>
                   <div class="or-text">OR</div>
@@ -202,11 +211,6 @@
                   </button>
                 </div>
 
-                <div class="terms-note">
-                  By creating an account you agree to our
-                  <a href="BlastyBiz-Terms.html">Terms of Service</a> and <a href="BlastyBiz-Privacy.html">Privacy Policy</a>
-                </div>
-
               </div>
 
               <!-- RESET PASSWORD (request form) -->
@@ -214,23 +218,24 @@
                 <button type="button" class="reset-back" onclick="hideReset()">← Back to Sign In</button>
                 <h2>Reset Password</h2>
                 <p>Enter your email and we'll send you a reset link.</p>
-
+                <form autocomplete="email" onsubmit="handleReset(); return false;">
                 <div class="field">
                   <label>Email</label>
                   <input type="email" id="reset-email" placeholder="you@yourbusiness.com" />
                 </div>
 
-                <button type="button" class="btn-submit" onclick="handleReset()">
+                <button type="submit" class="btn-submit">
                   <div class="spinner"></div>
                   <span class="btn-text">Send Reset Link →</span>
                 </button>
+                </form>
               </div>
 
               <!-- SET NEW PASSWORD (arrived via reset link in email) -->
               <div class="reset-view" id="set-password-view">
                 <h2>Set New Password</h2>
                 <p>Resetting password for <strong id="set-pw-email"></strong></p>
-
+                <form autocomplete="new-password" onsubmit="handleSetPassword(); return false;">
                 <div class="field">
                   <label>New Password</label>
                   <div class="pw-wrap">
@@ -249,10 +254,11 @@
                   <div class="field-error" id="set-pw-confirm-err">Passwords don't match</div>
                 </div>
 
-                <button type="button" class="btn-submit" id="btn-set-pw" onclick="handleSetPassword()">
+                <button type="submit" class="btn-submit" id="btn-set-pw">
                   <div class="spinner"></div>
                   <span class="btn-text">Save New Password →</span>
                 </button>
+                </form>
               </div>
 
               <!-- EMAIL VERIFIED LANDING (arrived via verification link in email) -->
