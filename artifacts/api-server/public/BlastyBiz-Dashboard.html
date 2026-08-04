@@ -42,7 +42,6 @@ body{visibility:hidden}
     <div class="agency-bar">
       <span id="agency-usage-text" class="agency-usage-text"></span>
       <div class="agency-pips" id="agency-pips"></div>
-      <a id="manage-biz-link" href="BlastyBiz-Businesses.html" style="display:none;font-size:11px;color:var(--green,#39ff14);text-decoration:none;margin-left:10px;opacity:.75;">Manage →</a>
     </div>
     <!-- kept for legacy JS refs -->
     <div style="display:none">
@@ -328,9 +327,6 @@ function renderAgencyBar() {
   const used = BUSINESSES.length;
   const bizLimit = getBizLimit();
   document.getElementById('agency-usage-text').textContent = `${used} of ${bizLimit} businesses used`;
-  // Show "Manage →" link once the user has more than one business
-  const manageLink = document.getElementById('manage-biz-link');
-  if (manageLink) manageLink.style.display = used > 1 ? 'inline' : 'none';
   const pips = document.getElementById('agency-pips');
   pips.innerHTML = '';
   for (let i = 0; i < bizLimit; i++) {

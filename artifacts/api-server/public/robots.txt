@@ -13,7 +13,6 @@ Allow: /BlastyBiz-Terms.html
 # Authenticated app routes — do not index
 Disallow: /BlastyBiz.html
 Disallow: /BlastyBiz-Dashboard.html
-Disallow: /BlastyBiz-Businesses.html
 Disallow: /BlastyBiz-Profile.html
 Disallow: /BlastyBiz-Connect.html
 Disallow: /BlastyBiz-Connected.html
@@ -35,7 +34,6 @@ Disallow: /BlastyBiz-Admin-
 
 # Retired pages — do not index
 Disallow: /BlastyBiz-Onboarding.html
-Disallow: /BlastyBiz-Chat-Onboarding.html
 
 # Shared partials and tooling
 Disallow: /blastybiz-header.html
