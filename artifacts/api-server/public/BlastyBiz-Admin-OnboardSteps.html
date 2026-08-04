@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1785820481810">
+  <link rel="stylesheet" href="global-style.css?v=1785820584310">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -281,7 +281,7 @@ const db = getFirestore(getApp());
 
 const STEP_DEFS = [
   { idx:1,  key:'ownerName',         label:'Owner Name',                 defaultMsg:"Hi! I'm Blasty. What's your name?" },
-  { idx:2,  key:'createPassword',    label:'Create Password (post-verify)', defaultMsg:"Welcome back! You're verified. Now let's set up your password." },
+  { idx:2,  key:'createPassword',    label:'Create Password (post-verify)', defaultMsg:"Your email is verified — nice work, {ownerName}! 🔐 One last thing before we blast off: create a password so you can log back in anytime." },
   { idx:3,  key:'bizName',           label:'Business Name',              defaultMsg:"Nice to meet you! What's the name of your business?" },
   { idx:4,  key:'role',              label:'Owner Title / Role',         defaultMsg:"What's your title at the business?" },
   { idx:5,  key:'email',             label:'Email Address',              defaultMsg:"What's the best email address?" },
