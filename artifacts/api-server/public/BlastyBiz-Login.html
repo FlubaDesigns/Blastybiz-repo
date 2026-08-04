@@ -16,6 +16,20 @@
 #auth-card-wrap.verify-mode .auth-form,
 #auth-card-wrap.verify-mode .back-home{display:none!important}
 #auth-card-wrap.verify-mode .verify-view{display:block}
+
+/* Email verification landing view */
+.email-confirmed-view{display:none;padding:8px 0;text-align:center}
+.email-confirmed-view .confirmed-logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:.04em;color:#0d1a0d;margin-bottom:16px;display:block}
+.email-confirmed-view .confirmed-logo span{color:#00C853}
+.email-confirmed-view .confirmed-icon{font-size:3rem;margin-bottom:12px;display:block}
+.email-confirmed-view h2{margin:0 0 10px;font-size:1.25rem;color:#0d1a0d}
+.email-confirmed-view p{color:#555;font-size:.95rem;margin:0 0 22px;line-height:1.5}
+.email-confirmed-view .btn-submit{width:100%;margin-bottom:10px}
+.email-confirmed-view .reset-back{display:inline-block;margin-top:4px}
+#auth-card-wrap.email-confirm-mode .auth-tabs,
+#auth-card-wrap.email-confirm-mode .auth-form,
+#auth-card-wrap.email-confirm-mode .back-home{display:none!important}
+#auth-card-wrap.email-confirm-mode .email-confirmed-view{display:block}
 </style>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="blastybiz-menu.js?v=5"></script>
@@ -237,6 +251,29 @@
                 </button>
               </div>
 
+              <!-- EMAIL VERIFIED LANDING (arrived via verification link in email) -->
+              <div class="email-confirmed-view" id="email-confirmed-view">
+                <strong class="confirmed-logo">Blasty<span>Biz</span></strong>
+                <!-- success state -->
+                <div id="ecv-success">
+                  <span class="confirmed-icon">✅</span>
+                  <h2>Your email is verified!</h2>
+                  <p>You're all set — sign in to get started.</p>
+                  <button class="btn-submit" type="button" onclick="showNormalLogin()">
+                    <span class="btn-text">Sign In to Get Started →</span>
+                  </button>
+                </div>
+                <!-- error state -->
+                <div id="ecv-error" style="display:none">
+                  <span class="confirmed-icon">⚠️</span>
+                  <h2>Link expired or already used</h2>
+                  <p id="ecv-error-msg">This verification link has expired or was already used. Sign in and we'll give you the option to resend it.</p>
+                  <button class="btn-submit" type="button" onclick="showNormalLogin()">
+                    <span class="btn-text">Back to Sign In</span>
+                  </button>
+                </div>
+              </div>
+
               <!-- EMAIL VERIFICATION -->
               <div class="verify-view" id="verify-view">
                 <div style="font-size:2.5rem;text-align:center;margin-bottom:12px">📧</div>
@@ -384,7 +421,8 @@ import {
   sendPasswordResetEmail,
   sendEmailVerification,
   verifyPasswordResetCode,
-  confirmPasswordReset
+  confirmPasswordReset,
+  applyActionCode
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -445,6 +483,44 @@ window.handleSetPassword = async function() {
                 'Could not save password — try again.';
     showToast(msg, true);
   }
+};
+
+// ── Email-verification link handler ──────────────────────────────────────────
+// When the user clicks the "Verify Email" link, Firebase redirects back here
+// with ?mode=verifyEmail&oobCode=...  Detect that, apply the code, and show a
+// branded confirmation instead of the normal sign-in tabs.
+(async function checkVerifyEmailLink() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('mode') !== 'verifyEmail') return;
+  const oobCode = params.get('oobCode');
+  // Always show the confirmation card (not the loading spinner) first
+  document.getElementById('auth-loading').style.display = 'none';
+  document.getElementById('auth-card-wrap').classList.add('ready', 'email-confirm-mode');
+  if (!oobCode) {
+    document.getElementById('ecv-error-msg').textContent =
+      'Missing verification code. Please use the link from your email.';
+    document.getElementById('ecv-success').style.display = 'none';
+    document.getElementById('ecv-error').style.display = '';
+    return;
+  }
+  try {
+    await applyActionCode(auth, oobCode);
+    // Success — success panel already visible by default
+  } catch (e) {
+    const msg =
+      e.code === 'auth/expired-action-code'  ? 'This verification link has expired. Sign in and request a new one.' :
+      e.code === 'auth/invalid-action-code'  ? 'This verification link has already been used or is invalid.' :
+      e.code === 'auth/user-disabled'        ? 'This account has been disabled.' :
+      'Verification failed — please try signing in or request a new link.';
+    document.getElementById('ecv-error-msg').textContent = msg;
+    document.getElementById('ecv-success').style.display = 'none';
+    document.getElementById('ecv-error').style.display = '';
+  }
+})();
+
+window.showNormalLogin = function() {
+  document.getElementById('auth-card-wrap').classList.remove('email-confirm-mode');
+  history.replaceState({}, '', window.location.pathname);
 };
 
 window.selectPlan = function(plan) {
@@ -546,7 +622,8 @@ window.backFromVerify = async function() {
 };
 
 onAuthStateChanged(auth, async (user) => {
-  if (new URLSearchParams(window.location.search).get('mode') === 'resetPassword') return;
+  const _mode = new URLSearchParams(window.location.search).get('mode');
+  if (_mode === 'resetPassword' || _mode === 'verifyEmail') return;
 
   if (!user) {
     localStorage.setItem('bb_auth', '0');
