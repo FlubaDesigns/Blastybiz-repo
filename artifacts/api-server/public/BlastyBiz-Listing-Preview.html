@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="global-style.css?v=1785807148794" />
+  <link rel="stylesheet" href="global-style.css?v=1785807474944" />
   <title>BlastyBiz — Publish Your Blast</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>body{visibility:hidden}</style>
@@ -350,7 +350,7 @@ function populateFromDraftData(draftData) {
         +   '<span class="pub-preview-chevron" id="pub-prev-chev-' + pid + '">›</span>'
         + '</button>'
         + '<div class="pub-preview-body" id="pub-prev-body-' + pid + '">'
-        +   '<div class="pub-preview-text">' + escHtmlPub(text) + '</div>'
+        +   '<div class="pub-preview-text">' + escHtml(text) + '</div>'
         +   '<button class="pub-copy-btn" onclick="copyPreviewText(\'' + pid + '\')">📋 Copy this copy</button>'
         + '</div>'
         + '</div>';
@@ -372,7 +372,7 @@ function populateFromDraftData(draftData) {
   renderManualPanel();
 }
 
-function escHtmlPub(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); /* canonical — see escape-utils.js */ }
+// escHtml provided by escape-utils.js
 
 function renderManualPanel() {
   var manualKeys = Object.keys(drafts).filter(function(k){

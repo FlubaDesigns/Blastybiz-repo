@@ -87,12 +87,11 @@ if (failures === 0) console.log('  ✅ No orphaned pages found');
 
 // ── Check 2: Duplicate escape-function definitions ────────────────────────────
 console.log('\n── 2. Duplicate escape-function definitions ─────────────────────');
+// Only flag actual function body definitions — not `const escHtml = window.escHtml;` delegations
 const ESCAPE_PATTERNS = [
   /function escHtml\(/g,
   /function _esc\(/g,
   /function escHtmlPub\(/g,
-  /const escHtml\s*=/g,
-  /var escHtml\s*=/g,
 ];
 const escDefs = {};
 for (const [f, content] of Object.entries(fileContents)) {

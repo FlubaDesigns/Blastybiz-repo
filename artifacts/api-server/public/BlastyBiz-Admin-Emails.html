@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>BlastyBiz — Email Templates</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="global-style.css?v=1785807148794">
+<link rel="stylesheet" href="global-style.css?v=1785807474944">
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
 <script src="blastybiz-menu.js?v=5"></script>
@@ -131,6 +131,7 @@
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, query, where, orderBy, getDocs, addDoc, updateDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+const escHtml = window.escHtml; // escape-utils.js
 
 let currentType = 'welcome';
 let versions = [];
@@ -480,7 +481,6 @@ async function seedTemplate(type) {
 }
 
 function populateVersionSelect() {
-  const escHtml = window.escHtml; // from escape-utils.js
   const sel = document.getElementById('version-select');
   sel.innerHTML = versions.map(v =>
     `<option value="${v.id}">${escHtml(v.label || ('v' + v.version))}${v.active ? ' ✓ Active' : ''}</option>`
@@ -514,7 +514,6 @@ window.onVersionChange = function() {
 };
 
 function renderHistory() {
-  const escHtml = window.escHtml; // from escape-utils.js
   const container = document.getElementById('version-history');
   if (!versions.length) { container.innerHTML = '<p style="color:#888;font-size:13px">No versions yet.</p>'; return; }
   container.innerHTML = versions.map(v => {
