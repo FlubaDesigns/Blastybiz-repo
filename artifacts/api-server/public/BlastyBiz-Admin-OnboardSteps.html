@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1785850906169">
+  <link rel="stylesheet" href="global-style.css?v=1785851697889">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -362,10 +362,6 @@ const OB2_ANIM_EVENTS = [
   { key:'animSuccess', label:'Success',             icon:'🎉',
     def:{ mood:'s-celebrate', flame:'s-flame-green',lights:'s-lights-flash',  eyes:'', smoke:true,  noseSpin:false } },
 ];
-
-function buildAnimClassStr(a) {
-  return [a.mood||'s-wave',a.flame||'',a.lights||'',a.eyes||'',a.smoke?'s-smoke':'',a.noseSpin?'s-nose-spin':''].filter(Boolean).join(' ');
-}
 
 function renderOb2AnimCards() {
   document.getElementById('ose-ob2-anims').innerHTML = OB2_ANIM_EVENTS.map(ev => {

@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785850906169" />
+<link rel="stylesheet" href="global-style.css?v=1785851697889" />
 <title>BlastyBiz — Command Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -322,34 +322,6 @@ function renderDashboardCampaigns(campaigns) {
 const escHtml = window.escHtml; // escape-utils.js
 
 // ══════════════════════════════════════════
-// RENDER SHEET CARDS
-// ══════════════════════════════════════════
-function renderSheet() {
-  const container = document.getElementById('biz-cards');
-  if (!container) return;
-  container.innerHTML = '';
-  const currentBizId = window.activeBizId ?? activeBizId;
-  const currentBizList = window.BUSINESSES || BUSINESSES;
-  currentBizList.forEach(biz => {
-    const card = document.createElement('div');
-    card.className = 'biz-card' + (biz.id === currentBizId ? ' active' : '');
-    card.onclick = () => switchBusiness(biz.id);
-    card.innerHTML = `
-      <div class="biz-card-avatar avatar-green-tint">${biz.avatar}</div>
-      <div class="biz-card-info">
-        <div class="biz-card-name">${biz.name}</div>
-        <div class="biz-card-meta">${biz.platforms} platforms · Score ${biz.score}</div>
-      </div>
-      <div class="biz-card-status">
-        <div class="biz-score">${biz.score}</div>
-        <div class="biz-platforms">${biz.platforms} platforms</div>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
-
-// ══════════════════════════════════════════
 // RENDER AGENCY LIMIT BAR
 // ══════════════════════════════════════════
 function renderAgencyBar() {
@@ -424,12 +396,6 @@ function closeUpgradeModal() {
   const overlay = document.getElementById('upgrade-overlay');
   if (overlay) overlay.style.display = 'none';
 }
-
-// ══════════════════════════════════════════
-// SHEET OPEN / CLOSE
-// ══════════════════════════════════════════
-function openSwitcher() {}
-function closeSwitcher() {}
 
 function closeCampaignSheet() {
   document.getElementById('campaign-sheet').classList.remove('open');

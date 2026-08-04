@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785850906169" />
+<link rel="stylesheet" href="global-style.css?v=1785851697889" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -3236,7 +3236,6 @@ function updateCopyPreview() {
 
 // In-memory map: draftId → schedule state (for Schedule tab)
 var _draftSchedules = {};    // { draftId: { schedule, blastName, campaignId, campaignName, platforms[] } }
-var _campSchedules  = {};    // legacy alias (kept so old refs don't crash)
 var _TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 function _defaultSched() {
@@ -3467,9 +3466,12 @@ function _renderSchedUpcoming() {
   if (!list) return;
   const rows = Object.values(_draftSchedules)
     .filter(e => e.schedule?.enabled)
-    .map(e => ({ name: (e.campaignName ? e.campaignName + ' — ' : '') + (e.blastName || 'Blast'), next: _schedNextLine(e.schedule) }))
+    .map(e => {
+      const nextDate = (() => { try { return _computeNextRunDate(e.schedule); } catch(_) { return null; } })();
+      return { name: (e.campaignName ? e.campaignName + ' — ' : '') + (e.blastName || 'Blast'), next: _schedNextLine(e.schedule), sortTs: nextDate ? nextDate.getTime() : Infinity };
+    })
     .filter(r => r.next)
-    .sort((a, b) => a.next.localeCompare(b.next));
+    .sort((a, b) => a.sortTs - b.sortTs);
 
   if (!rows.length) {
     list.innerHTML = '<div class="empty"><div class="empty-icon">🗓️</div><div class="empty-text">No active schedules yet.<br/>Turn on a schedule on any blast below.</div></div>';
@@ -3591,15 +3593,10 @@ function _computeNextRunDate(sched) {
   return new Date(approx.getTime() + (approx.getTime() - tzLocalMs));
 }
 
-// Legacy stubs — kept so existing Create-tab accordion references don't crash
+// Legacy stubs — kept so existing accordion references don't crash on call
 function loadSchedule() {}
 function saveSchedule() {}
-function toggleSchedEnabled() {}
 function toggleSchedReview() {}
-function setSchedFreq() {}
-function setSchedDay() {}
-function setSchedDom() {}
-function setSchedTime() {}
 function _renderSchedChips() {}
 function _renderSchedCampaignSelect() {}
 function setSchedCampaign() {}
@@ -5044,8 +5041,6 @@ window._bbSaveDraftSchedule = async function(draftId, schedule) {
   await updateDoc(ref, { schedule, updatedAt: serverTimestamp() });
 };
 
-// Legacy — kept for any residual refs
-window._bbSaveCampaignSchedule = async function() {};
 
 window._bbSaveCampaigns = async function(cams) {
   if (!activeBizId || !currentUser) throw new Error('No active business');
@@ -5428,8 +5423,6 @@ onAuthStateChanged(auth, async (user) => {
       _sortCampaigns();
       renderCampaignChips();
       // Seed per-campaign schedule map from saved campaign docs
-      _campSchedules = {};
-      campaigns.forEach(c => { if (c.schedule) _campSchedules[c.id] = c.schedule; });
       renderScheduleTab();
 
       // URL param handling — ?newcampaign=1 auto-opens the create form
