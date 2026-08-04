@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785821961946" />
+<link rel="stylesheet" href="global-style.css?v=1785822398971" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -1160,7 +1160,7 @@ let profile   = (function(){ try { return JSON.parse(localStorage.getItem('bb_pr
 let draft     = {};                           // form state only — draftId tracked separately
 let locationType        = 'physical';         // 'physical' | 'online' — create form
 let campaigns           = [];                 // [{id, name, photos:[]}] loaded from Firestore
-let activeCampaignId    = null;
+var activeCampaignId    = null;
 let activeCampaignName  = '';
 var ynState = { name: 'no', role: 'no', address: 'yes', phone: 'yes', email: 'yes', website: 'yes' }; // About You in Copy pill state
 // Per-platform photo selection (session only — resets on reload)
@@ -1288,7 +1288,7 @@ function showTab(name) {
   if (name === 'account') { if (window._bbLoadAccount) window._bbLoadAccount(); }
   if (name === 'create') {
     createWizGoTo(1);
-    if (window.activeCampaignId) {
+    if (activeCampaignId) {
       document.getElementById('campaign-content')?.classList.remove('hidden');
     }
   }
@@ -4342,7 +4342,7 @@ function renderCreateCampList() {
     // #5 Campaign lifecycle status
     const sText  = c.offer ? '✍️ In progress' : '📝 New';
     const sColor = c.offer ? '#4caf50' : '#888';
-    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0 4px;">
+    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0 4px;cursor:pointer;" onclick="selectCampaign('${esc(c.id)}','${esc(c.name||'')}')">
       <div>
         <div style="font-size:15px;font-weight:700;color:${isActive?'var(--green)':'var(--light)'};">${hesc(c.name||'(unnamed)')}</div>
         <div style="font-size:11px;color:${sColor};margin-top:2px;">${sText}</div>
