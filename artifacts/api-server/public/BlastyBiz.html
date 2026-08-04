@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785809827425" />
+<link rel="stylesheet" href="global-style.css?v=1785810520043" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -691,22 +691,21 @@
         </select>
 
         <label for="profile-cat">Category</label>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <select id="profile-cat" onchange="saveProfile()" style="flex:1;">
-            <option value="">Select a category...</option>
-            <option>Restaurant / Food & Drink</option>
-            <option>Retail Shop</option>
-            <option>Beauty & Salon</option>
-            <option>Auto Services</option>
-            <option>Home Services</option>
-            <option>Health & Fitness</option>
-            <option>Professional Services</option>
-            <option>Church / Nonprofit</option>
-            <option>Entertainment</option>
-            <option>Other</option>
-          </select>
-          <button type="button" id="rerun-ai-cats-btn" onclick="rerunAICats()" class="btn btn--sm btn--outline" style="white-space:nowrap;">🤖 AI Pick</button>
-        </div>
+        <input id="profile-cat" list="profile-cat-list" placeholder="e.g. Home Services, Online Marketing…"
+               oninput="saveProfile()" autocomplete="off"
+               style="width:100%;box-sizing:border-box;" />
+        <datalist id="profile-cat-list">
+          <option>Restaurant / Food & Drink</option>
+          <option>Retail Shop</option>
+          <option>Beauty & Salon</option>
+          <option>Auto Services</option>
+          <option>Home Services</option>
+          <option>Health & Fitness</option>
+          <option>Professional Services</option>
+          <option>Church / Nonprofit</option>
+          <option>Entertainment</option>
+          <option>Other</option>
+        </datalist>
 
         <label for="profile-phone">Phone</label>
         <input type="tel" id="profile-phone" placeholder="555-000-0000" oninput="formatPhone(this);saveProfile()" inputmode="tel" />
@@ -913,8 +912,8 @@
           <div id="clear-all-confirm" class="hidden" style="background:rgba(220,38,38,0.12);border-radius:10px;padding:14px;margin-bottom:12px;">
             <div style="font-size:13px;font-weight:700;color:#f87171;margin-bottom:12px;">Are you sure? This deletes everything.</div>
             <div style="display:flex;gap:8px;">
+              <button type="button" autofocus onclick="clearAllCancel()" style="flex:1;padding:11px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--light);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Cancel</button>
               <button type="button" onclick="clearAllConfirmed()" style="flex:1;padding:11px;border-radius:8px;border:none;background:#dc2626;color:#fff;font-weight:800;font-size:13px;cursor:pointer;font-family:inherit;">Yes, delete everything</button>
-              <button type="button" onclick="clearAllCancel()" style="flex:1;padding:11px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Cancel</button>
             </div>
           </div>
           <button type="button" id="clear-all-btn" onclick="clearAllPrompt()" style="padding:10px 20px;border-radius:8px;border:2px solid rgba(220,38,38,0.6);background:rgba(220,38,38,0.12);color:#f87171;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;width:100%;text-align:center;">🗑️ Clear All Data</button>
