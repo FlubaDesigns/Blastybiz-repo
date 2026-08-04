@@ -17,7 +17,12 @@
 const { onRequest } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onDocumentUpdated, onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { setGlobalOptions } = require('firebase-functions/v2');
 const admin = require('firebase-admin');
+
+// ── Global instance cap — prevents runaway billing from abuse or bugs ─────────
+// Raise per-function if a specific endpoint genuinely needs more headroom.
+setGlobalOptions({ maxInstances: 10 });
 
 // ── Base URL for all web-app redirects (checkout, OAuth, emails) ──────────────
 // Set APP_BASE_URL env var when adding a custom domain so all redirects update
@@ -316,6 +321,9 @@ async function getAdminEmails() {
 
 async function requireAdmin(req) {
   const decoded = await verifyBearer(req);
+  if (!decoded.email_verified) {
+    throw Object.assign(new Error('Email not verified'), { status: 403 });
+  }
   const adminEmails = await getAdminEmails();
   if (!adminEmails.includes(decoded.email)) {
     throw Object.assign(new Error('Forbidden'), { status: 403 });
@@ -554,6 +562,11 @@ Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
 exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  let decoded;
+  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+  if (!(await checkUidRateLimit('suggestCategoryRateLimit', decoded.uid, 20, 60 * 60 * 1000))) {
+    return res.status(429).json({ error: 'Rate limit exceeded' });
+  }
   const { bizName } = req.body;
   if (!bizName) return res.status(400).json({ error: 'bizName required' });
   try {
@@ -2390,6 +2403,7 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
       const storageBucket = admin.storage().bucket();
       const storageDeletes = [
         storageBucket.deleteFiles({ prefix: `users/${uid}/images/` }),
+        storageBucket.deleteFiles({ prefix: `photos/${uid}/` }),  // active upload path — GDPR erasure
       ];
       for (const bizDoc of bizSnap.docs) {
         storageDeletes.push(

@@ -5,7 +5,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785858635994" />
+<link rel="stylesheet" href="global-style.css?v=1785859899740" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -4947,7 +4947,8 @@ if (isSignInWithEmailLink(auth, window.location.href)) {
     signInWithEmailLink(auth, _mlEmail, window.location.href)
       .then(async (result) => {
         window.localStorage.removeItem('bb_trial_email');
-        const _mlName = window.localStorage.removeItem('bb_trial_name') || '';
+        const _mlName = window.localStorage.getItem('bb_trial_name') || '';
+        window.localStorage.removeItem('bb_trial_name');
         await setDoc(doc(db, 'users', result.user.uid), {
           plan: 'trial',
           displayName: _mlName,
