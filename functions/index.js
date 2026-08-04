@@ -4640,6 +4640,52 @@ exports.adminSetPlan = onRequest(async (req, res) => {
   }
 });
 
+// ── cleanupAbandonedSignups — daily cron: delete users who never onboarded ────
+// Removes Firebase Auth accounts and Firestore user docs for accounts that
+// were created more than 30 days ago and still have onboarded: false.
+// This covers users who signed up but never clicked the verification link.
+exports.cleanupAbandonedSignups = onSchedule('every 24 hours', async (_event) => {
+  const thirtyDaysAgo = admin.firestore.Timestamp.fromDate(
+    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  );
+  let snap;
+  try {
+    snap = await db.collection('users')
+      .where('onboarded', '==', false)
+      .where('createdAt', '<=', thirtyDaysAgo)
+      .get();
+  } catch(e) {
+    console.error('[cleanupAbandonedSignups] Firestore query failed:', e.message);
+    return;
+  }
+
+  console.log('[cleanupAbandonedSignups] candidates:', snap.size);
+  let deleted = 0;
+  let errors  = 0;
+
+  for (const userDoc of snap.docs) {
+    const uid = userDoc.id;
+    try {
+      // Delete Firebase Auth account (non-fatal if not found)
+      try {
+        await admin.auth().deleteUser(uid);
+      } catch(authErr) {
+        if (authErr.code !== 'auth/user-not-found') {
+          console.warn('[cleanupAbandonedSignups] Auth delete failed uid=' + uid, authErr.code);
+        }
+      }
+      // Delete Firestore user doc (onboardingProgress field lives here too)
+      await userDoc.ref.delete();
+      deleted++;
+    } catch(e) {
+      console.error('[cleanupAbandonedSignups] Failed uid=' + uid, e.message);
+      errors++;
+    }
+  }
+
+  console.log('[cleanupAbandonedSignups] done — deleted=' + deleted + ' errors=' + errors);
+});
+
 // ── adminDeleteBusiness — cascade-delete a business (admin only) ──────────────
 // Replaces the client-side cascade deleteDoc() chain in Admin.html — the server
 // independently verifies admin status before touching any documents.
