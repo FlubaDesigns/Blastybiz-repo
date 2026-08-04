@@ -5,7 +5,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1785810520043" />
+  <link rel="stylesheet" href="global-style.css?v=1785811003314" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -611,12 +611,21 @@ window.handleSignUp = async function() {
     await setDoc(doc(db, 'users', cred.user.uid), {
       ownerName: name, email, plan: 'starter', onboarded: false, createdAt: serverTimestamp()
     });
-    // Send via Resend (noreply@blastybiz.com) for better deliverability; fall back to Firebase default
-    try { await sendVerificationViaResend(cred.user); }
-    catch(_) { await sendEmailVerification(cred.user); }
+    // Account created — attempt verification email.
+    // If BOTH paths fail, still show verify view (account exists); user can Resend from there.
+    let emailSent = true;
+    try {
+      try { await sendVerificationViaResend(cred.user); }
+      catch(_) { await sendEmailVerification(cred.user); }
+    } catch(_) {
+      emailSent = false;
+    }
     setLoading('btn-signup', false);
     showLoginForm();
     showVerifyView(cred.user.email);
+    if (!emailSent) {
+      showToast("Account created! We couldn't send the verification email right now — sign in to request a new one.", false);
+    }
   } catch (e) {
     setLoading('btn-signup', false);
     const msg = e.code === 'auth/email-already-in-use' ? 'Account already exists — sign in instead' : e.message;
