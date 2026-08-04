@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785815601029" />
+<link rel="stylesheet" href="global-style.css?v=1785815763284" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -1255,6 +1255,17 @@ function showTab(name) {
   if (name === 'account') { if (window._bbLoadAccount) window._bbLoadAccount(); }
   if (name === 'create') {
     createWizGoTo(1);
+  }
+  // Profile = global business knowledge only; campaign scope only available on Create
+  const campaignScopeBtn = document.getElementById('tai-scope-campaign');
+  if (campaignScopeBtn) {
+    if (name === 'profile') {
+      campaignScopeBtn.style.display = 'none';
+      // If the user was on campaign scope, switch back to global
+      if (typeof switchAIMemoryScope === 'function') switchAIMemoryScope('global');
+    } else {
+      campaignScopeBtn.style.display = '';
+    }
   }
 }
 
