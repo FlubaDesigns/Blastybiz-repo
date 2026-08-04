@@ -6,10 +6,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>BlastyBiz — Email Templates</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="global-style.css?v=1785801814449">
+<link rel="stylesheet" href="global-style.css?v=1785802864721">
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
 <script src="blastybiz-menu.js?v=5"></script>
+<script src="escape-utils.js?v=1"></script>
 </head>
 <body class="admin-page">
 
@@ -479,9 +480,10 @@ async function seedTemplate(type) {
 }
 
 function populateVersionSelect() {
+  const escHtml = window.escHtml; // from escape-utils.js
   const sel = document.getElementById('version-select');
   sel.innerHTML = versions.map(v =>
-    `<option value="${v.id}">${v.label || ('v' + v.version)}${v.active ? ' ✓ Active' : ''}</option>`
+    `<option value="${v.id}">${escHtml(v.label || ('v' + v.version))}${v.active ? ' ✓ Active' : ''}</option>`
   ).join('');
   if (selectedVersionId) sel.value = selectedVersionId;
 }
@@ -512,6 +514,7 @@ window.onVersionChange = function() {
 };
 
 function renderHistory() {
+  const escHtml = window.escHtml; // from escape-utils.js
   const container = document.getElementById('version-history');
   if (!versions.length) { container.innerHTML = '<p style="color:#888;font-size:13px">No versions yet.</p>'; return; }
   container.innerHTML = versions.map(v => {
@@ -521,7 +524,7 @@ function renderHistory() {
       : '';
     return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0">
       <div>
-        <span style="font-size:14px;font-weight:600;color:#111">${v.label || ('v' + v.version)}</span>${activePill}
+        <span style="font-size:14px;font-weight:600;color:#111">${escHtml(v.label || ('v' + v.version))}</span>${activePill}
         <div style="font-size:12px;color:#888;margin-top:2px">${date}</div>
       </div>
       <div style="display:flex;gap:8px">
