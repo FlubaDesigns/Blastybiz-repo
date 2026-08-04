@@ -164,6 +164,16 @@
     <p style="font-size:12px;color:#aaa;margin:12px 0 0;">⚠️ Switching to a non-Anthropic provider also requires setting that provider's API key as a Firebase secret (<code>firebase functions:secrets:set OPENAI_API_KEY</code> etc.) and redeploying functions once.</p>
   </section>
 
+  <!-- ── YELP CATEGORY CACHE ── -->
+  <section class="card mb-16" id="yelp-cache-card" style="border-left:4px solid #D32323;">
+    <div class="card-title">🔍 Yelp Category Cache</div>
+    <p style="font-size:13px;color:#666;margin:0 0 16px;">Force-fetches the full Yelp category list and stores it in Firestore. Required before category suggestions will work for users. Requires <code>YELP_API_KEY</code> to be set as a Firebase secret.</p>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button id="yelp-refresh-btn" onclick="window.refreshYelpCategories()" class="btn" style="background:#D32323;border-color:#D32323;color:#fff;">🔄 Refresh Yelp Categories</button>
+      <span id="yelp-refresh-msg" style="font-size:13px;color:#888;"></span>
+    </div>
+  </section>
+
   <section class="three-col">
     <div class="card">
       <div class="card-title">💳 Billing</div>
@@ -237,6 +247,31 @@ function populateModelSelects(provider, fastModel, smartModel) {
 document.getElementById('ai-provider')?.addEventListener('change', function() {
   populateModelSelects(this.value, null, null);
 });
+
+window.refreshYelpCategories = async function() {
+  const btn = document.getElementById('yelp-refresh-btn');
+  const msg = document.getElementById('yelp-refresh-msg');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Refreshing…'; }
+  msg.style.color = '#888';
+  msg.textContent = 'Calling refreshYelpCategories…';
+  try {
+    const token = await window._adminUser?.getIdToken();
+    if (!token) throw new Error('Not authenticated');
+    const resp = await fetch(`${CF_BASE}/refreshYelpCategories`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
+    msg.style.color = '#00C853';
+    msg.textContent = `✓ ${data.count != null ? data.count + ' categories cached' : 'Cache refreshed successfully'}`;
+  } catch(e) {
+    msg.style.color = '#e53935';
+    msg.textContent = '✗ ' + e.message;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Refresh Yelp Categories'; }
+  }
+};
 
 window.saveAiSettings = async function() {
   const provider   = document.getElementById('ai-provider')?.value;
