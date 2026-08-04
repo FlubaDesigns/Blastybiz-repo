@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785819209074" />
+<link rel="stylesheet" href="global-style.css?v=1785819325348" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -113,11 +113,11 @@
 <div class="tabs-row">
   <button class="tabs-arrow tabs-arrow--left" id="tabs-arrow-left" aria-label="Scroll tabs left" onclick="_tabsScroll(-1)">&#8249;</button>
   <div class="tabs" id="tabs-scroll">
-    <div class="tab active" onclick="showTab('create')" id="tab-create"><span class="tab-icon">✏️ </span>Create</div>
+    <div class="tab active" onclick="showTab('profile')" id="tab-profile"><span class="tab-icon">⚙️ </span>Profile</div>
+    <div class="tab" onclick="showTab('create')" id="tab-create"><span class="tab-icon">✏️ </span>Create</div>
     <div class="tab" onclick="showTab('platforms')" id="tab-platforms"><span class="tab-icon">📡 </span>Platforms</div>
     <div class="tab" onclick="showTab('schedule')" id="tab-schedule"><span class="tab-icon">🗓️ </span>Schedule</div>
     <div class="tab" onclick="showTab('history')" id="tab-history"><span class="tab-icon">📋 </span>History</div>
-    <div class="tab" onclick="showTab('profile')" id="tab-profile"><span class="tab-icon">⚙️ </span>Profile</div>
     <div class="tab" onclick="showTab('story')" id="tab-story"><span class="tab-icon">📖 </span>Story</div>
     <div class="tab" onclick="showTab('account')" id="tab-account"><span class="tab-icon">💼 </span>Account</div>
   </div>
@@ -139,7 +139,7 @@
 <!-- ══════════════════════════════════════════
      TAB 1: CREATE LISTING
 ══════════════════════════════════════════ -->
-<div class="section active" id="section-create">
+<div class="section" id="section-create">
 
   <!-- Recent campaigns bar — shown for returning users with 2+ campaigns -->
   <div id="recent-activity-bar" style="display:none;padding:0 0 4px;">
@@ -665,7 +665,7 @@
 <!-- ══════════════════════════════════════════
      TAB 4: PROFILE
 ══════════════════════════════════════════ -->
-<div class="section" id="section-profile">
+<div class="section active" id="section-profile">
 
   <div id="biz-name-missing-banner" class="biz-missing-banner hidden">
     ⚠️ Your business name is not set — the AI is using a placeholder. Tap <strong>Business Name</strong> below and type your real name.
