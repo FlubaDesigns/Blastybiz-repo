@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Blasty Bubble System</title>
+  <link rel="stylesheet" href="./blasty-bubbles.css">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: clamp(18px,4vw,56px);
+      background:
+        radial-gradient(circle at 20% 10%, rgba(42,94,150,.18), transparent 34%),
+        linear-gradient(145deg,#07101f,#09182c 60%,#06101e);
+      color: white;
+      font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    main { width: min(100%, 1040px); margin: auto; }
+    .eyebrow { margin: 0 0 8px; color:#63d53c; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+    h1 { margin:0 0 10px; font-size:clamp(2rem,5vw,4rem); line-height:1; letter-spacing:-.04em; }
+    .intro { margin:0 0 34px; color:#b9c8dc; font-size:clamp(1rem,2vw,1.2rem); }
+  </style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">Production component preview</p>
+  <h1>Blasty appears with every message.</h1>
+  <p class="intro">Desktop and mobile keep the rocket attached to its own rounded speech bubble.</p>
+
+  <section class="blasty-thread" aria-label="Blasty onboarding conversation">
+    <article class="blasty-message" data-state="wave" data-auto-talk="true">
+      <div class="blasty-avatar" aria-hidden="true"></div>
+      <div class="blasty-bubble">
+        <h3>Hi there!</h3>
+        <p>Ready to launch your business?</p>
+        <span class="blasty-accent"></span>
+      </div>
+    </article>
+
+    <article class="blasty-message" data-state="ask" data-auto-talk="true" data-talk-ms="1400">
+      <div class="blasty-avatar" aria-hidden="true"></div>
+      <div class="blasty-bubble">
+        <h3>Hey!</h3>
+        <p>Want a little help getting started?</p>
+        <span class="blasty-accent"></span>
+      </div>
+    </article>
+
+    <article class="blasty-message" data-state="think">
+      <div class="blasty-avatar" aria-hidden="true"></div>
+      <div class="blasty-bubble">
+        <h3>Let me think…</h3>
+        <p>I’ll find the best options for you.</p>
+        <span class="blasty-accent"></span>
+      </div>
+    </article>
+
+    <article class="blasty-message" data-state="working">
+      <div class="blasty-avatar" aria-hidden="true"></div>
+      <div class="blasty-bubble">
+        <h3>Working on it!</h3>
+        <p>This will just take a moment…</p>
+        <span class="blasty-accent"></span>
+      </div>
+    </article>
+
+    <article class="blasty-message" data-state="celebrate">
+      <div class="blasty-avatar" aria-hidden="true"></div>
+      <div class="blasty-bubble">
+        <h3>All set!</h3>
+        <p>You’re ready to blast off!</p>
+        <span class="blasty-accent"></span>
+      </div>
+    </article>
+  </section>
+</main>
+
+<script src="./blasty-bubbles.js"></script>
+<script>
+  new BlastyBubbleSystem().init().catch(console.error);
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<svg id="blasty-svg" class="blasty state-idle" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 420" role="img" aria-labelledby="blasty-title blasty-desc">
+<title id="blasty-title">Blasty, the BlastyBiz onboarding guide</title>
+<desc id="blasty-desc">A friendly rounded rocket mascot with a speech bubble, animated flame, glow, face, smoke, and shadow.</desc>
+<defs>
+  <radialGradient id="engineGlowGradient"><stop offset="0" stop-color="#fff7c2" stop-opacity=".9"/><stop offset=".55" stop-color="#f59e0b" stop-opacity=".45"/><stop offset="1" stop-color="#f59e0b" stop-opacity="0"/></radialGradient>
+  <linearGradient id="bodyGradient" x1="0" x2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#eaf3ff"/></linearGradient>
+  <filter id="softGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="8"/></filter>
+</defs>
+<g id="blasty-root">
+  <ellipse id="shadow" cx="170" cy="375" rx="54" ry="13" fill="#071426" opacity=".28"/>
+  <g id="smoke" opacity="0" aria-hidden="true">
+    <circle id="smoke-puff-1" cx="145" cy="348" r="13" fill="#dce6ef"/>
+    <circle id="smoke-puff-2" cx="174" cy="355" r="17" fill="#edf3f8"/>
+    <circle id="smoke-puff-3" cx="201" cy="346" r="11" fill="#d6e1ea"/>
+  </g>
+  <circle id="engine-glow" cx="171" cy="327" r="55" fill="url(#engineGlowGradient)" opacity=".2" filter="url(#softGlow)"/>
+  <g id="rocket" transform-origin="170px 220px">
+    <path id="left-fin" d="M116 241 C80 260 75 307 92 330 C105 309 121 299 138 295 Z" fill="#f59e0b" stroke="#0b1f36" stroke-width="8" stroke-linejoin="round"/>
+    <path id="right-fin" d="M224 241 C260 260 265 307 248 330 C235 309 219 299 202 295 Z" fill="#f59e0b" stroke="#0b1f36" stroke-width="8" stroke-linejoin="round"/>
+    <path id="rocket-body" d="M170 55 C118 88 102 150 108 225 C112 278 132 311 170 324 C208 311 228 278 232 225 C238 150 222 88 170 55 Z" fill="url(#bodyGradient)" stroke="#0b1f36" stroke-width="9" stroke-linejoin="round"/>
+    <path id="nose-accent" d="M170 55 C151 69 136 86 126 107 C154 94 186 94 214 107 C204 86 189 69 170 55 Z" fill="#f59e0b" opacity=".96"/>
+    <circle id="window-ring" cx="170" cy="177" r="54" fill="#071426" stroke="#0b1f36" stroke-width="7"/>
+    <circle id="window" cx="170" cy="177" r="43" fill="#6ec8ff"/>
+    <path id="window-highlight" d="M142 158 C151 143 174 137 193 145" fill="none" stroke="#dff6ff" stroke-width="8" stroke-linecap="round" opacity=".8"/>
+    <g id="face">
+      <g id="eyes">
+        <ellipse id="eye-left" cx="154" cy="175" rx="6" ry="9" fill="#0b1f36"/>
+        <ellipse id="eye-right" cx="186" cy="175" rx="6" ry="9" fill="#0b1f36"/>
+      </g>
+      <g id="eyelids" opacity="0">
+        <path d="M145 175 Q154 168 163 175" fill="none" stroke="#0b1f36" stroke-width="5" stroke-linecap="round"/>
+        <path d="M177 175 Q186 168 195 175" fill="none" stroke="#0b1f36" stroke-width="5" stroke-linecap="round"/>
+      </g>
+      <path id="mouth-happy" d="M153 194 Q170 208 187 194" fill="none" stroke="#0b1f36" stroke-width="6" stroke-linecap="round"/>
+      <ellipse id="mouth-talking" cx="170" cy="198" rx="10" ry="7" fill="#0b1f36" opacity="0"/>
+      <path id="mouth-concerned" d="M155 202 Q170 190 185 202" fill="none" stroke="#0b1f36" stroke-width="6" stroke-linecap="round" opacity="0"/>
+    </g>
+    <g id="engine" transform-origin="170px 325px">
+      <path id="flame-outer" d="M143 314 Q170 373 197 314 Q184 330 170 334 Q156 330 143 314 Z" fill="#f97316" stroke="#0b1f36" stroke-width="7" stroke-linejoin="round"/>
+      <path id="flame-middle" d="M154 316 Q170 355 186 316 Q178 326 170 329 Q162 326 154 316 Z" fill="#fbbf24"/>
+      <path id="flame-inner" d="M164 319 Q170 340 176 319 Q172 324 170 325 Q168 324 164 319 Z" fill="#fff7c2"/>
+    </g>
+  </g>
+  <g id="motion-lines" opacity="0" aria-hidden="true">
+    <path d="M80 250 h-32" stroke="#6ec8ff" stroke-width="7" stroke-linecap="round"/>
+    <path d="M278 272 h31" stroke="#6ec8ff" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <g id="speech-bubble" transform="translate(16 5)">
+    <path id="bubble-shape" d="M236 24 H334 Q350 24 350 40 V130 Q350 146 334 146 H252 L224 174 L228 142 Q214 136 214 122 V40 Q214 24 230 24 Z" fill="#fff" stroke="#0b1f36" stroke-width="7" stroke-linejoin="round"/>
+    <foreignObject id="bubble-text-region" x="231" y="42" width="103" height="82">
+      <div xmlns="http://www.w3.org/1999/xhtml" id="bubble-text" style="font:700 15px/1.25 Arial,sans-serif;color:#0b1f36;display:flex;align-items:center;height:100%;overflow:hidden;">Ready to launch?</div>
+    </foreignObject>
+  </g>
+</g>
+</svg>

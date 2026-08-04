@@ -1,0 +1,206 @@
+/* Blasty Bubble System */
+:root {
+  --blasty-navy: #071329;
+  --blasty-panel: #0b1a31;
+  --blasty-green: #63d53c;
+  --blasty-orange: #f59e0b;
+  --blasty-white: #ffffff;
+  --blasty-bubble-text: #071329;
+}
+
+.blasty-thread {
+  display: grid;
+  gap: 20px;
+  width: min(100%, 920px);
+  margin-inline: auto;
+}
+
+.blasty-message {
+  display: grid;
+  grid-template-columns: clamp(92px, 14vw, 150px) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
+}
+
+.blasty-avatar {
+  width: 100%;
+  min-width: 0;
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,.28));
+}
+
+.blasty-avatar .blasty-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.blasty-bubble {
+  position: relative;
+  background: linear-gradient(145deg, #fff 0%, #fbfdff 70%, #e9eef5 100%);
+  color: var(--blasty-bubble-text);
+  border: 2px solid rgba(7,19,41,.12);
+  border-radius: 34px;
+  padding: clamp(18px, 2.8vw, 32px) clamp(20px, 3.2vw, 38px);
+  box-shadow: 0 14px 35px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+/* Rounded speech nub — broad, soft, and integrated; not a sharp pointer */
+.blasty-bubble::before {
+  content: "";
+  position: absolute;
+  left: -22px;
+  top: 50%;
+  width: 38px;
+  height: 30px;
+  transform: translateY(-50%) rotate(18deg);
+  background: inherit;
+  border-left: 2px solid rgba(7,19,41,.12);
+  border-bottom: 2px solid rgba(7,19,41,.12);
+  border-bottom-left-radius: 24px;
+  border-top-right-radius: 28px;
+  box-shadow: -7px 8px 12px rgba(0,0,0,.08);
+}
+
+.blasty-bubble h3 {
+  margin: 0 0 6px;
+  font: 800 clamp(1.35rem, 3vw, 2.35rem)/1.05 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: -.035em;
+}
+
+.blasty-bubble p {
+  margin: 0;
+  font: 500 clamp(1rem, 2vw, 1.4rem)/1.3 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.blasty-accent {
+  display: block;
+  width: min(230px, 68%);
+  height: 6px;
+  margin: 14px auto 0;
+  border-radius: 999px;
+  background: var(--blasty-orange);
+  transform: rotate(-2deg);
+}
+
+/* Base mascot motion */
+.blasty-svg #blasty-rocket {
+  transform-origin: 180px 240px;
+  animation: blastyHover 3.2s ease-in-out infinite;
+}
+.blasty-svg .shadow-ellipse {
+  transform-origin: 180px 431px;
+  animation: blastyShadow 3.2s ease-in-out infinite;
+}
+.blasty-svg .flame {
+  transform-origin: 180px 360px;
+  animation: blastyFlame .55s ease-in-out infinite alternate;
+}
+.blasty-svg .pupil { transition: transform .28s ease; }
+.blasty-svg .mouth,
+.blasty-svg .arm,
+.blasty-svg .sparkles,
+.blasty-svg .confetti,
+.blasty-svg .motion-lines,
+.blasty-svg .smoke { transition: opacity .18s ease; }
+
+/* States */
+.blasty-message[data-state="wave"] .arm-wave { opacity: 1; animation: blastyWave .9s ease-in-out infinite alternate; transform-origin: 78px 199px; }
+.blasty-message[data-state="wave"] .sparkles { opacity: .85; }
+
+.blasty-message[data-state="ask"] .arm-point-right { opacity: 1; }
+.blasty-message[data-state="ask"] .pupil-left,
+.blasty-message[data-state="ask"] .pupil-right { transform: translate(5px, 1px); }
+
+.blasty-message[data-state="think"] .arm-think { opacity: 1; }
+.blasty-message[data-state="think"] .pupil-left,
+.blasty-message[data-state="think"] .pupil-right { transform: translate(0, -7px); }
+.blasty-message[data-state="think"] .brow-left { transform: rotate(-7deg); transform-origin: 145px 158px; }
+.blasty-message[data-state="think"] .brow-right { transform: rotate(7deg); transform-origin: 215px 158px; }
+
+.blasty-message[data-state="working"] .motion-lines { opacity: .8; }
+.blasty-message[data-state="working"] #blasty-rocket { animation: blastyWorking .5s ease-in-out infinite alternate; }
+.blasty-message[data-state="working"] .flame-outer { animation-duration: .24s; filter: url(#glow); }
+
+.blasty-message[data-state="celebrate"] .confetti,
+.blasty-message[data-state="celebrate"] .sparkles { opacity: 1; }
+.blasty-message[data-state="celebrate"] #blasty-rocket { animation: blastyCelebrate .85s cubic-bezier(.18,.8,.25,1) infinite alternate; }
+.blasty-message[data-state="celebrate"] .flame-outer { transform: scaleY(1.18); }
+
+.blasty-message[data-talking="true"] .mouth-smile { opacity: 0; }
+.blasty-message[data-talking="true"] .mouth-talk-small { animation: blastyTalkSmall .34s steps(1,end) infinite; }
+.blasty-message[data-talking="true"] .mouth-talk-open { animation: blastyTalkOpen .34s steps(1,end) infinite; }
+
+@keyframes blastyHover {
+  0%,100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-8px) rotate(1deg); }
+}
+@keyframes blastyShadow {
+  0%,100% { transform: scaleX(1); opacity: .5; }
+  50% { transform: scaleX(.82); opacity: .32; }
+}
+@keyframes blastyFlame {
+  from { transform: scale(.96, .92); }
+  to { transform: scale(1.04, 1.08); }
+}
+@keyframes blastyWave {
+  from { transform: rotate(-10deg); }
+  to { transform: rotate(14deg); }
+}
+@keyframes blastyWorking {
+  from { transform: translate(-2px,-3px) rotate(-1.5deg); }
+  to { transform: translate(2px,-6px) rotate(1.5deg); }
+}
+@keyframes blastyCelebrate {
+  from { transform: translateY(-2px) rotate(-3deg) scale(1); }
+  to { transform: translateY(-17px) rotate(3deg) scale(1.03); }
+}
+@keyframes blastyTalkSmall {
+  0%,49% { opacity: 1; }
+  50%,100% { opacity: 0; }
+}
+@keyframes blastyTalkOpen {
+  0%,49% { opacity: 0; }
+  50%,100% { opacity: 1; }
+}
+
+/* Mobile: rocket remains beside every bubble, never detached at the top */
+@media (max-width: 620px) {
+  .blasty-thread { gap: 14px; }
+  .blasty-message {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 9px;
+    align-items: center;
+  }
+  .blasty-bubble {
+    border-radius: 24px;
+    padding: 14px 15px 15px 17px;
+  }
+  .blasty-bubble::before {
+    left: -15px;
+    width: 28px;
+    height: 23px;
+    border-bottom-left-radius: 18px;
+  }
+  .blasty-bubble h3 { font-size: 1.18rem; }
+  .blasty-bubble p { font-size: .93rem; }
+  .blasty-accent { height: 4px; margin-top: 9px; }
+}
+
+/* Very narrow phones */
+@media (max-width: 360px) {
+  .blasty-message { grid-template-columns: 64px minmax(0, 1fr); gap: 7px; }
+  .blasty-bubble { padding: 12px 12px 13px 14px; border-radius: 20px; }
+  .blasty-bubble h3 { font-size: 1.03rem; }
+  .blasty-bubble p { font-size: .85rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blasty-svg *,
+  .blasty-svg *::before,
+  .blasty-svg *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
