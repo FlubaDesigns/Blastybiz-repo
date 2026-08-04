@@ -197,7 +197,7 @@
   ].join('\n');
 
   /* ── SVG ──────────────────────────────────────────────────────────────── */
-  var SVG = '<svg id="mascot-svg" viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg">'
+  var SVG = '<svg id="mascot-svg" viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
     + '<defs>'
     + '<linearGradient id="mc-bf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".48" stop-color="#f8fbff"/><stop offset="1" stop-color="#dbe6f2"/></linearGradient>'
     + '<linearGradient id="mc-bs" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff" stop-opacity=".94"/><stop offset=".64" stop-color="#ffffff" stop-opacity=".08"/><stop offset="1" stop-color="#8ea4bc" stop-opacity=".34"/></linearGradient>'

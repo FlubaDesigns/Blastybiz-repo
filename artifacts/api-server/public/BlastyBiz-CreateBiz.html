@@ -389,13 +389,13 @@ function applyOb2Config(c) {
   if (window._ob2Anim.load && window.cbSetMood) window.cbSetMood(window._ob2Anim.load);
 }
 
-getDoc(doc(db, 'config', 'ob2Steps')).then(snap => {
-  if (snap.exists()) applyOb2Config(snap.data());
-}).catch(() => {});
-
 onAuthStateChanged(auth, async user => {
   if (!user) { window.location.href = 'BlastyBiz-Login.html?next=BlastyBiz-CreateBiz.html'; return; }
   currentUser = user;
+
+  getDoc(doc(db, 'config', 'ob2Steps')).then(snap => {
+    if (snap.exists()) applyOb2Config(snap.data());
+  }).catch(() => {});
 
   if (editBizId) {
     try {
@@ -423,7 +423,7 @@ function prefill(d) {
   s('f-different', d.different||'');
   s('f-awards',    d.awards||'');
   s('f-customer',  d.customer||'');
-  s('f-other',     d.otherInfo||'');
+  s('f-other',     (d.aiContext && d.aiContext.other) || d.otherInfo || '');
   document.querySelector('.cb-page-title').textContent = 'Edit Business';
   document.getElementById('cb-header-msg').innerHTML = '<strong>Update your business</strong> — edit any details and hit save.';
 }
@@ -543,7 +543,7 @@ window.cbSubmit = async function() {
   } catch(e) {
     console.error('[cb save]', e);
     cbSetMood('s-ask');
-    err.textContent = 'Something went wrong: ' + e.message;
+    err.textContent = 'Something went wrong. Please try again.';
     btn.disabled=false; btn.textContent='🚀 Create Business & Launch';
   }
 };
