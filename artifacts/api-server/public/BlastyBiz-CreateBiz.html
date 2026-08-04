@@ -159,7 +159,7 @@
 
   <div id="cb-form">
     <!-- Section 1: Business Info -->
-    <div class="cb-section open" id="cbs-info">
+    <div class="cb-section open" id="cbs-info" data-guide-step="1">
       <div class="cb-sec-head" onclick="cbToggle('info')">
         <span class="cb-sec-title" id="cb-sec1-title">🏢 Business Info <span class="cb-sec-badge">Required</span></span>
         <span class="cb-sec-ic">▾</span>
@@ -242,7 +242,7 @@
     </div>
 
     <!-- Section 2: Your Story -->
-    <div class="cb-section" id="cbs-story">
+    <div class="cb-section" id="cbs-story" data-guide-step="2">
       <div class="cb-sec-head" onclick="cbToggle('story')">
         <span class="cb-sec-title" id="cb-sec2-title">📖 Your Story <span class="cb-sec-badge">Optional — makes AI smarter</span></span>
         <span class="cb-sec-ic">▾</span>
@@ -274,7 +274,7 @@
     </div>
 
     <!-- Section 3: First Campaign -->
-    <div class="cb-section" id="cbs-campaign">
+    <div class="cb-section" id="cbs-campaign" data-guide-step="3">
       <div class="cb-sec-head" onclick="cbToggle('campaign')">
         <span class="cb-sec-title" id="cb-sec3-title">🚀 First Campaign <span class="cb-sec-badge">Required</span></span>
         <span class="cb-sec-ic">▾</span>
@@ -332,9 +332,15 @@
   </div>
 </div>
 
+<script src="form-guide.js"></script>
 <script>
 function cbToggle(id) {
-  document.getElementById('cbs-'+id).classList.toggle('open');
+  const sec = document.getElementById('cbs-'+id);
+  sec.classList.toggle('open');
+  // Advance form guide to this section when it's opened
+  if (window._cbGuide && sec.classList.contains('open')) {
+    window._cbGuide.setActiveEl(sec);
+  }
 }
 document.getElementById('f-locationType').addEventListener('change', function() {
   document.getElementById('cb-address-fields').style.display = this.value === 'online' ? 'none' : '';
@@ -349,6 +355,11 @@ document.querySelectorAll('.cb-input,.cb-ta,.cb-select').forEach(el => {
   el.addEventListener('focus', () => cbSetMood((window._ob2Anim&&window._ob2Anim.focus)||'s-ask'));
   el.addEventListener('blur',  () => cbSetMood((window._ob2Anim&&window._ob2Anim.load)||'s-wave'));
 });
+// Initialise section guide — section 1 (Business Info) is active on load
+window._cbGuide = new FormGuide({
+  steps: document.querySelectorAll('[data-guide-step]')
+});
+window._cbGuide.setActive(0);
 </script>
 
 <script type="module">
@@ -435,7 +446,7 @@ window.cbSubmit = async function() {
   const campName = document.getElementById('f-campName').value.trim();
   const about    = document.getElementById('f-about').value.trim();
   if (!bizName)  { err.textContent='Please enter a business name.'; return; }
-  if (!campName) { err.textContent='Please enter a campaign name.'; document.getElementById('cbs-campaign').classList.add('open'); return; }
+  if (!campName) { err.textContent='Please enter a campaign name.'; const _cs=document.getElementById('cbs-campaign'); _cs.classList.add('open'); if(window._cbGuide) window._cbGuide.setActiveEl(_cs); return; }
   if (!about)    { err.textContent='Please describe what this campaign is about.'; return; }
   if (!currentUser) { err.textContent='Not signed in. Please reload.'; return; }
 
