@@ -5,7 +5,13 @@ function _revealAdminNav() {
       const { doc, getDoc, collection, getDocs, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
       await auth.authStateReady();
       const user = auth.currentUser;
-      if (!user) return;
+
+      if (!user) {
+        // Firebase confirmed: not logged in — clear any stale optimistic state
+        document.body.classList.remove('logged-in');
+        localStorage.setItem('bb_auth', '0');
+        return;
+      }
 
       // Mark body as logged-in so CSS reveals app nav links
       document.body.classList.add('logged-in');
