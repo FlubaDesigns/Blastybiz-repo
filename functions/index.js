@@ -4805,6 +4805,14 @@ exports.cleanupAbandonedSignups = onSchedule('every 24 hours', async (_event) =>
   for (const userDoc of snap.docs) {
     const uid = userDoc.id;
     try {
+      // Guard: skip users who have already created business data — they started onboarding
+      // even if they never finished. Do not destroy real data; let them complete or admin-review.
+      const bizSnap = await db.collection('users').doc(uid).collection('businesses').limit(1).get();
+      if (!bizSnap.empty) {
+        console.log('[cleanupAbandonedSignups] Skipping uid=' + uid + ' — has business data');
+        continue;
+      }
+
       // Delete Firebase Auth account (non-fatal if not found)
       try {
         await admin.auth().deleteUser(uid);
