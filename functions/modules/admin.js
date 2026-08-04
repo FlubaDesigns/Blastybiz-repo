@@ -559,15 +559,16 @@ exports.adminDeleteBusiness = onRequest({ invoker: 'public' }, async (req, res) 
   }
 });
 
-// ── adminUpdateYelpCategories — manual paste-in replacement for the old API refresh ──
-// Paste the category JSON from https://www.yelp.com/developers/documentation/v3/all_categories
-// (publicly listed, no API key required). Accepts an array of { alias, title, parent_aliases }
-// objects (raw Yelp shape) or the normalized { alias, title, parentAliases } shape.
-exports.adminUpdateYelpCategories = onRequest({ invoker: 'public' }, withAuth(async (req, res) => {
+// ── adminUpdatePlatformCategories — manual paste-in for any platform's category list ──
+// Accepts { platformId, categories } where categories is an array of { alias, title, parentAliases }.
+// Writes to platformCategories/{platformId}/categories/{alias}.
+// For yelp, also mirrors to the top-level yelpCategories collection for backward compat.
+exports.adminUpdatePlatformCategories = onRequest({ invoker: 'public' }, withAuth(async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
   try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: e.message }); }
 
-  const { categories } = req.body || {};
+  const { platformId, categories } = req.body || {};
+  if (!platformId) return res.status(400).json({ error: 'platformId is required' });
   if (!Array.isArray(categories) || categories.length === 0) {
     return res.status(400).json({ error: 'categories must be a non-empty array' });
   }
@@ -579,19 +580,40 @@ exports.adminUpdateYelpCategories = onRequest({ invoker: 'public' }, withAuth(as
   })).filter(c => c.alias && c.title);
 
   const CHUNK = 450;
+
+  // Write to platformCategories/{platformId}/categories/{alias}
   for (let i = 0; i < normalized.length; i += CHUNK) {
     const batch = db.batch();
     for (const cat of normalized.slice(i, i + CHUNK)) {
-      batch.set(db.collection('yelpCategories').doc(cat.alias), cat);
+      batch.set(
+        db.collection('platformCategories').doc(platformId).collection('categories').doc(cat.alias),
+        cat
+      );
     }
     await batch.commit();
   }
-  await db.collection('config').doc('yelpCategoriesMeta').set({
-    count: normalized.length,
+  await db.collection('platformCategories').doc(platformId).set({
+    platformId, count: normalized.length,
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     source: 'manual',
-  });
+  }, { merge: true });
 
-  res.json({ ok: true, count: normalized.length });
+  // Yelp backward compat: also mirror to top-level yelpCategories collection
+  if (platformId === 'yelp') {
+    for (let i = 0; i < normalized.length; i += CHUNK) {
+      const batch = db.batch();
+      for (const cat of normalized.slice(i, i + CHUNK)) {
+        batch.set(db.collection('yelpCategories').doc(cat.alias), cat);
+      }
+      await batch.commit();
+    }
+    await db.collection('config').doc('yelpCategoriesMeta').set({
+      count: normalized.length,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      source: 'manual',
+    }, { merge: true });
+  }
+
+  res.json({ ok: true, platformId, count: normalized.length });
 }, { admin: true }));
 
