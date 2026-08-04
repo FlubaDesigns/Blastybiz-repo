@@ -1012,7 +1012,12 @@
       placeholder: 'e.g. https://qrgear.com',
       hint: 'Leave blank if you don\'t have one yet — no worries!',
       skipIf: a => a.locationType === 'brick',
-      validate: () => null
+      validate: v => {
+        if (!v.trim()) return null;
+        return /\.\S{2,}/.test(v.trim())
+          ? null
+          : 'Please include the full address — e.g. yourbusiness.com.';
+      }
     },
 
     /* ══════════════════════════════════════════════════════════
@@ -1408,6 +1413,13 @@
     // Remove stale fork prompt when moving past it
     const fp = document.getElementById('ob-fork-prompt');
     if (fp) fp.remove();
+    // Hide story rows when "blast" path was chosen — they're skipped and shouldn't clutter the form
+    if (answers._fork === 'blast') {
+      ['story','different','awards','customer','other'].forEach(k => {
+        const r = document.getElementById('obfr-'+k);
+        if (r) r.style.display = 'none';
+      });
+    }
     // Spotlight active field row
     if (s.key !== '_fork') {
       document.querySelectorAll('.obf-row').forEach(r => {
@@ -1563,7 +1575,15 @@
   window._ob2PickChoice = function(btn) {
     document.querySelectorAll('.ob2-choice-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
-    if (currentInput) currentInput.value = btn.dataset.val;
+    const choiceVal = btn.dataset.val || '';
+    // Primary: set via currentInput. Fallback: find hidden input within the same bubble.
+    if (currentInput) {
+      currentInput.value = choiceVal;
+    } else {
+      const bubble = btn.closest('.ob-fork-prompt, .obf-bubble');
+      const inp = bubble ? bubble.querySelector('input[type="hidden"]') : null;
+      if (inp) inp.value = choiceVal;
+    }
     const errEl = currentBubble ? currentBubble.querySelector('#ob2-err') : null;
     if (errEl) errEl.style.display = 'none';
     setTimeout(() => window._ob2Continue(), 220);
@@ -1575,7 +1595,12 @@
       var rv = currentInput.value.trim();
       if (rv) { if (!/^https?:\/\//i.test(rv)) rv = 'https://' + rv; currentInput.value = rv; }
     }
-    const val = currentInput ? currentInput.value : '';
+    let val = currentInput ? currentInput.value : '';
+    // Fallback for choice steps: if hidden input is stale/empty, read from selected button
+    if (!val && s.inputType === 'choice' && currentBubble) {
+      const sel = currentBubble.querySelector('.ob2-choice-btn.selected');
+      if (sel) val = sel.dataset.val || '';
+    }
     const errEl = currentBubble ? currentBubble.querySelector('#ob2-err') : null;
     if (s.validate) {
       const err = s.validate(val);
