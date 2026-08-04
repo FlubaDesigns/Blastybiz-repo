@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="global-style.css?v=1785868371648">
+<link rel="stylesheet" href="global-style.css?v=1785879523224">
 
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
@@ -457,7 +457,7 @@
         </p>
         <p class="op-fn-group">Scheduled</p>
         <p class="op-fn-list">
-          scheduledPostingCheck · scheduledYelpCategoryRefresh
+          scheduledPostingCheck
         </p>
         <p class="op-fn-group">Triggers</p>
         <p class="op-fn-list">
@@ -472,31 +472,9 @@
           adminGetAdminEmails · adminListActivityLogs · adminListBusinesses · adminListFailedJobs ·
           adminListPlatformConnections · adminListPublishJobs · adminMarkManualFollowup · adminOnboardingFunnel ·
           adminRetryJob ·
-          adminSubscriptionSummary · adminUpdateAdminEmails · adminUpdatePricing · refreshYelpCategories ·
+          adminSubscriptionSummary · adminUpdateAdminEmails · adminUpdatePricing ·
           sendTestEmail
         </p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Yelp Category Cache -->
-  <div class="op-section">
-    <div class="op-card">
-      <div class="op-card-header" onclick="toggleCard(this)">
-        <span>⭐ Yelp Category Cache</span>
-        <span class="op-chevron">▶</span>
-      </div>
-      <div class="op-card-body">
-        <p style="font-size:13px;color:#888;margin:0 0 12px;line-height:1.6;">
-          Forces a live pull from the Yelp Fusion API and repopulates <code>platformCategoryCache/yelp</code> in Firestore.
-          The scheduled refresh runs weekly — use this button after first configuring <code>YELP_API_KEY</code>,
-          or any time the cache seems stale.
-        </p>
-        <div id="yelp-refresh-status" style="font-size:13px;color:#888;margin-bottom:12px;min-height:20px;"></div>
-        <button type="button" id="yelp-refresh-btn" onclick="refreshYelpCategoriesNow()"
-          style="padding:10px 20px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
-          🔄 Refresh Yelp Categories Now
-        </button>
       </div>
     </div>
   </div>
@@ -1056,30 +1034,6 @@ onAuthStateChanged(auth, user => {
   }
 });
 
-async function refreshYelpCategoriesNow() {
-  const btn    = document.getElementById('yelp-refresh-btn');
-  const status = document.getElementById('yelp-refresh-status');
-  btn.disabled = true;
-  btn.textContent = '⏳ Refreshing…';
-  status.style.color = '#888';
-  status.textContent = 'Calling refreshYelpCategories…';
-  try {
-    const token = await auth.currentUser.getIdToken();
-    const res   = await fetch(CF_BASE + '/refreshYelpCategories', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    const data  = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Server error ' + res.status);
-    status.style.color = '#00C853';
-    status.textContent = '✓ ' + (data.message || 'Cache refreshed');
-  } catch(e) {
-    status.style.color = '#f87171';
-    status.textContent = '✗ ' + e.message;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '🔄 Refresh Yelp Categories Now';
-  }
-}
 </script>
 <nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Queue-Manager.html">📋<br>Queue</a><a class="" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a><a class="active" href="#">⚙️<br>Operate</a></nav>
 </body>

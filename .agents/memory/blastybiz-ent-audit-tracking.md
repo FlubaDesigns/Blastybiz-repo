@@ -1,59 +1,64 @@
 ---
 name: BlastyBiz enterprise audit tracking
-description: Current completion status of the bb_ent_01/02/03 audit findings. Pass 03 is the production-gate audit — four items, two now done. Trust this file over session summaries.
+description: Current completion status through bb_ent_04. Pass 04 introduced 3 regressions that are now fixed.
 ---
 
-## Production Gate Status (Pass 03 — 2026-08-04)
+## Production Gate Status (Pass 04 resolved — 2026-08-04)
 
-Pass 03 asked: "what breaks if you go live tomorrow?" Answer: 4 items.
+All Pass 03 gate items remain closed. Pass 04 found 3 new regressions, all fixed.
 
-| # | Item | Status |
+### Pass 04 regressions — all fixed
+
+| # | Item | Fix |
 |---|---|---|
-| 1 | Broken barrel | ✅ Fixed (prior session) |
-| 2 | 13 dead lib/ files | ✅ Fixed (deleted) |
-| 3 | reserveAiAction throws on missing user doc | ✅ Fixed (tx.set merge:true) |
-| 4 | private/tokens survives deleteAccount | ✅ Fixed (prior session) |
+| 2.1 | `scheduledPostingCheck` read from `scheduledPosts` (nothing writes there) | Reverted to `collectionGroup('listingDrafts').where('schedule.enabled', '==', true)` — matches what frontend writes |
+| 2.2 | Yelp functions missing `secrets: ['YELP_API_KEY']` | Removed entirely — Dave dropped the $229/mo Yelp API |
+| 2.3 | 5 cron schedules changed with no rationale | Restored originals; both nudge emails set to weekly (Monday) per Dave |
 
-**All four production-gate items are closed. Safe to take payments.**
+### Yelp removal (2026-08-04)
+Removed `refreshYelpCategories`, `scheduledYelpCategoryRefresh`, `fetchAndCacheYelpCategories`, import in scheduled.js, and all admin UI. Barrel now exports **62 functions** (down from 65). `check-release.cjs` EXPECTED_EXPORTS updated to 62. Existing `yelpCategories` Firestore data left in place.
 
----
+### Current cron schedules
+- `scheduledPostingCheck` — every 1 hours
+- `scheduledUpgradeNudge` — every monday 10:00 ET (weekly — no more than once/week)
+- `scheduledSetupNudge` — every monday 09:00 ET (weekly — no more than once/week)
+- `scheduledWeeklyDigest` — every monday 08:00 ET
+- `scheduledFirestoreExport` — 0 2 * * 0 PT (weekly Sunday)
+- `cleanupAbandonedSignups` — every 24 hours
 
-## Fixes applied this session (2026-08-04)
-
-- **Dead lib/ files (§2)** — Deleted 13 unimported files: `ai.js auth.js config.js db.js email.js logging.js plans.js platforms.js publishers.js rateLimit.js square.js unsub.js yelp.js`. Only `lib/shared.js` remains (the live file). Also removed duplicate `setGlobalOptions` call from `shared.js` (kept in `index.js`).
-- **reserveAiAction (§3)** — `tx.update()` → `tx.set({merge:true})` in both branches (`lib/shared.js`). Affects any user whose `users/{uid}` doc is missing (pre-fix magic-link trial signups).
-- **check-release.cjs (§ strongly recommended)** — Added Check 6 (barrel export count ≥65) and Check 7 (no dead files in `lib/`). All 7 checks pass. Run with `node scripts/check-release.cjs` before every deploy.
+### scheduledPostingCheck — how it works
+Reads `collectionGroup('listingDrafts').where('schedule.enabled', '==', true).limit(200)`.
+Filters `nextRunAt <= now` in memory (ISO string in `schedule.nextRunAt`, not a Timestamp).
+Path shape: `users/{uid}/businesses/{bizId}/listingDrafts/{id}`.
+Content from `draft.adaptations[platformId]` (plain string). API platforms: google, facebook, instagram.
+Updates `schedule.nextRunAt` and `schedule.lastRunAt` (ISO strings) after each run.
 
 ---
 
 ## Remaining open items (not production blockers)
 
-### Security (do soon)
-- **2.8** — publish triggers read `job.uid`/`job.businessId` from doc data instead of `event.params`; not exploitable (admin-only job writes) but wrong pattern
-- **2.9** — `public/admin-guard.js` no `emailVerified` check; client-side only, server enforcement correct
-- **3.5** — client uploads bypass server-side magic-byte validation in `uploadImage`
+### Security
+- **2.8** — triggers read `job.uid`/`job.businessId` from doc data instead of `event.params`
+- **2.9** — `admin-guard.js` no `emailVerified` check (client-side only; server enforcement correct)
+- **3.5** — client uploads bypass server-side magic-byte validation
 - **3.6** — signed URLs 10-year expiry
-- **1.7 (second half)** — admin still email allowlist (not custom claim); drift: 2 addresses in `BOOTSTRAP_ADMIN_EMAILS` vs 1 in rules `isAdmin()`
-- **1.5 (ops)** / **1.9 (ops)** — revoke browser-exposed OAuth tokens + Anthropic key rotation (console/ops work, not code)
+- **1.7 (half)** — admin still email allowlist not custom claim; 2 addresses in functions vs 1 in rules
+- **1.5 / 1.9 (ops)** — revoke old OAuth tokens + Anthropic key rotation (console work)
 
-### Scale (do before significant user growth)
-- **4.2** — 4 unbounded queries in `modules/admin.js`: lines 157, 368, 371, 489; lines 368+371 are same handler (reads entire users collection + all publish jobs on one page load)
-- **4.3** — N+1 reads in scheduled jobs
+### Scale
+- **4.2** — 4 unbounded queries in `admin.js` now limited to 2000/5000; migrate to aggregation counters at scale
 
 ### Process
-- **1.3 / 5.5** — no CI; wire `node scripts/check-release.cjs` into a GitHub Action
+- **1.3 / 5.5** — CI exists (.github/workflows/check-release.yml) but not yet wired to a real GitHub remote
 - **5.3** — no dependency scanning
-- **5.4** — no SRI on ~40 Firebase CDN script tags
-
-### Nice-to-have / product
-- **5.2** — extract inline JS from `BlastyBiz.html`
-- **5.7** — product decision: nudge users who skipped Story
+- **5.4** — no SRI on CDN script tags
 
 ### Quarter
-- **1.2** — staging Firebase project; `blastybiz-9523e` hardcoded 172×
-- **1.1** — `organizations`/`memberships`/RBAC (blocks all 11 Section 6 enterprise gaps)
+- **1.2** — staging project
+- **1.1** — org/RBAC (blocks all Section 6 enterprise)
 
-### Outstanding ops tasks (backfill)
-- One-time sweep for orphaned `private` subcollection docs from accounts deleted before the deleteAccount fix
-- Backfill missing `users/{uid}` documents for authenticated users who have no doc (magic-link trial signups before §3.3 fix)
-- Provider-side token revocation: `deleteAccount` should revoke Google/Facebook tokens before deleting docs (like `disconnectPlatform` already does)
+### Ops backfill
+- Backfill `users/{uid}` docs for magic-link trial signups with missing docs
+- Sweep orphaned `private` subcollection docs from accounts deleted before the fix
+- Provider-side OAuth token revocation for tokens exposed before Pass 01 §1.5
+- Delete `YELP_API_KEY` from Firebase Secret Manager (console)

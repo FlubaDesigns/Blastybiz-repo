@@ -14,8 +14,6 @@ const {
   makeUnsubSig, _unsubSecret,
 } = require('../lib/shared');
 
-const { fetchAndCacheYelpCategories } = require('./admin');
-
 // ── Platform helpers for scheduled posting ────────────────────────────────────
 const SCHED_PLATFORMS = {
   google:   { name: 'Google Business Profile', publish: publishGoogle   },
@@ -112,43 +110,55 @@ async function _runScheduledPost(schedule) {
 }
 
 // ── scheduledPostingCheck ─────────────────────────────────────────────────────
+// Schedules live as a `schedule` map on each listingDraft. The frontend writes
+// schedule.enabled and schedule.nextRunAt (ISO string) onto the draft doc.
+// We filter enabled:true, then evaluate nextRunAt in memory — Firestore
+// range-filtering an ISO string nested inside a map requires a composite index
+// and is fragile; memory evaluation is simpler and correct at this scale.
 exports.scheduledPostingCheck = onSchedule(
-  { schedule: 'every 30 minutes', region: 'us-central1', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
+  { schedule: 'every 1 hours', region: 'us-central1', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
   async () => {
     const now = new Date();
+    const API_PLATFORMS = ['google', 'facebook', 'instagram'];
     try {
-      const snap = await db.collectionGroup('scheduledPosts')
-        .where('status', '==', 'active')
-        .where('nextRunAt', '<=', now)
-        .limit(50)
+      const snap = await db.collectionGroup('listingDrafts')
+        .where('schedule.enabled', '==', true)
+        .limit(200)
         .get();
 
-      for (const docSnap of snap.docs) {
-        const schedule = docSnap.data();
-        const schedRef = docSnap.ref;
-        try {
-          const result = await _runScheduledPost(schedule);
-          const nextRunAt = await _computeNextRunAt(schedule, now);
-          const update = {
-            lastRunAt:    now,
-            nextRunAt,
-            lastResult:   result.manualFallback ? 'manual_fallback' : 'success',
-            lastPostId:   result.postId || null,
-            runCount:     admin.firestore.FieldValue.increment(1),
-            updatedAt:    admin.firestore.FieldValue.serverTimestamp(),
-          };
-          if (result.manualFallback) {
-            update.status = 'paused';
-            update.pauseReason = result.reason || 'manual_fallback';
+      for (const draftSnap of snap.docs) {
+        const draft    = draftSnap.data();
+        const schedule = draft.schedule || {};
+        if (!schedule.nextRunAt || new Date(schedule.nextRunAt) > now) continue;
+
+        // Path shape: users/{uid}/businesses/{bizId}/listingDrafts/{id}
+        const parts = draftSnap.ref.path.split('/');
+        const uid   = parts[1];
+        const bizId = parts[3];
+        const adaptations = draft.adaptations || {};
+        const nextRunAt   = await _computeNextRunAt(schedule, now);
+
+        for (const platformId of API_PLATFORMS) {
+          const content = adaptations[platformId];
+          if (!content) continue;
+          try {
+            const result = await _runScheduledPost({
+              uid, bizId, platformId, content, imageUrls: draft.imageUrls || [],
+            });
+            if (result.manualFallback) {
+              console.warn(`[scheduledPostingCheck] manual fallback ${uid}/${bizId}/${platformId}: ${result.reason}`);
+            }
+          } catch (e) {
+            console.error(`[scheduledPostingCheck] failed ${uid}/${bizId}/${platformId}:`, e.message);
           }
-          await schedRef.update(update);
-        } catch(e) {
-          console.error(`[scheduledPostingCheck] failed for ${docSnap.id}:`, e.message);
-          await schedRef.update({
-            status: 'paused', pauseReason: e.message,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
         }
+
+        // Advance nextRunAt on the draft regardless of per-platform outcome
+        await draftSnap.ref.update({
+          'schedule.nextRunAt': nextRunAt.toISOString(),
+          'schedule.lastRunAt': now.toISOString(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
       }
     } catch(e) {
       console.error('[scheduledPostingCheck] error:', e.message);
@@ -156,22 +166,9 @@ exports.scheduledPostingCheck = onSchedule(
   }
 );
 
-// ── scheduledYelpCategoryRefresh ──────────────────────────────────────────────
-exports.scheduledYelpCategoryRefresh = onSchedule(
-  { schedule: 'every 720 hours', region: 'us-central1' },
-  async () => {
-    try {
-      const count = await fetchAndCacheYelpCategories();
-      console.log(`[scheduledYelpCategoryRefresh] Cached ${count} categories`);
-    } catch(e) {
-      console.error('[scheduledYelpCategoryRefresh] error:', e.message);
-    }
-  }
-);
-
 // ── scheduledUpgradeNudge ─────────────────────────────────────────────────────
 exports.scheduledUpgradeNudge = onSchedule(
-  { schedule: 'every monday 09:00', region: 'us-central1', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] },
+  { schedule: 'every monday 10:00', timeZone: 'America/New_York', region: 'us-central1', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] },
   async () => {
     try {
       const cutoff = admin.firestore.Timestamp.fromMillis(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -238,7 +235,7 @@ exports.scheduledUpgradeNudge = onSchedule(
 
 // ── scheduledWeeklyDigest ─────────────────────────────────────────────────────
 exports.scheduledWeeklyDigest = onSchedule(
-  { schedule: 'every monday 09:30', region: 'us-central1', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] },
+  { schedule: 'every monday 08:00', region: 'us-central1', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] },
   async () => {
     const weekAgo = admin.firestore.Timestamp.fromMillis(Date.now() - 7 * 24 * 60 * 60 * 1000);
     try {
@@ -324,7 +321,7 @@ exports.scheduledWeeklyDigest = onSchedule(
 
 // ── scheduledSetupNudge ───────────────────────────────────────────────────────
 exports.scheduledSetupNudge = onSchedule(
-  { schedule: 'every 6 hours', region: 'us-central1', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] },
+  { schedule: 'every monday 09:00', timeZone: 'America/New_York', region: 'us-central1', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] },
   async () => {
     const now = Date.now();
     try {
