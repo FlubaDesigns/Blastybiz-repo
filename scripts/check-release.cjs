@@ -177,7 +177,7 @@ if (sessionFailures === 0) console.log('  ✅ All doSignOut-defining pages inclu
 // Catches MODULE_NOT_FOUND in the barrel (missing ./modules/ prefix, dropped
 // module, etc.) that would abort the entire deploy silently in production.
 console.log('\n── 6. Cloud Functions barrel export count ─────────────────────────');
-const EXPECTED_EXPORTS = 62;
+const EXPECTED_EXPORTS = 63;
 try {
   const barrelPath = path.resolve(__dirname, '../functions/index.js');
   const exported = Object.keys(require(barrelPath)).length;

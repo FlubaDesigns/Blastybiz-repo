@@ -559,3 +559,39 @@ exports.adminDeleteBusiness = onRequest({ invoker: 'public' }, async (req, res) 
   }
 });
 
+// ── adminUpdateYelpCategories — manual paste-in replacement for the old API refresh ──
+// Paste the category JSON from https://www.yelp.com/developers/documentation/v3/all_categories
+// (publicly listed, no API key required). Accepts an array of { alias, title, parent_aliases }
+// objects (raw Yelp shape) or the normalized { alias, title, parentAliases } shape.
+exports.adminUpdateYelpCategories = onRequest({ invoker: 'public' }, withAuth(async (req, res) => {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+  try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: e.message }); }
+
+  const { categories } = req.body || {};
+  if (!Array.isArray(categories) || categories.length === 0) {
+    return res.status(400).json({ error: 'categories must be a non-empty array' });
+  }
+
+  const normalized = categories.map(c => ({
+    alias:         c.alias,
+    title:         c.title,
+    parentAliases: c.parentAliases || c.parent_aliases || [],
+  })).filter(c => c.alias && c.title);
+
+  const CHUNK = 450;
+  for (let i = 0; i < normalized.length; i += CHUNK) {
+    const batch = db.batch();
+    for (const cat of normalized.slice(i, i + CHUNK)) {
+      batch.set(db.collection('yelpCategories').doc(cat.alias), cat);
+    }
+    await batch.commit();
+  }
+  await db.collection('config').doc('yelpCategoriesMeta').set({
+    count: normalized.length,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    source: 'manual',
+  });
+
+  res.json({ ok: true, count: normalized.length });
+}, { admin: true }));
+
