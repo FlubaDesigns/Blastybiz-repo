@@ -131,12 +131,32 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
        bizFactsSnap, bizImagesSnap]
         .forEach(snap => snap.docs.forEach(d => bizSubRefs.push(d.ref)));
 
-      // Enumerate private/tokens subcollections under each platformConnection.
-      // Firestore does NOT cascade-delete subcollections when a parent doc is deleted,
-      // so these must be collected explicitly or live OAuth tokens orphan after erasure.
+      // Revoke OAuth tokens at provider, then collect private subcollection refs for deletion.
+      // Revocation must happen BEFORE docs are deleted — once gone, tokens are unreadable
+      // but remain valid at Google/Facebook. disconnectPlatform uses the same revoke calls.
+      // Firestore does NOT cascade-delete subcollections when a parent doc is deleted.
       for (const connDoc of connsSnap.docs) {
+        const platformId = connDoc.id;
         const privSnap = await connDoc.ref.collection('private').get();
         privSnap.docs.forEach(d => bizSubRefs.push(d.ref));
+
+        const privData = privSnap.docs[0]?.data() || {};
+        const { accessToken, refreshToken } = privData;
+
+        if (platformId === 'google') {
+          for (const tok of [accessToken, refreshToken].filter(Boolean)) {
+            try {
+              await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(tok)}`, { method: 'POST' });
+            } catch (e) { console.warn('[deleteAccount] Google revoke failed:', e.message); }
+          }
+        }
+        if (platformId === 'facebook' || platformId === 'instagram') {
+          if (accessToken) {
+            try {
+              await fetch(`https://graph.facebook.com/v20.0/me/permissions?access_token=${encodeURIComponent(accessToken)}`, { method: 'DELETE' });
+            } catch (e) { console.warn('[deleteAccount] Facebook revoke failed:', e.message); }
+          }
+        }
       }
 
       const campSnap = await userBizRef(uid, bizId).collection('campaigns').get();
