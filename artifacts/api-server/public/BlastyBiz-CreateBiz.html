@@ -98,6 +98,16 @@
   .cb-success { text-align:center; padding:40px 20px; }
   .cb-success h2 { font-family:'Bebas Neue',sans-serif; font-size:32px; color:var(--green); margin-bottom:8px; }
   .cb-success p { color:var(--sub); font-size:14px; }
+
+  /* ── Spotlight ring — pb-spotlight class applied by FormGuide's mascot shim ── */
+  .pb-spotlight {
+    outline: 3px solid rgba(0,200,83,.85) !important;
+    outline-offset: 4px;
+    box-shadow: 0 0 0 8px rgba(0,200,83,.12), 0 0 24px rgba(0,200,83,.22) !important;
+    border-radius: 14px;
+    transition: outline .25s ease, box-shadow .25s ease;
+  }
+  @media (prefers-reduced-motion: reduce) { .pb-spotlight { transition: none; } }
 </style>
 </head>
 <body>
@@ -361,9 +371,24 @@ document.querySelectorAll('.cb-input,.cb-ta,.cb-select').forEach(el => {
   el.addEventListener('focus', () => cbSetMood((window._ob2Anim&&window._ob2Anim.focus)||'s-ask'));
   el.addEventListener('blur',  () => cbSetMood((window._ob2Anim&&window._ob2Anim.load)||'s-wave'));
 });
+// Minimal PBMascot-compatible shim — scrolls + spotlights the active section
+// and triggers a brief mascot gesture via cbSetMood.
+var _cbMascotShim = {
+  pointTo: function(el, opts) {
+    if (!el) return;
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' });
+    el.classList.add('pb-spotlight');
+    setTimeout(function() { el.classList.remove('pb-spotlight'); }, (opts && opts.duration) || 2400);
+    // Show a brief "pointing" gesture on the header mascot
+    cbSetMood('s-working s-flame-blue s-lights-pulse');
+    setTimeout(function() { cbSetMood('s-wave'); }, 1200);
+  }
+};
 // Initialise section guide — section 1 (Business Info) is active on load
 window._cbGuide = new FormGuide({
-  steps: document.querySelectorAll('[data-guide-step]')
+  steps:  document.querySelectorAll('[data-guide-step]'),
+  mascot: _cbMascotShim
 });
 window._cbGuide.setActive(0);
 </script>

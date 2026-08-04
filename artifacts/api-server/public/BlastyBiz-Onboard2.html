@@ -1229,6 +1229,38 @@
     if (pos) zone.classList.add('mascot-pos-' + pos);
   }
 
+  /* ── PBMascot shim ───────────────────────────────────────────────── *
+   * Exposes the minimal PBMascot API expected by FormGuide's mascot
+   * option without loading the full mascot.js.  pointTo() scrolls the
+   * newly-active section into view and adds a temporary spotlight ring.
+   * setMood is available in this closure for future gesture hooks.
+   * ────────────────────────────────────────────────────────────────── */
+  (function() {
+    if (!document.getElementById('pb-spotlight-css')) {
+      var st = document.createElement('style');
+      st.id = 'pb-spotlight-css';
+      st.textContent =
+        '.pb-spotlight{outline:3px solid rgba(57,255,20,.85)!important;outline-offset:4px;' +
+        'box-shadow:0 0 0 8px rgba(57,255,20,.15),0 0 24px rgba(57,255,20,.25)!important;' +
+        'border-radius:10px;transition:outline .25s ease,box-shadow .25s ease;}' +
+        '@media(prefers-reduced-motion:reduce){.pb-spotlight{transition:none;}}';
+      document.head.appendChild(st);
+    }
+  }());
+  window.PBMascot = {
+    pointTo: function(el, opts) {
+      if (!el) return;
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' });
+      el.classList.add('pb-spotlight');
+      setTimeout(function() { el.classList.remove('pb-spotlight'); }, (opts && opts.duration) || 2400);
+      /* Show the pointing-arm mood briefly; showStep() will override with the
+         per-step mood ~5 ms later via its own setMood() call, so this fires
+         during the s-arrive pop and the arm is visible for the pop duration. */
+      setMood({ mood: 's-working', flame: 's-flame-blue', lights: 's-lights-pulse' });
+    }
+  };
+
   function _miniMascotSVG(mood) {
     const py = { 's-ask': 204, 's-working': 207, 's-wave': 198, 's-happy': 205, 's-celebrate': 198 }[mood] || 202;
     return `<svg viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg">
