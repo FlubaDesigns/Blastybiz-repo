@@ -420,8 +420,6 @@ body.home-page .main { padding-top: 0 !important; }
 
 /* Auth state — JS adds/removes body.logged-in */
 #header__nav-logout  { display: none; }
-/* App-only nav items: hidden by default, shown when logged in */
-.header__nav-app     { display: none; }
 #header__mobile-login { display: none; }
 #header__mobile-logout {
   display: none;
@@ -480,6 +478,9 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 }
 .header__mobile-link:last-child { border-bottom: none; }
 .header__mobile-link:hover      { color: #fff; }
+/* App-only nav items: hidden by default, shown when logged in.
+   MUST come after .header__mobile-link { display:block } or that rule wins. */
+.header__nav-app { display: none; }
 
 /* ── HEADER — Mobile (≤767px) ───────────────────────────── */
 @media (max-width: 767px) {
