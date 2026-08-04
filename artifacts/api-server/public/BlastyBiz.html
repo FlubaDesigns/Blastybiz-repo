@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785821433658" />
+<link rel="stylesheet" href="global-style.css?v=1785821616787" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -5476,11 +5476,43 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   // ── Image compression (max 1200px, JPEG 85%) ─────────────
-  function compressImage(file) {
+  // Silently decode HEIC/HEIF → JPEG blob using heic2any (lazy-loaded from CDN).
+  // Returns the original file if not HEIC, a JPEG Blob if converted, or null on failure.
+  async function maybeDecodeHeic(file) {
+    const name = (file.name || '').toLowerCase();
+    const isHeic = file.type === 'image/heic' || file.type === 'image/heif'
+      || name.endsWith('.heic') || name.endsWith('.heif');
+    if (!isHeic) return file;
+    // Lazy-load heic2any once
+    if (!window._heic2any) {
+      await new Promise((res, rej) => {
+        if (window.heic2any) { res(); return; }
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      }).catch(() => null);
+      window._heic2any = window.heic2any || null;
+    }
+    if (!window._heic2any) return null; // CDN unavailable
+    try {
+      const result = await window._heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+      return Array.isArray(result) ? result[0] : result;
+    } catch(e) {
+      console.warn('heic2any failed:', e);
+      return null;
+    }
+  }
+
+  async function compressImage(file) {
+    // Transparently convert HEIC/HEIF → JPEG before canvas touches it (Android Chrome can't decode HEIC natively)
+    const source = await maybeDecodeHeic(file);
+    if (!source) return null;
+
     return new Promise(resolve => {
       const MAX = 1200;
       const img = new Image();
-      const objUrl = URL.createObjectURL(file);
+      const objUrl = URL.createObjectURL(source);
       let settled = false;
       const done = (result) => {
         if (settled) return;
@@ -5489,7 +5521,7 @@ onAuthStateChanged(auth, async (user) => {
         URL.revokeObjectURL(objUrl);
         resolve(result);
       };
-      // Safety net: if the whole process hangs (large HEIC on Android), fail clearly — never fall back to raw file
+      // Safety net: if the whole process hangs, fail clearly — never fall back to raw file
       const giveUp = setTimeout(() => done(null), 25000);
       img.onload = () => {
         let { width, height } = img;
