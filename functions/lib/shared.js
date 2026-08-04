@@ -7,12 +7,7 @@
 const { onRequest }                             = require('firebase-functions/v2/https');
 const { onSchedule }                            = require('firebase-functions/v2/scheduler');
 const { onDocumentUpdated, onDocumentCreated }  = require('firebase-functions/v2/firestore');
-const { setGlobalOptions }                      = require('firebase-functions/v2');
 const admin                                     = require('firebase-admin');
-
-// ── Global instance cap — prevents runaway billing from abuse or bugs ─────────
-// Raise per-function if a specific endpoint genuinely needs more headroom.
-setGlobalOptions({ maxInstances: 10 });
 
 // ── Base URL for all web-app redirects (checkout, OAuth, emails) ──────────────
 const APP_BASE_URL = process.env.APP_BASE_URL || 'https://blastybiz-9523e.web.app';
@@ -205,17 +200,20 @@ async function reserveAiAction(uid) {
       throw Object.assign(new Error('LIMIT_REACHED'), { used, cap, plan });
     }
 
+    // Use set+merge (not update) so this works even when users/{uid} doc is absent.
+    // tx.update() throws NOT_FOUND (code 5) on a missing document; tx.set({merge:true})
+    // creates it. FieldValue.increment works correctly with set+merge on missing fields.
     if (needsReset) {
-      tx.update(userRef, {
+      tx.set(userRef, {
         aiActionsUsed: 1,
         aiActionsResetAt: admin.firestore.Timestamp.fromDate(
           new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
         ),
-      });
+      }, { merge: true });
     } else {
-      tx.update(userRef, {
+      tx.set(userRef, {
         aiActionsUsed: admin.firestore.FieldValue.increment(1),
-      });
+      }, { merge: true });
     }
 
     return { plan, used: used + 1, cap };

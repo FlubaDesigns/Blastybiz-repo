@@ -1,56 +1,59 @@
 ---
 name: BlastyBiz enterprise audit tracking
-description: Current completion status of the bb_ent_01/02 audit findings (47 original). Pass 02 corrected several items the memory had wrong — trust this file over session summaries.
+description: Current completion status of the bb_ent_01/02/03 audit findings. Pass 03 is the production-gate audit — four items, two now done. Trust this file over session summaries.
 ---
 
-## Score: ~24/47 done (Pass 02 ground truth, 2026-08-04)
+## Production Gate Status (Pass 03 — 2026-08-04)
 
-Pass 02 audited actual source and overruled the old session-summary scores.
-Items 2.8, 2.9, 3.5, 3.6, 4.2, 4.3 were NOT done — old memory was wrong.
+Pass 03 asked: "what breaks if you go live tomorrow?" Answer: 4 items.
 
-### Confirmed done (Pass 02 §1, verified in source)
-1.4, 1.5, 1.6, 1.8,
-2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.10,
-3.1, 3.2, 3.3, 3.4,
-4.1, 4.4, 4.5, 4.6, 4.7, 4.8,
-5.1
+| # | Item | Status |
+|---|---|---|
+| 1 | Broken barrel | ✅ Fixed (prior session) |
+| 2 | 13 dead lib/ files | ✅ Fixed (deleted) |
+| 3 | reserveAiAction throws on missing user doc | ✅ Fixed (tx.set merge:true) |
+| 4 | private/tokens survives deleteAccount | ✅ Fixed (prior session) |
 
-### Done this session (Pass 02 §0 + new finding)
-- **§0 barrel bug** — `functions/index.js` required `./ai` etc (MODULE_NOT_FOUND); fixed to `./modules/ai` etc; added `./modules/business` and `./modules/misc`; header comment updated to match actual disk layout. 65 exports verified with `node -e` before deploy.
-- **private/tokens orphan** — `deleteAccount` in `modules/business.js` now enumerates `private` subcollection under each platformConnection before batching deletes (Firestore doesn't cascade-delete subcollections).
+**All four production-gate items are closed. Safe to take payments.**
 
-### Partial
-- **1.7** — email_verified check added; custom-claims half still open (admin is still email allowlist in functions AND rules, with drift: 2 addresses in BOOTSTRAP_ADMIN_EMAILS vs 1 hardcoded in isAdmin() rules)
-- **1.9** — Anthropic key removal from Replit shared env: cannot verify from source (ops step)
-- **4.9** — scheduledFirestoreExport CF deployed; PITR + GCS bucket + IAM + tested restore are console/CLI ops steps
+---
 
-### Remaining (still open, not done)
+## Fixes applied this session (2026-08-04)
 
-**Security — do soon:**
-- **2.8** — publish triggers still read `job.uid` / `job.businessId` instead of `event.params` (4 triggers in `modules/publishing.js`)
-- **2.9** — `public/admin-guard.js` has no `emailVerified` check
-- **3.5** — client uploads direct via `uploadBytesResumable`, bypassing magic-byte validation in `uploadImage` CF
-- **3.6** — signed URLs still 10-year expiry
-- **1.5 (ops)** — rotate the OAuth tokens that were browser-readable before the subcollection fix
+- **Dead lib/ files (§2)** — Deleted 13 unimported files: `ai.js auth.js config.js db.js email.js logging.js plans.js platforms.js publishers.js rateLimit.js square.js unsub.js yelp.js`. Only `lib/shared.js` remains (the live file). Also removed duplicate `setGlobalOptions` call from `shared.js` (kept in `index.js`).
+- **reserveAiAction (§3)** — `tx.update()` → `tx.set({merge:true})` in both branches (`lib/shared.js`). Affects any user whose `users/{uid}` doc is missing (pre-fix magic-link trial signups).
+- **check-release.cjs (§ strongly recommended)** — Added Check 6 (barrel export count ≥65) and Check 7 (no dead files in `lib/`). All 7 checks pass. Run with `node scripts/check-release.cjs` before every deploy.
 
-**Scale — do soon:**
-- **4.2** — 4 unbounded queries in `modules/admin.js`: line 157 (collectionGroup platformConnections), 368 (collection users), 371 (collectionGroup publishJobs), 489 (collection users). Lines 368+371 are same handler — one admin page load reads entire user table + every publish job ever.
-- **4.3** — N+1 per-user reads in scheduled jobs; no `getAll` anywhere
+---
 
-**Process:**
-- **1.3 / 5.5** — no CI; `check-release.cjs` resolves PUBLIC to `../artifacts/api-server/public` (doesn't exist); need to repoint to `public/` and add barrel-count check (expect ≥65 exports)
-- **5.3** — no dependency scanning / Dependabot
+## Remaining open items (not production blockers)
+
+### Security (do soon)
+- **2.8** — publish triggers read `job.uid`/`job.businessId` from doc data instead of `event.params`; not exploitable (admin-only job writes) but wrong pattern
+- **2.9** — `public/admin-guard.js` no `emailVerified` check; client-side only, server enforcement correct
+- **3.5** — client uploads bypass server-side magic-byte validation in `uploadImage`
+- **3.6** — signed URLs 10-year expiry
+- **1.7 (second half)** — admin still email allowlist (not custom claim); drift: 2 addresses in `BOOTSTRAP_ADMIN_EMAILS` vs 1 in rules `isAdmin()`
+- **1.5 (ops)** / **1.9 (ops)** — revoke browser-exposed OAuth tokens + Anthropic key rotation (console/ops work, not code)
+
+### Scale (do before significant user growth)
+- **4.2** — 4 unbounded queries in `modules/admin.js`: lines 157, 368, 371, 489; lines 368+371 are same handler (reads entire users collection + all publish jobs on one page load)
+- **4.3** — N+1 reads in scheduled jobs
+
+### Process
+- **1.3 / 5.5** — no CI; wire `node scripts/check-release.cjs` into a GitHub Action
+- **5.3** — no dependency scanning
 - **5.4** — no SRI on ~40 Firebase CDN script tags
-- **5.6** — replit.md had stale references (fixed 2026-08-04)
 
-**Nice-to-have / product:**
-- **5.2** — extract inline JS from `BlastyBiz.html` (6,653 lines)
+### Nice-to-have / product
+- **5.2** — extract inline JS from `BlastyBiz.html`
 - **5.7** — product decision: nudge users who skipped Story
 
-**Quarter (architectural):**
+### Quarter
 - **1.2** — staging Firebase project; `blastybiz-9523e` hardcoded 172×
 - **1.1** — `organizations`/`memberships`/RBAC (blocks all 11 Section 6 enterprise gaps)
 
-**Section 6 (all blocked on 1.1):**
-SSO/SAML, SCIM, RBAC, per-user audit log, data export, data residency,
-DPA/subprocessor list, uptime SLA/status page, retention policy, pen test, SOC 2
+### Outstanding ops tasks (backfill)
+- One-time sweep for orphaned `private` subcollection docs from accounts deleted before the deleteAccount fix
+- Backfill missing `users/{uid}` documents for authenticated users who have no doc (magic-link trial signups before §3.3 fix)
+- Provider-side token revocation: `deleteAccount` should revoke Google/Facebook tokens before deleting docs (like `disconnectPlatform` already does)

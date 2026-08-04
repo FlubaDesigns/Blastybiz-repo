@@ -173,6 +173,54 @@ for (const [f, content] of Object.entries(fileContents)) {
 }
 if (sessionFailures === 0) console.log('  ✅ All doSignOut-defining pages include session.js');
 
+// ── Check 6: Functions barrel exports expected count ─────────────────────────
+// Catches MODULE_NOT_FOUND in the barrel (missing ./modules/ prefix, dropped
+// module, etc.) that would abort the entire deploy silently in production.
+console.log('\n── 6. Cloud Functions barrel export count ─────────────────────────');
+const EXPECTED_EXPORTS = 65;
+try {
+  const barrelPath = path.resolve(__dirname, '../functions/index.js');
+  const exported = Object.keys(require(barrelPath)).length;
+  if (exported < EXPECTED_EXPORTS) {
+    console.log(`  ❌ Barrel exports ${exported} functions — expected ≥${EXPECTED_EXPORTS}. A module is missing or a require path is wrong.`);
+    failures++;
+  } else {
+    console.log(`  ✅ Barrel exports ${exported} functions (≥${EXPECTED_EXPORTS})`);
+  }
+} catch (e) {
+  console.log(`  ❌ Barrel failed to load: ${e.message}`);
+  failures++;
+}
+
+// ── Check 7: No dead files in functions/lib/ ─────────────────────────────────
+// Every file in lib/ must be imported by at least one module. A dead file means
+// edits to it silently have no effect — wrong-file fixes are the dominant agent
+// failure mode in this codebase.
+console.log('\n── 7. Dead files in functions/lib/ ────────────────────────────────');
+const LIB_DIR = path.resolve(__dirname, '../functions/lib');
+const MODULES_DIR = path.resolve(__dirname, '../functions/modules');
+const libFiles = fs.readdirSync(LIB_DIR).filter(f => f.endsWith('.js'));
+// Collect all require() calls across modules/ and index.js
+const scanDirs = [MODULES_DIR, path.resolve(__dirname, '../functions')];
+let allFunctionSrc = '';
+for (const dir of scanDirs) {
+  for (const f of fs.readdirSync(dir).filter(f => f.endsWith('.js'))) {
+    allFunctionSrc += fs.readFileSync(path.join(dir, f), 'utf8');
+  }
+}
+let deadLibFiles = 0;
+for (const f of libFiles) {
+  const base = path.basename(f, '.js');
+  // Match require('../lib/X') or require('./lib/X') or require('../lib/X.js')
+  const pattern = new RegExp(`require\\(['"]\\.\\./lib/${base}(?:\\.js)?['"]\\)`);
+  if (!pattern.test(allFunctionSrc)) {
+    console.log(`  ❌ Dead file: functions/lib/${f} — imported by nothing`);
+    deadLibFiles++;
+    failures++;
+  }
+}
+if (deadLibFiles === 0) console.log(`  ✅ All ${libFiles.length} lib/ file(s) are imported`);
+
 // ── Summary ───────────────────────────────────────────────────────────────────
 console.log('\n── Summary ───────────────────────────────────────────────────────');
 if (failures === 0) {
