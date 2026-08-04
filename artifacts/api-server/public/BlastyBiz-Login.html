@@ -505,7 +505,20 @@ window.handleSetPassword = async function() {
   }
   try {
     await applyActionCode(auth, oobCode);
-    // Success — success panel already visible by default
+    // Success — if a session already exists, reload the user so emailVerified
+    // reflects the just-applied code, then skip the "Sign In" button entirely.
+    if (auth.currentUser) {
+      try {
+        await auth.currentUser.reload();
+        if (auth.currentUser.emailVerified) {
+          afterAuth(auth.currentUser);
+          return;
+        }
+      } catch (_) {
+        // reload failed (e.g. network) — fall through to show the button
+      }
+    }
+    // No live session (different browser / tab) — show the normal button
   } catch (e) {
     const msg =
       e.code === 'auth/expired-action-code'  ? 'This verification link has expired. Sign in and request a new one.' :
