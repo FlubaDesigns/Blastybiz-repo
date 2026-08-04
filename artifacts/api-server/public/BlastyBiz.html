@@ -708,10 +708,17 @@
         </datalist>
 
         <label for="profile-phone">Phone</label>
-        <input type="tel" id="profile-phone" placeholder="555-000-0000" oninput="formatPhone(this);saveProfile()" inputmode="tel" />
+        <input type="tel" id="profile-phone" placeholder="555-000-0000"
+          oninput="formatPhone(this);saveProfile();var e=document.getElementById('profile-phone-err');if(e)e.textContent='';"
+          onblur="(function(inp){var v=inp.value.trim();var e=document.getElementById('profile-phone-err');if(e)e.textContent=v&&(v.replace(/\D/g,'').length<7)?'Please enter at least 7 digits':''; })(this)"
+          inputmode="tel" />
+        <div id="profile-phone-err" style="color:#ff4c4c;font-size:12px;margin-top:4px;min-height:16px;"></div>
 
         <label for="profile-email">Email</label>
-        <input type="email" id="profile-email" placeholder="hello@yourbusiness.com" oninput="saveProfile()" />
+        <input type="email" id="profile-email" placeholder="hello@yourbusiness.com"
+          oninput="saveProfile();var e=document.getElementById('profile-email-err');if(e)e.textContent='';"
+          onblur="(function(inp){var v=inp.value.trim();var e=document.getElementById('profile-email-err');if(e)e.textContent=v&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)?'That doesn\u2019t look like a valid email address':''; })(this)" />
+        <div id="profile-email-err" style="color:#ff4c4c;font-size:12px;margin-top:4px;min-height:16px;"></div>
 
         <label for="profile-street">Location</label>
         <div class="loc-type-toggle">
@@ -5865,14 +5872,23 @@ window.saveProfile = function() {
   _saveProfileTimer = setTimeout(async () => {
   if (!currentUser || !activeBizId) return;
   try {
+    // Validate email and phone before persisting — skip invalid non-empty values
+    const _emailVal = profile.email || '';
+    const _phoneVal = profile.phone || '';
+    const _emailOk  = !_emailVal || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(_emailVal);
+    const _phoneOk  = !_phoneVal || _phoneVal.replace(/\D/g,'').length >= 7;
+    const _emailErr = document.getElementById('profile-email-err');
+    const _phoneErr = document.getElementById('profile-phone-err');
+    if (_emailErr) _emailErr.textContent = _emailOk ? '' : 'That doesn\u2019t look like a valid email address';
+    if (_phoneErr) _phoneErr.textContent = _phoneOk ? '' : 'Please enter at least 7 digits';
     await setDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), {
       // Never overwrite saved fields with blank — only write a field if it has a value
       ...(profile.name      ? { businessName: profile.name }      : {}),
       ...(profile.ownerName ? { ownerName:   profile.ownerName } : {}),
       ownerRole: profile.ownerRole || 'owner',
       ...(profile.category  ? { category:    profile.category }  : {}),
-      ...(profile.phone    ? { phone:        profile.phone }    : {}),
-      ...(profile.email    ? { email:        profile.email }    : {}),
+      ...(_phoneOk && profile.phone ? { phone: profile.phone } : {}),
+      ...(_emailOk && profile.email ? { email: profile.email } : {}),
       ...(profile.street   ? { street:       profile.street }   : {}),
       ...(profile.city     ? { city:         profile.city }     : {}),
       ...(profile.state    ? { state:        profile.state }    : {}),
