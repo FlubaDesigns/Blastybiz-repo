@@ -2934,6 +2934,67 @@ exports.adminListActivityLogs = onRequest({ invoker: 'public' }, async (req, res
   res.json({ logs: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
 });
 
+exports.adminOnboardingFunnel = onRequest({ invoker: 'public' }, async (req, res) => {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+
+  // Step labels keyed by 0-based index, matching STEPS array in BlastyBiz-Onboard2.html
+  const STEP_LABELS = [
+    'Your name',              // 0
+    'Business name',          // 1
+    'Your title',             // 2
+    'Business email',         // 3
+    'Phone number',           // 4
+    'Location type',          // 5
+    'Street address',         // 6
+    'City',                   // 7
+    'State',                  // 8
+    'ZIP code',               // 9
+    'Website',                // 10
+    'Story or blast?',        // 11
+    'Business story',         // 12
+    'What makes you different', // 13
+    'Awards & press',         // 14
+    'Ideal customer',         // 15
+    'Anything else?',         // 16
+    'Campaign name',          // 17
+    'Campaign about',         // 18
+    'Campaign audience',      // 19
+    'Special offer',          // 20
+    'Platforms',              // 21
+    'AI category',            // 22
+  ];
+
+  const snap = await db.collection('users').where('onboarded', '==', false).get();
+  const counts = {};
+  let totalStuck = 0;
+
+  snap.docs.forEach(d => {
+    const data = d.data();
+    const progress = data.onboardingProgress;
+    if (!progress || progress.stepIndex == null) return;
+    const idx = Number(progress.stepIndex);
+    if (isNaN(idx)) return;
+    counts[idx] = (counts[idx] || 0) + 1;
+    totalStuck++;
+  });
+
+  const steps = Object.entries(counts)
+    .map(([idx, count]) => {
+      const i = parseInt(idx, 10);
+      return { stepIndex: i, label: STEP_LABELS[i] || `Step ${i + 1}`, count };
+    })
+    .sort((a, b) => b.count - a.count || a.stepIndex - b.stepIndex);
+
+  res.json({
+    steps,
+    totalStuck,
+    totalNotOnboarded: snap.size,
+    asOf: new Date().toISOString(),
+  });
+});
+
 exports.adminSubscriptionSummary = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
