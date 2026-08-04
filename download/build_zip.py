@@ -3,19 +3,18 @@
 Rebuilds download/BlastyBiz_Site.zip from artifacts/api-server/public/.
 Also bundles backend source files so the package is self-contained.
 Run after any HTML/CSS/JS change: python3 download/build_zip.py
+
+Excluded from zip:
+  - img/ and images/ subdirectories (large image assets served by Firebase)
+  - download/ folder docs (audit log, runbooks, etc. — kept separately)
 """
 import zipfile, hashlib, pathlib
 
 SRC  = pathlib.Path('artifacts/api-server/public')
 DEST = pathlib.Path('download/BlastyBiz_Site.zip')
 
-# Documentation files to include alongside the site files
-DOCS = [
-    pathlib.Path('download/BlastyBiz_Audit.md'),
-    pathlib.Path('download/AnimEngine.md'),
-    pathlib.Path('download/BlastyBiz_Runbooks.md'),
-    pathlib.Path('download/BlastyBiz_Responsibility.md'),
-]
+# Subdirectory names inside public/ to skip (image asset folders)
+SKIP_DIRS = {'img', 'images'}
 
 # Backend source files — included so the package is complete and self-verifiable
 BACKEND = [
@@ -40,19 +39,15 @@ https://blastybiz-9523e.web.app
 ## What's in this package
 | Folder / File | What it is |
 |---------------|-----------|
-| `*.html`, `*.js`, `*.css`, `img/`, `images/` | Static frontend — deployed to Firebase Hosting |
+| `*.html`, `*.js`, `*.css` | Static frontend — deployed to Firebase Hosting |
 | `backend/functions/index.js` | All Cloud Functions source |
 | `backend/functions/package.json` | Cloud Functions dependencies |
 | `backend/firestore.rules` | Firestore security rules |
 | `backend/storage.rules` | Firebase Storage security rules |
 | `backend/firebase.json` | Firebase project configuration |
+| `scripts/check-release.cjs` | Release audit script |
 
-## Documentation
-| File | What it is |
-|------|-----------|
-| [BlastyBiz_Audit.md](BlastyBiz_Audit.md) | Full change and bug fix log — every fix, date, file, and description |
-| [AnimEngine.md](AnimEngine.md) | Animation engine master reference — SVG anatomy, mood states, CSS animations, onboarding step flow, JS API, Cloud Functions |
-| [BlastyBiz_Runbooks.md](BlastyBiz_Runbooks.md) | Operational runbooks — deploy steps, Cloud Function management, Firestore rules |
+Note: img/ and images/ asset folders are excluded — served directly by Firebase Hosting.
 
 ## Stack
 - Static HTML/CSS/JS (no build step)
@@ -85,9 +80,13 @@ npx firebase-tools deploy --only hosting
 """
 
 with zipfile.ZipFile(DEST, 'w', zipfile.ZIP_DEFLATED) as zf:
-    # Frontend / site files
+    # Frontend / site files — skip large image asset directories
     for f in sorted(SRC.rglob('*')):
         if f.is_file():
+            # Skip any file whose path passes through a SKIP_DIRS folder
+            parts = f.relative_to(SRC).parts
+            if any(p in SKIP_DIRS for p in parts):
+                continue
             zf.write(f, f.relative_to(SRC))
     # Backend source files — nested under backend/ to keep them separate
     for bf in BACKEND:
@@ -97,10 +96,6 @@ with zipfile.ZipFile(DEST, 'w', zipfile.ZIP_DEFLATED) as zf:
     for sf in SCRIPTS:
         if sf.exists():
             zf.write(sf, str(sf))
-    # Docs
-    for doc in DOCS:
-        if doc.exists():
-            zf.write(doc, doc.name)
     # README generated inline — no separate file needed
     zf.writestr('README.md', README)
 
