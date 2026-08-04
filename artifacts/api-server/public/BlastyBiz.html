@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785822398971" />
+<link rel="stylesheet" href="global-style.css?v=1785823456986" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -5402,6 +5402,13 @@ onAuthStateChanged(auth, async (user) => {
         const docsSnap = await getDocs(query(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'documents'), orderBy('uploadedAt', 'desc')));
         window._libraryDocs = docsSnap.docs.map(d => ({ name: d.data().name, extractedText: d.data().extractedText || '' }));
       } catch(_) { window._libraryDocs = []; }
+
+      // ?tab=X — nav links from the site header route here so onboarded users skip the mascot wizard
+      const _tabParam = new URLSearchParams(window.location.search).get('tab');
+      if (_tabParam && ['profile','story','create','platforms','schedule','history','account'].includes(_tabParam)) {
+        window.history.replaceState({}, '', window.location.pathname);
+        showTab(_tabParam);
+      }
 
       // ?edit=1 from Dashboard "Edit Business Info" button — jump straight to Profile tab
       if (new URLSearchParams(window.location.search).get('edit') === '1') {
