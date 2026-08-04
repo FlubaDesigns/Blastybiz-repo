@@ -5,7 +5,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1785824055267" />
+  <link rel="stylesheet" href="global-style.css?v=1785850552714" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -405,7 +405,6 @@ function showToast(msg, isError = false) {
 function handleSignIn() {}
 function handleSignUp() {}
 function handleGoogle() {}
-function handleFacebook() {}
 function handleReset() {}
 function handleSetPassword() {}
 </script>
@@ -417,6 +416,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
+  FacebookAuthProvider,
   signInWithPopup,
   sendPasswordResetEmail,
   sendEmailVerification,
@@ -742,7 +742,25 @@ window.handleGoogle = async function() {
   }
 };
 
-window.handleFacebook = function() { showToast('Facebook sign-in coming soon'); };
+window.handleFacebook = async function() {
+  const provider = new FacebookAuthProvider();
+  try {
+    const cred = await signInWithPopup(auth, provider);
+    const snap = await getDoc(doc(db, 'users', cred.user.uid));
+    if (!snap.exists()) {
+      await setDoc(doc(db, 'users', cred.user.uid), {
+        ownerName: cred.user.displayName || '', email: cred.user.email,
+        plan: 'starter', onboarded: false, createdAt: serverTimestamp()
+      });
+    }
+    await afterAuth(cred.user);
+  } catch (e) {
+    if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+      showToast('Facebook sign-in failed: ' + (e.code || e.message), true);
+    }
+  }
+};
+
 
 window.handleReset = async function() {
   const email = document.getElementById('reset-email').value.trim();

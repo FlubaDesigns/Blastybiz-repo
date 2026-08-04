@@ -276,7 +276,7 @@ async function checkUidRateLimit(collectionName, uid, maxCount, windowMs) {
       await rlRef.set({ count: 1, windowStart: now, expiresAt: admin.firestore.Timestamp.fromMillis(now + windowMs) });
     }
     return true;
-  } catch(e) { return true; /* rate-limit check non-fatal — proceed if Firestore unavailable */ }
+  } catch(e) { return false; /* rate-limit check fails closed — deny if Firestore unavailable */ }
 }
 
 function setCors(req, res) {
@@ -4627,7 +4627,7 @@ exports.adminSetAiSettings = onRequest({ invoker: 'public' }, async (req, res) =
 // Called from the login page instead of Firebase's built-in sendEmailVerification
 // so that verification emails come from blastybiz.com and clear spam filters.
 exports.sendVerificationEmail = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
-  res.set('Access-Control-Allow-Origin', '*');
+  setCors(req, res);
   if (req.method === 'OPTIONS') { res.set('Access-Control-Allow-Headers', 'Content-Type'); return res.status(204).send(''); }
   try {
     const { idToken } = req.body || {};
@@ -4635,6 +4635,10 @@ exports.sendVerificationEmail = onRequest({ invoker: 'public', secrets: ['RESEND
 
     const decoded = await admin.auth().verifyIdToken(idToken);
     if (decoded.email_verified) return res.json({ ok: true, skipped: true });
+
+    // Rate-limit: max 5 verification emails per user per hour
+    const allowed = await checkUidRateLimit('rateLimits_verifyEmail', decoded.uid, 5, 60 * 60 * 1000);
+    if (!allowed) return res.status(429).json({ error: 'Too many verification emails. Try again later.' });
 
     const actionCodeSettings = { url: `${APP_BASE_URL}/BlastyBiz-Login.html` };
     const link = await admin.auth().generateEmailVerificationLink(decoded.email, actionCodeSettings);
