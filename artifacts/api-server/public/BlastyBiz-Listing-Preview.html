@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="global-style.css?v=1785800895072" />
+  <link rel="stylesheet" href="global-style.css?v=1785801814449" />
   <title>BlastyBiz — Publish Your Blast</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>body{visibility:hidden}</style>
@@ -218,12 +218,36 @@ function saveSchedule() {
   var recur   = document.getElementById('sched-recur').value;
   var stop    = document.getElementById('sched-stop').value;
   if (!dateVal) { showToast('Pick a send date first'); return; }
-  var sched = { sendAt: dateVal, recur: recur || null, stopAfter: stop ? parseInt(stop) : null };
+
+  var selectedMs = new Date(dateVal).getTime();
+
+  // Reject past dates
+  if (selectedMs <= Date.now()) {
+    showToast('Schedule must be in the future'); return;
+  }
+  // Reject dates more than 1 year out
+  if (selectedMs > Date.now() + 365 * 24 * 60 * 60 * 1000) {
+    showToast('Schedule must be within the next year'); return;
+  }
+
+  // Store an unambiguous UTC timestamp and the browser timezone alongside
+  // the raw local string — the backend should use sendAtUtc, never sendAt,
+  // to avoid timezone guessing (Finding 1, Production Pass 3).
+  var tz        = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  var sendAtUtc = new Date(dateVal).toISOString();
+  var sched = {
+    sendAt:    dateVal,      // local string kept for display purposes only
+    sendAtUtc: sendAtUtc,    // canonical: use this to schedule the actual send
+    timezone:  tz,           // browser tz, e.g. "America/Los_Angeles"
+    recur:     recur || null,
+    stopAfter: stop ? parseInt(stop) : null
+  };
   window._saveSchedule && window._saveSchedule(sched);
+
   var saved   = document.getElementById('sched-saved');
   var summary = document.getElementById('sched-summary');
-  var dt = new Date(dateVal).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
-  var txt = 'First post: ' + dt;
+  var dt  = new Date(dateVal).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+  var txt = 'First post: ' + dt + ' (' + tz + ')';
   if (recur)  txt += ' · repeats ' + recur;
   if (stop)   txt += ' · stops after ' + stop + ' posts';
   summary.textContent = txt;

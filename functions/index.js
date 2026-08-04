@@ -4554,6 +4554,67 @@ exports.scoreFact = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'
   }
 });
 
+// ── disconnectPlatform — revoke OAuth token then mark as disconnected ─────────
+// Replaces the client-side updateDoc() in Connect.html. The server holds the
+// stored access/refresh tokens and is the only layer that can call the provider
+// revocation endpoints. Revocation is best-effort — Firestore is updated even
+// if the provider call fails (e.g. already-expired token), so the user is never
+// stuck with a half-disconnected state.
+exports.disconnectPlatform = onRequest(async (req, res) => {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).send('');
+  try {
+    const decoded = await verifyBearer(req);
+    const { bizId, platformId } = req.body;
+    if (!bizId || !platformId) return res.status(400).json({ error: 'Missing bizId or platformId' });
+    if (!['google', 'facebook', 'instagram'].includes(platformId)) {
+      return res.status(400).json({ error: 'Invalid platformId' });
+    }
+
+    const connRef = db.collection('users').doc(decoded.uid)
+      .collection('businesses').doc(bizId)
+      .collection('platformConnections').doc(platformId);
+    const connSnap = await connRef.get();
+    if (!connSnap.exists) return res.status(404).json({ error: 'Connection not found' });
+    const conn = connSnap.data();
+
+    // ── Best-effort OAuth revocation ──────────────────────────────────────────
+    if (platformId === 'google') {
+      for (const tok of [conn.accessToken, conn.refreshToken].filter(Boolean)) {
+        try {
+          await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(tok)}`, { method: 'POST' });
+        } catch(e) { console.warn('[disconnectPlatform] Google revoke failed:', e.message); }
+      }
+    }
+    if (platformId === 'facebook' || platformId === 'instagram') {
+      if (conn.accessToken) {
+        try {
+          await fetch(`https://graph.facebook.com/v20.0/me/permissions?access_token=${encodeURIComponent(conn.accessToken)}`, { method: 'DELETE' });
+        } catch(e) { console.warn('[disconnectPlatform] Facebook revoke failed:', e.message); }
+      }
+    }
+
+    // ── Mark disconnected in Firestore ────────────────────────────────────────
+    await connRef.update({ status: 'disconnected', disconnectedAt: admin.firestore.FieldValue.serverTimestamp() });
+
+    // Disconnecting Facebook also severs Instagram (shared token)
+    if (platformId === 'facebook') {
+      const igRef = db.collection('users').doc(decoded.uid)
+        .collection('businesses').doc(bizId)
+        .collection('platformConnections').doc('instagram');
+      const igSnap = await igRef.get();
+      if (igSnap.exists) {
+        await igRef.update({ status: 'disconnected', disconnectedAt: admin.firestore.FieldValue.serverTimestamp() });
+      }
+    }
+
+    res.json({ ok: true });
+  } catch(e) {
+    console.error('[disconnectPlatform]', e.message);
+    res.status(e.status || 500).json({ error: e.message });
+  }
+});
+
 // ── adminSetPlan — change a user's subscription plan (admin only) ─────────────
 // Replaces the client-side setDoc() in Admin.html — the server independently
 // verifies the caller is an admin before writing to Firestore.

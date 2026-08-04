@@ -1,0 +1,45 @@
+User-agent: *
+
+# Public marketing pages — allow indexing
+Allow: /BlastyBiz-Home.html
+Allow: /BlastyBiz-About.html
+Allow: /BlastyBiz-Contact.html
+Allow: /BlastyBiz-Plan-Free.html
+Allow: /BlastyBiz-Plan-Pro.html
+Allow: /BlastyBiz-Plan-Agency.html
+Allow: /BlastyBiz-Privacy.html
+Allow: /BlastyBiz-Terms.html
+
+# Authenticated app routes — do not index
+Disallow: /BlastyBiz.html
+Disallow: /BlastyBiz-Dashboard.html
+Disallow: /BlastyBiz-Businesses.html
+Disallow: /BlastyBiz-Profile.html
+Disallow: /BlastyBiz-Connect.html
+Disallow: /BlastyBiz-Connected.html
+Disallow: /BlastyBiz-Listing-Preview.html
+Disallow: /BlastyBiz-Publishing-Status.html
+Disallow: /BlastyBiz-Onboard2.html
+Disallow: /BlastyBiz-CreateBiz.html
+Disallow: /BlastyBiz-Memory.html
+Disallow: /BlastyBiz-Story.html
+Disallow: /BlastyBiz-BizContext.html
+Disallow: /BlastyBiz-AI.html
+Disallow: /BlastyBiz-Account.html
+Disallow: /BlastyBiz-Intro.html
+Disallow: /BlastyBiz-Trial.html
+
+# Admin routes — do not index
+Disallow: /BlastyBiz-Admin.html
+Disallow: /BlastyBiz-Admin-
+
+# Retired pages — do not index
+Disallow: /BlastyBiz-Onboarding.html
+Disallow: /BlastyBiz-Chat-Onboarding.html
+
+# Shared partials and tooling
+Disallow: /blastybiz-header.html
+Disallow: /blastybiz-footer.html
+Disallow: /BlastyBiz-TestBlasty.html
+
+Sitemap: https://blastybiz-9523e.web.app/sitemap.xml

@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="stylesheet" href="global-style.css?v=1785800895072" />
+<link rel="stylesheet" href="global-style.css?v=1785801814449" />
 <title>BlastyBiz — Connect Platforms</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
@@ -409,21 +409,40 @@ onAuthStateChanged(auth, async (user) => {
 
   window._bbGetToken = () => user.getIdToken();
 
+  const CF_BASE = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
+
   window._disconnectPlatform = async function(platformId) {
     const conn = connMap[platformId];
     if (!conn) return;
     if (!confirm('Disconnect ' + platformId + '? Auto-posting will stop until you reconnect.')) return;
-    await updateDoc(doc(db, 'users', user.uid, 'businesses', bizId, 'platformConnections', platformId), { status: 'disconnected' });
-    connMap[platformId] = { ...conn, status: 'disconnected' };
-    renderPlatform(platformId, connMap[platformId], bizId, user.uid);
-    if (platformId === 'facebook') {
-      const igConn = connMap['instagram'];
-      if (igConn) {
-        await updateDoc(doc(db, 'users', user.uid, 'businesses', bizId, 'platformConnections', 'instagram'), { status: 'disconnected' });
-        connMap['instagram'] = { ...igConn, status: 'disconnected' };
-        renderPlatform('instagram', connMap['instagram'], bizId, user.uid)}
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(CF_BASE + '/disconnectPlatform', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ bizId, platformId })
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        showToast('Disconnect failed: ' + (e.error || 'Unknown error'), true);
+        return;
+      }
+      // Update local UI state to match what the CF wrote to Firestore
+      connMap[platformId] = { ...conn, status: 'disconnected' };
+      renderPlatform(platformId, connMap[platformId], bizId, user.uid);
+      if (platformId === 'facebook') {
+        const igConn = connMap['instagram'];
+        if (igConn) {
+          connMap['instagram'] = { ...igConn, status: 'disconnected' };
+          renderPlatform('instagram', connMap['instagram'], bizId, user.uid);
+        }
+      }
+      showToast(platformId.charAt(0).toUpperCase() + platformId.slice(1) + ' disconnected.');
+    } catch(e) {
+      showToast('Disconnect failed: ' + e.message, true);
     }
-    showToast(platformId.charAt(0).toUpperCase() + platformId.slice(1) + ' disconnected.')}})});
+  };
+})})
 </script>
 <div id="site-footer-inject"></div>
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html});</script>

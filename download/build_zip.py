@@ -14,6 +14,7 @@ DOCS = [
     pathlib.Path('download/BlastyBiz_Audit.md'),
     pathlib.Path('download/AnimEngine.md'),
     pathlib.Path('download/BlastyBiz_Runbooks.md'),
+    pathlib.Path('download/BlastyBiz_Responsibility.md'),
 ]
 
 # Backend source files — included so the package is complete and self-verifiable
