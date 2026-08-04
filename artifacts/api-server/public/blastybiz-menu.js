@@ -118,11 +118,16 @@ function _applyHeaderOffset() {
 
 document.addEventListener('DOMContentLoaded', function() {
   var injectEl = document.getElementById('header__inject');
-  if (!injectEl) { _applyHeaderOffset(); return; }
-  // Header is injected asynchronously via fetch — watch for it
-  if (document.querySelector('.header')) {
+  if (!injectEl) {
+    // Header is inline — still need auth state check + offset
     _applyHeaderOffset();
+    _revealAdminNav();
+  } else if (document.querySelector('.header')) {
+    // Header already rendered (fast load / cache)
+    _applyHeaderOffset();
+    _revealAdminNav();
   } else {
+    // Header injected asynchronously — watch for it
     var obs = new MutationObserver(function() {
       if (document.querySelector('.header')) {
         obs.disconnect();
@@ -130,7 +135,6 @@ document.addEventListener('DOMContentLoaded', function() {
         requestAnimationFrame(function() {
           requestAnimationFrame(_applyHeaderOffset);
         });
-        // Reveal Test Console link for admins
         _revealAdminNav();
       }
     });
