@@ -1,7 +1,7 @@
 - [BlastyBiz architecture](blastybiz-arch.md) — Firebase + Cloud Functions ONLY; Express server deleted; static files in `public/`; deploy after EVERY change, no exceptions.
 - [BlastyBiz Firestore rules](blastybiz-firestore-rules.md) — businesses now nested under users/{uid}/businesses/{bizId}; ownership via path segment (request.auth.uid == userId), NOT uid field.
 - [BlastyBiz API wiring](blastybiz-api-wiring.md) — Express routes, Firestore collections, and client-side event pattern.
-- [BlastyBiz CF deploy gotchas](blastybiz-cf-deploy.md) — timeout vs Cloud Build, HTTPS→trigger type conflict, square npm name, lock file sync, secrets: declarations.
+- [BlastyBiz CF deploy gotchas](blastybiz-cf-deploy.md) — timeout vs Cloud Build, HTTPS→trigger type conflict, square npm name, lock file sync, secrets: declarations. Adding retry:true to a trigger requires `--force` flag on deploy.
 - [BlastyBiz admin access](blastybiz-admin-access.md) — bootstrap admin is info@blastybiz.com; extra admins managed via config/admins Firestore + adminGetAdminEmails/adminUpdateAdminEmails CFs.
 - [BlastyBiz Firestore REST access](blastybiz-firestore-rest.md) — no ADC in Replit; use firebase-tools configstore token + googleapis.com/token refresh to call Firestore REST API directly.
 - [BlastyBiz emails](blastybiz-emails.md) — confirmed mailboxes: info/sales/support/billing/noreply @blastybiz.com. hello@ does NOT exist.

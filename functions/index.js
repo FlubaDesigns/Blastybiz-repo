@@ -310,6 +310,29 @@ function setCors(req, res) {
   res.set('Access-Control-Allow-Headers', 'Content-Type,Authorization');
   res.set('Access-Control-Allow-Methods', 'POST,OPTIONS');
 }
+// ── 2.2: withAuth — single standard wrapper for every onRequest handler ───────
+// Handles CORS preflight and authentication in one place.
+//   withAuth(fn)                → requires valid Firebase bearer token (user)
+//   withAuth(fn, { admin:t })   → requires admin role
+//   withAuth(fn, { public:t })  → no auth (public endpoint)
+function withAuth(fn, opts = {}) {
+  return async (req, res) => {
+    setCors(req, res);
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    let decoded = null;
+    if (!opts.public) {
+      if (opts.admin) {
+        try { decoded = await requireAdmin(req); }
+        catch (e) { return res.status(e.status || 403).json({ error: e.message }); }
+      } else {
+        try { decoded = await verifyBearer(req); }
+        catch (e) { return res.status(401).json({ error: 'Unauthorized' }); }
+      }
+    }
+    return fn(req, res, decoded);
+  };
+}
+
 
 // ── Auth helpers ─────────────────────────────────────────────────────────────
 async function verifyBearer(req) {
@@ -514,11 +537,7 @@ function buildPlatformBlock(p) {
 // Function 1: adaptListing
 // POST /adaptListing
 // ══════════════════════════════════════════
-exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-  let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
 
   try {
     await reserveAiAction(decoded.uid);
@@ -580,13 +599,9 @@ Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
     console.error('generateEnrichmentQuestions error [' + failureType + ']:', e.message);
     res.status(500).json({ error: e.message });
   }
-});
+}));
 
-exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-  let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
   if (!(await checkUidRateLimit('suggestCategoryRateLimit', decoded.uid, 20, 60 * 60 * 1000))) {
     return res.status(429).json({ error: 'Rate limit exceeded' });
   }
@@ -601,15 +616,10 @@ exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_AP
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
-});
+}));
 
-exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'], timeoutSeconds: 120 }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'], timeoutSeconds: 120 }, withAuth(async (req, res, decoded) => {
   const fnStartMs = Date.now();
-
-  let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
 
   const { listing, platforms, tone, platformCats } = req.body;
   const now = new Date();
@@ -739,19 +749,14 @@ ${platformList.map(p => `    "${p.id}": "adapted text for ${p.name}"`).join(',\n
   }
 
   res.json(parsed);
-});
+}));
 
 // ══════════════════════════════════════════
 // Function 2: resolveCategories
 // POST /resolveCategories
 // ══════════════════════════════════════════
-exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
   const fnStartMs = Date.now();
-
-  let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
 
   const { businessName, ownerName, city, state, description, specialNotes, followUpAnswers, platformCatLists, locationType, requestId: rcRequestId } = req.body;
 
@@ -874,17 +879,13 @@ ${platformBlocks}`;
   }
 
   res.json(parsed);
-});
+}));
 
 // ══════════════════════════════════════════
 // Function 3: approveDraft
 // POST /approveDraft
 // ══════════════════════════════════════════
-exports.approvePendingPost = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-  let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+exports.approvePendingPost = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
 
   const { pendingPostId, bizId: pendingBizId } = req.body;
   if (!pendingPostId) return res.status(400).json({ error: 'pendingPostId required' });
@@ -936,14 +937,9 @@ exports.approvePendingPost = onRequest({ invoker: 'public' }, async (req, res) =
   await batch.commit();
 
   res.json({ ok: true });
-});
+}));
 
-exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-
-  let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, withAuth(async (req, res, decoded) => {
 
   const { draftId, businessId, platforms: legacyPlatforms, platformKeys } = req.body;
   // Accept new platformKeys (array of IDs) or fall back to legacy platforms array
@@ -1031,18 +1027,13 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
 
   await batch.commit();
   res.json({ success: true, plan: userPlan });
-});
+}));
 
 // ══════════════════════════════════════════
 // Function 4: uploadImage
 // POST /uploadImage
 // ══════════════════════════════════════════
-exports.uploadImage = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-
-  let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+exports.uploadImage = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
 
   const { imageData, fileName, mimeType } = req.body;
   if (!imageData || !fileName || !mimeType) return res.status(400).json({ error: 'Missing fields' });
@@ -1075,7 +1066,7 @@ exports.uploadImage = onRequest({ invoker: 'public' }, async (req, res) => {
   await file.save(rawBytes, { contentType: mimeType });
   const [url] = await file.getSignedUrl({ action: 'read', expires: new Date(Date.now() + 365 * 24 * 3600 * 1000) }); // 3.6: 1 year max (was 10 years)
   res.json({ url });
-});
+}));
 
 // ── Internal publishing helpers (used by onJobCreated trigger) ───────────────
 
@@ -1159,11 +1150,7 @@ async function _publishInstagramJob(job, conn) {
 // Function 5: createCheckoutSession
 // POST /createCheckoutSession
 // ══════════════════════════════════════════
-exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN', 'SQUARE_LOCATION_ID'] }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-  let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN', 'SQUARE_LOCATION_ID'] }, withAuth(async (req, res, decoded) => {
   const uid   = decoded.uid;
   const email = decoded.email || req.body.email || '';
   const { plan, billingPeriod: rawPeriod } = req.body;
@@ -1237,7 +1224,7 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
     });
   }
   res.json({ url: response.paymentLink.url });
-});
+}));
 
 // ══════════════════════════════════════════
 // Function 9: createPortalSession
@@ -1245,16 +1232,12 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
 // Square has no hosted billing portal.
 // Returns a mailto link so the user can request changes.
 // ══════════════════════════════════════════
-exports.createPortalSession = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+exports.createPortalSession = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   const uid = decoded.uid;
   const subSnap = await db.collection('subscriptions').doc(uid).get();
   if (!subSnap.exists) return res.status(404).json({ error: 'No subscription found' });
   res.json({ url: 'mailto:info@blastybiz.com?subject=Manage%20BlastyBiz%20Subscription' });
-});
+}));
 
 // ══════════════════════════════════════════
 // Function 10: squareWebhook
@@ -1638,12 +1621,8 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
 // Google Cloud Console: enable Business Profile API,
 // OAuth 2.0 redirect URI = https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback
 // ══════════════════════════════════════════
-exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID'] }, async (req, res) => {
-  setCors(req, res);
+exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID'] }, withAuth(async (req, res, decoded) => {
   res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-  let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
   const uid = decoded.uid;
   const { businessId, returnTo } = req.query;
   if (!businessId) { res.status(400).json({ error: 'Missing businessId' }); return; }
@@ -1670,7 +1649,7 @@ exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
     `&access_type=offline&prompt=consent` +
     `&state=${encodeURIComponent(nonce)}`;
   res.json({ url });
-});
+}));
 
 // ══════════════════════════════════════════
 // Function 11: googleOAuthCallback
@@ -1752,12 +1731,8 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', region: 'us-central
 // Required permissions: pages_manage_posts, pages_read_engagement,
 //   instagram_basic, instagram_content_publish
 // ══════════════════════════════════════════
-exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBOOK_APP_ID'] }, async (req, res) => {
-  setCors(req, res);
+exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBOOK_APP_ID'] }, withAuth(async (req, res, decoded) => {
   res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-  let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
   const uid = decoded.uid;
   const { businessId, returnTo } = req.query;
   if (!businessId) { res.status(400).json({ error: 'Missing businessId' }); return; }
@@ -1782,7 +1757,7 @@ exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBO
     `&scope=${encodeURIComponent(scope)}` +
     `&state=${encodeURIComponent(nonce)}`;
   res.json({ url });
-});
+}));
 
 // ══════════════════════════════════════════
 // Function 13: facebookOAuthCallback
@@ -1912,11 +1887,7 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-centr
 // Bing Places has no public write API.
 // Marks the job as manual_required with copy-paste instructions.
 // ══════════════════════════════════════════
-exports.postToBing = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-  let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+exports.postToBing = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   const { jobId, businessId: bingBizId } = req.body;
   if (jobId && bingBizId) {
     const jobSnap = await userBizJobsRef(decoded.uid, bingBizId).doc(jobId).get();
@@ -1931,18 +1902,14 @@ exports.postToBing = onRequest({ invoker: 'public' }, async (req, res) => {
     });
   }
   res.json({ status: 'manual_required', manualUrl: 'https://www.bingplaces.com' });
-});
+}));
 
 // ══════════════════════════════════════════
 // Function 15: postToAppleMaps
 // Apple Maps Connect has no public write API.
 // Marks the job as manual_required with submission instructions.
 // ══════════════════════════════════════════
-exports.postToAppleMaps = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-  let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+exports.postToAppleMaps = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   const { jobId, businessId: appleBizId } = req.body;
   if (jobId && appleBizId) {
     const jobSnap = await userBizJobsRef(decoded.uid, appleBizId).doc(jobId).get();
@@ -1957,7 +1924,7 @@ exports.postToAppleMaps = onRequest({ invoker: 'public' }, async (req, res) => {
     });
   }
   res.json({ status: 'manual_required', manualUrl: 'https://mapsconnect.apple.com' });
-});
+}));
 
 // ══════════════════════════════════════════
 // Function 17: dispatchPublishJob
@@ -1965,7 +1932,7 @@ exports.postToAppleMaps = onRequest({ invoker: 'public' }, async (req, res) => {
 // Dispatches pending auto-post jobs to the right platform helper
 // ══════════════════════════════════════════
 exports.dispatchPublishJob = onDocumentCreated(
-  { document: 'users/{userId}/businesses/{bizId}/publishJobs/{jobId}', region: 'us-central1', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
+  { document: 'users/{userId}/businesses/{bizId}/publishJobs/{jobId}', region: 'us-central1', retry: true, secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, // 4.7: retry enabled
   async (event) => {
     const job    = event.data.data();
     const jobRef = event.data.ref;
@@ -2042,13 +2009,32 @@ exports.dispatchPublishJob = onDocumentCreated(
       });
 
     } catch(e) {
-      console.error(`dispatchPublishJob [${event.params.jobId}] failed:`, e.message);
+      // 4.7: retry with exponential backoff — Cloud Functions manages the schedule.
+      // After MAX_RETRIES, permanently fail the job so the retry loop terminates.
+      const MAX_RETRIES = 5;
+      const freshSnap = await jobRef.get().catch(() => null);
+      const retryCount = ((freshSnap?.data()?.retryCount) || 0) + 1;
+      console.error(`dispatchPublishJob [${event.params.jobId}] attempt ${retryCount} failed:`, e.message);
+
+      if (retryCount >= MAX_RETRIES) {
+        // Permanent failure — do NOT throw; terminates the Cloud Functions retry loop
+        await jobRef.update({
+          status: 'failed',
+          retryCount,
+          adminError: `Permanent failure after ${MAX_RETRIES} attempts: ${e.message}`,
+          customerVisibleMessage: `There was a problem posting to ${job.platform}. Our team will follow up.`,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        }).catch(() => {});
+        return;
+      }
+
+      // Retryable: reset to pending so the next invocation can claim and re-attempt the job
       await jobRef.update({
-        status: 'failed',
-        adminError: e.message,
-        customerVisibleMessage: `There was a problem posting to ${job.platform}. Our team will follow up.`,
+        status: 'pending',
+        retryCount,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
+      }).catch(() => {});
+      throw e; // trigger Cloud Functions retry with exponential backoff
     }
   }
 );
@@ -2497,10 +2483,7 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
 // Admin endpoints — all require requireAdmin()
 // ══════════════════════════════════════════
 
-exports.adminListPublishJobs = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+exports.adminListPublishJobs = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   const { status, limit: lim = '100' } = req.query;
   const cap = Math.min(Number(lim) || 100, 500); // 4.2: hard cap — never scan the whole collection
   let snap;
@@ -2512,24 +2495,18 @@ exports.adminListPublishJobs = onRequest({ invoker: 'public' }, async (req, res)
   const jobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   jobs.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
   res.json({ jobs });
-});
+}, { admin: true }));
 
-exports.adminListFailedJobs = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+exports.adminListFailedJobs = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   const snap = await db.collectionGroup('publishJobs')
     .where('status', 'in', ['failed', 'manual_required', 'manual_followup']).limit(100).get(); // 4.2
   const jobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   jobs.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
   res.json({ jobs });
-});
+}, { admin: true }));
 
-exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  let adminDecoded;
-  try { adminDecoded = await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, withAuth(async (req, res, decoded) => {
+  const adminDecoded = decoded;
   const { jobId, uid: jobUid, businessId: jobBizId, force } = req.body;
   if (!jobId) return res.status(400).json({ error: 'jobId required' });
   if (!jobUid || !jobBizId) return res.status(400).json({ error: 'uid and businessId required' });
@@ -2616,12 +2593,9 @@ exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_
     });
     res.status(500).json({ error: e.message });
   }
-});
+}, { admin: true }));
 
-exports.adminMarkManualFollowup = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+exports.adminMarkManualFollowup = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   const { jobId, uid: jobUid, businessId: jobBizId } = req.body;
   if (!jobId) return res.status(400).json({ error: 'jobId required' });
   if (!jobUid || !jobBizId) return res.status(400).json({ error: 'uid and businessId required' });
@@ -2630,31 +2604,22 @@ exports.adminMarkManualFollowup = onRequest({ invoker: 'public' }, async (req, r
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   });
   res.json({ success: true });
-});
+}, { admin: true }));
 
-exports.adminListBusinesses = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+exports.adminListBusinesses = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   const snap = await db.collectionGroup('businesses').orderBy('createdAt', 'desc').limit(200).get();
   res.json({ businesses: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
-});
+}, { admin: true }));
 
-exports.adminListPlatformConnections = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+exports.adminListPlatformConnections = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   const snap = await db.collectionGroup('platformConnections').limit(200).get(); // 4.2
   const conns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   conns.sort((a, b) => (b.connectedAt?.toMillis?.() || 0) - (a.connectedAt?.toMillis?.() || 0));
   res.json({ connections: conns });
-});
+}, { admin: true }));
 
 // Returns connection-health summary + list of broken/expiring connections joined with business names
-exports.adminPlatformHealth = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+exports.adminPlatformHealth = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
 
   const snap = await db.collectionGroup('platformConnections').limit(500).get(); // 4.2
   const counts = { connected: 0, expired: 0, disconnected: 0, other: 0 };
@@ -2699,13 +2664,10 @@ exports.adminPlatformHealth = onRequest({ invoker: 'public' }, async (req, res) 
   }).sort((a, b) => (b.daysSinceExpired || 0) - (a.daysSinceExpired || 0));
 
   res.json({ counts, broken: result });
-});
+}, { admin: true }));
 
 // Sends a one-off reconnect nudge email to the business owner for a given connection
-exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] }, withAuth(async (req, res, decoded) => {
 
   const { uid: nudgeUid, bizId: nudgeBizId, platform: nudgePlatform } = req.body;
   if (!nudgeUid || !nudgeBizId || !nudgePlatform) return res.status(400).json({ error: 'uid, bizId, and platform required' });
@@ -2761,14 +2723,11 @@ exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESE
   });
 
   res.json({ success: true, sentTo: userData.email });
-});
+}, { admin: true }));
 
 // ── adminSendRecoveryEmails — bulk billing-recovery nudge for past_due businesses ──
 // Admin-only. Emails the owner of every business currently in `past_due` status.
-exports.adminSendRecoveryEmails = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+exports.adminSendRecoveryEmails = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] }, withAuth(async (req, res, decoded) => {
 
   try {
     const bizSnap = await db.collectionGroup('businesses').where('subscriptionStatus', '==', 'past_due').get();
@@ -2811,22 +2770,14 @@ exports.adminSendRecoveryEmails = onRequest({ invoker: 'public', secrets: ['RESE
     console.error('[adminSendRecoveryEmails]', e.message);
     res.status(500).json({ error: 'Server error' });
   }
-});
+}, { admin: true }));
 
 // ── createBusiness — server-enforced plan limits + atomic write ───────────────
 // Onboarding calls this instead of writing Firestore directly.
 // Returns { bizId } on success; 403 if the user has hit their plan cap.
-exports.createBusiness = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
+exports.createBusiness = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
-  let uid;
-  try {
-    const decoded = await verifyBearer(req);
-    uid = decoded.uid;
-  } catch(e) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  const uid = decoded.uid;
   const { profileData, isNew } = req.body || {};
   if (!profileData || typeof profileData !== 'object') {
     return res.status(400).json({ error: 'Missing profileData' });
@@ -2891,20 +2842,12 @@ exports.createBusiness = onRequest({ invoker: 'public' }, async (req, res) => {
     console.error('[createBusiness]', e.message);
     return res.status(500).json({ error: 'Server error' });
   }
-});
+}));
 
 // ── deleteBusiness — recursive server-side deletion ───────────────────────────
-exports.deleteBusiness = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
+exports.deleteBusiness = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
-  let uid;
-  try {
-    const decoded = await verifyBearer(req);
-    uid = decoded.uid;
-  } catch(e) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  const uid = decoded.uid;
   const { bizId } = req.body || {};
   if (!bizId) return res.status(400).json({ error: 'Missing bizId' });
   try {
@@ -2918,25 +2861,19 @@ exports.deleteBusiness = onRequest({ invoker: 'public' }, async (req, res) => {
     console.error('[deleteBusiness]', e.message);
     return res.status(500).json({ error: 'Server error' });
   }
-});
+}));
 
 // ── adminGetAdminEmails / adminUpdateAdminEmails ───────────────────────────────
 // Allow authorized admins to manage the dynamic admin list stored in config/admins.
 // BOOTSTRAP_ADMIN_EMAILS (info@blastybiz.com) is always included and cannot be removed.
-exports.adminGetAdminEmails = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+exports.adminGetAdminEmails = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   const snap = await db.collection('config').doc('admins').get();
   const extra = snap.exists ? (snap.data().emails || []) : [];
   res.json({ bootstrap: BOOTSTRAP_ADMIN_EMAILS, extra });
-});
+}, { admin: true }));
 
-exports.adminUpdateAdminEmails = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
+exports.adminUpdateAdminEmails = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
-  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
   const { emails } = req.body || {};
   if (!Array.isArray(emails)) return res.status(400).json({ error: 'emails must be an array' });
   const valid = emails.filter(e => typeof e === 'string' && e.includes('@'));
@@ -2945,12 +2882,9 @@ exports.adminUpdateAdminEmails = onRequest({ invoker: 'public' }, async (req, re
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
   res.json({ success: true, emails: valid });
-});
+}, { admin: true }));
 
-exports.adminListActivityLogs = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+exports.adminListActivityLogs = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   const { uid } = req.query;
   const col = db.collection('activityLogs');
   const q = uid
@@ -2958,7 +2892,7 @@ exports.adminListActivityLogs = onRequest({ invoker: 'public' }, async (req, res
     : col.orderBy('createdAt', 'desc').limit(100);
   const snap = await q.get();
   res.json({ logs: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
-});
+}, { admin: true }));
 
 // Step labels keyed by 0-based index, matching STEPS array in BlastyBiz-Onboard2.html
 const ONBOARDING_STEP_LABELS = [
@@ -2987,10 +2921,7 @@ const ONBOARDING_STEP_LABELS = [
   'AI category',            // 22
 ];
 
-exports.adminOnboardingFunnel = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+exports.adminOnboardingFunnel = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
 
   const snap = await db.collection('users').where('onboarded', '==', false).limit(500).get(); // 4.2
 
@@ -3048,13 +2979,10 @@ exports.adminOnboardingFunnel = onRequest({ invoker: 'public' }, async (req, res
     totalNotOnboarded: snap.size,
     asOf: new Date().toISOString(),
   });
-});
+}, { admin: true }));
 
-exports.adminSendOnboardingNudge = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
+exports.adminSendOnboardingNudge = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
 
   const { uid } = req.body || {};
   if (!uid) return res.status(400).json({ error: 'uid is required' });
@@ -3097,12 +3025,9 @@ exports.adminSendOnboardingNudge = onRequest({ invoker: 'public' }, async (req, 
   });
 
   res.json({ ok: true, sentTo: email });
-});
+}, { admin: true }));
 
-exports.adminSubscriptionSummary = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+exports.adminSubscriptionSummary = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   const [usersSnap, subsSnap] = await Promise.all([
     db.collection('users').limit(5000).get(),           // 4.2: prevent full-table scan
     db.collection('subscriptions').limit(5000).get(),   // 4.2
@@ -3126,7 +3051,7 @@ exports.adminSubscriptionSummary = onRequest({ invoker: 'public' }, async (req, 
     totalSubscriptions: subsSnap.size,
     asOf: new Date().toISOString(),
   });
-});
+}, { admin: true }));
 
 // ══════════════════════════════════════════
 // Function 30: adminUpdatePricing
@@ -3144,12 +3069,7 @@ exports.adminSubscriptionSummary = onRequest({ invoker: 'public' }, async (req, 
 // category knowledge since no live data can be fetched yet.
 // User toggles remain fully editable after suggestions are applied.
 // ══════════════════════════════════════════
-exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-
-  let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
 
   const { name, category, description, locationType, website, requestId: spRequestId } = req.body;
 
@@ -3259,12 +3179,9 @@ Return ONLY valid JSON, no markdown, no explanation:
     console.error('suggestPlatforms error [' + failureType + ']:', e.message);
     res.status(500).json({ error: 'AI suggestion failed: ' + e.message });
   }
-});
+}));
 
-exports.sendTestEmail = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: 'Forbidden' }); }
+exports.sendTestEmail = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, withAuth(async (req, res, decoded) => {
   const { to, subject: rawSubject, html: rawHtml } = req.body;
   if (!to || !rawSubject || !rawHtml) return res.status(400).json({ error: 'to, subject, and html are required' });
   const apiKey = process.env.RESEND_API_KEY;
@@ -3299,15 +3216,13 @@ exports.sendTestEmail = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY
   } catch(e) {
     return res.status(500).json({ error: e.message });
   }
-});
+}, { admin: true }));
 
 // ══════════════════════════════════════════
 // contactForm — public CF replacing Express /api/contact route
 // Accepts to, name, email, message from the Contact page
 // ══════════════════════════════════════════
-exports.contactForm = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
+exports.contactForm = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, withAuth(async (req, res) => {
   const ALLOWED_TO = new Set(['support@blastybiz.com', 'info@blastybiz.com', 'sales@blastybiz.com', 'billing@blastybiz.com']);
   const { to, name, email, message } = req.body || {};
   if (!ALLOWED_TO.has(to)) return res.status(400).json({ error: 'Invalid recipient' });
@@ -3364,12 +3279,9 @@ exports.contactForm = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY']
   } catch(e) {
     return res.status(500).json({ error: e.message });
   }
-});
+}, { public: true }));
 
-exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_ACCESS_TOKEN'] }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: 'Forbidden' }); }
+exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_ACCESS_TOKEN'] }, withAuth(async (req, res, decoded) => {
   const { proMonthly, agencyMonthly, proAnnual, agencyAnnual } = req.body;
   if (!proMonthly || !agencyMonthly) return res.status(400).json({ error: 'proMonthly and agencyMonthly required' });
   const pro          = parseFloat(proMonthly);
@@ -3482,7 +3394,7 @@ exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_AC
     squareAgencyAnnualPlanId:  squareAgencyAnnualPlanId  || null,
     squareError: squareError || null,
   });
-});
+}, { admin: true }));
 
 // ── Yelp Category Cache ────────────────────────────────────────────────────────
 async function fetchAndCacheYelpCategories() {
@@ -3912,6 +3824,15 @@ exports.scheduledUpgradeNudge = onSchedule(
       .where('createdAt', '<=', admin.firestore.Timestamp.fromDate(sevenDaysAgo))
       .get();
 
+    // 4.3: batch all biz-name reads before the loop to eliminate N+1
+    const _nudgeBizMap = {};
+    await Promise.all(usersSnap.docs.map(async (userDoc) => {
+      try {
+        const bizSnap = await userBizCol(userDoc.id).limit(1).get();
+        _nudgeBizMap[userDoc.id] = bizSnap.docs[0]?.data()?.businessName || '';
+      } catch(e) { _nudgeBizMap[userDoc.id] = ''; }
+    }));
+
     let sent = 0;
     for (const userDoc of usersSnap.docs) {
       const userData = userDoc.data();
@@ -3919,11 +3840,7 @@ exports.scheduledUpgradeNudge = onSchedule(
       if (userData.emailUnsubscribed) continue;
       const uid = userDoc.id;
       const ownerName = userData.ownerName || userData.displayName || '';
-      let businessName = '';
-      try {
-        const bizSnap = await userBizCol(uid).limit(1).get();
-        businessName = bizSnap.docs[0]?.data()?.businessName || '';
-      } catch(e) { /* non-fatal */ }
+      const businessName = _nudgeBizMap[uid] || '';
 
       const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, _unsubSecret())}`;
 
@@ -4016,6 +3933,17 @@ exports.scheduledWeeklyDigest = onSchedule(
       const usersSnap = await q.get();
       if (usersSnap.empty) break;
 
+      // 4.3: batch biz reads and jobs queries for this page to eliminate N+1
+      const _digestUids = usersSnap.docs.map(d => d.id);
+      const [_digestBizResults, _digestJobsResults] = await Promise.all([
+        Promise.all(_digestUids.map(uid => userBizCol(uid).limit(1).get().catch(() => null))),
+        Promise.all(_digestUids.map(uid =>
+          db.collectionGroup('publishJobs').where('uid', '==', uid).where('status', '==', 'success').get().catch(() => null)
+        )),
+      ]);
+      const _digestBizMap  = Object.fromEntries(_digestUids.map((uid, i) => [uid, _digestBizResults[i]]));
+      const _digestJobsMap = Object.fromEntries(_digestUids.map((uid, i) => [uid, _digestJobsResults[i]]));
+
       for (const userDoc of usersSnap.docs) {
       const userData = userDoc.data();
       if (!userData.email) continue;
@@ -4025,27 +3953,21 @@ exports.scheduledWeeklyDigest = onSchedule(
 
       let businessName = '';
       let bizId = null;
-      try {
-        const bizSnap = await userBizCol(uid).limit(1).get();
-        if (!bizSnap.empty) {
-          businessName = bizSnap.docs[0].data().businessName || '';
-          bizId = bizSnap.docs[0].id;
-        }
-      } catch(e) { /* non-fatal */ }
+      const _bizSnap = _digestBizMap[uid];
+      if (_bizSnap && !_bizSnap.empty) {
+        businessName = _bizSnap.docs[0].data().businessName || '';
+        bizId = _bizSnap.docs[0].id;
+      }
 
-      // Get this week's successful jobs
-      let successJobs = [];
-      try {
-        const jobsSnap = await db.collectionGroup('publishJobs')
-          .where('uid', '==', uid)
-          .where('status', '==', 'success')
-          .get();
-        const sevenDaysAgoMs = sevenDaysAgo.getTime();
-        successJobs = jobsSnap.docs.map(d => d.data()).filter(j => {
-          const pub = j.publishedAt?.toDate?.() || null;
-          return pub && pub.getTime() >= sevenDaysAgoMs;
-        });
-      } catch(e) { /* non-fatal */ }
+      // Get this week's successful jobs (already fetched in batch above)
+      const sevenDaysAgoMs = sevenDaysAgo.getTime();
+      const _jobsSnap = _digestJobsMap[uid];
+      const successJobs = _jobsSnap
+        ? _jobsSnap.docs.map(d => d.data()).filter(j => {
+            const pub = j.publishedAt?.toDate?.() || null;
+            return pub && pub.getTime() >= sevenDaysAgoMs;
+          })
+        : [];
 
       // Only send if there were jobs this week
       if (successJobs.length === 0) continue;
@@ -4292,6 +4214,7 @@ exports.checkPlatformTokenExpiry = onSchedule(
       .get();
 
     let refreshed = 0, expired = 0, skipped = 0;
+    const toNotify = []; // 4.3: collect expired conns; user docs batch-read after the loop
 
     for (const docSnap of snap.docs) {
       const conn = docSnap.data();
@@ -4410,45 +4333,54 @@ exports.checkPlatformTokenExpiry = onSchedule(
         continue;
       }
 
-      // Send reconnect notification email to the business owner
-      if (!conn.uid) continue;
-      try {
-        const userSnap = await db.collection('users').doc(conn.uid).get();
-        if (!userSnap.exists) continue;
-        const userData = userSnap.data();
-        if (!userData.email || userData.emailUnsubscribed) continue;
+      // Collect for post-loop batch email notification
+      if (conn.uid) toNotify.push({ conn, docId: docSnap.id });
+    }
 
-        const ownerName = userData.ownerName || userData.displayName || '';
-        let businessName = '';
+    // 4.3: batch-read users for all expired-connection email notifications
+    // Replaces N individual db.collection('users').doc(uid).get() calls with one db.getAll()
+    if (toNotify.length > 0) {
+      const _uniqueUids  = [...new Set(toNotify.map(n => n.conn.uid))];
+      const _userRefs    = _uniqueUids.map(uid => db.collection('users').doc(uid));
+      const _userDocs    = await db.getAll(..._userRefs);
+      const _userDataMap = Object.fromEntries(_userDocs.map(d => [d.id, d.exists ? d.data() : null]));
+
+      for (const { conn, docId } of toNotify) {
+        const userData = _userDataMap[conn.uid];
+        if (!userData || !userData.email || userData.emailUnsubscribed) continue;
+
         try {
-          const bizSnap = await userBizRef(conn.uid, conn.businessId).get();
-          businessName = bizSnap.data()?.businessName || '';
-        } catch(e) { /* non-fatal */ }
+          const ownerName = userData.ownerName || userData.displayName || '';
+          let businessName = '';
+          try {
+            const bizSnap = await userBizRef(conn.uid, conn.businessId).get();
+            businessName = bizSnap.data()?.businessName || '';
+          } catch(e) { /* non-fatal */ }
 
-        const platformDisplay = conn.platform === 'google' ? 'Google Business Profile'
-          : conn.platform.charAt(0).toUpperCase() + conn.platform.slice(1);
+          const platformDisplay = conn.platform === 'google' ? 'Google Business Profile'
+            : conn.platform.charAt(0).toUpperCase() + conn.platform.slice(1);
 
-        const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(conn.uid)}&sig=${makeUnsubSig(conn.uid, process.env.RESEND_API_KEY)}`;
-        const connectUrl = `${APP_BASE_URL}/BlastyBiz-Connect.html`;
+          const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(conn.uid)}&sig=${makeUnsubSig(conn.uid, _unsubSecret())}`; // 2.4
+          const connectUrl = `${APP_BASE_URL}/BlastyBiz-Connect.html`;
 
-        const mergeData = {
-          name:           ownerName || 'there',
-          businessName:   businessName || (ownerName ? ownerName + '\'s Business' : 'your business'),
-          platform:       platformDisplay,
-          connectUrl,
-          appUrl:         APP_BASE_URL,
-          unsubscribeUrl: unsubUrl,
-        };
-        function applyExpiredTags(str) {
-          return str.replace(/\{\{(\w+)\}\}/g, (_, k) => mergeData[k] || '');
-        }
+          const mergeData = {
+            name:           ownerName || 'there',
+            businessName:   businessName || (ownerName ? ownerName + '\'s Business' : 'your business'),
+            platform:       platformDisplay,
+            connectUrl,
+            appUrl:         APP_BASE_URL,
+            unsubscribeUrl: unsubUrl,
+          };
+          function applyExpiredTags(str) {
+            return str.replace(/\{\{(\w+)\}\}/g, (_, k) => mergeData[k] || '');
+          }
 
-        const subject = tmplSubject
-          ? applyExpiredTags(tmplSubject)
-          : `Action needed — your ${platformDisplay} connection expired`;
-        const html = tmplHtml
-          ? applyExpiredTags(tmplHtml)
-          : `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+          const subject = tmplSubject
+            ? applyExpiredTags(tmplSubject)
+            : `Action needed — your ${platformDisplay} connection expired`;
+          const html = tmplHtml
+            ? applyExpiredTags(tmplHtml)
+            : `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
   <div style="background:#0d1a0d;padding:28px 32px 22px">
     <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto" />
     <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
@@ -4465,10 +4397,11 @@ exports.checkPlatformTokenExpiry = onSchedule(
   </div>
 </div>`;
 
-        await sendResendEmail({ to: userData.email, subject, html });
-        console.log(`[checkPlatformTokenExpiry] Sent expiry email to ${userData.email} for ${docSnap.id}`);
-      } catch(e) {
-        console.error(`[checkPlatformTokenExpiry] Email failed for ${docSnap.id}:`, e.message);
+          await sendResendEmail({ to: userData.email, subject, html });
+          console.log(`[checkPlatformTokenExpiry] Sent expiry email to ${userData.email} for ${docId}`);
+        } catch(e) {
+          console.error(`[checkPlatformTokenExpiry] Email failed for ${docId}:`, e.message);
+        }
       }
     }
 
@@ -4479,12 +4412,7 @@ exports.checkPlatformTokenExpiry = onSchedule(
 // ══════════════════════════════════════════════════════════════════════════════
 // chatCampaign — AI-driven campaign interview → builds Campaign Memory doc
 // ══════════════════════════════════════════════════════════════════════════════
-exports.chatCampaign = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-
-  let decoded;
-  try { decoded = await verifyBearer(req); } catch(e) { return res.status(401).json({ error: 'Unauthorized' }); }
+exports.chatCampaign = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
 
   const { conversationHistory, businessProfile, collectedData } = req.body;
   if (!Array.isArray(conversationHistory)) return res.status(400).json({ error: 'conversationHistory array required' });
@@ -4536,15 +4464,12 @@ If finished: {"done":true,"message":"brief warm wrap-up line","campaignMemory":"
     console.error('[chatCampaign] error:', e.message);
     return res.status(500).json({ error: 'Campaign interview failed. Please try again.' });
   }
-});
+}));
 
 // ══════════════════════════════════════════════════════════════════════════════
 // adminGetAiSettings — returns current AI provider/model config (admin only)
 // ══════════════════════════════════════════════════════════════════════════════
-exports.adminGetAiSettings = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-  try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: 'Forbidden' }); }
+exports.adminGetAiSettings = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
 
   try {
     const snap = await db.collection('config').doc('aiSettings').get();
@@ -4558,16 +4483,13 @@ exports.adminGetAiSettings = onRequest({ invoker: 'public' }, async (req, res) =
     console.error('[adminGetAiSettings]', e.message);
     return res.status(500).json({ error: e.message });
   }
-});
+}, { admin: true }));
 
 // ══════════════════════════════════════════════════════════════════════════════
 // adminSetAiSettings — updates AI provider/model config (admin only)
 // Resets the in-memory cache so new calls pick up the change within seconds.
 // ══════════════════════════════════════════════════════════════════════════════
-exports.adminSetAiSettings = onRequest({ invoker: 'public' }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
-  try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: 'Forbidden' }); }
+exports.adminSetAiSettings = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
 
   const VALID_PROVIDERS = ['anthropic', 'openai', 'gemini', 'grok'];
   const { provider, fastModel, smartModel } = req.body;
@@ -4585,7 +4507,7 @@ exports.adminSetAiSettings = onRequest({ invoker: 'public' }, async (req, res) =
     console.error('[adminSetAiSettings]', e.message);
     return res.status(500).json({ error: e.message });
   }
-});
+}, { admin: true }));
 
 // ── Send email verification via Resend (noreply@blastybiz.com) ────────────────
 // Called from the login page instead of Firebase's built-in sendEmailVerification

@@ -5,7 +5,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785864425302" />
+<link rel="stylesheet" href="global-style.css?v=1785867151638" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -5464,6 +5464,22 @@ onAuthStateChanged(auth, async (user) => {
     }
   }
 
+  // 3.5: magic-byte check — reject non-image files before they reach Storage.
+  // Reads only the first 12 bytes so it's essentially free.
+  async function _bbValidateImageBytes(file) {
+    try {
+      const buf = await file.slice(0, 12).arrayBuffer();
+      const b = new Uint8Array(buf);
+      const isJpeg = b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF;
+      const isPng  = b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47;
+      const isWebp = b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 &&
+                     b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50;
+      const isGif  = b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46;
+      const isHeic = b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70; // ftyp box — HEIF/HEIC
+      return isJpeg || isPng || isWebp || isGif || isHeic;
+    } catch(e) { return true; } // fail-open: let the upload proceed and let Storage rules catch it
+  }
+
   async function compressImage(file) {
     // Transparently convert HEIC/HEIF → JPEG before canvas touches it (Android Chrome can't decode HEIC natively)
     const source = await maybeDecodeHeic(file);
@@ -5527,6 +5543,14 @@ onAuthStateChanged(auth, async (user) => {
     window._bbPhotoItems = window._bbPhotoItems || [];
     window._bbPhotoItems.push(item);
     if (window.renderAllPhotos) window.renderAllPhotos();
+
+    // 3.5: validate magic bytes before wasting bandwidth on a non-image file
+    if (!await _bbValidateImageBytes(file)) {
+      window._bbPhotoItems = (window._bbPhotoItems || []).filter(x => x !== item);
+      if (window.renderAllPhotos) window.renderAllPhotos();
+      if (window.showToast) window.showToast('⚠️ Only JPEG, PNG, WebP, GIF, or HEIC images are supported.');
+      return;
+    }
 
     const compressed = await compressImage(file);
     item.compressing = false;
