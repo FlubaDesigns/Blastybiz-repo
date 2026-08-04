@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BlastyBiz — Onboard Step Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1785819325348">
+  <link rel="stylesheet" href="global-style.css?v=1785820481810">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -281,28 +281,29 @@ const db = getFirestore(getApp());
 
 const STEP_DEFS = [
   { idx:1,  key:'ownerName',         label:'Owner Name',                 defaultMsg:"Hi! I'm Blasty. What's your name?" },
-  { idx:2,  key:'bizName',           label:'Business Name',              defaultMsg:"Nice to meet you! What's the name of your business?" },
-  { idx:3,  key:'role',              label:'Owner Title / Role',         defaultMsg:"What's your title at the business?" },
-  { idx:4,  key:'email',             label:'Email Address',              defaultMsg:"What's the best email address?" },
-  { idx:5,  key:'phone',             label:'Phone Number',               defaultMsg:"What's the best phone number?" },
-  { idx:6,  key:'locationType',      label:'Location Type',              defaultMsg:"Physical, online only, or both?" },
-  { idx:7,  key:'street',            label:'Street Address',             defaultMsg:"What's the street address?" },
-  { idx:8,  key:'city',              label:'City',                       defaultMsg:"City?" },
-  { idx:9,  key:'state',             label:'State',                      defaultMsg:"State?" },
-  { idx:10, key:'zip',               label:'ZIP Code',                   defaultMsg:"ZIP code?" },
-  { idx:11, key:'website',           label:'Website',                    defaultMsg:"What's the website?" },
-  { idx:12, key:'_fork',             label:'Path Fork (story vs blast)', defaultMsg:"You're all set! Blast now, or tell me your story first?" },
-  { idx:13, key:'story',             label:'Business Story',             defaultMsg:"How did the business get started? What's the story?" },
-  { idx:14, key:'different',         label:'What Makes You Different',   defaultMsg:"What makes you different from the competition?" },
-  { idx:15, key:'awards',            label:'Awards / Press',             defaultMsg:"Any awards, press coverage, or milestones?" },
-  { idx:16, key:'customer',          label:'Ideal Customer',             defaultMsg:"Who's your ideal customer?" },
-  { idx:17, key:'other',             label:'Other Info',                 defaultMsg:"Anything else I should always know?" },
-  { idx:18, key:'campaignName',      label:'Campaign Name',              defaultMsg:"Let's build your first campaign. What to call it?" },
-  { idx:19, key:'campaignAbout',     label:'Campaign About',             defaultMsg:"What's this campaign about? What are you promoting?" },
-  { idx:20, key:'campaignAudience',  label:'Campaign Audience',          defaultMsg:"Who is this campaign targeting?" },
-  { idx:21, key:'campaignOffer',     label:'Campaign Offer / CTA',       defaultMsg:"Any special offer or call to action?" },
-  { idx:22, key:'campaignPlatforms', label:'Platforms',                  defaultMsg:"Last one — which platforms do you want to blast on?" },
-  { idx:23, key:'category',          label:'Business Category (AI)',     defaultMsg:"Almost done! Let me figure out the right category..." },
+  { idx:2,  key:'createPassword',    label:'Create Password (post-verify)', defaultMsg:"Welcome back! You're verified. Now let's set up your password." },
+  { idx:3,  key:'bizName',           label:'Business Name',              defaultMsg:"Nice to meet you! What's the name of your business?" },
+  { idx:4,  key:'role',              label:'Owner Title / Role',         defaultMsg:"What's your title at the business?" },
+  { idx:5,  key:'email',             label:'Email Address',              defaultMsg:"What's the best email address?" },
+  { idx:6,  key:'phone',             label:'Phone Number',               defaultMsg:"What's the best phone number?" },
+  { idx:7,  key:'locationType',      label:'Location Type',              defaultMsg:"Physical, online only, or both?" },
+  { idx:8,  key:'street',            label:'Street Address',             defaultMsg:"What's the street address?" },
+  { idx:9,  key:'city',              label:'City',                       defaultMsg:"City?" },
+  { idx:10, key:'state',             label:'State',                      defaultMsg:"State?" },
+  { idx:11, key:'zip',               label:'ZIP Code',                   defaultMsg:"ZIP code?" },
+  { idx:12, key:'website',           label:'Website',                    defaultMsg:"What's the website?" },
+  { idx:13, key:'_fork',             label:'Path Fork (story vs blast)', defaultMsg:"You're all set! Blast now, or tell me your story first?" },
+  { idx:14, key:'story',             label:'Business Story',             defaultMsg:"How did the business get started? What's the story?" },
+  { idx:15, key:'different',         label:'What Makes You Different',   defaultMsg:"What makes you different from the competition?" },
+  { idx:16, key:'awards',            label:'Awards / Press',             defaultMsg:"Any awards, press coverage, or milestones?" },
+  { idx:17, key:'customer',          label:'Ideal Customer',             defaultMsg:"Who's your ideal customer?" },
+  { idx:18, key:'other',             label:'Other Info',                 defaultMsg:"Anything else I should always know?" },
+  { idx:19, key:'campaignName',      label:'Campaign Name',              defaultMsg:"Let's build your first campaign. What to call it?" },
+  { idx:20, key:'campaignAbout',     label:'Campaign About',             defaultMsg:"What's this campaign about? What are you promoting?" },
+  { idx:21, key:'campaignAudience',  label:'Campaign Audience',          defaultMsg:"Who is this campaign targeting?" },
+  { idx:22, key:'campaignOffer',     label:'Campaign Offer / CTA',       defaultMsg:"Any special offer or call to action?" },
+  { idx:23, key:'campaignPlatforms', label:'Platforms',                  defaultMsg:"Last one — which platforms do you want to blast on?" },
+  { idx:24, key:'category',          label:'Business Category (AI)',     defaultMsg:"Almost done! Let me figure out the right category..." },
 ];
 
 const MOOD_OPTS  = [{v:'s-ask',l:'Ask'},{v:'s-ask-2',l:'Ask 2 (lean right)'},{v:'s-ask-3',l:'Ask 3 (look up)'},{v:'s-wave',l:'Wave'},{v:'s-wave-2',l:'Wave 2 (big)'},{v:'s-happy',l:'Happy'},{v:'s-working',l:'Working'},{v:'s-celebrate',l:'Celebrate'},{v:'s-spin',l:'Spin'},{v:'s-tilt-left',l:'Tilt Left'},{v:'s-tilt-right',l:'Tilt Right'},{v:'s-arrive-land',l:'Arrive Land'}];
