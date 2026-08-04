@@ -131,6 +131,14 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
        bizFactsSnap, bizImagesSnap]
         .forEach(snap => snap.docs.forEach(d => bizSubRefs.push(d.ref)));
 
+      // Enumerate private/tokens subcollections under each platformConnection.
+      // Firestore does NOT cascade-delete subcollections when a parent doc is deleted,
+      // so these must be collected explicitly or live OAuth tokens orphan after erasure.
+      for (const connDoc of connsSnap.docs) {
+        const privSnap = await connDoc.ref.collection('private').get();
+        privSnap.docs.forEach(d => bizSubRefs.push(d.ref));
+      }
+
       const campSnap = await userBizRef(uid, bizId).collection('campaigns').get();
       for (const campDoc of campSnap.docs) {
         const campId = campDoc.id;
