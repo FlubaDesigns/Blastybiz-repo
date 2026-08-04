@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>BlastyBiz — Operator Setup</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="global-style.css?v=1785850552714">
+<link rel="stylesheet" href="global-style.css?v=1785850906169">
 
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
@@ -295,6 +295,28 @@
           <li>If rejected, Meta's email explains why — come back here and we'll fix the specific issue before resubmitting</li>
         </ol>
         <div class="op-note">⚠️ Until Meta approves, only Facebook test accounts you've manually added can connect Facebook or Instagram through BlastyBiz.</div>
+      </div>
+    </div>
+
+    <!-- Facebook Sign-In reminder -->
+    <div class="card" style="border-left:4px solid #e65100;">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-fb-signin" onclick="toggleCheck(event,'fb-signin')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">🔐 Verify Facebook sign-in is enabled in Firebase Console</div>
+          <div class="op-card-sub">The login page is wired up — but Firebase needs the App ID &amp; Secret entered before it will work for real users</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-step-label">What to check</p>
+        <ol class="op-list">
+          <li>Go to <span class="cf-url">console.firebase.google.com → blastybiz-9523e → Authentication → Sign-in method</span></li>
+          <li>Find <strong>Facebook</strong> — confirm it's enabled and your <strong>App ID</strong> and <strong>App Secret</strong> from developers.facebook.com are entered</li>
+          <li>Copy the <strong>OAuth redirect URI</strong> shown in Firebase and confirm it's listed in your Facebook app under <span class="cf-url">developers.facebook.com → BlastyBiz app → Facebook Login → Settings → Valid OAuth Redirect URIs</span></li>
+          <li>Test it: open the login page in an incognito tab and try "Continue with Facebook"</li>
+        </ol>
+        <div class="op-note">⚠️ Without this, the Facebook sign-in button will throw an error for all users.</div>
       </div>
     </div>
   </div>
