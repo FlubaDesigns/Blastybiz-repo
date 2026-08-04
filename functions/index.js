@@ -2934,39 +2934,68 @@ exports.adminListActivityLogs = onRequest({ invoker: 'public' }, async (req, res
   res.json({ logs: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
 });
 
+// Step labels keyed by 0-based index, matching STEPS array in BlastyBiz-Onboard2.html
+const ONBOARDING_STEP_LABELS = [
+  'Your name',              // 0
+  'Business name',          // 1
+  'Your title',             // 2
+  'Business email',         // 3
+  'Phone number',           // 4
+  'Location type',          // 5
+  'Street address',         // 6
+  'City',                   // 7
+  'State',                  // 8
+  'ZIP code',               // 9
+  'Website',                // 10
+  'Story or blast?',        // 11
+  'Business story',         // 12
+  'What makes you different', // 13
+  'Awards & press',         // 14
+  'Ideal customer',         // 15
+  'Anything else?',         // 16
+  'Campaign name',          // 17
+  'Campaign about',         // 18
+  'Campaign audience',      // 19
+  'Special offer',          // 20
+  'Platforms',              // 21
+  'AI category',            // 22
+];
+
 exports.adminOnboardingFunnel = onRequest({ invoker: 'public' }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
 
-  // Step labels keyed by 0-based index, matching STEPS array in BlastyBiz-Onboard2.html
-  const STEP_LABELS = [
-    'Your name',              // 0
-    'Business name',          // 1
-    'Your title',             // 2
-    'Business email',         // 3
-    'Phone number',           // 4
-    'Location type',          // 5
-    'Street address',         // 6
-    'City',                   // 7
-    'State',                  // 8
-    'ZIP code',               // 9
-    'Website',                // 10
-    'Story or blast?',        // 11
-    'Business story',         // 12
-    'What makes you different', // 13
-    'Awards & press',         // 14
-    'Ideal customer',         // 15
-    'Anything else?',         // 16
-    'Campaign name',          // 17
-    'Campaign about',         // 18
-    'Campaign audience',      // 19
-    'Special offer',          // 20
-    'Platforms',              // 21
-    'AI category',            // 22
-  ];
-
   const snap = await db.collection('users').where('onboarded', '==', false).get();
+
+  // ── Drill-down mode: return user list for a specific step ─────────────────
+  if (req.query.stepIndex !== undefined) {
+    const stepIndex = parseInt(req.query.stepIndex, 10);
+    if (isNaN(stepIndex)) return res.status(400).json({ error: 'Invalid stepIndex' });
+    const users = [];
+    snap.docs.forEach(d => {
+      const data = d.data();
+      const progress = data.onboardingProgress;
+      if (!progress || progress.stepIndex == null) return;
+      if (Number(progress.stepIndex) !== stepIndex) return;
+      users.push({
+        uid: d.id,
+        email: data.email || '',
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
+        lastProgressAt: progress.savedAt?.toDate?.()?.toISOString() ||
+                        progress.updatedAt?.toDate?.()?.toISOString() || null,
+        nudgeCount: data.nudgeCount || 0,
+        lastNudgeAt: data.lastNudgeAt?.toDate?.()?.toISOString() || null,
+      });
+    });
+    return res.json({
+      stepIndex,
+      label: ONBOARDING_STEP_LABELS[stepIndex] || `Step ${stepIndex + 1}`,
+      users,
+    });
+  }
+
+  // ── Summary mode: group by step ───────────────────────────────────────────
   const counts = {};
   let totalStuck = 0;
 
@@ -2983,7 +3012,7 @@ exports.adminOnboardingFunnel = onRequest({ invoker: 'public' }, async (req, res
   const steps = Object.entries(counts)
     .map(([idx, count]) => {
       const i = parseInt(idx, 10);
-      return { stepIndex: i, label: STEP_LABELS[i] || `Step ${i + 1}`, count };
+      return { stepIndex: i, label: ONBOARDING_STEP_LABELS[i] || `Step ${i + 1}`, count };
     })
     .sort((a, b) => b.count - a.count || a.stepIndex - b.stepIndex);
 
@@ -2993,6 +3022,55 @@ exports.adminOnboardingFunnel = onRequest({ invoker: 'public' }, async (req, res
     totalNotOnboarded: snap.size,
     asOf: new Date().toISOString(),
   });
+});
+
+exports.adminSendOnboardingNudge = onRequest({ invoker: 'public' }, async (req, res) => {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
+
+  const { uid } = req.body || {};
+  if (!uid) return res.status(400).json({ error: 'uid is required' });
+
+  const userDoc = await db.collection('users').doc(uid).get();
+  if (!userDoc.exists) return res.status(404).json({ error: 'User not found' });
+
+  const data = userDoc.data();
+  const email = data.email;
+  if (!email) return res.status(400).json({ error: 'User has no email address on record' });
+
+  const stepIndex = data.onboardingProgress?.stepIndex ?? null;
+  const stepLabel = stepIndex != null
+    ? (ONBOARDING_STEP_LABELS[stepIndex] || `Step ${stepIndex + 1}`)
+    : 'your profile';
+  const safeLabel = String(stepLabel).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  await sendResendEmail({
+    to: email,
+    subject: "Your BlastyBiz setup is almost done \uD83D\uDE80",
+    html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#111;">
+      <h2 style="margin:0 0 12px;">You're almost there!</h2>
+      <p style="margin:0 0 16px;line-height:1.6;color:#444;">
+        You started setting up your BlastyBiz account but got stuck on <strong>${safeLabel}</strong>.
+        It only takes a few minutes to finish — and once you're done, you'll have AI-powered marketing working for your business.
+      </p>
+      <a href="${APP_BASE_URL}/BlastyBiz-Onboard2.html"
+         style="display:inline-block;background:#2563eb;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">
+        Continue Setup →
+      </a>
+      <p style="margin:24px 0 0;font-size:12px;color:#9ca3af;">
+        BlastyBiz · <a href="${APP_BASE_URL}/BlastyBiz-Home.html" style="color:#9ca3af;">blastybiz.com</a>
+      </p>
+    </div>`,
+  });
+
+  await db.collection('users').doc(uid).update({
+    lastNudgeAt: admin.firestore.FieldValue.serverTimestamp(),
+    nudgeCount: admin.firestore.FieldValue.increment(1),
+  });
+
+  res.json({ ok: true, sentTo: email });
 });
 
 exports.adminSubscriptionSummary = onRequest({ invoker: 'public' }, async (req, res) => {

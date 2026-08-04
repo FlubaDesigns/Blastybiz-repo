@@ -613,11 +613,12 @@
       <div class="op-card-body">
         <p style="font-size:13px;color:#888;margin:0 0 14px;line-height:1.6;">
           Users who signed up but haven't finished onboarding, grouped by the step where they stopped.
-          Highest bar = biggest friction point. Data refreshes on page load.
+          Highest bar = biggest friction point. Click any bar to see exactly who's stuck there.
         </p>
         <div id="funnel-status" style="font-size:13px;color:#888;min-height:18px;margin-bottom:10px;"></div>
         <div id="funnel-chart"></div>
         <div id="funnel-meta" style="font-size:12px;color:#9ca3af;margin-top:14px;"></div>
+        <div id="funnel-detail" style="margin-top:18px;display:none;"></div>
       </div>
     </div>
   </div>
@@ -882,6 +883,8 @@ async function removeAdminEmail(email) {
 }
 
 // ── Onboarding Funnel ────────────────────────────────────────────────────────
+let _funnelOpenStep = null; // currently expanded step index
+
 async function loadOnboardingFunnel() {
   const statusEl = document.getElementById('funnel-status');
   const chartEl  = document.getElementById('funnel-chart');
@@ -908,13 +911,16 @@ async function loadOnboardingFunnel() {
     const rows = data.steps.map(s => {
       const pct = maxCount > 0 ? Math.max(4, Math.round((s.count / maxCount) * 100)) : 4;
       const stepNum = s.stepIndex + 1;
-      return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      return `<div data-step="${s.stepIndex}" onclick="toggleStepUsers(${s.stepIndex},'${s.label.replace(/'/g,"\\'")}',this)"
+        style="display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer;border-radius:6px;padding:3px 6px;transition:background .15s;"
+        onmouseenter="this.style.background='#f0f4ff'" onmouseleave="this.style.background=''">
         <div style="width:26px;text-align:right;font-size:11px;color:#9ca3af;flex-shrink:0;">s${stepNum}</div>
         <div style="flex:1;background:#f3f4f6;border-radius:4px;height:22px;overflow:hidden;">
           <div style="height:100%;width:${pct}%;background:#2563eb;border-radius:4px;transition:width .3s;"></div>
         </div>
         <div style="width:28px;text-align:right;font-size:12px;font-weight:700;color:#111;flex-shrink:0;">${s.count}</div>
         <div style="min-width:160px;font-size:12px;color:#555;">${s.label}</div>
+        <div style="font-size:11px;color:#9ca3af;flex-shrink:0;">▸</div>
       </div>`;
     }).join('');
 
@@ -923,6 +929,132 @@ async function loadOnboardingFunnel() {
   } catch(e) {
     statusEl.style.color = '#f87171';
     statusEl.textContent = '✗ ' + e.message;
+  }
+}
+
+function _fmtAgo(isoStr) {
+  if (!isoStr) return '—';
+  const ms = Date.now() - new Date(isoStr).getTime();
+  const mins  = Math.floor(ms / 60000);
+  const hours = Math.floor(ms / 3600000);
+  const days  = Math.floor(ms / 86400000);
+  if (days > 0)  return days  + 'd ago';
+  if (hours > 0) return hours + 'h ago';
+  if (mins > 0)  return mins  + 'm ago';
+  return 'just now';
+}
+
+function _fmtDate(isoStr) {
+  if (!isoStr) return '—';
+  return new Date(isoStr).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
+}
+
+async function toggleStepUsers(stepIndex, stepLabel, rowEl) {
+  const detailEl = document.getElementById('funnel-detail');
+  if (!detailEl) return;
+
+  // If clicking the already-open step, close it
+  if (_funnelOpenStep === stepIndex) {
+    _funnelOpenStep = null;
+    detailEl.style.display = 'none';
+    detailEl.innerHTML = '';
+    // Reset all row indicators
+    document.querySelectorAll('#funnel-chart [data-step]').forEach(r => {
+      const ind = r.querySelector('div:last-child');
+      if (ind) ind.textContent = '▸';
+    });
+    return;
+  }
+
+  // Update open state and indicator
+  _funnelOpenStep = stepIndex;
+  document.querySelectorAll('#funnel-chart [data-step]').forEach(r => {
+    const ind = r.querySelector('div:last-child');
+    if (ind) ind.textContent = r.dataset.step == stepIndex ? '▾' : '▸';
+  });
+
+  detailEl.style.display = 'block';
+  detailEl.innerHTML = `<div style="font-size:13px;color:#888;padding:10px 0;">Loading users for "${stepLabel}"…</div>`;
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res   = await fetch(`${CF_BASE}/adminOnboardingFunnel?stepIndex=${stepIndex}`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Server error ' + res.status);
+
+    const users = data.users || [];
+    if (!users.length) {
+      detailEl.innerHTML = `<p style="font-size:13px;color:#9ca3af;padding:10px 0;">No users found at this step.</p>`;
+      return;
+    }
+
+    const tableRows = users.map(u => {
+      const stuckFor = _fmtAgo(u.lastProgressAt || u.createdAt);
+      const started  = _fmtDate(u.createdAt);
+      const nudgeLabel = u.nudgeCount > 0
+        ? `Nudged ${u.nudgeCount}× (last ${_fmtAgo(u.lastNudgeAt)})`
+        : 'Send nudge';
+      const nudgeStyle = u.nudgeCount > 0
+        ? 'font-size:11px;color:#6b7280;background:#f9fafb;border:1px solid #e5e7eb;padding:4px 10px;border-radius:4px;cursor:pointer;white-space:nowrap;'
+        : 'font-size:11px;color:#fff;background:#2563eb;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;white-space:nowrap;';
+      return `<tr>
+        <td style="padding:7px 10px 7px 0;font-size:12px;color:#111;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.email || '<em style="color:#9ca3af">no email</em>'}</td>
+        <td style="padding:7px 8px;font-size:11px;color:#9ca3af;font-family:monospace;white-space:nowrap;">${u.uid.slice(0,10)}…</td>
+        <td style="padding:7px 8px;font-size:12px;color:#555;white-space:nowrap;">${started}</td>
+        <td style="padding:7px 8px;font-size:12px;color:#555;white-space:nowrap;">${stuckFor}</td>
+        <td style="padding:7px 0 7px 8px;white-space:nowrap;">
+          <button type="button" id="nudge-btn-${u.uid}" style="${nudgeStyle}"
+            onclick="sendOnboardingNudge('${u.uid}','${(u.email||'').replace(/'/g,"\\'")}',this)">${nudgeLabel}</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    detailEl.innerHTML = `
+      <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:8px;">
+        ${users.length} user${users.length===1?'':'s'} stuck at <em>${stepLabel}</em>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;min-width:460px;">
+          <thead>
+            <tr style="border-bottom:1px solid #e5e7eb;">
+              <th style="text-align:left;font-size:11px;color:#6b7280;font-weight:600;padding:0 10px 6px 0;">Email</th>
+              <th style="text-align:left;font-size:11px;color:#6b7280;font-weight:600;padding:0 8px 6px;">UID</th>
+              <th style="text-align:left;font-size:11px;color:#6b7280;font-weight:600;padding:0 8px 6px;">Started</th>
+              <th style="text-align:left;font-size:11px;color:#6b7280;font-weight:600;padding:0 8px 6px;">Stuck for</th>
+              <th style="text-align:left;font-size:11px;color:#6b7280;font-weight:600;padding:0 0 6px 8px;">Action</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>`;
+  } catch(e) {
+    detailEl.innerHTML = `<p style="font-size:13px;color:#f87171;padding:10px 0;">✗ ${e.message}</p>`;
+  }
+}
+
+async function sendOnboardingNudge(uid, email, btn) {
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch(CF_BASE + '/adminSendOnboardingNudge', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Server error ' + res.status);
+    btn.textContent = '✓ Sent';
+    btn.style.background = '#dcfce7';
+    btn.style.color = '#166534';
+    btn.style.border = '1px solid #bbf7d0';
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = original;
+    alert('Failed to send nudge: ' + e.message);
   }
 }
 
