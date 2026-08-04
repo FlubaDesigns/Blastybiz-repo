@@ -154,7 +154,9 @@ exports.adminListPlatformConnections = onRequest({ invoker: 'public' }, withAuth
 // ── adminPlatformHealth ───────────────────────────────────────────────────────
 exports.adminPlatformHealth = onRequest({ invoker: 'public' }, withAuth(async (req, res) => {
   try {
-    const snap = await db.collectionGroup('platformConnections').get();
+    // Limit prevents timeout/runaway cost. At ~5 000+ connections replace with
+    // per-platform aggregation counters written by OAuth triggers.
+    const snap = await db.collectionGroup('platformConnections').limit(5000).get();
     const summary = {};
     snap.docs.forEach(d => {
       const { platform, status } = d.data();
@@ -165,7 +167,8 @@ exports.adminPlatformHealth = onRequest({ invoker: 'public' }, withAuth(async (r
       else if (status === 'disconnected') summary[platform].disconnected++;
       else                           summary[platform].other++;
     });
-    res.json({ health: summary, totalConnections: snap.size });
+    const truncated = snap.size === 5000;
+    res.json({ health: summary, totalConnections: snap.size, truncated });
   } catch(e) {
     console.error('[adminPlatformHealth]', e.message);
     res.status(500).json({ error: e.message });
@@ -365,11 +368,14 @@ const ONBOARDING_STEP_LABELS = {
 
 exports.adminOnboardingFunnel = onRequest({ invoker: 'public' }, withAuth(async (req, res) => {
   try {
-    const usersSnap  = await db.collection('users').get();
-    const bizSnap    = await db.collectionGroup('businesses').get();
-    const draftsSnap = await db.collectionGroup('listingDrafts').where('status', '==', 'approved').get();
-    const jobsSnap   = await db.collectionGroup('publishJobs').get();
-    const connsSnap  = await db.collectionGroup('platformConnections').where('status', '==', 'connected').get();
+    // Limits prevent timeout/runaway cost. At ~2 000+ users replace with
+    // scheduled aggregation counters (e.g. a nightly Cloud Function writing
+    // funnel snapshots to Firestore) rather than live full-table scans.
+    const usersSnap  = await db.collection('users').limit(2000).get();
+    const bizSnap    = await db.collectionGroup('businesses').limit(2000).get();
+    const draftsSnap = await db.collectionGroup('listingDrafts').where('status', '==', 'approved').limit(2000).get();
+    const jobsSnap   = await db.collectionGroup('publishJobs').limit(5000).get();
+    const connsSnap  = await db.collectionGroup('platformConnections').where('status', '==', 'connected').limit(2000).get();
 
     const totalUsers = usersSnap.size;
     const uidsWithBiz   = new Set(bizSnap.docs.map(d => d.data().uid));
@@ -485,9 +491,11 @@ exports.adminSendOnboardingNudge = onRequest({ invoker: 'public', secrets: ['RES
 // ── adminSubscriptionSummary ──────────────────────────────────────────────────
 exports.adminSubscriptionSummary = onRequest({ invoker: 'public' }, withAuth(async (req, res) => {
   try {
+    // Limits prevent timeout/runaway cost. At ~2 000+ users replace with
+    // plan-counter aggregation (increment/decrement on plan changes).
     const [usersSnap, subsSnap] = await Promise.all([
-      db.collection('users').get(),
-      db.collection('subscriptions').get(),
+      db.collection('users').limit(2000).get(),
+      db.collection('subscriptions').limit(2000).get(),
     ]);
     const planCounts = { starter: 0, trial: 0, pro: 0, agency: 0, other: 0 };
     usersSnap.docs.forEach(d => {
