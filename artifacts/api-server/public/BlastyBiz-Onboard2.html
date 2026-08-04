@@ -1385,15 +1385,24 @@
     const s = STEPS[step];
     if (s.skipIf && s.skipIf(answers)) { step++; showStep(); return; }
     currentStepKey = s.key;
-    // Advance form guide to the section that contains this key
+    // Set per-step mood first so the shim's s-working flash (pointing arm)
+    // is not immediately squashed by a subsequent setMood() call.
+    setMood(s.anim || s.mood);
+    // Advance form guide to the section that contains this key.
+    // The shim calls setMood('s-working') inside setActiveEl(), showing the
+    // pointing arm; we restore the step's own mood after ~600 ms so the arm
+    // is visible for roughly half a second during the section transition.
     if (s.key !== '_fork' && window._ob2Guide) {
       const activeRow = document.getElementById('obfr-' + s.key);
       if (activeRow) {
         const sec = activeRow.closest('[data-guide-step]');
-        if (sec) window._ob2Guide.setActiveEl(sec);
+        if (sec) {
+          window._ob2Guide.setActiveEl(sec);
+          const _stepMood = s.anim || s.mood;
+          setTimeout(function() { setMood(_stepMood); }, 600);
+        }
       }
     }
-    setMood(s.anim || s.mood);
     const msg = s.blastyMsgFn ? s.blastyMsgFn(answers) : interpolate(s.blastyMsg, answers);
     setBlastyBubble(msg);
     // Remove stale fork prompt when moving past it
