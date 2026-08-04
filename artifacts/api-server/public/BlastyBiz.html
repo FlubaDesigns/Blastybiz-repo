@@ -4,7 +4,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785821045492" />
+<link rel="stylesheet" href="global-style.css?v=1785821433658" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
@@ -5486,12 +5486,12 @@ onAuthStateChanged(auth, async (user) => {
         if (settled) return;
         settled = true;
         clearTimeout(giveUp);
+        URL.revokeObjectURL(objUrl);
         resolve(result);
       };
-      // Safety net: if canvas.toBlob() never fires (known mobile/HEIC bug), fall back to original file
-      const giveUp = setTimeout(() => done(file), 25000);
+      // Safety net: if the whole process hangs (large HEIC on Android), fail clearly — never fall back to raw file
+      const giveUp = setTimeout(() => done(null), 25000);
       img.onload = () => {
-        URL.revokeObjectURL(objUrl);
         let { width, height } = img;
         if (width > MAX || height > MAX) {
           if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
@@ -5501,13 +5501,13 @@ onAuthStateChanged(auth, async (user) => {
         canvas.width = width; canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'low'; // faster on mobile, quality is fine at 1200px
+        ctx.imageSmoothingQuality = 'medium';
         ctx.drawImage(img, 0, 0, width, height);
-        // toBlob timeout: fall back to original if stalled (seen on iOS/Android with large images)
-        const blobTimeout = setTimeout(() => done(file), 15000);
-        canvas.toBlob(blob => { clearTimeout(blobTimeout); done(blob || file); }, 'image/jpeg', 0.82);
+        // If toBlob stalls (known mobile bug), fail clearly rather than uploading the raw original
+        const blobTimeout = setTimeout(() => done(null), 15000);
+        canvas.toBlob(blob => { clearTimeout(blobTimeout); done(blob || null); }, 'image/jpeg', 0.82);
       };
-      img.onerror = () => { URL.revokeObjectURL(objUrl); done(file); };
+      img.onerror = () => done(null);
       img.src = objUrl;
     });
   }
@@ -5539,12 +5539,21 @@ onAuthStateChanged(auth, async (user) => {
     const compressed = await compressImage(file);
     item.compressing = false;
 
-    // Guard: if compression fell back to original and it's too large, reject clearly
+    // Compression failed or timed out (e.g. large HEIC on Android) — never attempt raw upload
+    if (!compressed) {
+      item.error = true;
+      item.errorMsg = 'Could not compress — try a different photo';
+      if (window.renderAllPhotos) window.renderAllPhotos();
+      if (window.showToast) window.showToast('⚠️ This photo couldn\'t be compressed. It may be an unsupported format or too large. Try saving it as a JPEG from your gallery first.');
+      return;
+    }
+
+    // Sanity check: compressed result should always be well under 4.9 MB at 1200px/JPEG 0.82
     if (compressed.size > 4.9 * 1024 * 1024) {
       item.error = true;
-      item.errorMsg = 'Too large — try a smaller image';
+      item.errorMsg = 'Still too large after compression — try a smaller photo';
       if (window.renderAllPhotos) window.renderAllPhotos();
-      if (window.showToast) window.showToast('Image is too large to upload even after compression. Try a smaller photo.');
+      if (window.showToast) window.showToast('⚠️ This photo is still too large after compression. Try exporting it as a JPEG from your gallery.');
       return;
     }
 
@@ -5557,8 +5566,9 @@ onAuthStateChanged(auth, async (user) => {
       },
       err => {
         item.error = true;
+        item.errorMsg = 'Upload failed — tap ✕ and try again';
         if (window.renderAllPhotos) window.renderAllPhotos();
-        if (window.showToast) window.showToast('Upload failed: ' + err.message);
+        if (window.showToast) window.showToast('⚠️ Upload failed: ' + (err.message || 'unknown error') + '. Tap the ✕ on the photo and try again.');
       },
       async () => {
         const dlUrl = await getDownloadURL(task.snapshot.ref);
