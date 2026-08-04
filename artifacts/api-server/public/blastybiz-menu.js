@@ -69,6 +69,20 @@ function _revealAdminNav() {
   })();
 }
 
+// Global sign-out — defined here so every page has it regardless of whether
+// the page's own module script also defines one.
+window.doSignOut = function() {
+  Promise.all([
+    import('./firebase-init-v2.js'),
+    import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js')
+  ]).then(function(mods) {
+    var auth   = mods[0].auth;
+    var signOut = mods[1].signOut;
+    localStorage.setItem('bb_auth', '0');
+    signOut(auth).finally(function() { window.location.href = 'BlastyBiz-Login.html'; });
+  }).catch(function() { window.location.href = 'BlastyBiz-Login.html'; });
+};
+
 window.toggleMenu = function() {
   var m = document.getElementById('header__mobile-menu');
   if (m) m.classList.toggle('open');

@@ -1326,8 +1326,8 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
           if (!paidHtml) {
             paidHtml = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
               <div style="background:#0d1a0d;padding:28px 32px">
-                <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz ${planName}</div>
-                <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+                <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto" />
+                <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
               </div>
               <div style="padding:32px">
                 <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Welcome aboard, ${mergeData.name}. You&#39;re ${planName}. &#127881;</h1>
@@ -1461,8 +1461,8 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
                   if (!cancelHtml) {
                     cancelHtml = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
   <div style="background:#0d1a0d;padding:28px 32px 22px">
-    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
-    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+    <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto" />
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
   </div>
   <div style="padding:32px">
     <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You're on the free plan now, ${mergeData.name}.</h1>
@@ -1546,8 +1546,8 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
           if (!pfHtml) {
             pfHtml = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
   <div style="background:#0d1a0d;padding:28px 32px 22px">
-    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
-    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+    <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto" />
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
   </div>
   <div style="padding:32px">
     <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Hi ${mergeData.name} — your payment didn't go through.</h1>
@@ -2034,8 +2034,8 @@ exports.jobFailedTrigger = onDocumentUpdated(
     if (!html) {
       html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
   <div style="background:#0d1a0d;padding:28px 32px 22px">
-    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
-    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+    <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto" />
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
   </div>
   <div style="padding:32px">
     <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Heads up, ${mergeData.name} — your ${platformDisplay} post hit a snag.</h1>
@@ -2115,8 +2115,8 @@ exports.jobCompletedTrigger = onDocumentUpdated(
     if (!html) {
       html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
   <div style="background:#0d1a0d;padding:28px 32px 22px">
-    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
-    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+    <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto" />
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
   </div>
   <div style="padding:32px">
     <div style="display:inline-block;background:#e8f5e9;border-radius:100px;padding:8px 18px;font-size:13px;font-weight:700;color:#00873a;margin-bottom:20px">&#10003; Posted successfully</div>
@@ -2204,8 +2204,8 @@ exports.businessCreatedTrigger = onDocumentCreated(
       subject = `Welcome to BlastyBiz Agency, ${mergeData.name} — you&#39;re all set. 🚀`;
       html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
   <div style="background:#0d1a0d;padding:28px 32px">
-    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz Agency</div>
-    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+    <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto" />
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
   </div>
   <div style="padding:32px">
     <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re Agency, ${mergeData.name}. Full power unlocked.</h1>
@@ -2223,8 +2223,8 @@ exports.businessCreatedTrigger = onDocumentCreated(
       subject = `Welcome to BlastyBiz Pro, ${mergeData.name} — let&#39;s get blasting. 🎯`;
       html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
   <div style="background:#0d1a0d;padding:28px 32px">
-    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz Pro</div>
-    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+    <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto" />
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
   </div>
   <div style="padding:32px">
     <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re Pro, ${mergeData.name}. Everything&#39;s unlocked.</h1>
@@ -2242,8 +2242,8 @@ exports.businessCreatedTrigger = onDocumentCreated(
       subject = `Welcome to BlastyBiz, ${mergeData.name}! 🚀`;
       html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
   <div style="background:#0d1a0d;padding:28px 32px">
-    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
-    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+    <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto" />
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
   </div>
   <div style="padding:32px">
     <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re in, ${mergeData.name}. Let&#39;s blast.</h1>
@@ -2713,8 +2713,8 @@ exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESE
   const subject = `Action needed — your ${platformDisplay} connection expired`;
   const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
   <div style="background:#0d1a0d;padding:28px 32px 22px">
-    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
-    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+    <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto" />
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
   </div>
   <div style="padding:32px">
     <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Your ${platformDisplay} connection needs a quick reconnect, ${ownerName}.</h1>
@@ -2764,8 +2764,8 @@ exports.adminSendRecoveryEmails = onRequest({ invoker: 'public', secrets: ['RESE
       const subject = `Payment failed for ${bizLabel} — update your card to avoid downgrade`;
       const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
   <div style="background:#0d1a0d;padding:28px 32px 22px">
-    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
-    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+    <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto" />
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
   </div>
   <div style="padding:32px">
     <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Hi ${ownerName}, your last payment for ${bizLabel} didn't go through.</h1>
@@ -3781,8 +3781,8 @@ exports.scheduledUpgradeNudge = onSchedule(
         ? applyNudgeTags(tmplHtml)
         : `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
   <div style="background:#0d1a0d;padding:28px 32px 22px">
-    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
-    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+    <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto" />
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
   </div>
   <div style="padding:32px">
     <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Hey ${mergeData.name} — it's been a week. Let's talk.</h1>
@@ -3921,8 +3921,8 @@ exports.scheduledWeeklyDigest = onSchedule(
         ? applyDigestTags(tmplHtml)
         : `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
   <div style="background:#0d1a0d;padding:28px 32px 22px">
-    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
-    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+    <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto" />
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
   </div>
   <div style="padding:32px">
     <div style="font-size:12px;font-weight:700;color:#888;letter-spacing:2px;margin-bottom:8px">WEEKLY RECAP</div>
@@ -4069,8 +4069,8 @@ exports.scheduledSetupNudge = onSchedule(
         ? applyNudgeTags(tmplHtml)
         : `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
   <div style="background:#0d1a0d;padding:28px 32px 22px">
-    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
-    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+    <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto" />
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
   </div>
   <div style="padding:32px">
     <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Hey ${mergeData.name} — your profile is almost ready.</h1>
@@ -4282,8 +4282,8 @@ exports.checkPlatformTokenExpiry = onSchedule(
           ? applyExpiredTags(tmplHtml)
           : `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
   <div style="background:#0d1a0d;padding:28px 32px 22px">
-    <div style="font-family:'Arial Black',sans-serif;font-size:24px;color:#00C853">BlastyBiz</div>
-    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:4px;font-weight:700">LOCK. LOAD. BLAST.</div>
+    <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto" />
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
   </div>
   <div style="padding:32px">
     <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Your ${platformDisplay} connection needs a quick reconnect, ${mergeData.name}.</h1>
@@ -4500,18 +4500,22 @@ exports.sendVerificationEmail = onRequest({ invoker: 'public', secrets: ['RESEND
     const actionCodeSettings = { url: `${APP_BASE_URL}/BlastyBiz-Login.html` };
     const link = await admin.auth().generateEmailVerificationLink(decoded.email, actionCodeSettings);
 
-    const html = `
-      <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#1a1a1a">
-        <h2 style="color:#00c853">Verify your BlastyBiz email</h2>
-        <p>Click the button below to verify your email address and activate your account.</p>
-        <p style="margin:24px 0">
-          <a href="${link}" style="background:#00c853;color:#000;font-weight:700;padding:14px 28px;border-radius:8px;text-decoration:none;display:inline-block">
-            Verify Email →
-          </a>
-        </p>
-        <p style="color:#666;font-size:13px">Or copy and paste this link:<br/><a href="${link}" style="color:#00c853">${link}</a></p>
-        <p style="color:#999;font-size:12px;margin-top:32px">If you didn't create a BlastyBiz account, you can safely ignore this email.</p>
-      </div>`;
+    const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+  <div style="background:#0d1a0d;padding:28px 32px">
+    <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto" />
+    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
+  </div>
+  <div style="padding:32px">
+    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Verify your email address</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">Click the button below to confirm your email and activate your BlastyBiz account.</p>
+    <a href="${link}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Verify Email &#8594;</a>
+    <p style="font-size:13px;color:#888;margin-top:24px;line-height:1.6">Or copy and paste this link:<br/><a href="${link}" style="color:#00873a">${link}</a></p>
+    <p style="font-size:12px;color:#bbb;margin-top:32px">If you didn't create a BlastyBiz account, you can safely ignore this email.</p>
+  </div>
+  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+    <p style="font-size:12px;color:#999;margin:0">&#169; BlastyBiz &#183; <a href="https://blastybiz-9523e.web.app" style="color:#999">blastybiz.com</a></p>
+  </div>
+</div>`;
 
     await sendResendEmail({ to: decoded.email, subject: 'Verify your BlastyBiz email', html });
     return res.json({ ok: true });
