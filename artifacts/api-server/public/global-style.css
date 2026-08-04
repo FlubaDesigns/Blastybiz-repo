@@ -2544,12 +2544,40 @@ body.create-page .loc-type-toggle .loc-type-btn:first-child { border-right: 1.5p
 /* ═══ CREATE PAGE — SCOPED OVERRIDES (conflict prevention) ═══ */
 
 /* Tabs (conflict: listing-preview page also uses .tab/.tabs) */
-body.create-page .tabs-row { width: 100%; overflow: hidden; }
-body.create-page .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--dark); border-radius: 10px 10px 0 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-body.create-page .tabs::-webkit-scrollbar { display: none; }
-@media (max-width: 767px) {
-  body.create-page .tabs { border-radius: 0; }
+body.create-page .tabs-row {
+  width: 100%; display: flex; align-items: stretch; position: relative;
+  background: var(--dark); border-radius: 10px 10px 0 0;
+  border-bottom: 1px solid var(--border);
 }
+@media (max-width: 767px) {
+  body.create-page .tabs-row { border-radius: 0; }
+}
+/* Scroll arrows — hidden by default, JS shows them when overflow exists */
+body.create-page .tabs-arrow {
+  display: none; flex-shrink: 0; align-items: center; justify-content: center;
+  width: 32px; background: var(--dark);
+  border: none; border-bottom: 2px solid transparent;
+  color: var(--muted); font-size: 22px; line-height: 1;
+  cursor: pointer; padding: 0; transition: color .15s;
+  z-index: 2;
+}
+body.create-page .tabs-arrow:hover { color: var(--light); }
+body.create-page .tabs-arrow.visible { display: flex; }
+body.create-page .tabs-arrow--left  { border-right: 1px solid var(--border); }
+body.create-page .tabs-arrow--right { border-left: 1px solid var(--border); }
+/* Fade-gradient edge hints — overlay on the .tabs-row */
+body.create-page .tabs-row::before,
+body.create-page .tabs-row::after {
+  content: ''; position: absolute; top: 0; bottom: 2px; width: 28px;
+  pointer-events: none; z-index: 1; transition: opacity .2s; opacity: 0;
+}
+body.create-page .tabs-row::before { left: 0;  background: linear-gradient(to right,  var(--dark), transparent); }
+body.create-page .tabs-row::after  { right: 0; background: linear-gradient(to left, var(--dark), transparent); }
+body.create-page .tabs-row.fade-left::before  { opacity: 1; }
+body.create-page .tabs-row.fade-right::after  { opacity: 1; }
+/* The scrollable strip */
+body.create-page .tabs { display: flex; flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; border-radius: 0; border-bottom: none; background: transparent; }
+body.create-page .tabs::-webkit-scrollbar { display: none; }
 body.create-page .tab  { flex: 0 0 auto; padding: 14px 14px; text-align: center; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s; white-space: nowrap; }
 body.create-page .tab.active { color: var(--green); border-bottom-color: var(--green); }
 @media (max-width: 767px) {
