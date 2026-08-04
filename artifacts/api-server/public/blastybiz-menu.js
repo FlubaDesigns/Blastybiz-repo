@@ -7,6 +7,9 @@ function _revealAdminNav() {
       const user = auth.currentUser;
       if (!user) return;
 
+      // Mark body as logged-in so CSS reveals app nav links
+      document.body.classList.add('logged-in');
+
       // ── Admin nav link ──────────────────────────────
       let isAdmin = user.email === 'info@blastybiz.com';
       if (!isAdmin) {
@@ -20,6 +23,10 @@ function _revealAdminNav() {
         var m = document.getElementById('header__mobile-testconsole');
         if (d) d.style.display = '';
         if (m) m.style.display = '';
+        var da = document.getElementById('header__nav-admin');
+        var ma = document.getElementById('header__mobile-admin');
+        if (da) da.style.display = '';
+        if (ma) ma.style.display = '';
       }
 
       // ── Business tab strip (pro/agency, 2+ businesses) ─

@@ -420,7 +420,8 @@ body.home-page .main { padding-top: 0 !important; }
 
 /* Auth state — JS adds/removes body.logged-in */
 #header__nav-logout  { display: none; }
-#header__nav-create { display: none; }
+/* App-only nav items: hidden by default, shown when logged in */
+.header__nav-app     { display: none; }
 #header__mobile-login { display: none; }
 #header__mobile-logout {
   display: none;
@@ -437,8 +438,9 @@ body.home-page .main { padding-top: 0 !important; }
 body.logged-in #header__nav-login               { display: none; }
 @media (min-width: 768px) {
   body.logged-in #header__nav-logout             { display: inline; }
-  body.logged-in #header__nav-create             { display: inline; }
+  body.logged-in .header__nav-app                { display: inline-flex; }
 }
+body.logged-in .header__mobile-menu .header__nav-app { display: block; }
 body.logged-in #header__mobile-logout             { display: block; }
 .header__mobile-menu #header__mobile-login            { display: block; }
 body.logged-in .header__mobile-menu #header__mobile-login { display: none; }

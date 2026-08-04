@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>BlastyBiz — Admin Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="global-style.css?v=1785809174858">
+<link rel="stylesheet" href="global-style.css?v=1785809827425">
 
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
@@ -74,9 +74,9 @@
   </section>
 
   <section class="grid" id="finance">
-    <div class="stat"><div class="stat-num" id="stat-mrr">$0</div><div class="stat-label">MRR</div><div class="stat-note money">Monthly recurring revenue</div></div>
-    <div class="stat"><div class="stat-num">$126</div><div class="stat-label">AI Spend</div><div class="stat-note warn">Owner-only metric</div></div>
-    <div class="stat"><div class="stat-num">86%</div><div class="stat-label">Gross Margin</div><div class="stat-note money">After AI + platform costs</div></div>
+    <div class="stat"><div class="stat-num" id="stat-mrr">$0</div><div class="stat-label">MRR</div><div class="stat-note money">Paying subscriptions only</div></div>
+    <div class="stat"><div class="stat-num" id="stat-ai-spend">$0.00</div><div class="stat-label">AI Spend</div><div class="stat-note warn">This month · owner-only</div></div>
+    <div class="stat"><div class="stat-num">~86%</div><div class="stat-label">Margin Target</div><div class="stat-note money">Est. after AI + platform costs</div></div>
     <div class="stat"><div class="stat-num" id="stat-failed">0</div><div class="stat-label">Failed Jobs</div><div class="stat-note bad">Needs review</div></div>
   </section>
 
@@ -268,7 +268,21 @@ onAuthStateChanged(auth, async (user) => {
   if (!user) return;
   window._adminUser = user;
   const el = id => document.getElementById(id);
-  const PRICES = { pro: 19, agency: 99 };
+  // Load live pricing from Firestore (set via adminUpdatePricing)
+  let PRICES = { pro: 19, agency: 99 }; // fallback defaults
+  try {
+    const pricingSnap = await getDoc(doc(db, 'settings', 'pricing'));
+    if (pricingSnap.exists()) {
+      const pd = pricingSnap.data();
+      PRICES = {
+        pro:    pd.proMonthly    || 19,
+        agency: pd.agencyMonthly || 99,
+      };
+    }
+  } catch(e) { console.warn('[admin] pricing load failed, using defaults:', e.message); }
+
+  // Canonical plan display names
+  const PLAN_DISPLAY = { starter: 'Starter', free: 'Free', pro: 'Pro', agency: 'Agency' };
 
   // ── Load current AI settings ──
   (async () => {
@@ -338,10 +352,14 @@ onAuthStateChanged(auth, async (user) => {
   // Businesses snapshot
   onSnapshot(query(collectionGroup(db, 'businesses'), limit(200)), (snap) => {
     const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const active = all.filter(b => b.subscriptionStatus === 'active').length;
-    const trial  = all.filter(b => b.subscriptionStatus === 'trial').length;
+    // Active = explicit 'active' OR no status set (pre-subscription records)
+    const active  = all.filter(b => !b.subscriptionStatus || b.subscriptionStatus === 'active').length;
+    const trial   = all.filter(b => b.subscriptionStatus === 'trial').length;
     const pastDue = all.filter(b => b.subscriptionStatus === 'past_due').length;
-    const mrr = all.reduce((s, b) => s + (PRICES[(b.currentPlan||'').toLowerCase()] || 0), 0);
+    // MRR: only count subscriptions that are paying (active or trial); canceled/past-due excluded
+    const mrr = all
+      .filter(b => ['active', 'trial'].includes(b.subscriptionStatus || ''))
+      .reduce((s, b) => s + (PRICES[(b.currentPlan||'').toLowerCase()] || 0), 0);
 
     if (el('stat-mrr'))      el('stat-mrr').textContent      = '$' + mrr.toLocaleString();
     if (el('stat-biz'))      el('stat-biz').textContent      = all.length;
@@ -363,8 +381,8 @@ onAuthStateChanged(auth, async (user) => {
       const named = all.filter(b => b.businessName).sort((a,b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
       allTbody.innerHTML = named.length
         ? named.map(b => {
-            const s = b.subscriptionStatus || 'active';
-            const plan = SAFE_PLANS.has((b.currentPlan||'').toLowerCase()) ? b.currentPlan : 'Free';
+            const s = b.subscriptionStatus || 'unknown';
+            const plan = PLAN_DISPLAY[(b.currentPlan||'').toLowerCase()] || 'Free';
             const joined = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
             return '<tr><td class="biz-name-cell"></td><td>' + _esc(plan) + '</td><td><span class="badge ' + (SUB_BADGE[s]||'live') + '">' + _esc(s) + '</span></td><td class="muted">' + _esc(joined) + '</td></tr>';
           }).join('')
@@ -380,8 +398,8 @@ onAuthStateChanged(auth, async (user) => {
     if (tbody) {
       tbody.innerHTML = attn.length
         ? attn.slice(0,20).map(b => {
-            const s = b.subscriptionStatus || 'active';
-            const plan = SAFE_PLANS.has((b.currentPlan||'').toLowerCase()) ? b.currentPlan : 'Free';
+            const s = b.subscriptionStatus || 'unknown';
+            const plan = PLAN_DISPLAY[(b.currentPlan||'').toLowerCase()] || 'Free';
             const issue = !isOnboarded(b) ? 'Empty signup — no profile'
               : s === 'past_due' ? 'Square payment failed'
               : s === 'trial'    ? 'Trial — needs upgrade'
@@ -401,7 +419,7 @@ onAuthStateChanged(auth, async (user) => {
         });
       });
     }
-  });
+  }, (err) => { console.error('[admin] businesses snapshot error:', err.message); });
 
   // AI usage logs — live cost from Firestore
   const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
@@ -410,6 +428,7 @@ onAuthStateChanged(auth, async (user) => {
     (snap) => {
       const logs = snap.docs.map(d => d.data());
       const totalCost    = logs.reduce((s, l) => s + (l.costUsd || 0), 0);
+      if (el('stat-ai-spend')) el('stat-ai-spend').textContent = '$' + totalCost.toFixed(2);
       const totalTokensIn  = logs.reduce((s, l) => s + (l.inputTokens  || 0), 0);
       const totalTokensOut = logs.reduce((s, l) => s + (l.outputTokens || 0), 0);
       const callCounts   = {};
@@ -433,7 +452,8 @@ onAuthStateChanged(auth, async (user) => {
           ? 'Live data · tracking started when calls were instrumented'
           : 'No AI calls logged yet this month — data accumulates as users run the tool';
       }
-    }
+    },
+    (err) => { console.error('[admin] aiUsageLogs snapshot error:', err.message); }
   );
 
   // Failed jobs snapshot
@@ -453,12 +473,14 @@ onAuthStateChanged(auth, async (user) => {
           }).join('')
         : '<div class="list-item"><div class="icon">✓</div><div class="row-main"><div class="row-title">No failed jobs</div><div class="row-sub">All clear.</div></div><span class="badge live">Good</span></div>';
     }
-  });
+  }, (err) => { console.error('[admin] publishJobs snapshot error:', err.message); });
 
   // Successful posts count
-  onSnapshot(query(collectionGroup(db, 'publishJobs'), where('status','==','success'), limit(500)), (snap) => {
-    if (el('stat-posts')) el('stat-posts').textContent = snap.size;
-  });
+  onSnapshot(
+    query(collectionGroup(db, 'publishJobs'), where('status','==','success'), limit(500)),
+    (snap) => { if (el('stat-posts')) el('stat-posts').textContent = snap.size; },
+    (err) => { console.error('[admin] publishJobs success snapshot error:', err.message); }
+  );
 });
 </script>
 </body>
