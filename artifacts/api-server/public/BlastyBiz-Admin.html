@@ -87,6 +87,17 @@
     <div class="stat"><div class="stat-num" id="stat-manual">0</div><div class="stat-label">Manual Tasks</div><div class="stat-note blue">Copy/paste platforms</div></div>
   </section>
 
+  <!-- ── ONBOARDING FUNNEL WIDGET ── -->
+  <section class="card mb-16" id="onboarding-funnel-widget" style="border-left:4px solid #FF6D00;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+      <div class="card-title" style="margin:0;">🚧 Onboarding Funnel</div>
+      <a href="BlastyBiz-Admin-Operate.html#onboarding-funnel" style="font-size:13px;color:#FF6D00;text-decoration:none;white-space:nowrap;">View full funnel →</a>
+    </div>
+    <div id="funnel-widget-body">
+      <div style="font-size:13px;color:#888;">Loading…</div>
+    </div>
+  </section>
+
   <section class="two-col">
     <div class="card" id="failed">
       <div class="card-title">⚠️ Failed Job Queue</div>
@@ -490,6 +501,54 @@ onAuthStateChanged(auth, async (user) => {
     },
     (err) => { console.error('[admin] aiUsageLogs snapshot error:', err.message); }
   );
+
+  // ── Onboarding funnel widget ──
+  (async () => {
+    const funnelBody = document.getElementById('funnel-widget-body');
+    if (!funnelBody) return;
+    try {
+      const token = await user.getIdToken();
+      const resp = await fetch(`${CF_BASE}/adminOnboardingFunnel`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const { steps = [], totalStuck = 0 } = await resp.json();
+
+      if (totalStuck === 0) {
+        funnelBody.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:#00C853;font-size:14px;font-weight:600;">✓ All users onboarded — nobody stuck right now.</div>';
+        return;
+      }
+
+      const top3 = steps.slice(0, 3);
+      const maxCount = top3[0]?.count || 1;
+
+      const rows = top3.map(s => {
+        const pct = Math.round((s.count / maxCount) * 100);
+        return `<div style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+            <span style="font-size:13px;font-weight:600;color:#111;">${s.label}</span>
+            <span style="font-size:13px;font-weight:700;color:#FF6D00;min-width:32px;text-align:right;">${s.count}</span>
+          </div>
+          <div style="height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:#FF6D00;border-radius:3px;transition:width .4s;"></div>
+          </div>
+        </div>`;
+      }).join('');
+
+      const more = steps.length > 3
+        ? `<div style="font-size:12px;color:#888;margin-top:6px;">+ ${steps.length - 3} more step${steps.length - 3 === 1 ? '' : 's'} with drop-off</div>`
+        : '';
+
+      funnelBody.innerHTML = `
+        <div style="font-size:13px;color:#555;margin-bottom:12px;">
+          <strong style="font-size:16px;color:#111;">${totalStuck}</strong> user${totalStuck === 1 ? '' : 's'} stuck mid-onboarding — top drop-off steps:
+        </div>
+        ${rows}${more}`;
+    } catch(e) {
+      if (funnelBody) funnelBody.innerHTML = '<div style="font-size:13px;color:#aaa;">Could not load funnel data.</div>';
+      console.warn('[funnel-widget]', e.message);
+    }
+  })();
 
   // Failed jobs snapshot
   onSnapshot(query(collectionGroup(db, 'publishJobs'), where('status','in',['failed','manual_required']), orderBy('updatedAt','desc'), limit(50)), (snap) => {
