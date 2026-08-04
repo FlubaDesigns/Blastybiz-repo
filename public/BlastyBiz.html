@@ -5,7 +5,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785863058939" />
+<link rel="stylesheet" href="global-style.css?v=1785864425302" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -4930,14 +4930,7 @@ import {
   ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
-window.doSignOut = () => {
-  localStorage.setItem('bb_auth', '0');
-  // Clear per-account caches so a subsequent sign-in on the same browser
-  // never flashes another user's profile data, even for an instant.
-  try { localStorage.removeItem('bb_profile'); }           catch(e) {}
-  try { localStorage.removeItem('bb_platforms_enabled'); } catch(e) {}
-  signOut(auth).finally(() => { window.location.href = 'BlastyBiz-Login.html'; });
-};
+window.doSignOut = () => window._bbSignOut(auth, signOut);
 
 // ── Magic-link trial sign-in ─────────────────────────────────────────
 if (isSignInWithEmailLink(auth, window.location.href)) {
@@ -6614,6 +6607,7 @@ window.confirmDeleteAccount = async function() {
 
 <script src="escape-utils.js?v=1"></script>
 <script src="header-loader.js?v=1"></script>
+<script src="session.js?v=1"></script>
 
 <!-- ── Create-Business choice modal ─────────────────────────── -->
 <div id="cb-choose-modal" class="cbm-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">

@@ -276,23 +276,28 @@ const ALLOWED_ORIGINS = new Set([
 
 // ── Simple per-uid rate limiter (Firestore-backed, mirrors contactForm's IP limiter) ──
 // Returns true if the caller is within limit (and records the hit); false if over limit.
+// 4.6: wrapped in a transaction to eliminate the read-then-write race condition that
+// could allow slightly over-limit requests through under concurrency.
 async function checkUidRateLimit(collectionName, uid, maxCount, windowMs) {
   try {
     const rlRef = db.collection(collectionName).doc(uid);
-    const rlSnap = await rlRef.get();
     const now = Date.now();
-    if (rlSnap.exists) {
-      const { count, windowStart } = rlSnap.data();
-      if (now - windowStart < windowMs) {
-        if (count >= maxCount) return false;
-        await rlRef.update({ count: admin.firestore.FieldValue.increment(1) });
+    const allowed = await db.runTransaction(async (txn) => {
+      const rlSnap = await txn.get(rlRef);
+      if (rlSnap.exists) {
+        const { count, windowStart } = rlSnap.data();
+        if (now - windowStart < windowMs) {
+          if (count >= maxCount) return false;
+          txn.update(rlRef, { count: admin.firestore.FieldValue.increment(1) });
+        } else {
+          txn.set(rlRef, { count: 1, windowStart: now, expiresAt: admin.firestore.Timestamp.fromMillis(now + windowMs) });
+        }
       } else {
-        await rlRef.set({ count: 1, windowStart: now, expiresAt: admin.firestore.Timestamp.fromMillis(now + windowMs) });
+        txn.set(rlRef, { count: 1, windowStart: now, expiresAt: admin.firestore.Timestamp.fromMillis(now + windowMs) });
       }
-    } else {
-      await rlRef.set({ count: 1, windowStart: now, expiresAt: admin.firestore.Timestamp.fromMillis(now + windowMs) });
-    }
-    return true;
+      return true;
+    });
+    return allowed;
   } catch(e) { return false; /* rate-limit check fails closed — deny if Firestore unavailable */ }
 }
 
@@ -343,13 +348,19 @@ async function requireAdmin(req) {
   return decoded;
 }
 
-// HMAC-signed unsubscribe tokens — prevents forging by base64-encoding a uid
+// HMAC-signed unsubscribe tokens
+// 2.4: use a dedicated UNSUB_SIGNING_KEY so rotating the Resend key doesn't
+// silently invalidate every unsubscribe link already in customers' inboxes.
 function makeUnsubSig(uid, secret) {
   return crypto.createHmac('sha256', secret).update(uid).digest('hex');
 }
+function _unsubSecret() {
+  return process.env.UNSUB_SIGNING_KEY || process.env.RESEND_API_KEY;
+}
 
 // ── AI usage limits (actions per month by plan) ──────────────────────────────
-const AI_LIMITS = { starter: 10, pro: 100, agency: 500 };
+// 4.5: trial added — previously fell through silently to starter cap
+const AI_LIMITS = { trial: 10, starter: 10, pro: 100, agency: 500 };
 
 // ── Canonical job status values ───────────────────────────────────────────────
 const JOB_STATUS = {
@@ -1062,7 +1073,7 @@ exports.uploadImage = onRequest({ invoker: 'public' }, async (req, res) => {
   const bucket = admin.storage().bucket();
   const file = bucket.file(`users/${uid}/images/${Date.now()}_${safeFileName}`);
   await file.save(rawBytes, { contentType: mimeType });
-  const [url] = await file.getSignedUrl({ action: 'read', expires: new Date(Date.now() + 10 * 365 * 24 * 3600 * 1000) });
+  const [url] = await file.getSignedUrl({ action: 'read', expires: new Date(Date.now() + 365 * 24 * 3600 * 1000) }); // 3.6: 1 year max (was 10 years)
   res.json({ url });
 });
 
@@ -1958,6 +1969,7 @@ exports.dispatchPublishJob = onDocumentCreated(
   async (event) => {
     const job    = event.data.data();
     const jobRef = event.data.ref;
+    const { userId: _pathUserId, bizId: _pathBizId } = event.params; // 2.8: path params are authoritative
 
     // Only process jobs that need auto-posting
     if (job.status !== 'pending') return;
@@ -1979,12 +1991,12 @@ exports.dispatchPublishJob = onDocumentCreated(
     }
 
     try {
-      const connSnap = await userBizConnsRef(job.uid, job.businessId).doc(job.platform).get();
+      const connSnap = await userBizConnsRef(_pathUserId, _pathBizId).doc(job.platform).get(); // 2.8
 
       if (!connSnap.exists || connSnap.data().status !== 'connected') {
         await jobRef.update({
           status: 'failed',
-          adminError: `No connected ${job.platform} account for business ${job.businessId}`,
+          adminError: `No connected ${job.platform} account for business ${_pathBizId}`,
           customerVisibleMessage: `Your ${job.platform} account isn't connected. Go to Connect Platforms to link it.`,
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
@@ -2053,7 +2065,7 @@ exports.jobFailedTrigger = onDocumentUpdated(
     const after  = event.data.after.data();
     if (before.status === after.status || after.status !== 'failed') return;
 
-    const uid = after.uid;
+    const uid = event.params.userId; // 2.8: use path param, not doc data field
     if (!uid) return;
     let toEmail, ownerName, businessName;
     try {
@@ -2134,7 +2146,7 @@ exports.jobCompletedTrigger = onDocumentUpdated(
     const after  = event.data.after.data();
     if (before.status === after.status || after.status !== 'success') return;
 
-    const uid = after.uid;
+    const uid = event.params.userId; // 2.8: use path param, not doc data field
     if (!uid) return;
     let toEmail, ownerName, businessName;
     try {
@@ -2490,15 +2502,16 @@ exports.adminListPublishJobs = onRequest({ invoker: 'public' }, async (req, res)
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
   const { status, limit: lim = '100' } = req.query;
+  const cap = Math.min(Number(lim) || 100, 500); // 4.2: hard cap — never scan the whole collection
   let snap;
   if (status) {
-    snap = await db.collectionGroup('publishJobs').where('status', '==', status).get();
+    snap = await db.collectionGroup('publishJobs').where('status', '==', status).limit(cap).get();
   } else {
-    snap = await db.collectionGroup('publishJobs').get();
+    snap = await db.collectionGroup('publishJobs').orderBy('createdAt', 'desc').limit(cap).get();
   }
   const jobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   jobs.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
-  res.json({ jobs: jobs.slice(0, Number(lim)) });
+  res.json({ jobs });
 });
 
 exports.adminListFailedJobs = onRequest({ invoker: 'public' }, async (req, res) => {
@@ -2506,10 +2519,10 @@ exports.adminListFailedJobs = onRequest({ invoker: 'public' }, async (req, res) 
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
   const snap = await db.collectionGroup('publishJobs')
-    .where('status', 'in', ['failed', 'manual_required', 'manual_followup']).get();
+    .where('status', 'in', ['failed', 'manual_required', 'manual_followup']).limit(100).get(); // 4.2
   const jobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   jobs.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
-  res.json({ jobs: jobs.slice(0, 100) });
+  res.json({ jobs });
 });
 
 exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, async (req, res) => {
@@ -2631,10 +2644,10 @@ exports.adminListPlatformConnections = onRequest({ invoker: 'public' }, async (r
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
-  const snap = await db.collectionGroup('platformConnections').get();
+  const snap = await db.collectionGroup('platformConnections').limit(200).get(); // 4.2
   const conns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   conns.sort((a, b) => (b.connectedAt?.toMillis?.() || 0) - (a.connectedAt?.toMillis?.() || 0));
-  res.json({ connections: conns.slice(0, 200) });
+  res.json({ connections: conns });
 });
 
 // Returns connection-health summary + list of broken/expiring connections joined with business names
@@ -2643,7 +2656,7 @@ exports.adminPlatformHealth = onRequest({ invoker: 'public' }, async (req, res) 
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
 
-  const snap = await db.collectionGroup('platformConnections').get();
+  const snap = await db.collectionGroup('platformConnections').limit(500).get(); // 4.2
   const counts = { connected: 0, expired: 0, disconnected: 0, other: 0 };
   const broken = [];
 
@@ -2689,7 +2702,7 @@ exports.adminPlatformHealth = onRequest({ invoker: 'public' }, async (req, res) 
 });
 
 // Sends a one-off reconnect nudge email to the business owner for a given connection
-exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
+exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
@@ -2752,7 +2765,7 @@ exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESE
 
 // ── adminSendRecoveryEmails — bulk billing-recovery nudge for past_due businesses ──
 // Admin-only. Emails the owner of every business currently in `past_due` status.
-exports.adminSendRecoveryEmails = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
+exports.adminSendRecoveryEmails = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
@@ -2772,7 +2785,7 @@ exports.adminSendRecoveryEmails = onRequest({ invoker: 'public', secrets: ['RESE
       const ownerName = userData.ownerName || userData.displayName || 'there';
       const bizLabel = biz.businessName || 'your business';
       const dashboardUrl = APP_BASE_URL + '/BlastyBiz-Dashboard.html#billing';
-      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, process.env.RESEND_API_KEY)}`;
+      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, _unsubSecret())}`;
 
       const subject = `Payment failed for ${bizLabel} — update your card to avoid downgrade`;
       const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
@@ -2818,7 +2831,7 @@ exports.createBusiness = onRequest({ invoker: 'public' }, async (req, res) => {
   if (!profileData || typeof profileData !== 'object') {
     return res.status(400).json({ error: 'Missing profileData' });
   }
-  const BIZ_LIMITS = { starter: 1, pro: 3, agency: 10 };
+  const BIZ_LIMITS = { trial: 1, starter: 1, pro: 3, agency: 10 }; // 4.5: trial added
   try {
     const limSnap = await db.collection('settings').doc('bizLimits').get();
     if (limSnap.exists) {
@@ -2979,7 +2992,7 @@ exports.adminOnboardingFunnel = onRequest({ invoker: 'public' }, async (req, res
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
 
-  const snap = await db.collection('users').where('onboarded', '==', false).get();
+  const snap = await db.collection('users').where('onboarded', '==', false).limit(500).get(); // 4.2
 
   // ── Drill-down mode: return user list for a specific step ─────────────────
   if (req.query.stepIndex !== undefined) {
@@ -3091,8 +3104,8 @@ exports.adminSubscriptionSummary = onRequest({ invoker: 'public' }, async (req, 
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   try { await requireAdmin(req); } catch(e) { return res.status(e.status || 403).json({ error: e.message }); }
   const [usersSnap, subsSnap] = await Promise.all([
-    db.collection('users').get(),
-    db.collection('subscriptions').get(),
+    db.collection('users').limit(5000).get(),           // 4.2: prevent full-table scan
+    db.collection('subscriptions').limit(5000).get(),   // 4.2
   ]);
   const planCounts = { starter: 0, pro: 0, agency: 0 };
   usersSnap.docs.forEach(d => {
@@ -3912,7 +3925,7 @@ exports.scheduledUpgradeNudge = onSchedule(
         businessName = bizSnap.docs[0]?.data()?.businessName || '';
       } catch(e) { /* non-fatal */ }
 
-      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, process.env.RESEND_API_KEY)}`;
+      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, _unsubSecret())}`;
 
       const mergeData = {
         name: ownerName || 'there',
@@ -4042,7 +4055,7 @@ exports.scheduledWeeklyDigest = onSchedule(
       ))].join(', ');
       const jobCount = successJobs.length.toString();
 
-      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, process.env.RESEND_API_KEY)}`;
+      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, _unsubSecret())}`;
 
       const mergeData = {
         name: ownerName || 'there',
@@ -4113,15 +4126,16 @@ exports.scheduledWeeklyDigest = onSchedule(
 // HMAC-signed — sig = HMAC-SHA256(uid, RESEND_API_KEY); prevents uid-guessing attacks
 // Sets emailUnsubscribed: true on the users doc
 // ══════════════════════════════════════════
-exports.unsubscribeEmail = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
+exports.unsubscribeEmail = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] }, async (req, res) => {
   const uid = req.query.uid;
   const sig = req.query.sig;
   if (!uid || !sig) return res.status(400).send('<p>Missing unsubscribe parameters.</p>');
 
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return res.status(500).send('<p>Configuration error.</p>');
+  // 2.4: verify with the same dedicated key used to generate the token
+  const signingKey = _unsubSecret();
+  if (!signingKey) return res.status(500).send('<p>Configuration error.</p>');
 
-  const expected = makeUnsubSig(uid, apiKey);
+  const expected = makeUnsubSig(uid, signingKey);
   let sigValid = false;
   try {
     sigValid = crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex'));
@@ -4191,7 +4205,7 @@ exports.scheduledSetupNudge = onSchedule(
       if (userData.emailUnsubscribed) { await db.collection('setupNudges').doc(uid).delete(); continue; }
 
       const ownerName = userData.ownerName || userData.displayName || '';
-      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, process.env.RESEND_API_KEY)}`;
+      const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, _unsubSecret())}`;
 
       let tmplSubject = null;
       let tmplHtml = null;
@@ -4620,8 +4634,7 @@ exports.sendVerificationEmail = onRequest({ invoker: 'public', secrets: ['RESEND
 
 // ── scoreFact — lightweight AI importance scoring for user-added factoids ──────
 exports.scoreFact = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, async (req, res) => {
-  res.set('Access-Control-Allow-Origin', '*');
-  res.set('Access-Control-Allow-Headers', 'Authorization,Content-Type');
+  setCors(req, res); // 2.3: use the allowlist-validated helper, not wildcard
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
   const authHeader = req.headers.authorization || '';

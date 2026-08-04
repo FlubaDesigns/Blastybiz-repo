@@ -5,7 +5,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785863058939" />
+<link rel="stylesheet" href="global-style.css?v=1785864425302" />
 <title>BlastyBiz — Command Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -424,7 +424,7 @@ import {
   collection, query, where, getDocs, getDoc, setDoc, deleteDoc, doc, serverTimestamp, orderBy, limit
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-window.doSignOut = () => { localStorage.setItem('bb_auth','0'); signOut(auth).finally(()=>{ window.location.href='BlastyBiz-Login.html'; }); };
+window.doSignOut = () => window._bbSignOut(auth, signOut);
 
 window.openCampaignSheet = async function(draftId) {
   if (!draftId) return;
@@ -870,5 +870,6 @@ async function startCheckout(plan) {
 
 </script>
 <script src="header-loader.js?v=1"></script>
+<script src="session.js?v=1"></script>
 </body>
 </html>

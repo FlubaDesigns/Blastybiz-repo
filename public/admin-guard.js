@@ -25,6 +25,11 @@ auth.authStateReady()
         return;
       }
       clearTimeout(_safetyTimer);
+      // 2.9: check emailVerified the same way auth-guard.js does
+      if (!user.emailVerified) {
+        window.location.href = 'BlastyBiz-Login.html';
+        return;
+      }
       try {
         const token = await user.getIdToken();
         const resp = await fetch(`${CF_BASE}/adminGetAdminEmails`, {

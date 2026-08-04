@@ -14,7 +14,7 @@
 const fs   = require('fs');
 const path = require('path');
 
-const PUBLIC = path.resolve(__dirname, '../artifacts/api-server/public');
+const PUBLIC = path.resolve(__dirname, '../public');
 
 // Pages that are intentionally not linked from any other page
 const ALLOWLIST = new Set([
@@ -35,9 +35,11 @@ const ALLOWLIST = new Set([
   'BlastyBiz-Chat-Onboarding.html',  // retired; redirects to Onboard2.html on load
   'BlastyBiz-Onboarding.html',       // retired; redirects to Onboard2.html on load
   'BlastyBiz-Listing-Preview.html', // opened in new tab from campaign
-  'index.html',                   // root redirect
-  'blastybiz-header.html',        // partial, fetched by header-loader.js
-  'blastybiz-footer.html',        // partial, fetched inline
+  'index.html',                      // root redirect
+  'blastybiz-header.html',           // partial, fetched by header-loader.js
+  'blastybiz-footer.html',           // partial, fetched inline
+  '404.html',                        // Firebase Hosting error page — referenced in firebase.json, not HTML links
+  'BlastyBiz-Businesses.html',       // multi-business switcher — future feature, linked from nav conditionally
 ]);
 
 // Shared assets to check for version consistency
@@ -136,6 +138,40 @@ for (const asset of VERSIONED_ASSETS) {
     console.log(`  — ${asset} — no versioned references found`);
   }
 }
+
+// ── Check 4: Unescaped innerHTML interpolations ───────────────────────────────
+console.log('\n── 4. Unescaped innerHTML interpolations ────────────────────────');
+// Flag any line that writes to innerHTML AND contains ${ but lacks escHtml( or _esc( on the same line.
+// This catches the class of XSS bugs documented in finding 3.1 of the enterprise audit.
+const INNER_RE = /innerHTML\s*[+]?=\s*[^;]*?\$\{/;
+const SAFE_RE  = /escHtml\(|_esc\(/;
+let innerHtmlFailures = 0;
+for (const [f, content] of Object.entries(fileContents)) {
+  const lines = content.split('\n');
+  lines.forEach((line, idx) => {
+    if (INNER_RE.test(line) && !SAFE_RE.test(line)) {
+      console.log(`  ❌ UNESCAPED innerHTML: ${f}:${idx + 1} — ${line.trim().slice(0, 100)}`);
+      innerHtmlFailures++;
+      failures++;
+    }
+  });
+}
+if (innerHtmlFailures === 0) console.log('  ✅ No unescaped innerHTML interpolations found');
+
+// ── Check 5: session.js included on pages that DEFINE doSignOut ──────────────
+// Pages that only CALL doSignOut (e.g. blastybiz-header.html via onclick) are
+// excluded — they rely on the including page to have already loaded session.js.
+console.log('\n── 5. session.js missing from pages that define doSignOut ────────');
+const DEFINE_DO_SIGN_OUT = /window\.doSignOut\s*=/;
+let sessionFailures = 0;
+for (const [f, content] of Object.entries(fileContents)) {
+  if (DEFINE_DO_SIGN_OUT.test(content) && !content.includes('session.js')) {
+    console.log(`  ❌ MISSING session.js: ${f}`);
+    sessionFailures++;
+    failures++;
+  }
+}
+if (sessionFailures === 0) console.log('  ✅ All doSignOut-defining pages include session.js');
 
 // ── Summary ───────────────────────────────────────────────────────────────────
 console.log('\n── Summary ───────────────────────────────────────────────────────');

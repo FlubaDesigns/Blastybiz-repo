@@ -83,7 +83,7 @@ Import `auth` and `db` from `./firebase-init-v2.js` only. Do NOT add separate fi
 4. **Confirm** — verify the fix is actually live (e.g. `curl` the deployed file and check the output). Do not assume it worked.
 5. **VERIFY** — Use `curl` to confirm the deployed file/response reflects the fix. Use Playwright (`runTest()`) when the bug involves browser-side JavaScript execution, console errors, or UI behavior that curl cannot catch (e.g. SyntaxErrors, module failures, auth-guard redirects). Use the Firestore REST-API token-refresh technique to verify Firestore state. Skipping verification entirely is not allowed. If verification fails, go back to step 1.
 6. **Update `download/BlastyBiz_Audit.md`** — add a row to the 🐛 Bugs Fixed table with date, location, and what was wrong and how it was fixed.
-7. **Rebuild `download/BlastyBiz_Site.zip`** — run the Python zipfile script so the zip always reflects the latest state.
+7. **Rebuild `downloads/BlastyBiz.zip`** — run the Python zipfile script at the project root so the zip always reflects the latest state (`python3 -c "import zipfile,os,pathlib; ..."` or run `python3 download/build_zip.py` if that script exists and is up to date).
 8. **Present both files** to the user before closing out the fix.
 9. **Post the live link** — always end with the direct URL so it can be tapped on mobile: https://blastybiz-9523e.web.app
 

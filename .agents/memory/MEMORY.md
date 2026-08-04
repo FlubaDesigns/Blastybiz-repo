@@ -15,3 +15,5 @@
 - [BlastyBiz approveDraft CF trust model](blastybiz-approvedraft-trust.md) — client sends only platformKeys[]; CF uses server-side PLATFORM_CAPABILITY_MAP + draftSnap.data().adaptations; never trust client-supplied capabilityLevel or adaptedContent.
 - [BlastyBiz anim variants](blastybiz-anim-variants.md) — smoke/nose saved as CSS class strings not booleans; backward-compat for legacy true values; pattern for adding future variant families.
 - [BlastyBiz mascot portability](blastybiz-mascot-portability.md) — NO "Blasty" in component names; self-contained single file; portable to other sites; descriptive class names not generic "anim".
+- [BlastyBiz session.js](blastybiz-session-js.md) — canonical sign-out via window._bbSignOut(auth, signOut); BB_KEYS is the authoritative list; all doSignOut-defining pages must include session.js.
+- [BlastyBiz UNSUB_SIGNING_KEY](blastybiz-unsub-signing-key.md) — dedicated Firebase secret for unsubscribe HMAC; _unsubSecret() falls back to RESEND_API_KEY; declared in adminSendReconnectNudge, adminSendRecoveryEmails, unsubscribeEmail.
