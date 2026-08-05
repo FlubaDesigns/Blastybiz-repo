@@ -14,7 +14,7 @@ firebase deploy --only firestore:rules  # Firestore rules changes
 
 ## Mascot Component
 
-See `mascot/README.md` for the full guide — SVG anatomy, animation class reference, composition examples, and changelog.
+The mascot is a self-contained animated SVG component at `public/mascot.js`. It is included on 11 pages (Onboard2, Story, Trial, CreateBiz, Intro, Profile, TestBlasty, Admin-Moods, and form-guide.js). Animation variants are controlled via CSS classes on the root element. See the top of `public/mascot.js` for the full class reference, SVG anatomy, and composition notes.
 
 ## Stack
 
