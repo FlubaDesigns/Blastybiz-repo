@@ -42,7 +42,7 @@ Updates `schedule.nextRunAt` and `schedule.lastRunAt` (ISO strings) after each r
 - ~~**2.9**~~ ✅ FIXED (was already done — emailVerified check in admin-guard.js)
 - ~~**3.5**~~ ✅ FIXED (was already done — magic-byte validation in uploadImage)
 - ~~**3.6**~~ ✅ FIXED 2026-08-05 — `uploadImage` now does `file.makePublic()` + permanent `storage.googleapis.com` URL instead of 365-day signed URL
-- **1.7 (half)** — admin still email allowlist not custom claim; 2 addresses in functions vs 1 in rules
+- ~~**1.7**~~ ✅ FIXED 2026-08-05 — single source of truth: `config/admins.emails` in Firestore. `getAdminEmails()` self-seeds on first boot. `PERMANENT_ADMIN_EMAIL = 'info@blastybiz.com'` is the only hardcoded value (lockout-prevention, matches rules fallback). Admin UI updated to flat `{ emails, permanent }` shape.
 - **1.5 / 1.9 (ops)** — revoke old OAuth tokens + Anthropic key rotation (console work)
 
 ### Scale

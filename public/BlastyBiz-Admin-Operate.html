@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="global-style.css?v=1785895500447">
+<link rel="stylesheet" href="global-style.css?v=1785896828786">
 
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
@@ -777,7 +777,8 @@ window.saveSecret = function(name, inputId, statusId, btn) {
 
 // ── Admin email management ────────────────────────────────────────────────────
 const CF_BASE = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
-let _adminEmailsCache = { bootstrap: [], extra: [] };
+// Single flat list — permanent[] comes from server, everything else is removable
+let _adminEmailsCache = { emails: [], permanent: ['info@blastybiz.com'] };
 
 async function _cfGet(path) {
   const token = await auth.currentUser.getIdToken();
@@ -795,23 +796,20 @@ async function _cfPost(path, body) {
 }
 
 function renderAdminEmails() {
-  const { bootstrap, extra } = _adminEmailsCache;
+  const { emails, permanent } = _adminEmailsCache;
   const el = document.getElementById('admin-email-list');
   if (!el) return;
   el.innerHTML = '';
-  const all = [
-    ...bootstrap.map(e => ({ email: e, permanent: true })),
-    ...extra.map(e => ({ email: e, permanent: false })),
-  ];
-  if (!all.length) { el.innerHTML = '<p style="font-size:13px;color:#9ca3af;">No extra admins yet.</p>'; return; }
-  all.forEach(({ email, permanent }) => {
+  if (!emails.length) { el.innerHTML = '<p style="font-size:13px;color:#9ca3af;">No admins yet.</p>'; return; }
+  emails.forEach(email => {
+    const isPermanent = permanent.includes(email);
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0f0f0;';
     const span = document.createElement('span');
     span.style.cssText = 'flex:1;font-size:13px;';
     span.textContent = email;
     row.appendChild(span);
-    if (permanent) {
+    if (isPermanent) {
       const badge = document.createElement('span');
       badge.style.cssText = 'font-size:11px;color:#9ca3af;padding:2px 6px;background:#f3f4f6;border-radius:10px;';
       badge.textContent = 'permanent';
@@ -832,7 +830,10 @@ async function loadAdminEmails() {
   const statusEl = document.getElementById('admin-email-status');
   try {
     const data = await _cfGet('/adminGetAdminEmails');
-    _adminEmailsCache = { bootstrap: data.bootstrap || [], extra: data.extra || [] };
+    _adminEmailsCache = {
+      emails:    data.emails    || [],
+      permanent: data.permanent || ['info@blastybiz.com'],
+    };
     renderAdminEmails();
     statusEl.textContent = '';
   } catch(e) {
@@ -845,14 +846,12 @@ async function addAdminEmail() {
   const statusEl = document.getElementById('admin-email-status');
   const email = (input.value || '').trim().toLowerCase();
   if (!email || !email.includes('@')) { statusEl.textContent = 'Enter a valid email.'; return; }
-  if (_adminEmailsCache.bootstrap.includes(email) || _adminEmailsCache.extra.includes(email)) {
-    statusEl.textContent = 'Already in the list.'; return;
-  }
+  if (_adminEmailsCache.emails.includes(email)) { statusEl.textContent = 'Already in the list.'; return; }
   statusEl.textContent = 'Saving…';
-  const newList = [..._adminEmailsCache.extra, email];
+  const newList = [..._adminEmailsCache.emails, email];
   try {
-    await _cfPost('/adminUpdateAdminEmails', { emails: newList });
-    _adminEmailsCache.extra = newList;
+    const result = await _cfPost('/adminUpdateAdminEmails', { emails: newList });
+    _adminEmailsCache.emails = result.emails || newList;
     input.value = '';
     renderAdminEmails();
     statusEl.textContent = '✓ Added';
@@ -862,10 +861,10 @@ async function addAdminEmail() {
 async function removeAdminEmail(email) {
   const statusEl = document.getElementById('admin-email-status');
   statusEl.textContent = 'Removing…';
-  const newList = _adminEmailsCache.extra.filter(e => e !== email);
+  const newList = _adminEmailsCache.emails.filter(e => e !== email);
   try {
-    await _cfPost('/adminUpdateAdminEmails', { emails: newList });
-    _adminEmailsCache.extra = newList;
+    const result = await _cfPost('/adminUpdateAdminEmails', { emails: newList });
+    _adminEmailsCache.emails = result.emails || newList;
     renderAdminEmails();
     statusEl.textContent = '✓ Removed';
   } catch(e) { statusEl.textContent = '✗ ' + e.message; }

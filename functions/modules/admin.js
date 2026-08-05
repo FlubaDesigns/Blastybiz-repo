@@ -15,7 +15,7 @@ const {
   userBizRef, userBizCol, userBizJobsRef, userBizConnsRef,
   _getConnTokens,
   withAuth, verifyBearer, setCors, requireAdmin,
-  bbLog, BOOTSTRAP_ADMIN_EMAILS, getAdminEmails,
+  bbLog, PERMANENT_ADMIN_EMAIL, getAdminEmails,
   JOB_STATUS, makeUnsubSig, _unsubSecret,
   getPlanConfig,
 } = require('../lib/shared');
@@ -315,11 +315,12 @@ exports.adminSendRecoveryEmails = onRequest({ invoker: 'public', secrets: ['RESE
 }, { admin: true }));
 
 // ── adminGetAdminEmails ───────────────────────────────────────────────────────
+// Returns flat { emails, permanent } — config/admins is the single source of truth.
+// getAdminEmails() self-seeds the doc on first call if it doesn't exist yet.
 exports.adminGetAdminEmails = onRequest({ invoker: 'public' }, withAuth(async (req, res) => {
   try {
-    const snap = await db.collection('config').doc('admins').get();
-    const extra = snap.exists ? (snap.data().emails || []) : [];
-    res.json({ bootstrap: BOOTSTRAP_ADMIN_EMAILS, extra, all: [...new Set([...BOOTSTRAP_ADMIN_EMAILS, ...extra])] });
+    const emails = await getAdminEmails();
+    res.json({ emails, permanent: [PERMANENT_ADMIN_EMAIL] });
   } catch(e) {
     console.error('[adminGetAdminEmails]', e.message);
     res.status(500).json({ error: e.message });
@@ -327,10 +328,13 @@ exports.adminGetAdminEmails = onRequest({ invoker: 'public' }, withAuth(async (r
 }, { admin: true }));
 
 // ── adminUpdateAdminEmails ────────────────────────────────────────────────────
+// Writes the full list to config/admins. Enforces permanent admin cannot be removed.
 exports.adminUpdateAdminEmails = onRequest({ invoker: 'public' }, withAuth(async (req, res) => {
   const { emails } = req.body;
   if (!Array.isArray(emails)) return res.status(400).json({ error: 'emails array required' });
-  const clean = emails.map(e => (e||'').trim().toLowerCase()).filter(e => e.includes('@'));
+  let clean = emails.map(e => (e||'').trim().toLowerCase()).filter(e => e.includes('@'));
+  // Permanent admin cannot be removed — enforce server-side
+  if (!clean.includes(PERMANENT_ADMIN_EMAIL)) clean = [PERMANENT_ADMIN_EMAIL, ...clean];
   try {
     await db.collection('config').doc('admins').set({ emails: clean }, { merge: true });
     res.json({ ok: true, emails: clean });

@@ -327,17 +327,30 @@ async function verifyBearer(req) {
   return await admin.auth().verifyIdToken(token);
 }
 
-const BOOTSTRAP_ADMIN_EMAILS = ['info@blastybiz.com', 'perceys@gmail.com'];
+// Single permanent bootstrap — only appears in code as a lockout-prevention last resort.
+// All other admins (including perceys@gmail.com) live exclusively in config/admins Firestore doc.
+const PERMANENT_ADMIN_EMAIL = 'info@blastybiz.com';
 
 async function getAdminEmails() {
   try {
-    const snap = await db.collection('config').doc('admins').get();
+    const ref = db.collection('config').doc('admins');
+    const snap = await ref.get();
     if (snap.exists) {
-      const extra = snap.data().emails || [];
-      return [...new Set([...BOOTSTRAP_ADMIN_EMAILS, ...extra])];
+      const emails = snap.data().emails || [];
+      // Self-heal: permanent admin must always be in the list
+      if (!emails.includes(PERMANENT_ADMIN_EMAIL)) {
+        const healed = [PERMANENT_ADMIN_EMAIL, ...emails];
+        await ref.update({ emails: healed }).catch(() => {});
+        return healed;
+      }
+      return emails;
     }
+    // First boot — seed Firestore with founder emails so rules and functions share one list
+    const seed = ['info@blastybiz.com', 'perceys@gmail.com'];
+    await ref.set({ emails: seed }).catch(() => {});
+    return seed;
   } catch(e) { /* fall through */ }
-  return BOOTSTRAP_ADMIN_EMAILS;
+  return [PERMANENT_ADMIN_EMAIL]; // ultimate fallback
 }
 
 async function requireAdmin(req) {
@@ -562,7 +575,7 @@ module.exports = {
   // CORS / auth
   ALLOWED_ORIGINS, checkUidRateLimit, setCors, withAuth,
   bbLog, verifyBearer,
-  BOOTSTRAP_ADMIN_EMAILS, getAdminEmails, requireAdmin,
+  PERMANENT_ADMIN_EMAIL, getAdminEmails, requireAdmin,
   // unsub
   makeUnsubSig, _unsubSecret,
   // plans
