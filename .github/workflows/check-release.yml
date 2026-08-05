@@ -23,3 +23,21 @@ jobs:
 
       - name: Run release checks
         run: node scripts/check-release.cjs
+
+      - name: Install firebase-tools
+        # Required by smoke-test.cjs to verify scheduled/trigger functions are deployed.
+        # Skipped when SMOKE_TEST_TOKEN is absent (forks / unrelated PRs).
+        if: ${{ secrets.SMOKE_TEST_TOKEN != '' }}
+        run: npm install -g firebase-tools
+
+      - name: Smoke-test Cloud Function endpoints
+        # Requires two secrets:
+        #   SMOKE_TEST_TOKEN — Firebase ID token for an admin user (for HTTP auth checks)
+        #   FIREBASE_TOKEN   — firebase-tools CI token (firebase login:ci) for functions:list
+        # Both must be set in repository secrets; the step is skipped if either is absent.
+        if: ${{ secrets.SMOKE_TEST_TOKEN != '' && secrets.FIREBASE_TOKEN != '' }}
+        env:
+          SMOKE_TEST_TOKEN: ${{ secrets.SMOKE_TEST_TOKEN }}
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          FIREBASE_PROJECT_ID: blastybiz-9523e
+        run: node scripts/smoke-test.cjs
