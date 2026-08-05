@@ -3,7 +3,8 @@
  * uploadImage, approvePendingPost, approveDraft,
  * postToBing, postToAppleMaps, dispatchPublishJob,
  * jobFailedTrigger, jobCompletedTrigger,
- * userCreatedTrigger, businessCreatedTrigger
+ * userCreatedTrigger, businessCreatedTrigger,
+ * importGooglePhotos, onGoogleImportQueued
  */
 'use strict';
 
@@ -14,6 +15,8 @@ const {
   _getConnTokens, _setConnTokens,
   withAuth,
 } = require('../lib/shared');
+
+const crypto = require('crypto');
 
 // ── Internal platform publishers ─────────────────────────────────────────────
 
@@ -570,6 +573,200 @@ exports.userCreatedTrigger = onDocumentCreated(
     } catch(e) { console.error('[userCreatedTrigger] setupNudges write failed:', e.message); }
   }
 );
+
+// ── Google Business Profile photo import ──────────────────────────────────
+
+/**
+ * Shared import logic — called from both onGoogleImportQueued trigger and
+ * the importGooglePhotos onRequest endpoint (manual re-import).
+ *
+ * Fetches up to 20 photos from the GBP media API, validates magic bytes,
+ * deduplicates by SHA-256 content hash, uploads to Storage, writes to the
+ * business images subcollection, and tracks progress in importJobs/{uid}_google.
+ */
+async function _runGooglePhotoImport(uid, bizId) {
+  const jobRef = db.collection('importJobs').doc(uid + '_google');
+
+  try {
+    const connRef = userBizConnsRef(uid, bizId).doc('google');
+    const connSnap = await connRef.get();
+    if (!connSnap.exists || connSnap.data().status !== 'connected') {
+      await jobRef.set({ status: 'skipped', reason: 'not_connected', uid, bizId,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      return;
+    }
+    const conn = connSnap.data();
+    const tokens = await _getConnTokens(connRef);
+    if (!tokens?.accessToken) {
+      await jobRef.set({ status: 'skipped', reason: 'no_token', uid, bizId,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      return;
+    }
+
+    const { accountId, locationId } = conn;
+    if (!accountId || !locationId) {
+      await jobRef.set({ status: 'skipped', reason: 'no_location', uid, bizId,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      return;
+    }
+
+    await jobRef.set({
+      uid, bizId, status: 'running', total: 0, done: 0,
+      startedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt:  admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    // Fetch GBP media list
+    let mediaItems = [];
+    try {
+      const resp = await axios.get(
+        `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/media`,
+        { headers: { Authorization: `Bearer ${tokens.accessToken}` }, timeout: 15000 }
+      );
+      mediaItems = resp.data.mediaItems || [];
+    } catch(e) {
+      if (e.response?.status === 429) {
+        await jobRef.update({ status: 'quota_exceeded', error: 'GBP quota exceeded',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+        return;
+      }
+      console.warn('[importGooglePhotos] media list fetch failed:', e.message);
+      await jobRef.update({ status: 'failed', error: e.message,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+      return;
+    }
+
+    const toImport = mediaItems
+      .filter(item => !item.mediaFormat || item.mediaFormat === 'PHOTO')
+      .slice(0, 20);
+
+    await jobRef.update({ total: toImport.length, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+
+    if (!toImport.length) {
+      await jobRef.update({ status: 'done', done: 0,
+        completedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt:   admin.firestore.FieldValue.serverTimestamp() });
+      return;
+    }
+
+    // Pre-fetch existing content hashes to deduplicate
+    const existingSnap = await userBizRef(uid, bizId).collection('images')
+      .where('source', '==', 'google_import').get();
+    const existingHashes = new Set(
+      existingSnap.docs.map(d => d.data().contentHash).filter(Boolean)
+    );
+
+    const bucket = admin.storage().bucket();
+    const MAX_BYTES = 5 * 1024 * 1024;
+    let done = 0;
+
+    for (const item of toImport) {
+      const googleUrl = item.googleUrl || item.sourceUrl;
+      if (!googleUrl) { done++; await jobRef.update({ done }); continue; }
+
+      try {
+        const photoResp = await axios.get(googleUrl, {
+          responseType: 'arraybuffer',
+          timeout: 20000,
+          maxContentLength: MAX_BYTES + 1024,
+        });
+        const raw = Buffer.from(photoResp.data);
+
+        // 5 MB cap
+        if (raw.length > MAX_BYTES) { done++; await jobRef.update({ done }); continue; }
+
+        // Magic-byte validation (JPEG / PNG / WEBP)
+        const isJpeg = raw[0] === 0xFF && raw[1] === 0xD8;
+        const isPng  = raw[0] === 0x89 && raw[1] === 0x50 && raw[2] === 0x4E && raw[3] === 0x47;
+        const isWebp = raw.slice(0,4).toString('binary') === 'RIFF' &&
+                       raw.slice(8,12).toString('binary') === 'WEBP';
+        if (!isJpeg && !isPng && !isWebp) { done++; await jobRef.update({ done }); continue; }
+
+        // SHA-256 content-hash dedup
+        const contentHash = crypto.createHash('sha256').update(raw).digest('hex');
+        if (existingHashes.has(contentHash)) { done++; await jobRef.update({ done }); continue; }
+        existingHashes.add(contentHash);
+
+        const mimeType  = isJpeg ? 'image/jpeg' : isPng ? 'image/png' : 'image/webp';
+        const ext       = isJpeg ? 'jpg' : isPng ? 'png' : 'webp';
+        const storePath = `photos/${uid}/global/${Date.now()}_gbp_${done}.${ext}`;
+
+        const file = bucket.file(storePath);
+        await file.save(raw, { contentType: mimeType });
+        await file.makePublic();
+        const url = `https://storage.googleapis.com/${bucket.name}/${storePath}`;
+
+        await userBizRef(uid, bizId).collection('images').add({
+          uid, bizId, url, contentHash, source: 'google_import', mimeType,
+          originalGoogleUrl: googleUrl,
+          mediaFormat:  item.mediaFormat || 'PHOTO',
+          createTime:   item.createTime  || null,
+          createdAt:    admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+      } catch(e) {
+        if (e.response?.status === 429) {
+          await jobRef.update({ status: 'partial', done,
+            error: 'GBP quota limit hit during download',
+            updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+          return;
+        }
+        console.warn(`[importGooglePhotos] item ${done} skipped:`, e.message);
+      }
+
+      done++;
+      await jobRef.update({ done, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+    }
+
+    await jobRef.update({
+      status: 'done', done, total: toImport.length,
+      completedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt:   admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+  } catch(e) {
+    console.error('[importGooglePhotos] unexpected error:', e.message);
+    await jobRef.update({ status: 'failed', error: e.message,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+  }
+}
+
+/**
+ * onRequest — authenticated manual re-import (e.g. from a "Re-import Photos" button).
+ * Responds immediately; import runs in background.
+ */
+exports.importGooglePhotos = onRequest(
+  { invoker: 'public', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'], timeoutSeconds: 120, region: 'us-central1' },
+  withAuth(async (req, res, decoded) => {
+    const uid   = decoded.uid;
+    const bizId = req.body?.bizId;
+    if (!bizId) return res.status(400).json({ error: 'bizId required' });
+    const bizSnap = await userBizRef(uid, bizId).get();
+    if (!bizSnap.exists) return res.status(403).json({ error: 'Business not found' });
+    // Fire-and-forget — respond immediately so the client isn't blocked
+    _runGooglePhotoImport(uid, bizId).catch(e =>
+      console.error('[importGooglePhotos] bg error:', e.message)
+    );
+    res.json({ ok: true, queued: true });
+  })
+);
+
+/**
+ * Firestore trigger — runs when googleOAuthCallback writes importJobs/{uid}_google
+ * with status 'queued'. Calls the shared import helper.
+ */
+exports.onGoogleImportQueued = onDocumentCreated(
+  { document: 'importJobs/{docId}', region: 'us-central1' },
+  async (event) => {
+    const data = event.data?.data?.();
+    if (!data || data.status !== 'queued') return;
+    const { uid, bizId } = data;
+    if (!uid || !bizId) return;
+    await _runGooglePhotoImport(uid, bizId);
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 exports.businessCreatedTrigger = onDocumentCreated(
   { document: 'users/{uid}/businesses/{bizId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },

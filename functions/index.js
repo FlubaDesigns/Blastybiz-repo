@@ -26,7 +26,8 @@
  *     ai.js           — adaptListing, suggestPlatforms, suggestCategory, previewAds, scoreFact, summarizeReviews
  *     payments.js     — squareCheckout, squareWebhook, getPricingPlans
  *     oauth.js        — googleOAuthStart/Callback, facebookOAuthStart/Callback, disconnectPlatform, checkPlatformTokenExpiry
- *     publishing.js   — approveDraft, dispatchPublishJob, onPublishJobCreated, onPublishJobUpdated
+ *     publishing.js   — approveDraft, dispatchPublishJob, onPublishJobCreated, onPublishJobUpdated,
+ *                       importGooglePhotos, onGoogleImportQueued
  *     admin.js        — all admin* endpoints, refreshYelpCategories, fetchAndCacheYelpCategories
  *     scheduled.js    — cleanupAbandonedSignups, scheduledTokenRefresh, scheduledFirestoreExport
  *     business.js     — createBusiness, deleteBusiness, deleteAccount, sendVerificationEmail

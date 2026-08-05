@@ -102,6 +102,12 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', region: 'us-central
     }, { merge: true });
     await _setConnTokens(googleConnRef, { accessToken: access_token, refreshToken: refresh_token || '' });
 
+    // Queue Google photos import — fire-and-forget, never await (callback must stay fast)
+    db.collection('importJobs').doc(uid + '_google').set({
+      status: 'queued', uid, bizId: businessId,
+      queuedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }).catch(e => console.warn('[googleOAuthCallback] importJobs queue failed:', e.message));
+
     res.redirect(connectedRedirect);
   } catch(e) {
     console.error('googleOAuthCallback error:', e.response?.data || e.message);

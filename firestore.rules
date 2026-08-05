@@ -52,7 +52,7 @@ service cloud.firestore {
               'phone', 'email', 'street', 'city', 'state', 'zip', 'address',
               'website', 'hours', 'locationType', 'region', 'tone',
               'globalMemory', 'featuredPhoto', 'aiContext', 'bizInsights',
-              'platformCats', 'postingSchedule',
+              'platformCats', 'postingSchedule', 'platformPrefs',
               'businessId', 'uid', 'status', 'createdAt', 'updatedAt'
             ]);
         allow update: if request.auth != null &&
@@ -62,7 +62,7 @@ service cloud.firestore {
               'phone', 'email', 'street', 'city', 'state', 'zip', 'address',
               'website', 'hours', 'locationType', 'region', 'tone',
               'globalMemory', 'featuredPhoto', 'aiContext', 'bizInsights',
-              'platformCats', 'postingSchedule', 'updatedAt'
+              'platformCats', 'postingSchedule', 'platformPrefs', 'updatedAt'
             ]);
         allow delete: if request.auth != null &&
           (request.auth.uid == userId || isAdmin());

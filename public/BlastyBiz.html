@@ -105,6 +105,24 @@
 .step5-url-row{display:flex;gap:6px;margin-top:10px;}
 .step5-url-input{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:8px;padding:9px 10px;font-size:13px;color:var(--light,#fff);font-family:inherit;min-width:0;}
 .step5-url-save{padding:9px 12px;border-radius:8px;background:var(--green,#39ff14);border:none;color:#000;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+/* ── Platform dismiss / dismissed-fold ── */
+.pcard-dismiss-btn{background:none;border:none;color:var(--muted,#888);font-size:11px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline;text-underline-offset:2px;margin-left:auto;}
+.pcard-dismiss-btn:hover{color:var(--light,#fff);}
+#dismissed-platforms-fold{margin-top:10px;}
+.dismissed-fold-toggle{background:none;border:1px solid var(--border,#333);border-radius:8px;padding:8px 14px;color:var(--muted,#888);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center;}
+.dismissed-fold-toggle:hover{color:var(--light,#fff);border-color:var(--muted,#555);}
+.dismissed-fold-body{display:none;margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;}
+.dismissed-fold-wrap.open .dismissed-fold-body{display:flex;}
+.dismissed-fold-wrap:not(.open) .dismissed-fold-body{display:none;}
+.dismissed-plat-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border:1px solid var(--border,#333);border-radius:20px;padding:5px 10px;font-size:12px;color:var(--muted,#888);}
+.dismissed-plat-chip button{background:none;border:none;color:var(--green,#39ff14);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;padding:0;text-underline-offset:2px;text-decoration:underline;}
+/* ── Manual-posted confirmation prompt ── */
+.manposted-prompt{margin-top:10px;padding:10px 12px;background:rgba(57,255,20,.07);border:1px solid rgba(57,255,20,.2);border-radius:10px;display:flex;align-items:center;flex-wrap:wrap;gap:8px;}
+.manposted-prompt-text{font-size:13px;color:var(--light,#fff);flex:1;min-width:120px;}
+.manposted-yes-btn{background:var(--green,#39ff14);color:#000;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.manposted-no-btn{background:none;border:1px solid var(--border,#333);color:var(--muted,#888);border-radius:7px;padding:7px 12px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+/* ── "posted" badge variant ── */
+.badge-posted{background:rgba(0,200,83,0.12);color:var(--green,#39ff14);font-size:11px;}
 </style>
 <script type="importmap">
 {
@@ -588,6 +606,7 @@
     <div class="col-full">
       <div class="section-label">Copy &amp; Paste Platforms</div>
       <div class="platform-grid" id="manual-platforms"></div>
+      <div id="dismissed-platforms-fold"></div>
 
       <a id="review-listings-btn" href="BlastyBiz-Listing-Preview.html" class="review-btn">
         ✅ Review &amp; Approve All Listings →
@@ -1329,13 +1348,34 @@ function renderPlatforms() {
   apiEl.innerHTML = '';
   manualEl.innerHTML = '';
 
+  const prefs = window._bbPlatPrefs || {};
+
   platforms.forEach(p => {
+    if (p.type === 'manual' && prefs[p.id]?.status === 'dismissed') return;
     const card = buildPlatformCard(p);
     if (p.type === 'api') apiEl.appendChild(card);
     else manualEl.appendChild(card);
   });
 
+  _renderDismissedFold(platforms.filter(p => p.type === 'manual' && (window._bbPlatPrefs || {})[p.id]?.status === 'dismissed'));
+
   updateStats();
+}
+
+function _renderDismissedFold(dismissed) {
+  const foldEl = document.getElementById('dismissed-platforms-fold');
+  if (!foldEl) return;
+  if (!dismissed.length) { foldEl.innerHTML = ''; return; }
+  const wasOpen = foldEl.querySelector('.dismissed-fold-wrap.open');
+  foldEl.innerHTML = `<div class="dismissed-fold-wrap${wasOpen ? ' open' : ''}">
+    <button type="button" class="dismissed-fold-toggle"
+      onclick="this.closest('.dismissed-fold-wrap').classList.toggle('open')">
+      <span>Not using (${dismissed.length})</span><span>▾</span>
+    </button>
+    <div class="dismissed-fold-body">
+      ${dismissed.map(p => `<span class="dismissed-plat-chip">${p.icon} ${escHtml(p.name)}<button type="button" onclick="restorePlatform('${escHtml(p.id)}')">Add back</button></span>`).join('')}
+    </div>
+  </div>`;
 }
 
 function buildPlatformCard(p) {
@@ -1375,7 +1415,16 @@ function buildPlatformCard(p) {
     <div class="platform-note-text">${p.note}</div>
     <div class="platform-actions">
       ${actionBtn}
-      <span class="badge badge-${p.status}" id="badge-${p.id}">● ${p.status}</span>
+      ${p.type !== 'api' ? `<button type="button" class="pcard-dismiss-btn" onclick="dismissPlatform('${p.id}')" title="Remove from list">✕ Not using</button>` : ''}
+      ${(function() {
+        const platPref = (window._bbPlatPrefs || {})[p.id] || {};
+        if (platPref.lastPostedAt) {
+          const d = new Date(platPref.lastPostedAt);
+          const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          return `<span class="badge badge-posted" id="badge-${p.id}">✓ posted ${label}</span>`;
+        }
+        return `<span class="badge badge-${p.status}" id="badge-${p.id}">● ${p.status}</span>`;
+      })()}
     </div>
     ${adaptedText}
   `;
@@ -1627,6 +1676,102 @@ window.copyAndOpen = async function(pid) {
   const url = (saved && saved.startsWith('http')) ? saved : (PLATFORM_DEFAULT_URLS[pid] || 'https://google.com');
   showToast('📋 Copied! Opening ' + name + '…');
   setTimeout(() => window.open(url, '_blank'), 80);
+
+  // Track copy count and start "Did it post?" prompt on tab return (max 3 prompts per draft+platform)
+  const draftId = window._currentDraftId;
+  if (draftId) {
+    const key = draftId + '_' + pid;
+    window._bbManualCopyCount = window._bbManualCopyCount || {};
+    window._bbManualCopyCount[key] = (window._bbManualCopyCount[key] || 0) + 1;
+    if (window._bbManualCopyCount[key] <= 3) {
+      _bbStartManualPostedPrompt(pid, name, draftId);
+    }
+  }
+};
+
+// ── Manual-posted prompt helpers ──────────────────────────────────────────
+
+function _bbStartManualPostedPrompt(pid, platName, draftId) {
+  // Remove any active listener for this pid so we don't stack them
+  const listenKey = '_bbVisListen_' + pid;
+  if (window[listenKey]) {
+    document.removeEventListener('visibilitychange', window[listenKey]);
+    delete window[listenKey];
+  }
+  const handler = function() {
+    if (document.visibilityState !== 'visible') return;
+    document.removeEventListener('visibilitychange', handler);
+    delete window[listenKey];
+    _bbShowManualPostedPrompt(pid, platName, draftId);
+  };
+  window[listenKey] = handler;
+  document.addEventListener('visibilitychange', handler);
+}
+
+function _bbShowManualPostedPrompt(pid, platName, draftId) {
+  // Remove any existing prompt for this pid
+  document.getElementById('manpost-prompt-' + pid)?.remove();
+
+  // Find the platform card in the main platforms grid
+  const card = document.getElementById('pcard-' + pid);
+  if (!card) return;
+
+  // Don't prompt if already confirmed for this draft
+  if (window._bbManualPostedSet && window._bbManualPostedSet.has(draftId + '_' + pid)) return;
+
+  const prompt = document.createElement('div');
+  prompt.id = 'manpost-prompt-' + pid;
+  prompt.className = 'manposted-prompt';
+  prompt.innerHTML =
+    `<span class="manposted-prompt-text">Did you post to <strong>${escHtml(platName)}</strong>?</span>` +
+    `<button type="button" class="manposted-yes-btn" onclick="window.confirmManualPosted('${escHtml(pid)}','${escHtml(draftId)}','${escHtml(platName)}')">✓ Yes, posted!</button>` +
+    `<button type="button" class="manposted-no-btn" onclick="document.getElementById('manpost-prompt-${escHtml(pid)}')?.remove()">Not yet</button>`;
+  card.appendChild(prompt);
+}
+
+window.confirmManualPosted = function(pid, draftId, platName) {
+  document.getElementById('manpost-prompt-' + pid)?.remove();
+
+  // Record locally so we don't re-prompt
+  window._bbManualPostedSet = window._bbManualPostedSet || new Set();
+  window._bbManualPostedSet.add(draftId + '_' + pid);
+
+  // Update the badge on the card immediately
+  const badge = document.getElementById('badge-' + pid);
+  if (badge) {
+    badge.className = 'badge badge-posted';
+    const label = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    badge.textContent = '✓ posted ' + label;
+  }
+
+  const now = new Date().toISOString();
+
+  // Persist manualPosted to draft and lastPostedAt to platformPrefs via module script events
+  document.dispatchEvent(new CustomEvent('bb:manualPosted', { detail: { pid, draftId, postedAt: now } }));
+
+  window._bbPlatPrefs = window._bbPlatPrefs || {};
+  window._bbPlatPrefs[pid] = { ...(window._bbPlatPrefs[pid] || {}), lastPostedAt: now };
+  document.dispatchEvent(new CustomEvent('bb:savePlatPrefs', { detail: { prefs: window._bbPlatPrefs } }));
+
+  showToast('✓ Marked as posted on ' + (platName || pid) + '!');
+};
+
+// ── Platform dismiss / restore ─────────────────────────────────────────────
+
+window.dismissPlatform = function(pid) {
+  window._bbPlatPrefs = window._bbPlatPrefs || {};
+  window._bbPlatPrefs[pid] = { ...(window._bbPlatPrefs[pid] || {}), status: 'dismissed' };
+  renderPlatforms();
+  renderQuickSelect();
+  document.dispatchEvent(new CustomEvent('bb:savePlatPrefs', { detail: { prefs: window._bbPlatPrefs } }));
+};
+
+window.restorePlatform = function(pid) {
+  window._bbPlatPrefs = window._bbPlatPrefs || {};
+  window._bbPlatPrefs[pid] = { ...(window._bbPlatPrefs[pid] || {}), status: 'active' };
+  renderPlatforms();
+  renderQuickSelect();
+  document.dispatchEvent(new CustomEvent('bb:savePlatPrefs', { detail: { prefs: window._bbPlatPrefs } }));
 };
 
 function togglePlatformPhoto(pid, url, maxPhotos, photos) {
@@ -4743,9 +4888,11 @@ function loadDraft() {
 // STATS
 // ══════════════════════════════════════════
 function updateStats() {
-  const enabled = platforms.filter(p => p.enabled).length;
-  const api     = platforms.filter(p => p.enabled && p.type === 'api').length;
-  const manual  = platforms.filter(p => p.enabled && p.type === 'manual').length;
+  const prefs   = window._bbPlatPrefs || {};
+  const active  = platforms.filter(p => prefs[p.id]?.status !== 'dismissed');
+  const enabled = active.filter(p => p.enabled).length;
+  const api     = active.filter(p => p.enabled && p.type === 'api').length;
+  const manual  = active.filter(p => p.enabled && p.type === 'manual').length;
   document.getElementById('stat-enabled').textContent = enabled;
   document.getElementById('stat-api').textContent     = api;
   document.getElementById('stat-manual').textContent  = manual;
@@ -5374,6 +5521,7 @@ onAuthStateChanged(auth, async (user) => {
       };
       if (window._bbSetProfile) window._bbSetProfile(p);
       window._globalMemory = biz.globalMemory || '';
+      window._bbPlatPrefs  = biz.platformPrefs || {};
       if (window.loadInsights) window.loadInsights(biz.bizInsights || []);
 
       // Restore saved platform selections (cross-device)
@@ -5965,6 +6113,34 @@ document.addEventListener('bb:clearAll', async () => {
   } catch(e) {
     console.error('clearAll Firestore error:', e);
   }
+});
+
+// Write manualPosted timestamp to the draft doc when user confirms a copy-paste post
+document.addEventListener('bb:manualPosted', async (e) => {
+  if (!currentUser || !activeBizId) return;
+  const { pid, draftId, postedAt } = e.detail || {};
+  if (!pid || !draftId) return;
+  try {
+    const draftRef = doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'listingDrafts', draftId);
+    await updateDoc(draftRef, {
+      [`manualPosted.${pid}`]: new Date(postedAt),
+      updatedAt: serverTimestamp(),
+    });
+  } catch(e) { console.warn('[bb:manualPosted]', e.message); }
+});
+
+// Persist platformPrefs (dismiss/restore + lastPostedAt) to the business doc
+document.addEventListener('bb:savePlatPrefs', async (e) => {
+  if (!currentUser || !activeBizId) return;
+  const prefs = e.detail?.prefs;
+  if (!prefs) return;
+  try {
+    await setDoc(
+      doc(db, 'users', currentUser.uid, 'businesses', activeBizId),
+      { platformPrefs: prefs, updatedAt: serverTimestamp() },
+      { merge: true }
+    );
+  } catch(e) { console.warn('[bb:savePlatPrefs]', e.message); }
 });
 
 // Save a platform's page URL to Firestore — called from URL input onblur
