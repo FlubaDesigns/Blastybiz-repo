@@ -27,9 +27,11 @@
  *     payments.js     — squareCheckout, squareWebhook, getPricingPlans
  *     oauth.js        — googleOAuthStart/Callback, facebookOAuthStart/Callback, disconnectPlatform, checkPlatformTokenExpiry
  *     publishing.js   — approveDraft, dispatchPublishJob, onPublishJobCreated, onPublishJobUpdated,
- *                       importGooglePhotos, onGoogleImportQueued
+ *                       importGooglePhotos, onGoogleImportQueued, draftAction
  *     admin.js        — all admin* endpoints, refreshYelpCategories, fetchAndCacheYelpCategories
- *     scheduled.js    — cleanupAbandonedSignups, scheduledTokenRefresh, scheduledFirestoreExport
+ *     scheduled.js    — scheduledPostingCheck, scheduledDraftPreview, scheduledUpgradeNudge,
+ *                       scheduledWeeklyDigest, cleanupAbandonedSignups, scheduledTokenRefresh,
+ *                       scheduledFirestoreExport
  *     business.js     — createBusiness, deleteBusiness, deleteAccount, sendVerificationEmail
  *     misc.js         — sendTestEmail, contactForm, unsubscribeEmail
  *

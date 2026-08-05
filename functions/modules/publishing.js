@@ -4,7 +4,8 @@
  * postToBing, postToAppleMaps, dispatchPublishJob,
  * jobFailedTrigger, jobCompletedTrigger,
  * userCreatedTrigger, businessCreatedTrigger,
- * importGooglePhotos, onGoogleImportQueued
+ * importGooglePhotos, onGoogleImportQueued,
+ * draftAction
  */
 'use strict';
 
@@ -14,6 +15,7 @@ const {
   userBizRef, userBizCol, userBizDraftsRef, userBizJobsRef, userBizPostsRef, userBizConnsRef,
   _getConnTokens, _setConnTokens,
   withAuth,
+  makeActionSig, _actionSecret, computeNextRunAt,
 } = require('../lib/shared');
 
 const crypto = require('crypto');
@@ -763,6 +765,167 @@ exports.onGoogleImportQueued = onDocumentCreated(
     const { uid, bizId } = data;
     if (!uid || !bizId) return;
     await _runGooglePhotoImport(uid, bizId);
+  }
+);
+
+// ── draftAction — email approval-queue action handler ─────────────────────────
+// Unauthenticated endpoint; HMAC signature is the auth.
+// ?uid=&biz=&draft=&action=approve|skip|change|pause&sig=&cycle=
+
+function _actionHtmlPage(icon, title, body, dashUrl) {
+  const cta = dashUrl ? `<p style="margin:24px 0 0"><a href="${dashUrl}" style="color:#00C853;font-weight:700;text-decoration:none">Back to Dashboard →</a></p>` : '';
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title} — BlastyBiz</title>
+<style>body{font-family:Arial,sans-serif;background:#0d1a0d;color:#f0f0f0;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{background:#1a2e1a;border-radius:16px;padding:40px 36px;max-width:480px;width:100%;text-align:center;box-shadow:0 4px 32px rgba(0,0,0,.4)}
+.icon{font-size:48px;margin-bottom:16px}.title{font-size:22px;font-weight:800;margin:0 0 12px;color:#fff}
+.body{font-size:15px;color:#ccc;line-height:1.65;margin:0}</style></head>
+<body><div class="card"><div class="icon">${icon}</div><h1 class="title">${title}</h1><p class="body">${body}</p>${cta}</div></body></html>`;
+}
+
+exports.draftAction = onRequest(
+  { invoker: 'public', region: 'us-central1',
+    secrets: ['ACTION_SIGNING_KEY', 'UNSUB_SIGNING_KEY', 'RESEND_API_KEY'] },
+  async (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    const { uid, biz: bizId, draft: draftId, action, sig, cycle } = req.query;
+    const dashUrl = APP_BASE_URL + '/BlastyBiz.html';
+
+    if (!uid || !draftId || !action || !sig || !cycle) {
+      return res.status(400).send(_actionHtmlPage('❌', 'Missing parameters',
+        'This action link is incomplete. Check your email for the correct link.'));
+    }
+    if (!['approve', 'skip', 'change', 'pause'].includes(action)) {
+      return res.status(400).send(_actionHtmlPage('❌', 'Unknown action',
+        'This link contains an unrecognised action type.'));
+    }
+
+    // ── Verify HMAC signature ────────────────────────────────────────────────
+    const key = _actionSecret();
+    if (!key) return res.status(500).send(_actionHtmlPage('⚙️', 'Configuration error',
+      'Please contact support@blastybiz.com.'));
+
+    // cycle is included in the signature so it cannot be tampered with
+    const expected = makeActionSig(uid, draftId, action, cycle, key);
+    let sigValid = false;
+    try {
+      sigValid = crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex'));
+    } catch(_) { /* invalid hex — sigValid stays false */ }
+    if (!sigValid) {
+      return res.status(400).send(_actionHtmlPage('🔒', 'Invalid link',
+        'This action link is not valid or has been tampered with. Links in your original preview email are correct.'));
+    }
+
+    // ── Check link age (14 days) ─────────────────────────────────────────────
+    const cycleTs = parseInt(cycle, 10);
+    if (!cycleTs || Date.now() - cycleTs > 14 * 24 * 60 * 60 * 1000) {
+      return res.status(400).send(_actionHtmlPage('⏱', 'Link expired',
+        'This link has expired — preview links are valid for 14 days. Your next scheduled preview will arrive soon.', dashUrl));
+    }
+
+    // ── "change" — just redirect (no Firestore write needed) ────────────────
+    if (action === 'change') {
+      const target = `${APP_BASE_URL}/BlastyBiz.html${draftId ? '?edit=1' : ''}`;
+      return res.redirect(302, target);
+    }
+
+    // ── Single-use record check (approve / skip / pause) ────────────────────
+    const actionKey = `${uid}_${draftId}_${cycle}`;
+    const actionRef  = db.collection('draftActions').doc(actionKey);
+
+    let actionSnap;
+    try { actionSnap = await actionRef.get(); } catch(e) {
+      return res.status(500).send(_actionHtmlPage('⚙️', 'Error', 'Could not verify link. Please try again.'));
+    }
+    if (actionSnap.exists) {
+      const prev = actionSnap.data().action || 'this';
+      return res.send(_actionHtmlPage('✓', 'Already done',
+        `You already used the <strong>${prev}</strong> action from this email. Check your dashboard to see the current post status.`, dashUrl));
+    }
+
+    // ── Resolve draft path ───────────────────────────────────────────────────
+    // We trust uid (it's in the sig). biz is provided in the URL for direct lookup;
+    // fall back to collectionGroup scan if omitted.
+    let draftRef;
+    if (bizId) {
+      draftRef = db.collection('users').doc(uid).collection('businesses')
+        .doc(bizId).collection('listingDrafts').doc(draftId);
+    } else {
+      try {
+        const q = await db.collectionGroup('listingDrafts')
+          .where('uid', '==', uid).limit(50).get();
+        const found = q.docs.find(d => d.id === draftId);
+        if (found) draftRef = found.ref;
+      } catch(e) { /* non-fatal */ }
+    }
+
+    if (!draftRef) {
+      return res.status(404).send(_actionHtmlPage('🔍', 'Draft not found',
+        'This draft may have been deleted or moved. Head to your dashboard to manage your posts.', dashUrl));
+    }
+
+    // ── Execute action ───────────────────────────────────────────────────────
+    try {
+      if (action === 'pause') {
+        // Resolve bizId for the pause write — prefer URL param, else parse from draftRef path
+        const targetBizId = bizId || draftRef.path.split('/')[3];
+        if (targetBizId) {
+          await db.collection('users').doc(uid).collection('businesses').doc(targetBizId).update({
+            schedulingPaused: true,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+        }
+        await actionRef.set({ uid, draftId, action: 'pause', cycle,
+          usedAt: admin.firestore.FieldValue.serverTimestamp() });
+        // Track email engagement
+        await db.collection('users').doc(uid).update({
+          lastEmailEngagedAt: admin.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+        return res.send(_actionHtmlPage('⏸', 'Scheduling paused',
+          'Your automated posts have been paused. Log in to BlastyBiz anytime to resume.', dashUrl));
+      }
+
+      const draftSnap = await draftRef.get();
+      if (!draftSnap.exists) {
+        return res.status(404).send(_actionHtmlPage('🔍', 'Draft not found',
+          'This draft no longer exists.', dashUrl));
+      }
+      const schedule = (draftSnap.data().schedule || {});
+
+      if (action === 'approve') {
+        await draftRef.update({
+          'schedule.approved': true,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        await actionRef.set({ uid, draftId, action: 'approve', cycle,
+          usedAt: admin.firestore.FieldValue.serverTimestamp() });
+        await db.collection('users').doc(uid).update({
+          lastEmailEngagedAt: admin.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+        return res.send(_actionHtmlPage('✅', 'Post approved!',
+          'Your post has been approved and will go out as scheduled. You don\'t need to do anything else.', dashUrl));
+      }
+
+      if (action === 'skip') {
+        // Set skipCycle flag only — do NOT advance nextRunAt here.
+        // scheduledPostingCheck sees the flag, advances nextRunAt exactly once,
+        // then clears it. Advancing here too would skip two cycles.
+        await draftRef.update({
+          'schedule.skipCycle':     true,
+          'schedule.previewSentAt': admin.firestore.FieldValue.delete(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        await actionRef.set({ uid, draftId, action: 'skip', cycle,
+          usedAt: admin.firestore.FieldValue.serverTimestamp() });
+        await db.collection('users').doc(uid).update({
+          lastEmailEngagedAt: admin.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+        const nextRunAt = computeNextRunAt(schedule, new Date(schedule.nextRunAt || Date.now()));
+        const nextFmt = nextRunAt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        return res.send(_actionHtmlPage('⏭', 'Post skipped',
+          `This cycle has been skipped. Your next scheduled post is due <strong>${nextFmt}</strong>.`, dashUrl));
+      }
+    } catch(e) {
+      console.error('[draftAction] error:', e.message);
+      return res.status(500).send(_actionHtmlPage('⚙️', 'Something went wrong',
+        'Please try again or contact support@blastybiz.com.'));
+    }
   }
 );
 

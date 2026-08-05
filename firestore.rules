@@ -62,7 +62,8 @@ service cloud.firestore {
               'phone', 'email', 'street', 'city', 'state', 'zip', 'address',
               'website', 'hours', 'locationType', 'region', 'tone',
               'globalMemory', 'featuredPhoto', 'aiContext', 'bizInsights',
-              'platformCats', 'postingSchedule', 'platformPrefs', 'updatedAt'
+              'platformCats', 'postingSchedule', 'platformPrefs',
+              'schedulingPaused', 'updatedAt'
             ]);
         allow delete: if request.auth != null &&
           (request.auth.uid == userId || isAdmin());
@@ -293,6 +294,12 @@ service cloud.firestore {
     // OAuth nonces — written/deleted by Cloud Functions (admin SDK, bypasses rules)
     // Explicitly blocked from direct client access
     match /oauthNonces/{nonceId} {
+      allow read, write: if false;
+    }
+
+    // Draft action records (approve/skip single-use records) — admin SDK only
+    // Client must never read or write these — they guard action-link integrity.
+    match /draftActions/{docId} {
       allow read, write: if false;
     }
 

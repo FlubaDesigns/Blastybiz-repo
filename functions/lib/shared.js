@@ -503,6 +503,27 @@ function _unsubSecret() {
   return process.env.UNSUB_SIGNING_KEY || process.env.RESEND_API_KEY;
 }
 
+// ── HMAC-signed draft action tokens (approve / skip / change / pause) ─────────
+// Signature covers uid + draftId + action + cycle so that none of those params
+// can be tampered with without invalidating the link. cycle is the epoch-ms
+// timestamp embedded in the URL; its integrity is enforced by the signature,
+// and expiry is verified against the same signed value.
+function makeActionSig(uid, draftId, action, cycle, key) {
+  return crypto.createHmac('sha256', key).update(`${uid}:${draftId}:${action}:${cycle}`).digest('hex');
+}
+function _actionSecret() {
+  return process.env.ACTION_SIGNING_KEY || process.env.UNSUB_SIGNING_KEY || process.env.RESEND_API_KEY;
+}
+
+// ── Shared schedule helper ────────────────────────────────────────────────────
+function computeNextRunAt(schedule, now) {
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const freq = (schedule && schedule.frequency) || 'weekly';
+  if (freq === 'daily')   return new Date(now.getTime() + DAY_MS);
+  if (freq === 'monthly') return new Date(now.getTime() + 30 * DAY_MS);
+  return new Date(now.getTime() + 7 * DAY_MS); // weekly default
+}
+
 // ── getPlanConfig — single source of truth for all plan entitlements (4.4) ────
 const _PLAN_CONFIG_DEFAULTS = {
   aiLimits:  { trial: 10, starter: 10, pro: 100, agency: 500 },
@@ -708,6 +729,10 @@ module.exports = {
   PERMANENT_ADMIN_EMAIL, getAdminEmails, requireAdmin,
   // unsub
   makeUnsubSig, _unsubSecret,
+  // action signing
+  makeActionSig, _actionSecret,
+  // schedule helper
+  computeNextRunAt,
   // plans
   getPlanConfig,
   // constants
