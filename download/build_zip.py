@@ -10,19 +10,27 @@ Excluded from zip:
 """
 import zipfile, hashlib, pathlib
 
-SRC  = pathlib.Path('artifacts/api-server/public')
+SRC  = pathlib.Path('public')
 DEST = pathlib.Path('download/BlastyBiz_Site.zip')
 
 # Subdirectory names inside public/ to skip (image asset folders)
 SKIP_DIRS = {'img', 'images'}
 
 # Backend source files — included so the package is complete and self-verifiable
-BACKEND = [
+_BACKEND_SINGLES = [
     pathlib.Path('functions/index.js'),
     pathlib.Path('functions/package.json'),
     pathlib.Path('firestore.rules'),
     pathlib.Path('storage.rules'),
     pathlib.Path('firebase.json'),
+]
+# Entire module directories (lib/ and modules/ split from monolithic index.js)
+_BACKEND_DIRS = [
+    pathlib.Path('functions/lib'),
+    pathlib.Path('functions/modules'),
+]
+BACKEND = _BACKEND_SINGLES + [
+    f for d in _BACKEND_DIRS for f in sorted(d.rglob('*.js')) if f.is_file()
 ]
 
 # Scripts — tooling that aids release quality checks
@@ -40,7 +48,9 @@ https://blastybiz-9523e.web.app
 | Folder / File | What it is |
 |---------------|-----------|
 | `*.html`, `*.js`, `*.css` | Static frontend — deployed to Firebase Hosting |
-| `backend/functions/index.js` | All Cloud Functions source |
+| `backend/functions/index.js` | Cloud Functions barrel (exports all modules) |
+| `backend/functions/lib/shared.js` | Shared helpers, Firestore refs, email utils |
+| `backend/functions/modules/*.js` | Cloud Function modules (ai, admin, oauth, publishing, scheduled, …) |
 | `backend/functions/package.json` | Cloud Functions dependencies |
 | `backend/firestore.rules` | Firestore security rules |
 | `backend/storage.rules` | Firebase Storage security rules |
