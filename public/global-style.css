@@ -2641,7 +2641,7 @@ body.admin-page .logo span     { color: var(--silver); font-size: 11px; display:
 /* ── Admin main layout ── */
 body.admin-page main,
 body.admin-page .main          { width: 100%; }
-body.admin-page .main-inner    { width: min(1220px, 100%); margin: 0 auto; padding: 20px; }
+body.admin-page .main-inner    { width: min(1220px, 100%); margin: 0 auto; padding: 20px; box-sizing: border-box; }
 body.operate-page .main-inner  { max-width: 860px; }
 
 /* ── Admin layout primitives ── */
@@ -2796,7 +2796,7 @@ body.admin-page .progress-bar { height: 10px; background: #00C853; border-radius
 .progress-title     { font-weight: 700; font-size: 16px; color: var(--light); min-width: 120px; }
 .op-section         { margin-bottom: 28px; }
 .section-icon       { font-size: 20px; }
-.section-title      { font-size: 18px; font-weight: 700; color: var(--light); }
+.section-title      { font-size: 18px; font-weight: 700; color: var(--light); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .section-badge      { font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; padding: 3px 9px; border-radius: 99px; background: #2A0A0A; color: #f87171; border: 1px solid #dc2626; }
 .section-badge.ok   { background: #0A2A0A; color: var(--green); border-color: var(--green); }
 .section-badge.warn    { background: #1a1200; color: #e6b84a; border: 1px solid #7a5500; }
