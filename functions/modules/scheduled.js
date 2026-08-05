@@ -1,8 +1,7 @@
 /**
  * BlastyBiz — Scheduled Cloud Functions
- * scheduledPostingCheck, scheduledYelpCategoryRefresh, scheduledUpgradeNudge,
- * scheduledWeeklyDigest, scheduledSetupNudge, scheduledFirestoreExport,
- * cleanupAbandonedSignups
+ * scheduledPostingCheck, scheduledUpgradeNudge, scheduledWeeklyDigest,
+ * scheduledSetupNudge, scheduledFirestoreExport, cleanupAbandonedSignups
  */
 'use strict';
 
@@ -235,7 +234,7 @@ exports.scheduledUpgradeNudge = onSchedule(
 
 // ── scheduledWeeklyDigest ─────────────────────────────────────────────────────
 exports.scheduledWeeklyDigest = onSchedule(
-  { schedule: 'every monday 08:00', region: 'us-central1', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] },
+  { schedule: 'every monday 08:00', timeZone: 'America/New_York', region: 'us-central1', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] },
   async () => {
     const weekAgo = admin.firestore.Timestamp.fromMillis(Date.now() - 7 * 24 * 60 * 60 * 1000);
     try {
