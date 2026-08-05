@@ -221,6 +221,64 @@ for (const f of libFiles) {
 }
 if (deadLibFiles === 0) console.log(`  ✅ All ${libFiles.length} lib/ file(s) are imported`);
 
+// ── Check 8: Unreachable JS files in functions/ ───────────────────────────────
+// Every .js file under functions/ (excluding node_modules/ and test/) must be
+// reachable via require() from functions/index.js. Files that are not reachable
+// are dead — they upload on every deploy, can shadow the live tree, and silently
+// have no effect when edited. This is the mechanical catch for the class of
+// problem found in Passes 02, 03, and 05 (one file → 13 lib files → 7 dirs).
+console.log('\n── 8. Unreachable JS files in functions/ ──────────────────────────');
+const FUNCTIONS_ROOT = path.resolve(__dirname, '../functions');
+const EXCLUDE_DIRS   = new Set(['node_modules', 'test']);
+
+function collectJsFiles(dir) {
+  const results = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (!EXCLUDE_DIRS.has(entry.name)) results.push(...collectJsFiles(full));
+    } else if (entry.name.endsWith('.js')) {
+      results.push(full);
+    }
+  }
+  return results;
+}
+
+function buildReachableSet(entryPoint) {
+  const visited = new Set();
+  const queue   = [entryPoint];
+  while (queue.length) {
+    const file = queue.shift();
+    if (visited.has(file)) continue;
+    visited.add(file);
+    let src = '';
+    try { src = fs.readFileSync(file, 'utf8'); } catch { continue; }
+    // Match require('./path') and require('../path') — relative only
+    const re = /require\(['"](\.[^'"]+)['"]\)/g;
+    let m;
+    while ((m = re.exec(src)) !== null) {
+      let resolved = path.resolve(path.dirname(file), m[1]);
+      if (!resolved.endsWith('.js')) resolved += '.js';
+      if (fs.existsSync(resolved)) queue.push(resolved);
+    }
+  }
+  return visited;
+}
+
+const allFunctionsJs = collectJsFiles(FUNCTIONS_ROOT);
+const reachable      = buildReachableSet(path.join(FUNCTIONS_ROOT, 'index.js'));
+let deadFunctionFiles = 0;
+for (const f of allFunctionsJs) {
+  if (!reachable.has(f)) {
+    console.log(`  ❌ Unreachable: functions/${path.relative(FUNCTIONS_ROOT, f)}`);
+    deadFunctionFiles++;
+    failures++;
+  }
+}
+if (deadFunctionFiles === 0) {
+  console.log(`  ✅ All ${allFunctionsJs.length} JS file(s) in functions/ reachable from index.js`);
+}
+
 // ── Summary ───────────────────────────────────────────────────────────────────
 console.log('\n── Summary ───────────────────────────────────────────────────────');
 if (failures === 0) {
