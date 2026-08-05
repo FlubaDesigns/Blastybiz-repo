@@ -1,15 +1,17 @@
 /**
  * BlastyBiz — AI endpoints
- * generateEnrichmentQuestions, suggestCategory, adaptListing, resolveCategories,
- * suggestPlatforms, chatCampaign, scoreFact, adminGetAiSettings, adminSetAiSettings
+ * generateEnrichmentQuestions, suggestCategory, extractBizContext,
+ * adaptListing, resolveCategories, suggestPlatforms, chatCampaign,
+ * scoreFact, adminGetAiSettings, adminSetAiSettings
  */
 'use strict';
 
 const {
-  onRequest, admin, db,
+  onRequest, admin, db, axios,
   AI_DEFAULTS, trackAiUsage, callAI, reserveAiAction, classifyAiError,
   checkUidRateLimit, withAuth, setCors, bbLog, verifyBearer,
   resetAiSettingsCache, PLATFORM_DOCS, buildPlatformBlock,
+  safeFetchUrl, _getConnTokens, userBizConnsRef,
 } = require('../lib/shared');
 
 exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
@@ -93,13 +95,136 @@ exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_AP
   }
 }));
 
+// ── extractBizContext ─────────────────────────────────────────────────────────
+// Fetches a business website (or reads Google Business Profile) and uses AI
+// to populate the five aiContext story fields. One AI credit per call.
+// Rate-limited to 5 calls/hour/user.
+exports.extractBizContext = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'], timeoutSeconds: 90 }, withAuth(async (req, res, decoded) => {
+  const { bizId, sourceUrl, source } = req.body;
+  if (!bizId) return res.status(400).json({ error: 'bizId required' });
+
+  if (!(await checkUidRateLimit('extractBizContextRate', decoded.uid, 5, 60 * 60 * 1000))) {
+    return res.status(429).json({ error: 'Rate limit exceeded — try again in an hour.' });
+  }
+
+  const bizRef = db.collection('users').doc(decoded.uid).collection('businesses').doc(bizId);
+  const bizSnap = await bizRef.get();
+  if (!bizSnap.exists) return res.status(403).json({ error: 'Business not found.' });
+
+  let sourceText = '';
+  let sourceLabel = '';
+
+  if (source === 'google') {
+    const connRef = userBizConnsRef(decoded.uid, bizId).doc('google');
+    const connSnap = await connRef.get();
+    if (!connSnap.exists || connSnap.data().status !== 'connected') {
+      return res.status(400).json({ error: 'Google Business Profile not connected.' });
+    }
+    const conn = connSnap.data();
+    const tokens = await _getConnTokens(connRef);
+    if (!tokens?.accessToken) return res.status(400).json({ error: 'Google access token unavailable — reconnect Google.' });
+    const { accountId, locationId } = conn;
+    if (!accountId || !locationId) return res.status(400).json({ error: 'Google account not fully resolved yet. Try again in a moment.' });
+    try {
+      const locResp = await axios.get(
+        `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}`,
+        { headers: { Authorization: `Bearer ${tokens.accessToken}` } }
+      );
+      const loc = locResp.data;
+      const parts = [];
+      if (loc.locationName) parts.push(`Business name: ${loc.locationName}`);
+      if (loc.primaryCategory?.displayName) parts.push(`Category: ${loc.primaryCategory.displayName}`);
+      if (loc.profile?.description) parts.push(`Description: ${loc.profile.description}`);
+      if (loc.websiteUrl) parts.push(`Website: ${loc.websiteUrl}`);
+      if (loc.regularHours) parts.push('Has regular hours listed on Google');
+      sourceText = parts.join('\n');
+      sourceLabel = 'Google Business Profile';
+    } catch (e) {
+      bbLog('ERROR', 'extractBizContext/google', { uid: decoded.uid, msg: e.message });
+      return res.status(502).json({ error: 'Could not read Google Business Profile. Try again.' });
+    }
+  } else if (sourceUrl) {
+    try {
+      const raw = await safeFetchUrl(sourceUrl);
+      sourceText = raw
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 8000);
+      sourceLabel = sourceUrl;
+    } catch (e) {
+      const code = e.code || '';
+      if (code.startsWith('SSRF_')) {
+        return res.status(400).json({ error: 'That URL cannot be fetched. Use a public website URL starting with https://', code });
+      }
+      return res.status(400).json({ error: 'Could not read that page — check the URL and try again.' });
+    }
+    if (sourceText.length < 200) {
+      return res.status(200).json({ thin: true, message: "We couldn't read much from that page. Fill in the fields yourself below." });
+    }
+  } else {
+    return res.status(400).json({ error: 'Provide sourceUrl or source: "google".' });
+  }
+
+  // Reserve one AI credit before calling the model
+  try {
+    await reserveAiAction(decoded.uid);
+  } catch(e) {
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: `AI limit reached (${e.used}/${e.cap} this month). Upgrade your plan for more.` });
+    console.error('[reserveAiAction] extractBizContext failed:', e.message);
+    return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
+  }
+
+  const prompt = `You are extracting business context to improve ad copy quality.
+
+Source: ${sourceLabel}
+Content:
+---
+${sourceText.slice(0, 6000)}
+---
+
+Extract the following five fields. Return ONLY valid JSON — no markdown, no explanation.
+Rules:
+- Only populate a field if the source content clearly supports it
+- Return null for any field you cannot ground in the source (especially awards — never guess)
+- Write in first person from the business owner's perspective
+- Keep each field to 2–4 sentences maximum
+
+{
+  "story": "How the business got started, its history, or the owner's background — or null",
+  "different": "What makes this business different from competitors — or null",
+  "awards": "Specific awards, recognitions, or certifications explicitly mentioned — or null",
+  "customer": "Who the ideal customer is and who gets the most value — or null",
+  "other": "Any other notable context: specialties, community involvement, unique offerings — or null"
+}`;
+
+  let extracted;
+  try {
+    const { text } = await callAI(prompt, { tier: 'smart', maxTokens: 800 });
+    extracted = JSON.parse(text.replace(/```json|```/g, '').trim());
+  } catch(e) {
+    bbLog('ERROR', 'extractBizContext/ai', { uid: decoded.uid, msg: e.message });
+    return res.status(500).json({ error: 'AI extraction failed. Please try again.' });
+  }
+
+  // Stamp the biz doc with metadata (not the content — the owner edits that via Story tab)
+  await bizRef.set({ aiContextSource: { label: sourceLabel, extractedAt: admin.firestore.FieldValue.serverTimestamp() } }, { merge: true }).catch(() => {});
+
+  return res.json({ aiContext: extracted, source: sourceLabel });
+}));
+
 exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'], timeoutSeconds: 120 }, withAuth(async (req, res, decoded) => {
   const fnStartMs = Date.now();
 
   const { listing, platforms, tone, platformCats } = req.body;
+  const isRegeneration = req.body.isRegeneration === true;
+  const regenDraftId   = req.body.draftId || null;
   const now = new Date();
 
-  const requestId = listing?.requestId;
+  // Dedup — fall back from listing.requestId to top-level fields so both old and new clients work
+  const requestId = listing?.requestId || req.body.requestId || req.body.generationAttemptId;
   if (requestId) {
     try {
       const dedupSnap = await db.collection('aiRequestDedup').doc(`${decoded.uid}_${requestId}`).get();
@@ -107,8 +232,26 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
     } catch(e) { console.warn('[adaptListing] dedup read failed:', e.message); }
   }
 
+  // Build draftRef for the free-regen transaction check.
+  // Both draftId and businessId are required for regeneration; without them we
+  // cannot scope the doc to this user's tree and cannot grant free regen safely.
+  const regenBizId = listing?.businessId || null;
+  let draftRef = null;
+  if (isRegeneration) {
+    if (!regenDraftId || !regenBizId) {
+      // Malformed regen — treat as a normal (credit-burning) generation rather than
+      // rejecting outright, so legacy clients still get copy.
+      bbLog('WARNING', 'adaptListing/regen', { uid: decoded.uid, msg: 'isRegeneration=true but draftId or businessId missing — falling back to normal charge' });
+    } else {
+      draftRef = db.collection('users').doc(decoded.uid)
+        .collection('businesses').doc(regenBizId)
+        .collection('listingDrafts').doc(regenDraftId);
+    }
+  }
+
+  let _reserveResult;
   try {
-    await reserveAiAction(decoded.uid);
+    _reserveResult = await reserveAiAction(decoded.uid, { draftRef, isRegeneration });
   } catch(e) {
     if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: `AI limit reached (${e.used}/${e.cap} this month). Upgrade your plan for more.` });
     console.error('[reserveAiAction] adaptListing transaction failed:', e.message);
@@ -222,6 +365,8 @@ ${platformList.map(p => `    "${p.id}": "adapted text for ${p.name}"`).join(',\n
     } catch(e) { console.warn('[adaptListing] dedup write failed:', e.message); }
   }
 
+  // Signal to the client whether the free-regen credit was applied so labels stay accurate
+  if (isRegeneration) parsed.freeRegenApplied = _reserveResult?.freeRegen === true;
   res.json(parsed);
 }));
 

@@ -183,10 +183,18 @@ async function callAI(content, { system = '', maxTokens = 1024, tier = 'smart', 
 }
 
 // ── reserveAiAction — atomic AI usage gate ────────────────────────────────────
-async function reserveAiAction(uid) {
+// opts.draftRef    — Firestore DocumentReference for the listing draft (optional)
+// opts.isRegeneration — when true, the first regen of a draft is free (doesn't burn a credit)
+async function reserveAiAction(uid, opts = {}) {
+  const { draftRef, isRegeneration } = opts;
   return db.runTransaction(async (tx) => {
     const userRef = db.collection('users').doc(uid);
-    const snap    = await tx.get(userRef);
+
+    // Read user doc + draft doc (if free-regen path) in one round-trip
+    const reads = [tx.get(userRef)];
+    if (isRegeneration && draftRef) reads.push(tx.get(draftRef));
+    const [snap, draftSnap] = await Promise.all(reads);
+
     const data    = snap.exists ? snap.data() : {};
     const plan    = data.plan || 'starter';
     const cfg     = await getPlanConfig();
@@ -195,6 +203,14 @@ async function reserveAiAction(uid) {
     const now     = new Date();
     const needsReset = !resetAt || now > resetAt;
     const used    = needsReset ? 0 : (data.aiActionsUsed || 0);
+
+    // Free first-regeneration: skip the credit counter for the first regen per draft.
+    // draftSnap.exists must be true — a non-existent or fabricated draftId gets no free regen.
+    // Atomically mark freeRegenUsed on the draft so concurrent calls can't both get free.
+    if (isRegeneration && draftRef && draftSnap && draftSnap.exists && !draftSnap.data()?.freeRegenUsed) {
+      tx.set(draftRef, { freeRegenUsed: true }, { merge: true });
+      return { plan, used, cap, freeRegen: true };
+    }
 
     if (used >= cap) {
       throw Object.assign(new Error('LIMIT_REACHED'), { used, cap, plan });
@@ -216,7 +232,7 @@ async function reserveAiAction(uid) {
       }, { merge: true });
     }
 
-    return { plan, used: used + 1, cap };
+    return { plan, used: used + 1, cap, freeRegen: false };
   });
 }
 
@@ -229,6 +245,120 @@ async function fetchWithTimeout(url, options, timeoutMs = 25000) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+// ── safeFetchUrl — SSRF-safe URL fetch for user-supplied URLs ─────────────────
+// Use this (not fetchWithTimeout) whenever the URL comes from user input.
+// Validates scheme, resolves hostname against private/reserved ranges, caps
+// response size to 2 MB, caps redirects at 3, and re-validates after each.
+// Throws a typed Error with e.code starting with 'SSRF_' on any violation.
+// Never returns the raw body to a client — callers extract structured data only.
+function _isPrivateAddress(ip) {
+  const v4 = ip.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+  if (v4) {
+    const [, a, b] = v4.map(Number);
+    return (
+      a === 10 ||                                // 10.0.0.0/8
+      a === 127 ||                               // 127.0.0.0/8
+      a === 0 ||                                 // 0.0.0.0/8
+      (a === 172 && b >= 16 && b <= 31) ||       // 172.16.0.0/12
+      (a === 192 && b === 168) ||                // 192.168.0.0/16
+      (a === 169 && b === 254) ||                // 169.254.0.0/16 link-local
+      (a === 100 && b >= 64 && b <= 127)         // 100.64.0.0/10 shared
+    );
+  }
+  const lc = ip.toLowerCase();
+  if (lc.startsWith('::ffff:')) {
+    // IPv4-mapped IPv6 — check the embedded IPv4 part
+    const embedded = lc.slice(7);
+    if (embedded.includes('.')) return _isPrivateAddress(embedded);
+  }
+  return (
+    lc === '::1' ||            // loopback
+    lc === '::' ||             // unspecified
+    lc.startsWith('fc') ||     // fc00::/7
+    lc.startsWith('fd') ||     // fd00::/8
+    lc.startsWith('fe80:')     // link-local
+  );
+}
+
+async function safeFetchUrl(url) {
+  const dns = require('dns');
+
+  async function validateHost(hostname) {
+    let entries;
+    try {
+      entries = await dns.promises.lookup(hostname, { all: true });
+    } catch {
+      throw Object.assign(new Error('SSRF_DNS_FAILED'), { code: 'SSRF_DNS_FAILED' });
+    }
+    for (const { address } of entries) {
+      if (_isPrivateAddress(address)) {
+        throw Object.assign(new Error('SSRF_PRIVATE_IP'), { code: 'SSRF_PRIVATE_IP', address });
+      }
+    }
+  }
+
+  let parsed;
+  try { parsed = new URL(url); } catch {
+    throw Object.assign(new Error('SSRF_INVALID_URL'), { code: 'SSRF_INVALID_URL' });
+  }
+  if (parsed.protocol !== 'https:') {
+    throw Object.assign(new Error('SSRF_NOT_HTTPS'), { code: 'SSRF_NOT_HTTPS' });
+  }
+  await validateHost(parsed.hostname);
+
+  const MAX_SIZE   = 2 * 1024 * 1024; // 2 MB
+  let currentUrl   = url;
+  let redirectCount = 0;
+
+  while (redirectCount <= 3) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    let resp;
+    try {
+      resp = await fetch(currentUrl, {
+        signal:   controller.signal,
+        redirect: 'manual',
+        headers:  { 'User-Agent': 'BlastyBiz/1.0 (business-context-extractor)' },
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+
+    if (resp.status >= 300 && resp.status < 400) {
+      redirectCount++;
+      if (redirectCount > 3) throw Object.assign(new Error('SSRF_TOO_MANY_REDIRECTS'), { code: 'SSRF_TOO_MANY_REDIRECTS' });
+      const location = resp.headers.get('location');
+      if (!location) throw Object.assign(new Error('SSRF_REDIRECT_NO_LOCATION'), { code: 'SSRF_REDIRECT_NO_LOCATION' });
+      let redir;
+      try { redir = new URL(location, currentUrl); } catch {
+        throw Object.assign(new Error('SSRF_INVALID_REDIRECT'), { code: 'SSRF_INVALID_REDIRECT' });
+      }
+      if (redir.protocol !== 'https:') throw Object.assign(new Error('SSRF_NOT_HTTPS'), { code: 'SSRF_NOT_HTTPS' });
+      await validateHost(redir.hostname);
+      currentUrl = redir.href;
+      continue;
+    }
+
+    if (!resp.ok) throw Object.assign(new Error('SSRF_HTTP_ERROR'), { code: 'SSRF_HTTP_ERROR', status: resp.status });
+
+    const clHeader = parseInt(resp.headers.get('content-length') || '0', 10);
+    if (clHeader > MAX_SIZE) throw Object.assign(new Error('SSRF_TOO_LARGE'), { code: 'SSRF_TOO_LARGE' });
+
+    const reader = resp.body.getReader();
+    const chunks = [];
+    let total = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.length;
+      if (total > MAX_SIZE) { await reader.cancel(); throw Object.assign(new Error('SSRF_TOO_LARGE'), { code: 'SSRF_TOO_LARGE' }); }
+      chunks.push(value);
+    }
+    return Buffer.concat(chunks.map(c => Buffer.from(c))).toString('utf8');
+  }
+  throw Object.assign(new Error('SSRF_TOO_MANY_REDIRECTS'), { code: 'SSRF_TOO_MANY_REDIRECTS' });
 }
 
 // ── classifyAiError ───────────────────────────────────────────────────────────
@@ -571,7 +701,7 @@ module.exports = {
   _getConnTokens, _setConnTokens,
   // AI
   AI_COSTS, AI_DEFAULTS, trackAiUsage, getAiSettings, resetAiSettingsCache, callAI,
-  reserveAiAction, fetchWithTimeout, classifyAiError,
+  reserveAiAction, fetchWithTimeout, safeFetchUrl, classifyAiError,
   // CORS / auth
   ALLOWED_ORIGINS, checkUidRateLimit, setCors, withAuth,
   bbLog, verifyBearer,

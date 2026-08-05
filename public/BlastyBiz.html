@@ -945,6 +945,24 @@
 
     <div class="ai-badge" style="margin-bottom:12px;">🤖 Feeds the AI every time it writes for you</div>
 
+    <!-- Fill this in for me — AI extraction from website or Google -->
+    <div class="card" id="story-extract-card" style="background:var(--surface2,#1a1a2e);border:1.5px solid var(--accent,#6c63ff)33;margin-bottom:20px;">
+      <div class="card-title" style="color:var(--accent,#6c63ff);">✨ Fill This In For Me</div>
+      <p class="helper mb-12">Paste your website URL and the AI will read your site and draft all five fields for you. Review and edit anything before saving.</p>
+      <div id="story-extract-google-row" style="display:none;margin-bottom:10px;">
+        <button type="button" class="btn btn-outline" id="story-extract-google-btn" onclick="window._bbExtractBizContext('google')" style="width:100%;justify-content:center;gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 18 18" style="flex-shrink:0"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.31z"/></svg>
+          Use Google Business Profile
+        </button>
+        <p class="helper" style="margin-top:6px;text-align:center;">— or paste your website below —</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="url" id="story-extract-url" class="form-input" placeholder="https://yourbusiness.com" style="flex:1;min-width:0;" oninput="document.getElementById('story-extract-btn').disabled=!this.value.trim()" />
+        <button type="button" class="btn btn-primary" id="story-extract-btn" onclick="window._bbExtractBizContext('url')" disabled style="white-space:nowrap;">Extract ✨</button>
+      </div>
+      <div id="story-extract-status" style="margin-top:10px;font-size:13px;color:var(--muted,#888);display:none;"></div>
+    </div>
+
     <div class="card">
       <div class="card-title">📖 Your Story</div>
       <p class="helper mb-16">Everything here gets read by the AI <strong>before it writes a single word</strong> of your marketing. Write it once — AI uses it every time.</p>
@@ -1964,10 +1982,14 @@ async function regeneratePlatformCopy(pid) {
           aiContext: profile.aiContext || null,
           ...(_getAIMemory()),
           libraryDocs: window._libraryDocs || [],
+          businessId: window.activeBizId || '',  // required for server free-regen draftRef
+          requestId: crypto.randomUUID(),  // fresh ID per regen — ensures new AI output, not cached
         },
         platforms: [{ id: platform.id, name: platform.name, type: platform.type, enabled: true }],
         tone,
         platformCats: profile.platformCats || {},
+        isRegeneration: true,
+        draftId: window._currentDraftId || '',
         ownerMention: (includeName || includeRole)
           ? [includeName ? profile.ownerName : null,
              includeRole ? (profile.ownerRole === 'manager' ? 'Manager' : profile.ownerRole === 'other' ? profile.ownerRole : 'Owner') : null]
@@ -2054,7 +2076,17 @@ async function regeneratePlatformCopy(pid) {
       }
     }
 
-    showToast('✅ Copy regenerated for ' + platform.name);
+    // Use server signal to determine whether the free regen was actually applied.
+    // This ensures labels and toasts reflect real billing outcome, not a local assumption.
+    const freeRegenApplied = parsed.freeRegenApplied === true;
+    showToast(freeRegenApplied
+      ? '✅ Copy regenerated for ' + platform.name + ' (free!)'
+      : '✅ Copy regenerated for ' + platform.name);
+    // Mark free regen as used (either it was just used, or it was already gone)
+    window._bbDraftFreeRegenUsed = true;
+    document.querySelectorAll('[id^="qp-regen-"]').forEach(btn => {
+      if (btn.id !== 'qp-regen-' + pid && !btn.disabled) btn.textContent = '🔄 Try again (1 credit)';
+    });
     // #6 Show restore-previous button so user can revert without re-running AI
     if (previousContent) {
       const freshRegen = document.getElementById('qp-regen-' + pid);
@@ -2082,7 +2114,7 @@ async function regeneratePlatformCopy(pid) {
   } finally {
     // Use fresh element refs — card may have been rebuilt
     const freshRegenBtn = document.getElementById('qp-regen-' + pid);
-    if (freshRegenBtn) { freshRegenBtn.disabled = false; freshRegenBtn.textContent = '🔄 Regenerate'; }
+    if (freshRegenBtn) { freshRegenBtn.disabled = false; freshRegenBtn.textContent = window._bbDraftFreeRegenUsed ? '🔄 Try again (1 credit)' : '🔄 Try again (free)'; }
     const freshCopyEl = document.getElementById('qp-copy-text-' + pid);
     if (freshCopyEl) freshCopyEl.style.opacity = '1';
   }
@@ -2420,7 +2452,7 @@ function buildStep5Card(p) {
       // Left — copy
       + '<div class="col-left">'
       +   '<div class="step5-copy-actions">'
-      +     '<button type="button" class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">🔄 Regenerate</button>'
+      +     '<button type="button" class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">' + (window._bbDraftFreeRegenUsed ? '🔄 Try again (1 credit)' : '🔄 Try again (free)') + '</button>'
       +     (!isApi ? '<button type="button" class="step5-action-btn" onclick="copyQpText(\'' + escHtml(p.id) + '\')">📋 Copy</button>' : '')
       +   '</div>'
       +   '<div id="qp-copy-text-' + p.id + '" class="step5-copy-text" contenteditable="true">' + safeText + '</div>'
@@ -2775,6 +2807,13 @@ async function runAdaptation() {
   // the draft for idempotency / audit purposes.
   const generationAttemptId = crypto.randomUUID();
 
+  // Each new generation run resets the free-regen entitlement for the new draft.
+  window._bbDraftFreeRegenUsed = false;
+  // Update any visible regen buttons to show "free" label for the new draft
+  document.querySelectorAll('[id^="qp-regen-"]').forEach(btn => {
+    if (!btn.disabled) btn.textContent = '🔄 Try again (free)';
+  });
+
   try {
     document.getElementById('ai-loading-sub').textContent = `Adapting for ${enabledPlatforms.length} platform${enabledPlatforms.length > 1 ? 's' : ''}...`;
 
@@ -2802,11 +2841,12 @@ async function runAdaptation() {
           libraryDocs: window._libraryDocs || [],
           businessId: window.activeBizId || '',
           campaignId: activeCampaignId || '',
+          requestId: generationAttemptId,  // used by server for dedup; placed inside listing per spec
         },
         platforms: enabledPlatforms,
         tone,
         platformCats: profile.platformCats || {},
-        generationAttemptId,
+        generationAttemptId,  // kept at top level for backward compat
       })
     });
 
@@ -6407,6 +6447,87 @@ window.closeCampaignChat = function() {
 // ══════════════════════════════════════════
 // STORY TAB
 // ══════════════════════════════════════════
+
+// Track whether the first free regen of the current draft has been used.
+// Set to false at the start of each new generation run; set to true after any regen.
+window._bbDraftFreeRegenUsed = false;
+
+// ── _bbExtractBizContext ──────────────────────────────────────────────────────
+// Calls extractBizContext CF with either 'google' or 'url' as source,
+// then pre-fills the five STORY_FIELDS textareas with AI-drafted text.
+window._bbExtractBizContext = async function(source) {
+  const statusEl = document.getElementById('story-extract-status');
+  const extractBtn = document.getElementById('story-extract-btn');
+  const googleBtn  = document.getElementById('story-extract-google-btn');
+
+  const setStatus = (msg, color) => {
+    if (!statusEl) return;
+    statusEl.textContent = msg;
+    statusEl.style.color = color || 'var(--muted,#888)';
+    statusEl.style.display = msg ? 'block' : 'none';
+  };
+
+  const urlInput = document.getElementById('story-extract-url');
+  const sourceUrl = source === 'url' ? urlInput?.value?.trim() : '';
+
+  if (source === 'url' && !sourceUrl) return;
+
+  // Loading state
+  setStatus('⏳ Reading your site…', 'var(--muted,#888)');
+  if (extractBtn) { extractBtn.disabled = true; extractBtn.textContent = '⏳ Working…'; }
+  if (googleBtn)  { googleBtn.disabled = true; }
+
+  try {
+    const idToken = window._bbGetToken ? await window._bbGetToken() : null;
+    const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/extractBizContext', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(idToken ? { Authorization: 'Bearer ' + idToken } : {}) },
+      body: JSON.stringify({ bizId: activeBizId, sourceUrl: source === 'url' ? sourceUrl : undefined, source: source === 'google' ? 'google' : undefined }),
+    });
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      setStatus('❌ ' + (data.error || 'Extraction failed — try again'), 'var(--red,#e05)');
+      return;
+    }
+    if (data.thin) {
+      setStatus('⚠️ ' + data.message, 'var(--yellow,#fa0)');
+      return;
+    }
+    if (!data.aiContext) {
+      setStatus('❌ No content extracted — try a different URL', 'var(--red,#e05)');
+      return;
+    }
+
+    // Pre-fill only fields that AI returned a value for; preserve existing content otherwise
+    let filled = 0;
+    STORY_FIELDS.forEach(f => {
+      const val = data.aiContext[f.key];
+      if (!val) return;
+      const el = document.getElementById(f.id);
+      if (!el) return;
+      el.value = val;
+      // Update char count
+      const cntId = 'cnt-' + f.id.replace('ctx-', '');
+      const cntEl = document.getElementById(cntId);
+      if (cntEl) cntEl.textContent = val.length;
+      filled++;
+    });
+
+    // Enable save button
+    const saveBtn = document.getElementById('story-btn-save');
+    if (saveBtn) saveBtn.disabled = false;
+
+    setStatus(`✅ AI drafted ${filled} field${filled !== 1 ? 's' : ''} from ${data.source || 'the source'}. Review and edit before saving.`, 'var(--green,#0c6)');
+  } catch(e) {
+    console.error('extractBizContext error:', e);
+    setStatus('❌ Network error — check connection and try again', 'var(--red,#e05)');
+  } finally {
+    if (extractBtn) { extractBtn.disabled = !urlInput?.value?.trim(); extractBtn.textContent = 'Extract ✨'; }
+    if (googleBtn)  { googleBtn.disabled = false; }
+  }
+};
+
 const STORY_FIELDS = [
   { id: 'ctx-story',     key: 'story' },
   { id: 'ctx-different', key: 'different' },
@@ -6420,6 +6541,13 @@ let _storyLoaded = false;
 window._bbLoadStory = async function() {
   if (_storyLoaded) return;
   try {
+    // Check Google connection to decide whether to show the Google extract button
+    try {
+      const gConnSnap = await getDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'platformConnections', 'google'));
+      const gRow = document.getElementById('story-extract-google-row');
+      if (gRow) gRow.style.display = (gConnSnap.exists() && gConnSnap.data().status === 'connected') ? 'block' : 'none';
+    } catch(_) { /* non-fatal — hide google row silently */ }
+
     const bizSnap = await getDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId));
     if (bizSnap.exists()) {
       const biz = bizSnap.data();
