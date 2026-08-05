@@ -61,4 +61,4 @@ Updates `schedule.nextRunAt` and `schedule.lastRunAt` (ISO strings) after each r
 - Backfill `users/{uid}` docs for magic-link trial signups with missing docs
 - Sweep orphaned `private` subcollection docs from accounts deleted before the fix
 - Provider-side OAuth token revocation for tokens exposed before Pass 01 §1.5
-- Delete `YELP_API_KEY` from Firebase Secret Manager (console)
+- ~~Delete `YELP_API_KEY` from Firebase Secret Manager~~ ✅ DONE 2026-08-05 via CLI
