@@ -23,7 +23,7 @@
  *     yelp.js         — Yelp category cache helpers
  *
  *   modules/          — Cloud Function exports, one file per domain
- *     ai.js           — adaptListing, suggestPlatforms, suggestCategory, scoreFact, summarizeReviews
+ *     ai.js           — adaptListing, suggestPlatforms, suggestCategory, previewAds, scoreFact, summarizeReviews
  *     payments.js     — squareCheckout, squareWebhook, getPricingPlans
  *     oauth.js        — googleOAuthStart/Callback, facebookOAuthStart/Callback, disconnectPlatform, checkPlatformTokenExpiry
  *     publishing.js   — approveDraft, dispatchPublishJob, onPublishJobCreated, onPublishJobUpdated

@@ -109,6 +109,18 @@
   .cb-success h2 { font-family:'Bebas Neue',sans-serif; font-size:32px; color:var(--green); margin-bottom:8px; }
   .cb-success p { color:var(--sub); font-size:14px; }
 
+  /* ── Preview banner (pre-filled from BlastyBiz-Preview.html) ─────────── */
+  .cb-preview-banner { background:#0a1f0a; border:1.5px solid var(--green); border-radius:14px; margin-bottom:20px; overflow:hidden; }
+  .cb-preview-banner-head { display:flex; align-items:center; justify-content:space-between; padding:12px 18px 10px; }
+  .cb-preview-banner-title { font-size:13px; font-weight:700; color:var(--green); }
+  .cb-preview-banner-close { background:none; border:none; color:var(--sub); cursor:pointer; font-size:15px; padding:0 2px; line-height:1; }
+  .cb-preview-banner-close:hover { color:var(--text); }
+  .cb-preview-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:10px; padding:0 14px 14px; }
+  .cb-preview-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; }
+  .cb-preview-card-plat { font-size:10px; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.07em; margin-bottom:5px; }
+  .cb-preview-card-head { font-size:13px; font-weight:700; color:var(--text); margin-bottom:4px; line-height:1.3; }
+  .cb-preview-card-body { font-size:12px; color:#7aab82; line-height:1.55; white-space:pre-wrap; word-break:break-word; }
+
   /* ── Spotlight ring — pb-spotlight class applied by FormGuide's mascot shim ── */
   .pb-spotlight {
     outline: 3px solid rgba(0,200,83,.85) !important;
@@ -180,6 +192,15 @@
 <div class="cb-main">
   <div class="cb-page-title">Create Business</div>
   <p class="cb-page-sub">No wizard, no waiting — fill in your details and blast.</p>
+
+  <!-- Preview banner: shown when user arrives from BlastyBiz-Preview.html -->
+  <div id="cb-preview-banner" class="cb-preview-banner" style="display:none" aria-live="polite">
+    <div class="cb-preview-banner-head">
+      <span class="cb-preview-banner-title">✨ Your preview ads — we pre-filled what we know</span>
+      <button type="button" class="cb-preview-banner-close" onclick="document.getElementById('cb-preview-banner').style.display='none'" aria-label="Dismiss preview">✕</button>
+    </div>
+    <div class="cb-preview-cards" id="cb-preview-cards"></div>
+  </div>
 
   <div id="cb-form">
     <!-- Section 1: Business Info -->
@@ -449,6 +470,17 @@ onAuthStateChanged(auth, async user => {
     if (snap.exists()) applyOb2Config(snap.data());
   }).catch(() => {});
 
+  // ── Pre-fill from preview (only on create, not edit) ─────────────────────
+  if (!editBizId) {
+    try {
+      const previewRaw = sessionStorage.getItem('bb_preview');
+      if (previewRaw) {
+        sessionStorage.removeItem('bb_preview'); // clear immediately — no second-business bleed
+        applyPreviewPrefill(JSON.parse(previewRaw));
+      }
+    } catch(e) { console.warn('[cb] preview prefill failed', e); }
+  }
+
   if (editBizId) {
     try {
       const snap = await getDoc(doc(db, 'users', user.uid, 'businesses', editBizId));
@@ -456,6 +488,38 @@ onAuthStateChanged(auth, async user => {
     } catch(e) { console.warn('[cb prefill]', e); }
   }
 });
+
+function applyPreviewPrefill(preview) {
+  const s = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+  if (preview.bizName)  s('f-bizName',  preview.bizName);
+  if (preview.city)     s('f-city',     preview.city);
+  if (preview.category) s('f-category', preview.category);
+  if (preview.adaptations) _cbShowPreviewBanner(preview);
+}
+
+// Minimal inline escaper for AI output in the preview banner (pre-auth content)
+function _cbEsc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+const _CB_PLAT_LABELS = { google: '📍 Google Business', facebook: '📘 Facebook', instagram: '📸 Instagram' };
+
+function _cbShowPreviewBanner(preview) {
+  const container = document.getElementById('cb-preview-cards');
+  const banner    = document.getElementById('cb-preview-banner');
+  if (!container || !banner) return;
+  container.innerHTML = Object.entries(preview.adaptations).map(([key, ad]) =>
+    `<div class="cb-preview-card">
+      <div class="cb-preview-card-plat">${_cbEsc(_CB_PLAT_LABELS[key] || key)}</div>
+      <div class="cb-preview-card-head">${_cbEsc(ad.headline || '')}</div>
+      <div class="cb-preview-card-body">${_cbEsc(ad.adaptedContent || '')}</div>
+    </div>`
+  ).join('');
+  banner.style.display = 'block';
+  cbSetMood((window._ob2Anim && window._ob2Anim.load) || 's-wave');
+}
 
 function prefill(d) {
   const s = (id, v) => { const el=document.getElementById(id); if(el&&v!==undefined) el.value=v; };

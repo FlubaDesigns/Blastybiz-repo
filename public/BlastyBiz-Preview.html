@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta charset="UTF-8"/>
+  <meta name="theme-color" content="#000000"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>BlastyBiz — See Your Ads Before You Sign Up</title>
+  <meta name="description" content="Type your business name and city — BlastyBiz writes 3 real ads in about 20 seconds. Free, no account required."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="global-style.css?v=1785897260010"/>
+  <style>
+    body { background:#0d1a0d; color:#e0f0e3; font-family:'DM Sans',sans-serif; margin:0; }
+    :root { --green:#00C853; --dark:#0d1a0d; --card:#111f11; --border:#1e3320; --text:#e0f0e3; --sub:#7aab82; }
+
+    /* ── Hero / form ──────────────────────────────────────────────── */
+    .pv-hero { max-width:720px; margin:0 auto; padding:56px 20px 80px; text-align:center; }
+    .pv-eyebrow { display:inline-block; background:#1b3a1b; color:var(--green); font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; padding:5px 14px; border-radius:20px; margin-bottom:20px; }
+    .pv-h1 { font-family:'Bebas Neue',sans-serif; font-size:clamp(36px,8vw,72px); line-height:1.0; color:#fff; margin:0 0 18px; letter-spacing:1px; }
+    .pv-h1 em { color:var(--green); font-style:normal; }
+    .pv-sub { font-size:17px; color:var(--sub); line-height:1.65; max-width:500px; margin:0 auto 40px; }
+
+    .pv-form { background:#111f11; border:1.5px solid #1e3320; border-radius:18px; padding:28px; max-width:520px; margin:0 auto; }
+    .pv-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+    @media (max-width:500px) { .pv-row { grid-template-columns:1fr; } }
+    .pv-lbl { display:block; font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.07em; margin-bottom:5px; }
+    .pv-inp { width:100%; background:#0a1409; border:1.5px solid #1e3320; border-radius:10px; padding:12px 14px; color:#e0f0e3; font:15px 'DM Sans',sans-serif; transition:border-color .15s; box-sizing:border-box; }
+    .pv-inp:focus-visible { border-color:var(--green); outline:none; box-shadow:0 0 0 3px rgba(0,200,83,.12); }
+    .pv-inp::placeholder { color:#3a5e3e; }
+    .pv-btn { width:100%; background:var(--green); color:#0a1409; border:none; border-radius:12px; padding:16px; font:700 16px 'DM Sans',sans-serif; cursor:pointer; letter-spacing:.02em; transition:opacity .15s,transform .1s; }
+    .pv-btn:hover:not(:disabled) { opacity:.92; transform:translateY(-1px); }
+    .pv-btn:active:not(:disabled) { transform:translateY(0); }
+    .pv-btn:disabled { opacity:.5; cursor:default; transform:none; }
+    .pv-err { color:#ef5350; font-size:13px; margin-top:10px; min-height:18px; }
+
+    /* ── Loading ──────────────────────────────────────────────────── */
+    .pv-loading { text-align:center; padding:80px 20px; }
+    .pv-spinner { display:inline-flex; gap:8px; margin-bottom:22px; }
+    .pv-dot { width:11px; height:11px; border-radius:50%; background:var(--green); animation:pvBounce 1.2s ease-in-out infinite; }
+    .pv-dot:nth-child(2) { animation-delay:.2s; }
+    .pv-dot:nth-child(3) { animation-delay:.4s; }
+    @keyframes pvBounce { 0%,80%,100%{transform:scale(.5);opacity:.4} 40%{transform:scale(1.1);opacity:1} }
+    .pv-loading-text { font-size:17px; color:var(--sub); }
+    .pv-loading-biz  { color:var(--text); font-weight:700; }
+
+    /* ── Results ──────────────────────────────────────────────────── */
+    .pv-results { max-width:760px; margin:0 auto; padding:0 20px 80px; }
+    .pv-results-head { text-align:center; margin-bottom:32px; }
+    .pv-results-title { font-family:'Bebas Neue',sans-serif; font-size:clamp(28px,5vw,48px); color:#fff; margin:0 0 8px; }
+    .pv-results-sub { color:var(--sub); font-size:14px; margin:0; }
+    .pv-sample-note { background:#1b2e1b; border:1px solid #2e4e2e; border-radius:8px; padding:10px 16px; font-size:12px; color:var(--sub); text-align:center; margin-bottom:24px; }
+
+    .pv-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; margin-bottom:32px; }
+    .pv-card { background:var(--card); border:1.5px solid var(--border); border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:10px; }
+    .pv-card-plat { display:flex; align-items:center; gap:8px; }
+    .pv-card-icon { font-size:18px; line-height:1; }
+    .pv-card-plat-name { font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.07em; }
+    .pv-card-headline { font-size:15px; font-weight:700; color:var(--text); line-height:1.3; }
+    .pv-card-body { font-size:13px; color:#a8c8ac; line-height:1.65; white-space:pre-wrap; word-break:break-word; }
+
+    /* ── CTA block ────────────────────────────────────────────────── */
+    .pv-cta-block { background:#0a1f0a; border:1.5px solid var(--green); border-radius:18px; padding:32px 28px; text-align:center; max-width:520px; margin:0 auto 20px; }
+    .pv-cta-title { font-family:'Bebas Neue',sans-serif; font-size:28px; color:#fff; margin:0 0 8px; letter-spacing:.5px; }
+    .pv-cta-desc  { font-size:14px; color:var(--sub); margin:0 0 22px; line-height:1.5; }
+    .pv-cta-btn { display:inline-block; background:var(--green); color:#0a1409; border:none; border-radius:12px; padding:16px 32px; font:700 16px 'DM Sans',sans-serif; cursor:pointer; letter-spacing:.02em; transition:opacity .15s,transform .1s; text-decoration:none; }
+    .pv-cta-btn:hover { opacity:.92; transform:translateY(-1px); }
+
+    .pv-trust { text-align:center; font-size:12px; color:#3a5e3e; margin-bottom:28px; }
+    .pv-trust span { margin:0 6px; }
+
+    .pv-tryagain { text-align:center; }
+    .pv-tryagain-link { color:var(--sub); font-size:13px; cursor:pointer; text-decoration:underline; background:none; border:none; font-family:'DM Sans',sans-serif; }
+    .pv-tryagain-link:hover { color:var(--text); }
+  </style>
+</head>
+<body>
+
+<script src="blastybiz-menu.js?v=6"></script>
+
+<main>
+
+  <!-- ── Step 1: Form ──────────────────────────────────────────────────────── -->
+  <div id="pv-step1" class="pv-hero">
+    <div class="pv-eyebrow">Free Preview — No Account Needed</div>
+    <h1 class="pv-h1">See Your Ads Before<br><em>You Sign Up Anything.</em></h1>
+    <p class="pv-sub">Type your business name and city — BlastyBiz writes 3 real ads (Google, Facebook, Instagram) in about 20&nbsp;seconds. Free forever.</p>
+
+    <div class="pv-form">
+      <div class="pv-row">
+        <div>
+          <label class="pv-lbl" for="pv-bizName">Business name</label>
+          <input class="pv-inp" id="pv-bizName" type="text" placeholder="e.g. Mike's Auto Repair" maxlength="80" autocomplete="organization" spellcheck="false"/>
+        </div>
+        <div>
+          <label class="pv-lbl" for="pv-city">City</label>
+          <input class="pv-inp" id="pv-city" type="text" placeholder="e.g. Austin, TX" maxlength="60"/>
+        </div>
+      </div>
+      <button class="pv-btn" id="pv-generate-btn" onclick="pvGenerate()">✨ Generate My Free Ads →</button>
+      <div class="pv-err" id="pv-err" role="alert" aria-live="polite"></div>
+    </div>
+
+    <p style="margin-top:24px;font-size:13px;color:#3a5e3e;">No credit card &nbsp;·&nbsp; No account &nbsp;·&nbsp; Just your ads</p>
+  </div>
+
+  <!-- ── Loading ────────────────────────────────────────────────────────────── -->
+  <div id="pv-loading" class="pv-loading" hidden aria-live="polite" aria-atomic="true">
+    <div class="pv-spinner" aria-hidden="true">
+      <div class="pv-dot"></div>
+      <div class="pv-dot"></div>
+      <div class="pv-dot"></div>
+    </div>
+    <p class="pv-loading-text">Writing your ads for <span id="pv-loading-name" class="pv-loading-biz"></span>…</p>
+  </div>
+
+  <!-- ── Step 2: Results ────────────────────────────────────────────────────── -->
+  <div id="pv-results" class="pv-results" hidden>
+    <div class="pv-results-head">
+      <h2 class="pv-results-title" id="pv-results-title">Here Are Your Ads</h2>
+      <p class="pv-results-sub">AI-written for your business — ready to post the moment you sign up.</p>
+    </div>
+    <div id="pv-sample-note" class="pv-sample-note" hidden>
+      These are sample ads — your live account will generate personalized versions with your full business details.
+    </div>
+    <div class="pv-cards" id="pv-cards"></div>
+
+    <div class="pv-cta-block">
+      <p class="pv-cta-title">Save These Ads — Start Blasting</p>
+      <p class="pv-cta-desc">Create your free account and we'll have these ads ready on day one. No credit card required.</p>
+      <button class="pv-cta-btn" id="pv-cta-btn" onclick="pvSaveAndSignup()">Start Free Trial — Save My Ads →</button>
+    </div>
+    <p class="pv-trust">
+      <span>✓ No credit card</span>
+      <span>✓ Free forever for 1 campaign</span>
+      <span>✓ Cancel anytime</span>
+    </p>
+    <div class="pv-tryagain">
+      <button type="button" class="pv-tryagain-link" onclick="pvReset()">Try a different business</button>
+    </div>
+  </div>
+
+</main>
+
+<script src="escape-utils.js?v=1"></script>
+<script>
+(function () {
+  'use strict';
+
+  var CF_URL = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/previewAds';
+
+  var PLAT_META = {
+    google:    { icon: '📍', label: 'Google Business Profile' },
+    facebook:  { icon: '📘', label: 'Facebook'                },
+    instagram: { icon: '📸', label: 'Instagram'               },
+  };
+
+  // Use global escHtml from escape-utils.js (loaded above); never trust raw AI output
+  function esc(s) {
+    if (typeof window.escHtml === 'function') return window.escHtml(String(s));
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  var _lastResult = null;
+
+  window.pvGenerate = async function () {
+    var bizName = (document.getElementById('pv-bizName').value || '').trim();
+    var city    = (document.getElementById('pv-city').value    || '').trim();
+    var errEl   = document.getElementById('pv-err');
+    errEl.textContent = '';
+
+    if (!bizName) { errEl.textContent = 'Please enter your business name.'; document.getElementById('pv-bizName').focus(); return; }
+    if (!city)    { errEl.textContent = 'Please enter your city.';          document.getElementById('pv-city').focus();    return; }
+
+    var btn = document.getElementById('pv-generate-btn');
+    btn.disabled    = true;
+    btn.textContent = 'Generating…';
+
+    document.getElementById('pv-loading-name').textContent = bizName;
+    document.getElementById('pv-step1').hidden   = true;
+    document.getElementById('pv-loading').hidden = false;
+    document.getElementById('pv-results').hidden = true;
+
+    try {
+      var resp = await fetch(CF_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ bizName: bizName, city: city }),
+      });
+      var data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Generation failed');
+
+      _lastResult = { bizName: bizName, city: city, category: data.category || '', adaptations: data.adaptations };
+      _renderResults(_lastResult, data.sample === true);
+
+    } catch (e) {
+      console.error('[pvGenerate]', e);
+      document.getElementById('pv-step1').hidden   = false;
+      document.getElementById('pv-loading').hidden = true;
+      errEl.textContent = 'Something went wrong — please try again in a moment.';
+      btn.disabled    = false;
+      btn.textContent = '✨ Generate My Free Ads →';
+    }
+  };
+
+  function _renderResults(result, isSample) {
+    // Title
+    document.getElementById('pv-results-title').textContent = 'Here Are Your Ads, ' + result.bizName;
+
+    // Sample note
+    document.getElementById('pv-sample-note').hidden = !isSample;
+
+    // Platform cards — all model output escaped with esc()
+    var cards = document.getElementById('pv-cards');
+    cards.innerHTML = Object.entries(result.adaptations).map(function (entry) {
+      var key = entry[0], ad = entry[1];
+      var meta = PLAT_META[key] || { icon: '📣', label: key };
+      return '<div class="pv-card">'
+        + '<div class="pv-card-plat">'
+        +   '<span class="pv-card-icon" aria-hidden="true">' + meta.icon + '</span>'
+        +   '<span class="pv-card-plat-name">' + esc(meta.label) + '</span>'
+        + '</div>'
+        + '<div class="pv-card-headline">' + esc(ad.headline || '') + '</div>'
+        + '<div class="pv-card-body">'    + esc(ad.adaptedContent || '') + '</div>'
+        + '</div>';
+    }).join('');
+
+    document.getElementById('pv-loading').hidden = true;
+    document.getElementById('pv-results').hidden = false;
+  }
+
+  window.pvSaveAndSignup = function () {
+    if (!_lastResult) return;
+    try {
+      sessionStorage.setItem('bb_preview', JSON.stringify(_lastResult));
+    } catch (e) {
+      console.warn('[pvSaveAndSignup] sessionStorage unavailable:', e);
+    }
+    window.location.href = 'BlastyBiz-Login.html';
+  };
+
+  window.pvReset = function () {
+    var btn = document.getElementById('pv-generate-btn');
+    btn.disabled    = false;
+    btn.textContent = '✨ Generate My Free Ads →';
+    document.getElementById('pv-err').textContent = '';
+    document.getElementById('pv-step1').hidden   = false;
+    document.getElementById('pv-loading').hidden = true;
+    document.getElementById('pv-results').hidden = true;
+    _lastResult = null;
+  };
+
+  // Allow Enter key to submit from either input
+  ['pv-bizName', 'pv-city'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', function (e) { if (e.key === 'Enter') window.pvGenerate(); });
+  });
+
+}());
+</script>
+
+</body>
+</html>

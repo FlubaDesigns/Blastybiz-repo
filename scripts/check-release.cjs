@@ -40,6 +40,7 @@ const ALLOWLIST = new Set([
   'blastybiz-footer.html',           // partial, fetched inline
   '404.html',                        // Firebase Hosting error page — referenced in firebase.json, not HTML links
   'BlastyBiz-Businesses.html',       // multi-business switcher — future feature, linked from nav conditionally
+  'BlastyBiz-Preview.html',          // pre-auth ad preview landing — intentionally not linked from other pages
 ]);
 
 // Shared assets to check for version consistency

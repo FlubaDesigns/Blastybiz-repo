@@ -477,6 +477,24 @@ exports.cleanupAbandonedSignups = onSchedule(
         await batch3.commit();
         console.log(`[cleanupAbandonedSignups] Deleted ${nudgeSnap.size} old nudge records`);
       }
+      // ── Expired previewCache entries (TTL field set at write time) ──────────
+      const pcSnap = await db.collection('previewCache')
+        .where('expiresAt', '<', admin.firestore.Timestamp.fromMillis(Date.now())).limit(500).get();
+      if (!pcSnap.empty) {
+        const batch4 = db.batch();
+        pcSnap.docs.forEach(d => batch4.delete(d.ref));
+        await batch4.commit();
+        console.log(`[cleanupAbandonedSignups] Deleted ${pcSnap.size} expired previewCache entries`);
+      }
+      // ── Expired previewRateLimit entries ────────────────────────────────────
+      const prlSnap = await db.collection('previewRateLimit')
+        .where('expiresAt', '<', admin.firestore.Timestamp.fromMillis(Date.now())).limit(500).get();
+      if (!prlSnap.empty) {
+        const batch5 = db.batch();
+        prlSnap.docs.forEach(d => batch5.delete(d.ref));
+        await batch5.commit();
+        console.log(`[cleanupAbandonedSignups] Deleted ${prlSnap.size} expired previewRateLimit entries`);
+      }
     } catch(e) {
       console.error('[cleanupAbandonedSignups] error:', e.message);
     }

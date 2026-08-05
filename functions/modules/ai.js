@@ -1,6 +1,6 @@
 /**
  * BlastyBiz — AI endpoints
- * generateEnrichmentQuestions, suggestCategory, extractBizContext,
+ * generateEnrichmentQuestions, suggestCategory, previewAds, extractBizContext,
  * adaptListing, resolveCategories, suggestPlatforms, chatCampaign,
  * scoreFact, adminGetAiSettings, adminSetAiSettings
  */
@@ -13,6 +13,8 @@ const {
   resetAiSettingsCache, PLATFORM_DOCS, buildPlatformBlock,
   safeFetchUrl, _getConnTokens, userBizConnsRef,
 } = require('../lib/shared');
+
+const crypto = require('crypto');
 
 exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
 
@@ -94,6 +96,152 @@ exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_AP
     res.status(500).json({ error: e.message });
   }
 }));
+
+// ── previewAds ────────────────────────────────────────────────────────────────
+// Unauthenticated: generates 3-platform sample ad copy from a business name and
+// city. Used by BlastyBiz-Preview.html before the user has an account.
+//
+// Rate limits:
+//   IP:     3 requests/hr — SHA-256 hashed source IP via checkUidRateLimit
+//   Global: 500 AI calls per UTC day — config/previewBudget { count, date }
+// Both over-limit paths return fallback copy (sample:true) instead of an error.
+//
+// Cache: SHA-256(bizName|city) → previewCache/{hash}, 7-day TTL.
+// Cleanup: cleanupAbandonedSignups deletes expired entries daily.
+
+function _previewFallback(bizName, city, category) {
+  const cat = category || 'local business';
+  return {
+    adaptations: {
+      google: {
+        platform: 'google_business',
+        headline: `${bizName} | ${cat} in ${city}`,
+        adaptedContent: `${bizName} is your trusted ${cat} serving ${city} and the surrounding area. We're committed to quality service and your complete satisfaction. Visit us today or give us a call!`,
+      },
+      facebook: {
+        platform: 'facebook',
+        headline: `Discover ${bizName} in ${city}`,
+        adaptedContent: `Looking for a great ${cat} in ${city}? ${bizName} is here to help! We take pride in serving our community with quality work. Come see why our customers keep coming back. 👍`,
+      },
+      instagram: {
+        platform: 'instagram',
+        headline: `${bizName} | ${city}`,
+        adaptedContent: `✨ ${bizName} — your go-to ${cat} in ${city}.\n\nQuality you can count on, service you'll love. Follow us for updates and special offers!\n\n#${city.replace(/\W+/g, '')} #${cat.replace(/\s+/g, '')} #SmallBusiness #LocalBusiness`,
+      },
+    },
+    category: cat,
+  };
+}
+
+exports.previewAds = onRequest(
+  { invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'], timeoutSeconds: 60 },
+  async (req, res) => {
+    setCors(req, res);
+    if (req.method === 'OPTIONS') return res.status(204).end();
+
+    const { bizName: rawBizName, city: rawCity } = req.body;
+    const bizName = (rawBizName || '').toString().trim().slice(0, 80);
+    const city    = (rawCity    || '').toString().trim().slice(0, 60);
+    if (!bizName || !city) return res.status(400).json({ error: 'bizName and city are required' });
+
+    // ── IP rate limit: 3/hr — over limit returns sample gracefully ───────────
+    const rawIp  = ((req.headers['x-forwarded-for'] || '').split(',')[0].trim()) || req.ip || 'unknown';
+    const ipHash = crypto.createHash('sha256').update(rawIp).digest('hex');
+    const withinRateLimit = await checkUidRateLimit('previewRateLimit', ipHash, 3, 60 * 60 * 1000).catch(() => false);
+    if (!withinRateLimit) {
+      return res.json({ ..._previewFallback(bizName, city, null), sample: true });
+    }
+
+    // ── Global daily budget: 500/UTC day; reset inline when date changes ─────
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    let overBudget = false;
+    try {
+      await db.runTransaction(async tx => {
+        const budgetRef  = db.collection('config').doc('previewBudget');
+        const budgetSnap = await tx.get(budgetRef);
+        let   { count = 0, date = '' } = budgetSnap.exists ? budgetSnap.data() : {};
+        if (date !== today) { count = 0; date = today; }
+        if (count >= 500) { overBudget = true; return; }
+        tx.set(budgetRef, { count: count + 1, date });
+      });
+    } catch(e) {
+      console.warn('[previewAds] budget transaction failed:', e.message);
+    }
+    if (overBudget) {
+      return res.json({ ..._previewFallback(bizName, city, null), sample: true });
+    }
+
+    // ── Cache lookup: SHA-256(bizName|city), 7-day TTL ───────────────────────
+    const cacheKey  = crypto.createHash('sha256').update(`${bizName}|${city}`).digest('hex');
+    const cacheRef  = db.collection('previewCache').doc(cacheKey);
+    try {
+      const cacheSnap = await cacheRef.get();
+      if (cacheSnap.exists) {
+        const cached = cacheSnap.data();
+        if (cached.expiresAt && cached.expiresAt.toMillis() > Date.now()) {
+          return res.json({ adaptations: cached.adaptations, category: cached.category, fromCache: true });
+        }
+      }
+    } catch(e) {
+      console.warn('[previewAds] cache read failed:', e.message);
+    }
+
+    // ── Category inference: fast model, ~20 tokens ───────────────────────────
+    let category = '';
+    try {
+      const { text: catText } = await callAI(
+        `What type of business is "${bizName}" in "${city}"? Reply with ONLY the business category, 1-4 words. Examples: "Hair Salon", "Mexican Restaurant", "Auto Repair Shop", "Coffee Shop". No punctuation, no explanation.`,
+        { tier: 'fast', maxTokens: 20 }
+      );
+      category = catText.trim().replace(/^["'.]+|["'.]+$/g, '');
+    } catch(e) {
+      console.warn('[previewAds] category inference failed:', e.message);
+    }
+
+    // ── Ad copy: smart model, 3 platforms ────────────────────────────────────
+    let adaptations;
+    try {
+      const adPrompt = `You are a local business marketing expert. Write compelling, platform-specific ad copy for a business called "${bizName}" in ${city}${category ? ` (${category})` : ''}.
+
+Write one authentic ad for each platform. Return ONLY valid JSON in exactly this structure — no markdown, no extra keys, no explanation:
+{
+  "google": {
+    "headline": "Google Business post headline, max 10 words, professional",
+    "adaptedContent": "Google Business post body, 2–3 sentences, local and professional"
+  },
+  "facebook": {
+    "headline": "Facebook post opening hook, max 8 words, warm and engaging",
+    "adaptedContent": "Facebook post, 2–3 sentences, friendly community tone, include 1–2 relevant emojis"
+  },
+  "instagram": {
+    "headline": "Instagram caption first line, 5–7 punchy words",
+    "adaptedContent": "Instagram caption body, 2–3 sentences then a new line with 4–5 relevant hashtags"
+  }
+}`;
+
+      const { text: adText } = await callAI(adPrompt, { tier: 'smart', maxTokens: 600 });
+      const parsed = JSON.parse(adText.replace(/```json\n?|```/g, '').trim());
+
+      adaptations = {
+        google:    { platform: 'google_business', headline: parsed.google.headline,    adaptedContent: parsed.google.adaptedContent    },
+        facebook:  { platform: 'facebook',        headline: parsed.facebook.headline,  adaptedContent: parsed.facebook.adaptedContent  },
+        instagram: { platform: 'instagram',       headline: parsed.instagram.headline, adaptedContent: parsed.instagram.adaptedContent },
+      };
+    } catch(e) {
+      console.warn('[previewAds] ad generation failed:', e.message);
+      return res.json({ ..._previewFallback(bizName, city, category), sample: true });
+    }
+
+    // ── Cache write: 7-day TTL, fire-and-forget ───────────────────────────────
+    const expiresAt = admin.firestore.Timestamp.fromMillis(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    cacheRef.set({
+      adaptations, category, expiresAt, bizName, city,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    }).catch(e => console.warn('[previewAds] cache write failed:', e.message));
+
+    return res.json({ adaptations, category });
+  }
+);
 
 // ── extractBizContext ─────────────────────────────────────────────────────────
 // Fetches a business website (or reads Google Business Profile) and uses AI
