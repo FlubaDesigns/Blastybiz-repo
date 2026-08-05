@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Try BlastyBiz free — no credit card, no password. Say hi to Blasty and get your magic link in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1785896828786"/>
+  <link rel="stylesheet" href="global-style.css?v=1785897260010"/>
   <title>BlastyBiz — Try Free</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -635,7 +635,17 @@
 </script>
 
 <!-- ── Firebase (module) ──────────────────────────────────────────── -->
-<script type="module">
+<script type="importmap">
+{
+  "integrity": {
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js":       "sha384-wY0ZJNz4V101UNldqXjHz0zuQq2LFWQg9C6MejyUaw58KxejR+Fq3MinHCx/5y77",
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js":      "sha384-zgcbfcVBtrcOc7CwpMfyGnYBfuol1tUBzdw+qfnzk43mD50+D2shQKuddFaWQfsc",
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js": "sha384-wrbWJmwwo/g58yNujR9u0v2HlcTvuGH1Pb8q0J3RR0EyaqypirmzeoG8+qkopilb",
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js":   "sha384-MiuhCiy/+BHXhKiAgD/lPmYfVJHJMXdXL6BVfwPkfeg7UCfcjV6EMGCWk+LqguU1"
+  }
+}
+</script>
+  <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import {
   sendSignInLinkToEmail,

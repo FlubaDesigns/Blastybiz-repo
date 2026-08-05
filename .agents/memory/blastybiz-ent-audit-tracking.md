@@ -51,7 +51,7 @@ Updates `schedule.nextRunAt` and `schedule.lastRunAt` (ISO strings) after each r
 ### Process
 - **1.3 / 5.5** — CI exists (.github/workflows/check-release.yml) but not yet wired to a real GitHub remote
 - **5.3** — no dependency scanning
-- **5.4** — no SRI on CDN script tags
+- ~~**5.4**~~ ✅ FIXED 2026-08-05 — importmap integrity block injected into all 40 Firebase-using pages; BizContext.html pdf.min.js got integrity+crossorigin; heic2any dynamic loader got s.integrity+s.crossOrigin
 
 ### Quarter
 - **1.2** — staging project

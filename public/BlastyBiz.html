@@ -5,7 +5,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785896828786" />
+<link rel="stylesheet" href="global-style.css?v=1785897260010" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -106,7 +106,17 @@
 .step5-url-input{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:8px;padding:9px 10px;font-size:13px;color:var(--light,#fff);font-family:inherit;min-width:0;}
 .step5-url-save{padding:9px 12px;border-radius:8px;background:var(--green,#39ff14);border:none;color:#000;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;}
 </style>
-<script type="module" src="./auth-guard.js"></script>
+<script type="importmap">
+{
+  "integrity": {
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js":       "sha384-wY0ZJNz4V101UNldqXjHz0zuQq2LFWQg9C6MejyUaw58KxejR+Fq3MinHCx/5y77",
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js":      "sha384-zgcbfcVBtrcOc7CwpMfyGnYBfuol1tUBzdw+qfnzk43mD50+D2shQKuddFaWQfsc",
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js": "sha384-wrbWJmwwo/g58yNujR9u0v2HlcTvuGH1Pb8q0J3RR0EyaqypirmzeoG8+qkopilb",
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js":   "sha384-MiuhCiy/+BHXhKiAgD/lPmYfVJHJMXdXL6BVfwPkfeg7UCfcjV6EMGCWk+LqguU1"
+  }
+}
+</script>
+  <script type="module" src="./auth-guard.js"></script>
 <script src="blastybiz-menu.js?v=6"></script>
 </head>
 <body class="has-site-header create-page">
@@ -5449,6 +5459,8 @@ onAuthStateChanged(auth, async (user) => {
         if (window.heic2any) { res(); return; }
         const s = document.createElement('script');
         s.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+        s.integrity = 'sha384-OTofQ0MEeiSgh62havBcemCIK0gqj809wX6UA0uPISNMRnR6NZyCdGzX3SbLrgwL';
+        s.crossOrigin = 'anonymous';
         s.onload = res; s.onerror = rej;
         document.head.appendChild(s);
       }).catch(() => null);

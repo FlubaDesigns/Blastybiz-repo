@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1785896828786"/>
+  <link rel="stylesheet" href="global-style.css?v=1785897260010"/>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -154,7 +154,17 @@
 <div id="site-footer-inject"></div>
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 
-<script type="module">
+<script type="importmap">
+{
+  "integrity": {
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js":       "sha384-wY0ZJNz4V101UNldqXjHz0zuQq2LFWQg9C6MejyUaw58KxejR+Fq3MinHCx/5y77",
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js":      "sha384-zgcbfcVBtrcOc7CwpMfyGnYBfuol1tUBzdw+qfnzk43mD50+D2shQKuddFaWQfsc",
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js": "sha384-wrbWJmwwo/g58yNujR9u0v2HlcTvuGH1Pb8q0J3RR0EyaqypirmzeoG8+qkopilb",
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js":   "sha384-MiuhCiy/+BHXhKiAgD/lPmYfVJHJMXdXL6BVfwPkfeg7UCfcjV6EMGCWk+LqguU1"
+  }
+}
+</script>
+  <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 const app = initializeApp({ apiKey:"AIzaSyCyEwA6jGHp0xjAJO3NOXHblYfpajtFXGM",authDomain:"blastybiz-9523e.firebaseapp.com",projectId:"blastybiz-9523e" });
