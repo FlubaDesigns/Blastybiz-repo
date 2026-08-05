@@ -50,3 +50,7 @@ Thumbs.db
 placeholder
 .firebase/hosting.*.cache
 download/BlastyBiz_Site.zip
+
+# Replit config (contains platform-specific settings)
+.replit
+.replit.new
