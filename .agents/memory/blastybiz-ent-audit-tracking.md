@@ -49,7 +49,7 @@ Updates `schedule.nextRunAt` and `schedule.lastRunAt` (ISO strings) after each r
 - **4.2** — 4 unbounded queries in `admin.js` now limited to 2000/5000; migrate to aggregation counters at scale
 
 ### Process
-- **1.3 / 5.5** — CI exists (.github/workflows/check-release.yml) but not yet wired to a real GitHub remote
+- ~~**1.3 / 5.5**~~ ✅ FIXED 2026-08-05 — GitHub remote live at FlubaDesigns/Blastybiz-repo (main). CI wired. GITHUB_TOKEN secret stored in Replit.
 - **5.3** — no dependency scanning
 - ~~**5.4**~~ ✅ FIXED 2026-08-05 — importmap integrity block injected into all 40 Firebase-using pages; BizContext.html pdf.min.js got integrity+crossorigin; heic2any dynamic loader got s.integrity+s.crossOrigin
 
@@ -62,3 +62,4 @@ Updates `schedule.nextRunAt` and `schedule.lastRunAt` (ISO strings) after each r
 - Sweep orphaned `private` subcollection docs from accounts deleted before the fix
 - Provider-side OAuth token revocation for tokens exposed before Pass 01 §1.5
 - ~~Delete `YELP_API_KEY` from Firebase Secret Manager~~ ✅ DONE 2026-08-05 via CLI
+- ~~`.replit` exposed on GitHub with plaintext Playwright password~~ ✅ FIXED 2026-08-05 — file scrubbed from entire git history via git-filter-repo, added to .gitignore, Firebase Auth password rotated, `PLAYWRIGHT_TEST_PASSWORD` stored as Replit secret
