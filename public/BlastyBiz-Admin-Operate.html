@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="global-style.css?v=1785881928854">
+<link rel="stylesheet" href="global-style.css?v=1785894865475">
 
 <style>body{visibility:hidden}</style>
 <script type="module" src="./admin-guard.js"></script>
@@ -383,6 +383,27 @@
       </div>
     </div>
 
+    <!-- Facebook Marketplace subcategories -->
+    <div class="card">
+      <div class="op-card-header" onclick="toggleCard(this)">
+        <div class="check-box" id="chk-fbmarket-categories" onclick="toggleCheck(event,'fbmarket-categories')"></div>
+        <div class="flex-1">
+          <div class="op-card-title">🛒 Facebook Marketplace — Fill In Subcategories</div>
+          <div class="op-card-sub">Currently only 20 top-level categories; needs full subcategory tree</div>
+        </div>
+        <span class="op-chevron">▼</span>
+      </div>
+      <div class="op-card-body">
+        <p class="op-sub-text">Facebook blocks all automated scraping, so subcategories must be collected manually. Each top-level category (Vehicles, Electronics, Clothing, etc.) has its own subcategory list inside Marketplace.</p>
+        <div class="op-step-list">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Log into Facebook and go to <strong>Marketplace → Create new listing</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Click through each top-level category and note every subcategory shown. Format: <code>alias[tab]title</code> per line (e.g. <code>cars_trucks&nbsp;&nbsp;&nbsp;Cars &amp; Trucks</code>). If there's no natural alias, just use the title — the admin tool will generate one.</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Go to <a href="BlastyBiz-Admin.html" target="_blank">Admin → Platform Category List</a>, select <strong>Facebook Marketplace</strong>, paste the full list, and hit Save.</div></div>
+        </div>
+        <p class="op-note">The 20 existing top-level categories will be replaced with whatever you paste. Do the full tree in one paste session so nothing gets lost.</p>
+      </div>
+    </div>
+
   </div>
 
   <!-- ══════════════════════════════════════════
@@ -654,7 +675,7 @@ function renderChecks() {
                      'client-bing','client-thumbtack',
                      'google-verify','google-logo',
                      'meta-review',
-                     'linkedin-api','x-api',
+                     'linkedin-api','x-api','fbmarket-categories',
                      'e2e-onboard','e2e-blast','e2e-limits','e2e-queue'];
   checkable.forEach(key => {
     const box = document.getElementById('chk-' + key);
