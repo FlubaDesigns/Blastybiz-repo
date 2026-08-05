@@ -29,7 +29,7 @@ async function _googleRefreshToken(refreshToken) {
   return resp.data.access_token;
 }
 
-async function _publishGoogleJob(job, conn) {
+async function _publishGoogleJob(job, conn, pathUserId, pathBizId) {
   const content   = job.payload?.adaptedContent || '';
   const imageUrls = job.payload?.imageUrls || [];
   async function tryPost(token) {
@@ -46,7 +46,8 @@ async function _publishGoogleJob(job, conn) {
   } catch(e) {
     if (e.response?.status === 401 && conn.refreshToken) {
       const newToken = await _googleRefreshToken(conn.refreshToken);
-      const gConnRef = userBizConnsRef(job.uid, job.businessId).doc('google');
+      // 2.8: use path-derived uid/bizId, never trust doc-data fields for path construction
+      const gConnRef = userBizConnsRef(pathUserId, pathBizId).doc('google');
       await _setConnTokens(gConnRef, { accessToken: newToken });
       await gConnRef.update({ updatedAt: admin.firestore.FieldValue.serverTimestamp() });
       const r = await tryPost(newToken);
@@ -127,7 +128,9 @@ exports.uploadImage = onRequest({ invoker: 'public' }, withAuth(async (req, res,
   const bucket = admin.storage().bucket();
   const file = bucket.file(`photos/${uid}/${Date.now()}_${safeFileName}`);
   await file.save(rawBytes, { contentType: mimeType });
-  const [url] = await file.getSignedUrl({ action: 'read', expires: new Date(Date.now() + 365 * 24 * 3600 * 1000) });
+  // 3.6: make public (photos are posted to public social platforms anyway) — no expiry risk
+  await file.makePublic();
+  const url = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
   res.json({ url });
 }));
 
@@ -344,7 +347,7 @@ exports.dispatchPublishJob = onDocumentCreated(
       let result;
 
       switch (job.platform) {
-        case 'google':    result = await _publishGoogleJob(job, conn);    break;
+        case 'google':    result = await _publishGoogleJob(job, conn, _pathUserId, _pathBizId);    break;
         case 'facebook':  result = await _publishFacebookJob(job, conn);  break;
         case 'instagram': result = await _publishInstagramJob(job, conn); break;
         default:

@@ -76,7 +76,8 @@ exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_
     const conn = { ...connSnap.data(), ...tokens };
     let result;
     switch (job.platform) {
-      case 'google':    result = await _publishGoogleJob(job, conn);    break;
+      // 2.8: pass explicit uid/businessId from the verified request body, never from job doc data
+      case 'google':    result = await _publishGoogleJob(job, conn, uid, businessId);    break;
       case 'facebook':  result = await _publishFacebookJob(job, conn);  break;
       case 'instagram': result = await _publishInstagramJob(job, conn); break;
       default:
