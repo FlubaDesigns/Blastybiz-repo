@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786040792544" />
+  <link rel="stylesheet" href="global-style.css?v=1786040939811" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -561,8 +561,10 @@ function handleSetPassword() {}
     floatEl.classList.add('visible');
   }
 
-  // Track which field wrappers should be blurred until visited
-  var _fieldEls = [];
+  // Separate blur-tracking per tab so each tab's fields are independent
+  var _siFields = [];   // Sign In fields in top→bottom order
+  var _suFields = [];   // Create Account fields in top→bottom order
+  var _fieldEls = [];   // whichever is active; used by showGuide blur logic
 
   function showGuide(key, anchorEl) {
     var bubble = document.getElementById('login-bubble');
@@ -602,63 +604,60 @@ function handleSetPassword() {}
     }
   }
 
-  function wire(id, key) {
+  function wire(id, key, arr) {
     var el = document.getElementById(id);
-    if (!el) return;
+    if (!el) return null;
     var fieldEl = (el.closest && el.closest('.field')) || el.parentElement || el;
-    _fieldEls.push(fieldEl);
+    arr.push(fieldEl);
     el.addEventListener('focus', function() { showGuide(key, fieldEl); });
+    return fieldEl;
   }
 
-  // Blur all tracked field wrappers (call on setup + tab switch)
+  // Blur all fields in the active set
   function blurAllFields() {
     _fieldEls.forEach(function(f) { f.classList.add('bb-field-blur'); });
   }
 
   function setup() {
-    // Anchor for welcome messages is the whole tab row, so Blasty clears both buttons
     var tabsRow = document.querySelector('.auth-tabs') ||
                   (document.getElementById('tab-signin') || {}).parentElement;
 
-    // Field wiring (anchor = nearest .field wrapper)
-    wire('si-email',     'signinEmail');
-    wire('si-password',  'signinPassword');
-    wire('su-name',      'name');
-    wire('su-email',     'email');
-    wire('su-password',  'password');
-    wire('su-password2', 'confirmPassword');
-    wire('reset-email',  'reset');
+    // Sign In fields — order matters (top→bottom)
+    wire('si-email',    'signinEmail',    _siFields);
+    wire('si-password', 'signinPassword', _siFields);
+    wire('reset-email', 'reset',          _siFields);
 
-    // Plan picker click — anchor to the whole plan-picker row
+    // Create Account fields — plan picker first, then form fields top→bottom
     var picker = document.getElementById('plan-picker');
     if (picker) {
-      _fieldEls.push(picker);
+      _suFields.push(picker);
       picker.addEventListener('click', function() { showGuide('plan', picker); });
     }
+    wire('su-name',      'name',           _suFields);
+    wire('su-email',     'email',          _suFields);
+    wire('su-password',  'password',       _suFields);
+    wire('su-password2', 'confirmPassword',_suFields);
 
-    // Start all form fields blurred
+    // Start on Sign In tab
+    _fieldEls = _siFields;
     blurAllFields();
 
-    // Patch switchTab — re-blur all fields when changing tabs (inline onclick fires first)
+    // Patch switchTab — swap active field set and re-blur (inline onclick fires first)
     var origSwitch = window.switchTab;
     window.switchTab = function(tab) {
       origSwitch(tab);
+      _fieldEls = (tab === 'signup') ? _suFields : _siFields;
       blurAllFields();
     };
 
-    // Tab button click handlers fire AFTER switchTab (addEventListener fires after onclick).
-    // They advance Blasty down to the first field of the selected tab and unblur it.
+    // Tab click handlers fire AFTER switchTab; advance Blasty to first field of that tab
     var tabSI = document.getElementById('tab-signin');
     var tabSU = document.getElementById('tab-signup');
     if (tabSI) tabSI.addEventListener('click', function() {
-      var el = document.getElementById('si-email');
-      var fieldEl = el && ((el.closest && el.closest('.field')) || el.parentElement || el);
-      if (fieldEl) showGuide('signinEmail', fieldEl);
+      if (_siFields[0]) showGuide('signinEmail', _siFields[0]);
     });
     if (tabSU) tabSU.addEventListener('click', function() {
-      // Plan picker is the first step in Create Account
-      var planEl = document.getElementById('plan-picker') || picker;
-      if (planEl) showGuide('plan', planEl);
+      if (_suFields[0]) showGuide('plan', _suFields[0]); // plan picker is index 0
     });
 
     // Remove spotlight on blur away from auth card
