@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786000343209" />
+  <link rel="stylesheet" href="global-style.css?v=1786000510145" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -594,12 +594,15 @@ function handleSetPassword() {}
   }
 
   function setup() {
+    // Anchor for welcome messages is the whole tab row, so Blasty clears both buttons
+    var tabsRow = document.querySelector('.auth-tabs') ||
+                  (document.getElementById('tab-signin') || {}).parentElement;
+
     // Patch switchTab so guide responds to tab clicks
     var origSwitch = window.switchTab;
     window.switchTab = function(tab) {
       origSwitch(tab);
-      var tabEl = document.getElementById(tab === 'signup' ? 'tab-signup' : 'tab-signin');
-      showGuide(tab === 'signup' ? 'signupWelcome' : 'signinWelcome', tabEl);
+      showGuide(tab === 'signup' ? 'signupWelcome' : 'signinWelcome', tabsRow);
     };
 
     // Field wiring (anchor = nearest .field wrapper so spotlight covers label + input)
@@ -615,11 +618,11 @@ function handleSetPassword() {}
     var picker = document.getElementById('plan-picker');
     if (picker) picker.addEventListener('click', function() { showGuide('plan', picker); });
 
-    // Tab button explicit clicks
+    // Tab button explicit clicks — anchor to the full row so Blasty clears both buttons
     var tabSI = document.getElementById('tab-signin');
     var tabSU = document.getElementById('tab-signup');
-    if (tabSI) tabSI.addEventListener('click', function() { showGuide('signinWelcome', tabSI); });
-    if (tabSU) tabSU.addEventListener('click', function() { showGuide('signupWelcome', tabSU); });
+    if (tabSI) tabSI.addEventListener('click', function() { showGuide('signinWelcome', tabsRow); });
+    if (tabSU) tabSU.addEventListener('click', function() { showGuide('signupWelcome', tabsRow); });
 
     // Remove spotlight on blur away from auth card
     document.addEventListener('blur', function() {
@@ -639,8 +642,7 @@ function handleSetPassword() {}
         obs.disconnect();
         var isSignup = document.getElementById('tab-signup') &&
                        document.getElementById('tab-signup').classList.contains('active');
-        var tabEl = document.getElementById(isSignup ? 'tab-signup' : 'tab-signin');
-        showGuide(isSignup ? 'signupWelcome' : 'signinWelcome', tabEl);
+        showGuide(isSignup ? 'signupWelcome' : 'signinWelcome', tabsRow);
       }).observe(wrap, { attributes: true, attributeFilter: ['class'] });
     }
   }
