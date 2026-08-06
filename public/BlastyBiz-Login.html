@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786000510145" />
+  <link rel="stylesheet" href="global-style.css?v=1786039775059" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -64,6 +64,14 @@
   word-break: break-word;
   position: relative;
 }
+/* Fields not yet guided are blurred until Blasty points to them */
+.bb-field-blur {
+  filter: blur(2.5px);
+  opacity: 0.45;
+  transition: filter .35s ease, opacity .35s ease;
+  pointer-events: none;
+}
+
 /* Tail pointing right toward Blasty — ::before = border layer, ::after = white fill */
 #login-bubble::before {
   content: '';
@@ -553,7 +561,8 @@ function handleSetPassword() {}
     floatEl.classList.add('visible');
   }
 
-  var _spotEl = null;
+  // Track which field wrappers should be blurred until visited
+  var _fieldEls = [];
 
   function showGuide(key, anchorEl) {
     var bubble = document.getElementById('login-bubble');
@@ -580,17 +589,23 @@ function handleSetPassword() {}
     // Move Blasty next to the anchor element
     if (anchorEl) positionBlasty(anchorEl);
 
-    // Spotlight on focused field
-    if (_spotEl) _spotEl.classList.remove('pb-spotlight');
-    _spotEl = anchorEl || null;
-    if (_spotEl) _spotEl.classList.add('pb-spotlight');
+    // Clear blur on this field (field wrappers only, not the tab row)
+    if (anchorEl && anchorEl.classList.contains('bb-field-blur')) {
+      anchorEl.classList.remove('bb-field-blur');
+    }
   }
 
   function wire(id, key) {
     var el = document.getElementById(id);
     if (!el) return;
     var fieldEl = (el.closest && el.closest('.field')) || el.parentElement || el;
+    _fieldEls.push(fieldEl);
     el.addEventListener('focus', function() { showGuide(key, fieldEl); });
+  }
+
+  // Blur all tracked field wrappers (call on setup + tab switch)
+  function blurAllFields() {
+    _fieldEls.forEach(function(f) { f.classList.add('bb-field-blur'); });
   }
 
   function setup() {
@@ -598,14 +613,7 @@ function handleSetPassword() {}
     var tabsRow = document.querySelector('.auth-tabs') ||
                   (document.getElementById('tab-signin') || {}).parentElement;
 
-    // Patch switchTab so guide responds to tab clicks
-    var origSwitch = window.switchTab;
-    window.switchTab = function(tab) {
-      origSwitch(tab);
-      showGuide(tab === 'signup' ? 'signupWelcome' : 'signinWelcome', tabsRow);
-    };
-
-    // Field wiring (anchor = nearest .field wrapper so spotlight covers label + input)
+    // Field wiring (anchor = nearest .field wrapper)
     wire('si-email',     'signinEmail');
     wire('si-password',  'signinPassword');
     wire('su-name',      'name');
@@ -616,7 +624,21 @@ function handleSetPassword() {}
 
     // Plan picker click — anchor to the whole plan-picker row
     var picker = document.getElementById('plan-picker');
-    if (picker) picker.addEventListener('click', function() { showGuide('plan', picker); });
+    if (picker) {
+      _fieldEls.push(picker);
+      picker.addEventListener('click', function() { showGuide('plan', picker); });
+    }
+
+    // Start all form fields blurred
+    blurAllFields();
+
+    // Patch switchTab — re-blur all fields on tab switch so each tab starts fresh
+    var origSwitch = window.switchTab;
+    window.switchTab = function(tab) {
+      origSwitch(tab);
+      blurAllFields();
+      showGuide(tab === 'signup' ? 'signupWelcome' : 'signinWelcome', tabsRow);
+    };
 
     // Tab button explicit clicks — anchor to the full row so Blasty clears both buttons
     var tabSI = document.getElementById('tab-signin');
