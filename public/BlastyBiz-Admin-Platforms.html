@@ -354,12 +354,22 @@ function renderDisplayGrid(platforms) {
             <input type="number" id="disp_order_${def.slug}" value="${merged.order||def.order}" min="1" max="99" style="max-width:80px"/>
           </div>
         </div>
-        <div class="field-group">
-          <label>Enabled on site?</label>
-          <select id="disp_enabled_${def.slug}">
-            <option value="true"${merged.enabled!==false?' selected':''}>Yes — show on site &amp; in wizard</option>
-            <option value="false"${merged.enabled===false?' selected':''}>No — hide everywhere</option>
-          </select>
+        <div class="two-col">
+          <div class="field-group">
+            <label>Enabled on site?</label>
+            <select id="disp_enabled_${def.slug}">
+              <option value="true"${merged.enabled!==false?' selected':''}>Yes — show on site &amp; in wizard</option>
+              <option value="false"${merged.enabled===false?' selected':''}>No — hide everywhere</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Pro Plan required?</label>
+            <select id="disp_proOnly_${def.slug}">
+              <option value="false"${!merged.proOnly?' selected':''}>No — all plans</option>
+              <option value="true"${merged.proOnly?' selected':''}>Yes — Pro/Agency only</option>
+            </select>
+            <div class="field-hint">Gates this platform in the signup wizard for non-Pro users.</div>
+          </div>
         </div>
       </div>
     `;
@@ -375,6 +385,7 @@ window.saveDisplayAll = async function() {
       capabilityLevel:  document.getElementById(`disp_cap_${def.slug}`).value,
       order:            parseInt(document.getElementById(`disp_order_${def.slug}`).value) || def.order,
       enabled:          document.getElementById(`disp_enabled_${def.slug}`).value === 'true',
+      proOnly:          document.getElementById(`disp_proOnly_${def.slug}`).value === 'true',
     };
   }
   try {

@@ -1739,7 +1739,7 @@ const db = getFirestore(getApp());
     window._bbPlatformChoices = platforms.map(p => ({
       value:   p.slug,
       label:   p.icon + ' ' + p.name,
-      proOnly: p.capabilityLevel === 'manual_assisted' && !isPro,
+      proOnly: p.proOnly && !isPro,
     }));
   } catch(e) {
     console.warn('[ob2] platform list load failed, using fallback:', e.message);
