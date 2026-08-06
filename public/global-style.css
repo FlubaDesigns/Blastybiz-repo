@@ -142,8 +142,8 @@ img { margin: 0; }
 .breadcrumb            { display: flex; align-items: center; gap: 3px; font-size: 11px; color: #999; margin-bottom: 12px; letter-spacing: 0; }
 .breadcrumb a          { color: #999; text-decoration: none; transition: color 0.15s; }
 .breadcrumb a:hover    { color: #ddd; }
-.breadcrumb .bc-sep    { color: #777; margin: 0 2px; }
-.breadcrumb .bc-current { color: #ccc; font-weight: 500; }
+.breadcrumb .bc-sep    { color: #666; margin: 0 1px; }
+.breadcrumb .bc-current { color: #7dde7d; font-weight: 500; }
 
 
 
