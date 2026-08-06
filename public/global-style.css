@@ -996,11 +996,11 @@ body.has-site-header h4  { font-family: 'DM Sans', sans-serif; font-size: 15px; 
 
 /* Article — constrained readable width */
 .legal article            { max-width: 680px; margin: 2rem 0 3rem; }
-.legal article section    { padding: 1.5rem 0; border-bottom: 1px solid var(--border); }
+.legal article section    { padding: 2rem 0 1.5rem; border-bottom: 1px solid var(--border); }
 .legal article section:last-child { border-bottom: none; }
 
 /* Article typography — overrides shared defaults */
-.legal article h2         { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--light); margin: 0 0 0.75rem; letter-spacing: 0.5px; }
+.legal article h2         { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--light); margin: 0 0 0.4rem; letter-spacing: 0.5px; }
 .legal article p          { font-size: 15px; color: var(--silver); line-height: 1.75; margin: 0 0 0.75rem; }
 .legal article p:last-child { margin-bottom: 0; }
 .legal article strong     { color: var(--light); }
