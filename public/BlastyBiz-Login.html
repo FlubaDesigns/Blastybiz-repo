@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786040107222" />
+  <link rel="stylesheet" href="global-style.css?v=1786040792544" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -639,19 +639,27 @@ function handleSetPassword() {}
     // Start all form fields blurred
     blurAllFields();
 
-    // Patch switchTab — re-blur all fields on tab switch so each tab starts fresh
+    // Patch switchTab — re-blur all fields when changing tabs (inline onclick fires first)
     var origSwitch = window.switchTab;
     window.switchTab = function(tab) {
       origSwitch(tab);
       blurAllFields();
-      showGuide(tab === 'signup' ? 'signupWelcome' : 'signinWelcome', tabsRow);
     };
 
-    // Tab button explicit clicks — anchor to the full row so Blasty clears both buttons
+    // Tab button click handlers fire AFTER switchTab (addEventListener fires after onclick).
+    // They advance Blasty down to the first field of the selected tab and unblur it.
     var tabSI = document.getElementById('tab-signin');
     var tabSU = document.getElementById('tab-signup');
-    if (tabSI) tabSI.addEventListener('click', function() { showGuide('signinWelcome', tabsRow); });
-    if (tabSU) tabSU.addEventListener('click', function() { showGuide('signupWelcome', tabsRow); });
+    if (tabSI) tabSI.addEventListener('click', function() {
+      var el = document.getElementById('si-email');
+      var fieldEl = el && ((el.closest && el.closest('.field')) || el.parentElement || el);
+      if (fieldEl) showGuide('signinEmail', fieldEl);
+    });
+    if (tabSU) tabSU.addEventListener('click', function() {
+      // Plan picker is the first step in Create Account
+      var planEl = document.getElementById('plan-picker') || picker;
+      if (planEl) showGuide('plan', planEl);
+    });
 
     // Remove spotlight on blur away from auth card
     document.addEventListener('blur', function() {
