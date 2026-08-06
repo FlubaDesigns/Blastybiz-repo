@@ -922,7 +922,7 @@ body.has-site-header .page-hero p        { font-size: 1.05rem; color: var(--silv
 .about__label, .contact__label           { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--green-lime); font-weight: 600; margin: 0 0 0.4rem; }
 
 /* ── TYPOGRAPHY — universal across all public pages ─────────── */
-body.has-site-header h1  { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 72px); line-height: 1.1; margin: 0 0 0.6em; color: var(--light); }
+body.has-site-header h1  { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 72px); line-height: 1.1; margin: 0 0 0.6em; padding-top: 1.5rem; color: var(--light); }
 body.has-site-header h2  { font-family: 'Bebas Neue', sans-serif; font-size: clamp(28px, 6vw, 52px); line-height: 1.35; font-weight: 400; margin: 1.4rem 0 0.6rem; color: var(--h2-color); }
 body.has-site-header h2 span { color: var(--green-lime); }
 body.has-site-header h3  { font-family: 'DM Sans', sans-serif; font-size: 18px; font-weight: 600; line-height: 1.25; margin: 0 0 0.25em; color: var(--h3-color); }
