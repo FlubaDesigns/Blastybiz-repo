@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1785989340985" />
+  <link rel="stylesheet" href="global-style.css?v=1785990452167" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -606,7 +606,16 @@ async function afterAuth(user) {
     if (userData.onboarded) {
       window.location.href = 'BlastyBiz.html';
     } else {
-      window.location.href = 'BlastyBiz-Onboard2.html';
+      // New user — respect the choice made on the Start page
+      const startChoice = localStorage.getItem('bb_start_choice');
+      localStorage.removeItem('bb_start_choice');
+      if (startChoice === 'forms') {
+        // Skip the wizard — go straight to the quick-form onboarding
+        window.location.href = 'BlastyBiz-CreateBiz.html';
+      } else {
+        // Default (guided or no choice): Blasty wizard
+        window.location.href = 'BlastyBiz-Onboard2.html';
+      }
     }
   } catch (e) {
     localStorage.setItem('bb_auth', '0');

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="robots" content="noindex"/>
+  <title>Get Started — BlastyBiz</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="mascot.js?v=4"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #060e06;
+      --card-bg:  #0f1f0f;
+      --border:   #1e3a1e;
+      --green:    #00C853;
+      --lime:     #aeea00;
+      --light:    #f0f0f0;
+      --muted:    #888;
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--light);
+      font-family: 'DM Sans', sans-serif;
+      line-height: 1.6;
+      letter-spacing: 0.015em;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px 48px;
+      text-align: center;
+    }
+
+    /* ── Logo ── */
+    .start-logo {
+      margin-bottom: 36px;
+    }
+    .start-logo img {
+      width: 160px;
+      height: auto;
+    }
+
+    /* ── Mascot + bubble ── */
+    .mascot-wrap {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+    .pb-mascot {
+      width: 110px;
+    }
+    .speech-bubble {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      color: #111;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      padding: 8px 14px;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.35);
+      pointer-events: none;
+      animation: bubble-in 0.4s 0.6s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #fff;
+      border-bottom: none;
+    }
+    @keyframes bubble-in {
+      from { opacity: 0; transform: translateX(-50%) scale(0.7) translateY(8px); }
+      to   { opacity: 1; transform: translateX(-50%) scale(1)   translateY(0);   }
+    }
+
+    /* ── Heading ── */
+    .start-heading {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2rem, 8vw, 2.8rem);
+      line-height: 1.1;
+      margin: 24px 0 8px;
+      color: #fff;
+    }
+    .start-heading span { color: var(--green); }
+
+    .start-sub {
+      font-size: 15px;
+      color: var(--muted);
+      margin-bottom: 36px;
+      max-width: 340px;
+    }
+
+    /* ── Choice cards ── */
+    .choice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      width: 100%;
+      max-width: 520px;
+    }
+    @media (max-width: 440px) {
+      .choice-grid { grid-template-columns: 1fr; }
+    }
+
+    .choice-card {
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 20px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+      background: var(--card-bg);
+      text-align: left;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .choice-card:hover, .choice-card:focus-visible {
+      border-color: var(--green);
+      transform: translateY(-2px);
+      outline: none;
+    }
+    .choice-card:active { transform: translateY(0); }
+
+    .choice-card--primary {
+      border-color: var(--green);
+      background: #0a2a14;
+    }
+    .choice-card--primary:hover, .choice-card--primary:focus-visible {
+      background: #0d3518;
+    }
+
+    .choice-icon {
+      font-size: 28px;
+      margin-bottom: 10px;
+      display: block;
+    }
+    .choice-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.25rem;
+      letter-spacing: 0.5px;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .choice-card--primary .choice-title { color: var(--green); }
+    .choice-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ── Already have account ── */
+    .start-signin {
+      margin-top: 32px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .start-signin a {
+      color: var(--green);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .start-signin a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <div class="start-logo">
+    <img src="img/blastybiz-title.png" alt="BlastyBiz"/>
+  </div>
+
+  <div class="mascot-wrap">
+    <div class="speech-bubble">Hey! How do you want to start?</div>
+    <div class="pb-mascot" id="pb-mascot"></div>
+  </div>
+
+  <h1 class="start-heading">Let's Get You <span>Blasting</span></h1>
+  <p class="start-sub">Your first post takes about 2 minutes. Pick how you want to do it.</p>
+
+  <div class="choice-grid">
+    <button class="choice-card choice-card--primary" onclick="choose(true)" tabindex="0">
+      <span class="choice-icon">🚀</span>
+      <div class="choice-title">Show me how</div>
+      <p class="choice-desc">Blasty walks you through setup step by step. Recommended if this is your first time.</p>
+    </button>
+    <button class="choice-card" onclick="choose(false)" tabindex="0">
+      <span class="choice-icon">📋</span>
+      <div class="choice-title">Just the forms</div>
+      <p class="choice-desc">Fill in your business details yourself and jump straight to the app.</p>
+    </button>
+  </div>
+
+  <p class="start-signin">Already have an account? <a href="BlastyBiz-Login.html">Sign in</a></p>
+
+  <script>
+    // Animate Blasty into ask mood on load
+    window.addEventListener('load', function () {
+      if (window.PBMascot) {
+        window.PBMascot.setMood('ask');
+      }
+    });
+
+    function choose(guided) {
+      localStorage.setItem('bb_start_choice', guided ? 'guided' : 'forms');
+      window.location.href = 'BlastyBiz-Login.html';
+    }
+  </script>
+</body>
+</html>
