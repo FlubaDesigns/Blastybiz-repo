@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786041302058" />
+  <link rel="stylesheet" href="global-style.css?v=1786041616354" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -64,6 +64,16 @@
   word-break: break-word;
   position: relative;
 }
+/* Before user picks a tab: both buttons look neutral, form is hidden */
+#auth-card-wrap.bb-unpicked .auth-tab {
+  background: transparent !important;
+  color: #aaa !important;
+  border-color: #444 !important;
+}
+#auth-card-wrap.bb-unpicked .auth-form {
+  display: none !important;
+}
+
 /* Tab buttons pulse to demand a pick before anything else unlocks */
 .bb-tab-prompt {
   animation: bb-tab-pulse 1.5s ease-in-out infinite;
@@ -502,6 +512,7 @@ function handleSetPassword() {}
 
   // Default messages + moods per step
   var DEFAULTS = {
+    pickTab:         { text: "👆 Tap Sign In or Create Account to get started!",                   mood: 's-wave'      },
     signinWelcome:   { text: "Welcome back! Sign in to keep blasting. 🚀",                         mood: 's-wave'      },
     signinEmail:     { text: "Enter the email you signed up with.",                                 mood: 's-ask'       },
     signinPassword:  { text: "Enter your BlastyBiz password.",                                     mood: 's-ask'       },
@@ -668,13 +679,18 @@ function handleSetPassword() {}
     function removeTabPrompt() { [tabSI, tabSU].forEach(function(b){ if(b) b.classList.remove('bb-tab-prompt'); }); }
     addTabPrompt(); // pulse both buttons until the user picks
 
-    // Tab click handlers fire AFTER switchTab; stop pulsing, advance Blasty to first field
-    if (tabSI) tabSI.addEventListener('click', function() {
+    // Tab click handlers fire AFTER switchTab; stop pulsing, reveal form, advance Blasty
+    function unpick() {
       removeTabPrompt();
+      var wrap = document.getElementById('auth-card-wrap');
+      if (wrap) wrap.classList.remove('bb-unpicked');
+    }
+    if (tabSI) tabSI.addEventListener('click', function() {
+      unpick();
       if (_siFields[0]) showGuide('signinEmail', _siFields[0]);
     });
     if (tabSU) tabSU.addEventListener('click', function() {
-      removeTabPrompt();
+      unpick();
       if (_suFields[0]) showGuide('plan', _suFields[0]);
     });
 
@@ -688,15 +704,14 @@ function handleSetPassword() {}
       }, 150);
     }, true);
 
-    // Fire initial message once auth card is ready
+    // Once auth card is ready: put it in unpicked state and show Blasty at the tabs
     var wrap = document.getElementById('auth-card-wrap');
     if (wrap) {
       new MutationObserver(function(_, obs) {
         if (!wrap.classList.contains('ready')) return;
         obs.disconnect();
-        var isSignup = document.getElementById('tab-signup') &&
-                       document.getElementById('tab-signup').classList.contains('active');
-        showGuide(isSignup ? 'signupWelcome' : 'signinWelcome', tabsRow);
+        wrap.classList.add('bb-unpicked');
+        showGuide('pickTab', tabsRow);
       }).observe(wrap, { attributes: true, attributeFilter: ['class'] });
     }
   }

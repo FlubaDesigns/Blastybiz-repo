@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1786041302058">
+  <link rel="stylesheet" href="global-style.css?v=1786041616354">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -359,7 +359,8 @@ let loginOverrides = {};
 let moodPresets = [];
 
 const LOGIN_STEP_DEFS = [
-  { idx:1,  key:'signinWelcome',   label:'Sign In — Welcome',            defaultMsg:"Welcome back! Sign in to keep blasting. 🚀",                             defaultMood:'s-wave'      },
+  { idx:1,  key:'pickTab',       label:'Initial — Pick a Tab',            defaultMsg:"👆 Tap Sign In or Create Account to get started!",                      defaultMood:'s-wave'      },
+  { idx:2,  key:'signinWelcome',   label:'Sign In — Welcome',            defaultMsg:"Welcome back! Sign in to keep blasting. 🚀",                             defaultMood:'s-wave'      },
   { idx:2,  key:'signinEmail',     label:'Sign In — Email field',         defaultMsg:"Enter the email address you signed up with.",                            defaultMood:'s-ask'       },
   { idx:3,  key:'signinPassword',  label:'Sign In — Password field',      defaultMsg:"Enter your BlastyBiz password.",                                         defaultMood:'s-ask'       },
   { idx:4,  key:'signupWelcome',   label:'Create Account — Welcome',      defaultMsg:"Let's get you set up! 🚀 Pick a plan — Starter is always free.",         defaultMood:'s-wave'      },
