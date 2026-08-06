@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786041098099" />
+  <link rel="stylesheet" href="global-style.css?v=1786041156809" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -678,11 +678,7 @@ function handleSetPassword() {}
         obs.disconnect();
         var isSignup = document.getElementById('tab-signup') &&
                        document.getElementById('tab-signup').classList.contains('active');
-        if (isSignup) {
-          if (_suFields[0]) showGuide('plan', _suFields[0]);
-        } else {
-          if (_siFields[0]) showGuide('signinEmail', _siFields[0]);
-        }
+        showGuide(isSignup ? 'signupWelcome' : 'signinWelcome', tabsRow);
       }).observe(wrap, { attributes: true, attributeFilter: ['class'] });
     }
   }
