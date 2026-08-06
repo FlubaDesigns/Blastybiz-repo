@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786041616354" />
+  <link rel="stylesheet" href="global-style.css?v=1786041950210" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -583,9 +583,10 @@ function handleSetPassword() {}
   }
 
   // Separate blur-tracking per tab so each tab's fields are independent
-  var _siFields = [];   // Sign In fields in top→bottom order
-  var _suFields = [];   // Create Account fields in top→bottom order
-  var _fieldEls = [];   // whichever is active; used by showGuide blur logic
+  var _siFields  = [];         // Sign In fields in top→bottom order
+  var _suFields  = [];         // Create Account fields in top→bottom order
+  var _fieldEls  = [];         // whichever is active; used by showGuide blur logic
+  var _fieldKeys = new Map();  // fieldEl → step key, for auto-advance lookup
 
   function showGuide(key, anchorEl) {
     var bubble = document.getElementById('login-bubble');
@@ -630,7 +631,18 @@ function handleSetPassword() {}
     if (!el) return null;
     var fieldEl = (el.closest && el.closest('.field')) || el.parentElement || el;
     arr.push(fieldEl);
+    _fieldKeys.set(fieldEl, key);
     el.addEventListener('focus', function() { showGuide(key, fieldEl); });
+    // Auto-advance to the next field when this one has a value and loses focus
+    el.addEventListener('blur', function() {
+      if (!el.value.trim()) return;
+      var idx = _fieldEls.indexOf(fieldEl);
+      if (idx >= 0 && idx < _fieldEls.length - 1) {
+        var nextEl  = _fieldEls[idx + 1];
+        var nextKey = _fieldKeys.get(nextEl) || '';
+        showGuide(nextKey, nextEl);
+      }
+    });
     return fieldEl;
   }
 
@@ -693,6 +705,18 @@ function handleSetPassword() {}
       unpick();
       if (_suFields[0]) showGuide('plan', _suFields[0]);
     });
+
+    // Patch selectPlan so picking a plan auto-advances Blasty to the Name field
+    var origSelectPlan = window.selectPlan;
+    window.selectPlan = function(plan) {
+      if (origSelectPlan) origSelectPlan(plan);
+      // Advance to whichever field comes next after the plan picker in the active sequence
+      var idx = _fieldEls.indexOf(picker);
+      if (idx >= 0 && idx < _fieldEls.length - 1) {
+        var nextEl = _fieldEls[idx + 1];
+        showGuide(_fieldKeys.get(nextEl) || '', nextEl);
+      }
+    };
 
     // Remove spotlight on blur away from auth card
     document.addEventListener('blur', function() {
