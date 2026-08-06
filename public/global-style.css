@@ -244,8 +244,7 @@ select option  { background: var(--dark); }
 
 /* Container */
 .header {
-  position: fixed;
-  top: 0; left: 0; right: 0;
+  position: relative;
   z-index: 200;
   background: #000;
   display: flex;
@@ -393,13 +392,6 @@ body.home-page .header__badge-bar { display: flex; }
 /* Hide old nav bar on pages using the new site header */
 body.has-site-header nav:not(.header__nav):not(.header__mobile-menu) { display: none; }
 
-/* Clear fixed site header — only job is header-offset clearance.
-   Vertical structure (flex-col, min-height, flex:1) is owned by body.stage. */
-body.has-site-header .main { padding-top: var(--main-offset); }
-/* Home page: JS _setHeaderOffset() already sets body.style.paddingTop to the
-   full header height (nav + badge bar). Zero out .main's own padding-top so
-   the two don't stack and create a double gap. */
-body.home-page .main { padding-top: 0 !important; }
 
 /* ── STAGE BACKBONE ──────────────────────────────────────────────────
    body.stage : universal surface — vertical structure lives here.
