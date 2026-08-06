@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786041950210" />
+  <link rel="stylesheet" href="global-style.css?v=1786042223364" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -728,14 +728,23 @@ function handleSetPassword() {}
       }, 150);
     }, true);
 
-    // Once auth card is ready: put it in unpicked state and show Blasty at the tabs
+    // Once auth card is ready: check if this user has been through the guide before.
+    // If yes (localStorage flag), skip the gate and show Sign In form directly.
+    // If no, put the card in unpicked state and let Blasty prompt the choice.
     var wrap = document.getElementById('auth-card-wrap');
     if (wrap) {
       new MutationObserver(function(_, obs) {
         if (!wrap.classList.contains('ready')) return;
         obs.disconnect();
-        wrap.classList.add('bb-unpicked');
-        showGuide('pickTab', tabsRow);
+        if (localStorage.getItem('bb_guide_done')) {
+          // Returning user — show Sign In form immediately, no guided gate
+          blurAllFields();
+          if (_siFields[0]) showGuide('signinEmail', _siFields[0]);
+        } else {
+          // First-time visitor — guided gate
+          wrap.classList.add('bb-unpicked');
+          showGuide('pickTab', tabsRow);
+        }
       }).observe(wrap, { attributes: true, attributeFilter: ['class'] });
     }
   }
@@ -932,6 +941,13 @@ async function afterAuth(user) {
 
     const snap     = await getDoc(doc(db, 'users', user.uid));
     const userData = snap.exists() ? snap.data() : {};
+
+    // Mark that this user has completed the login guide — persists across devices via Firestore,
+    // and locally via localStorage so future visits skip the guided gate without an auth round-trip.
+    if (!userData.loginGuideDone) {
+      setDoc(doc(db, 'users', user.uid), { loginGuideDone: true }, { merge: true }).catch(() => {});
+    }
+    localStorage.setItem('bb_guide_done', '1');
     if (userData.onboarded) {
       window.location.href = 'BlastyBiz.html';
     } else {
