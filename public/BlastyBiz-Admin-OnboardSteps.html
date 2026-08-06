@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1786042223364">
+  <link rel="stylesheet" href="global-style.css?v=1786042582833">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -72,6 +72,15 @@
     .btn-rst:hover { border-color:#ef4444; color:#ef4444; }
     .btn-prv { background:none; border:1.5px solid #e2e8f0; border-radius:7px; padding:5px 11px; font:13px 'DM Sans',sans-serif; cursor:pointer; color:#64748b; }
     .btn-prv:hover { border-color:#7c3aed; color:#7c3aed; }
+    .btn-del { background:none; border:1.5px solid #e2e8f0; border-radius:7px; padding:5px 11px; font:13px 'DM Sans',sans-serif; cursor:pointer; color:#64748b; }
+    .btn-del:hover { border-color:#ef4444; color:#ef4444; }
+    .add-step-row { margin:3px 0; }
+    .btn-add-step { width:100%; background:none; border:1.5px dashed #cbd5e1; color:#94a3b8; border-radius:8px; padding:6px; font:12px 'DM Sans',sans-serif; cursor:pointer; transition:all .2s; }
+    .btn-add-step:hover { border-color:#22c55e; color:#22c55e; }
+    .new-step-form { background:#f8fafc; border:1.5px solid #94a3b8; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:7px; margin:3px 0; }
+    .new-step-form input,.new-step-form textarea { border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px; font:13px 'DM Sans',sans-serif; color:#1e293b; width:100%; box-sizing:border-box; }
+    .new-step-form textarea { resize:vertical; }
+    .new-step-acts { display:flex; gap:8px; }
     .sts { font-size:12px; color:#22c55e; }
     /* preview */
     .ose-preview { position:sticky; top:80px; align-self:start; }
@@ -356,6 +365,7 @@ let overrides = {};
 let ob2Overrides = {};
 let startOverrides = {};
 let loginOverrides = {};
+let loginStepDefs  = []; // mutable working copy — starts from LOGIN_STEP_DEFS, may include custom steps
 let moodPresets = [];
 
 const LOGIN_STEP_DEFS = [
@@ -565,51 +575,58 @@ window.oseTab = function(tab) {
 };
 
 // ── Login Guide ────────────────────────────────────────────────────────────
-function renderLoginSteps() {
-  document.getElementById('ose-login-steps').innerHTML = LOGIN_STEP_DEFS.map(s => {
-    const ov   = loginOverrides[s.key] || {};
-    const an   = (ov.anim && typeof ov.anim === 'object') ? ov.anim : {};
-    const txt  = ov.msg !== undefined ? ov.msg : s.defaultMsg;
-    const hasOv = !!(ov.msg !== undefined || ov.anim);
-    return `<div class="step-card${hasOv?' has-ov':''}" id="lsc-${s.key}">
-      <div class="step-head" onclick="window._loginToggle('${s.key}')">
-        <span class="step-num">${s.idx}</span>
-        <span class="sk">${s.key}</span>
-        <span class="sd">${s.label}</span>
-        <span class="mod-badge">Modified</span>
-        <span class="exp-ic">▾</span>
-      </div>
-      <div class="step-body">
-        <span class="fl">What Blasty says</span>
-        <textarea class="mta" id="lmsg-${s.key}" rows="2">${txt.replace(/</g,'&lt;')}</textarea>
-        <div class="anim-row" style="margin-top:10px">
-          <div class="asg"><label>Mood</label><select id="lam-${s.key}">${sel(MOOD_OPTS, an.mood||s.defaultMood||'s-ask')}</select></div>
-          <div class="asg"><label>Flame</label><select id="laf-${s.key}">${sel(FLAME_OPTS, an.flame||'')}</select></div>
-          <div class="asg"><label>Lights</label><select id="lal-${s.key}">${sel(LIGHTS_OPTS, an.lights||'')}</select></div>
-          <div class="asg"><label>Eyes</label><select id="lae-${s.key}">${sel(EYES_OPTS, an.eyes||'')}</select></div>
-        </div>
-        <div class="anim-chk">
-          <label><input type="checkbox" id="las-${s.key}"${an.smoke?' checked':''}> 💨 Smoke</label>
-          <label><input type="checkbox" id="lan-${s.key}"${an.noseSpin?' checked':''}> 🌀 Nose spin</label>
-        </div>
-        <div class="card-acts">
-          <button class="btn-sv" onclick="window._loginSave('${s.key}')">Save</button>
-          <button class="btn-rst" onclick="window._loginReset('${s.key}')">Reset to default</button>
-          <button class="btn-prv" onclick="window._loginPreview('${s.key}')">▶ Preview</button>
-          <span class="sts" id="lsts-${s.key}"></span>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+function addStepBtnHtml(idx) {
+  return `<div class="add-step-row" id="add-step-row-${idx}"><button class="btn-add-step" onclick="window._loginAddStep(${idx})">＋ Add Step Here</button></div>`;
+}
 
-  LOGIN_STEP_DEFS.forEach(s => {
+function loginStepCardHtml(s) {
+  const ov    = loginOverrides[s.key] || {};
+  const an    = (ov.anim && typeof ov.anim === 'object') ? ov.anim : {};
+  const txt   = ov.msg !== undefined ? ov.msg : s.defaultMsg;
+  const hasOv = !!(ov.msg !== undefined || ov.anim);
+  const del   = s.custom ? `<button class="btn-del" onclick="window._loginDeleteStep('${s.key}')">🗑 Delete</button>` :
+                            `<button class="btn-rst" onclick="window._loginReset('${s.key}')">Reset to default</button>`;
+  return `<div class="step-card${hasOv?' has-ov':''}${s.custom?' custom-step':''}" id="lsc-${s.key}">
+    <div class="step-head" onclick="window._loginToggle('${s.key}')">
+      <span class="step-num">${s.idx}</span>
+      <span class="sk">${s.key}${s.custom?' ✦':''}</span>
+      <span class="sd">${s.label}</span>
+      <span class="mod-badge">Modified</span>
+      <span class="exp-ic">▾</span>
+    </div>
+    <div class="step-body">
+      <span class="fl">What Blasty says</span>
+      <textarea class="mta" id="lmsg-${s.key}" rows="2">${txt.replace(/</g,'&lt;')}</textarea>
+      <div class="anim-row" style="margin-top:10px">
+        <div class="asg"><label>Mood</label><select id="lam-${s.key}">${sel(MOOD_OPTS, an.mood||s.defaultMood||'s-ask')}</select></div>
+        <div class="asg"><label>Flame</label><select id="laf-${s.key}">${sel(FLAME_OPTS, an.flame||'')}</select></div>
+        <div class="asg"><label>Lights</label><select id="lal-${s.key}">${sel(LIGHTS_OPTS, an.lights||'')}</select></div>
+        <div class="asg"><label>Eyes</label><select id="lae-${s.key}">${sel(EYES_OPTS, an.eyes||'')}</select></div>
+      </div>
+      <div class="anim-chk">
+        <label><input type="checkbox" id="las-${s.key}"${an.smoke?' checked':''}> 💨 Smoke</label>
+        <label><input type="checkbox" id="lan-${s.key}"${an.noseSpin?' checked':''}> 🌀 Nose spin</label>
+      </div>
+      <div class="card-acts">
+        <button class="btn-sv" onclick="window._loginSave('${s.key}')">Save</button>
+        ${del}
+        <button class="btn-prv" onclick="window._loginPreview('${s.key}')">▶ Preview</button>
+        <span class="sts" id="lsts-${s.key}"></span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderLoginSteps() {
+  let html = addStepBtnHtml(0);
+  loginStepDefs.forEach((s, i) => { html += loginStepCardHtml(s) + addStepBtnHtml(i + 1); });
+  document.getElementById('ose-login-steps').innerHTML = html;
+
+  loginStepDefs.forEach(s => {
     const ta = document.getElementById('lmsg-'+s.key);
     if (ta) {
       let timer;
-      ta.addEventListener('input', () => {
-        clearTimeout(timer);
-        timer = setTimeout(() => window._loginSave(s.key), 900);
-      });
+      ta.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => window._loginSave(s.key), 900); });
     }
     ['lam-','laf-','lal-','lae-'].forEach(pfx => {
       const el = document.getElementById(pfx+s.key);
@@ -621,6 +638,65 @@ function renderLoginSteps() {
     });
   });
 }
+
+async function saveLoginStepOrder() {
+  const order      = loginStepDefs.map(s => s.key);
+  const customMeta = {};
+  loginStepDefs.filter(s => s.custom).forEach(s => { customMeta[s.key] = { label: s.label, defaultMsg: s.defaultMsg||'' }; });
+  await setDoc(doc(db,'config','loginGuide'), { __stepOrder__: order, __customStepMeta__: customMeta }, { merge:true });
+}
+
+window._loginAddStep = function(insertIdx) {
+  const row = document.getElementById('add-step-row-' + insertIdx);
+  if (!row) return;
+  row.innerHTML = `<div class="new-step-form">
+    <div style="font:600 12px 'DM Sans',sans-serif;color:#475569">New step at position ${insertIdx + 1}</div>
+    <input type="text" id="ns-key-${insertIdx}" placeholder="Step key — camelCase, no spaces (e.g. googleBtn)">
+    <input type="text" id="ns-label-${insertIdx}" placeholder="Label shown in admin (e.g. Google Sign-In)">
+    <textarea id="ns-msg-${insertIdx}" rows="2" placeholder="What Blasty says..."></textarea>
+    <div class="new-step-acts">
+      <button class="btn-sv" onclick="window._loginConfirmNewStep(${insertIdx})">Add Step</button>
+      <button class="btn-rst" onclick="window._loginCancelNewStep(${insertIdx})">Cancel</button>
+    </div>
+  </div>`;
+  document.getElementById('ns-key-'+insertIdx).focus();
+};
+
+window._loginCancelNewStep = function(insertIdx) {
+  const row = document.getElementById('add-step-row-' + insertIdx);
+  if (row) row.innerHTML = `<button class="btn-add-step" onclick="window._loginAddStep(${insertIdx})">＋ Add Step Here</button>`;
+};
+
+window._loginConfirmNewStep = async function(insertIdx) {
+  const key   = (document.getElementById('ns-key-'+insertIdx)?.value   || '').trim().replace(/\s+/g,'');
+  const label = (document.getElementById('ns-label-'+insertIdx)?.value || '').trim();
+  const msg   = (document.getElementById('ns-msg-'+insertIdx)?.value   || '').trim();
+  if (!key) { alert('A step key is required.'); return; }
+  if (loginStepDefs.some(s => s.key === key)) { alert('Key "'+key+'" already exists — choose a different one.'); return; }
+  const newStep = { key, label: label || key, defaultMsg: msg, defaultMood: 's-ask', idx: insertIdx + 1, custom: true };
+  loginStepDefs.splice(insertIdx, 0, newStep);
+  loginStepDefs.forEach((s, i) => s.idx = i + 1);
+  loginOverrides[key] = { msg: msg || '', anim: { mood: 's-ask' } };
+  try {
+    await setDoc(doc(db,'config','loginGuide'), { [key]: { msg: msg||'', anim:{ mood:'s-ask' } } }, { merge:true });
+    await saveLoginStepOrder();
+  } catch(e) { alert('Error saving: '+e.message); }
+  renderLoginSteps();
+};
+
+window._loginDeleteStep = async function(k) {
+  if (!confirm('Delete custom step "'+k+'"? This cannot be undone.')) return;
+  const idx = loginStepDefs.findIndex(s => s.key === k);
+  if (idx < 0) return;
+  loginStepDefs.splice(idx, 1);
+  loginStepDefs.forEach((s, i) => s.idx = i + 1);
+  delete loginOverrides[k];
+  try {
+    await setDoc(doc(db,'config','loginGuide'), { [k]: deleteField() }, { merge:true });
+    await saveLoginStepOrder();
+  } catch(e) { alert('Error deleting: '+e.message); }
+  renderLoginSteps();
+};
 
 window._loginToggle = k => document.getElementById('lsc-'+k).classList.toggle('open');
 
@@ -655,7 +731,7 @@ window._loginSave = async function(k) {
   if (smoke)  anim.smoke    = true;
   if (nose)   anim.noseSpin = true;
   const payload = { anim };
-  if (msg && msg !== LOGIN_STEP_DEFS.find(s=>s.key===k)?.defaultMsg) payload.msg = msg;
+  if (msg && msg !== loginStepDefs.find(s=>s.key===k)?.defaultMsg) payload.msg = msg;
   try {
     if (auth.currentUser) await auth.currentUser.getIdToken(true);
     await setDoc(doc(db,'config','loginGuide'), { [k]: payload }, { merge:true });
@@ -676,7 +752,7 @@ window._loginReset = async function(k) {
     await setDoc(doc(db,'config','loginGuide'), { [k]: deleteField() }, { merge:true });
     delete loginOverrides[k];
     document.getElementById('lsc-'+k).classList.remove('has-ov');
-    const def = LOGIN_STEP_DEFS.find(s=>s.key===k);
+    const def = loginStepDefs.find(s=>s.key===k);
     if (def) document.getElementById('lmsg-'+k).value = def.defaultMsg;
     const sts = document.getElementById('lsts-'+k);
     if (sts) { sts.style.color='#64748b'; sts.textContent='↩ Reset'; setTimeout(()=>{ sts.textContent=''; }, 2500); }
@@ -1060,7 +1136,21 @@ onAuthStateChanged(auth, async user => {
     ob2Overrides   = ob2Snap.exists()    ? ob2Snap.data()    : {};
     startOverrides = startSnap.exists()  ? startSnap.data()  : {};
     moodPresets    = moodsSnap.exists()  ? (moodsSnap.data().presets || []) : [];
-    loginOverrides = loginSnap.exists()  ? loginSnap.data()  : {};
+    const rawLogin  = loginSnap.exists() ? loginSnap.data() : {};
+    const stepOrder = rawLogin.__stepOrder__;
+    const customMeta= rawLogin.__customStepMeta__ || {};
+    loginOverrides  = Object.fromEntries(Object.entries(rawLogin).filter(([k]) => !k.startsWith('__')));
+    // Build mutable loginStepDefs: saved order wins; unknown keys are custom steps
+    if (stepOrder && Array.isArray(stepOrder)) {
+      loginStepDefs = stepOrder.map((key, i) => {
+        const def = LOGIN_STEP_DEFS.find(s => s.key === key);
+        if (def) return { ...def, idx: i + 1 };
+        const m = customMeta[key] || {};
+        return { key, label: m.label || key, defaultMsg: m.defaultMsg || '', defaultMood: 's-ask', idx: i + 1, custom: true };
+      });
+    } else {
+      loginStepDefs = LOGIN_STEP_DEFS.map((s, i) => ({ ...s, idx: i + 1 }));
+    }
     // OB1 pane
     document.getElementById('ose-status').style.display='none';
     document.getElementById('ose-steps').style.display='';

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786042223364" />
+  <link rel="stylesheet" href="global-style.css?v=1786042582833" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -737,9 +737,9 @@ function handleSetPassword() {}
         if (!wrap.classList.contains('ready')) return;
         obs.disconnect();
         if (localStorage.getItem('bb_guide_done')) {
-          // Returning user — show Sign In form immediately, no guided gate
-          blurAllFields();
-          if (_siFields[0]) showGuide('signinEmail', _siFields[0]);
+          // Returning user — Blasty guide was a one-time onboarding step; skip it entirely.
+          // The Sign In form is already visible and ready; just let them log in.
+          return;
         } else {
           // First-time visitor — guided gate
           wrap.classList.add('bb-unpicked');
