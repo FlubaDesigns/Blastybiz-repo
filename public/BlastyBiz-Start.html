@@ -41,24 +41,16 @@
       text-align: center;
     }
 
-    /* ── Logo ── */
-    .start-logo {
-      margin-bottom: 36px;
-    }
-    .start-logo img {
-      width: 160px;
-      height: auto;
-    }
+    .start-logo { margin-bottom: 36px; }
+    .start-logo img { width: 160px; height: auto; }
 
-    /* ── Mascot + bubble ── */
     .mascot-wrap {
       position: relative;
       display: inline-block;
       margin-bottom: 12px;
     }
-    .pb-mascot {
-      width: 110px;
-    }
+    .pb-mascot { width: 110px; }
+
     .speech-bubble {
       position: absolute;
       top: -14px;
@@ -90,7 +82,6 @@
       to   { opacity: 1; transform: translateX(-50%) scale(1)   translateY(0);   }
     }
 
-    /* ── Heading ── */
     .start-heading {
       font-family: 'Bebas Neue', sans-serif;
       font-size: clamp(2rem, 8vw, 2.8rem);
@@ -107,7 +98,6 @@
       max-width: 340px;
     }
 
-    /* ── Choice cards ── */
     .choice-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -129,6 +119,7 @@
       text-align: left;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
+      font-family: 'DM Sans', sans-serif;
     }
     .choice-card:hover, .choice-card:focus-visible {
       border-color: var(--green);
@@ -145,11 +136,7 @@
       background: #0d3518;
     }
 
-    .choice-icon {
-      font-size: 28px;
-      margin-bottom: 10px;
-      display: block;
-    }
+    .choice-icon { font-size: 28px; margin-bottom: 10px; display: block; }
     .choice-title {
       font-family: 'Bebas Neue', sans-serif;
       font-size: 1.25rem;
@@ -158,23 +145,10 @@
       margin-bottom: 6px;
     }
     .choice-card--primary .choice-title { color: var(--green); }
-    .choice-desc {
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.5;
-    }
+    .choice-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
 
-    /* ── Already have account ── */
-    .start-signin {
-      margin-top: 32px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-    .start-signin a {
-      color: var(--green);
-      text-decoration: none;
-      font-weight: 600;
-    }
+    .start-signin { margin-top: 32px; font-size: 13px; color: var(--muted); }
+    .start-signin a { color: var(--green); text-decoration: none; font-weight: 600; }
     .start-signin a:hover { text-decoration: underline; }
   </style>
 </head>
@@ -185,40 +159,96 @@
   </div>
 
   <div class="mascot-wrap">
-    <div class="speech-bubble">Hey! How do you want to start?</div>
+    <div class="speech-bubble" id="start-bubble">Hey! How do you want to start?</div>
     <div class="pb-mascot" id="pb-mascot"></div>
   </div>
 
-  <h1 class="start-heading">Let's Get You <span>Blasting</span></h1>
-  <p class="start-sub">Your first post takes about 2 minutes. Pick how you want to do it.</p>
+  <h1 class="start-heading" id="start-heading">Let's Get You <span>Blasting</span></h1>
+  <p class="start-sub" id="start-subheading">Your first post takes about 2 minutes. Pick how you want to do it.</p>
 
   <div class="choice-grid">
     <button class="choice-card choice-card--primary" onclick="choose(true)" tabindex="0">
-      <span class="choice-icon">🚀</span>
-      <div class="choice-title">Show me how</div>
-      <p class="choice-desc">Blasty walks you through setup step by step. Recommended if this is your first time.</p>
+      <span class="choice-icon" id="start-guided-icon">🚀</span>
+      <div class="choice-title" id="start-guided-title">Show me how</div>
+      <p class="choice-desc" id="start-guided-desc">Blasty walks you through setup step by step. Recommended if this is your first time.</p>
     </button>
     <button class="choice-card" onclick="choose(false)" tabindex="0">
-      <span class="choice-icon">📋</span>
-      <div class="choice-title">Just the forms</div>
-      <p class="choice-desc">Fill in your business details yourself and jump straight to the app.</p>
+      <span class="choice-icon" id="start-forms-icon">📋</span>
+      <div class="choice-title" id="start-forms-title">Just the forms</div>
+      <p class="choice-desc" id="start-forms-desc">Fill in your business details yourself and jump straight to the app.</p>
     </button>
   </div>
 
-  <p class="start-signin">Already have an account? <a href="BlastyBiz-Login.html">Sign in</a></p>
+  <p class="start-signin"><span id="start-signin-text">Already have an account?</span> <a href="BlastyBiz-Login.html">Sign in</a></p>
 
   <script>
-    // Animate Blasty into ask mood on load
-    window.addEventListener('load', function () {
-      if (window.PBMascot) {
-        window.PBMascot.setMood('ask');
-      }
-    });
-
     function choose(guided) {
       localStorage.setItem('bb_start_choice', guided ? 'guided' : 'forms');
       window.location.href = 'BlastyBiz-Login.html';
     }
   </script>
+
+  <script type="module">
+    import { getApp }      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import './firebase-init-v2.js';
+
+    const db = getFirestore(getApp());
+
+    const DEFAULTS = {
+      speechBubble:  'Hey! How do you want to start?',
+      heading:       "Let's Get You <span>Blasting</span>",
+      subheading:    'Your first post takes about 2 minutes. Pick how you want to do it.',
+      guidedIcon:    '🚀',
+      guidedTitle:   'Show me how',
+      guidedDesc:    'Blasty walks you through setup step by step. Recommended if this is your first time.',
+      formsIcon:     '📋',
+      formsTitle:    'Just the forms',
+      formsDesc:     'Fill in your business details yourself and jump straight to the app.',
+      signinText:    'Already have an account?',
+      animLoad:      { mood: 's-ask' },
+    };
+
+    function applyText(id, val, isHtml) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (isHtml) el.innerHTML = val; else el.textContent = val;
+    }
+
+    (async () => {
+      let cfg = {};
+      try {
+        const snap = await getDoc(doc(db, 'config', 'startPage'));
+        if (snap.exists()) cfg = snap.data();
+      } catch(_) { /* non-fatal — use defaults */ }
+
+      const v = k => cfg[k] || DEFAULTS[k];
+
+      applyText('start-bubble',       v('speechBubble'));
+      applyText('start-heading',      v('heading'), true);
+      applyText('start-subheading',   v('subheading'));
+      applyText('start-guided-icon',  v('guidedIcon'));
+      applyText('start-guided-title', v('guidedTitle'));
+      applyText('start-guided-desc',  v('guidedDesc'));
+      applyText('start-forms-icon',   v('formsIcon'));
+      applyText('start-forms-title',  v('formsTitle'));
+      applyText('start-forms-desc',   v('formsDesc'));
+      applyText('start-signin-text',  v('signinText'));
+
+      // Apply Blasty animation
+      if (window.PBMascot) {
+        const anim = v('animLoad');
+        window.PBMascot.setMood(typeof anim === 'object' ? anim : { mood: anim });
+      } else {
+        window.addEventListener('load', () => {
+          if (window.PBMascot) {
+            const anim = v('animLoad');
+            window.PBMascot.setMood(typeof anim === 'object' ? anim : { mood: anim });
+          }
+        });
+      }
+    })();
+  </script>
+
 </body>
 </html>

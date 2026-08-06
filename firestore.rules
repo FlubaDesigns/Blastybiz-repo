@@ -286,6 +286,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Start page text overrides — public read so unauthenticated visitors get live customizations
+    match /config/startPage {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Admin config (admin email list, feature flags, plans, etc.) — admin only
     match /config/{doc} {
       allow read, write: if isAdmin();

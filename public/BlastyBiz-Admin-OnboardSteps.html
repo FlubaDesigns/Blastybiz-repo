@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1785990452167">
+  <link rel="stylesheet" href="global-style.css?v=1785990770891">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -254,11 +254,22 @@
       <div class="ose-tabs">
         <button class="ose-tab active" id="tab-ob1" onclick="oseTab('ob1')">🚀 OB1 — Blasty Wizard</button>
         <button class="ose-tab" id="tab-ob2" onclick="oseTab('ob2')">📝 OB2 — Quick Form</button>
+        <button class="ose-tab" id="tab-start" onclick="oseTab('start')">🎬 Start Page</button>
       </div>
 
       <div id="ose-ob1-pane">
         <div id="ose-status" style="text-align:center;padding:32px 0;color:#64748b">Loading steps…</div>
         <div id="ose-steps" style="display:none"></div>
+      </div>
+
+      <div id="ose-start-pane" style="display:none">
+        <div id="ose-start-status" style="text-align:center;padding:32px 0;color:#64748b">Loading…</div>
+        <div id="ose-start-content" style="display:none">
+          <p class="ose-sec-lbl">✏️ Copy &amp; Labels</p>
+          <div id="ose-start-fields"></div>
+          <p class="ose-sec-lbl">🚀 Blasty Animation</p>
+          <div id="ose-start-anims"></div>
+        </div>
       </div>
 
       <div id="ose-ob2-pane" style="display:none">
@@ -333,10 +344,196 @@ const sel = (opts, val) => opts.map(o=>`<option value="${o.v}"${o.v===val?' sele
 
 let overrides = {};
 let ob2Overrides = {};
+let startOverrides = {};
 let moodPresets = [];
 
+const START_FIELDS = [
+  { key:'speechBubble', label:'Blasty Speech Bubble',       type:'tx', defaultVal:'Hey! How do you want to start?',                                hint:'Short — fits on one line.' },
+  { key:'heading',      label:'Page Heading (HTML)',         type:'ta', defaultVal:"Let's Get You <span>Blasting</span>",                           hint:'Use &lt;span&gt; for the green word.' },
+  { key:'subheading',   label:'Page Subheading',            type:'tx', defaultVal:'Your first post takes about 2 minutes. Pick how you want to do it.', hint:'' },
+  { key:'guidedIcon',   label:'Guided Card — Icon (emoji)', type:'tx', defaultVal:'🚀',    hint:'' },
+  { key:'guidedTitle',  label:'Guided Card — Title',        type:'tx', defaultVal:'Show me how', hint:'' },
+  { key:'guidedDesc',   label:'Guided Card — Description',  type:'ta', defaultVal:'Blasty walks you through setup step by step. Recommended if this is your first time.', hint:'' },
+  { key:'formsIcon',    label:'Forms Card — Icon (emoji)',  type:'tx', defaultVal:'📋',    hint:'' },
+  { key:'formsTitle',   label:'Forms Card — Title',         type:'tx', defaultVal:'Just the forms', hint:'' },
+  { key:'formsDesc',    label:'Forms Card — Description',   type:'ta', defaultVal:'Fill in your business details yourself and jump straight to the app.', hint:'' },
+  { key:'signinText',   label:'"Already have account" text',type:'tx', defaultVal:'Already have an account?', hint:'' },
+];
+
+const START_ANIM_EVENTS = [
+  { key:'animLoad', label:'Blasty Mood (page load)', icon:'😄',
+    def:{ mood:'s-ask', flame:'', lights:'', eyes:'', smoke:false, noseSpin:false } },
+];
+
+function renderStartFields() {
+  document.getElementById('ose-start-fields').innerHTML = START_FIELDS.map(f => {
+    const ov = startOverrides[f.key] || '';
+    const hasOv = !!ov;
+    const dq = s => s.replace(/"/g,'&quot;');
+    const defEl = f.type === 'ta'
+      ? `<textarea class="mta def" readonly rows="2">${f.defaultVal}</textarea>`
+      : `<input type="text" class="mta def" readonly value="${dq(f.defaultVal)}">`;
+    const ovEl = f.type === 'ta'
+      ? `<textarea class="mta" id="stf-${f.key}" rows="2" placeholder="Leave blank to keep default">${ov}</textarea>`
+      : `<input type="text" class="mta" id="stf-${f.key}" placeholder="Leave blank to keep default" value="${dq(ov)}">`;
+    return `<div class="ob2-field-card${hasOv?' has-ov':''}" id="stcard-${f.key}">
+      <div class="ob2-field-head">
+        <span class="sk">${f.key}</span>
+        <span class="sd">${f.label}</span>
+        ${f.hint ? `<span class="ob2-hint">${f.hint}</span>` : ''}
+        <span class="mod-badge">Modified</span>
+      </div>
+      <div class="ob2-field-body">
+        <div class="msg-row">
+          <div><span class="fl">Default (read-only)</span>${defEl}</div>
+          <div><span class="fl">Override</span>${ovEl}</div>
+        </div>
+        <div class="card-acts">
+          <button class="btn-sv" onclick="window._stSave('${f.key}')">Save</button>
+          <button class="btn-rst" onclick="window._stReset('${f.key}')">Reset to default</button>
+          <span class="sts" id="ststs-${f.key}"></span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderStartAnimCards() {
+  document.getElementById('ose-start-anims').innerHTML = START_ANIM_EVENTS.map(ev => {
+    const saved = startOverrides[ev.key] && typeof startOverrides[ev.key]==='object' ? startOverrides[ev.key] : {};
+    const a = { ...ev.def, ...saved };
+    const hasOv = !!startOverrides[ev.key];
+    return `<div class="ob2-field-card${hasOv?' has-ov':''}" id="stanim-card-${ev.key}">
+      <div class="ob2-field-head">
+        <span class="sk">${ev.key}</span>
+        <span class="sd">${ev.icon} ${ev.label}</span>
+        <span class="mod-badge">Modified</span>
+      </div>
+      <div class="ob2-field-body">
+        <div class="anim-row">
+          ${moodPresets.length ? `<div class="asg" style="flex:2;min-width:160px"><label>Apply Preset ↓</label><select id="staprst-${ev.key}" onchange="window._stApplyPreset('${ev.key}')"><option value="">— pick a preset —</option>${moodPresets.map(p=>`<option value="${p.id}">${p.label}</option>`).join('')}</select></div>` : ''}
+          <div class="asg"><label>Mood</label><select id="stam-${ev.key}">${sel(MOOD_OPTS,a.mood)}</select></div>
+          <div class="asg"><label>Flame</label><select id="staf-${ev.key}">${sel(FLAME_OPTS,a.flame||'')}</select></div>
+          <div class="asg"><label>Lights</label><select id="stal-${ev.key}">${sel(LIGHTS_OPTS,a.lights||'')}</select></div>
+          <div class="asg"><label>Eyes</label><select id="stae-${ev.key}">${sel(EYES_OPTS,a.eyes||'')}</select></div>
+        </div>
+        <div class="anim-chk">
+          <label><input type="checkbox" id="stas-${ev.key}"${a.smoke?' checked':''}> 💨 Smoke</label>
+          <label><input type="checkbox" id="stan-${ev.key}"${a.noseSpin?' checked':''}> 🌀 Nose spin</label>
+        </div>
+        <div class="card-acts">
+          <button class="btn-sv" onclick="window._stAnimSave('${ev.key}')">Save</button>
+          <button class="btn-rst" onclick="window._stAnimReset('${ev.key}')">Reset to default</button>
+          <button class="btn-prv" onclick="window._stAnimPreview('${ev.key}')">▶ Preview</button>
+          <span class="sts" id="stasts-${ev.key}"></span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window._stSave = async function(k) {
+  const btn = document.querySelector(`#stcard-${k} .btn-sv`);
+  const sts = document.getElementById('ststs-'+k);
+  btn.disabled=true; btn.textContent='Saving…'; sts.textContent='';
+  const val = document.getElementById('stf-'+k).value.trim();
+  try {
+    if (val) {
+      await setDoc(doc(db,'config','startPage'), { [k]: val }, { merge:true });
+      startOverrides[k] = val;
+      document.getElementById('stcard-'+k).classList.add('has-ov');
+    } else {
+      await setDoc(doc(db,'config','startPage'), { [k]: deleteField() }, { merge:true });
+      delete startOverrides[k];
+      document.getElementById('stcard-'+k).classList.remove('has-ov');
+    }
+    sts.style.color='#22c55e'; sts.textContent='✓ Saved';
+    setTimeout(()=>{ sts.textContent=''; }, 2500);
+  } catch(e) {
+    sts.style.color='#ef4444'; sts.textContent='✗ '+e.message;
+  }
+  btn.disabled=false; btn.textContent='Save';
+};
+
+window._stReset = async function(k) {
+  if (!confirm('Reset "'+k+'" to default? This removes your override.')) return;
+  const btn = document.querySelector(`#stcard-${k} .btn-rst`);
+  btn.disabled=true;
+  try {
+    await setDoc(doc(db,'config','startPage'), { [k]: deleteField() }, { merge:true });
+    delete startOverrides[k];
+    document.getElementById('stcard-'+k).classList.remove('has-ov');
+    document.getElementById('stf-'+k).value='';
+    const sts = document.getElementById('ststs-'+k);
+    sts.style.color='#64748b'; sts.textContent='↩ Reset';
+    setTimeout(()=>{ sts.textContent=''; }, 2500);
+  } catch(e) { alert('Error: '+e.message); }
+  btn.disabled=false;
+};
+
+window._stAnimPreview = function(k) {
+  const mood  = document.getElementById('stam-'+k).value;
+  const flame = document.getElementById('staf-'+k).value;
+  const lights= document.getElementById('stal-'+k).value;
+  const eyes  = document.getElementById('stae-'+k).value;
+  const smoke = document.getElementById('stas-'+k).checked;
+  const nose  = document.getElementById('stan-'+k).checked;
+  window.PBMascot.setMood({ mood, flame:flame||undefined, lights:lights||undefined,
+    eyes:eyes||undefined, smoke:smoke||undefined, noseSpin:nose||undefined });
+  document.getElementById('prev-cap').textContent = MOOD_OPTS.find(o=>o.v===mood)?.l || mood;
+};
+
+window._stAnimSave = async function(k) {
+  const btn = document.querySelector(`#stanim-card-${k} .btn-sv`);
+  const sts = document.getElementById('stasts-'+k);
+  btn.disabled=true; btn.textContent='Saving…'; sts.textContent='';
+  const mood  = document.getElementById('stam-'+k).value;
+  const flame = document.getElementById('staf-'+k).value;
+  const lights= document.getElementById('stal-'+k).value;
+  const eyes  = document.getElementById('stae-'+k).value;
+  const smoke = document.getElementById('stas-'+k).checked;
+  const nose  = document.getElementById('stan-'+k).checked;
+  const raw   = { mood, flame:flame||undefined, lights:lights||undefined, eyes:eyes||undefined, smoke:smoke||undefined, noseSpin:nose||undefined };
+  const anim  = Object.fromEntries(Object.entries(raw).filter(([,v])=>v!==undefined&&v!==false&&v!==''));
+  try {
+    await setDoc(doc(db,'config','startPage'), { [k]: anim }, { merge:true });
+    startOverrides[k] = anim;
+    document.getElementById('stanim-card-'+k).classList.add('has-ov');
+    sts.style.color='#22c55e'; sts.textContent='✓ Saved';
+    setTimeout(()=>{ sts.textContent=''; }, 2500);
+  } catch(e) {
+    sts.style.color='#ef4444'; sts.textContent='✗ '+e.message;
+  }
+  btn.disabled=false; btn.textContent='Save';
+};
+
+window._stAnimReset = async function(k) {
+  if (!confirm('Reset "'+k+'" to default?')) return;
+  const btn = document.querySelector(`#stanim-card-${k} .btn-rst`);
+  btn.disabled=true;
+  try {
+    await setDoc(doc(db,'config','startPage'), { [k]: deleteField() }, { merge:true });
+    delete startOverrides[k];
+    renderStartAnimCards();
+  } catch(e) { alert('Error: '+e.message); }
+  btn.disabled=false;
+};
+
+window._stApplyPreset = function(k) {
+  const presetId = document.getElementById('staprst-'+k).value;
+  if (!presetId) return;
+  const preset = moodPresets.find(p=>p.id===presetId);
+  if (!preset) return;
+  if (preset.mood)   document.getElementById('stam-'+k).value  = preset.mood;
+  if (preset.flame)  document.getElementById('staf-'+k).value  = preset.flame;
+  if (preset.lights) document.getElementById('stal-'+k).value  = preset.lights;
+  if (preset.eyes)   document.getElementById('stae-'+k).value  = preset.eyes;
+  if (preset.smoke !== undefined)    document.getElementById('stas-'+k).checked = !!preset.smoke;
+  if (preset.noseSpin !== undefined) document.getElementById('stan-'+k).checked = !!preset.noseSpin;
+};
+
 window.oseTab = function(tab) {
-  ['ob1','ob2'].forEach(t => {
+  ['ob1','ob2','start'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
     document.getElementById('ose-'+t+'-pane').style.display = t===tab ? '' : 'none';
   });
@@ -707,14 +904,16 @@ window._oseAnimChange = async function(k) {
 onAuthStateChanged(auth, async user => {
   if (!user) return;
   try {
-    const [ob1Snap, ob2Snap, moodsSnap] = await Promise.all([
+    const [ob1Snap, ob2Snap, startSnap, moodsSnap] = await Promise.all([
       getDoc(doc(db,'config','ob1Steps')),
       getDoc(doc(db,'config','ob2Steps')),
+      getDoc(doc(db,'config','startPage')),
       getDoc(doc(db,'config','mascotMoods'))
     ]);
-    overrides    = ob1Snap.exists() ? ob1Snap.data() : {};
-    ob2Overrides = ob2Snap.exists() ? ob2Snap.data() : {};
-    moodPresets  = moodsSnap.exists() ? (moodsSnap.data().presets || []) : [];
+    overrides      = ob1Snap.exists()    ? ob1Snap.data()    : {};
+    ob2Overrides   = ob2Snap.exists()    ? ob2Snap.data()    : {};
+    startOverrides = startSnap.exists()  ? startSnap.data()  : {};
+    moodPresets    = moodsSnap.exists()  ? (moodsSnap.data().presets || []) : [];
     // OB1 pane
     document.getElementById('ose-status').style.display='none';
     document.getElementById('ose-steps').style.display='';
@@ -724,6 +923,11 @@ onAuthStateChanged(auth, async user => {
     document.getElementById('ose-ob2-content').style.display='';
     renderOb2Fields();
     renderOb2AnimCards();
+    // Start Page pane
+    document.getElementById('ose-start-status').style.display='none';
+    document.getElementById('ose-start-content').style.display='';
+    renderStartFields();
+    renderStartAnimCards();
   } catch(e) {
     document.getElementById('ose-status').textContent='Error loading: '+e.message;
     document.getElementById('ose-ob2-status').textContent='Error loading: '+e.message;
