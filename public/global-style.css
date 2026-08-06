@@ -393,8 +393,6 @@ body.home-page .header__badge-bar { display: flex; }
   border-radius: 20px;
 }
 
-/* Hide old nav bar on pages using the new site header */
-body.has-site-header nav:not(.header__nav):not(.header__mobile-menu) { display: none; }
 
 
 /* ── STAGE BACKBONE ──────────────────────────────────────────────────
@@ -683,6 +681,56 @@ main.home                { width: 100%; }
   overflow: hidden;
 }
 
+
+/* ── PLATFORMS PAGE ────────────────────────────────────────── */
+.plat-hero { padding: 52px 0 36px; }
+.plat-hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px,5.5vw,66px); line-height: 1.05; color: #fff; margin: 0 0 10px; }
+.plat-hero h1 span { color: var(--green); }
+.plat-kw { font-size: 16px; color: var(--muted); margin: 0 0 18px; font-weight: 400; }
+.plat-lead { font-size: 18px; line-height: 1.75; color: var(--light); max-width: 680px; margin-bottom: 0; }
+.plat-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; margin: 0 0 22px; }
+.plat-badge.auto { background: rgba(57,255,20,.15); color: var(--green); border: 1px solid rgba(57,255,20,.3); }
+.plat-badge.manual { background: rgba(255,255,255,.07); color: #bbb; border: 1px solid rgba(255,255,255,.15); }
+.plat-body { max-width: 740px; margin: 0 auto; }
+.plat-section { padding: 4px 0; }
+.plat-body h2 { font-family: 'Bebas Neue', sans-serif; font-size: 34px; color: #fff; margin: 48px 0 16px; }
+.plat-body h2 span { color: var(--green); }
+.plat-body p { font-size: 16px; line-height: 1.8; color: var(--text, #ccc); margin: 0 0 16px; }
+.plat-snapshot { list-style: none; padding: 0; margin: 0 0 8px; }
+.plat-snapshot li { font-size: 15px; line-height: 1.7; color: var(--text, #ccc); padding: 10px 0 10px 20px; border-bottom: 1px solid rgba(255,255,255,.06); position: relative; }
+.plat-snapshot li:last-child { border-bottom: none; }
+.plat-snapshot li::before { content: "→"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+.plat-look-list { list-style: none; padding: 0; margin: 0 0 8px; }
+.plat-look-list li { font-size: 15px; line-height: 1.7; color: var(--text, #ccc); padding: 8px 0 8px 24px; position: relative; }
+.plat-look-list li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+.plat-sample { background: rgba(255,255,255,.04); border-left: 3px solid var(--green); border-radius: 0 10px 10px 0; padding: 18px 20px; margin: 24px 0; font-size: 16px; font-style: italic; color: var(--light); line-height: 1.7; }
+.plat-sample-label { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.plat-workflow { background: rgba(57,255,20,.05); border: 1px solid rgba(57,255,20,.15); border-radius: 12px; padding: 20px 24px; margin: 32px 0; }
+.plat-workflow p { margin: 0; font-size: 15px; color: var(--light); }
+.plat-manual-steps { background: rgba(255,255,255,.04); border-radius: 10px; padding: 14px 18px; margin-top: 12px; font-size: 13px; color: var(--muted); }
+.plat-plan-close { font-size: 15px; color: var(--muted); margin-top: 20px; font-style: italic; }
+.plat-memory-box { background: rgba(57,255,20,.04); border: 1px solid rgba(57,255,20,.15); border-radius: 16px; padding: 32px; }
+.plat-memory-label { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--green); margin: 0 0 6px; }
+.plat-memory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+@media (max-width: 600px) { .plat-memory-grid { grid-template-columns: 1fr; } }
+.plat-memory-card { background: rgba(255,255,255,.04); border-radius: 12px; padding: 18px 20px; }
+.plat-memory-card-title { font-weight: 700; color: #fff; font-size: 14px; margin-bottom: 8px; }
+.plat-plan-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 24px; }
+@media (max-width: 640px) { .plat-plan-grid { grid-template-columns: 1fr; } }
+.plat-plan-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 20px; }
+.plat-plan-card--featured { background: rgba(57,255,20,.06); border-color: rgba(57,255,20,.3); }
+.plat-plan-name { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #fff; margin-bottom: 8px; }
+.plat-plan-card p { font-size: 14px; color: var(--text, #ccc); margin: 0 0 14px; }
+.plat-plan-link { font-size: 13px; font-weight: 700; color: var(--green); text-decoration: none; }
+.plat-plan-link:hover { text-decoration: underline; }
+.plat-cta-box { background: rgba(57,255,20,.06); border: 1px solid rgba(57,255,20,.2); border-radius: 16px; padding: 40px 36px; margin: 48px 0 24px; text-align: center; }
+.plat-cta-box h2 { font-family: 'Bebas Neue', sans-serif; font-size: 40px; color: #fff; margin: 0 0 14px; }
+.plat-cta-box h2 span { color: var(--green); }
+.plat-cta-box p { font-size: 16px; color: var(--text, #ccc); margin: 0 0 24px; max-width: 560px; margin-left: auto; margin-right: auto; }
+.plat-hub-nav { display: flex; flex-wrap: wrap; gap: 10px; margin: 24px 0 8px; }
+.plat-hub-pill { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; border: 1px solid rgba(255,255,255,.12); color: var(--light); background: rgba(255,255,255,.04); transition: border-color .15s; }
+.plat-hub-pill:hover { border-color: var(--green); color: #fff; }
+.plat-hub-pill.auto { border-color: rgba(57,255,20,.3); color: var(--green); }
 
 /* ── PROBLEM SECTION ───────────────────────────────────────── */
 
