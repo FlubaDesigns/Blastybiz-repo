@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786041156809" />
+  <link rel="stylesheet" href="global-style.css?v=1786041302058" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -64,6 +64,16 @@
   word-break: break-word;
   position: relative;
 }
+/* Tab buttons pulse to demand a pick before anything else unlocks */
+.bb-tab-prompt {
+  animation: bb-tab-pulse 1.5s ease-in-out infinite;
+}
+@keyframes bb-tab-pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(57,255,20,.65); }
+  60%  { box-shadow: 0 0 0 11px rgba(57,255,20,.0);  }
+  100% { box-shadow: 0 0 0 0   rgba(57,255,20,.0);   }
+}
+
 /* Fields not yet guided are blurred until Blasty points to them */
 .bb-field-blur {
   filter: blur(2.5px);
@@ -638,7 +648,7 @@ function handleSetPassword() {}
     wire('su-password',  'password',       _suFields);
     wire('su-password2', 'confirmPassword',_suFields);
 
-    // Start on Sign In tab
+    // Start on Sign In tab — blur all fields
     _fieldEls = _siFields;
     blurAllFields();
 
@@ -650,14 +660,22 @@ function handleSetPassword() {}
       blurAllFields();
     };
 
-    // Tab click handlers fire AFTER switchTab; advance Blasty to first field of that tab
+    // Tab buttons — declared here so prompt helpers can reference them
     var tabSI = document.getElementById('tab-signin');
     var tabSU = document.getElementById('tab-signup');
+
+    function addTabPrompt()    { [tabSI, tabSU].forEach(function(b){ if(b) b.classList.add('bb-tab-prompt'); }); }
+    function removeTabPrompt() { [tabSI, tabSU].forEach(function(b){ if(b) b.classList.remove('bb-tab-prompt'); }); }
+    addTabPrompt(); // pulse both buttons until the user picks
+
+    // Tab click handlers fire AFTER switchTab; stop pulsing, advance Blasty to first field
     if (tabSI) tabSI.addEventListener('click', function() {
+      removeTabPrompt();
       if (_siFields[0]) showGuide('signinEmail', _siFields[0]);
     });
     if (tabSU) tabSU.addEventListener('click', function() {
-      if (_suFields[0]) showGuide('plan', _suFields[0]); // plan picker is index 0
+      removeTabPrompt();
+      if (_suFields[0]) showGuide('plan', _suFields[0]);
     });
 
     // Remove spotlight on blur away from auth card
