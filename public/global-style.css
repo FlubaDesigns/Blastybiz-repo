@@ -240,7 +240,11 @@ textarea       { resize: vertical; min-height: 90px; }
 select option  { background: var(--dark); }
 
 
-/* ── HEADER ────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   MENU / SITE NAVIGATION
+   All header, nav bar, hamburger, mobile menu, badge bar,
+   and auth-state visibility rules live here and nowhere else.
+   ═══════════════════════════════════════════════════════════ */
 
 /* Container */
 .header {
@@ -488,9 +492,12 @@ body.logged-in .header__mobile-menu #header__mobile-login { display: none; }
 
 /* ── HEADER — Desktop (768px+) ─────────────────────────── */
 @media (min-width: 768px) {
-  .header__nav-row      { padding: 10px 60px; }
   .header__hamburger    { display: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   END MENU / SITE NAVIGATION
+   ═══════════════════════════════════════════════════════════ */
 
 
 /* ── LAYOUT ────────────────────────────────────────────────── */
