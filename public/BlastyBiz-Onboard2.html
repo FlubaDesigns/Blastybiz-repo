@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1785996460801"/>
+  <link rel="stylesheet" href="global-style.css?v=1785999051692"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -1134,11 +1134,11 @@
       inputType: 'multiselect',
       key: 'campaignPlatforms',
       choices: [
-        { value: 'google_business', label: '📍 Google Business' },
-        { value: 'facebook_page',   label: '📘 Facebook Page' },
-        { value: 'instagram',       label: '📸 Instagram',  proOnly: true },
-        { value: 'twitter',         label: '𝕏 Twitter / X', proOnly: true },
-        { value: 'linkedin',        label: '💼 LinkedIn',    proOnly: true }
+        { value: 'google',    label: '🔍 Google Business' },
+        { value: 'facebook',  label: '📘 Facebook Page' },
+        { value: 'instagram', label: '📸 Instagram',     proOnly: true },
+        { value: 'x',         label: '𝕏 X (Twitter)',   proOnly: true },
+        { value: 'linkedin',  label: '💼 LinkedIn',       proOnly: true }
       ],
       validate: v => (v && v.length) ? null : 'Pick at least one platform!'
     },
@@ -1476,7 +1476,7 @@
       const plan = window._ob2Plan || 'trial';
       const isPro = plan === 'pro' || plan === 'agency';
       html += '<div class="ob2-multiselect" id="ob2-multiselect">';
-      s.choices.forEach(c => {
+      (s.key === 'campaignPlatforms' && window._bbPlatformChoices ? window._bbPlatformChoices : s.choices).forEach(c => {
         const locked = c.proOnly && !isPro;
         html += '<label class="ob2-ms-label' + (locked ? ' ob2-ms-locked' : '') + '">'
           + '<input type="checkbox" class="ob2-ms-check" value="' + c.value + '"'
@@ -1724,8 +1724,27 @@ import {
   getFirestore, doc, getDoc, setDoc, updateDoc, deleteField, collection, serverTimestamp, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { loadPlatforms } from './platforms-config.js';
 
 const db = getFirestore(getApp());
+
+// ── Platform list: load from Firestore config/platforms ─────────────────────
+// Runs immediately (config/platforms is public-read — no auth required).
+// By the time the user reaches the platform step, this will have resolved.
+(async () => {
+  try {
+    const platforms = await loadPlatforms(db, getDoc, doc);
+    const plan = window._ob2Plan || 'trial';
+    const isPro = plan === 'pro' || plan === 'agency';
+    window._bbPlatformChoices = platforms.map(p => ({
+      value:   p.slug,
+      label:   p.icon + ' ' + p.name,
+      proOnly: p.capabilityLevel === 'manual_assisted' && !isPro,
+    }));
+  } catch(e) {
+    console.warn('[ob2] platform list load failed, using fallback:', e.message);
+  }
+})();
 
 // ── Onboarding progress persistence ────────────────────────────────────────
 // Saves current answers/toggles/step to users/{uid}.onboardingProgress so

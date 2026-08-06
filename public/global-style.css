@@ -732,6 +732,19 @@ main.home                { width: 100%; }
 .plat-hub-pill:hover { border-color: var(--green); color: #fff; }
 .plat-hub-pill.auto { border-color: rgba(57,255,20,.3); color: var(--green); }
 
+/* ── PLATFORMS HUB GRID (BlastyBiz-Platforms.html) ─────────── */
+.plat-hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; max-width: 900px; margin: 0 auto; }
+.plat-hub-card { display: block; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 20px; text-decoration: none; color: inherit; transition: border-color .15s; }
+.plat-hub-card:hover { border-color: rgba(57,255,20,.4); }
+.plat-hub-card__icon { font-size: 24px; margin-bottom: 8px; }
+.plat-hub-card__name { font-weight: 700; font-size: 16px; color: #fff; margin-bottom: 4px; }
+.plat-hub-badge--auto { font-size: 11px; font-weight: 700; color: var(--green); }
+.plat-hub-badge--copy { font-size: 11px; color: #888; }
+.plat-how-box { display: flex; gap: 28px; flex-wrap: wrap; align-items: center; background: rgba(57,255,20,.04); border: 1px solid rgba(57,255,20,.15); border-radius: 14px; padding: 24px 28px; }
+.plat-how-item > span { font-size: 28px; display: block; margin-bottom: 4px; }
+.plat-how-item p { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+.plat-how-divider { width: 1px; height: 60px; background: rgba(255,255,255,.08); }
+
 /* ── PROBLEM SECTION ───────────────────────────────────────── */
 
 /* .problem__lead { color: #000; font-weight: 700; } */

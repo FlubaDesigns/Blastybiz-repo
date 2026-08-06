@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1785996460801">
+  <link rel="stylesheet" href="global-style.css?v=1785999051692">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -255,6 +255,7 @@
         <button class="ose-tab active" id="tab-ob1" onclick="oseTab('ob1')">🚀 OB1 — Blasty Wizard</button>
         <button class="ose-tab" id="tab-ob2" onclick="oseTab('ob2')">📝 OB2 — Quick Form</button>
         <button class="ose-tab" id="tab-start" onclick="oseTab('start')">🎬 Start Page</button>
+        <button class="ose-tab" id="tab-login" onclick="oseTab('login')">🔐 Login Guide</button>
       </div>
 
       <div id="ose-ob1-pane">
@@ -279,6 +280,15 @@
           <div id="ose-ob2-fields"></div>
           <p class="ose-sec-lbl">🚀 Blasty Animations</p>
           <div id="ose-ob2-anims"></div>
+        </div>
+      </div>
+
+      <div id="ose-login-pane" style="display:none">
+        <div id="ose-login-status" style="text-align:center;padding:32px 0;color:#64748b">Loading…</div>
+        <div id="ose-login-content" style="display:none">
+          <p class="ose-sec-lbl">🔐 Login Page — Blasty Messages &amp; Animations</p>
+          <p style="font-size:12px;color:#64748b;margin:0 0 14px">Customize what Blasty says as users move through the Login page. Changes go live immediately.</p>
+          <div id="ose-login-steps"></div>
         </div>
       </div>
     </div>
@@ -345,7 +355,21 @@ const sel = (opts, val) => opts.map(o=>`<option value="${o.v}"${o.v===val?' sele
 let overrides = {};
 let ob2Overrides = {};
 let startOverrides = {};
+let loginOverrides = {};
 let moodPresets = [];
+
+const LOGIN_STEP_DEFS = [
+  { idx:1,  key:'signinWelcome',   label:'Sign In — Welcome',            defaultMsg:"Welcome back! Sign in to keep blasting. 🚀",                             defaultMood:'s-wave'      },
+  { idx:2,  key:'signinEmail',     label:'Sign In — Email field',         defaultMsg:"Enter the email address you signed up with.",                            defaultMood:'s-ask'       },
+  { idx:3,  key:'signinPassword',  label:'Sign In — Password field',      defaultMsg:"Enter your BlastyBiz password.",                                         defaultMood:'s-ask'       },
+  { idx:4,  key:'signupWelcome',   label:'Create Account — Welcome',      defaultMsg:"Let's get you set up! 🚀 Pick a plan — Starter is always free.",         defaultMood:'s-wave'      },
+  { idx:5,  key:'plan',            label:'Create Account — Choose Plan',  defaultMsg:"Starter is free forever. Pro unlocks auto-posting on Google, Facebook & Instagram.", defaultMood:'s-ask' },
+  { idx:6,  key:'name',            label:'Create Account — Your Name',    defaultMsg:"What's your name? We'll use it to personalize your experience.",         defaultMood:'s-ask'       },
+  { idx:7,  key:'email',           label:'Create Account — Email',        defaultMsg:"Use your business email — we'll send your login link here.",             defaultMood:'s-ask'       },
+  { idx:8,  key:'password',        label:'Create Account — Password',     defaultMsg:"Create a strong password — 8+ characters, letters and numbers.",        defaultMood:'s-ask'       },
+  { idx:9,  key:'confirmPassword', label:'Create Account — Confirm PW',   defaultMsg:"Type it one more time — almost there!",                                 defaultMood:'s-happy'     },
+  { idx:10, key:'reset',           label:'Forgot Password',               defaultMsg:"Enter your email and we'll send a reset link right away.",               defaultMood:'s-tilt-left' },
+];
 
 const START_FIELDS = [
   { key:'speechBubble', label:'Blasty Speech Bubble',       type:'tx', defaultVal:'Hey! How do you want to start?',                                hint:'Short — fits on one line.' },
@@ -533,10 +557,130 @@ window._stApplyPreset = function(k) {
 };
 
 window.oseTab = function(tab) {
-  ['ob1','ob2','start'].forEach(t => {
+  ['ob1','ob2','start','login'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
     document.getElementById('ose-'+t+'-pane').style.display = t===tab ? '' : 'none';
   });
+};
+
+// ── Login Guide ────────────────────────────────────────────────────────────
+function renderLoginSteps() {
+  document.getElementById('ose-login-steps').innerHTML = LOGIN_STEP_DEFS.map(s => {
+    const ov   = loginOverrides[s.key] || {};
+    const an   = (ov.anim && typeof ov.anim === 'object') ? ov.anim : {};
+    const txt  = ov.msg !== undefined ? ov.msg : s.defaultMsg;
+    const hasOv = !!(ov.msg !== undefined || ov.anim);
+    return `<div class="step-card${hasOv?' has-ov':''}" id="lsc-${s.key}">
+      <div class="step-head" onclick="window._loginToggle('${s.key}')">
+        <span class="step-num">${s.idx}</span>
+        <span class="sk">${s.key}</span>
+        <span class="sd">${s.label}</span>
+        <span class="mod-badge">Modified</span>
+        <span class="exp-ic">▾</span>
+      </div>
+      <div class="step-body">
+        <span class="fl">What Blasty says</span>
+        <textarea class="mta" id="lmsg-${s.key}" rows="2">${txt.replace(/</g,'&lt;')}</textarea>
+        <div class="anim-row" style="margin-top:10px">
+          <div class="asg"><label>Mood</label><select id="lam-${s.key}">${sel(MOOD_OPTS, an.mood||s.defaultMood||'s-ask')}</select></div>
+          <div class="asg"><label>Flame</label><select id="laf-${s.key}">${sel(FLAME_OPTS, an.flame||'')}</select></div>
+          <div class="asg"><label>Lights</label><select id="lal-${s.key}">${sel(LIGHTS_OPTS, an.lights||'')}</select></div>
+          <div class="asg"><label>Eyes</label><select id="lae-${s.key}">${sel(EYES_OPTS, an.eyes||'')}</select></div>
+        </div>
+        <div class="anim-chk">
+          <label><input type="checkbox" id="las-${s.key}"${an.smoke?' checked':''}> 💨 Smoke</label>
+          <label><input type="checkbox" id="lan-${s.key}"${an.noseSpin?' checked':''}> 🌀 Nose spin</label>
+        </div>
+        <div class="card-acts">
+          <button class="btn-sv" onclick="window._loginSave('${s.key}')">Save</button>
+          <button class="btn-rst" onclick="window._loginReset('${s.key}')">Reset to default</button>
+          <button class="btn-prv" onclick="window._loginPreview('${s.key}')">▶ Preview</button>
+          <span class="sts" id="lsts-${s.key}"></span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  LOGIN_STEP_DEFS.forEach(s => {
+    const ta = document.getElementById('lmsg-'+s.key);
+    if (ta) {
+      let timer;
+      ta.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => window._loginSave(s.key), 900);
+      });
+    }
+    ['lam-','laf-','lal-','lae-'].forEach(pfx => {
+      const el = document.getElementById(pfx+s.key);
+      if (el) el.addEventListener('change', () => window._loginSave(s.key));
+    });
+    ['las-','lan-'].forEach(pfx => {
+      const el = document.getElementById(pfx+s.key);
+      if (el) el.addEventListener('change', () => window._loginSave(s.key));
+    });
+  });
+}
+
+window._loginToggle = k => document.getElementById('lsc-'+k).classList.toggle('open');
+
+window._loginPreview = function(k) {
+  const mood  = document.getElementById('lam-'+k).value;
+  const flame = document.getElementById('laf-'+k).value;
+  const lights= document.getElementById('lal-'+k).value;
+  const eyes  = document.getElementById('lae-'+k).value;
+  const smoke = document.getElementById('las-'+k).checked;
+  const nose  = document.getElementById('lan-'+k).checked;
+  window.PBMascot.setMood({ mood, flame:flame||undefined, lights:lights||undefined,
+    eyes:eyes||undefined, smoke:smoke||undefined, noseSpin:nose||undefined });
+  document.getElementById('prev-cap').textContent = MOOD_OPTS.find(o=>o.v===mood)?.l || mood;
+};
+
+window._loginSave = async function(k) {
+  const sts = document.getElementById('lsts-'+k);
+  const btn = document.querySelector(`#lsc-${k} .btn-sv`);
+  if (btn) { btn.disabled=true; btn.textContent='Saving…'; }
+  if (sts) { sts.textContent=''; }
+  const msg   = document.getElementById('lmsg-'+k).value.trim();
+  const mood  = document.getElementById('lam-'+k).value;
+  const flame = document.getElementById('laf-'+k).value;
+  const lights= document.getElementById('lal-'+k).value;
+  const eyes  = document.getElementById('lae-'+k).value;
+  const smoke = document.getElementById('las-'+k).checked;
+  const nose  = document.getElementById('lan-'+k).checked;
+  const anim  = { mood };
+  if (flame)  anim.flame    = flame;
+  if (lights) anim.lights   = lights;
+  if (eyes)   anim.eyes     = eyes;
+  if (smoke)  anim.smoke    = true;
+  if (nose)   anim.noseSpin = true;
+  const payload = { anim };
+  if (msg && msg !== LOGIN_STEP_DEFS.find(s=>s.key===k)?.defaultMsg) payload.msg = msg;
+  try {
+    if (auth.currentUser) await auth.currentUser.getIdToken(true);
+    await setDoc(doc(db,'config','loginGuide'), { [k]: payload }, { merge:true });
+    loginOverrides[k] = payload;
+    document.getElementById('lsc-'+k).classList.add('has-ov');
+    if (sts) { sts.style.color='#22c55e'; sts.textContent='✓ Saved'; setTimeout(()=>{ sts.textContent=''; }, 2500); }
+  } catch(e) {
+    if (sts) { sts.style.color='#ef4444'; sts.textContent='✗ '+e.message; }
+  }
+  if (btn) { btn.disabled=false; btn.textContent='Save'; }
+};
+
+window._loginReset = async function(k) {
+  if (!confirm('Reset "'+k+'" to default? This removes your override.')) return;
+  const btn = document.querySelector(`#lsc-${k} .btn-rst`);
+  if (btn) btn.disabled=true;
+  try {
+    await setDoc(doc(db,'config','loginGuide'), { [k]: deleteField() }, { merge:true });
+    delete loginOverrides[k];
+    document.getElementById('lsc-'+k).classList.remove('has-ov');
+    const def = LOGIN_STEP_DEFS.find(s=>s.key===k);
+    if (def) document.getElementById('lmsg-'+k).value = def.defaultMsg;
+    const sts = document.getElementById('lsts-'+k);
+    if (sts) { sts.style.color='#64748b'; sts.textContent='↩ Reset'; setTimeout(()=>{ sts.textContent=''; }, 2500); }
+  } catch(e) { alert('Error: '+e.message); }
+  if (btn) btn.disabled=false;
 };
 
 const OB2_FIELDS = [
@@ -904,16 +1048,18 @@ window._oseAnimChange = async function(k) {
 onAuthStateChanged(auth, async user => {
   if (!user) return;
   try {
-    const [ob1Snap, ob2Snap, startSnap, moodsSnap] = await Promise.all([
+    const [ob1Snap, ob2Snap, startSnap, moodsSnap, loginSnap] = await Promise.all([
       getDoc(doc(db,'config','ob1Steps')),
       getDoc(doc(db,'config','ob2Steps')),
       getDoc(doc(db,'config','startPage')),
-      getDoc(doc(db,'config','mascotMoods'))
+      getDoc(doc(db,'config','mascotMoods')),
+      getDoc(doc(db,'config','loginGuide')),
     ]);
     overrides      = ob1Snap.exists()    ? ob1Snap.data()    : {};
     ob2Overrides   = ob2Snap.exists()    ? ob2Snap.data()    : {};
     startOverrides = startSnap.exists()  ? startSnap.data()  : {};
     moodPresets    = moodsSnap.exists()  ? (moodsSnap.data().presets || []) : [];
+    loginOverrides = loginSnap.exists()  ? loginSnap.data()  : {};
     // OB1 pane
     document.getElementById('ose-status').style.display='none';
     document.getElementById('ose-steps').style.display='';
@@ -928,9 +1074,14 @@ onAuthStateChanged(auth, async user => {
     document.getElementById('ose-start-content').style.display='';
     renderStartFields();
     renderStartAnimCards();
+    // Login Guide pane
+    document.getElementById('ose-login-status').style.display='none';
+    document.getElementById('ose-login-content').style.display='';
+    renderLoginSteps();
   } catch(e) {
     document.getElementById('ose-status').textContent='Error loading: '+e.message;
     document.getElementById('ose-ob2-status').textContent='Error loading: '+e.message;
+    document.getElementById('ose-login-status').textContent='Error loading: '+e.message;
   }
 });
 </script>

@@ -352,13 +352,8 @@
         </div>
         <div class="cb-field">
           <label class="cb-label">Platforms to blast on</label>
-          <div class="plat-grid">
-            <label class="plat-chk"><input type="checkbox" value="google_business" checked> <span>📍 Google</span></label>
-            <label class="plat-chk"><input type="checkbox" value="facebook" checked> <span>📘 Facebook</span></label>
-            <label class="plat-chk"><input type="checkbox" value="instagram"> <span>📸 Instagram</span></label>
-            <label class="plat-chk"><input type="checkbox" value="twitter"> <span>𝕏 Twitter/X</span></label>
-            <label class="plat-chk"><input type="checkbox" value="linkedin"> <span>💼 LinkedIn</span></label>
-            <label class="plat-chk"><input type="checkbox" value="yelp"> <span>⭐ Yelp</span></label>
+          <div class="plat-grid" id="plat-grid-wrap">
+            <span style="color:#5a7a60;font-size:13px">Loading platforms…</span>
           </div>
         </div>
       </div>
@@ -431,6 +426,7 @@ import {
   getFirestore, doc, collection, serverTimestamp, writeBatch, getDoc, setDoc
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js';
 
 const db = getFirestore(getApp());
 let currentUser = null;
@@ -438,6 +434,30 @@ let editBizId   = null;
 
 const urlP = new URLSearchParams(window.location.search);
 editBizId = urlP.get('bizId') || null;
+
+// ── Platform grid ────────────────────────────────────────────────────────────
+// Default to first two auto platforms pre-checked, rest unchecked
+const _DEFAULT_CHECKED = new Set(['google', 'facebook']);
+let _platLabels = {}; // populated after platform load
+
+function renderPlatformGrid(platforms) {
+  const grid = document.getElementById('plat-grid-wrap');
+  if (!grid) return;
+  // Use edit-mode pre-selection if set, otherwise default google + facebook
+  const checked = (window._cbPrefillPlatforms instanceof Set) ? window._cbPrefillPlatforms : _DEFAULT_CHECKED;
+  _platLabels = Object.fromEntries(platforms.map(p => [p.slug, p.icon + ' ' + p.name]));
+  grid.innerHTML = platforms.map(p =>
+    `<label class="plat-chk"><input type="checkbox" value="${p.slug}"${checked.has(p.slug) ? ' checked' : ''}> <span>${p.icon} ${p.name}</span></label>`
+  ).join('');
+}
+
+// Load platforms immediately (config/platforms is public-read — no auth needed)
+loadPlatforms(db, getDoc, doc)
+  .then(platforms => renderPlatformGrid(platforms))
+  .catch(() => {
+    // Fallback: render built-in defaults
+    renderPlatformGrid(PLATFORM_DEFAULTS);
+  });
 
 function applyOb2Config(c) {
   const si = (id, v) => { const el=document.getElementById(id); if(el&&v) el.innerHTML=v; };
@@ -483,8 +503,30 @@ onAuthStateChanged(auth, async user => {
 
   if (editBizId) {
     try {
-      const snap = await getDoc(doc(db, 'users', user.uid, 'businesses', editBizId));
-      if (snap.exists()) prefill(snap.data());
+      const bizSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', editBizId));
+      if (bizSnap.exists()) {
+        const bizData = bizSnap.data();
+        prefill(bizData);
+        // Load platform selection from the active campaign (that's where platformsEnabled lives)
+        const activeCampId = bizData.activeCampaign;
+        if (activeCampId) {
+          const campSnap = await getDoc(
+            doc(db, 'users', user.uid, 'businesses', editBizId, 'campaigns', activeCampId)
+          );
+          if (campSnap.exists()) {
+            // Onboard2 saves as onboardingPlatforms; CreateBiz saves as platformsEnabled — read both
+            const campPlats = campSnap.data().platformsEnabled || campSnap.data().onboardingPlatforms;
+            if (Array.isArray(campPlats) && campPlats.length) {
+              window._cbPrefillPlatforms = new Set(campPlats);
+              // Apply immediately if grid is already rendered; renderPlatformGrid picks it up otherwise
+              const grid = document.getElementById('plat-grid-wrap');
+              if (grid) grid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = window._cbPrefillPlatforms.has(cb.value);
+              });
+            }
+          }
+        }
+      }
     } catch(e) { console.warn('[cb prefill]', e); }
   }
 });
@@ -504,15 +546,13 @@ function _cbEsc(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-const _CB_PLAT_LABELS = { google: '📍 Google Business', facebook: '📘 Facebook', instagram: '📸 Instagram' };
-
 function _cbShowPreviewBanner(preview) {
   const container = document.getElementById('cb-preview-cards');
   const banner    = document.getElementById('cb-preview-banner');
   if (!container || !banner) return;
   container.innerHTML = Object.entries(preview.adaptations).map(([key, ad]) =>
     `<div class="cb-preview-card">
-      <div class="cb-preview-card-plat">${_cbEsc(_CB_PLAT_LABELS[key] || key)}</div>
+      <div class="cb-preview-card-plat">${_cbEsc(_platLabels[key] || key)}</div>
       <div class="cb-preview-card-head">${_cbEsc(ad.headline || '')}</div>
       <div class="cb-preview-card-body">${_cbEsc(ad.adaptedContent || '')}</div>
     </div>`
@@ -540,6 +580,15 @@ function prefill(d) {
   s('f-awards',    d.awards||'');
   s('f-customer',  d.customer||'');
   s('f-other',     (d.aiContext && d.aiContext.other) || d.otherInfo || '');
+  // Restore saved platform selection for edit mode
+  if (Array.isArray(d.platformsEnabled) && d.platformsEnabled.length) {
+    window._cbPrefillPlatforms = new Set(d.platformsEnabled);
+    // Apply to grid immediately if already rendered; otherwise renderPlatformGrid picks it up
+    const grid = document.getElementById('plat-grid-wrap');
+    if (grid) grid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.checked = window._cbPrefillPlatforms.has(cb.value);
+    });
+  }
   document.querySelector('.cb-page-title').textContent = 'Edit Business';
   document.getElementById('cb-header-msg').innerHTML = '<strong>Update your business</strong> — edit any details and hit save.';
 }

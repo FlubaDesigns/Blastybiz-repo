@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1785996460801" />
+  <link rel="stylesheet" href="global-style.css?v=1785999051692" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -31,12 +31,52 @@
 #auth-card-wrap.email-confirm-mode .auth-form,
 #auth-card-wrap.email-confirm-mode .back-home{display:none!important}
 #auth-card-wrap.email-confirm-mode .email-confirmed-view{display:block}
+
+/* ── Login Blasty guide column ── */
+.login-blasty-col {
+  background: var(--bg, #000);
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 32px 20px !important;
+  overflow: visible !important;
+  gap: 0 !important;
+}
+.login-blasty-col img,
+.login-blasty-col .login-img-overlay { display: none !important; }
+.login-blasty-bubble {
+  margin-top: 20px;
+  background: linear-gradient(168deg,#ffffff 0%,#f0f5ff 70%,#e6eeff 100%);
+  border: 1.5px solid rgba(180,205,240,.55);
+  border-radius: 18px 4px 18px 18px;
+  padding: 14px 16px;
+  font-size: 14px;
+  line-height: 1.58;
+  color: #0d1f3c;
+  box-shadow: 0 6px 22px rgba(0,0,0,.45);
+  width: 100%;
+  max-width: 220px;
+  position: relative;
+  transition: opacity .18s ease;
+  min-height: 56px;
+  font-family: 'DM Sans', sans-serif;
+}
+.login-blasty-bubble::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: -9px;
+  border: 9px solid transparent;
+  border-right-color: #f0f5ff;
+  border-left: none;
+}
 </style>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="blastybiz-menu.js?v=6"></script>
+<script src="mascot.js"></script>
 </head>
 <body class="login-page has-site-header">
 
@@ -306,14 +346,10 @@
 
         </div><!-- /login-form-col -->
 
-        <!-- IMAGE PANEL — desktop only via .hero-img-col -->
-        <div class="hero-img-col login-img-col">
-          <img src="img/people-login-new.png" alt="Business owner smiling" />
-          <div class="login-img-overlay">
-            <strong class="login-panel-logo">Blasty<span>Biz</span></strong>
-            <p class="login-panel-tag">Fill It Once. Blast Everywhere.</p>
-            <blockquote class="login-panel-quote">"I used to spend my whole Sunday posting. Now it takes 5 minutes." — Maria R., Pizzeria Owner</blockquote>
-          </div>
+        <!-- BLASTY GUIDE COLUMN — desktop only via .hero-img-col -->
+        <div class="hero-img-col login-img-col login-blasty-col" id="login-blasty-col">
+          <div class="pb-mascot s-wave" id="pb-mascot" style="width:180px"></div>
+          <div class="login-blasty-bubble" id="login-bubble">Hey! Let's get you set up. 🚀</div>
         </div>
 
       </div><!-- /layout__split-2-1 -->
@@ -417,6 +453,154 @@ function handleSignUp() {}
 function handleGoogle() {}
 function handleReset() {}
 function handleSetPassword() {}
+
+// ── Login Blasty Guide ─────────────────────────────────────────────────────
+(function () {
+  'use strict';
+
+  // Default messages + moods per focus target (admin can override via config/loginGuide)
+  var DEFAULTS = {
+    signinWelcome:   { text: "Welcome back! Sign in to keep blasting. 🚀",                        mood: 's-wave'      },
+    signinEmail:     { text: "Enter the email address you signed up with.",                        mood: 's-ask'       },
+    signinPassword:  { text: "Enter your BlastyBiz password.",                                    mood: 's-ask'       },
+    signupWelcome:   { text: "Let's get you set up! 🚀 Pick a plan — Starter is always free.",    mood: 's-wave'      },
+    plan:            { text: "Starter is free forever. Pro unlocks auto-posting on Google, Facebook & Instagram.", mood: 's-ask' },
+    name:            { text: "What's your name? We'll use it to personalize your experience.",    mood: 's-ask'       },
+    email:           { text: "Use your business email — we'll send your login link here.",        mood: 's-ask'       },
+    password:        { text: "Create a strong password — 8+ characters, letters and numbers.",   mood: 's-ask'       },
+    confirmPassword: { text: "Type it one more time — almost there!",                             mood: 's-happy'     },
+    reset:           { text: "Enter your email and we'll send a reset link right away.",          mood: 's-tilt-left' },
+  };
+
+  var adminGuide = {}; // populated from config/loginGuide REST fetch
+
+  // Load admin-customized messages (public-read, no auth required)
+  fetch('https://firestore.googleapis.com/v1/projects/blastybiz-9523e/databases/(default)/documents/config/loginGuide')
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(data) {
+      if (!data || !data.fields) return;
+      function sv(v) {
+        if (!v) return null;
+        if ('stringValue'  in v) return v.stringValue;
+        if ('booleanValue' in v) return v.booleanValue;
+        if ('mapValue'     in v) {
+          var out = {};
+          Object.entries(v.mapValue.fields || {}).forEach(function(e) { out[e[0]] = sv(e[1]); });
+          return out;
+        }
+        return null;
+      }
+      Object.entries(data.fields).forEach(function(e) {
+        var val = sv(e[1]);
+        if (val && typeof val === 'object') adminGuide[e[0]] = val;
+      });
+    })
+    .catch(function() {});
+
+  function getStep(key) {
+    var def = DEFAULTS[key] || { text: '', mood: 's-ask' };
+    var ov  = adminGuide[key] || {};
+    return {
+      text:   ov.msg                              || def.text,
+      mood:   (ov.anim && ov.anim.mood)          || def.mood,
+      flame:  (ov.anim && ov.anim.flame)         || '',
+      lights: (ov.anim && ov.anim.lights)        || '',
+    };
+  }
+
+  var _spotEl = null;
+
+  function showGuide(key, spotTarget) {
+    var bubble = document.getElementById('login-bubble');
+    if (!bubble) return;
+    var step = getStep(key);
+    if (!step.text) return;
+
+    // Fade bubble text
+    bubble.style.opacity = '0';
+    setTimeout(function() {
+      bubble.textContent = step.text;
+      bubble.style.opacity = '1';
+    }, 120);
+
+    // Update mascot mood
+    if (window.PBMascot) {
+      window.PBMascot.setMood({
+        mood:   step.mood,
+        flame:  step.flame  || undefined,
+        lights: step.lights || undefined,
+      });
+    }
+
+    // Move green spotlight to the focused field
+    if (_spotEl) _spotEl.classList.remove('pb-spotlight');
+    _spotEl = spotTarget || null;
+    if (_spotEl) _spotEl.classList.add('pb-spotlight');
+  }
+
+  function wire(id, key) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var fieldEl = el.parentElement && el.parentElement.closest ? el.parentElement.closest('.field') : null;
+    el.addEventListener('focus', function() { showGuide(key, fieldEl || el); });
+  }
+
+  function setup() {
+    // Patch switchTab so guide responds to tab clicks
+    var origSwitch = window.switchTab;
+    window.switchTab = function(tab) {
+      origSwitch(tab);
+      showGuide(tab === 'signup' ? 'signupWelcome' : 'signinWelcome', null);
+    };
+
+    // Field wiring
+    wire('si-email',     'signinEmail');
+    wire('si-password',  'signinPassword');
+    wire('su-name',      'name');
+    wire('su-email',     'email');
+    wire('su-password',  'password');
+    wire('su-password2', 'confirmPassword');
+    wire('reset-email',  'reset');
+
+    // Plan picker click
+    var picker = document.getElementById('plan-picker');
+    if (picker) picker.addEventListener('click', function() { showGuide('plan', picker); });
+
+    // Tab button clicks (catch before switchTab patch propagates for instant response)
+    var tabSI = document.getElementById('tab-signin');
+    var tabSU = document.getElementById('tab-signup');
+    if (tabSI) tabSI.addEventListener('click', function() { showGuide('signinWelcome', null); });
+    if (tabSU) tabSU.addEventListener('click', function() { showGuide('signupWelcome', null); });
+
+    // Remove spotlight on blur away from auth card
+    document.addEventListener('blur', function() {
+      setTimeout(function() {
+        var a = document.activeElement;
+        if (!a || !a.closest || !a.closest('.auth-card')) {
+          if (_spotEl) { _spotEl.classList.remove('pb-spotlight'); _spotEl = null; }
+        }
+      }, 120);
+    }, true);
+
+    // Fire initial message once the auth loading spinner clears (auth-card-wrap gets .ready)
+    var wrap = document.getElementById('auth-card-wrap');
+    if (wrap) {
+      new MutationObserver(function(_, obs) {
+        if (!wrap.classList.contains('ready')) return;
+        obs.disconnect();
+        var isSignup = (document.getElementById('tab-signup') || {}).classList &&
+                       document.getElementById('tab-signup').classList.contains('active');
+        showGuide(isSignup ? 'signupWelcome' : 'signinWelcome', null);
+      }).observe(wrap, { attributes: true, attributeFilter: ['class'] });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setup);
+  } else {
+    setup();
+  }
+})();
 </script>
 
 <script type="importmap">

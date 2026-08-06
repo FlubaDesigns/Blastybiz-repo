@@ -5,7 +5,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1785996460801" />
+<link rel="stylesheet" href="global-style.css?v=1785999051692" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -4942,8 +4942,57 @@ function showToast(msg) {
 // ══════════════════════════════════════════
 init();
 
+// ── Apply config/platforms admin overrides (name, icon, type, order, enabled) ──
+// Runs after init() so user-enabled state from localStorage is already applied.
+// Falls back silently if config/platforms doesn't exist yet.
+(async function _applyAdminPlatformConfig() {
+  try {
+    const res = await fetch('https://firestore.googleapis.com/v1/projects/blastybiz-9523e/databases/(default)/documents/config/platforms');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.fields) return;
+    function _fsVal(v) {
+      if (!v) return null;
+      if ('stringValue'  in v) return v.stringValue;
+      if ('booleanValue' in v) return v.booleanValue;
+      if ('integerValue' in v) return parseInt(v.integerValue, 10);
+      if ('mapValue'     in v) {
+        const out = {};
+        for (const [k, fv] of Object.entries(v.mapValue.fields || {})) out[k] = _fsVal(fv);
+        return out;
+      }
+      return null;
+    }
+    const adminMap = {};
+    for (const [slug, val] of Object.entries(data.fields)) adminMap[slug] = _fsVal(val);
+    // Cache admin config — _bbSetPlatforms applies it on every subsequent call
+    window._bbAdminPlatformConfig = adminMap;
+    // Apply immediately to current platform state (re-render via _bbSetPlatforms)
+    if (window._bbSetPlatforms) window._bbSetPlatforms(platforms);
+  } catch(e) {
+    console.warn('[BlastyBiz] config/platforms overlay failed:', e.message);
+  }
+})();
+
 // Window setters — module script calls these to push Firestore data into UI
 window._bbSetPlatforms = function(updatedPlatforms) {
+  // Always apply the admin display overlay (name, icon, type, order, globally-disabled).
+  // window._bbAdminPlatformConfig is populated by _applyAdminPlatformConfig() below.
+  const adminMap = window._bbAdminPlatformConfig;
+  if (adminMap) {
+    updatedPlatforms = updatedPlatforms
+      .filter(p => adminMap[p.id]?.enabled !== false)
+      .map(p => {
+        const a = adminMap[p.id];
+        if (!a) return p;
+        return Object.assign({}, p, {
+          name: a.name || p.name,
+          icon: a.icon || p.icon,
+          type: a.capabilityLevel === 'manual_assisted' ? 'manual' : 'api',
+        });
+      })
+      .sort((a, b) => ((adminMap[a.id]?.order || 99) - (adminMap[b.id]?.order || 99)));
+  }
   platforms = updatedPlatforms;
   renderPlatforms();
   renderQuickSelect();

@@ -5,14 +5,21 @@
   <meta charset="UTF-8"/>
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BlastyBiz — Platform Docs Editor</title>
+  <title>BlastyBiz — Platform Editor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1785996460801"/>
+  <link rel="stylesheet" href="global-style.css?v=1785999051692"/>
   <style>
     body { visibility: hidden; }
+
+    /* ── Tabs ── */
+    .plat-tab-bar { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 2px solid #e0e0e0; }
+    .plat-tab-btn { background: none; border: none; padding: 10px 22px; font-size: 14px; font-weight: 600; color: #777; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color .15s; font-family: inherit; }
+    .plat-tab-btn.active { color: #4361ee; border-bottom-color: #4361ee; }
+    .plat-tab-btn:hover:not(.active) { color: #333; }
+
+    /* ── AI Writing Guide tab (existing) ── */
     .platform-grid { display: grid; grid-template-columns: 220px 1fr; gap: 24px; align-items: start; }
     .platform-list { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
     .platform-list-item { padding: 10px 16px; cursor: pointer; border-bottom: 1px solid #e8e8e8; font-size: 14px; font-weight: 500; color: #333; transition: background 0.15s; }
@@ -34,10 +41,22 @@
     .reset-btn { background: #fff; color: #666; border: 1px solid #d0d0d0; border-radius: 6px; padding: 10px 24px; font-weight: 600; font-size: 14px; cursor: pointer; }
     .reset-btn:hover { background: #f5f5f5; }
     .status-msg { font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 6px; display: none; }
-    .status-msg.ok { background: #e6f4ea; color: #2e7d32; display: inline-block; }
+    .status-msg.ok  { background: #e6f4ea; color: #2e7d32; display: inline-block; }
     .status-msg.err { background: #fdecea; color: #c62828; display: inline-block; }
-    .images-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-    @media (max-width: 700px) { .platform-grid { grid-template-columns: 1fr; } .two-col, .images-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 700px) { .platform-grid { grid-template-columns: 1fr; } .two-col { grid-template-columns: 1fr; } }
+
+    /* ── Listing & Display tab ── */
+    .disp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
+    .disp-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; }
+    .disp-card-slug { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #aaa; margin-bottom: 12px; }
+    .disp-cap-label { font-size: 11px; font-weight: 700; letter-spacing: .04em; }
+    .disp-cap-label.full_auto      { color: #2e7d32; }
+    .disp-cap-label.partial_auto   { color: #1565c0; }
+    .disp-cap-label.manual_assisted{ color: #777; }
+    .disp-save-bar { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .disp-status { font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 6px; display: none; }
+    .disp-status.ok  { background: #e6f4ea; color: #2e7d32; display: inline-block; }
+    .disp-status.err { background: #fdecea; color: #c62828; display: inline-block; }
   </style>
   <script type="importmap">
 {
@@ -55,7 +74,7 @@
 <body class="admin-page">
 
 <header>
-  <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Platform Docs</span></a>
+  <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Platform Editor</span></a>
   <div class="top-actions">
     <a class="icon-btn hide-mobile" href="BlastyBiz-Admin.html">Dashboard</a>
     <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a>
@@ -74,33 +93,70 @@
 <main><div class="main"><div class="main-inner">
 
 <div class="card" style="margin-bottom:20px">
-  <div class="card-title">📋 Platform Docs Editor</div>
-  <p style="margin:0;color:#555;font-size:14px">Edit the instructions the AI reads for each platform before writing. Changes save to Firestore and take effect on the next generation. Click a platform to edit it.</p>
+  <div class="card-title">📋 Platform Editor</div>
+  <p style="margin:0;color:#555;font-size:14px">Two tabs: <strong>AI Writing Guide</strong> — the instructions the AI reads before writing for each platform. <strong>Listing &amp; Display</strong> — what name, icon, and capability badge visitors see on the public site and in the signup wizard.</p>
 </div>
 
-<div class="platform-grid">
-  <div class="platform-list" id="platformList"></div>
+<!-- Tab bar -->
+<div class="plat-tab-bar">
+  <button class="plat-tab-btn active" id="tab-btn-writing" onclick="switchTab('writing')">✏️ AI Writing Guide</button>
+  <button class="plat-tab-btn" id="tab-btn-display" onclick="switchTab('display')">🗂 Listing &amp; Display</button>
+</div>
 
-  <div>
-    <div class="editor-panel" id="editorPanel">
-      <p style="color:#888;text-align:center;padding:40px 0">Select a platform on the left to edit its docs.</p>
+<!-- Tab: AI Writing Guide -->
+<div id="plat-tab-writing">
+  <div class="platform-grid">
+    <div class="platform-list" id="platformList"></div>
+    <div>
+      <div class="editor-panel" id="editorPanel">
+        <p style="color:#888;text-align:center;padding:40px 0">Select a platform on the left to edit its AI instructions.</p>
+      </div>
+      <div id="statusMsg" class="status-msg"></div>
     </div>
-    <div id="statusMsg" class="status-msg"></div>
+  </div>
+</div>
+
+<!-- Tab: Listing & Display -->
+<div id="plat-tab-display" style="display:none">
+  <p style="color:#555;font-size:14px;margin:0 0 20px">These fields control what visitors see on the public Platforms page and in the signup wizard. Changes save immediately to Firestore and take effect on page reload.</p>
+  <div class="disp-grid" id="dispGrid">
+    <p style="color:#888">Loading…</p>
+  </div>
+  <div class="disp-save-bar">
+    <button class="save-btn" onclick="saveDisplayAll()">💾 Save All Display Settings</button>
+    <button class="reset-btn" onclick="resetDisplayAll()">↩ Reset All to Defaults</button>
+    <span id="dispStatus" class="disp-status"></span>
   </div>
 </div>
 
 </div></div></main>
 
 <script type="module">
+import { PLATFORM_DEFAULTS, loadPlatforms } from './platforms-config.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const app = initializeApp({ apiKey:"AIzaSyCyEwA6jGHp0xjAJO3NOXHblYfpajtFXGM", authDomain:"blastybiz-9523e.firebaseapp.com", projectId:"blastybiz-9523e" });
 const auth = getAuth(app);
-const db = getFirestore(app);
+const db   = getFirestore(app);
 
-const DEFAULTS = {
+// ═══════════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════════════════════
+
+window.switchTab = function(tab) {
+  document.getElementById('plat-tab-writing').style.display = tab === 'writing' ? '' : 'none';
+  document.getElementById('plat-tab-display').style.display = tab === 'display' ? '' : 'none';
+  document.getElementById('tab-btn-writing').className = 'plat-tab-btn' + (tab === 'writing' ? ' active' : '');
+  document.getElementById('tab-btn-display').className = 'plat-tab-btn' + (tab === 'display' ? ' active' : '');
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// AI WRITING GUIDE TAB
+// ═══════════════════════════════════════════════════════════════════
+
+const WRITING_DEFAULTS = {
   google:     { name:'Google Business Profile', purpose:'Local search — customers finding you via Google Maps and Search', maxChars:750, format:'Business description. Plain text only. No markdown, no links.', tone:'Professional, informative, keyword-aware but natural', dos:'Include primary service keywords in the first sentence\nMention your city or neighborhood for local SEO\nState what makes you different from competitors\nInclude specialty, experience level, or credentials', donts:'No "best in town" or superlatives — Google may suppress\nNo URLs or phone numbers — they are stripped from descriptions\nNo emoji\nNo all-caps\nNo competitor names', imageRequired:false, imageNotes:'Cover photo (16:9), logo (1:1), interior/exterior and product shots. JPG or PNG, max 5MB each.' },
   facebook:   { name:'Facebook Business Page', purpose:'Social feed — customers who follow or discover the page', maxChars:2000, format:'Post body. No separate title field. Supports emoji, line breaks, casual formatting.', tone:'Friendly, conversational, engaging — write like a person not a press release', dos:'Lead with a hook or question in the first line\nUse 1-3 emoji naturally\nInclude a clear CTA (call, message, book, visit)\nUse short paragraphs — mobile readers scan fast\nMention specific details like price, time, or a name to feel real', donts:'No walls of text\nAvoid over-hashtagging — 1-2 max or none\nNo generic openers like "We are excited to announce"\nNo all-caps\nNo excessive punctuation!!!', imageRequired:false, imageNotes:'Single image or carousel (up to 10). Landscape 1200×630px for link posts. Square 1080×1080px for organic feed posts.' },
   instagram:  { name:'Instagram', purpose:'Visual-first social feed — customers who discover or follow the account', maxChars:2200, format:'Caption only. No title field. Links in captions are NOT clickable on Instagram.', tone:'Conversational, energetic, brand personality forward', dos:'Lead with a strong hook — first line is the preview before "more"\nPut 3-5 hashtags at the very end of the caption only\nEnd with a CTA that works without a link (DM us, call now, visit us)\nUse line breaks between paragraphs\nEmoji used intentionally — reinforce the message', donts:'No clickable links in caption — they do not work on Instagram\nNo markdown or bullet points — renders as plain text\nDo not write like a traditional ad\nNo hashtag stuffing\nDo not bury the hook — first line must earn the tap to read more', imageRequired:true, imageNotes:'Image or video required. Single or carousel (up to 10 slides). Feed: 1:1 or 4:5 portrait. Stories: 9:16. JPG/PNG max 30MB.' },
@@ -112,38 +168,35 @@ const DEFAULTS = {
   angi:       { name:"Angi (formerly Angie's List)", purpose:'Home services marketplace — homeowners looking for vetted contractors', maxChars:800, format:'Business description / about section. Homeowners compare multiple pros.', tone:'Professional, trustworthy, trade-specific — homeowners want to feel safe hiring you', dos:'Lead with your primary trade or specialty\nMention licensing and insurance if applicable — it is a key trust signal\nInclude years in business and service area\nDescribe specific job types you handle\nMention guarantees or warranties if offered', donts:'Do not skip licensing or insurance info if you have it — Angi customers look for it\nNo vague claims without substance\nNo pricing in description — Angi has a separate quote flow\nNo emoji\nDo not sound like a new business — homeowners want established pros', imageRequired:false, imageNotes:'Before/after project photos are highly effective on Angi. Profile photo required. JPG/PNG.' },
   alignable:  { name:'Alignable', purpose:'B2B local business network — other business owners looking for referral partners', maxChars:800, format:'Business description for peer-to-peer B2B context. The audience is other business owners, not consumers.', tone:'Professional, peer-to-peer, network-oriented — you are talking to fellow business owners', dos:'Frame services in terms of how you help other businesses\nMention the types of businesses you work with or serve\nInclude what makes you a good referral partner\nName your primary service category clearly\nInvite connection or referral relationships', donts:'Do not write consumer-facing copy — this is a B2B context\nNo consumer-oriented offers or promotions\nNo emoji — this is a professional network\nDo not ignore the referral angle — Alignable is built around it\nNo pricing — focus on relationship and fit', imageRequired:false, imageNotes:'Professional logo and team or location photo. Business-appropriate imagery only. JPG/PNG.' },
   applemaps:  { name:'Apple Maps', purpose:'Location discovery — iPhone users finding businesses nearby via Maps', maxChars:500, format:'Business description. Very short and factual. Pairs with structured data fields (hours, category, address).', tone:'Factual, complete, concise — Apple Maps users want fast answers', dos:'State what you are and what you do in the first sentence\nInclude your primary category or specialty\nMention physical location context if helpful (near X, in Y neighborhood)\nKeep it to 2-3 sentences max\nEnsure hours, address, and phone are accurate in the listing fields', donts:'No promotional language\nNo emoji\nDo not write more than needed — short and factual wins here\nNo hashtags\nNo calls to action — Apple Maps is for discovery not conversion', imageRequired:false, imageNotes:'Exterior and interior photos recommended. JPG/PNG.' },
-  bing:       { name:'Bing Places', purpose:'Local search on Bing and Microsoft products — customers finding businesses via Bing Maps', maxChars:1500, format:'Business description. Similar to Google Business Profile. Plain text, professional.', tone:'Professional, informative, keyword-aware — mirrors Google Business Profile tone', dos:'Include primary service keywords naturally\nMention your city or region for local search relevance\nState specialty, experience, or credentials\nWrite for an audience that searched specifically for your service type', donts:'No promotional superlatives\nNo URLs or phone numbers in description\nNo emoji\nNo all-caps\nNo competitor names', imageRequired:false, imageNotes:'Cover photo and additional photos supported. JPG/PNG, max 5MB.' }
+  bing:       { name:'Bing Places', purpose:'Local search on Bing and Microsoft products — customers finding businesses via Bing Maps', maxChars:1500, format:'Business description. Similar to Google Business Profile. Plain text, professional.', tone:'Professional, informative, keyword-aware — mirrors Google Business Profile tone', dos:'Include primary service keywords naturally\nMention your city or region for local search relevance\nState specialty, experience, or credentials\nWrite for an audience that searched specifically for your service type', donts:'No promotional superlatives\nNo URLs or phone numbers in description\nNo emoji\nNo all-caps\nNo competitor names', imageRequired:false, imageNotes:'Cover photo and additional photos supported. JPG/PNG, max 5MB.' },
+  linkedin:   { name:'LinkedIn', purpose:'Professional network — business owners and decision-makers discovering services', maxChars:1300, format:'Post body. Professional tone. Line breaks work well. Hashtags at the end (3-5 relevant ones).', tone:'Professional, insightful, peer-to-peer — speak to business owners and decision-makers', dos:'Lead with a business insight or problem you solve\nMention who you help (business owners, homeowners, etc.)\nInclude a soft CTA (connect, visit, message)\nUse 3-5 relevant hashtags at the end\nShort paragraphs — LinkedIn readers scan', donts:'No hard-sell tone — LinkedIn culture rejects pushy sales copy\nNo excessive emoji\nDo not ignore the professional angle\nAvoid consumer-facing language\nNo all-caps', imageRequired:false, imageNotes:'Square or landscape images. Professional imagery preferred. JPG/PNG.' },
+  pinterest:  { name:'Pinterest', purpose:'Visual discovery platform — users searching for ideas, inspiration, and local services', maxChars:500, format:'Pin description. Keyword-rich, descriptive, action-oriented. Links in descriptions are clickable.', tone:'Inspirational, helpful, keyword-rich — Pinterest is a visual search engine', dos:'Include strong keywords in the first line\nDescribe the image and what value it delivers\nInclude a call to action (click to learn more, save for later)\nMention your city/area for local discoverability\nUse natural language — avoid keyword stuffing', donts:'No all-caps\nNo excessive hashtags — 2-5 max\nDo not ignore the visual description\nNo vague descriptions\nDo not skip the CTA', imageRequired:true, imageNotes:'Vertical images (2:3 ratio, 1000×1500px) perform best. High-quality, bright images. JPG/PNG.' },
+  x:          { name:'X (Twitter)', purpose:'Real-time social platform — broad audience discovery and engagement', maxChars:280, format:'Short post. No title. Hashtags and @mentions within the post body.', tone:'Punchy, direct, conversational — X rewards brevity and wit', dos:'Lead with the most important point\nUse 1-2 hashtags naturally within the text\nInclude a CTA or question to drive engagement\nKeep it under 240 chars to leave room for retweets\nMention location or event for local reach', donts:'No walls of text — X truncates at 280 chars\nNo more than 2 hashtags\nDo not use formal or corporate language\nNo all-caps\nDo not repeat the same post verbatim', imageRequired:false, imageNotes:'1-4 images per post. 16:9 landscape for single image. Square for 2-4 image posts. JPG/PNG/GIF.' },
 };
 
-const PLATFORM_ORDER = ['google','facebook','instagram','nextdoor','fbmarket','craigslist','yelp','thumbtack','angi','alignable','applemaps','bing'];
+const WRITING_ORDER = ['google','facebook','instagram','nextdoor','fbmarket','craigslist','yelp','thumbtack','angi','alignable','applemaps','bing','linkedin','pinterest','x'];
 
-let firestoreData = {};
+let writingFirestoreData = {};
 let activePlatformId = null;
 
-onAuthStateChanged(auth, async user => {
-  if (!user) return;
-  await loadFirestoreData();
-  renderList();
-  document.body.style.visibility = 'visible';
-});
-
-async function loadFirestoreData() {
+// ── AI Writing Guide: load ─────────────────────────────────────────────────
+async function loadWritingData() {
   try {
     const snap = await getDoc(doc(db, 'settings', 'platformDocs'));
-    if (snap.exists()) firestoreData = snap.data();
-  } catch(e) { console.error('Load failed:', e); }
+    if (snap.exists()) writingFirestoreData = snap.data();
+  } catch(e) { console.error('Load writing data failed:', e); }
 }
 
-function getDoc_(id) {
-  return Object.assign({}, DEFAULTS[id] || {}, firestoreData[id] || {});
+function getWritingDoc(id) {
+  return Object.assign({}, WRITING_DEFAULTS[id] || {}, writingFirestoreData[id] || {});
 }
 
-function renderList() {
+function renderWritingList() {
   const list = document.getElementById('platformList');
-  list.innerHTML = PLATFORM_ORDER.map(id => {
-    const d = getDoc_(id);
-    const isCustom = !!firestoreData[id];
-    return `<div class="platform-list-item${activePlatformId===id?' active':''}" data-id="${id}" onclick="selectPlatform('${id}')">
+  list.innerHTML = WRITING_ORDER.map(id => {
+    const d = getWritingDoc(id);
+    const isCustom = !!writingFirestoreData[id];
+    return `<div class="platform-list-item${activePlatformId===id?' active':''}" onclick="selectPlatform('${id}')">
       ${d.name || id}${isCustom ? ' <span style="font-size:10px;opacity:0.7">✎</span>' : ''}
     </div>`;
   }).join('');
@@ -151,14 +204,13 @@ function renderList() {
 
 window.selectPlatform = function(id) {
   activePlatformId = id;
-  renderList();
-  renderEditor(id);
+  renderWritingList();
+  renderWritingEditor(id);
 };
 
-function renderEditor(id) {
-  const d = getDoc_(id);
-  const panel = document.getElementById('editorPanel');
-  panel.innerHTML = `
+function renderWritingEditor(id) {
+  const d = getWritingDoc(id);
+  document.getElementById('editorPanel').innerHTML = `
     <h3>${d.name || id}</h3>
     <div class="field-group">
       <label>Purpose <span style="font-weight:400;color:#aaa">(shown to AI)</span></label>
@@ -209,48 +261,164 @@ function renderEditor(id) {
   document.getElementById('statusMsg').className = 'status-msg';
 }
 
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
 window.savePlatform = async function(id) {
   const payload = {
-    purpose: document.getElementById('f_purpose').value.trim(),
-    maxChars: parseInt(document.getElementById('f_maxChars').value) || 1000,
-    format: document.getElementById('f_format').value.trim(),
-    tone: document.getElementById('f_tone').value.trim(),
-    dos: document.getElementById('f_dos').value.trim(),
-    donts: document.getElementById('f_donts').value.trim(),
+    purpose:       document.getElementById('f_purpose').value.trim(),
+    maxChars:      parseInt(document.getElementById('f_maxChars').value) || 1000,
+    format:        document.getElementById('f_format').value.trim(),
+    tone:          document.getElementById('f_tone').value.trim(),
+    dos:           document.getElementById('f_dos').value.trim(),
+    donts:         document.getElementById('f_donts').value.trim(),
     imageRequired: document.getElementById('f_imageRequired').value === 'true',
-    imageNotes: document.getElementById('f_imageNotes').value.trim(),
+    imageNotes:    document.getElementById('f_imageNotes').value.trim(),
   };
   try {
-    firestoreData[id] = payload;
-    await setDoc(doc(db, 'settings', 'platformDocs'), firestoreData);
-    showStatus('Saved.', 'ok');
-    renderList();
-  } catch(e) {
-    showStatus('Save failed: ' + e.message, 'err');
-  }
+    writingFirestoreData[id] = payload;
+    await setDoc(doc(db, 'settings', 'platformDocs'), writingFirestoreData);
+    showWritingStatus('Saved.', 'ok');
+    renderWritingList();
+  } catch(e) { showWritingStatus('Save failed: ' + e.message, 'err'); }
 };
 
 window.resetPlatform = async function(id) {
-  if (!confirm('Reset "' + (DEFAULTS[id]?.name || id) + '" to built-in defaults? This removes your custom overrides.')) return;
-  delete firestoreData[id];
+  if (!confirm('Reset "' + (WRITING_DEFAULTS[id]?.name || id) + '" to built-in defaults? This removes your custom overrides.')) return;
+  delete writingFirestoreData[id];
   try {
-    await setDoc(doc(db, 'settings', 'platformDocs'), firestoreData);
-    showStatus('Reset to defaults.', 'ok');
-    renderEditor(id);
-    renderList();
-  } catch(e) {
-    showStatus('Reset failed: ' + e.message, 'err');
-  }
+    await setDoc(doc(db, 'settings', 'platformDocs'), writingFirestoreData);
+    showWritingStatus('Reset to defaults.', 'ok');
+    renderWritingEditor(id);
+    renderWritingList();
+  } catch(e) { showWritingStatus('Reset failed: ' + e.message, 'err'); }
 };
 
-function showStatus(msg, type) {
+function showWritingStatus(msg, type) {
   const el = document.getElementById('statusMsg');
   el.textContent = msg;
   el.className = 'status-msg ' + type;
   setTimeout(() => { el.className = 'status-msg'; }, 4000);
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// LISTING & DISPLAY TAB
+// ═══════════════════════════════════════════════════════════════════
+
+let displayFirestoreData = {};
+
+const CAP_LABELS = {
+  full_auto:       '⚡ Full Auto (posts itself)',
+  partial_auto:    '⚡ Partial Auto (API-assisted)',
+  manual_assisted: '📋 Copy-Ready (manual paste)',
+};
+
+async function loadDisplayData() {
+  try {
+    const platforms = await loadPlatforms(db, getDoc, doc);
+    // Build a lookup of current Firestore values
+    const snap = await getDoc(doc(db, 'config', 'platforms'));
+    if (snap.exists()) displayFirestoreData = snap.data();
+    renderDisplayGrid(platforms);
+  } catch(e) {
+    console.error('Load display data failed:', e);
+    renderDisplayGrid(PLATFORM_DEFAULTS);
+  }
+}
+
+function renderDisplayGrid(platforms) {
+  const grid = document.getElementById('dispGrid');
+  grid.innerHTML = PLATFORM_DEFAULTS.map(def => {
+    const merged = Object.assign({}, def, displayFirestoreData[def.slug] || {});
+    return `
+      <div class="disp-card" id="disp-card-${def.slug}">
+        <div class="disp-card-slug">${def.slug}</div>
+        <div class="two-col">
+          <div class="field-group">
+            <label>Icon</label>
+            <input type="text" id="disp_icon_${def.slug}" value="${esc(merged.icon||def.icon)}" maxlength="6" style="font-size:20px;max-width:80px"/>
+          </div>
+          <div class="field-group">
+            <label>Display Name</label>
+            <input type="text" id="disp_name_${def.slug}" value="${esc(merged.name||def.name)}"/>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="field-group">
+            <label>Capability</label>
+            <select id="disp_cap_${def.slug}">
+              ${Object.entries(CAP_LABELS).map(([v,l]) =>
+                `<option value="${v}"${(merged.capabilityLevel||def.capabilityLevel)===v?' selected':''}>${l}</option>`
+              ).join('')}
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Sort Order</label>
+            <input type="number" id="disp_order_${def.slug}" value="${merged.order||def.order}" min="1" max="99" style="max-width:80px"/>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Enabled on site?</label>
+          <select id="disp_enabled_${def.slug}">
+            <option value="true"${merged.enabled!==false?' selected':''}>Yes — show on site &amp; in wizard</option>
+            <option value="false"${merged.enabled===false?' selected':''}>No — hide everywhere</option>
+          </select>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.saveDisplayAll = async function() {
+  const payload = {};
+  for (const def of PLATFORM_DEFAULTS) {
+    payload[def.slug] = {
+      name:             document.getElementById(`disp_name_${def.slug}`).value.trim() || def.name,
+      icon:             document.getElementById(`disp_icon_${def.slug}`).value.trim() || def.icon,
+      capabilityLevel:  document.getElementById(`disp_cap_${def.slug}`).value,
+      order:            parseInt(document.getElementById(`disp_order_${def.slug}`).value) || def.order,
+      enabled:          document.getElementById(`disp_enabled_${def.slug}`).value === 'true',
+    };
+  }
+  try {
+    await setDoc(doc(db, 'config', 'platforms'), payload);
+    displayFirestoreData = payload;
+    showDispStatus('All display settings saved.', 'ok');
+  } catch(e) { showDispStatus('Save failed: ' + e.message, 'err'); }
+};
+
+window.resetDisplayAll = async function() {
+  if (!confirm('Reset ALL platform display settings to built-in defaults? This clears all your customizations.')) return;
+  try {
+    await setDoc(doc(db, 'config', 'platforms'), {});
+    displayFirestoreData = {};
+    renderDisplayGrid(PLATFORM_DEFAULTS);
+    showDispStatus('Reset to defaults.', 'ok');
+  } catch(e) { showDispStatus('Reset failed: ' + e.message, 'err'); }
+};
+
+function showDispStatus(msg, type) {
+  const el = document.getElementById('dispStatus');
+  el.textContent = msg;
+  el.className = 'disp-status ' + type;
+  setTimeout(() => { el.className = 'disp-status'; }, 4000);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SHARED UTILS
+// ═══════════════════════════════════════════════════════════════════
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+
+onAuthStateChanged(auth, async user => {
+  if (!user) return;
+  await Promise.all([loadWritingData(), loadDisplayData()]);
+  renderWritingList();
+  document.body.style.visibility = 'visible';
+});
 </script>
 </body>
 </html>

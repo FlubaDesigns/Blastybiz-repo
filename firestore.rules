@@ -292,6 +292,18 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Platform listing & display config — public read so public pages render dynamically
+    match /config/platforms {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Login page Blasty guide messages — public read so Login page renders without auth
+    match /config/loginGuide {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Admin config (admin email list, feature flags, plans, etc.) — admin only
     match /config/{doc} {
       allow read, write: if isAdmin();
