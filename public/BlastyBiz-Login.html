@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786144288686" />
+  <link rel="stylesheet" href="global-style.css?v=1786145035863" />
   <title>BlastyBiz — Sign In</title>
 <!-- All styles in global-style.css -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -915,17 +915,17 @@ window.handleSetPassword = async function() {
   }
   try {
     await applyActionCode(auth, oobCode);
-    // Success — if a session already exists, reload the user so emailVerified
-    // reflects the just-applied code, then skip the "Sign In" button entirely.
+    // Success — if a session already exists, go straight to onboarding (not the dashboard —
+    // new users haven't filled in their profile yet).
     if (auth.currentUser) {
       try {
         await auth.currentUser.reload();
         if (auth.currentUser.emailVerified) {
-          afterAuth(auth.currentUser);
+          window.location.href = 'BlastyBiz-Onboard2.html?new=1';
           return;
         }
       } catch (_) {
-        // reload failed (e.g. network) — fall through to show the button
+        // reload failed — fall through to show the sign-in button
       }
     }
     // No live session (different browser / tab) — show the normal button
