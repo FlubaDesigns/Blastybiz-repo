@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1786130453773">
+  <link rel="stylesheet" href="global-style.css?v=1786130578749">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -285,9 +285,14 @@
       <div id="ose-ob2-pane" style="display:none">
         <div id="ose-ob2-status" style="text-align:center;padding:32px 0;color:#64748b">Loading…</div>
         <div id="ose-ob2-content" style="display:none">
-          <p class="ose-sec-lbl">📝 Text &amp; Labels</p>
-          <div id="ose-ob2-fields"></div>
-          <p class="ose-sec-lbl">🚀 Blasty Animations</p>
+          <details class="ose-accordion" id="ob2-text-accordion" open>
+            <summary class="ose-accordion-head">
+              <span class="ose-accordion-title">📝 Text &amp; Labels</span>
+              <span class="ose-acc-chev">▼</span>
+            </summary>
+            <div id="ose-ob2-fields"></div>
+          </details>
+          <p class="ose-sec-lbl" style="margin-top:22px">🚀 Blasty Animations</p>
           <div id="ose-ob2-anims"></div>
         </div>
       </div>
