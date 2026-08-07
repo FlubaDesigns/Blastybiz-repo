@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1786129640178">
+  <link rel="stylesheet" href="global-style.css?v=1786129787424">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -883,14 +883,16 @@ window._qfAnimReset = async function(k) {
 };
 
 function renderOb2Fields() {
-  const dq = s => s.replace(/"/g,'&quot;').replace(/\n/g,'&#10;');
+  const dq = s => s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   document.getElementById('ose-ob2-fields').innerHTML = OB2_FIELDS.map(f => {
-    const current = ob2Overrides[f.key] || '';
-    const hasOv   = !!current;
+    const override = ob2Overrides[f.key] || '';
+    const isDefault = !override;
+    const displayVal = override || f.defaultVal;
+    const grayClass  = isDefault ? ' ob2-showing-default' : '';
     const inputEl = f.type === 'ta'
-      ? `<textarea class="mta" id="ob2f-${f.key}" rows="3" placeholder="${dq(f.defaultVal)}">${current}</textarea>`
-      : `<input type="text" class="mta" id="ob2f-${f.key}" placeholder="${dq(f.defaultVal)}" value="${dq(current)}">`;
-    return `<div class="ob2-field-card${hasOv?' has-ov':''}" id="ob2-card-${f.key}">
+      ? `<textarea class="mta${grayClass}" id="ob2f-${f.key}" rows="3">${dq(displayVal)}</textarea>`
+      : `<input type="text" class="mta${grayClass}" id="ob2f-${f.key}" value="${dq(displayVal)}">`;
+    return `<div class="ob2-field-card${isDefault?'':' has-ov'}" id="ob2-card-${f.key}">
       <div class="ob2-field-head">
         <span class="sd">${f.label}</span>
         <span class="mod-badge">Customized</span>
@@ -909,6 +911,8 @@ function renderOb2Fields() {
     if (!el) return;
     let timer;
     el.addEventListener('input', () => {
+      // As soon as they type anything, remove the gray-default styling
+      el.classList.remove('ob2-showing-default');
       clearTimeout(timer);
       const sts = document.getElementById('ob2sts-' + f.key);
       if (sts) { sts.style.color = '#94a3b8'; sts.textContent = 'Saving…'; }
@@ -918,18 +922,23 @@ function renderOb2Fields() {
 }
 
 window._qfSave = async function(k) {
-  const sts = document.getElementById('ob2sts-'+k);
-  const val = document.getElementById('ob2f-'+k)?.value ?? '';
-  const isCustomized = val.trim() !== '' && val.trim() !== (OB2_FIELDS.find(f=>f.key===k)?.defaultVal ?? '').trim();
+  const sts  = document.getElementById('ob2sts-'+k);
+  const el   = document.getElementById('ob2f-'+k);
+  const val  = el?.value ?? '';
+  const defVal = (OB2_FIELDS.find(f=>f.key===k)?.defaultVal ?? '').trim();
+  const isCustomized = val.trim() !== '' && val.trim() !== defVal;
   try {
     if (isCustomized) {
       await setDoc(doc(db,'config','ob2Steps'), { [k]: val }, { merge:true });
       ob2Overrides[k] = val;
       document.getElementById('ob2-card-'+k).classList.add('has-ov');
+      if (el) el.classList.remove('ob2-showing-default');
     } else {
       await setDoc(doc(db,'config','ob2Steps'), { [k]: deleteField() }, { merge:true });
       delete ob2Overrides[k];
       document.getElementById('ob2-card-'+k).classList.remove('has-ov');
+      // Restore gray default styling and refill with default text
+      if (el) { el.classList.add('ob2-showing-default'); el.value = OB2_FIELDS.find(f=>f.key===k)?.defaultVal ?? ''; }
     }
     if (sts) { sts.style.color='#22c55e'; sts.textContent='✓ Saved'; setTimeout(()=>{ if(sts) sts.textContent=''; }, 2000); }
   } catch(e) {
