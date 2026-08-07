@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786141151387" />
+  <link rel="stylesheet" href="global-style.css?v=1786142084647" />
   <title>BlastyBiz — Sign In</title>
 <!-- All styles in global-style.css -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -467,14 +467,20 @@ function handleSetPassword() {}
   function positionBlasty(anchorEl) {
     if (!anchorEl) return;
 
-    // On mobile Blasty is inline at the top of the card — don't reposition it.
-    // The speech bubble text update in showGuide() is enough; the field state
-    // changes (bb-field-done / bb-field-blur) give the user visual context.
-    if (floatEl.classList.contains('login-blasty-inline')) {
+    var rect = anchorEl.getBoundingClientRect();
+
+    if (window.innerWidth < 540) {
+      // Mobile: fixed overlay at the right edge of the viewport, animates
+      // vertically as the user moves through fields (CSS transition handles it)
+      var top  = Math.max(10, Math.min(rect.top + rect.height / 2 - 40, window.innerHeight - 150));
+      var left = window.innerWidth - 108; // 100 px wide + 8 px margin
+      floatEl.style.top  = top  + 'px';
+      floatEl.style.left = left + 'px';
       floatEl.classList.add('visible');
       return;
     }
-    var fW = 80;  // float element width
+
+    var fW = 80;  // float element width (desktop)
     var gap = 6;
 
     // Vertical: center Blasty's mascot body on the anchor's midpoint
@@ -482,9 +488,7 @@ function handleSetPassword() {}
     var top = Math.max(56, Math.min(elemMid - 35, window.innerHeight - 180));
 
     // Horizontal: right of element, clamped to viewport
-    var leftAttempt = rect.right + gap;
-    var maxLeft     = window.innerWidth - fW - 2;
-    var left        = Math.min(leftAttempt, maxLeft);
+    var left = Math.min(rect.right + gap, window.innerWidth - fW - 2);
 
     floatEl.style.top  = top  + 'px';
     floatEl.style.left = left + 'px';
@@ -586,15 +590,6 @@ function handleSetPassword() {}
   }
 
   function setup() {
-    // On mobile: move Blasty inside the auth card so he's in document flow
-    if (window.innerWidth < 540) {
-      var card = document.querySelector('.auth-card');
-      if (card && floatEl) {
-        card.insertBefore(floatEl, card.firstChild);
-        floatEl.classList.add('login-blasty-inline');
-      }
-    }
-
     var tabsRow = document.querySelector('.auth-tabs') ||
                   (document.getElementById('tab-signin') || {}).parentElement;
 
