@@ -1144,7 +1144,8 @@ body.has-site-header h4  { font-family: 'DM Sans', sans-serif; font-size: 15px; 
 .plan-picker                 { display: flex; gap: 6px; }
 .plan-pick-btn               { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 11px 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--dark); color: var(--muted); cursor: pointer; font-family: inherit; transition: border-color .2s, background .2s, color .2s; }
 .plan-pick-btn:hover:not(.active) { border-color: var(--silver); color: var(--silver); }
-.plan-pick-btn.active        { border-width: 2px; border-color: var(--green); background: rgba(0,200,83,.15); color: var(--green); box-shadow: 0 0 0 1px rgba(0,200,83,.25); }
+.plan-pick-btn.active        { border-width: 2px; border-color: var(--green); background: rgba(0,200,83,.18); color: var(--green); box-shadow: 0 0 0 2px rgba(0,200,83,.35), inset 0 0 8px rgba(0,200,83,.08); font-weight: 700; }
+.plan-selected-summary       { margin: 6px 0 0; font-size: 12px; color: var(--green); text-align: center; min-height: 18px; }
 .plan-pick-name              { font-size: 13px; font-weight: 700; line-height: 1.2; }
 .plan-pick-price             { font-size: 12px; opacity: .85; }
 

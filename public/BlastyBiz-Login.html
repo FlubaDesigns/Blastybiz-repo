@@ -117,6 +117,7 @@
                       <span class="plan-pick-price" id="price-agency">$99/mo</span>
                     </button>
                   </div>
+                  <p class="plan-selected-summary" id="plan-selected-summary">You're signing up for: <strong>Starter</strong></p>
                 </div>
 
                 <div class="field">
@@ -923,6 +924,9 @@ window.selectPlan = function(plan) {
     b.classList.toggle('active', b.dataset.plan === plan)
   );
   localStorage.setItem('bb_selected_plan', plan);
+  var label = plan.charAt(0).toUpperCase() + plan.slice(1);
+  var summaryEl = document.getElementById('plan-selected-summary');
+  if (summaryEl) summaryEl.innerHTML = 'You\u2019re signing up for: <strong>' + label + '</strong>';
 };
 
 window.selectBilling = function(period) {
