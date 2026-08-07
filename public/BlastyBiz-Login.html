@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786136490151" />
+  <link rel="stylesheet" href="global-style.css?v=1786138690073" />
   <title>BlastyBiz — Sign In</title>
 <!-- All styles in global-style.css -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -420,6 +420,11 @@ function handleSetPassword() {}
     reset:           { text: "We'll send a reset link right away.",                                mood: 's-tilt-left' },
   };
 
+  // Allow the module script (which fetches live pricing) to update step texts
+  window._blastySetStepText = function(key, text) {
+    if (DEFAULTS[key]) DEFAULTS[key].text = text;
+  };
+
   var adminGuide = {};
 
   fetch('https://firestore.googleapis.com/v1/projects/blastybiz-9523e/databases/(default)/documents/config/loginGuide')
@@ -763,6 +768,41 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+// ── Live pricing from settings/pricing ───────────────────────────────────────
+// Hardcoded fallbacks; overwritten by Firestore fetch below
+let _prices = { proMonthly: 19, agencyMonthly: 99, proAnnual: 199, agencyAnnual: 999 };
+
+function _calcSavings() {
+  // Use Pro as the reference plan for the badge & Blasty message
+  return Math.round(_prices.proMonthly * 12 - _prices.proAnnual);
+}
+
+function _applyLivePricing() {
+  const isAnnual = localStorage.getItem('bb_billing_period') === 'annual';
+  const proPriceEl    = document.getElementById('price-pro');
+  const agencyPriceEl = document.getElementById('price-agency');
+  const saveBadge     = document.querySelector('.billing-save-badge');
+  if (proPriceEl)    proPriceEl.textContent    = isAnnual ? `$${_prices.proAnnual}/yr`    : `$${_prices.proMonthly}/mo`;
+  if (agencyPriceEl) agencyPriceEl.textContent = isAnnual ? `$${_prices.agencyAnnual}/yr` : `$${_prices.agencyMonthly}/mo`;
+  const savings = _calcSavings();
+  if (saveBadge) saveBadge.textContent = `Save $${savings}/year`;
+  // Update Blasty's billing step with real savings
+  if (window._blastySetStepText) {
+    window._blastySetStepText('billing', `Annual saves you $${savings} — and locks in your rate. Switch anytime.`);
+  }
+}
+
+// Fetch live pricing — update UI and Blasty once loaded
+getDoc(doc(db, 'settings', 'pricing')).then(snap => {
+  if (!snap.exists()) return;
+  const d = snap.data();
+  if (d.proMonthly)    _prices.proMonthly    = d.proMonthly;
+  if (d.agencyMonthly) _prices.agencyMonthly = d.agencyMonthly;
+  if (d.proAnnual)     _prices.proAnnual     = d.proAnnual;
+  if (d.agencyAnnual)  _prices.agencyAnnual  = d.agencyAnnual;
+  _applyLivePricing();
+}).catch(() => {});
+
 // Sign-in button: enable immediately when auth loads
 const _siBtn = document.getElementById('btn-signin');
 if (_siBtn) _siBtn.disabled = false;
@@ -890,11 +930,14 @@ window.selectBilling = function(period) {
   const aBtn = document.getElementById('toggle-annual');
   if (mBtn) mBtn.classList.toggle('active', !isAnnual);
   if (aBtn) aBtn.classList.toggle('active',  isAnnual);
-  // Update price labels
+  // Update price labels using live pricing
   const proPriceEl    = document.getElementById('price-pro');
   const agencyPriceEl = document.getElementById('price-agency');
-  if (proPriceEl)    proPriceEl.textContent    = isAnnual ? '$199/yr' : '$19/mo';
-  if (agencyPriceEl) agencyPriceEl.textContent = isAnnual ? '$999/yr' : '$99/mo';
+  const saveBadge     = document.querySelector('.billing-save-badge');
+  if (proPriceEl)    proPriceEl.textContent    = isAnnual ? `$${_prices.proAnnual}/yr`    : `$${_prices.proMonthly}/mo`;
+  if (agencyPriceEl) agencyPriceEl.textContent = isAnnual ? `$${_prices.agencyAnnual}/yr` : `$${_prices.agencyMonthly}/mo`;
+  const savings = _calcSavings();
+  if (saveBadge) saveBadge.textContent = `Save $${savings}/year`;
 };
 
 (function initPlanPicker() {
@@ -916,7 +959,7 @@ async function afterAuth(user) {
 
     // Paid plan selected → go to checkout first; Dashboard sends to onboarding after payment
     if (picked && ['pro', 'agency'].includes(picked)) {
-      window.location.href = `BlastyBiz.html?checkout=${encodeURIComponent(picked)}&billing=${encodeURIComponent(billing)}`;
+      window.location.href = `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(picked)}&billing=${encodeURIComponent(billing)}`;
       return;
     }
 
@@ -1059,6 +1102,7 @@ window.handleSignUp = async function() {
   setLoading('btn-signup', true);
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    // Always start as starter — the Square webhook upgrades the plan after payment
     await setDoc(doc(db, 'users', cred.user.uid), {
       ownerName: name, email, plan: 'starter', onboarded: false, createdAt: serverTimestamp()
     });
