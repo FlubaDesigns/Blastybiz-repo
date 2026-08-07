@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786126865290" />
+  <link rel="stylesheet" href="global-style.css?v=1786127246968" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -524,8 +524,11 @@ function handleSetPassword() {}
     signinWelcome:   { text: "Welcome back! Sign in to keep blasting. 🚀",                         mood: 's-wave'      },
     signinEmail:     { text: "Enter the email you signed up with — or skip ahead and sign in with Google or Facebook below!",  mood: 's-ask' },
     signinPassword:  { text: "Enter your BlastyBiz password.",                                     mood: 's-ask'       },
-    signupWelcome:   { text: "Let's get you set up! 🚀 Pick a plan — Starter is always free.",     mood: 's-wave'      },
-    plan:            { text: "Starter is free forever. Pro unlocks auto-posting on Google, Facebook & more.", mood: 's-ask' },
+    signupWelcome:   { text: "Let's get you set up! 🚀 First — monthly or annual? Annual saves you two months free.",  mood: 's-wave'  },
+    billing:         { text: "Annual saves you two months free and locks in your rate. Switch anytime.",               mood: 's-wave'  },
+    planStarter:     { text: "Starter is free forever — great for getting your first location blasting.",              mood: 's-ask'   },
+    planPro:         { text: "Smart choice! 🔥 Pro auto-posts to Google, Facebook & Instagram for you — set it and blast it!",  mood: 's-happy' },
+    planAgency:      { text: "Agency lets you manage unlimited locations from one dashboard. Built for franchises and multi-location brands. 💼", mood: 's-happy' },
     name:            { text: "What's your name? We'll personalize your experience.",               mood: 's-ask'       },
     email:           { text: "Use your business email — we'll send your login link here.",         mood: 's-ask'       },
     password:        { text: "8+ characters with letters and numbers.",                            mood: 's-ask'       },
@@ -696,11 +699,17 @@ function handleSetPassword() {}
       });
     }
 
-    // Create Account fields — plan picker first, then form fields top→bottom
+    // Create Account fields — billing toggle first, then plan picker, then form fields
+    var billingRow = document.getElementById('toggle-monthly') &&
+                     document.getElementById('toggle-monthly').parentElement;
+    if (billingRow) {
+      _suFields.push(billingRow);
+      _fieldKeys.set(billingRow, 'billing');
+    }
     var picker = document.getElementById('plan-picker');
     if (picker) {
       _suFields.push(picker);
-      picker.addEventListener('click', function() { showGuide('plan', picker); });
+      _fieldKeys.set(picker, 'planStarter'); // default; overridden per click below
     }
     wire('su-name',      'name',           _suFields);
     wire('su-email',     'email',          _suFields);
@@ -739,19 +748,26 @@ function handleSetPassword() {}
     });
     if (tabSU) tabSU.addEventListener('click', function() {
       unpick();
-      if (_suFields[0]) showGuide('plan', _suFields[0]);
+      if (_suFields[0]) showGuide('billing', _suFields[0]);
     });
 
-    // Patch selectPlan so picking a plan auto-advances Blasty to the Name field
+    // Patch selectBilling — show savings message when toggling monthly/annual
+    var origSelectBilling = window.selectBilling;
+    window.selectBilling = function(period) {
+      if (origSelectBilling) origSelectBilling(period);
+      if (billingRow && _fieldEls.indexOf(billingRow) >= 0) {
+        showGuide('billing', billingRow);
+      }
+    };
+
+    // Patch selectPlan — show plan-specific Blasty message, then advance to Name
+    var PLAN_KEYS = { starter: 'planStarter', pro: 'planPro', agency: 'planAgency' };
     var origSelectPlan = window.selectPlan;
     window.selectPlan = function(plan) {
       if (origSelectPlan) origSelectPlan(plan);
-      // Advance to whichever field comes next after the plan picker in the active sequence
-      var idx = _fieldEls.indexOf(picker);
-      if (idx >= 0 && idx < _fieldEls.length - 1) {
-        var nextEl = _fieldEls[idx + 1];
-        showGuide(_fieldKeys.get(nextEl) || '', nextEl);
-      }
+      // Show the message for whichever plan was picked — Blasty stays on picker
+      var key = PLAN_KEYS[plan] || 'planStarter';
+      if (picker) showGuide(key, picker);
     };
 
     // Remove spotlight on blur away from auth card

@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1786126865290">
+  <link rel="stylesheet" href="global-style.css?v=1786127246968">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -373,9 +373,12 @@ const LOGIN_STEP_DEFS = [
   { idx:2,  key:'signinWelcome',   label:'Sign In — Welcome',            defaultMsg:"Welcome back! Sign in to keep blasting. 🚀",                             defaultMood:'s-wave'      },
   { idx:2,  key:'signinEmail',     label:'Sign In — Email field',         defaultMsg:"Enter the email address you signed up with.",                            defaultMood:'s-ask'       },
   { idx:3,  key:'signinPassword',  label:'Sign In — Password field',      defaultMsg:"Enter your BlastyBiz password.",                                         defaultMood:'s-ask'       },
-  { idx:4,  key:'signupWelcome',   label:'Create Account — Welcome',      defaultMsg:"Let's get you set up! 🚀 Pick a plan — Starter is always free.",         defaultMood:'s-wave'      },
-  { idx:5,  key:'plan',            label:'Create Account — Choose Plan',  defaultMsg:"Starter is free forever. Pro unlocks auto-posting on Google, Facebook & Instagram.", defaultMood:'s-ask' },
-  { idx:6,  key:'name',            label:'Create Account — Your Name',    defaultMsg:"What's your name? We'll use it to personalize your experience.",         defaultMood:'s-ask'       },
+  { idx:4,  key:'signupWelcome',   label:'Create Account — Welcome',        defaultMsg:"Let's get you set up! 🚀 First — monthly or annual? Annual saves you two months free.", defaultMood:'s-wave'  },
+  { idx:5,  key:'billing',         label:'Create Account — Billing Toggle', defaultMsg:"Annual saves you two months free and locks in your rate. Switch anytime.",               defaultMood:'s-wave'  },
+  { idx:6,  key:'planStarter',     label:'Create Account — Plan: Starter',  defaultMsg:"Starter is free forever — great for getting your first location blasting.",             defaultMood:'s-ask'   },
+  { idx:7,  key:'planPro',         label:'Create Account — Plan: Pro',      defaultMsg:"Smart choice! 🔥 Pro auto-posts to Google, Facebook & Instagram for you — set it and blast it!", defaultMood:'s-happy' },
+  { idx:8,  key:'planAgency',      label:'Create Account — Plan: Agency',   defaultMsg:"Agency lets you manage unlimited locations from one dashboard. Built for franchises and multi-location brands. 💼", defaultMood:'s-happy' },
+  { idx:9,  key:'name',            label:'Create Account — Your Name',      defaultMsg:"What's your name? We'll use it to personalize your experience.",                         defaultMood:'s-ask'   },
   { idx:7,  key:'email',           label:'Create Account — Email',        defaultMsg:"Use your business email — we'll send your login link here.",             defaultMood:'s-ask'       },
   { idx:8,  key:'password',        label:'Create Account — Password',     defaultMsg:"Create a strong password — 8+ characters, letters and numbers.",        defaultMood:'s-ask'       },
   { idx:9,  key:'confirmPassword', label:'Create Account — Confirm PW',   defaultMsg:"Type it one more time — almost there!",                                 defaultMood:'s-happy'     },
