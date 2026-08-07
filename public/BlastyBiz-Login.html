@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786134909046" />
+  <link rel="stylesheet" href="global-style.css?v=1786135750050" />
   <title>BlastyBiz — Sign In</title>
 <!-- All styles in global-style.css -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -171,7 +171,6 @@
                   <div class="or-text">OR</div>
                   <div class="or-line"></div>
                 </div>
-
                 <div class="social-btns">
                   <button type="button" class="btn-social" onclick="handleGoogle()">
                     <span class="btn-social-icon">🔍</span>
@@ -407,9 +406,9 @@ function handleSetPassword() {}
     signinWelcome:   { text: "Welcome back! Sign in to keep blasting. 🚀",                          mood: 's-wave'      },
     signinEmail:     { text: "Enter the email you signed up with — or sign in with Google or Facebook below!",  mood: 's-ask' },
     signinPassword:  { text: "Enter your BlastyBiz password.",                                      mood: 's-ask'       },
-    signupWelcome:       { text: "Create your account below — or sign up instantly with Google or Facebook! 🚀",                                    mood: 's-wave'      },
-    signupWelcomeGuided: { text: "Let's get you set up! 🚀 Create your account — or tap Google / Facebook below to sign up in one click.",          mood: 's-wave'      },
-    signupWelcomeForms:  { text: "Fast lane it is! 📋 Create your account — or use Google / Facebook below to jump straight in.",                   mood: 's-happy'     },
+    signupWelcome:       { text: "Create your account — or sign up instantly with Google or Facebook below! 🚀",                                   mood: 's-wave'      },
+    signupWelcomeGuided: { text: "Let's get you set up! 🚀 Create your account — or tap Google / Facebook below to sign up in one click.",         mood: 's-wave'      },
+    signupWelcomeForms:  { text: "Fast lane it is! 📋 Create your account — or use Google / Facebook below to jump straight in.",                  mood: 's-happy'     },
     billing:         { text: "Annual saves you two months free and locks in your rate. Switch anytime.",               mood: 's-wave'  },
     planStarter:     { text: "Starter is free forever — great for getting your first location blasting.",              mood: 's-ask'   },
     planPro:         { text: "Smart choice! 🔥 Pro auto-posts to Google, Facebook & Instagram for you — set it and blast it!",  mood: 's-happy' },
@@ -688,13 +687,14 @@ function handleSetPassword() {}
       new MutationObserver(function(_, obs) {
         if (!wrap.classList.contains('ready')) return;
         obs.disconnect();
-        if (localStorage.getItem('bb_guide_done')) {
-          // Returning user — Blasty guide was a one-time onboarding step; skip it entirely.
-          // The Sign In form is already visible and ready; just let them log in.
+        var startChoice = localStorage.getItem('bb_start_choice') ||
+                          new URLSearchParams(window.location.search).get('start');
+
+        if (localStorage.getItem('bb_guide_done') && !startChoice) {
+          // Returning user who didn't come from the Start page — skip guide entirely.
           return;
         }
 
-        var startChoice = localStorage.getItem('bb_start_choice');
         if (startChoice) {
           // Visitor already picked their path on the Start page — don't gate them again.
           // Hide the whole tabs row (no reason to choose Sign In here) and go straight to signup.
@@ -705,10 +705,10 @@ function handleSetPassword() {}
           var welcomeKey = startChoice === 'guided' ? 'signupWelcomeGuided'
                          : startChoice === 'forms'  ? 'signupWelcomeForms'
                          : 'signupWelcome';
-          // Defer one frame so the card has painted before we measure its rect
+          // Defer so the card has painted before measuring field positions
           setTimeout(function() {
-            var cardEl = document.querySelector('.auth-card') || tabsRow;
-            showGuide(welcomeKey, cardEl);
+            var anchorEl = _suFields[0] || document.querySelector('.auth-card') || tabsRow;
+            showGuide(welcomeKey, anchorEl);
           }, 120);
         } else {
           // First-time visitor — guided gate
