@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1786131009834">
+  <link rel="stylesheet" href="global-style.css?v=1786131577331">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -277,6 +277,7 @@
         </div>
         <!-- Guided Tour steps -->
         <p class="ose-sec-lbl" style="margin-top:28px">🚀 Guided Tour — Blasty Steps</p>
+        <div id="ose-step0"></div>
         <div id="ose-status" style="text-align:center;padding:16px 0;color:#64748b">Loading steps…</div>
         <div id="ose-steps" style="display:none"></div>
       </div>
@@ -392,13 +393,10 @@ const LOGIN_STEP_DEFS = [
 ];
 
 const START_FIELDS = [
-  { key:'speechBubble', label:'Blasty Speech Bubble',       type:'tx', defaultVal:'Hey! How do you want to start?',                                hint:'Short — fits on one line.' },
   { key:'heading',      label:'Page Heading (HTML)',         type:'ta', defaultVal:"Let's Get You <span>Blasting</span>",                           hint:'Use &lt;span&gt; for the green word.' },
   { key:'subheading',   label:'Page Subheading',            type:'tx', defaultVal:'Your first post takes about 2 minutes. Pick how you want to do it.', hint:'' },
-  { key:'guidedIcon',   label:'Guided Card — Icon (emoji)', type:'tx', defaultVal:'🚀',    hint:'' },
   { key:'guidedTitle',  label:'Guided Card — Title',        type:'tx', defaultVal:'Show me how', hint:'' },
   { key:'guidedDesc',   label:'Guided Card — Description',  type:'ta', defaultVal:'Blasty walks you through setup step by step. Recommended if this is your first time.', hint:'' },
-  { key:'formsIcon',    label:'Forms Card — Icon (emoji)',  type:'tx', defaultVal:'📋',    hint:'' },
   { key:'formsTitle',   label:'Forms Card — Title',         type:'tx', defaultVal:'Just the forms', hint:'' },
   { key:'formsDesc',    label:'Forms Card — Description',   type:'ta', defaultVal:'Fill in your business details yourself and jump straight to the app.', hint:'' },
   { key:'signinText',   label:'"Already have account" text',type:'tx', defaultVal:'Already have an account?', hint:'' },
@@ -949,6 +947,108 @@ window._qfSave = async function(k) {
   }
 };
 
+// ── Step 0 — Start Page speech bubble + animation ─────────────────────────
+function renderStep0() {
+  const defMsg  = 'Hey! How do you want to start?';
+  const savedMsg = startOverrides.speechBubble || '';
+  const displayMsg = savedMsg || defMsg;
+  const isDefault  = !savedMsg;
+  const savedAnim  = (startOverrides.animLoad && typeof startOverrides.animLoad==='object') ? startOverrides.animLoad : {};
+  const a = { mood:'s-wave', flame:'', lights:'', eyes:'', noseSpin:'', mouth:'', limbs:'', smoke:'', ...savedAnim };
+  const hasOv = !!(savedMsg || startOverrides.animLoad);
+  document.getElementById('ose-step0').innerHTML = `
+    <div class="step-card${hasOv?' has-ov':''}" id="sc-step0">
+      <div class="step-head" onclick="document.getElementById('sc-step0').classList.toggle('open')">
+        <span class="step-num">0</span>
+        <span class="sd">Start Page — Blasty's Opening Question</span>
+        <span class="mod-badge">Modified</span>
+        <span class="exp-ic">▾</span>
+      </div>
+      <div class="step-body">
+        <p class="ob2-field-desc">The first thing Blasty says — shown on the path-picker page before the guided tour begins.</p>
+        <textarea class="mta${isDefault?' ob2-showing-default':''}" id="msg-step0" rows="2">${displayMsg.replace(/</g,'&lt;')}</textarea>
+        <span class="sts ob2-autosts" id="sts-step0"></span>
+        <div class="anim-row" style="margin-top:10px">
+          <div class="asg"><label>Mood</label><select id="am-step0">${sel(MOOD_OPTS,a.mood)}</select></div>
+          <div class="asg"><label>Flame</label><select id="af-step0">${sel(FLAME_OPTS,a.flame)}</select></div>
+          <div class="asg"><label>Lights</label><select id="al-step0">${sel(LIGHTS_OPTS,a.lights)}</select></div>
+          <div class="asg"><label>Eyes</label><select id="ae-step0">${sel(EYES_OPTS,a.eyes)}</select></div>
+          <div class="asg"><label>Nose</label><select id="an-step0">${sel(NOSE_OPTS,a.noseSpin)}</select></div>
+          <div class="asg"><label>Mouth</label><select id="amou-step0">${sel(MOUTH_OPTS,a.mouth)}</select></div>
+          <div class="asg"><label>Limbs</label><select id="alb-step0">${sel(LIMBS_OPTS,a.limbs)}</select></div>
+          <div class="asg"><label>Smoke</label><select id="as-step0">${sel(SMOKE_OPTS,a.smoke)}</select></div>
+        </div>
+        <span class="sts" id="sts-anim-step0" style="font-size:11px;display:block;min-height:16px;margin-top:4px"></span>
+      </div>
+    </div>`;
+  const ta = document.getElementById('msg-step0');
+  if (ta) {
+    let timer;
+    ta.addEventListener('input', () => {
+      ta.classList.remove('ob2-showing-default');
+      clearTimeout(timer);
+      const sts = document.getElementById('sts-step0');
+      if (sts) { sts.style.color='#94a3b8'; sts.textContent='Saving…'; }
+      timer = setTimeout(() => window._step0MsgSave(), 800);
+    });
+  }
+  ['am-','af-','al-','ae-','an-','amou-','alb-','as-'].forEach(pfx => {
+    const el = document.getElementById(pfx+'step0');
+    if (el) el.addEventListener('change', () => window._step0AnimSave());
+  });
+}
+
+window._step0MsgSave = async function() {
+  const sts = document.getElementById('sts-step0');
+  const el  = document.getElementById('msg-step0');
+  const val = el?.value ?? '';
+  const def = 'Hey! How do you want to start?';
+  const isDefault = val.trim() === '' || val.trim() === def.trim();
+  try {
+    if (!isDefault) {
+      await setDoc(doc(db,'config','startPage'), { speechBubble: val }, { merge:true });
+      startOverrides.speechBubble = val;
+      if (el) el.classList.remove('ob2-showing-default');
+    } else {
+      await setDoc(doc(db,'config','startPage'), { speechBubble: deleteField() }, { merge:true });
+      delete startOverrides.speechBubble;
+      if (el) { el.classList.add('ob2-showing-default'); el.value = def; }
+    }
+    document.getElementById('sc-step0')?.classList.toggle('has-ov', !!(startOverrides.speechBubble || startOverrides.animLoad));
+    if (sts) { sts.style.color='#22c55e'; sts.textContent='✓ Saved'; setTimeout(()=>{ if(sts) sts.textContent=''; }, 2000); }
+  } catch(e) {
+    if (sts) { sts.style.color='#ef4444'; sts.textContent='✗ '+e.message; }
+  }
+};
+
+window._step0AnimSave = async function() {
+  const sts   = document.getElementById('sts-anim-step0');
+  const mood  = document.getElementById('am-step0')?.value || 's-wave';
+  const flame = document.getElementById('af-step0')?.value || '';
+  const lights= document.getElementById('al-step0')?.value || '';
+  const eyes  = document.getElementById('ae-step0')?.value || '';
+  const nose  = document.getElementById('an-step0')?.value || '';
+  const mouth = document.getElementById('amou-step0')?.value || '';
+  const limbs = document.getElementById('alb-step0')?.value || '';
+  const smoke = document.getElementById('as-step0')?.value || '';
+  const anim  = { mood };
+  if (flame)  anim.flame    = flame;
+  if (lights) anim.lights   = lights;
+  if (eyes)   anim.eyes     = eyes;
+  if (nose)   anim.noseSpin = nose;
+  if (mouth)  anim.mouth    = mouth;
+  if (limbs)  anim.limbs    = limbs;
+  if (smoke)  anim.smoke    = smoke;
+  try {
+    await setDoc(doc(db,'config','startPage'), { animLoad: anim }, { merge:true });
+    startOverrides.animLoad = anim;
+    document.getElementById('sc-step0')?.classList.add('has-ov');
+    if (sts) { sts.style.color='#22c55e'; sts.textContent='✓'; setTimeout(()=>{ if(sts) sts.textContent=''; }, 1500); }
+  } catch(e) {
+    if (sts) { sts.style.color='#ef4444'; sts.textContent='✗ '+e.message; }
+  }
+};
+
 function renderSteps() {
   document.getElementById('ose-steps').innerHTML = STEP_DEFS.map(s => {
     const ov  = overrides[s.key] || {};
@@ -1149,7 +1249,8 @@ onAuthStateChanged(auth, async user => {
     } else {
       loginStepDefs = LOGIN_STEP_DEFS.map((s, i) => ({ ...s, idx: i + 1 }));
     }
-    // OB1 pane
+    // OB1 pane — Step 0 first, then wizard steps
+    renderStep0();
     document.getElementById('ose-status').style.display='none';
     document.getElementById('ose-steps').style.display='';
     renderSteps();
