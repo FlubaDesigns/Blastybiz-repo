@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786042582833" />
+  <link rel="stylesheet" href="global-style.css?v=1786125606172" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -84,12 +84,17 @@
   100% { box-shadow: 0 0 0 0   rgba(57,255,20,.0);   }
 }
 
-/* Fields not yet guided are blurred until Blasty points to them */
+/* Fields not yet guided — only blur the input line, keep the label sharp */
 .bb-field-blur {
-  filter: blur(2.5px);
-  opacity: 0.45;
-  transition: filter .35s ease, opacity .35s ease;
   pointer-events: none;
+}
+.bb-field-blur input,
+.bb-field-blur .pw-wrap,
+.bb-field-blur select,
+.bb-field-blur textarea {
+  filter: blur(2px);
+  opacity: 0.55;
+  transition: filter .35s ease, opacity .35s ease;
 }
 
 /* Tail pointing right toward Blasty — ::before = border layer, ::after = white fill */
@@ -659,6 +664,34 @@ function handleSetPassword() {}
     wire('si-email',    'signinEmail',    _siFields);
     wire('si-password', 'signinPassword', _siFields);
     wire('reset-email', 'reset',          _siFields);
+
+    // Auto-advance sign-in email → password when a valid email is typed (1s debounce)
+    var siEmailEl = document.getElementById('si-email');
+    if (siEmailEl) {
+      var _siEmailTimer;
+      siEmailEl.addEventListener('input', function() {
+        clearTimeout(_siEmailTimer);
+        if (!isValidEmail(siEmailEl.value.trim())) return;
+        _siEmailTimer = setTimeout(function() {
+          var pwEl = _siFields[1]; // password field
+          if (pwEl) showGuide('signinPassword', pwEl);
+        }, 1000);
+      });
+    }
+
+    // Auto-advance sign-up email → password when a valid email is typed (1s debounce)
+    var suEmailEl = document.getElementById('su-email');
+    if (suEmailEl) {
+      var _suEmailTimer;
+      suEmailEl.addEventListener('input', function() {
+        clearTimeout(_suEmailTimer);
+        if (!isValidEmail(suEmailEl.value.trim())) return;
+        _suEmailTimer = setTimeout(function() {
+          var pwEl = _suFields[3]; // password field (plan, name, email, password)
+          if (pwEl) showGuide('password', pwEl);
+        }, 1000);
+      });
+    }
 
     // Create Account fields — plan picker first, then form fields top→bottom
     var picker = document.getElementById('plan-picker');
