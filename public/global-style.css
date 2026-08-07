@@ -2980,7 +2980,9 @@ button, a, [role="button"], input[type="submit"], input[type="reset"], input[typ
 .bb-field-blur select,
 .bb-field-blur textarea,
 .bb-field-blur .plan-pick-btn,
-.bb-field-blur .billing-toggle-btn {
+.bb-field-blur .billing-toggle-btn,
+.bb-field-blur .obf-label,
+.bb-field-blur .obf-slot {
   filter: blur(2px);
   opacity: 0.4;
   transition: filter .35s ease, opacity .35s ease;

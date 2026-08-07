@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786146535573"/>
+  <link rel="stylesheet" href="global-style.css?v=1786146831802"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -141,9 +141,7 @@
       border: 1px solid transparent;
       transition: opacity .35s ease, background .35s ease;
     }
-    .obf-row.future  { filter: blur(1.5px); opacity: 0.35; pointer-events: none; transition: filter .35s ease, opacity .35s ease; }
-    .obf-row.answered { opacity: 0.5; transition: opacity .35s ease; }
-    .obf-row.answered:hover { opacity: 0.75; }
+    /* Blur/dim states driven by global .bb-field-blur / .bb-field-done classes */
     .obf-row.active {
       opacity: 1;
       background: rgba(57,255,20,.032);
@@ -1344,7 +1342,7 @@
       sd.innerHTML = '<div class="obf-sec-title">'+sec.title+'</div>';
       sec.keys.forEach(key => {
         const row = document.createElement('div');
-        row.className = 'obf-row future';
+        row.className = 'obf-row future bb-field-blur';
         row.id = 'obfr-'+key;
         row.dataset.key = key;
         row.innerHTML = '<div class="obf-label">'+(LABELS[key]||key)+'</div>'
@@ -1369,8 +1367,8 @@
   function lockField(key, text) {
     const row = document.getElementById('obfr-'+key);
     if (!row) return;
-    row.classList.remove('active','future');
-    row.classList.add('answered');
+    row.classList.remove('active','future','bb-field-blur');
+    row.classList.add('answered','bb-field-done');
     const slot = document.getElementById('obfs-'+key);
     if (slot) {
       const safe = String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1452,10 +1450,10 @@
     if (s.key !== '_fork') {
       document.querySelectorAll('.obf-row').forEach(r => {
         if (r.id === 'obfr-'+s.key) {
-          r.classList.remove('future','answered','just-answered');
+          r.classList.remove('future','answered','just-answered','bb-field-blur','bb-field-done');
           r.classList.add('active');
         } else if (!r.classList.contains('answered')) {
-          r.classList.remove('active'); r.classList.add('future');
+          r.classList.remove('active','bb-field-done'); r.classList.add('future','bb-field-blur');
         } else {
           r.classList.remove('active');
         }
