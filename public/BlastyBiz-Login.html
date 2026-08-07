@@ -407,7 +407,9 @@ function handleSetPassword() {}
     signinWelcome:   { text: "Welcome back! Sign in to keep blasting. 🚀",                         mood: 's-wave'      },
     signinEmail:     { text: "Enter the email you signed up with — or skip ahead and sign in with Google or Facebook below!",  mood: 's-ask' },
     signinPassword:  { text: "Enter your BlastyBiz password.",                                     mood: 's-ask'       },
-    signupWelcome:   { text: "Let's get you set up! 🚀 You can sign up with Google or Facebook below — or fill in the form!",  mood: 's-wave'  },
+    signupWelcome:       { text: "You're almost in! 🚀 Pick a plan and fill in your details — setup only takes a minute.",                         mood: 's-wave'      },
+    signupWelcomeGuided: { text: "Great pick! 🚀 Blasty will walk you through everything. First — choose a plan and create your account.",              mood: 's-wave'      },
+    signupWelcomeForms:  { text: "Fast lane it is! 📋 Pick a plan, fill in your details, and you'll be in the app in under a minute.",                  mood: 's-happy'     },
     billing:         { text: "Annual saves you two months free and locks in your rate. Switch anytime.",               mood: 's-wave'  },
     planStarter:     { text: "Starter is free forever — great for getting your first location blasting.",              mood: 's-ask'   },
     planPro:         { text: "Smart choice! 🔥 Pro auto-posts to Google, Facebook & Instagram for you — set it and blast it!",  mood: 's-happy' },
@@ -675,6 +677,19 @@ function handleSetPassword() {}
           // Returning user — Blasty guide was a one-time onboarding step; skip it entirely.
           // The Sign In form is already visible and ready; just let them log in.
           return;
+        }
+
+        var startChoice = localStorage.getItem('bb_start_choice');
+        if (startChoice) {
+          // Visitor already picked their path on the Start page — don't gate them again.
+          // Auto-switch to the Create Account tab and greet them contextually.
+          removeTabPrompt();
+          if (typeof window.switchTab === 'function') window.switchTab('signup');
+          _fieldEls = _suFields;
+          var welcomeKey = startChoice === 'guided' ? 'signupWelcomeGuided'
+                         : startChoice === 'forms'  ? 'signupWelcomeForms'
+                         : 'signupWelcome';
+          if (_suFields[0]) showGuide(welcomeKey, _suFields[0]);
         } else {
           // First-time visitor — guided gate
           wrap.classList.add('bb-unpicked');
