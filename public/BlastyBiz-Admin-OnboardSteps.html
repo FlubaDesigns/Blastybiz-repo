@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1786130857216">
+  <link rel="stylesheet" href="global-style.css?v=1786131009834">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -273,7 +273,6 @@
         <div id="ose-start-status" style="text-align:center;padding:16px 0;color:#64748b">Loading…</div>
         <div id="ose-start-content" style="display:none">
           <div id="ose-start-fields"></div>
-          <p class="ose-sec-lbl">🚀 Blasty Animation — Page Load</p>
           <div id="ose-start-anims"></div>
         </div>
         <!-- Guided Tour steps -->
@@ -405,10 +404,7 @@ const START_FIELDS = [
   { key:'signinText',   label:'"Already have account" text',type:'tx', defaultVal:'Already have an account?', hint:'' },
 ];
 
-const START_ANIM_EVENTS = [
-  { key:'animLoad', label:'Blasty Mood (page load)', icon:'😄',
-    def:{ mood:'s-ask', flame:'', lights:'', eyes:'', smoke:false, noseSpin:false } },
-];
+const START_ANIM_EVENTS = [];
 
 function renderStartFields() {
   document.getElementById('ose-start-fields').innerHTML = START_FIELDS.map(f => {
@@ -795,6 +791,8 @@ const OB2_FIELDS = [
 ];
 
 const OB2_ANIM_EVENTS = [
+  { key:'animLoad',    label:'Page Load',           icon:'😴',
+    def:{ mood:'s-wave',      flame:'',             lights:'',               eyes:'', smoke:false, noseSpin:false } },
   { key:'animFocus',   label:'Field Focused',       icon:'💬',
     def:{ mood:'s-ask',       flame:'',             lights:'',               eyes:'', smoke:false, noseSpin:false } },
   { key:'animSubmit',  label:'Saving / Submitting', icon:'⏳',
