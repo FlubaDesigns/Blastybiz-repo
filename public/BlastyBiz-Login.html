@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786131577331" />
+  <link rel="stylesheet" href="global-style.css?v=1786133080996" />
   <title>BlastyBiz — Sign In</title>
 <!-- All styles in global-style.css -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -456,10 +456,24 @@ function handleSetPassword() {}
     };
   }
 
-  // Position the floating Blasty element to the right of a target element.
-  // Falls back to left side if no room on the right.
+  // Position the floating Blasty element.
+  // Mobile (<540px): fixed top-right corner, stays put while bubble text changes.
+  // Desktop: right of the focused field.
   function positionBlasty(anchorEl) {
     if (!anchorEl) return;
+
+    if (window.innerWidth < 540) {
+      // Sit just above the top-right corner of the focused field
+      var floatW = 62;
+      var floatH = 60; // approx mascot height at 54px wide
+      var top  = Math.max(56, rect.top - floatH - 6);
+      var left = Math.min(rect.right - floatW, window.innerWidth - floatW - 4);
+      floatEl.style.top  = top + 'px';
+      floatEl.style.left = left + 'px';
+      floatEl.classList.add('visible');
+      return;
+    }
+
     var rect = anchorEl.getBoundingClientRect();
     var fW = 80;  // float element width
     var gap = 6;
