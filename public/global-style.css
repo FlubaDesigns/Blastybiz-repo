@@ -3083,6 +3083,10 @@ button, a, [role="button"], input[type="submit"], input[type="reset"], input[typ
   opacity: 0.15; filter: blur(4px); pointer-events: none; user-select: none;
 }
 
+/* OB2 / Start Page field description */
+.ob2-field-desc { font-size:12px; color:#64748b; margin:0 0 8px; line-height:1.6; }
+.ob2-autosts    { display:block; font-size:11px; min-height:16px; margin-top:5px; }
+
 /* Terms & Privacy checkbox row */
 .terms-check-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; font-size: 13px; color: #94a3b8; line-height: 1.5; }
 .terms-check-row input[type="checkbox"] { margin-top: 3px; flex-shrink: 0; width: 16px; height: 16px; cursor: pointer; accent-color: #00C853; }

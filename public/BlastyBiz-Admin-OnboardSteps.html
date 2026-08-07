@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1786127852115">
+  <link rel="stylesheet" href="global-style.css?v=1786129640178">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -764,27 +764,27 @@ window._loginReset = async function(k) {
 };
 
 const OB2_FIELDS = [
-  { key:'headerMsg',      label:'Header Greeting',   type:'ta',
+  { key:'headerMsg',      label:'Header Greeting',         type:'ta',
     defaultVal:'<strong>Let\u2019s set up your business!</strong> Fill in what you know \u2014 you can always update later.',
-    hint:'Next to the mini Blasty. HTML allowed (\u003cstrong\u003e).' },
-  { key:'sec1Title',      label:'Section 1 Title',   type:'ta',
+    desc:'The message shown next to Blasty at the very top of the form — the first thing users read before they fill anything in. HTML is allowed (<strong> for bold).' },
+  { key:'sec1Title',      label:'Business Info — Section Heading', type:'ta',
     defaultVal:'🏢 Business Info <span class="cb-sec-badge">Required</span>',
-    hint:'Full innerHTML of the title span. Emoji + text + badge HTML.' },
-  { key:'sec2Title',      label:'Section 2 Title',   type:'ta',
+    desc:'Heading above the first section of fields: business name, phone, address, website. The "Required" badge is a &lt;span&gt; tag inside the text.' },
+  { key:'sec2Title',      label:'Your Story — Section Heading',    type:'ta',
     defaultVal:'📖 Your Story <span class="cb-sec-badge">Optional — makes AI smarter</span>',
-    hint:'' },
-  { key:'sec3Title',      label:'Section 3 Title',   type:'ta',
+    desc:'Heading above the story section — where owners describe what makes their business different. This section is optional; users can skip it.' },
+  { key:'sec3Title',      label:'First Campaign — Section Heading',type:'ta',
     defaultVal:'🚀 First Campaign <span class="cb-sec-badge">Required</span>',
-    hint:'' },
-  { key:'submitText',     label:'Submit Button Text', type:'tx',
+    desc:'Heading above the campaign section — where they name their first campaign and choose which platforms to post on.' },
+  { key:'submitText',     label:'Submit Button',                   type:'tx',
     defaultVal:'🚀 Create Business & Launch',
-    hint:'Plain text only.' },
-  { key:'successHeading', label:'Success Heading',    type:'tx',
+    desc:'Text on the big green button at the very bottom of the form. Plain text only — no HTML.' },
+  { key:'successHeading', label:'Success Screen — Headline',       type:'tx',
     defaultVal:'🎉 You\'re Live!',
-    hint:'' },
-  { key:'successBody',    label:'Success Body',       type:'ta',
+    desc:'The headline shown after the form is submitted and the business is created.' },
+  { key:'successBody',    label:'Success Screen — Message',        type:'ta',
     defaultVal:'Your business is set up and your first campaign is ready. Redirecting to your dashboard\u2026',
-    hint:'' },
+    desc:'The message under the success headline — typically tells them what\'s happening next.' },
 ];
 
 const OB2_ANIM_EVENTS = [
@@ -883,45 +883,46 @@ window._qfAnimReset = async function(k) {
 };
 
 function renderOb2Fields() {
+  const dq = s => s.replace(/"/g,'&quot;').replace(/\n/g,'&#10;');
   document.getElementById('ose-ob2-fields').innerHTML = OB2_FIELDS.map(f => {
-    const ov = ob2Overrides[f.key] || '';
-    const hasOv = !!ov;
-    const dq = s => s.replace(/"/g,'&quot;');
-    const defEl = f.type === 'ta'
-      ? `<textarea class="mta def" readonly rows="2">${f.defaultVal}</textarea>`
-      : `<input type="text" class="mta def" readonly value="${dq(f.defaultVal)}">`;
-    const ovEl = f.type === 'ta'
-      ? `<textarea class="mta" id="ob2f-${f.key}" rows="2" placeholder="Leave blank to keep default">${ov}</textarea>`
-      : `<input type="text" class="mta" id="ob2f-${f.key}" placeholder="Leave blank to keep default" value="${dq(ov)}">`;
+    const current = ob2Overrides[f.key] || '';
+    const hasOv   = !!current;
+    const inputEl = f.type === 'ta'
+      ? `<textarea class="mta" id="ob2f-${f.key}" rows="3" placeholder="${dq(f.defaultVal)}">${current}</textarea>`
+      : `<input type="text" class="mta" id="ob2f-${f.key}" placeholder="${dq(f.defaultVal)}" value="${dq(current)}">`;
     return `<div class="ob2-field-card${hasOv?' has-ov':''}" id="ob2-card-${f.key}">
       <div class="ob2-field-head">
-        <span class="sk">${f.key}</span>
         <span class="sd">${f.label}</span>
-        ${f.hint ? `<span class="ob2-hint">${f.hint}</span>` : ''}
-        <span class="mod-badge">Modified</span>
+        <span class="mod-badge">Customized</span>
       </div>
       <div class="ob2-field-body">
-        <div class="msg-row">
-          <div><span class="fl">Default (read-only)</span>${defEl}</div>
-          <div><span class="fl">Override</span>${ovEl}</div>
-        </div>
-        <div class="card-acts">
-          <button class="btn-sv" onclick="window._qfSave('${f.key}')">Save</button>
-          <button class="btn-rst" onclick="window._qfReset('${f.key}')">Reset to default</button>
-          <span class="sts" id="ob2sts-${f.key}"></span>
-        </div>
+        <p class="ob2-field-desc">${f.desc}</p>
+        ${inputEl}
+        <span class="sts ob2-autosts" id="ob2sts-${f.key}"></span>
       </div>
     </div>`;
   }).join('');
+
+  // Wire auto-save — debounced 800ms after last keystroke
+  OB2_FIELDS.forEach(f => {
+    const el = document.getElementById('ob2f-' + f.key);
+    if (!el) return;
+    let timer;
+    el.addEventListener('input', () => {
+      clearTimeout(timer);
+      const sts = document.getElementById('ob2sts-' + f.key);
+      if (sts) { sts.style.color = '#94a3b8'; sts.textContent = 'Saving…'; }
+      timer = setTimeout(() => window._qfSave(f.key), 800);
+    });
+  });
 }
 
 window._qfSave = async function(k) {
-  const btn = document.querySelector(`#ob2-card-${k} .btn-sv`);
   const sts = document.getElementById('ob2sts-'+k);
-  btn.disabled=true; btn.textContent='Saving…'; sts.textContent='';
-  const val = document.getElementById('ob2f-'+k).value.trim();
+  const val = document.getElementById('ob2f-'+k)?.value ?? '';
+  const isCustomized = val.trim() !== '' && val.trim() !== (OB2_FIELDS.find(f=>f.key===k)?.defaultVal ?? '').trim();
   try {
-    if (val) {
+    if (isCustomized) {
       await setDoc(doc(db,'config','ob2Steps'), { [k]: val }, { merge:true });
       ob2Overrides[k] = val;
       document.getElementById('ob2-card-'+k).classList.add('has-ov');
@@ -930,28 +931,10 @@ window._qfSave = async function(k) {
       delete ob2Overrides[k];
       document.getElementById('ob2-card-'+k).classList.remove('has-ov');
     }
-    sts.style.color='#22c55e'; sts.textContent='✓ Saved';
-    setTimeout(()=>{ sts.textContent=''; }, 2500);
+    if (sts) { sts.style.color='#22c55e'; sts.textContent='✓ Saved'; setTimeout(()=>{ if(sts) sts.textContent=''; }, 2000); }
   } catch(e) {
-    sts.style.color='#ef4444'; sts.textContent='✗ '+e.message;
+    if (sts) { sts.style.color='#ef4444'; sts.textContent='✗ '+e.message; }
   }
-  btn.disabled=false; btn.textContent='Save';
-};
-
-window._qfReset = async function(k) {
-  if (!confirm('Reset "'+k+'" to default? This removes your override.')) return;
-  const btn = document.querySelector(`#ob2-card-${k} .btn-rst`);
-  btn.disabled=true;
-  try {
-    await setDoc(doc(db,'config','ob2Steps'), { [k]: deleteField() }, { merge:true });
-    delete ob2Overrides[k];
-    document.getElementById('ob2-card-'+k).classList.remove('has-ov');
-    document.getElementById('ob2f-'+k).value='';
-    const sts = document.getElementById('ob2sts-'+k);
-    sts.style.color='#64748b'; sts.textContent='↩ Reset';
-    setTimeout(()=>{ sts.textContent=''; }, 2500);
-  } catch(e) { alert('Error: '+e.message); }
-  btn.disabled=false;
 };
 
 function renderSteps() {
