@@ -3083,7 +3083,7 @@ button, a, [role="button"], input[type="submit"], input[type="reset"], input[typ
   flex-direction: column;
   align-items: center;
   width: 100%;
-  padding: 14px 0 6px;
+  padding: 6px 0 4px;
   transition: none;
 }
 #login-blasty-float.login-blasty-inline .pb-mascot {
