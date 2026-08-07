@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786135964290" />
+  <link rel="stylesheet" href="global-style.css?v=1786136152867" />
   <title>BlastyBiz — Sign In</title>
 <!-- All styles in global-style.css -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -467,7 +467,7 @@ function handleSetPassword() {}
       var floatH = 110;
       var safeTop = rect.top > 0 ? rect.top : 80;
       var top  = Math.max(56, safeTop - floatH - 6);
-      var left = 4; // left side — right side is cut off on mobile
+      var left = Math.max(4, Math.min(rect.left + rect.width / 2 - floatW / 2, window.innerWidth - floatW - 4)); // centered above field
       floatEl.style.top  = top + 'px';
       floatEl.style.left = left + 'px';
       floatEl.classList.add('visible');

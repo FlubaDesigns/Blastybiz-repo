@@ -3074,14 +3074,19 @@ button, a, [role="button"], input[type="submit"], input[type="reset"], input[typ
   border: 10px solid transparent; border-left-color: #fff; border-right: none;
 }
 
-/* ── Mobile: small, top-right corner, bubble below ── */
+/* ── Mobile: small, centered above field, bubble below ── */
 @media (max-width: 539px) {
   #login-blasty-float {
     flex-direction: column;
     align-items: center;
+    width: 120px;
+  }
+  #login-blasty-float .pb-mascot {
+    width: 54px;
+    display: inline-block;
   }
   #login-blasty-float .pb-mascot svg,
-  #login-blasty-float .pb-mascot > svg {
+  #login-blasty-float #mascot-svg {
     width: 54px !important;
     height: auto !important;
   }
