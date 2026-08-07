@@ -6,120 +6,9 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786127246968" />
+  <link rel="stylesheet" href="global-style.css?v=1786127852115" />
   <title>BlastyBiz — Sign In</title>
-<style>
-.verify-view{display:none;padding:8px 0}
-.verify-view h2{margin:0 0 10px;font-size:1.25rem}
-.verify-view p{color:#555;font-size:.95rem;margin:0 0 20px;line-height:1.5}
-.verify-view .btn-submit{width:100%;margin-bottom:10px}
-#auth-card-wrap.verify-mode .auth-tabs,
-#auth-card-wrap.verify-mode .auth-form,
-#auth-card-wrap.verify-mode .back-home{display:none!important}
-#auth-card-wrap.verify-mode .verify-view{display:block}
-
-/* Email verification landing view */
-.email-confirmed-view{display:none;padding:8px 0;text-align:center}
-.email-confirmed-view .confirmed-logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:.04em;color:#0d1a0d;margin-bottom:16px;display:block}
-.email-confirmed-view .confirmed-logo span{color:#00C853}
-.email-confirmed-view .confirmed-icon{font-size:3rem;margin-bottom:12px;display:block}
-.email-confirmed-view h2{margin:0 0 10px;font-size:1.25rem;color:#0d1a0d}
-.email-confirmed-view p{color:#555;font-size:.95rem;margin:0 0 22px;line-height:1.5}
-.email-confirmed-view .btn-submit{width:100%;margin-bottom:10px}
-.email-confirmed-view .reset-back{display:inline-block;margin-top:4px}
-#auth-card-wrap.email-confirm-mode .auth-tabs,
-#auth-card-wrap.email-confirm-mode .auth-form,
-#auth-card-wrap.email-confirm-mode .back-home{display:none!important}
-#auth-card-wrap.email-confirm-mode .email-confirmed-view{display:block}
-
-/* ── Login Blasty floating guide ── */
-#login-blasty-float {
-  position: fixed;
-  z-index: 900;
-  pointer-events: none;
-  display: flex;
-  flex-direction: row-reverse; /* Blasty on right, bubble extends left toward the form */
-  align-items: center;
-  opacity: 0;
-  transition: top .35s cubic-bezier(.34,1.56,.64,1),
-              left .35s cubic-bezier(.34,1.56,.64,1),
-              opacity .2s ease;
-}
-#login-blasty-float.visible { opacity: 1; }
-#login-bubble {
-  background: #fff;
-  border: 1.5px solid rgba(180,205,240,.5);
-  border-radius: 12px 4px 12px 12px; /* pointy corner on the right toward Blasty */
-  padding: 7px 9px;
-  font-size: 11px;
-  line-height: 1.45;
-  color: #0d1f3c;
-  box-shadow: 0 4px 18px rgba(0,0,0,.38);
-  max-width: 130px;
-  min-width: 80px;
-  text-align: center;
-  margin-right: 5px; /* gap between bubble and mascot */
-  font-family: 'DM Sans', sans-serif;
-  transition: opacity .15s ease;
-  word-break: break-word;
-  position: relative;
-}
-/* Before user picks a tab: both buttons look neutral, form is hidden */
-#auth-card-wrap.bb-unpicked .auth-tab {
-  background: transparent !important;
-  color: #aaa !important;
-  border-color: #444 !important;
-}
-#auth-card-wrap.bb-unpicked .auth-form {
-  opacity: 0.15;
-  filter: blur(4px);
-  pointer-events: none;
-  user-select: none;
-}
-
-/* Tab buttons pulse to demand a pick before anything else unlocks */
-.bb-tab-prompt {
-  animation: bb-tab-pulse 1.5s ease-in-out infinite;
-}
-@keyframes bb-tab-pulse {
-  0%   { box-shadow: 0 0 0 0   rgba(57,255,20,.65); }
-  60%  { box-shadow: 0 0 0 11px rgba(57,255,20,.0);  }
-  100% { box-shadow: 0 0 0 0   rgba(57,255,20,.0);   }
-}
-
-/* Fields not yet guided — only blur the input line, keep the label sharp */
-.bb-field-blur {
-  pointer-events: none;
-}
-.bb-field-blur input,
-.bb-field-blur .pw-wrap,
-.bb-field-blur select,
-.bb-field-blur textarea {
-  filter: blur(2px);
-  opacity: 0.55;
-  transition: filter .35s ease, opacity .35s ease;
-}
-
-/* Tail pointing right toward Blasty — ::before = border layer, ::after = white fill */
-#login-bubble::before {
-  content: '';
-  position: absolute;
-  right: -13px;
-  top: 9px;
-  border: 12px solid transparent;
-  border-left-color: rgba(180,205,240,.6);
-  border-right: none;
-}
-#login-bubble::after {
-  content: '';
-  position: absolute;
-  right: -10px;
-  top: 11px;
-  border: 10px solid transparent;
-  border-left-color: #fff;
-  border-right: none;
-}
-</style>
+<!-- All styles in global-style.css -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
@@ -145,7 +34,7 @@
 
           <div id="auth-card-wrap">
             <div class="auth-card">
-              <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Sign In or Create a BlastyBiz Account</h1>
+              <h1 class="sr-only">Sign In or Create a BlastyBiz Account</h1>
 
               <!-- TABS -->
               <div class="auth-tabs">
@@ -206,18 +95,12 @@
               <form autocomplete="on" onsubmit="handleSignUp(); return false;">
 
                 <div class="field">
-                  <label class="section-label" style="margin-bottom:10px">Choose your plan</label>
+                  <label class="section-label">Choose your plan</label>
 
                   <!-- Billing period toggle -->
-                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-                    <button type="button" id="toggle-monthly" onclick="selectBilling('monthly')"
-                      style="flex:1;padding:7px 0;border-radius:8px;border:1px solid var(--border,#2a3a2a);background:#00C853;color:#0d1a0d;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">
-                      Monthly
-                    </button>
-                    <button type="button" id="toggle-annual" onclick="selectBilling('annual')"
-                      style="flex:1;padding:7px 0;border-radius:8px;border:1px solid var(--border,#2a3a2a);background:transparent;color:#aaa;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">
-                      Annual &nbsp;<span style="font-size:11px;font-weight:600;color:#00C853">Save $29/year</span>
-                    </button>
+                  <div class="billing-toggle-row">
+                    <button type="button" id="toggle-monthly" class="billing-toggle-btn active" onclick="selectBilling('monthly')">Monthly</button>
+                    <button type="button" id="toggle-annual" class="billing-toggle-btn" onclick="selectBilling('annual')">Annual &nbsp;<span class="billing-save-badge">Save $29/year</span></button>
                   </div>
 
                   <div class="plan-picker" id="plan-picker">
@@ -272,15 +155,15 @@
                   <div class="field-error" id="su-password2-err">Passwords don't match</div>
                 </div>
 
+                <div class="terms-check-row">
+                  <input type="checkbox" id="su-terms" onchange="document.getElementById('btn-signup').disabled=!this.checked">
+                  <label for="su-terms">I agree to the <a href="BlastyBiz-Terms.html" target="_blank">Terms of Service</a> and <a href="BlastyBiz-Privacy.html" target="_blank">Privacy Policy</a></label>
+                </div>
+
                 <button type="submit" class="btn-submit" id="btn-signup" disabled>
                   <div class="spinner"></div>
                   <span class="btn-text">Create Account →</span>
                 </button>
-
-                <div class="terms-note">
-                  By creating an account you agree to our
-                  <a href="BlastyBiz-Terms.html">Terms of Service</a> and <a href="BlastyBiz-Privacy.html">Privacy Policy</a>
-                </div>
 
               </form>
                 <div class="or-divider">
@@ -363,7 +246,7 @@
                   </button>
                 </div>
                 <!-- error state -->
-                <div id="ecv-error" style="display:none">
+                <div id="ecv-error">
                   <span class="confirmed-icon">⚠️</span>
                   <h2>Link expired or already used</h2>
                   <p id="ecv-error-msg">This verification link has expired or was already used. Sign in and we'll give you the option to resend it.</p>
@@ -375,7 +258,7 @@
 
               <!-- EMAIL VERIFICATION -->
               <div class="verify-view" id="verify-view">
-                <div style="font-size:2.5rem;text-align:center;margin-bottom:12px">📧</div>
+                <div class="verify-emoji">📧</div>
                 <h2>Check your inbox</h2>
                 <p>We sent a verification link to <strong id="verify-email"></strong>. Click it to activate your account, then come back here to sign in.</p>
                 <button class="btn-submit" onclick="resendVerification()" type="button">
@@ -514,7 +397,7 @@ function handleSetPassword() {}
   // Inject the floating Blasty element into the page body
   var floatEl = document.createElement('div');
   floatEl.id = 'login-blasty-float';
-  floatEl.innerHTML = '<div class="pb-mascot s-wave" id="pb-mascot" style="width:70px"></div>' +
+  floatEl.innerHTML = '<div class="pb-mascot s-wave" id="pb-mascot"></div>' +
                       '<div id="login-bubble"></div>';
   document.body.appendChild(floatEl);
 
@@ -524,7 +407,7 @@ function handleSetPassword() {}
     signinWelcome:   { text: "Welcome back! Sign in to keep blasting. 🚀",                         mood: 's-wave'      },
     signinEmail:     { text: "Enter the email you signed up with — or skip ahead and sign in with Google or Facebook below!",  mood: 's-ask' },
     signinPassword:  { text: "Enter your BlastyBiz password.",                                     mood: 's-ask'       },
-    signupWelcome:   { text: "Let's get you set up! 🚀 First — monthly or annual? Annual saves you two months free.",  mood: 's-wave'  },
+    signupWelcome:   { text: "Let's get you set up! 🚀 You can sign up with Google or Facebook below — or fill in the form!",  mood: 's-wave'  },
     billing:         { text: "Annual saves you two months free and locks in your rate. Switch anytime.",               mood: 's-wave'  },
     planStarter:     { text: "Starter is free forever — great for getting your first location blasting.",              mood: 's-ask'   },
     planPro:         { text: "Smart choice! 🔥 Pro auto-posts to Google, Facebook & Instagram for you — set it and blast it!",  mood: 's-happy' },
@@ -836,10 +719,12 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-['btn-signin','btn-signup'].forEach(id => {
-  const el = document.getElementById(id);
-  if (el) el.disabled = false;
-});
+// Sign-in button: enable immediately when auth loads
+const _siBtn = document.getElementById('btn-signin');
+if (_siBtn) _siBtn.disabled = false;
+// Sign-up button: only enable if terms checkbox is already checked (e.g. page reload with state)
+const _suBtn = document.getElementById('btn-signup');
+if (_suBtn) _suBtn.disabled = !(document.getElementById('su-terms')?.checked);
 
 // ── Password-reset link handler ───────────────────────────────────────────────
 // When the user clicks the reset link in their email, Firebase redirects back
@@ -959,8 +844,8 @@ window.selectBilling = function(period) {
   // Toggle button styles
   const mBtn = document.getElementById('toggle-monthly');
   const aBtn = document.getElementById('toggle-annual');
-  if (mBtn) { mBtn.style.background = isAnnual ? 'transparent' : '#00C853'; mBtn.style.color = isAnnual ? '#aaa' : '#0d1a0d'; }
-  if (aBtn) { aBtn.style.background = isAnnual ? '#00C853' : 'transparent'; aBtn.style.color = isAnnual ? '#0d1a0d' : '#aaa'; }
+  if (mBtn) mBtn.classList.toggle('active', !isAnnual);
+  if (aBtn) aBtn.classList.toggle('active',  isAnnual);
   // Update price labels
   const proPriceEl    = document.getElementById('price-pro');
   const agencyPriceEl = document.getElementById('price-agency');
@@ -1119,7 +1004,9 @@ window.handleSignUp = async function() {
   const email = document.getElementById('su-email').value.trim();
   const pass  = document.getElementById('su-password').value;
   const pass2 = document.getElementById('su-password2').value;
+  const terms = document.getElementById('su-terms')?.checked;
   let valid = true;
+  if (!terms)              { showToast('Please agree to the Terms of Service and Privacy Policy.', true); return; }
   if (!name)               valid = showErr('su-name', 'Name is required');
   if (!isValidEmail(email))valid = showErr('su-email', 'Please enter a valid email');
   if (pass.length < 8)     valid = showErr('su-password', 'Password must be at least 8 characters');

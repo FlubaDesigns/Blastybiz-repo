@@ -2967,3 +2967,124 @@ button, a, [role="button"], input[type="submit"], input[type="reset"], input[typ
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Blasty Guide — shared field-blur + tab-prompt utilities ─────────────── */
+/* Applied by the login (and any future) Blasty guide to fields not yet reached */
+.bb-field-blur {
+  pointer-events: none;
+}
+.bb-field-blur input,
+.bb-field-blur .pw-wrap,
+.bb-field-blur select,
+.bb-field-blur textarea {
+  filter: blur(2px);
+  opacity: 0.55;
+  transition: filter .35s ease, opacity .35s ease;
+}
+
+/* Tab buttons pulse to demand a pick before the form unlocks */
+.bb-tab-prompt {
+  animation: bb-tab-pulse 1.5s ease-in-out infinite;
+}
+@keyframes bb-tab-pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(57,255,20,.65); }
+  60%  { box-shadow: 0 0 0 11px rgba(57,255,20,.0);  }
+  100% { box-shadow: 0 0 0 0   rgba(57,255,20,.0);   }
+}
+
+/* ── Login page ─────────────────────────────────────────────────────────────── */
+
+/* Screen-reader only — globally reusable */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap;
+}
+
+/* Billing period toggle */
+.billing-toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.billing-toggle-btn {
+  flex: 1; padding: 7px 0; border-radius: 8px;
+  border: 1px solid var(--border, #2a3a2a);
+  background: transparent; color: #aaa;
+  font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit;
+  transition: background .2s, color .2s;
+}
+.billing-toggle-btn.active { background: #00C853; color: #0d1a0d; }
+.billing-save-badge { font-size: 11px; font-weight: 600; color: #00C853; }
+.billing-toggle-btn.active .billing-save-badge { color: #0d1a0d; }
+
+/* Verify emoji header */
+.verify-emoji { font-size: 2.5rem; text-align: center; margin-bottom: 12px; }
+
+/* Login Blasty mascot size */
+#pb-mascot { width: 70px; }
+
+/* Email verification error state — hidden until JS shows it */
+#ecv-error { display: none; }
+
+/* Verify view */
+.verify-view { display: none; padding: 8px 0; }
+.verify-view h2 { margin: 0 0 10px; font-size: 1.25rem; }
+.verify-view p { color: #555; font-size: .95rem; margin: 0 0 20px; line-height: 1.5; }
+.verify-view .btn-submit { width: 100%; margin-bottom: 10px; }
+#auth-card-wrap.verify-mode .auth-tabs,
+#auth-card-wrap.verify-mode .auth-form,
+#auth-card-wrap.verify-mode .back-home { display: none !important; }
+#auth-card-wrap.verify-mode .verify-view { display: block; }
+
+/* Email-confirmed landing view */
+.email-confirmed-view { display: none; padding: 8px 0; text-align: center; }
+.email-confirmed-view .confirmed-logo { font-family: 'Bebas Neue',sans-serif; font-size: 2rem; letter-spacing: .04em; color: #0d1a0d; margin-bottom: 16px; display: block; }
+.email-confirmed-view .confirmed-logo span { color: #00C853; }
+.email-confirmed-view .confirmed-icon { font-size: 3rem; margin-bottom: 12px; display: block; }
+.email-confirmed-view h2 { margin: 0 0 10px; font-size: 1.25rem; color: #0d1a0d; }
+.email-confirmed-view p { color: #555; font-size: .95rem; margin: 0 0 22px; line-height: 1.5; }
+.email-confirmed-view .btn-submit { width: 100%; margin-bottom: 10px; }
+.email-confirmed-view .reset-back { display: inline-block; margin-top: 4px; }
+#auth-card-wrap.email-confirm-mode .auth-tabs,
+#auth-card-wrap.email-confirm-mode .auth-form,
+#auth-card-wrap.email-confirm-mode .back-home { display: none !important; }
+#auth-card-wrap.email-confirm-mode .email-confirmed-view { display: block; }
+
+/* Login Blasty floating guide */
+#login-blasty-float {
+  position: fixed; z-index: 900; pointer-events: none;
+  display: flex; flex-direction: row-reverse; align-items: center;
+  opacity: 0;
+  transition: top .35s cubic-bezier(.34,1.56,.64,1),
+              left .35s cubic-bezier(.34,1.56,.64,1),
+              opacity .2s ease;
+}
+#login-blasty-float.visible { opacity: 1; }
+#login-bubble {
+  background: #fff; border: 1.5px solid rgba(180,205,240,.5);
+  border-radius: 12px 4px 12px 12px;
+  padding: 7px 9px; font-size: 11px; line-height: 1.45;
+  color: #0d1f3c; box-shadow: 0 4px 18px rgba(0,0,0,.38);
+  max-width: 130px; min-width: 80px; text-align: center;
+  margin-right: 5px; font-family: 'DM Sans',sans-serif;
+  transition: opacity .15s ease; word-break: break-word; position: relative;
+}
+#login-bubble::before {
+  content: ''; position: absolute; right: -13px; top: 9px;
+  border: 12px solid transparent; border-left-color: rgba(180,205,240,.6); border-right: none;
+}
+#login-bubble::after {
+  content: ''; position: absolute; right: -10px; top: 11px;
+  border: 10px solid transparent; border-left-color: #fff; border-right: none;
+}
+
+/* Gate: before user picks a tab */
+#auth-card-wrap.bb-unpicked .auth-tab {
+  background: transparent !important; color: #aaa !important; border-color: #444 !important;
+}
+/* Only blur the <form> — social buttons and OR divider stay sharp and tappable */
+#auth-card-wrap.bb-unpicked .auth-form > form {
+  opacity: 0.15; filter: blur(4px); pointer-events: none; user-select: none;
+}
+
+/* Terms & Privacy checkbox row */
+.terms-check-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; font-size: 13px; color: #94a3b8; line-height: 1.5; }
+.terms-check-row input[type="checkbox"] { margin-top: 3px; flex-shrink: 0; width: 16px; height: 16px; cursor: pointer; accent-color: #00C853; }
+.terms-check-row a { color: #00C853; text-decoration: none; }
+.terms-check-row a:hover { text-decoration: underline; }
