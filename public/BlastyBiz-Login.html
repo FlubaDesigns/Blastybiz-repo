@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786138690073" />
+  <link rel="stylesheet" href="global-style.css?v=1786140073357" />
   <title>BlastyBiz — Sign In</title>
 <!-- All styles in global-style.css -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -466,6 +466,8 @@ function handleSetPassword() {}
   function positionBlasty(anchorEl) {
     if (!anchorEl) return;
 
+    var rect = anchorEl.getBoundingClientRect();
+
     if (window.innerWidth < 540) {
       // Column layout on mobile: bubble (max 120px) dominates width, mascot is 54px tall + bubble ~50px = ~110px total height
       var floatW = 124;
@@ -478,8 +480,6 @@ function handleSetPassword() {}
       floatEl.classList.add('visible');
       return;
     }
-
-    var rect = anchorEl.getBoundingClientRect();
     var fW = 80;  // float element width
     var gap = 6;
 
@@ -661,16 +661,19 @@ function handleSetPassword() {}
     });
     if (tabSU) tabSU.addEventListener('click', function() {
       unpick();
-      if (_suFields[0]) showGuide('billing', _suFields[0]);
+      // Anchor at plan picker so billing toggle AND plan buttons are both interactive from the start
+      var anchor = (picker && _fieldEls.indexOf(picker) >= 0) ? picker : _suFields[0];
+      if (anchor) showGuide('billing', anchor);
     });
 
     // Patch selectBilling — show savings message when toggling monthly/annual
     var origSelectBilling = window.selectBilling;
     window.selectBilling = function(period) {
       if (origSelectBilling) origSelectBilling(period);
-      if (billingRow && _fieldEls.indexOf(billingRow) >= 0) {
-        showGuide('billing', billingRow);
-      }
+      // Advance to plan picker so it's revealed and interactive after billing is toggled
+      var anchor = (picker && _fieldEls.indexOf(picker) >= 0) ? picker
+                 : (billingRow && _fieldEls.indexOf(billingRow) >= 0) ? billingRow : null;
+      if (anchor) showGuide('billing', anchor);
     };
 
     // Patch selectPlan — show plan-specific Blasty message, then advance to Name
@@ -721,7 +724,7 @@ function handleSetPassword() {}
                          : 'signupWelcome';
           // Defer so the card has painted before measuring field positions
           setTimeout(function() {
-            var anchorEl = _suFields[0] || document.querySelector('.auth-card') || tabsRow;
+            var anchorEl = _suFields[1] || _suFields[0] || document.querySelector('.auth-card') || tabsRow;
             showGuide(welcomeKey, anchorEl);
           }, 120);
         } else {
