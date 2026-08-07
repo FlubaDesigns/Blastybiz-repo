@@ -1070,7 +1070,7 @@ window.resendVerification = async function() {
   if (btn) { btn.disabled = true; btn.classList.add('loading'); }
   try {
     try { await sendVerificationViaResend(user); }
-    catch(_) { await sendEmailVerification(user); }
+    catch(_) { await sendEmailVerification(user, { url: 'https://blastybiz.com/BlastyBiz-Login.html' }); }
     showToast('Verification email resent — check your inbox ✓');
   } catch (e) {
     showToast('Could not resend — try again in a moment.', true);
@@ -1159,7 +1159,7 @@ window.handleSignUp = async function() {
     let emailSent = true;
     try {
       try { await sendVerificationViaResend(cred.user); }
-      catch(_) { await sendEmailVerification(cred.user); }
+      catch(_) { await sendEmailVerification(cred.user, { url: 'https://blastybiz.com/BlastyBiz-Login.html' }); }
     } catch(_) {
       emailSent = false;
     }
