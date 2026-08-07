@@ -2971,16 +2971,29 @@ button, a, [role="button"], input[type="submit"], input[type="reset"], input[typ
 
 /* ── Blasty Guide — shared field-blur + tab-prompt utilities ─────────────── */
 /* Applied by the login (and any future) Blasty guide to fields not yet reached */
+/* Field is ahead of the current step — locked, blurred */
 .bb-field-blur {
   pointer-events: none;
 }
 .bb-field-blur input,
 .bb-field-blur .pw-wrap,
 .bb-field-blur select,
-.bb-field-blur textarea {
+.bb-field-blur textarea,
+.bb-field-blur .plan-pick-btn,
+.bb-field-blur .billing-toggle-btn {
   filter: blur(2px);
-  opacity: 0.55;
+  opacity: 0.4;
   transition: filter .35s ease, opacity .35s ease;
+}
+
+/* Field is behind the current step — dimmed but fully interactive */
+.bb-field-done {
+  opacity: 0.5;
+  transition: opacity .35s ease;
+}
+.bb-field-done:hover {
+  opacity: 0.75;
+  transition: opacity .15s ease;
 }
 
 /* Tab buttons pulse to demand a pick before the form unlocks */
