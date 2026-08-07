@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786133453528" />
+  <link rel="stylesheet" href="global-style.css?v=1786134479094" />
   <title>BlastyBiz — Sign In</title>
 <!-- All styles in global-style.css -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -696,15 +696,17 @@ function handleSetPassword() {}
         var startChoice = localStorage.getItem('bb_start_choice');
         if (startChoice) {
           // Visitor already picked their path on the Start page — don't gate them again.
-          // Auto-switch to Create Account, hide Sign In tab (no reason to go back).
+          // Hide the whole tabs row (no reason to choose Sign In here) and go straight to signup.
           removeTabPrompt();
-          if (tabSI) tabSI.style.display = 'none';
+          if (tabsRow) tabsRow.style.display = 'none';
           if (typeof window.switchTab === 'function') window.switchTab('signup');
           _fieldEls = _suFields;
           var welcomeKey = startChoice === 'guided' ? 'signupWelcomeGuided'
                          : startChoice === 'forms'  ? 'signupWelcomeForms'
                          : 'signupWelcome';
-          if (_suFields[0]) showGuide(welcomeKey, _suFields[0]);
+          // Anchor Blasty to the top of the auth card so he's immediately visible
+          var cardEl = document.querySelector('.auth-card') || tabsRow;
+          showGuide(welcomeKey, cardEl);
         } else {
           // First-time visitor — guided gate
           wrap.classList.add('bb-unpicked');
