@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786134479094" />
+  <link rel="stylesheet" href="global-style.css?v=1786134909046" />
   <title>BlastyBiz — Sign In</title>
 <!-- All styles in global-style.css -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -463,11 +463,12 @@ function handleSetPassword() {}
     if (!anchorEl) return;
 
     if (window.innerWidth < 540) {
-      // Sit just above the top-right corner of the focused field
-      var floatW = 62;
-      var floatH = 60; // approx mascot height at 54px wide
-      var top  = Math.max(56, rect.top - floatH - 6);
-      var left = Math.min(rect.right - floatW, window.innerWidth - floatW - 4);
+      // Column layout on mobile: bubble (max 120px) dominates width, mascot is 54px tall + bubble ~50px = ~110px total height
+      var floatW = 124;
+      var floatH = 110;
+      var safeTop = rect.top > 0 ? rect.top : 80;
+      var top  = Math.max(56, safeTop - floatH - 6);
+      var left = window.innerWidth - floatW - 4; // right-align to viewport edge
       floatEl.style.top  = top + 'px';
       floatEl.style.left = left + 'px';
       floatEl.classList.add('visible');
@@ -704,9 +705,11 @@ function handleSetPassword() {}
           var welcomeKey = startChoice === 'guided' ? 'signupWelcomeGuided'
                          : startChoice === 'forms'  ? 'signupWelcomeForms'
                          : 'signupWelcome';
-          // Anchor Blasty to the top of the auth card so he's immediately visible
-          var cardEl = document.querySelector('.auth-card') || tabsRow;
-          showGuide(welcomeKey, cardEl);
+          // Defer one frame so the card has painted before we measure its rect
+          setTimeout(function() {
+            var cardEl = document.querySelector('.auth-card') || tabsRow;
+            showGuide(welcomeKey, cardEl);
+          }, 120);
         } else {
           // First-time visitor — guided gate
           wrap.classList.add('bb-unpicked');
