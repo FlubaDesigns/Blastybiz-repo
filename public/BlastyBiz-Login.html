@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786126687021" />
+  <link rel="stylesheet" href="global-style.css?v=1786126865290" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -71,7 +71,10 @@
   border-color: #444 !important;
 }
 #auth-card-wrap.bb-unpicked .auth-form {
-  display: none !important;
+  opacity: 0.15;
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
 }
 
 /* Tab buttons pulse to demand a pick before anything else unlocks */
