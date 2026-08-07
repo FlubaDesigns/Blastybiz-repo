@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786140258125" />
+  <link rel="stylesheet" href="global-style.css?v=1786140483246" />
   <title>BlastyBiz — Sign In</title>
 <!-- All styles in global-style.css -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -677,14 +677,23 @@ function handleSetPassword() {}
       if (anchor) showGuide('billing', anchor);
     };
 
-    // Patch selectPlan — show plan-specific Blasty message, then advance to Name
+    // Patch selectPlan — show plan-specific Blasty message, then advance to Name after 1s
     var PLAN_KEYS = { starter: 'planStarter', pro: 'planPro', agency: 'planAgency' };
+    var _planPickTimer;
     var origSelectPlan = window.selectPlan;
     window.selectPlan = function(plan) {
       if (origSelectPlan) origSelectPlan(plan);
       // Show the message for whichever plan was picked — Blasty stays on picker
       var key = PLAN_KEYS[plan] || 'planStarter';
       if (picker) showGuide(key, picker);
+      // After 1s, auto-advance to the Name field (same pattern as sign-in email→password)
+      clearTimeout(_planPickTimer);
+      _planPickTimer = setTimeout(function() {
+        var nameEl = _suFields[2]; // billing(0), picker(1), name(2)
+        if (nameEl && _fieldEls.indexOf(nameEl) >= 0) {
+          showGuide('name', nameEl);
+        }
+      }, 1000);
     };
 
     // Remove spotlight on blur away from auth card
