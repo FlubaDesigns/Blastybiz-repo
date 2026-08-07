@@ -5,7 +5,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1786142901913" />
+<link rel="stylesheet" href="global-style.css?v=1786144288686" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -136,6 +136,7 @@
 </script>
   <script type="module" src="./auth-guard.js"></script>
 <script src="blastybiz-menu.js?v=6"></script>
+<script src="mascot.js"></script>
 </head>
 <body class="has-site-header create-page">
 <div id="header__inject"></div>
@@ -7018,6 +7019,64 @@ window.confirmDeleteAccount = async function() {
     </div>
   </div>
 </div>
+<script>
+(function () {
+  if (!localStorage.getItem('bb_guided_new')) return;
+  localStorage.removeItem('bb_guided_new');
+
+  // Wait until mascot.js has had a chance to run
+  function injectBlastyWelcome() {
+    var floatEl = document.createElement('div');
+    floatEl.id = 'dash-blasty-float';
+    floatEl.innerHTML =
+      '<div class="pb-mascot s-happy" id="dash-blasty-mascot"></div>' +
+      '<div id="dash-blasty-bubble">🎉 You\'re in! Your account is all set — create your first campaign and start blasting!</div>' +
+      '<button id="dash-blasty-close" aria-label="Dismiss">✕</button>';
+    floatEl.style.cssText =
+      'position:fixed;bottom:24px;right:20px;display:flex;align-items:flex-end;gap:10px;z-index:9000;' +
+      'opacity:0;transition:opacity .4s ease;pointer-events:none;';
+    document.body.appendChild(floatEl);
+
+    var bubble = document.getElementById('dash-blasty-bubble');
+    if (bubble) {
+      bubble.style.cssText =
+        'background:#0d2b0d;border:1.5px solid #1e3a1e;border-radius:14px 14px 4px 14px;' +
+        'padding:12px 36px 12px 14px;font-size:13px;color:#e0f0e3;line-height:1.5;' +
+        'max-width:240px;box-shadow:0 4px 20px rgba(0,0,0,.5);position:relative;';
+    }
+    var closeBtn = document.getElementById('dash-blasty-close');
+    if (closeBtn) {
+      closeBtn.style.cssText =
+        'position:absolute;top:8px;right:8px;background:none;border:none;color:#4a7a52;' +
+        'font-size:14px;cursor:pointer;line-height:1;padding:2px 4px;';
+      closeBtn.onclick = function () { dismiss(); };
+    }
+
+    // Fade in
+    requestAnimationFrame(function () {
+      floatEl.style.opacity = '1';
+      floatEl.style.pointerEvents = 'auto';
+    });
+
+    // Auto-dismiss after 8 seconds
+    var timer = setTimeout(dismiss, 8000);
+
+    function dismiss() {
+      clearTimeout(timer);
+      floatEl.style.opacity = '0';
+      floatEl.style.pointerEvents = 'none';
+      setTimeout(function () { if (floatEl.parentNode) floatEl.parentNode.removeChild(floatEl); }, 400);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectBlastyWelcome);
+  } else {
+    injectBlastyWelcome();
+  }
+})();
+</script>
+
 <style>
 .cbm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
 .cbm-card{background:#0d1f0d;border:1.5px solid #1e3320;border-radius:18px;padding:28px 24px;max-width:460px;width:100%;position:relative}

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786142901913" />
+  <link rel="stylesheet" href="global-style.css?v=1786144288686" />
   <title>BlastyBiz — Sign In</title>
 <!-- All styles in global-style.css -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -756,16 +756,12 @@ function handleSetPassword() {}
     }
   }
 
-  // Patch showVerifyView — fire Blasty's congrats message when the verify screen appears
-  var _origShowVerify = window.showVerifyView;
-  window.showVerifyView = function(email) {
-    if (typeof _origShowVerify === 'function') _origShowVerify(email);
-    // Position Blasty over the verify card after the DOM transition
-    setTimeout(function() {
-      var verifyCard = document.getElementById('verify-view') ||
-                       document.querySelector('.verify-view');
-      showGuide('signupDone', verifyCard || document.querySelector('.auth-card'));
-    }, 200);
+  // Expose a hook so the module script can trigger Blasty steps after it overwrites window.showVerifyView
+  window._blastyShowStep = function(key, anchorSel) {
+    var anchor = (anchorSel && document.querySelector(anchorSel)) ||
+                 document.getElementById('verify-view') ||
+                 document.querySelector('.auth-card');
+    showGuide(key, anchor);
   };
 
   if (document.readyState === 'loading') {
@@ -1011,10 +1007,14 @@ async function afterAuth(user) {
     }
     localStorage.setItem('bb_guide_done', '1');
     if (userData.onboarded) {
+      // Carry guided flag to dashboard so Blasty can greet them there too
+      const _sc = localStorage.getItem('bb_start_choice');
+      if (_sc === 'guided') localStorage.setItem('bb_guided_new', '1');
       window.location.href = 'BlastyBiz.html';
     } else {
       // New user — respect the choice made on the Start page
       const startChoice = localStorage.getItem('bb_start_choice');
+      if (startChoice === 'guided') localStorage.setItem('bb_guided_new', '1');
       localStorage.removeItem('bb_start_choice');
       if (startChoice === 'forms') {
         // Skip the wizard — go straight to the quick-form onboarding
@@ -1040,6 +1040,16 @@ function showVerifyView(email) {
   // Wizard-style: replace entire card with just the verify screen
   document.getElementById('auth-card-wrap').classList.add('verify-mode');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Carry guided flag so the next page knows Blasty was active
+  if (localStorage.getItem('bb_start_choice') === 'guided') {
+    localStorage.setItem('bb_guided_new', '1');
+  }
+  // Show Blasty's congrats on the verify screen
+  setTimeout(function() {
+    if (typeof window._blastyShowStep === 'function') {
+      window._blastyShowStep('signupDone', '#verify-view');
+    }
+  }, 300);
 }
 window.showVerifyView = showVerifyView;
 
