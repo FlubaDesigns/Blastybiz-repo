@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786133080996" />
+  <link rel="stylesheet" href="global-style.css?v=1786133453528" />
   <title>BlastyBiz — Sign In</title>
 <!-- All styles in global-style.css -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -403,13 +403,13 @@ function handleSetPassword() {}
 
   // Default messages + moods per step
   var DEFAULTS = {
-    pickTab:         { text: "👆 Tap Sign In or Create Account to get started!",                   mood: 's-wave'      },
-    signinWelcome:   { text: "Welcome back! Sign in to keep blasting. 🚀",                         mood: 's-wave'      },
-    signinEmail:     { text: "Enter the email you signed up with — or skip ahead and sign in with Google or Facebook below!",  mood: 's-ask' },
-    signinPassword:  { text: "Enter your BlastyBiz password.",                                     mood: 's-ask'       },
-    signupWelcome:       { text: "You're almost in! 🚀 Pick a plan and fill in your details — setup only takes a minute.",                         mood: 's-wave'      },
-    signupWelcomeGuided: { text: "Great pick! 🚀 Blasty will walk you through everything. First — choose a plan and create your account.",              mood: 's-wave'      },
-    signupWelcomeForms:  { text: "Fast lane it is! 📋 Pick a plan, fill in your details, and you'll be in the app in under a minute.",                  mood: 's-happy'     },
+    pickTab:         { text: "👆 Pick Sign In or Create Account — or use Google / Facebook below!",  mood: 's-wave'      },
+    signinWelcome:   { text: "Welcome back! Sign in to keep blasting. 🚀",                          mood: 's-wave'      },
+    signinEmail:     { text: "Enter the email you signed up with — or sign in with Google or Facebook below!",  mood: 's-ask' },
+    signinPassword:  { text: "Enter your BlastyBiz password.",                                      mood: 's-ask'       },
+    signupWelcome:       { text: "Create your account below — or sign up instantly with Google or Facebook! 🚀",                                    mood: 's-wave'      },
+    signupWelcomeGuided: { text: "Let's get you set up! 🚀 Create your account — or tap Google / Facebook below to sign up in one click.",          mood: 's-wave'      },
+    signupWelcomeForms:  { text: "Fast lane it is! 📋 Create your account — or use Google / Facebook below to jump straight in.",                   mood: 's-happy'     },
     billing:         { text: "Annual saves you two months free and locks in your rate. Switch anytime.",               mood: 's-wave'  },
     planStarter:     { text: "Starter is free forever — great for getting your first location blasting.",              mood: 's-ask'   },
     planPro:         { text: "Smart choice! 🔥 Pro auto-posts to Google, Facebook & Instagram for you — set it and blast it!",  mood: 's-happy' },
@@ -696,8 +696,9 @@ function handleSetPassword() {}
         var startChoice = localStorage.getItem('bb_start_choice');
         if (startChoice) {
           // Visitor already picked their path on the Start page — don't gate them again.
-          // Auto-switch to the Create Account tab and greet them contextually.
+          // Auto-switch to Create Account, hide Sign In tab (no reason to go back).
           removeTabPrompt();
+          if (tabSI) tabSI.style.display = 'none';
           if (typeof window.switchTab === 'function') window.switchTab('signup');
           _fieldEls = _suFields;
           var welcomeKey = startChoice === 'guided' ? 'signupWelcomeGuided'
