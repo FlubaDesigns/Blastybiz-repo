@@ -3083,6 +3083,9 @@ button, a, [role="button"], input[type="submit"], input[type="reset"], input[typ
   opacity: 0.15; filter: blur(4px); pointer-events: none; user-select: none;
 }
 
+/* Onboard editor pane description line */
+.ose-pane-desc { font-size:12px; color:#64748b; margin:-6px 0 14px; line-height:1.6; }
+
 /* OB2 / Start Page field description */
 .ob2-field-desc { font-size:12px; color:#64748b; margin:0 0 8px; line-height:1.6; }
 .ob2-autosts    { display:block; font-size:11px; min-height:16px; margin-top:5px; }

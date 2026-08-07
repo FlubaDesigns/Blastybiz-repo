@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1786129787424">
+  <link rel="stylesheet" href="global-style.css?v=1786130453773">
   <style>
     body { visibility: hidden }
     .ose-outer-grid { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:24px; align-items:start; }
@@ -261,25 +261,25 @@
     <!-- left: tabs + pane content -->
     <div>
       <div class="ose-tabs">
-        <button class="ose-tab active" id="tab-ob1" onclick="oseTab('ob1')">🚀 OB1 — Blasty Wizard</button>
-        <button class="ose-tab" id="tab-ob2" onclick="oseTab('ob2')">📝 OB2 — Quick Form</button>
-        <button class="ose-tab" id="tab-start" onclick="oseTab('start')">🎬 Start Page</button>
+        <button class="ose-tab active" id="tab-ob1" onclick="oseTab('ob1')">🚀 Guided Tour</button>
+        <button class="ose-tab" id="tab-ob2" onclick="oseTab('ob2')">📝 Quick Form</button>
         <button class="ose-tab" id="tab-login" onclick="oseTab('login')">🔐 Login Guide</button>
       </div>
 
       <div id="ose-ob1-pane">
-        <div id="ose-status" style="text-align:center;padding:32px 0;color:#64748b">Loading steps…</div>
-        <div id="ose-steps" style="display:none"></div>
-      </div>
-
-      <div id="ose-start-pane" style="display:none">
-        <div id="ose-start-status" style="text-align:center;padding:32px 0;color:#64748b">Loading…</div>
+        <!-- Start Page — lives at the top since it's the entry point to the guided tour -->
+        <p class="ose-sec-lbl">🎬 Start Page — Path Picker</p>
+        <p class="ose-pane-desc">The page new users see first — where they choose between the guided tour or filling in the form themselves.</p>
+        <div id="ose-start-status" style="text-align:center;padding:16px 0;color:#64748b">Loading…</div>
         <div id="ose-start-content" style="display:none">
-          <p class="ose-sec-lbl">✏️ Copy &amp; Labels</p>
           <div id="ose-start-fields"></div>
-          <p class="ose-sec-lbl">🚀 Blasty Animation</p>
+          <p class="ose-sec-lbl">🚀 Blasty Animation — Page Load</p>
           <div id="ose-start-anims"></div>
         </div>
+        <!-- Guided Tour steps -->
+        <p class="ose-sec-lbl" style="margin-top:28px">🚀 Guided Tour — Blasty Steps</p>
+        <div id="ose-status" style="text-align:center;padding:16px 0;color:#64748b">Loading steps…</div>
+        <div id="ose-steps" style="display:none"></div>
       </div>
 
       <div id="ose-ob2-pane" style="display:none">
@@ -571,7 +571,7 @@ window._stApplyPreset = function(k) {
 };
 
 window.oseTab = function(tab) {
-  ['ob1','ob2','start','login'].forEach(t => {
+  ['ob1','ob2','login'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
     document.getElementById('ose-'+t+'-pane').style.display = t===tab ? '' : 'none';
   });
