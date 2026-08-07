@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786145035863"/>
+  <link rel="stylesheet" href="global-style.css?v=1786145664879"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -211,14 +211,20 @@
         margin-top: 0; font-size: 12.5px; flex: 1; min-width: 0;
         border-radius: 4px 14px 14px 14px; max-width: unset;
       }
+      /* Proper left-pointing tail — keep transparent top/bottom so the triangle renders */
       .ob-q-bubble::before {
         top: 12px; left: -9px;
-        border: 9px solid transparent;
-        border-right-color: #f0f5ff;
-        border-top: none; border-bottom: none;
+        border-top: 9px solid transparent;
+        border-bottom: 9px solid transparent;
+        border-right: 9px solid #f0f5ff;
+        border-left: none;
       }
+      /* Hide the "Let's blast!" caption — no space for it in the mobile row */
+      .pb-mascot-caption { display: none; }
       .ob-form-col { padding: 16px 14px 80px; overflow: visible; }
-      .obf-label { min-width: 80px; font-size: 10px; }
+      /* Stack label above field on mobile */
+      .obf-row { flex-direction: column; gap: 4px; }
+      .obf-label { min-width: unset; padding-top: 0; font-size: 10px; }
       .obf-bubble::after { display: none; }
     }
     .bubble-input {
@@ -1894,6 +1900,10 @@ if (isSignInWithEmailLink(auth, window.location.href)) {
     if (ud.onboardingProgress && ud.onboardingProgress.stepIndex > 0 && !editBizId) {
       window._ob2ResumeData = ud.onboardingProgress;
       window._ob2Prefill = ud.onboardingProgress.answers || {};
+    } else if (ud.ownerName && !editBizId) {
+      // Name was already collected at signup — skip the name step entirely
+      window._ob2ResumeData = { stepIndex: 1, answers: { ownerName: ud.ownerName } };
+      window._ob2Prefill    = { ownerName: ud.ownerName };
     }
     // Return-visit: load existing biz data for pre-population
     if (editBizId) {
