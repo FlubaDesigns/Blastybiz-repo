@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786140483246" />
+  <link rel="stylesheet" href="global-style.css?v=1786140647474" />
   <title>BlastyBiz — Sign In</title>
 <!-- All styles in global-style.css -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -595,6 +595,20 @@ function handleSetPassword() {}
         _siEmailTimer = setTimeout(function() {
           var pwEl = _siFields[1]; // password field
           if (pwEl) showGuide('signinPassword', pwEl);
+        }, 1000);
+      });
+    }
+
+    // Auto-advance sign-up name → email when name has content (1s debounce)
+    var suNameEl = document.getElementById('su-name');
+    if (suNameEl) {
+      var _suNameTimer;
+      suNameEl.addEventListener('input', function() {
+        clearTimeout(_suNameTimer);
+        if (suNameEl.value.trim().length < 2) return;
+        _suNameTimer = setTimeout(function() {
+          var emailEl = _suFields[3]; // billing(0), picker(1), name(2), email(3)
+          if (emailEl && _fieldEls.indexOf(emailEl) >= 0) showGuide('email', emailEl);
         }, 1000);
       });
     }
