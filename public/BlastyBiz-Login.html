@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786125606172" />
+  <link rel="stylesheet" href="global-style.css?v=1786126050155" />
   <title>BlastyBiz — Sign In</title>
 <style>
 .verify-view{display:none;padding:8px 0}
@@ -1026,13 +1026,17 @@ async function sendVerificationViaResend(user) {
 
 window.resendVerification = async function() {
   const user = auth.currentUser;
-  if (!user) return;
+  const btn  = document.querySelector('#verify-view .btn-submit');
+  if (!user) { showToast('Please go back and sign in again.', true); return; }
+  if (btn) { btn.disabled = true; btn.classList.add('loading'); }
   try {
     try { await sendVerificationViaResend(user); }
     catch(_) { await sendEmailVerification(user); }
     showToast('Verification email resent — check your inbox ✓');
   } catch (e) {
     showToast('Could not resend — try again in a moment.', true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
   }
 };
 
