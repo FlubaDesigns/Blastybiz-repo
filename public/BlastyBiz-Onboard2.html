@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786148690078"/>
+  <link rel="stylesheet" href="global-style.css?v=1786150007068"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -1015,32 +1015,16 @@
     },
 
     /* ══════════════════════════════════════════════════════════
-       PHASE 2 — Fork: memory explanation + path choice
+       PHASE 2 — Story questions (always run)
     ══════════════════════════════════════════════════════════ */
     {
       mood: 's-celebrate', pos: 'right',
       anim: { mood: 's-celebrate', flame: 's-flame-green', lights: 's-lights-flash', smoke: true },
-      blastyMsg: "You're set up! Quick note — I use two kinds of memory. 📖 Your Story is what I always know about you: your vibe, what makes you different, your ideal customer. Every campaign gets sharper the more I know you. 🚀 Campaign memory is specific to one blast — the offer, goal, and audience. Want to blast right now, or tell me your story first?",
-      inputType: 'choice',
-      key: '_fork',
-      choices: [
-        { value: 'blast', label: '🚀 Let\'s blast!' },
-        { value: 'story', label: '💬 Tell me your story first' }
-      ],
-      validate: v => v ? null : 'Pick one!'
-    },
-
-    /* ══════════════════════════════════════════════════════════
-       PHASE 2B — Story questions (skip if blast chosen)
-    ══════════════════════════════════════════════════════════ */
-    {
-      mood: 's-ask', pos: 'left',
-      blastyMsgFn: a => 'Love it! How did ' + a.bizName + ' get started? What\'s the story?',
+      blastyMsgFn: a => 'You\'re set up! Now I need to get to know ' + a.bizName + '. The more I know about you, the better every blast gets — sharper copy, better targeting, more you. Let\'s start with the origin story: how did ' + a.bizName + ' get started?',
       inputType: 'textarea',
       key: 'story',
       placeholder: 'e.g. We opened in 1987 after my father emigrated from Mexico with nothing but a family recipe and a dream…',
       hint: 'As much or as little as you like',
-      skipIf: a => a._fork === 'blast',
       validate: () => null
     },
     {
@@ -1050,7 +1034,6 @@
       key: 'different',
       placeholder: 'e.g. Everything is made from scratch daily. Our head chef trained in Lyon for 3 years…',
       hint: 'Why should someone choose you?',
-      skipIf: a => a._fork === 'blast',
       validate: () => null
     },
     {
@@ -1060,7 +1043,6 @@
       key: 'awards',
       placeholder: 'e.g. Best Pizza 3 years running. Featured in the Tribune. 4.9 stars across 600+ reviews…',
       hint: 'Leave blank if none — totally fine!',
-      skipIf: a => a._fork === 'blast',
       validate: () => null
     },
     {
@@ -1070,7 +1052,6 @@
       key: 'customer',
       placeholder: 'e.g. Homeowners aged 35–60 who value quality over price and have been burned by cheap contractors before…',
       hint: 'Who gets the most value from what you do?',
-      skipIf: a => a._fork === 'blast',
       validate: () => null
     },
     {
@@ -1080,16 +1061,15 @@
       key: 'other',
       placeholder: 'e.g. Free estimates. Loyalty program. Family-owned since 1995. We sponsor the local little league…',
       hint: 'Special services, team, community involvement — anything',
-      skipIf: a => a._fork === 'blast',
       validate: () => null
     },
 
     /* ══════════════════════════════════════════════════════════
-       PHASE 2A — Campaign questions (always run)
+       PHASE 3 — Campaign questions (always run)
     ══════════════════════════════════════════════════════════ */
     {
       mood: 's-working', pos: 'right',
-      blastyMsgFn: a => (a._fork === 'story' ? 'Perfect — I know you so much better now! ' : '') + 'Let\'s build your first campaign. What do you want to call it?',
+      blastyMsgFn: a => 'Perfect — I know you so much better now! Let\'s build your first campaign. What do you want to call it?',
       inputType: 'text',
       key: 'campaignName',
       placeholder: 'e.g. Summer Sale, Grand Opening, New Menu Drop',
@@ -1360,17 +1340,11 @@
   function addUserBubble(id) {
     const key = currentStepKey;
     const el = document.createElement('div');
-    el.className = key === '_fork' ? 'ob-fork-prompt' : 'obf-bubble';
+    el.className = 'obf-bubble';
     if (id) el.id = id;
-    if (key && key !== '_fork') {
+    if (key) {
       const slot = document.getElementById('obfs-'+key);
       if (slot) { slot.innerHTML = ''; slot.appendChild(el); }
-    } else if (key === '_fork') {
-      const container = document.getElementById('ob-form-body');
-      const existing = document.getElementById('ob-fork-prompt');
-      if (existing) existing.remove();
-      el.id = 'ob-fork-prompt';
-      if (container) container.insertBefore(el, container.firstChild);
     }
     return el;
   }
@@ -1383,7 +1357,7 @@
     if (step >= STEPS.length) { finish(); return; }
     const s = STEPS[step];
     if (s.skipIf && s.skipIf(answers)) {
-      if (s.key && s.key !== '_fork' && answers[s.key]) {
+      if (s.key && answers[s.key]) {
         const display = Array.isArray(answers[s.key]) ? answers[s.key].join(', ') : String(answers[s.key]);
         lockField(s.key, display);
       }
@@ -1394,10 +1368,7 @@
     // is not immediately squashed by a subsequent setMood() call.
     setMood(s.anim || s.mood);
     // Advance form guide to the section that contains this key.
-    // The shim calls setMood('s-working') inside setActiveEl(), showing the
-    // pointing arm; we restore the step's own mood after ~600 ms so the arm
-    // is visible for roughly half a second during the section transition.
-    if (s.key !== '_fork' && window._ob2Guide) {
+    if (window._ob2Guide) {
       const activeRow = document.getElementById('obfr-' + s.key);
       if (activeRow) {
         const sec = activeRow.closest('[data-guide-step]');
@@ -1410,19 +1381,9 @@
     }
     const msg = s.blastyMsgFn ? s.blastyMsgFn(answers) : interpolate(s.blastyMsg, answers);
     setBlastyBubble(msg);
-    // Remove stale fork prompt when moving past it
-    const fp = document.getElementById('ob-fork-prompt');
-    if (fp) fp.remove();
-    // Hide story rows when "blast" path was chosen — they're skipped and shouldn't clutter the form
-    if (answers._fork === 'blast') {
-      ['story','different','awards','customer','other'].forEach(k => {
-        const r = document.getElementById('obfr-'+k);
-        if (r) r.style.display = 'none';
-      });
-    }
     // Spotlight active field row + position Blasty float next to it
     var _activeRowEl = null;
-    if (s.key !== '_fork') {
+    {
       document.querySelectorAll('.obf-row').forEach(r => {
         if (r.id === 'obfr-'+s.key) {
           r.classList.remove('future','answered','just-answered','bb-field-blur','bb-field-done');
@@ -1685,7 +1646,7 @@
       // Lock all rows that were already answered before the saved step
       step = savedStep;
       STEPS.slice(0, savedStep).forEach(function(s) {
-        if (!s.key || s.key === '_fork') return;
+        if (!s.key) return;
         var val = answers[s.key];
         if (val === undefined || val === '') return;
         var display = Array.isArray(val) ? val.join(', ') : String(val);
