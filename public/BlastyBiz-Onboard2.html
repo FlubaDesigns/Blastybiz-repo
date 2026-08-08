@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786152261571"/>
+  <link rel="stylesheet" href="global-style.css?v=1786152366962"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -1141,17 +1141,7 @@
       blastyMsg: 'Last one — which platforms do you want to blast on?',
       inputType: 'multiselect',
       key: 'campaignPlatforms',
-      choices: [
-        { value: 'google',    label: '🔍 Google Business',        proOnly: true  },
-        { value: 'facebook',  label: '📘 Facebook Page',           proOnly: true  },
-        { value: 'instagram', label: '📸 Instagram',               proOnly: true  },
-        { value: 'fbmarket',  label: '🛒 Facebook Marketplace',    proOnly: false },
-        { value: 'yelp',      label: '⭐ Yelp',                    proOnly: false },
-        { value: 'craigslist',label: '📋 Craigslist',              proOnly: false },
-        { value: 'nextdoor',  label: '🏘️ Nextdoor',               proOnly: false },
-        { value: 'linkedin',  label: '💼 LinkedIn',                proOnly: false },
-        { value: 'x',         label: '𝕏 X (Twitter)',             proOnly: false }
-      ],
+      // No hardcoded choices — list comes entirely from admin config (Firestore → platforms-config.js)
       validate: v => (v && v.length) ? null : 'Pick at least one platform!'
     },
     {
@@ -1480,8 +1470,19 @@
     } else if (s.inputType === 'multiselect') {
       const plan = window._ob2Plan || 'trial';
       const isPro = plan === 'pro' || plan === 'agency';
+      const platformList = s.key === 'campaignPlatforms' ? (window._bbPlatformChoices || null) : (s.choices || []);
+      if (!platformList) {
+        // Admin platform list not loaded yet — show spinner and retry in 600 ms
+        html += '<div style="color:var(--muted,#888);font-size:13px;padding:8px 0;display:flex;align-items:center;gap:8px">'
+          + '<span style="display:inline-block;animation:spin 1s linear infinite">⚙️</span> Loading platforms…</div>';
+        html += '<input type="hidden" id="ob2-input" value=""/>';
+        bubble.innerHTML = html;
+        currentInput = document.getElementById('ob2-input');
+        setTimeout(() => renderInput(s), 600);
+        return;
+      }
       html += '<div class="ob2-multiselect" id="ob2-multiselect">';
-      (s.key === 'campaignPlatforms' && window._bbPlatformChoices ? window._bbPlatformChoices : s.choices).forEach(c => {
+      platformList.forEach(c => {
         const locked = c.proOnly && !isPro;
         html += '<label class="ob2-ms-label' + (locked ? ' ob2-ms-locked' : '') + '">'
           + '<input type="checkbox" class="ob2-ms-check" value="' + c.value + '"'
