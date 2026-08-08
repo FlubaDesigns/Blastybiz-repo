@@ -80,11 +80,14 @@ Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
   }
 }));
 
-exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'], timeoutSeconds: 120 }, withAuth(async (req, res, decoded) => {
+exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'], timeoutSeconds: 120 }, async (req, res) => {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).end();
   const { ALL_CATEGORIES } = require('../lib/platform-cats');
-  if (!(await checkUidRateLimit('suggestCategoryRateLimit', decoded.uid, 20, 60 * 60 * 1000))) {
-    return res.status(429).json({ error: 'Rate limit exceeded' });
-  }
+  const rawIp  = ((req.headers['x-forwarded-for'] || '').split(',')[0].trim()) || req.ip || 'unknown';
+  const ipHash = crypto.createHash('sha256').update(rawIp).digest('hex');
+  const withinLimit = await checkUidRateLimit('suggestCategoryRateLimit', ipHash, 10, 60 * 60 * 1000).catch(() => true);
+  if (!withinLimit) return res.status(429).json({ error: 'Rate limit exceeded' });
   const { bizName, ownerName, role, story, different, awards, customer, locationType,
           campaignName, campaignAbout, campaignAudience, offer } = req.body;
   if (!bizName) return res.status(400).json({ error: 'bizName required' });
@@ -118,10 +121,24 @@ Write a comprehensive 2–3 paragraph business briefing in third person that cap
 
 Be specific and vivid. Preserve anything quirky or unusual — that is what makes the copy distinctive. Do NOT use generic filler. This briefing must be good enough that an AI reading it cold can write compelling, on-brand marketing copy with no other information.`;
 
+  // Direct Gemini native call — uses ?key= param (not Authorization: Bearer)
+  async function _gem(prompt, maxTok) {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) throw new Error('GEMINI_API_KEY not set');
+    const r = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: maxTok } }) }
+    );
+    if (!r.ok) throw new Error(`Gemini ${r.status}: ${(await r.text()).slice(0, 300)}`);
+    const j = await r.json();
+    return j.candidates[0].content.parts[0].text.trim();
+  }
+
   try {
     // Call 1 — build a rich globalMemory brief from all gathered info
-    const { text: memText } = await callAI(describePrompt, { tier: 'smart', maxTokens: 400 });
-    const globalMemory = memText.trim();
+    const globalMemory = await _gem(describePrompt, 400);
 
     // Call 2 — match that brief to the real platform category list
     const catList = ALL_CATEGORIES.join(', ');
@@ -137,14 +154,13 @@ Rules:
 - Pick the closest match even if none is perfect.
 - Reply with ONLY the category name. No punctuation, no explanation.`;
 
-    const { text: catText } = await callAI(matchPrompt, { tier: 'fast', maxTokens: 20 });
-    const category = catText.trim().replace(/^["']+|["']+$/g, '');
+    const category = (await _gem(matchPrompt, 20)).replace(/^["']+|["']+$/g, '');
     res.json({ category, globalMemory });
   } catch (e) {
     bbLog('ERROR', 'suggestCategory', { event: 'failed', msg: e.message });
     res.status(500).json({ error: e.message });
   }
-}));
+});
 
 // ── previewAds ────────────────────────────────────────────────────────────────
 // Unauthenticated: generates 3-platform sample ad copy from a business name and
