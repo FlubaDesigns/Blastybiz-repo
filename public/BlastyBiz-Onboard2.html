@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786218639628"/>
+  <link rel="stylesheet" href="global-style.css?v=1786219093455"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -243,7 +243,7 @@
     },
     {
       mood: 's-happy',  pos: 'left',
-      blastyMsgFn: a => 'Nice to meet you, ' + (a.ownerName || 'you') + '! What\'s the name of your business?',
+      blastyMsgFn: a => 'Nice to meet you, ' + _ob2Esc(a.ownerName || 'you') + '! What\'s the name of your business?',
       inputType: 'text',
       key: 'bizName',
       placeholder: "e.g. Mike's Auto Repair",
@@ -252,7 +252,7 @@
     },
     {
       mood: 's-ask',    pos: 'right',
-      blastyMsgFn: a => 'Great, ' + (a.ownerName || 'you') + '! What\'s your title at ' + a.bizName + '?',
+      blastyMsgFn: a => 'Great, ' + _ob2Esc(a.ownerName || 'you') + '! What\'s your title at ' + _ob2Esc(a.bizName) + '?',
       inputType: 'text',
       key: 'role',
       placeholder: 'e.g. Owner, Marketing Director, GM',
@@ -262,7 +262,7 @@
     },
     {
       mood: 's-ask',    pos: 'right',
-      blastyMsgFn: a => 'Great! What\'s the best email address for ' + a.bizName + '?',
+      blastyMsgFn: a => 'Great! What\'s the best email address for ' + _ob2Esc(a.bizName) + '?',
       inputType: 'email',
       key: 'email',
       placeholder: 'you@yourbusiness.com',
@@ -273,7 +273,7 @@
     },
     {
       mood: 's-happy',  pos: 'left',
-      blastyMsgFn: a => 'Perfect. What\'s the best phone number for ' + a.bizName + '?',
+      blastyMsgFn: a => 'Perfect. What\'s the best phone number for ' + _ob2Esc(a.bizName) + '?',
       inputType: 'tel',
       key: 'phone',
       placeholder: '555-867-5309',
@@ -283,7 +283,7 @@
     },
     {
       mood: 's-ask',    pos: 'right',
-      blastyMsgFn: a => 'Got it! Is ' + a.bizName + ' a physical location, online only, or both?',
+      blastyMsgFn: a => 'Got it! Is ' + _ob2Esc(a.bizName) + ' a physical location, online only, or both?',
       inputType: 'choice',
       key: 'locationType',
       choices: [
@@ -336,7 +336,7 @@
     },
     {
       mood: 's-working', pos: 'left',
-      blastyMsgFn: a => 'Almost there! What\'s the website for ' + a.bizName + '?',
+      blastyMsgFn: a => 'Almost there! What\'s the website for ' + _ob2Esc(a.bizName) + '?',
       inputType: 'text',
       key: 'website',
       placeholder: 'e.g. yourbusiness.com',
@@ -356,7 +356,7 @@
     {
       mood: 's-celebrate', pos: 'right',
       anim: { mood: 's-celebrate', flame: 's-flame-green', lights: 's-lights-flash', smoke: true },
-      blastyMsgFn: a => 'You\'re set up! Now I need to get to know ' + a.bizName + '. The more I know about you, the better every blast gets — sharper copy, better targeting, more you. Let\'s start with the origin story: how did ' + a.bizName + ' get started?',
+      blastyMsgFn: a => 'You\'re set up! Now I need to get to know ' + _ob2Esc(a.bizName) + '. The more I know about you, the better every blast gets — sharper copy, better targeting, more you. Let\'s start with the origin story: how did ' + _ob2Esc(a.bizName) + ' get started?',
       inputType: 'textarea',
       key: 'story',
       placeholder: 'e.g. We opened in 1987 after my father emigrated from Mexico with nothing but a family recipe and a dream…',
@@ -365,7 +365,7 @@
     },
     {
       mood: 's-happy', pos: 'right',
-      blastyMsgFn: a => 'Good stuff! What makes ' + a.bizName + ' different from the competition?',
+      blastyMsgFn: a => 'Good stuff! What makes ' + _ob2Esc(a.bizName) + ' different from the competition?',
       inputType: 'textarea',
       key: 'different',
       placeholder: 'e.g. Everything is made from scratch daily. Our head chef trained in Lyon for 3 years…',
@@ -383,7 +383,7 @@
     },
     {
       mood: 's-happy', pos: 'right',
-      blastyMsgFn: a => 'Who\'s your ideal customer for ' + a.bizName + '?',
+      blastyMsgFn: a => 'Who\'s your ideal customer for ' + _ob2Esc(a.bizName) + '?',
       inputType: 'textarea',
       key: 'customer',
       placeholder: 'e.g. Homeowners aged 35–60 who value quality over price and have been burned by cheap contractors before…',
@@ -441,7 +441,7 @@
     {
       mood: 's-working', pos: 'left',
       anim: { mood: 's-working', flame: 's-flame-blue', lights: 's-lights-pulse' },
-      blastyMsgFn: a => 'Almost there! Let me figure out the right <strong>category</strong> for ' + a.bizName + ' — the right one gets you found on every platform...',
+      blastyMsgFn: a => 'Almost there! Let me figure out the right <strong>category</strong> for ' + _ob2Esc(a.bizName) + ' — the right one gets you found on every platform...',
       inputType: 'ai-suggest',
       key: 'category',
       fetchFn: async a => {
@@ -510,7 +510,7 @@
     },
     {
       mood: 's-working', pos: 'right',
-      blastyMsgFn: a => 'Last one, ' + (a.ownerName || 'friend') + '! Which platforms do you want to blast <strong>' + (a.bizName || 'your business') + '</strong> on?',
+      blastyMsgFn: a => 'Last one, ' + _ob2Esc(a.ownerName || 'friend') + '! Which platforms do you want to blast <strong>' + _ob2Esc(a.bizName || 'your business') + '</strong> on?',
       inputType: 'multiselect',
       key: 'campaignPlatforms',
       // No hardcoded choices — list comes entirely from admin config (Firestore → platforms-config.js)
@@ -701,10 +701,15 @@
     if (!row) return;
     row.classList.remove('active','future','bb-field-blur');
     row.classList.add('answered','bb-field-done');
-    row.onclick = () => window._ob2JumpToKey(key);
+    // Attach on the next tick. The click that locked this field originated on a
+    // button INSIDE this row and is still bubbling upward. Assigning the handler
+    // synchronously means that same tap immediately fires _ob2JumpToKey and
+    // bounces the user back into the step they just answered — on the AI category
+    // step that re-runs the entire lookup the moment you accept the suggestion.
+    setTimeout(() => { row.onclick = () => window._ob2JumpToKey(key); }, 0);
     const slot = document.getElementById('obfs-'+key);
     if (slot) {
-      const safe = String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const safe = _ob2Esc(text);
       slot.innerHTML = '<span class="obf-answered-val">'+safe
         +'<span class="obf-edit-hint">✏️ tap to edit</span></span>';
     }
@@ -908,7 +913,7 @@
 
   function interpolate(msg, ans) {
     if (!msg || !ans) return msg;
-    return msg.replace(/\{(\w+)\}/g, (_, k) => (ans[k] !== undefined ? ans[k] : '{' + k + '}'));
+    return msg.replace(/\{(\w+)\}/g, (_, k) => (ans[k] !== undefined ? _ob2Esc(ans[k]) : '{' + k + '}'));
   }
 
   function retrackBlasty() {
@@ -1037,6 +1042,11 @@
   }
 
   function _ob2RunAiSuggest(s) {
+    // Pin the step this run belongs to. A slow response that lands after the
+    // owner has already moved on must not repaint the suggestion UI (or an
+    // error) over whatever step they are now looking at.
+    const myStep = step;
+    const stale = () => step !== myStep;
     const wrap = document.getElementById('ob2-ai-suggest-wrap');
     if (wrap) {
       wrap.innerHTML = '<div style="color:var(--muted,#888);font-size:13px;display:flex;align-items:center;gap:8px">'
@@ -1050,10 +1060,12 @@
       return;
     }
     p.then(suggestion => {
+        if (stale()) return;
         const w = document.getElementById('ob2-ai-suggest-wrap');
         if (!w) return;
         setMood('s-happy');
         setTimeout(() => {
+          if (stale()) return;
           // setBlastyBubble assigns via innerHTML, and both the AI-returned
           // category and the owner-typed business name are untrusted. Escape
           // both; never interpolate either raw.
@@ -1073,7 +1085,7 @@
           if (no)  no.addEventListener('click',  function() { window._ob2ChangeSuggestion(); });
         }, 200);
       })
-      .catch(err => { _ob2RenderSuggestError(err); });
+      .catch(err => { if (stale()) return; _ob2RenderSuggestError(err); });
   }
 
   window._ob2RetrySuggest = function() {
