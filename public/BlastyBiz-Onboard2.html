@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786152788963"/>
+  <link rel="stylesheet" href="global-style.css?v=1786152887858"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -1484,9 +1484,10 @@
       html += '<div class="ob2-multiselect" id="ob2-multiselect">';
       platformList.forEach(c => {
         const locked = c.proOnly && !isPro;
-        html += '<label class="ob2-ms-label' + (locked ? ' ob2-ms-locked' : '') + '">'
+        html += '<label class="ob2-ms-label' + (locked ? ' ob2-ms-locked' : '') + '"'
+          + ' onclick="window._ob2PlatformLabelClick(event,\'' + c.value + '\')">'
           + '<input type="checkbox" class="ob2-ms-check" value="' + c.value + '"'
-          + (locked ? ' disabled' : '') + ' onchange="window._ob2PlatformPick(this)"/>'
+          + (locked ? ' disabled' : '') + '/>'
           + c.label
           + (locked ? ' <span class="ob2-pro-badge">PRO</span>' : '')
           + '</label>';
@@ -1615,18 +1616,17 @@
     angi:       "🔧 Angi sends pre-screened home-service leads straight to you. High intent, local, ready to book."
   };
 
-  window._ob2PlatformPick = function(checkbox) {
-    // Update the hidden input (same as before)
-    window._ob2MsChange();
-    // Show a Blasty factoid when checking a platform; restore prompt when none selected
-    const slug = checkbox.value;
-    const isChecked = checkbox.checked;
-    const anyChecked = [...document.querySelectorAll('.ob2-ms-check:checked')].length > 0;
-    if (isChecked && _PLATFORM_FACTS[slug]) {
-      setBlastyBubble(_PLATFORM_FACTS[slug]);
-    } else if (!anyChecked) {
-      setBlastyBubble('Last one — which platforms do you want to blast on?');
+  window._ob2PlatformLabelClick = function(e, slug) {
+    const label = e.currentTarget;
+    const checkbox = label.querySelector('input[type="checkbox"]');
+    if (!checkbox) return;
+    if (!checkbox.disabled) {
+      // Toggle the checkbox (label click normally does this, but we intercepted it)
+      checkbox.checked = !checkbox.checked;
+      window._ob2MsChange();
     }
+    // Show factoid for any platform — locked or not
+    if (_PLATFORM_FACTS[slug]) setBlastyBubble(_PLATFORM_FACTS[slug]);
   };
 
   window._ob2ToggleChange = function(stateKey, checked) {
