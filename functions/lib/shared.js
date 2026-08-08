@@ -127,8 +127,18 @@ async function getAiSettings() {
   if (_aiSettingsCache && now - _aiSettingsCacheAt < AI_SETTINGS_TTL) return _aiSettingsCache;
   try {
     const snap = await db.collection('config').doc('aiSettings').get();
-    _aiSettingsCache = snap.exists ? { ...AI_DEFAULTS, ...snap.data() } : { ...AI_DEFAULTS };
-  } catch { _aiSettingsCache = _aiSettingsCache || { ...AI_DEFAULTS }; }
+    if (snap.exists) {
+      _aiSettingsCache = { ...AI_DEFAULTS, ...snap.data() };
+    } else {
+      // The config doc is the source of truth — falling back to code defaults is
+      // exactly what made the 2026-08 Gemini retirement invisible. Make it loud.
+      bbLog('WARNING', 'getAiSettings', { event: 'ai_settings_doc_missing', msg: 'config/aiSettings missing — using hardcoded AI_DEFAULTS. Create the doc via the admin AI settings panel.' });
+      _aiSettingsCache = { ...AI_DEFAULTS };
+    }
+  } catch (e) {
+    bbLog('WARNING', 'getAiSettings', { event: 'ai_settings_read_failed', msg: e.message });
+    _aiSettingsCache = _aiSettingsCache || { ...AI_DEFAULTS };
+  }
   _aiSettingsCacheAt = now;
   return _aiSettingsCache;
 }
@@ -137,6 +147,27 @@ async function getAiSettings() {
 function resetAiSettingsCache() {
   _aiSettingsCache = null;
   _aiSettingsCacheAt = 0;
+}
+
+// ── AI health reporting — makes a rejected model visible to admins ───────────
+// Writes the most recent provider rejection to config/aiHealth so the admin
+// dashboard can surface it. Throttled per instance to avoid write storms when
+// every AI call is failing at once.
+let _lastAiFailureWriteAt = 0;
+const AI_FAILURE_WRITE_THROTTLE = 60_000;
+function recordAiFailure(provider, model, status, message) {
+  bbLog('ERROR', 'callAI', { event: 'ai_provider_rejected', provider, model, status, msg: (message || '').slice(0, 300) });
+  const now = Date.now();
+  if (now - _lastAiFailureWriteAt < AI_FAILURE_WRITE_THROTTLE) return;
+  _lastAiFailureWriteAt = now;
+  db.collection('config').doc('aiHealth').set({
+    lastError: {
+      provider, model,
+      status:  status || null,
+      message: (message || '').slice(0, 500),
+      at:      admin.firestore.FieldValue.serverTimestamp(),
+    },
+  }, { merge: true }).catch(e => console.warn('[recordAiFailure] write failed:', e.message));
 }
 
 // ── callAI — provider-agnostic wrapper ────────────────────────────────────────
@@ -161,7 +192,11 @@ async function callAI(content, { system = '', maxTokens = 1024, tier = 'smart', 
       { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' }, body: JSON.stringify(body) },
       timeoutMs
     );
-    if (!resp.ok) { const err = new Error(`Anthropic ${resp.status}: ${(await resp.text()).slice(0, 200)}`); err._isHttpError = true; throw err; }
+    if (!resp.ok) {
+      const bodyText = (await resp.text()).slice(0, 300);
+      recordAiFailure(provider, model, resp.status, bodyText);
+      const err = new Error(`Anthropic ${resp.status}: ${bodyText.slice(0, 200)}`); err._isHttpError = true; throw err;
+    }
     const j = await resp.json();
     return { text: j.content[0].text, usage: j.usage, model };
   }
@@ -177,7 +212,11 @@ async function callAI(content, { system = '', maxTokens = 1024, tier = 'smart', 
     { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model, max_tokens: maxTokens, messages: oaiMsgs }) },
     timeoutMs
   );
-  if (!resp.ok) { const err = new Error(`${provider} ${resp.status}: ${(await resp.text()).slice(0, 200)}`); err._isHttpError = true; throw err; }
+  if (!resp.ok) {
+    const bodyText = (await resp.text()).slice(0, 300);
+    recordAiFailure(provider, model, resp.status, bodyText);
+    const err = new Error(`${provider} ${resp.status}: ${bodyText.slice(0, 200)}`); err._isHttpError = true; throw err;
+  }
   const j = await resp.json();
   return { text: j.choices[0].message.content, usage: { input_tokens: j.usage?.prompt_tokens || 0, output_tokens: j.usage?.completion_tokens || 0 }, model };
 }

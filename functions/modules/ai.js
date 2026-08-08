@@ -985,12 +985,21 @@ exports.scoreFact = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'
 
 exports.adminGetAiSettings = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   try {
-    const snap = await db.collection('config').doc('aiSettings').get();
+    const [snap, healthSnap] = await Promise.all([
+      db.collection('config').doc('aiSettings').get(),
+      db.collection('config').doc('aiHealth').get(),
+    ]);
     const data = snap.exists ? snap.data() : {};
+    const health = healthSnap.exists ? healthSnap.data() : {};
+    const lastError = health.lastError
+      ? { ...health.lastError, at: health.lastError.at?.toDate?.()?.toISOString() || null }
+      : null;
     return res.json({
-      provider:   data.provider   || AI_DEFAULTS.provider,
-      fastModel:  data.fastModel  || AI_DEFAULTS.fastModel,
-      smartModel: data.smartModel || AI_DEFAULTS.smartModel,
+      provider:      data.provider   || AI_DEFAULTS.provider,
+      fastModel:     data.fastModel  || AI_DEFAULTS.fastModel,
+      smartModel:    data.smartModel || AI_DEFAULTS.smartModel,
+      configured:    snap.exists,   // false = silently running on hardcoded defaults
+      lastError,
     });
   } catch(e) {
     console.error('[adminGetAiSettings]', e.message);
@@ -1005,7 +1014,13 @@ exports.adminSetAiSettings = onRequest({ invoker: 'public' }, withAuth(async (re
   if (!VALID_PROVIDERS.includes(provider)) return res.status(400).json({ error: `provider must be one of: ${VALID_PROVIDERS.join(', ')}` });
 
   try {
-    await db.collection('config').doc('aiSettings').set({ provider, fastModel, smartModel }, { merge: true });
+    await db.collection('config').doc('aiSettings').set({
+      provider, fastModel, smartModel,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedBy: decoded?.email || null,
+    }, { merge: true });
+    // Saving new settings clears the visible failure state — the admin has acted on it.
+    await db.collection('config').doc('aiHealth').set({ lastError: admin.firestore.FieldValue.delete() }, { merge: true }).catch(() => {});
     resetAiSettingsCache();
     console.log(`[adminSetAiSettings] Updated to provider=${provider} fast=${fastModel} smart=${smartModel}`);
     return res.json({ ok: true, provider, fastModel, smartModel });

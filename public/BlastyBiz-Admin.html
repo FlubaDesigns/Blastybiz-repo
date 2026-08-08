@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="global-style.css?v=1786222751751">
+<link rel="stylesheet" href="global-style.css?v=1786226767930">
 
 <style>body{visibility:hidden}</style>
 <script type="importmap">
@@ -164,6 +164,7 @@
     <div class="card-title">🤖 AI Provider &amp; Models</div>
     <p style="font-size:13px;color:#666;margin:0 0 16px;">Controls which AI runs all copy generation, chat onboarding, and platform suggestions. Changes take effect within 60 seconds — no redeploy needed.</p>
     <div id="ai-settings-status" style="font-size:13px;color:#888;margin-bottom:12px;">Loading current settings…</div>
+    <div id="ai-health-banner" style="display:none;background:#fdecea;border:1px solid #e53935;border-radius:8px;padding:10px 14px;font-size:13px;color:#b71c1c;margin-bottom:14px;"></div>
     <div style="display:grid;gap:12px;grid-template-columns:1fr 1fr 1fr;margin-bottom:14px;" id="ai-selects-grid">
       <label style="font-size:12px;font-weight:600;color:#555;">
         Provider
@@ -266,7 +267,6 @@ const AI_PROVIDER_MODELS = {
     { id: 'gpt-5',       label: 'GPT-5 (powerful)' },
   ],
   gemini: [
-    { id: 'gemini-3.1-flash-lite',    label: 'Gemini 3.1 Flash Lite (cheapest)' },
     { id: 'gemini-flash-lite-latest', label: 'Gemini Flash Lite Latest (cheap/auto-updated)' },
     { id: 'gemini-flash-latest',      label: 'Gemini Flash Latest (mid-tier)' },
     { id: 'gemini-pro-latest',        label: 'Gemini Pro Latest (most powerful)' },
@@ -354,6 +354,8 @@ window.saveAiSettings = async function() {
     msg.style.color = '#00C853';
     msg.textContent = `✓ Saved — ${provider} / ${fastModel} / ${smartModel}`;
     document.getElementById('ai-settings-status').textContent = `Active: ${provider} · Fast: ${fastModel} · Smart: ${smartModel}`;
+    const banner = document.getElementById('ai-health-banner');
+    if (banner) banner.style.display = 'none';
   } catch(e) {
     msg.style.color = '#e53935';
     msg.textContent = '✗ ' + e.message;
@@ -386,12 +388,19 @@ onAuthStateChanged(auth, async (user) => {
       const token = await user.getIdToken();
       const resp = await fetch(`${CF_BASE}/adminGetAiSettings`, { headers: { 'Authorization': `Bearer ${token}` } });
       if (resp.ok) {
-        const { provider, fastModel, smartModel } = await resp.json();
+        const { provider, fastModel, smartModel, configured, lastError } = await resp.json();
         const provSel = el('ai-provider');
         if (provSel) provSel.value = provider || 'anthropic';
         populateModelSelects(provider || 'anthropic', fastModel, smartModel);
         const statusEl = el('ai-settings-status');
-        if (statusEl) statusEl.textContent = `Active: ${provider || 'anthropic'} · Fast: ${fastModel} · Smart: ${smartModel}`;
+        if (statusEl) statusEl.textContent = `Active: ${provider || 'anthropic'} · Fast: ${fastModel} · Smart: ${smartModel}`
+          + (configured === false ? ' — ⚠️ not saved to Firestore yet (running on code defaults). Hit Save to fix.' : '');
+        const banner = el('ai-health-banner');
+        if (banner && lastError) {
+          const when = lastError.at ? new Date(lastError.at).toLocaleString() : 'recently';
+          banner.style.display = 'block';
+          banner.textContent = `⚠️ AI provider rejected the configured model. ${lastError.provider} / ${lastError.model} returned ${lastError.status || 'an error'} at ${when}: ${lastError.message || ''} — pick a working model below and hit Save.`;
+        }
       }
     } catch(e) { console.warn('[ai-settings] load failed:', e.message); }
   })();

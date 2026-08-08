@@ -18,6 +18,9 @@ When Cloud Build's npm_modules layer is a CACHE MISS, it runs `npm ci`. If `npm 
 
 **How to apply:** Any time you see this error in Cloud Build logs, `rm functions/package-lock.json` then redeploy. Do NOT regenerate the lock file first — just delete it and let Cloud Build use `npm install`.
 
+## Rule 9 — background deploys die; files from timed-out shell calls vanish
+A `nohup`/`setsid` firebase deploy backgrounded from a shell call is unreliable: if the launching shell call times out (exit -1), its created files (and possibly the process) do not persist, and full 28-function deploys hang forever in the CLI's operation poller. Reliable pattern: deploy in the FOREGROUND with `timeout 280` in batches of ≤3 functions per call (`--only functions:a,functions:b,functions:c`), plus hosting alone — each completes in 2–4 min. Always make the launching command exit 0 quickly if backgrounding is unavoidable.
+
 ## Rule 1 — Replit bash timeout vs Cloud Build
 Cloud Build takes 3–5 minutes to build + deploy all 28 functions. Replit's max bash timeout is 120s. The deploy command will always time out at Replit's side, but Cloud Build continues on Google's servers and completes successfully. Strategy: fire the deploy, let it "time out", then `sleep 90` and check `firebase-tools functions:list` to confirm.
 
