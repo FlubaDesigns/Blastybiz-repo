@@ -365,17 +365,33 @@ Rules:
 
 // ── Admin platform-docs cache ────────────────────────────────────────────────
 // settings/platformDocs holds admin overrides written by BlastyBiz-Admin-Platforms.html.
-// We cache it in memory (5-min TTL) so each adaptListing call gets up-to-date rules
-// without a Firestore round-trip on every request.
+// A real-time onSnapshot listener primes this cache at module load and keeps it
+// updated instantly whenever an admin saves changes — no TTL, no per-request
+// Firestore round-trips, no cold-start delay.
 let _adminPlatformDocsCache = null;
-let _adminPlatformDocsCacheAt = 0;
-const PLATFORM_DOCS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+let _adminPlatformDocsListenerReady = false; // true once the first snapshot arrives
+
+// Attach the listener immediately at module load so the first request on a fresh
+// instance already has the data (listener fires before any HTTP request is served).
+db.collection('settings').doc('platformDocs').onSnapshot(
+  snap => {
+    _adminPlatformDocsCache = snap.exists ? snap.data() : {};
+    _adminPlatformDocsListenerReady = true;
+  },
+  err => {
+    // Listener error (e.g. transient network issue) — log and leave whatever
+    // was cached in place; _getAdminPlatformDocs() will fall back to a one-shot
+    // fetch if the cache is still null.
+    console.warn('[adaptListing] platformDocs onSnapshot error:', err.message);
+  }
+);
 
 async function _getAdminPlatformDocs() {
-  const now = Date.now();
-  if (_adminPlatformDocsCache && (now - _adminPlatformDocsCacheAt) < PLATFORM_DOCS_CACHE_TTL_MS) {
-    return _adminPlatformDocsCache;
-  }
+  // Fast path: listener has already populated the cache (normal steady-state).
+  if (_adminPlatformDocsListenerReady) return _adminPlatformDocsCache;
+
+  // Fallback: listener hasn't fired yet (extremely rare race on cold start).
+  // Do a one-shot fetch so this request isn't blocked waiting for the listener.
   try {
     const snap = await db.collection('settings').doc('platformDocs').get();
     _adminPlatformDocsCache = snap.exists ? snap.data() : {};
@@ -383,7 +399,6 @@ async function _getAdminPlatformDocs() {
     console.warn('[adaptListing] failed to fetch admin platformDocs, using defaults:', e.message);
     if (!_adminPlatformDocsCache) _adminPlatformDocsCache = {};
   }
-  _adminPlatformDocsCacheAt = now;
   return _adminPlatformDocsCache;
 }
 
