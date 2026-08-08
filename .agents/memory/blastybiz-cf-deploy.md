@@ -3,6 +3,13 @@ name: BlastyBiz Cloud Functions deploy gotchas
 description: Hard-won lessons about deploying Cloud Functions for this project — timeouts, type conflicts, npm issues
 ---
 
+## Rule 7 — "npm error Exit handler never called!" — delete package-lock.json
+When Cloud Build's npm_modules layer is a CACHE MISS, it runs `npm ci`. If `npm ci` fails with "Exit handler never called!" (no package-specific error shown), delete `functions/package-lock.json` and redeploy. Without a lock file, the buildpack falls back to `npm install`, which succeeds.
+
+**Why:** `npm ci` in this project's Cloud Build environment hits a bug where a package's install script exits abnormally (likely the `square` or `@anthropic-ai/sdk` postinstall under NODE_ENV=production), killing npm before its exit handler runs. `npm install` is more tolerant and completes successfully.
+
+**How to apply:** Any time you see this error in Cloud Build logs, `rm functions/package-lock.json` then redeploy. Do NOT regenerate the lock file first — just delete it and let Cloud Build use `npm install`.
+
 ## Rule 1 — Replit bash timeout vs Cloud Build
 Cloud Build takes 3–5 minutes to build + deploy all 28 functions. Replit's max bash timeout is 120s. The deploy command will always time out at Replit's side, but Cloud Build continues on Google's servers and completes successfully. Strategy: fire the deploy, let it "time out", then `sleep 90` and check `firebase-tools functions:list` to confirm.
 
