@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786146831802"/>
+  <link rel="stylesheet" href="global-style.css?v=1786147215115"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -20,77 +20,10 @@
       flex-direction: row;
       min-height: calc(100vh - var(--main-offset, 55px));
     }
-    /* Right: Blasty sticky column */
-    .ob-blasty-col {
-      width: 260px;
-      min-width: 220px;
-      position: sticky;
-      top: var(--main-offset, 55px);
-      height: calc(100vh - var(--main-offset, 55px));
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      padding: 20px 10px 20px 0;
-      border-left: 1px solid rgba(255,255,255,.07);
-      box-sizing: border-box;
-      overflow: visible;
-      order: 2;
-    }
-    #blasty-tracker {
-      display: flex;
-      flex-direction: row-reverse;
-      align-items: flex-start;
-      gap: 8px;
-      width: 100%;
-      transition: transform .45s cubic-bezier(.34,1.56,.64,1);
-    }
-    .pb-mascot { width: 72px; flex-shrink: 0; }
-    #mascot-svg { width: 100%; height: auto; overflow: visible; }
-    .pb-mascot-caption {
-      font-size: 11px;
-      color: var(--muted, #555);
-      margin-top: 5px;
-      text-align: center;
-      font-style: italic;
-      min-height: 15px;
-    }
-    /* Blasty question bubble — sits left of mascot, tail points right toward Blasty */
-    .ob-q-bubble {
-      position: relative;
-      background: linear-gradient(168deg, #ffffff 0%, #f0f5ff 70%, #e6eeff 100%);
-      border: 1.5px solid rgba(180,205,240,.55);
-      border-radius: 12px 4px 12px 12px;
-      padding: 10px 12px;
-      margin-top: 4px;
-      font-size: 12px;
-      line-height: 1.5;
-      color: #0d1f3c;
-      box-shadow: 0 4px 18px rgba(0,0,0,.32);
-      flex: 1;
-      min-width: 0;
-      box-sizing: border-box;
-      transition: opacity .2s;
-    }
-    /* Shadow layer of right-pointing tail */
-    .ob-q-bubble::before {
-      content: '';
-      position: absolute;
-      right: -13px;
-      top: 9px;
-      border: 12px solid transparent;
-      border-left-color: rgba(180,205,240,.6);
-      border-right: none;
-    }
-    /* Bright layer of right-pointing tail */
-    .ob-q-bubble::after {
-      content: '';
-      position: absolute;
-      right: -10px;
-      top: 11px;
-      border: 10px solid transparent;
-      border-left-color: #f0f5ff;
-      border-right: none;
-    }
+    /* Blasty column hidden — float injected by JS, same approach as Login page */
+    .ob-blasty-col { display: none !important; }
+    /* Wider bubble for Onboard2 (messages longer than Login page) */
+    #login-bubble { max-width: 200px !important; min-width: 120px !important; font-size: 12px !important; }
     @keyframes bb-in {
       from { opacity: 0; transform: translateY(9px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -213,34 +146,8 @@
       100% { background: transparent; }
     }
     .obf-row.just-answered { animation: ob-flash .65s ease; }
-    /* Mobile: Blasty fixed on right, 50% smaller; form takes full width */
     @media (max-width: 860px) {
-      .ob-page { flex-direction: column; }
-      .ob-blasty-col {
-        position: fixed;
-        right: 10px;
-        width: auto; min-width: unset;
-        height: auto; border: none; padding: 0;
-        background: none; overflow: visible;
-        order: 0; z-index: 200;
-      }
-      #blasty-tracker {
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        width: auto;
-      }
-      .pb-mascot { width: 36px; }
-      .ob-q-bubble {
-        flex: none; width: 100px; max-width: 100px;
-        font-size: 10px; padding: 5px 7px; margin-top: 0;
-        border-radius: 10px; line-height: 1.4;
-      }
-      .ob-q-bubble::before,
-      .ob-q-bubble::after { display: none; }
-      .pb-mascot-caption { display: none; }
-      .ob-form-col { order: 0; padding: 16px 120px 80px 14px; overflow: visible; width: 100%; box-sizing: border-box; }
-      /* Stack label above field on mobile */
+      .ob-form-col { padding: 16px 14px 80px; overflow: visible; }
       .obf-row { flex-direction: column; gap: 4px; }
       .obf-label { min-width: unset; padding-top: 0; font-size: 10px; }
       .obf-bubble::after { display: none; }
@@ -919,6 +826,34 @@
 <!-- ── Conversation engine ────────────────────────────────────────── -->
 <script>
 (function() {
+  // ── Inject floating Blasty — identical approach to Login page ──────────────
+  var floatEl = document.createElement('div');
+  floatEl.id = 'login-blasty-float';
+  floatEl.innerHTML = '<div class="pb-mascot s-wave" id="pb-mascot"></div>' +
+                      '<div id="login-bubble"><p id="ob-q-text" style="margin:0"></p></div>';
+  document.body.appendChild(floatEl);
+
+  function positionBlasty(anchorEl) {
+    if (!anchorEl) return;
+    var rect = anchorEl.getBoundingClientRect();
+    if (window.innerWidth < 700) {
+      var top  = Math.max(60, Math.min(rect.top + rect.height / 2 - 40, window.innerHeight - 160));
+      var left = window.innerWidth - 118;
+      floatEl.style.top  = top  + 'px';
+      floatEl.style.left = left + 'px';
+      floatEl.classList.add('visible');
+      return;
+    }
+    var gap     = 12;
+    var fW      = 80;
+    var elemMid = rect.top + rect.height / 2;
+    var top     = Math.max(60, Math.min(elemMid - 35, window.innerHeight - 220));
+    var left    = Math.min(rect.right + gap, window.innerWidth - fW - 210);
+    floatEl.style.top  = top  + 'px';
+    floatEl.style.left = left + 'px';
+    floatEl.classList.add('visible');
+  }
+
   const answers = {};
   const toggles = { ynMentionName: false, ynMentionRole: false, ynMentionAddress: true, ynMentionPhone: true };
   let step = 0;
@@ -1354,9 +1289,9 @@
   }
 
   function setBlastyBubble(msg) {
-    const el = document.getElementById('ob-q-text');
+    const el     = document.getElementById('ob-q-text');
+    const bubble = document.getElementById('login-bubble');
     if (!el) return;
-    const bubble = document.getElementById('ob-q-bubble');
     if (bubble) bubble.style.opacity = '0';
     setTimeout(() => {
       el.innerHTML = msg;
@@ -1446,12 +1381,14 @@
         if (r) r.style.display = 'none';
       });
     }
-    // Spotlight active field row
+    // Spotlight active field row + position Blasty float next to it
+    var _activeRowEl = null;
     if (s.key !== '_fork') {
       document.querySelectorAll('.obf-row').forEach(r => {
         if (r.id === 'obfr-'+s.key) {
           r.classList.remove('future','answered','just-answered','bb-field-blur','bb-field-done');
           r.classList.add('active');
+          _activeRowEl = r;
         } else if (!r.classList.contains('answered')) {
           r.classList.remove('active','bb-field-done'); r.classList.add('future','bb-field-blur');
         } else {
@@ -1459,6 +1396,7 @@
         }
       });
     }
+    if (_activeRowEl) setTimeout(() => positionBlasty(_activeRowEl), 80);
     // Progress bar
     const totalSteps = STEPS.filter(st => !st.skipIf || !st.skipIf(answers)).length;
     const pct = Math.round((step / Math.max(totalSteps, 1)) * 100);
@@ -1561,7 +1499,7 @@
       });
     }
     setTimeout(() => bubble.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
-    setTimeout(trackBlasty, 120);
+    setTimeout(retrackBlasty, 120);
   }
 
   function interpolate(msg, ans) {
@@ -1569,23 +1507,9 @@
     return msg.replace(/\{(\w+)\}/g, (_, k) => (ans[k] !== undefined ? ans[k] : '{' + k + '}'));
   }
 
-  // Track Blasty (the #blasty-tracker div) vertically alongside the active field row
-  function trackBlasty() {
-    var tracker = document.getElementById('blasty-tracker');
-    var zone    = document.getElementById('pb-mascot-zone');
-    if (!tracker || !zone) return;
+  function retrackBlasty() {
     var activeRow = document.querySelector('.obf-row.active');
-    if (!activeRow) return;
-    var rowRect     = activeRow.getBoundingClientRect();
-    var zoneRect    = zone.getBoundingClientRect();
-    var rowMid      = rowRect.top + rowRect.height / 2;
-    var trackerH    = tracker.offsetHeight;
-    // Target: center tracker on the active row's midpoint, relative to sticky zone top
-    var targetTop   = rowMid - zoneRect.top - trackerH / 2;
-    // Clamp: stay within the column bounds
-    var maxShift    = zoneRect.height - trackerH;
-    var shift       = Math.max(0, Math.min(targetTop, maxShift));
-    tracker.style.transform = 'translateY(' + shift + 'px)';
+    if (activeRow) positionBlasty(activeRow);
   }
 
 
@@ -1745,8 +1669,11 @@
     }
   };
   if (window._ob2Ready) window._ob2StartConvo();
-  window.addEventListener('scroll', trackBlasty, { passive: true });
-  window.addEventListener('resize', trackBlasty, { passive: true });
+  window.addEventListener('scroll',  retrackBlasty, { passive: true });
+  window.addEventListener('resize',  retrackBlasty, { passive: true });
+  // Also track on form-col internal scroll
+  var _formCol = document.querySelector('.ob-form-col');
+  if (_formCol) _formCol.addEventListener('scroll', retrackBlasty, { passive: true });
 })();
 </script>
 
