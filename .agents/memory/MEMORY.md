@@ -19,3 +19,4 @@
 - [BlastyBiz UNSUB_SIGNING_KEY](blastybiz-unsub-signing-key.md) — dedicated Firebase secret for unsubscribe HMAC; _unsubSecret() falls back to RESEND_API_KEY; declared in adminSendReconnectNudge, adminSendRecoveryEmails, unsubscribeEmail.
 - [BlastyBiz ent audit tracking](blastybiz-ent-audit-tracking.md) — 29/47 done as of 2026-08-04; remaining 17 are Month-2/nice-to-have/quarter items; ANTHROPIC_API_KEY removed from Replit shared env.
 - [BlastyBiz module split](blastybiz-module-split.md) — functions split into lib/shared.js + 8 modules; barrel index.js; gotchas: every 720 hours not every 30 days, --force for dispatchPublishJob, delete-before-redeploy for type changes.
+- [BlastyBiz hosting deploy verification](blastybiz-hosting-verify.md) — cleanUrls:true means a .html URL returns a 34-byte redirect stub; always curl -sL the extensionless path or you'll misread a good deploy as failed.
