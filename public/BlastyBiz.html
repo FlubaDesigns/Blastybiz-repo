@@ -5592,6 +5592,16 @@ onAuthStateChanged(auth, async (user) => {
         const restored = window.PLATFORMS.map(p => ({ ...p, enabled: _enabledPlatformIds.includes(p.id) }));
         if (window._bbSetPlatforms) window._bbSetPlatforms(restored);
         try { localStorage.setItem('bb_platforms_enabled', JSON.stringify(_enabledPlatformIds)); } catch(e) {}
+      } else {
+        // New user with no saved selections — seed defaults from admin config so admin
+        // changes to enabled-by-default state take effect immediately for new users.
+        const adminMap = window._bbAdminPlatformConfig;
+        const seeded = window.PLATFORMS.map(p => {
+          const adminEntry = adminMap && adminMap[p.id];
+          const adminEnabled = adminEntry ? adminEntry.enabled : p.enabled;
+          return { ...p, enabled: adminEnabled !== false && adminEnabled !== undefined ? !!adminEnabled : false };
+        });
+        if (window._bbSetPlatforms) window._bbSetPlatforms(seeded);
       }
 
       // Load global factoids from subcollection
