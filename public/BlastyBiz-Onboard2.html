@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786153616800"/>
+  <link rel="stylesheet" href="global-style.css?v=1786154129910"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -786,10 +786,14 @@
       html += '<div class="ob2-multiselect" id="ob2-multiselect">';
       platformList.forEach(c => {
         const locked = c.proOnly && !isPro;
+        // Unlocked: factoid fires from onchange (guaranteed after checkbox toggle, no interference)
+        // Locked: factoid fires from onclick on the label (disabled checkbox never fires onchange)
         html += '<label class="ob2-ms-label' + (locked ? ' ob2-ms-locked' : '') + '"'
-          + ' onclick="window._ob2ShowPlatformFactoid(\'' + c.value + '\')">'
+          + (locked ? ' onclick="window._ob2ShowPlatformFactoid(\'' + c.value + '\')"' : '')
+          + '>'
           + '<input type="checkbox" class="ob2-ms-check" value="' + c.value + '"'
-          + (locked ? ' disabled' : '') + ' onchange="window._ob2MsChange()"/>'
+          + (locked ? ' disabled' : ' onchange="window._ob2MsChange(this)"')
+          + '/>'
           + c.label
           + (locked ? ' <span class="ob2-pro-badge">PRO</span>' : '')
           + '</label>';
@@ -894,10 +898,12 @@
     if (inp) { inp.focus(); inp.addEventListener('keydown', e => { if (e.key === 'Enter') window._ob2AcceptSuggestion(inp.value.trim() || 'Local Business'); }); }
   };
 
-  window._ob2MsChange = function() {
+  window._ob2MsChange = function(el) {
     const checked = [...document.querySelectorAll('.ob2-ms-check:checked')].map(c => c.value);
     const inp = document.getElementById('ob2-input');
     if (inp) inp.value = checked.join(',');
+    // Show factoid for the platform that was just toggled
+    if (el && el.value) window._ob2ShowPlatformFactoid(el.value);
   };
 
   const _PLATFORM_FACTS = {
