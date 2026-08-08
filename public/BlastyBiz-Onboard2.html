@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786151590378"/>
+  <link rel="stylesheet" href="global-style.css?v=1786151848869"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -1037,7 +1037,7 @@
       blastyMsgFn: a => 'Almost there! What\'s the website for ' + a.bizName + '?',
       inputType: 'text',
       key: 'website',
-      placeholder: 'e.g. https://qrgear.com',
+      placeholder: 'e.g. yourbusiness.com',
       hint: 'Leave blank if you don\'t have one yet — no worries!',
       skipIf: a => a.locationType === 'brick',
       validate: v => {
@@ -1521,6 +1521,13 @@
     bubble.innerHTML = html;
 
     currentInput = document.getElementById('ob2-input');
+    // Pre-fill with existing answer when editing a past step
+    if (currentInput && _resumeStep !== null && answers[s.key] !== undefined && s.inputType !== 'multiselect') {
+      var prefillVal = Array.isArray(answers[s.key]) ? answers[s.key].join(',') : String(answers[s.key]);
+      // For website: strip the protocol so the user just sees dave.com
+      if (s.key === 'website') prefillVal = prefillVal.replace(/^https?:\/\//i, '');
+      currentInput.value = prefillVal;
+    }
     if (currentInput && s.inputType !== 'choice') {
       currentInput.focus();
       if (s.inputType !== 'textarea') {
@@ -1618,6 +1625,17 @@
       const sel = currentBubble.querySelector('.ob2-choice-btn.selected');
       if (sel) val = sel.dataset.val || '';
     }
+    // When editing a past step and nothing was entered, silently keep the original answer
+    if (!val.trim() && _resumeStep !== null && answers[s.key] !== undefined) {
+      const kept = Array.isArray(answers[s.key]) ? answers[s.key].join(', ') : String(answers[s.key]);
+      const keptDisplay = s.key === 'website' ? kept.replace(/^https?:\/\//i, '') : kept;
+      if (currentBubble) lockBubble(currentBubble, keptDisplay);
+      step = _resumeStep;
+      _resumeStep = null;
+      if (window._ob2SaveProgress) window._ob2SaveProgress(answers, toggles, step);
+      setTimeout(showStep, 380);
+      return;
+    }
     const errEl = currentBubble ? currentBubble.querySelector('#ob2-err') : null;
     if (s.validate) {
       const err = s.validate(val);
@@ -1631,7 +1649,9 @@
       if (currentBubble) lockBubble(currentBubble, answers[s.key].join(', ') || '(none selected)');
     } else {
       answers[s.key] = val.trim();
-      if (currentBubble) lockBubble(currentBubble, val.trim());
+      // For website: display without the protocol
+      const displayVal = s.key === 'website' ? val.trim().replace(/^https?:\/\//i, '') : val.trim();
+      if (currentBubble) lockBubble(currentBubble, displayVal);
     }
     step++;
     // If the user was editing a past answer, jump back to where they were
