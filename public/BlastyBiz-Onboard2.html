@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786154129910"/>
+  <link rel="stylesheet" href="global-style.css?v=1786154491130"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -439,17 +439,9 @@
       validate: () => null
     },
     {
-      mood: 's-working', pos: 'right',
-      blastyMsg: 'Last one — which platforms do you want to blast on?',
-      inputType: 'multiselect',
-      key: 'campaignPlatforms',
-      // No hardcoded choices — list comes entirely from admin config (Firestore → platforms-config.js)
-      validate: v => (v && v.length) ? null : 'Pick at least one platform!'
-    },
-    {
       mood: 's-working', pos: 'left',
       anim: { mood: 's-working', flame: 's-flame-blue', lights: 's-lights-pulse' },
-      blastyMsgFn: a => 'Almost done! Let me figure out the right <strong>category</strong> for ' + a.bizName + ' — the right one gets you found on every platform...',
+      blastyMsgFn: a => 'Almost there! Let me figure out the right <strong>category</strong> for ' + a.bizName + ' — the right one gets you found on every platform...',
       inputType: 'ai-suggest',
       key: 'category',
       fetchFn: async a => {
@@ -461,6 +453,14 @@
         const data = await res.json();
         return data.category || 'Local Business';
       }
+    },
+    {
+      mood: 's-working', pos: 'right',
+      blastyMsgFn: a => 'Last one, ' + (a.ownerName || 'friend') + '! Which platforms do you want to blast <strong>' + (a.bizName || 'your business') + '</strong> on?',
+      inputType: 'multiselect',
+      key: 'campaignPlatforms',
+      // No hardcoded choices — list comes entirely from admin config (Firestore → platforms-config.js)
+      validate: v => (v && v.length) ? null : 'Pick at least one platform!'
     }
   ];
 
