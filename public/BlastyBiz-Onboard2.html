@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786147215115"/>
+  <link rel="stylesheet" href="global-style.css?v=1786148112838"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -20,10 +20,45 @@
       flex-direction: row;
       min-height: calc(100vh - var(--main-offset, 55px));
     }
-    /* Blasty column hidden — float injected by JS, same approach as Login page */
-    .ob-blasty-col { display: none !important; }
-    /* Wider bubble for Onboard2 (messages longer than Login page) */
-    #login-bubble { max-width: 200px !important; min-width: 120px !important; font-size: 12px !important; }
+    /* Blasty: fixed float tracking the active row — same approach as Login page */
+    .ob-blasty-col {
+      position: fixed; z-index: 900; pointer-events: none;
+      display: flex; flex-direction: row-reverse; align-items: center; gap: 8px;
+      opacity: 0;
+      transition: top .35s cubic-bezier(.34,1.56,.64,1),
+                  left .35s cubic-bezier(.34,1.56,.64,1),
+                  opacity .2s ease;
+    }
+    .ob-blasty-col.visible { opacity: 1; }
+    .pb-mascot { width: 70px; flex-shrink: 0; }
+    #mascot-svg { width: 100%; height: auto; overflow: visible; }
+    .pb-mascot-caption { display: none; }
+    /* Speech bubble — tail points right toward mascot */
+    .ob-q-bubble {
+      position: relative;
+      background: #fff; border: 1.5px solid rgba(180,205,240,.5);
+      border-radius: 12px 4px 12px 12px;
+      padding: 8px 10px; font-size: 12px; line-height: 1.45;
+      color: #0d1f3c; box-shadow: 0 4px 18px rgba(0,0,0,.38);
+      max-width: 200px; min-width: 100px;
+      transition: opacity .15s ease; word-break: break-word;
+    }
+    .ob-q-bubble::before {
+      content: ''; position: absolute; right: -13px; top: 9px;
+      border: 12px solid transparent;
+      border-left-color: rgba(180,205,240,.6); border-right: none;
+    }
+    .ob-q-bubble::after {
+      content: ''; position: absolute; right: -10px; top: 11px;
+      border: 10px solid transparent;
+      border-left-color: #fff; border-right: none;
+    }
+    @media (max-width: 539px) {
+      .ob-blasty-col { flex-direction: column; align-items: center; width: 100px; }
+      .pb-mascot { width: 44px; }
+      .ob-q-bubble { margin-top: 4px; max-width: 100px; min-width: 70px; font-size: 10px; border-radius: 10px; }
+      .ob-q-bubble::before, .ob-q-bubble::after { display: none; }
+    }
     @keyframes bb-in {
       from { opacity: 0; transform: translateY(9px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -826,12 +861,9 @@
 <!-- ── Conversation engine ────────────────────────────────────────── -->
 <script>
 (function() {
-  // ── Inject floating Blasty — identical approach to Login page ──────────────
-  var floatEl = document.createElement('div');
-  floatEl.id = 'login-blasty-float';
-  floatEl.innerHTML = '<div class="pb-mascot s-wave" id="pb-mascot"></div>' +
-                      '<div id="login-bubble"><p id="ob-q-text" style="margin:0"></p></div>';
-  document.body.appendChild(floatEl);
+  // ── Use the existing Blasty column as the fixed float ──────────────────────
+  // (mascot.js already bound to the SVG inside it — don't inject a duplicate)
+  var floatEl = document.getElementById('pb-mascot-zone');
 
   function positionBlasty(anchorEl) {
     if (!anchorEl) return;
@@ -899,6 +931,7 @@
       key: 'email',
       placeholder: 'you@yourbusiness.com',
       hint: 'Used for customer inquiries and marketing',
+      skipIf: a => !!a.email,
       validate: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? null : 'Please enter a valid email address.',
       toggle: { stateKey: 'ynMentionEmail', label: 'Include email in marketing copy' }
     },
@@ -1290,7 +1323,7 @@
 
   function setBlastyBubble(msg) {
     const el     = document.getElementById('ob-q-text');
-    const bubble = document.getElementById('login-bubble');
+    const bubble = document.getElementById('ob-q-bubble');
     if (!el) return;
     if (bubble) bubble.style.opacity = '0';
     setTimeout(() => {
@@ -1349,7 +1382,13 @@
   function showStep() {
     if (step >= STEPS.length) { finish(); return; }
     const s = STEPS[step];
-    if (s.skipIf && s.skipIf(answers)) { step++; showStep(); return; }
+    if (s.skipIf && s.skipIf(answers)) {
+      if (s.key && s.key !== '_fork' && answers[s.key]) {
+        const display = Array.isArray(answers[s.key]) ? answers[s.key].join(', ') : String(answers[s.key]);
+        lockField(s.key, display);
+      }
+      step++; showStep(); return;
+    }
     currentStepKey = s.key;
     // Set per-step mood first so the shim's s-working flash (pointing arm)
     // is not immediately squashed by a subsequent setMood() call.
@@ -1873,6 +1912,11 @@ if (isSignInWithEmailLink(auth, window.location.href)) {
       // Name was already collected at signup — skip the name step entirely
       window._ob2ResumeData = { stepIndex: 1, answers: { ownerName: ud.ownerName } };
       window._ob2Prefill    = { ownerName: ud.ownerName };
+    }
+    // Always prefill auth email so the email step is skipped for new signups
+    if (!editBizId && user.email) {
+      window._ob2Prefill = window._ob2Prefill || {};
+      if (!window._ob2Prefill.email) window._ob2Prefill.email = user.email;
     }
     // Return-visit: load existing biz data for pre-population
     if (editBizId) {
