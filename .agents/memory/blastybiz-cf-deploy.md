@@ -3,6 +3,14 @@ name: BlastyBiz Cloud Functions deploy gotchas
 description: Hard-won lessons about deploying Cloud Functions for this project — timeouts, type conflicts, npm issues
 ---
 
+## Rule 8: GEMINI_API_KEY format and models
+- API keys from AI Studio start with `AQ.` (not `AIza`) — still valid
+- Use `?key=<apikey>` in the URL for native Gemini API, NOT `Authorization: Bearer`  
+- `callAI` uses `Authorization: Bearer` (OpenAI-compat path) — this returns 401 for this key type; use native API for `suggestCategory`
+- Working model as of 2026-08-08: `gemini-flash-lite-latest`
+- `thinkingConfig` is NOT supported on `/v1beta/models/...generateContent` endpoint
+- After updating a secret via `firebase functions:secrets:set`, must redeploy ALL functions that use it
+
 ## Rule 7 — "npm error Exit handler never called!" — delete package-lock.json
 When Cloud Build's npm_modules layer is a CACHE MISS, it runs `npm ci`. If `npm ci` fails with "Exit handler never called!" (no package-specific error shown), delete `functions/package-lock.json` and redeploy. Without a lock file, the buildpack falls back to `npm install`, which succeeds.
 
