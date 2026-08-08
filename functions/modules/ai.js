@@ -86,8 +86,10 @@ exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_AP
   const { ALL_CATEGORIES } = require('../lib/platform-cats');
   const rawIp  = ((req.headers['x-forwarded-for'] || '').split(',')[0].trim()) || req.ip || 'unknown';
   const ipHash = crypto.createHash('sha256').update(rawIp).digest('hex');
-  const withinLimit = await checkUidRateLimit('suggestCategoryRateLimit', ipHash, 10, 60 * 60 * 1000).catch(() => true);
-  if (!withinLimit) return res.status(429).json({ error: 'Rate limit exceeded' });
+  // Fail-open: if Firestore rate-limit write errors, let the request through
+  let withinLimit = true;
+  try { withinLimit = await checkUidRateLimit('suggestCategoryRateLimit', ipHash, 10, 60 * 60 * 1000); } catch {}
+  if (withinLimit === false) return res.status(429).json({ error: 'Rate limit exceeded' });
   const { bizName, ownerName, role, story, different, awards, customer, locationType,
           campaignName, campaignAbout, campaignAudience, offer } = req.body;
   if (!bizName) return res.status(400).json({ error: 'bizName required' });

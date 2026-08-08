@@ -399,7 +399,7 @@ async function checkUidRateLimit(collectionName, uid, maxCount, windowMs) {
       return true;
     });
     return allowed;
-  } catch(e) { return false; }
+  } catch(e) { return true; }
 }
 
 function setCors(req, res) {
