@@ -80,6 +80,8 @@ Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
   }
 }));
 
+const { ALL_CATEGORIES } = require('../lib/platform-cats');
+
 exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
   if (!(await checkUidRateLimit('suggestCategoryRateLimit', decoded.uid, 20, 60 * 60 * 1000))) {
     return res.status(429).json({ error: 'Rate limit exceeded' });
@@ -93,34 +95,60 @@ exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_AP
     customer  && `Ideal customer: ${customer}`,
     offer     && `Current offer: ${offer}`,
   ].filter(Boolean).join('\n');
-  const prompt = context
-    ? `A business called "${bizName}" provided this description:\n${context}\n\nBased on this, what is the most accurate business category? Reply with ONLY the category, 1-4 words. Examples: "Hair Salon", "Mexican Restaurant", "Auto Repair Shop", "Digital Marketing Agency", "Landscaping Company", "Coffee Shop". No punctuation, no explanation — just the category.`
-    : `What type of business is "${bizName}"? Reply with ONLY the business category, 1-4 words. Examples: "Hair Salon", "Mexican Restaurant", "Auto Repair Shop", "Digital Marketing Agency", "Landscaping Company", "Coffee Shop". No punctuation, no explanation — just the category.`;
-  // Try configured provider first; fall back to Gemini Flash directly if it fails
-  async function _geminiCategory(p) {
+  // ── Call 1: describe the business from gathered info ─────────────────────
+  const describePrompt = context
+    ? `Based on the following information about a business, describe in 3-6 words what type of business it is. Be specific.
+
+Business name: "${bizName}"
+${context}
+
+Reply with ONLY the business type description. No punctuation, no explanation.`
+    : `Describe in 3-6 words what type of business "${bizName}" is. Be specific. Reply with ONLY the business type. No punctuation, no explanation.`;
+
+  // ── Gemini fallback helper ────────────────────────────────────────────────
+  async function _gemini(prompt, maxTok) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error('GEMINI_API_KEY not set');
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`,
+      'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
       { method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({ model: 'gemini-2.0-flash', max_tokens: 20,
-          messages: [{ role: 'user', content: p }] }) }
+        body: JSON.stringify({ model: 'gemini-2.0-flash', max_tokens: maxTok,
+          messages: [{ role: 'user', content: prompt }] }) }
     );
     if (!r.ok) throw new Error(`Gemini ${r.status}`);
     const j = await r.json();
     return j.choices[0].message.content.trim().replace(/^["']+|["']+$/g, '');
   }
-  try {
-    let category;
+
+  async function _aiCall(prompt, maxTok) {
     try {
-      const { text } = await callAI(prompt, { tier: 'fast', maxTokens: 20 });
-      category = text.trim().replace(/^["']+|["']+$/g, '');
-    } catch (primaryErr) {
-      bbLog('WARNING', 'suggestCategory', { event: 'primary_ai_failed', msg: primaryErr.message });
-      category = await _geminiCategory(prompt);
+      const { text } = await callAI(prompt, { tier: 'fast', maxTokens: maxTok });
+      return text.trim().replace(/^["']+|["']+$/g, '');
+    } catch (e) {
+      bbLog('WARNING', 'suggestCategory', { event: 'primary_ai_failed', msg: e.message });
+      return _gemini(prompt, maxTok);
     }
-    res.json({ category });
+  }
+
+  try {
+    // Call 1 — what kind of business is this?
+    const description = await _aiCall(describePrompt, 30);
+
+    // Call 2 — match that description to the real category list
+    const catList = ALL_CATEGORIES.join(', ');
+    const matchPrompt = `A business has been described as: "${description}"
+
+From the following list, pick the single closest matching category:
+${catList}
+
+Rules:
+- You MUST pick from the list above exactly as written.
+- Pick the closest match even if it is not perfect.
+- Reply with ONLY the category name. No punctuation, no explanation.`;
+
+    const category = await _aiCall(matchPrompt, 20);
+    res.json({ category, description });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
