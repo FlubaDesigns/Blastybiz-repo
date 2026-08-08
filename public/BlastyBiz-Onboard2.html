@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786154632704"/>
+  <link rel="stylesheet" href="global-style.css?v=1786155001825"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -445,16 +445,20 @@
       inputType: 'ai-suggest',
       key: 'category',
       fetchFn: async a => {
+        const token = await auth.currentUser?.getIdToken().catch(() => null);
         const res = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/suggestCategory', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+          },
           body: JSON.stringify({
-            bizName:    a.bizName,
-            story:      a.story      || '',
-            different:  a.different  || '',
-            awards:     a.awards     || '',
-            customer:   a.customer   || '',
-            offer:      a.campaignOffer || ''
+            bizName:   a.bizName,
+            story:     a.story         || '',
+            different: a.different     || '',
+            awards:    a.awards        || '',
+            customer:  a.customer      || '',
+            offer:     a.campaignOffer || ''
           })
         });
         const data = await res.json();
@@ -615,7 +619,7 @@
     const SECTIONS = [
       { title:'Business Info', keys:['ownerName','bizName','role','email','phone','locationType','street','city','state','zip','website'] },
       { title:'Your Story', keys:['story','different','awards','customer','other'] },
-      { title:'Campaign', keys:['campaignName','campaignAbout','campaignAudience','campaignOffer','campaignPlatforms','category'] }
+      { title:'Campaign', keys:['campaignName','campaignAbout','campaignAudience','campaignOffer','category','campaignPlatforms'] }
     ];
     const container = document.getElementById('ob-form-body');
     if (!container) return;
@@ -1170,7 +1174,7 @@ import {
   getFirestore, doc, getDoc, setDoc, updateDoc, deleteField, collection, serverTimestamp, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { loadPlatforms } from './platforms-config.js?v=2';
+import { loadPlatforms } from './platforms-config.js?v=3';
 
 const db = getFirestore(getApp());
 
