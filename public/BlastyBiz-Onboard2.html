@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786218031895"/>
+  <link rel="stylesheet" href="global-style.css?v=1786218639628"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -453,34 +453,58 @@
           const _auth = window._ob2Auth;
           if (_auth && _auth.currentUser) token = await _auth.currentUser.getIdToken();
         } catch (_) { token = null; }
-        const res = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/suggestCategory', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': 'Bearer ' + token } : {})
-          },
-          body: JSON.stringify({
-            bizName:         a.bizName          || '',
-            ownerName:       a.ownerName        || '',
-            role:            a.role             || '',
-            story:           a.story            || '',
-            different:       a.different        || '',
-            awards:          a.awards           || '',
-            customer:        a.customer         || '',
-            locationType:    a.locationType     || '',
-            campaignName:    a.campaignName     || '',
-            campaignAbout:   a.campaignAbout    || '',
-            campaignAudience:a.campaignAudience || '',
-            offer:           a.campaignOffer    || ''
-          })
-        });
+        // Every throw below carries `kind` (and `status` where relevant) so the
+        // failure UI can tell the owner what actually went wrong instead of
+        // collapsing every cause into the same blank text box.
+        let res;
+        try {
+          res = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/suggestCategory', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+            },
+            body: JSON.stringify({
+              bizName:         a.bizName          || '',
+              ownerName:       a.ownerName        || '',
+              role:            a.role             || '',
+              story:           a.story            || '',
+              different:       a.different        || '',
+              awards:          a.awards           || '',
+              customer:        a.customer         || '',
+              locationType:    a.locationType     || '',
+              campaignName:    a.campaignName     || '',
+              campaignAbout:   a.campaignAbout    || '',
+              campaignAudience:a.campaignAudience || '',
+              offer:           a.campaignOffer    || ''
+            })
+          });
+        } catch (netErr) {
+          const e = new Error('Network request failed: ' + ((netErr && netErr.message) || netErr));
+          e.kind = 'network';
+          throw e;
+        }
         if (!res.ok) {
           const txt = await res.text().catch(() => '');
-          throw new Error('suggestCategory ' + res.status + ': ' + txt.slice(0, 200));
+          const e = new Error('HTTP ' + res.status + ' from suggestCategory'
+                              + (txt ? ' \u2014 ' + txt.slice(0, 300) : ''));
+          e.kind   = 'http';
+          e.status = res.status;
+          throw e;
         }
-        const data = await res.json();
-        if (data.globalMemory) window._ob2GlobalMemory = data.globalMemory;
-        if (!data.category) throw new Error('No category in response: ' + JSON.stringify(data).slice(0,200));
+        let data;
+        try { data = await res.json(); }
+        catch (parseErr) {
+          const e = new Error('Response was not valid JSON: ' + ((parseErr && parseErr.message) || parseErr));
+          e.kind = 'badjson';
+          throw e;
+        }
+        if (data && data.globalMemory) window._ob2GlobalMemory = data.globalMemory;
+        if (!data || !data.category) {
+          const e = new Error('No category in response: ' + JSON.stringify(data).slice(0, 300));
+          e.kind = 'nocategory';
+          throw e;
+        }
         return data.category;
       }
     },
@@ -768,23 +792,7 @@
     const delay = step === 0 ? 700 : 380;
     setTimeout(() => {
       renderInput(s);
-      if (s.inputType === 'ai-suggest' && s.fetchFn) {
-        s.fetchFn(answers)
-          .then(suggestion => {
-            const wrap = document.getElementById('ob2-ai-suggest-wrap');
-            if (!wrap) return;
-            setMood('s-happy');
-            setTimeout(() => {
-              setBlastyBubble('The best category for '+answers.bizName+' on the platforms is <strong>'+suggestion+'</strong> \u2014 does that sound right?');
-              const safe = suggestion.replace(/'/g, "\\'");
-              wrap.innerHTML = '<div class="ob2-choices">'
-                +'<button type="button" class="ob2-choice-btn" onclick="window._ob2AcceptSuggestion(\''+safe+'\')">✅ Yep, that\'s it</button>'
-                +'<button type="button" class="ob2-choice-btn" onclick="window._ob2ChangeSuggestion()">✏️ Not quite</button>'
-                +'</div>';
-            }, 200);
-          })
-          .catch(err => { console.error('[suggestCategory]', err); window._ob2ChangeSuggestion(); });
-      }
+      if (s.inputType === 'ai-suggest' && s.fetchFn) _ob2RunAiSuggest(s);
     }, delay);
   }
   function renderInput(s) {
@@ -926,6 +934,151 @@
       + 'onclick="window._ob2AcceptSuggestion(document.getElementById(\'ob2-input-cat\').value.trim()||\'Local Business\')">Looks good →</button>';
     const inp = document.getElementById('ob2-input-cat');
     if (inp) { inp.focus(); inp.addEventListener('keydown', e => { if (e.key === 'Enter') window._ob2AcceptSuggestion(inp.value.trim() || 'Local Business'); }); }
+  };
+
+  // ── AI suggestion: run, retry, and explain failures ─────────────────────────
+  // A failed suggestion must say why. Previously every cause — dead model, bad
+  // key, rate limit, dropped connection, client-side ReferenceError — collapsed
+  // into an identical blank text box, which hid real bugs completely.
+  function _ob2Esc(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function _ob2ClassifySuggestError(err) {
+    const kind   = err && err.kind;
+    const status = err && err.status;
+    const raw    = (err && (err.stack || err.message)) || String(err);
+    if (kind === 'network') return {
+      bubble: "I couldn't reach my brain just then \u2014 looks like a connection hiccup.",
+      title:  'Connection problem',
+      body:   'Check your signal and try again. Nothing you have entered has been lost.',
+      raw: raw };
+    if (status === 429) return {
+      bubble: "Whoa \u2014 I've had a lot of questions this hour. Give me a minute?",
+      title:  'Too many requests',
+      body:   'This device hit the hourly limit for category suggestions. Wait a minute and try again, or type your category in yourself.',
+      raw: raw };
+    if (status === 400) return {
+      bubble: "Hmm \u2014 I didn't get enough detail about the business to work with.",
+      title:  'Missing business details',
+      body:   'Your business name did not reach me. Type your category in below and carry on.',
+      raw: raw };
+    if (status === 401 || status === 403) return {
+      bubble: "I couldn't verify this session \u2014 that one's on me, not you.",
+      title:  'Not authorised',
+      body:   'Type your category in below and keep going. This will not affect the rest of your setup.',
+      raw: raw };
+    if (typeof status === 'number' && status >= 500) return {
+      bubble: 'My AI service just fell over. Not your fault!',
+      title:  'AI service error (' + status + ')',
+      body:   'This is a problem on our side. Try again in a moment, or type your category in yourself.',
+      raw: raw };
+    if (kind === 'nocategory' || kind === 'badjson') return {
+      bubble: "I got an answer back but couldn't make sense of it.",
+      title:  'Unexpected response',
+      body:   'Try again, or type your category in yourself.',
+      raw: raw };
+    return {
+      bubble: 'Something went wrong on my end working out your category.',
+      title:  'Unexpected error',
+      body:   'Try again, or type your category in yourself.',
+      raw: raw };
+  }
+
+  // Short, non-sensitive identifier an owner can quote to support.
+  function _ob2ErrCode(err) {
+    const kind = err && err.kind, status = err && err.status;
+    if (kind === 'http' && status) return 'http-' + status;
+    if (kind) return String(kind);
+    return err && err.name ? String(err.name).toLowerCase() : 'client';
+  }
+
+  // Full stacks and upstream response bodies are diagnostic gold but leak
+  // backend detail to ordinary owners. Show them only when explicitly asked
+  // for via ?debug=1 — which is also how to read them on a phone with no
+  // developer console.
+  const _ob2Debug = /[?&]debug=1(?:&|$)/.test(window.location.search || '');
+
+  function _ob2RenderSuggestError(err) {
+    try { console.error('[suggestCategory]', err); } catch (_) {}
+    const wrap = document.getElementById('ob2-ai-suggest-wrap');
+    if (!wrap) return;
+    const info = _ob2ClassifySuggestError(err);
+    const code = _ob2ErrCode(err);
+    try { setMood('s-ask'); setBlastyBubble(_ob2Esc(info.bubble)); } catch (_) {}
+    let html =
+        '<div style="padding:2px 0">'
+      +   '<div style="font-weight:600;color:#c0392b;font-size:14px;margin-bottom:4px">' + _ob2Esc(info.title) + '</div>'
+      +   '<div style="color:var(--muted,#888);font-size:13px;line-height:1.45">' + _ob2Esc(info.body) + '</div>'
+      +   '<div class="ob2-choices" style="margin-top:10px">'
+      +     '<button type="button" class="ob2-choice-btn" id="ob2-cat-retry">\u{1F504} Try again</button>'
+      +     '<button type="button" class="ob2-choice-btn" id="ob2-cat-manual">\u270F\uFE0F I\'ll type it myself</button>'
+      +   '</div>'
+      +   '<div style="margin-top:8px;color:var(--muted,#888);font-size:11px">Reference: ' + _ob2Esc(code) + '</div>';
+    if (_ob2Debug) {
+      html +=
+          '<details style="margin-top:10px" open>'
+        +   '<summary style="cursor:pointer;color:var(--muted,#888);font-size:12px">Technical details</summary>'
+        +   '<pre style="white-space:pre-wrap;word-break:break-word;font-size:11px;line-height:1.4;'
+        +        'color:var(--muted,#888);background:rgba(0,0,0,.05);padding:8px;border-radius:6px;'
+        +        'margin-top:6px;max-height:220px;overflow:auto">'
+        +     _ob2Esc(String(info.raw).slice(0, 1500))
+        +   '</pre>'
+        + '</details>';
+    }
+    html += '</div>';
+    wrap.innerHTML = html;
+    const rt = document.getElementById('ob2-cat-retry');
+    const mn = document.getElementById('ob2-cat-manual');
+    if (rt) rt.addEventListener('click', function() { window._ob2RetrySuggest(); });
+    if (mn) mn.addEventListener('click', function() { window._ob2ChangeSuggestion(); });
+  }
+
+  function _ob2RunAiSuggest(s) {
+    const wrap = document.getElementById('ob2-ai-suggest-wrap');
+    if (wrap) {
+      wrap.innerHTML = '<div style="color:var(--muted,#888);font-size:13px;display:flex;align-items:center;gap:8px">'
+        + '<span style="display:inline-block;animation:spin 1s linear infinite;font-size:16px">\u2699\uFE0F</span> Thinking...</div>';
+    }
+    let p;
+    try { p = s.fetchFn(answers); }
+    catch (syncErr) { _ob2RenderSuggestError(syncErr); return; }
+    if (!p || typeof p.then !== 'function') {
+      _ob2RenderSuggestError(new Error('fetchFn did not return a promise'));
+      return;
+    }
+    p.then(suggestion => {
+        const w = document.getElementById('ob2-ai-suggest-wrap');
+        if (!w) return;
+        setMood('s-happy');
+        setTimeout(() => {
+          // setBlastyBubble assigns via innerHTML, and both the AI-returned
+          // category and the owner-typed business name are untrusted. Escape
+          // both; never interpolate either raw.
+          setBlastyBubble('The best category for ' + _ob2Esc(answers.bizName)
+            + ' on the platforms is <strong>' + _ob2Esc(suggestion) + '</strong>'
+            + ' \u2014 does that sound right?');
+          // Bind the value in a closure rather than serialising it into an
+          // inline onclick — that escaping is fragile (newlines, backslashes,
+          // quotes) and is an injection sink waiting to happen.
+          w.innerHTML = '<div class="ob2-choices">'
+            +'<button type="button" class="ob2-choice-btn" id="ob2-cat-yes">✅ Yep, that\'s it</button>'
+            +'<button type="button" class="ob2-choice-btn" id="ob2-cat-no">✏️ Not quite</button>'
+            +'</div>';
+          const yes = document.getElementById('ob2-cat-yes');
+          const no  = document.getElementById('ob2-cat-no');
+          if (yes) yes.addEventListener('click', function() { window._ob2AcceptSuggestion(String(suggestion)); });
+          if (no)  no.addEventListener('click',  function() { window._ob2ChangeSuggestion(); });
+        }, 200);
+      })
+      .catch(err => { _ob2RenderSuggestError(err); });
+  }
+
+  window._ob2RetrySuggest = function() {
+    const s = STEPS[step];
+    if (s && s.inputType === 'ai-suggest' && s.fetchFn) _ob2RunAiSuggest(s);
   };
 
   window._ob2MsChange = function(el) {

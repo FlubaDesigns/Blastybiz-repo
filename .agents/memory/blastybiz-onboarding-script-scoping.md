@@ -47,6 +47,20 @@ the plain-script line range for bare module-scoped identifiers *before* investig
 keys, models, auth tokens, CORS, or rate limits. Cheap check:
 `awk 'NR>=<plainStart> && NR<=<plainEnd>' page.html | grep -nE "[^._A-Za-z0-9](auth|db|getDoc|setDoc)\s*[(.]"`
 
+## Diagnostics on the onboarding wizard are debug-gated on purpose
+
+The category step's failure UI shows a short message plus a `Reference: <code>` only.
+Full stack traces and upstream HTTP response bodies render **only** when the URL carries
+`?debug=1`.
+
+**Why:** a security review flagged that raw stacks and CF response bodies leak backend
+implementation detail to ordinary business owners. But Dave debugs on a phone with no
+developer console, so the detail had to stay reachable somehow. The flag is the compromise.
+
+**How to apply:** do not "helpfully" un-gate this to make debugging easier, and do not delete
+it as dead code. To diagnose a live onboarding failure, load the page with `?debug=1` and read
+the Technical details block on the page itself.
+
 ## Email verification via Identity Toolkit Admin API
 
 To set `emailVerified: true` on a Firebase Auth user without ADC credentials:
