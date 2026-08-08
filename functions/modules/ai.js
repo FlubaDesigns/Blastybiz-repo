@@ -80,7 +80,7 @@ Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
   }
 }));
 
-exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
+exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'], timeoutSeconds: 120 }, withAuth(async (req, res, decoded) => {
   const { ALL_CATEGORIES } = require('../lib/platform-cats');
   if (!(await checkUidRateLimit('suggestCategoryRateLimit', decoded.uid, 20, 60 * 60 * 1000))) {
     return res.status(429).json({ error: 'Rate limit exceeded' });
@@ -118,35 +118,10 @@ Write a comprehensive 2–3 paragraph business briefing in third person that cap
 
 Be specific and vivid. Preserve anything quirky or unusual — that is what makes the copy distinctive. Do NOT use generic filler. This briefing must be good enough that an AI reading it cold can write compelling, on-brand marketing copy with no other information.`;
 
-  // ── Gemini fallback helper ────────────────────────────────────────────────
-  async function _gemini(prompt, maxTok) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error('GEMINI_API_KEY not set');
-    const r = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-      { method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({ model: 'gemini-2.0-flash', max_tokens: maxTok,
-          messages: [{ role: 'user', content: prompt }] }) }
-    );
-    if (!r.ok) throw new Error(`Gemini ${r.status}`);
-    const j = await r.json();
-    return j.choices[0].message.content.trim().replace(/^["']+|["']+$/g, '');
-  }
-
-  async function _aiCall(prompt, maxTok) {
-    try {
-      const { text } = await callAI(prompt, { tier: 'fast', maxTokens: maxTok });
-      return text.trim().replace(/^["']+|["']+$/g, '');
-    } catch (e) {
-      bbLog('WARNING', 'suggestCategory', { event: 'primary_ai_failed', msg: e.message });
-      return _gemini(prompt, maxTok);
-    }
-  }
-
   try {
     // Call 1 — build a rich globalMemory brief from all gathered info
-    const globalMemory = await _aiCall(describePrompt, 400);
+    const { text: memText } = await callAI(describePrompt, { tier: 'smart', maxTokens: 400 });
+    const globalMemory = memText.trim();
 
     // Call 2 — match that brief to the real platform category list
     const catList = ALL_CATEGORIES.join(', ');
@@ -162,9 +137,11 @@ Rules:
 - Pick the closest match even if none is perfect.
 - Reply with ONLY the category name. No punctuation, no explanation.`;
 
-    const category = await _aiCall(matchPrompt, 20);
+    const { text: catText } = await callAI(matchPrompt, { tier: 'fast', maxTokens: 20 });
+    const category = catText.trim().replace(/^["']+|["']+$/g, '');
     res.json({ category, globalMemory });
   } catch (e) {
+    bbLog('ERROR', 'suggestCategory', { event: 'failed', msg: e.message });
     res.status(500).json({ error: e.message });
   }
 }));

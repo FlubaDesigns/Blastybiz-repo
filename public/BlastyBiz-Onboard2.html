@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786160158259"/>
+  <link rel="stylesheet" href="global-style.css?v=1786160389217"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -467,9 +467,14 @@
             offer:           a.campaignOffer    || ''
           })
         });
+        if (!res.ok) {
+          const txt = await res.text().catch(() => '');
+          throw new Error('suggestCategory ' + res.status + ': ' + txt.slice(0, 200));
+        }
         const data = await res.json();
         if (data.globalMemory) window._ob2GlobalMemory = data.globalMemory;
-        return data.category || 'Local Business';
+        if (!data.category) throw new Error('No category in response: ' + JSON.stringify(data).slice(0,200));
+        return data.category;
       }
     },
     {
@@ -771,7 +776,7 @@
                 +'</div>';
             }, 200);
           })
-          .catch(() => { window._ob2ChangeSuggestion(); });
+          .catch(err => { console.error('[suggestCategory]', err); window._ob2ChangeSuggestion(); });
       }
     }, delay);
   }
