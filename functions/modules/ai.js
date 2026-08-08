@@ -96,9 +96,31 @@ exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_AP
   const prompt = context
     ? `A business called "${bizName}" provided this description:\n${context}\n\nBased on this, what is the most accurate business category? Reply with ONLY the category, 1-4 words. Examples: "Hair Salon", "Mexican Restaurant", "Auto Repair Shop", "Digital Marketing Agency", "Landscaping Company", "Coffee Shop". No punctuation, no explanation — just the category.`
     : `What type of business is "${bizName}"? Reply with ONLY the business category, 1-4 words. Examples: "Hair Salon", "Mexican Restaurant", "Auto Repair Shop", "Digital Marketing Agency", "Landscaping Company", "Coffee Shop". No punctuation, no explanation — just the category.`;
+  // Try configured provider first; fall back to Gemini Flash directly if it fails
+  async function _geminiCategory(p) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_API_KEY not set');
+    const r = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`,
+      { method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({ model: 'gemini-2.0-flash', max_tokens: 20,
+          messages: [{ role: 'user', content: p }] }) }
+    );
+    if (!r.ok) throw new Error(`Gemini ${r.status}`);
+    const j = await r.json();
+    return j.choices[0].message.content.trim().replace(/^["']+|["']+$/g, '');
+  }
   try {
-    const { text } = await callAI(prompt, { tier: 'fast', maxTokens: 20 });
-    res.json({ category: text.trim().replace(/^["']+|["']+$/g, '') });
+    let category;
+    try {
+      const { text } = await callAI(prompt, { tier: 'fast', maxTokens: 20 });
+      category = text.trim().replace(/^["']+|["']+$/g, '');
+    } catch (primaryErr) {
+      bbLog('WARNING', 'suggestCategory', { event: 'primary_ai_failed', msg: primaryErr.message });
+      category = await _geminiCategory(prompt);
+    }
+    res.json({ category });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
