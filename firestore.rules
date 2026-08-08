@@ -27,12 +27,14 @@ service cloud.firestore {
         && request.resource.data.plan in ['starter', 'trial']
         && request.resource.data.keys().hasOnly([
             'ownerName', 'email', 'displayName', 'plan', 'onboarded', 'createdAt',
-            'activeBusiness', 'onboardingVersion', 'onboardingProgress'
+            'activeBusiness', 'onboardingVersion', 'onboardingProgress',
+            'onboardingCompleted'
           ]);
       allow update: if request.auth != null && request.auth.uid == userId
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'ownerName', 'email', 'displayName', 'onboarded', 'activeBusiness',
-            'updatedAt', 'onboardingProgress', 'onboardingVersion'
+            'updatedAt', 'onboardingProgress', 'onboardingVersion',
+            'onboardingCompleted'
           ]);
 
       // Businesses — nested under users/{uid}/businesses/{bizId}
@@ -51,6 +53,11 @@ service cloud.firestore {
               'businessName', 'name', 'ownerName', 'ownerRole', 'category',
               'phone', 'email', 'street', 'city', 'state', 'zip', 'address',
               'website', 'hours', 'locationType', 'region', 'tone',
+              'ynMentionName', 'ynMentionRole', 'ynMentionAddress',
+              'ynMentionPhone', 'ynMentionWebsite', 'ynMentionEmail',
+              'story', 'different', 'awards', 'customer', 'otherInfo',
+              'businessDescription', 'toggles', 'onboarded', 'onboardingVersion',
+              'activeCampaign', 'enabledPlatforms',
               'globalMemory', 'featuredPhoto', 'aiContext', 'bizInsights',
               'platformCats', 'postingSchedule', 'platformPrefs',
               'businessId', 'uid', 'status', 'createdAt', 'updatedAt'
@@ -61,6 +68,11 @@ service cloud.firestore {
               'businessName', 'name', 'ownerName', 'ownerRole', 'category',
               'phone', 'email', 'street', 'city', 'state', 'zip', 'address',
               'website', 'hours', 'locationType', 'region', 'tone',
+              'ynMentionName', 'ynMentionRole', 'ynMentionAddress',
+              'ynMentionPhone', 'ynMentionWebsite', 'ynMentionEmail',
+              'story', 'different', 'awards', 'customer', 'otherInfo',
+              'businessDescription', 'toggles', 'onboarded', 'onboardingVersion',
+              'activeCampaign', 'enabledPlatforms',
               'globalMemory', 'featuredPhoto', 'aiContext', 'bizInsights',
               'platformCats', 'postingSchedule', 'platformPrefs',
               'schedulingPaused', 'updatedAt'

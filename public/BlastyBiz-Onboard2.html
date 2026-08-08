@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786219093455"/>
+  <link rel="stylesheet" href="global-style.css?v=1786220013139"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -1273,8 +1273,28 @@
       }, 600);
     } catch (e) {
       console.error('[ob2 save]', e);
-      addMascotBubble("Something went wrong saving — let's try again.");
+      // Every save failure used to look identical here — which is exactly how a
+      // Firestore rules rejection (one unlisted field aborting the whole atomic
+      // batch) passed for an AI/generation bug. Name the cause instead.
+      const _code   = (e && (e.code || e.name)) || 'unknown';
+      const _denied = _code === 'permission-denied';
+      addMascotBubble("Something went wrong saving — let's try again."
+        + (_denied ? " The database refused the write, so this is a permissions rule — not anything you typed." : ''));
       setMood('s-ask');
+      const _st0 = document.getElementById('ob-status');
+      if (_st0) {
+        _st0.style.display = 'block';
+        const _d = document.createElement('div');
+        _d.style.cssText = 'font-size:12px;color:#888;margin-top:6px;text-align:center;';
+        _d.textContent = 'Error: ' + _code;
+        _st0.appendChild(_d);
+        if (_ob2Debug) {
+          const _pre = document.createElement('pre');
+          _pre.style.cssText = 'font-size:11px;color:#666;white-space:pre-wrap;text-align:left;max-height:180px;overflow:auto;';
+          _pre.textContent = (e && (e.stack || e.message)) || String(e);
+          _st0.appendChild(_pre);
+        }
+      }
       const retryBtn = document.createElement('button');
       retryBtn.textContent = '↩ Try again';
       retryBtn.style.cssText = 'margin:10px auto;display:block;padding:10px 24px;background:#ff6b00;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;';
