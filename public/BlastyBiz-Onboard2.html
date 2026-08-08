@@ -1649,6 +1649,39 @@
     setTimeout(() => window._ob2Continue(), 220);
   };
 
+  // Re-evaluate skipIf conditions between the just-edited step and the resume point.
+  // Returns the step index to jump to: either the first newly-visible unanswered step,
+  // or origResume if everything is already answered / skipped correctly.
+  function _ob2ResumeAfterEdit(fromStep, origResume) {
+    let firstNeeded = origResume;
+    for (let i = fromStep; i < origResume; i++) {
+      const si = STEPS[i];
+      if (!si || !si.key) continue;
+      const shouldSkip = si.skipIf ? si.skipIf(answers) : false;
+      if (shouldSkip) {
+        // Field is now skipped — clear any stale answer and reset its row to "future"
+        if (si.key in answers) {
+          delete answers[si.key];
+          const row = document.getElementById('obfr-' + si.key);
+          if (row) {
+            row.classList.remove('answered', 'bb-field-done', 'active', 'just-answered');
+            row.classList.add('future', 'bb-field-blur');
+            row.onclick = null;
+            const slot = document.getElementById('obfs-' + si.key);
+            if (slot) slot.innerHTML = '<span class="obf-dash">\u2014</span>';
+          }
+        }
+      } else {
+        // Field should be visible — if it has no valid answer, user must fill it in
+        const ans = answers[si.key];
+        const isEmpty = ans === undefined || ans === null || ans === '' ||
+                        (Array.isArray(ans) && ans.length === 0);
+        if (isEmpty && i < firstNeeded) firstNeeded = i;
+      }
+    }
+    return firstNeeded;
+  }
+
   window._ob2Continue = function() {
     const s = STEPS[step];
     // On platforms step: fire a Blasty blast factoid when the button is tapped
@@ -1703,9 +1736,9 @@
       if (currentBubble) lockBubble(currentBubble, displayVal);
     }
     step++;
-    // If the user was editing a past answer, jump back to where they were
+    // If the user was editing a past answer, re-evaluate skip conditions before resuming
     if (_resumeStep !== null && step <= _resumeStep) {
-      step = _resumeStep;
+      step = _ob2ResumeAfterEdit(step, _resumeStep);
       _resumeStep = null;
     }
     if (window._ob2SaveProgress) window._ob2SaveProgress(answers, toggles, step);
