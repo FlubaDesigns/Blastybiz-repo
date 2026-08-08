@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786155001825"/>
+  <link rel="stylesheet" href="global-style.css?v=1786156565460"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -453,15 +453,22 @@
             ...(token ? { 'Authorization': 'Bearer ' + token } : {})
           },
           body: JSON.stringify({
-            bizName:   a.bizName,
-            story:     a.story         || '',
-            different: a.different     || '',
-            awards:    a.awards        || '',
-            customer:  a.customer      || '',
-            offer:     a.campaignOffer || ''
+            bizName:         a.bizName          || '',
+            ownerName:       a.ownerName        || '',
+            role:            a.role             || '',
+            story:           a.story            || '',
+            different:       a.different        || '',
+            awards:          a.awards           || '',
+            customer:        a.customer         || '',
+            locationType:    a.locationType     || '',
+            campaignName:    a.campaignName     || '',
+            campaignAbout:   a.campaignAbout    || '',
+            campaignAudience:a.campaignAudience || '',
+            offer:           a.campaignOffer    || ''
           })
         });
         const data = await res.json();
+        if (data.globalMemory) window._ob2GlobalMemory = data.globalMemory;
         return data.category || 'Local Business';
       }
     },
@@ -1260,6 +1267,7 @@ window._ob2Save = async function(answers, toggles) {
       customer:  answers.customer  || '',
       other:     answers.other     || '',
     },
+    globalMemory: window._ob2GlobalMemory || '',
     createdAt: serverTimestamp()
   }, isEdit ? { merge: true } : {});
 

@@ -80,30 +80,43 @@ Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
   }
 }));
 
-const { ALL_CATEGORIES } = require('../lib/platform-cats');
-
 exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
+  const { ALL_CATEGORIES } = require('../lib/platform-cats');
   if (!(await checkUidRateLimit('suggestCategoryRateLimit', decoded.uid, 20, 60 * 60 * 1000))) {
     return res.status(429).json({ error: 'Rate limit exceeded' });
   }
-  const { bizName, story, different, awards, customer, offer } = req.body;
+  const { bizName, ownerName, role, story, different, awards, customer, locationType,
+          campaignName, campaignAbout, campaignAudience, offer } = req.body;
   if (!bizName) return res.status(400).json({ error: 'bizName required' });
-  const context = [
-    story     && `About the business: ${story}`,
-    different && `What makes it different: ${different}`,
-    awards    && `Awards/recognition: ${awards}`,
-    customer  && `Ideal customer: ${customer}`,
-    offer     && `Current offer: ${offer}`,
+
+  const contextLines = [
+    ownerName    && `Owner: ${ownerName}${role ? ' (' + role + ')' : ''}`,
+    locationType && `Location type: ${locationType}`,
+    story        && `Business story: ${story}`,
+    different    && `What makes it different: ${different}`,
+    awards       && `Awards / recognition: ${awards}`,
+    customer     && `Ideal customer: ${customer}`,
+    campaignName && `Current campaign: ${campaignName}`,
+    campaignAbout&& `Campaign focus: ${campaignAbout}`,
+    campaignAudience && `Target audience: ${campaignAudience}`,
+    offer        && `Current offer / CTA: ${offer}`,
   ].filter(Boolean).join('\n');
-  // ── Call 1: describe the business from gathered info ─────────────────────
-  const describePrompt = context
-    ? `Based on the following information about a business, describe in 3-6 words what type of business it is. Be specific.
+
+  // ── Call 1: synthesize a rich globalMemory brief ──────────────────────────
+  const describePrompt = `You are writing the permanent AI memory for a business. It will be injected into every future marketing copy generation so the AI always knows exactly who this business is.
 
 Business name: "${bizName}"
-${context}
+${contextLines || '(No additional context provided)'}
 
-Reply with ONLY the business type description. No punctuation, no explanation.`
-    : `Describe in 3-6 words what type of business "${bizName}" is. Be specific. Reply with ONLY the business type. No punctuation, no explanation.`;
+Write a comprehensive 2–3 paragraph business briefing in third person that captures:
+- What this business actually is and does
+- Their unique story and what makes them different from competitors
+- Who their ideal customer is
+- Their personality, tone, and brand voice
+- Any awards, achievements, or notable facts
+- Their current campaign focus and offer
+
+Be specific and vivid. Preserve anything quirky or unusual — that is what makes the copy distinctive. Do NOT use generic filler. This briefing must be good enough that an AI reading it cold can write compelling, on-brand marketing copy with no other information.`;
 
   // ── Gemini fallback helper ────────────────────────────────────────────────
   async function _gemini(prompt, maxTok) {
@@ -132,23 +145,25 @@ Reply with ONLY the business type description. No punctuation, no explanation.`
   }
 
   try {
-    // Call 1 — what kind of business is this?
-    const description = await _aiCall(describePrompt, 30);
+    // Call 1 — build a rich globalMemory brief from all gathered info
+    const globalMemory = await _aiCall(describePrompt, 400);
 
-    // Call 2 — match that description to the real category list
+    // Call 2 — match that brief to the real platform category list
     const catList = ALL_CATEGORIES.join(', ');
-    const matchPrompt = `A business has been described as: "${description}"
+    const matchPrompt = `Based on this business briefing:
 
-From the following list, pick the single closest matching category:
+"${globalMemory}"
+
+Pick the single closest matching category from this list:
 ${catList}
 
 Rules:
 - You MUST pick from the list above exactly as written.
-- Pick the closest match even if it is not perfect.
+- Pick the closest match even if none is perfect.
 - Reply with ONLY the category name. No punctuation, no explanation.`;
 
     const category = await _aiCall(matchPrompt, 20);
-    res.json({ category, description });
+    res.json({ category, globalMemory });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
