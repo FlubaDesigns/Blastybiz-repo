@@ -14,6 +14,39 @@ When a page has both a plain `<script>` and a `<script type="module">`, any `let
 - Update: inside every setter (`goToStep`, etc.) add `window.currentStep = currentStep;`
 - Module scripts then safely read `window.currentStep`.
 
+## The reverse direction (this one is the expensive one)
+
+The rule above covers plain → module. **The opposite direction bites harder:** anything
+`import`ed in a `<script type="module">` — `auth`, `db`, Firestore helpers — lives in module
+scope and is invisible to the plain `<script>`. A plain-script callback referencing bare
+`auth` throws `ReferenceError: auth is not defined`.
+
+**Why this is so hard to spot on the onboarding wizard:** the `STEPS` array lives in the plain
+script, but its `fetchFn` callbacks are the things that want `auth`. The ReferenceError is
+thrown *synchronously*, before any network call, and the step's `try/catch` swallows it and
+falls back to a manual text input. The page looks like it "chose" to show a text box. The
+backend is never contacted, so backend logs are clean and shell tests of the CF pass.
+
+Defensive form — a best-effort token must never be able to throw:
+```js
+let token = null;
+try {
+  const _auth = window._ob2Auth;              // bridged global, not bare `auth`
+  if (_auth && _auth.currentUser) token = await _auth.currentUser.getIdToken();
+} catch (_) { token = null; }
+```
+Bridge it once in the module: `window._ob2Auth = auth;`
+
+Note `a?.b().catch()` does **not** save you: `?.` short-circuits the *call* to `undefined`,
+then `.catch` on `undefined` throws a TypeError. And neither guards a bare-identifier
+ReferenceError, which happens before any of that evaluates.
+
+**Diagnostic heuristic:** an onboarding step that silently degrades to its fallback UI, while
+the CF works fine from `curl`, is a client-side ReferenceError until proven otherwise. Grep
+the plain-script line range for bare module-scoped identifiers *before* investigating API
+keys, models, auth tokens, CORS, or rate limits. Cheap check:
+`awk 'NR>=<plainStart> && NR<=<plainEnd>' page.html | grep -nE "[^._A-Za-z0-9](auth|db|getDoc|setDoc)\s*[(.]"`
+
 ## Email verification via Identity Toolkit Admin API
 
 To set `emailVerified: true` on a Firebase Auth user without ADC credentials:

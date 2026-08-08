@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786164755334"/>
+  <link rel="stylesheet" href="global-style.css?v=1786218031895"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -445,7 +445,14 @@
       inputType: 'ai-suggest',
       key: 'category',
       fetchFn: async a => {
-        const token = await (auth.currentUser ? auth.currentUser.getIdToken() : Promise.resolve(null)).catch(() => null);
+        // Best-effort only: suggestCategory runs before the magic-link sign-in,
+        // so there is usually no user yet and the CF does not require a token.
+        // Must never throw — a failure here would blank out the whole step.
+        let token = null;
+        try {
+          const _auth = window._ob2Auth;
+          if (_auth && _auth.currentUser) token = await _auth.currentUser.getIdToken();
+        } catch (_) { token = null; }
         const res = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/suggestCategory', {
           method: 'POST',
           headers: {
@@ -1189,6 +1196,12 @@ import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.
 import { loadPlatforms } from './platforms-config.js?v=3';
 
 const db = getFirestore(getApp());
+
+// `auth` is module-scoped and therefore invisible to the plain <script> above,
+// where the STEPS array (and its fetchFn callbacks) live. Bridge it onto window
+// so those callbacks can reach it. Do NOT reference bare `auth` from the plain
+// script — it throws ReferenceError, which silently kills the AI suggest step.
+window._ob2Auth = auth;
 
 // ── Platform list: load from Firestore config/platforms ─────────────────────
 // Runs immediately (config/platforms is public-read — no auth required).
