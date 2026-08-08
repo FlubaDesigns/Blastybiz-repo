@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786152366962"/>
+  <link rel="stylesheet" href="global-style.css?v=1786152737087"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -1486,7 +1486,7 @@
         const locked = c.proOnly && !isPro;
         html += '<label class="ob2-ms-label' + (locked ? ' ob2-ms-locked' : '') + '">'
           + '<input type="checkbox" class="ob2-ms-check" value="' + c.value + '"'
-          + (locked ? ' disabled' : '') + ' onchange="window._ob2MsChange()"/>'
+          + (locked ? ' disabled' : '') + ' onchange="window._ob2PlatformPick(this)"/>'
           + c.label
           + (locked ? ' <span class="ob2-pro-badge">PRO</span>' : '')
           + '</label>';
@@ -1597,6 +1597,38 @@
     if (inp) inp.value = checked.join(',');
   };
 
+  const _PLATFORM_FACTS = {
+    google:     "🔍 Google Business is the #1 driver of local foot traffic — people searching nearby are ready to buy <em>right now</em>.",
+    facebook:   "📘 Facebook Pages reach 3 billion people and are still the top platform for local word-of-mouth, events, and promos.",
+    instagram:  "📸 Instagram has the highest engagement rate of any platform — and visual businesses that post consistently see real walk-ins.",
+    fbmarket:   "🛒 Facebook Marketplace gets your offers in front of local buyers who are already in purchase mode.",
+    yelp:       "⭐ 88% of consumers read Yelp reviews before visiting a local business. A strong profile here builds instant trust.",
+    craigslist: "📋 Craigslist still drives millions of local service inquiries every month — and it's completely free to post.",
+    nextdoor:   "🏘️ Nextdoor is where neighbors recommend local businesses to each other. A single recommendation here spreads fast.",
+    linkedin:   "💼 LinkedIn is the go-to for B2B leads and professional services — if businesses buy from you, this is your lane.",
+    pinterest:  "📌 83% of Pinterest users have bought something they discovered there. Great for visual products and home services.",
+    x:          "𝕏 X moves fast — perfect for time-sensitive offers, trending topics, and building a public-facing brand voice.",
+    bing:       "🔵 Bing Places reaches 30% of US desktop searches and is often completely ignored by local competitors. Easy win.",
+    applemaps:  "🍎 Apple Maps is the default on every iPhone. If you're not there, you're invisible to half of mobile searchers.",
+    alignable:  "🤝 Alignable connects you with nearby business owners for referrals — your next big customer might come from a fellow local.",
+    thumbtack:  "📌 Thumbtack matches you with people actively requesting your exact service. They're not browsing — they're buying.",
+    angi:       "🔧 Angi sends pre-screened home-service leads straight to you. High intent, local, ready to book."
+  };
+
+  window._ob2PlatformPick = function(checkbox) {
+    // Update the hidden input (same as before)
+    window._ob2MsChange();
+    // Show a Blasty factoid when checking a platform; restore prompt when none selected
+    const slug = checkbox.value;
+    const isChecked = checkbox.checked;
+    const anyChecked = [...document.querySelectorAll('.ob2-ms-check:checked')].length > 0;
+    if (isChecked && _PLATFORM_FACTS[slug]) {
+      setBlastyBubble(_PLATFORM_FACTS[slug]);
+    } else if (!anyChecked) {
+      setBlastyBubble('Last one — which platforms do you want to blast on?');
+    }
+  };
+
   window._ob2ToggleChange = function(stateKey, checked) {
     toggles[stateKey] = checked;
   };
@@ -1620,6 +1652,12 @@
 
   window._ob2Continue = function() {
     const s = STEPS[step];
+    // On platforms step: immediately reset Blasty's bubble so the factoid doesn't hang
+    if (s.key === 'campaignPlatforms') {
+      const n = [...document.querySelectorAll('.ob2-ms-check:checked')].length;
+      setBlastyBubble(n === 1 ? "Great pick! Let me figure out your perfect category… 🚀"
+                               : "Great picks! Let me figure out your perfect category… 🚀");
+    }
     if ((s.inputType === 'url' || s.key === 'website') && currentInput) {
       var rv = currentInput.value.trim();
       if (rv) { if (!/^https?:\/\//i.test(rv)) rv = 'https://' + rv; currentInput.value = rv; }
