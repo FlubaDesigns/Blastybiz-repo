@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Mascot component — portability proof</title>
+<!--
+  This page deliberately loads NOTHING but mascot.js — no global-style.css,
+  no fonts, no app scripts.  If the mascots animate here, the component is
+  genuinely self-contained and can be dropped onto any site.
+-->
+<style>
+  body {
+    margin: 0; padding: 32px 20px 60px;
+    background: #0b1020; color: #dbe6f2;
+    font: 15px/1.55 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: #7f92ad; margin: 0 0 28px; font-size: 14px; }
+  .row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .card {
+    flex: 1 1 300px; min-width: 280px;
+    background: #121a30; border: 1px solid #22304d;
+    border-radius: 14px; padding: 20px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 2px; }
+  .card .who { color: #7f92ad; font-size: 12.5px; margin: 0 0 14px; }
+  .stage { display: flex; flex-direction: column; align-items: center; }
+  .stage .pb-mascot { width: 150px; }
+  .cap { min-height: 20px; color: #9fd6ff; font-size: 13px; margin-top: 6px; text-align: center; }
+  .controls { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; justify-content: center; }
+  button {
+    background: #1c2947; color: #dbe6f2; border: 1px solid #2f4370;
+    border-radius: 8px; padding: 6px 11px; font-size: 12.5px; cursor: pointer;
+  }
+  button:hover { background: #26355c; }
+  .note { margin-top: 30px; color: #7f92ad; font-size: 13px; max-width: 760px; }
+  .note code { color: #9fd6ff; }
+</style>
+</head>
+<body>
+
+<h1>Mascot component — portability proof</h1>
+<p class="sub">Two independent mascots on one page, each with its own name, mood and caption.</p>
+
+<div class="row">
+
+  <div class="card">
+    <h2>Instance A</h2>
+    <p class="who">Named “Blasty” · created from a selector</p>
+    <div class="stage">
+      <div class="pb-mascot" id="mascot-a"></div>
+      <div class="cap" id="cap-a"></div>
+    </div>
+    <div class="controls" data-for="a">
+      <button data-mood="s-wave">Wave</button>
+      <button data-mood="s-working">Working</button>
+      <button data-mood="s-ask">Ask</button>
+      <button data-mood="s-celebrate">Celebrate</button>
+      <button data-act="confetti">Confetti</button>
+      <button data-act="gaze">Gaze on/off</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Instance B</h2>
+    <p class="who">Named “Scout” · same artwork, separate state</p>
+    <div class="stage">
+      <div class="pb-mascot" id="mascot-b"></div>
+      <div class="cap" id="cap-b"></div>
+    </div>
+    <div class="controls" data-for="b">
+      <button data-mood="s-happy">Happy</button>
+      <button data-mood="s-tilt-left">Tilt</button>
+      <button data-mood="s-spin">Spin</button>
+      <button data-mood="s-arrive-land">Land</button>
+      <button data-act="confetti">Confetti</button>
+      <button data-act="gaze">Gaze on/off</button>
+    </div>
+  </div>
+
+</div>
+
+<p class="note">
+  Both mascots are created with <code>PBMascot.create(target, options)</code>. Clicking a mood on
+  one leaves the other untouched — that is the point of the change. Each instance also gets its own
+  copies of the artwork's internal gradient ids, so neither can steal the other's colours.
+</p>
+
+<script src="mascot.js?v=5"></script>
+<script>
+(function () {
+  var a = PBMascot.create('#mascot-a', { name: 'Blasty', caption: '#cap-a' });
+  var b = PBMascot.create('#mascot-b', { name: 'Scout',  caption: '#cap-b' });
+  var m = { a: a, b: b };
+
+  a.setMood('s-wave');
+  b.setMood('s-happy');
+
+  var gazing = { a: false, b: false };
+
+  document.querySelectorAll('.controls').forEach(function (bar) {
+    var key = bar.getAttribute('data-for');
+    bar.addEventListener('click', function (e) {
+      var btn = e.target.closest('button');
+      if (!btn) return;
+      var inst = m[key];
+      if (btn.dataset.mood) { inst.setMood(btn.dataset.mood); return; }
+      if (btn.dataset.act === 'confetti') { inst.setMood('s-celebrate'); inst.confetti(); return; }
+      if (btn.dataset.act === 'gaze') {
+        gazing[key] = !gazing[key];
+        gazing[key] ? inst.startGaze() : inst.stopGaze();
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

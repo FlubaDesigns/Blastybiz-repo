@@ -14,16 +14,16 @@
     '.pb-mascot{position:relative;display:inline-block;',
     '  --flame-top:#ffdc2f;--flame-mid:#ff961f;--flame-bot:#ef3d10;',
     '  --flamein-top:#fffbd7;--flamein-mid:#fff04c;--flamein-bot:#ffac20;}',
-    '#mascot-svg{width:100%;height:auto;overflow:visible;',
+    '.mascot-svg{width:100%;height:auto;overflow:visible;',
     '  transform-box:fill-box;transform-origin:bottom center;}',
 
     /* Idle float */
-    '#mascot-body{transform-box:fill-box;transform-origin:bottom center;',
+    '.mascot-body{transform-box:fill-box;transform-origin:bottom center;',
     '  animation:b-float 3.2s ease-in-out infinite;}',
     '@keyframes b-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-11px)}}',
 
     /* Arrive pop */
-    '.pb-mascot.s-arrive #mascot-svg{animation:b-arrive .45s cubic-bezier(.34,1.56,.64,1) both;}',
+    '.pb-mascot.s-arrive .mascot-svg{animation:b-arrive .45s cubic-bezier(.34,1.56,.64,1) both;}',
     '@keyframes b-arrive{0%{transform:scale(.6) translateY(18px);opacity:0}100%{transform:scale(1) translateY(0);opacity:1}}',
 
     /* Flame pulse */
@@ -70,59 +70,59 @@
     '.pb-mascot.s-limb-fin-both  .mascot-fin-r{animation:b-fin-up-r .4s ease-out both;}',
 
     /* s-wave */
-    '.pb-mascot.s-wave #mascot-body{animation:b-wave .55s ease-in-out 4,b-float 3.2s ease-in-out infinite 2.2s;}',
+    '.pb-mascot.s-wave .mascot-body{animation:b-wave .55s ease-in-out 4,b-float 3.2s ease-in-out infinite 2.2s;}',
     '@keyframes b-wave{0%,100%{transform:rotate(0deg) translateY(0)}25%{transform:rotate(-22deg) translateY(-8px)}65%{transform:rotate(16deg) translateY(-4px)}}',
     '.pb-mascot.s-wave .pupil-group-l,.pb-mascot.s-wave .pupil-group-r{transform:scale(1.1) translateY(-3px);}',
 
     /* s-wave-2 */
-    '.pb-mascot.s-wave-2 #mascot-body{animation:b-wave-big .45s ease-in-out 5,b-float 3.2s ease-in-out infinite 2.25s;}',
+    '.pb-mascot.s-wave-2 .mascot-body{animation:b-wave-big .45s ease-in-out 5,b-float 3.2s ease-in-out infinite 2.25s;}',
     '@keyframes b-wave-big{0%,100%{transform:rotate(0deg) translateY(0)}25%{transform:rotate(-28deg) translateY(-12px)}65%{transform:rotate(20deg) translateY(-6px)}}',
     '.pb-mascot.s-wave-2 .pupil-group-l,.pb-mascot.s-wave-2 .pupil-group-r{transform:scale(1.15) translateY(-4px);}',
 
     /* s-happy */
-    '.pb-mascot.s-happy #mascot-body{animation:b-bounce .4s ease-in-out 3,b-float 3.2s ease-in-out infinite 1.2s;}',
+    '.pb-mascot.s-happy .mascot-body{animation:b-bounce .4s ease-in-out 3,b-float 3.2s ease-in-out infinite 1.2s;}',
     '@keyframes b-bounce{0%{transform:translateY(0) scale(1,1)}35%{transform:translateY(-28px) scale(.9,1.15)}65%{transform:translateY(-22px) scale(.9,1.15)}85%{transform:translateY(4px) scale(1.12,.88)}100%{transform:translateY(0) scale(1,1)}}',
     '.pb-mascot.s-happy .pupil-group-l,.pb-mascot.s-happy .pupil-group-r{transform:translateY(4px) scaleY(.75);}',
 
     /* s-ask */
     '.pb-mascot.s-ask .pupil-group-l,.pb-mascot.s-ask .pupil-group-r{transform:translateX(-6px) translateY(2px);transition:transform .3s ease;}',
-    '.pb-mascot.s-ask #mascot-body{animation:b-lean 3s ease-in-out infinite;}',
+    '.pb-mascot.s-ask .mascot-body{animation:b-lean 3s ease-in-out infinite;}',
     '@keyframes b-lean{0%,100%{transform:translateY(0) rotate(-9deg)}50%{transform:translateY(-10px) rotate(-9deg)}}',
 
     /* s-ask-2 */
     '.pb-mascot.s-ask-2 .pupil-group-l,.pb-mascot.s-ask-2 .pupil-group-r{transform:translateX(6px) translateY(-2px);}',
-    '.pb-mascot.s-ask-2 #mascot-body{animation:b-lean-r 3s ease-in-out infinite;}',
+    '.pb-mascot.s-ask-2 .mascot-body{animation:b-lean-r 3s ease-in-out infinite;}',
     '@keyframes b-lean-r{0%,100%{transform:translateY(0) rotate(8deg)}50%{transform:translateY(-9px) rotate(8deg)}}',
 
     /* s-ask-3 */
     '.pb-mascot.s-ask-3 .pupil-group-l,.pb-mascot.s-ask-3 .pupil-group-r{transform:translateY(-7px);}',
-    '.pb-mascot.s-ask-3 #mascot-body{animation:b-float 2.2s ease-in-out infinite;}',
+    '.pb-mascot.s-ask-3 .mascot-body{animation:b-float 2.2s ease-in-out infinite;}',
 
     /* s-working */
-    '.pb-mascot.s-working #mascot-body{animation:b-work .65s ease-in-out infinite;}',
+    '.pb-mascot.s-working .mascot-body{animation:b-work .65s ease-in-out infinite;}',
     '@keyframes b-work{0%,100%{transform:translateY(0) rotate(-5deg)}25%{transform:translateY(-9px) rotate(7deg)}75%{transform:translateY(-4px) rotate(-8deg)}}',
     '.pb-mascot.s-working .flame{animation:b-flame-work .32s ease-in-out infinite;}',
     '@keyframes b-flame-work{0%,100%{transform:scaleY(1) scaleX(1)}50%{transform:scaleY(2.1) scaleX(.65)}}',
     '.pb-mascot.s-working .pupil-group-l,.pb-mascot.s-working .pupil-group-r{transform:translateY(5px);}',
 
     /* s-celebrate */
-    '.pb-mascot.s-celebrate #mascot-body{animation:b-celebrate .38s ease-in-out 5;}',
+    '.pb-mascot.s-celebrate .mascot-body{animation:b-celebrate .38s ease-in-out 5;}',
     '@keyframes b-celebrate{0%,100%{transform:translateY(0) scale(1) rotate(0deg)}25%{transform:translateY(-30px) scale(1.14) rotate(-8deg)}75%{transform:translateY(-22px) scale(1.14) rotate(8deg)}}',
     '.pb-mascot.s-celebrate .confetti>g{transform-box:fill-box;transform-origin:center;animation:confetti-burst 1.6s ease-out forwards;}',
     '@keyframes confetti-burst{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(80px) scale(1.8)}}',
 
     /* s-spin */
-    '.pb-mascot.s-spin #mascot-body{animation:b-spin-full 1s cubic-bezier(.34,1.56,.64,1) both,b-float 3.2s ease-in-out infinite 1.05s;}',
+    '.pb-mascot.s-spin .mascot-body{animation:b-spin-full 1s cubic-bezier(.34,1.56,.64,1) both,b-float 3.2s ease-in-out infinite 1.05s;}',
     '@keyframes b-spin-full{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(200deg) scale(1.1)}85%{transform:rotate(355deg) scale(1)}100%{transform:rotate(360deg) scale(1)}}',
 
     /* s-tilt-left / s-tilt-right */
-    '.pb-mascot.s-tilt-left  #mascot-body{animation:b-tilt-l 3.2s ease-in-out infinite;}',
+    '.pb-mascot.s-tilt-left  .mascot-body{animation:b-tilt-l 3.2s ease-in-out infinite;}',
     '@keyframes b-tilt-l{0%,100%{transform:rotate(-8deg) translateY(0)}50%{transform:rotate(-8deg) translateY(-10px)}}',
-    '.pb-mascot.s-tilt-right #mascot-body{animation:b-tilt-r 3.2s ease-in-out infinite;}',
+    '.pb-mascot.s-tilt-right .mascot-body{animation:b-tilt-r 3.2s ease-in-out infinite;}',
     '@keyframes b-tilt-r{0%,100%{transform:rotate(8deg) translateY(0)}50%{transform:rotate(8deg) translateY(-10px)}}',
 
     /* s-arrive-land */
-    '.pb-mascot.s-arrive-land #mascot-svg{animation:b-land .7s cubic-bezier(.22,1.4,.64,1) both;}',
+    '.pb-mascot.s-arrive-land .mascot-svg{animation:b-land .7s cubic-bezier(.22,1.4,.64,1) both;}',
     '@keyframes b-land{0%{transform:translateY(-80px) scale(.8);opacity:.2}70%{transform:translateY(8px) scale(1.04);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}',
 
     /* Flame color system */
@@ -153,7 +153,7 @@
     '@keyframes b-nose-pop-fast{0%,100%{transform:translateY(0)}40%{transform:translateY(-65px)}}',
 
     /* Nose beacon */
-    '.pb-mascot.s-light-nose #mascot-nose-light{opacity:.9;animation:b-beacon 1.8s ease-in-out infinite;}',
+    '.pb-mascot.s-light-nose .mascot-nose-light{opacity:.9;animation:b-beacon 1.8s ease-in-out infinite;}',
     '@keyframes b-beacon{0%,75%,100%{opacity:.9}40%{opacity:.1}}',
 
     /* Waist lights */
@@ -190,11 +190,11 @@
     '.pb-mascot.s-smoke-3 .smoke-puff:nth-child(1){animation-delay:0s}',
     '.pb-mascot.s-smoke-3 .smoke-puff:nth-child(2){animation-delay:.18s}',
     '.pb-mascot.s-smoke-3 .smoke-puff:nth-child(3){animation-delay:.36s}',
-    '.pb-mascot.s-smoke    #mascot-exhaust{opacity:0!important;}',
-    '.pb-mascot.s-smoke-sm #mascot-exhaust{opacity:0!important;}',
-    '.pb-mascot.s-smoke-lg #mascot-exhaust{opacity:0!important;}',
-    '.pb-mascot.s-smoke-2  #mascot-exhaust{opacity:0!important;}',
-    '.pb-mascot.s-smoke-3  #mascot-exhaust{opacity:0!important;}',
+    '.pb-mascot.s-smoke    .mascot-exhaust{opacity:0!important;}',
+    '.pb-mascot.s-smoke-sm .mascot-exhaust{opacity:0!important;}',
+    '.pb-mascot.s-smoke-lg .mascot-exhaust{opacity:0!important;}',
+    '.pb-mascot.s-smoke-2  .mascot-exhaust{opacity:0!important;}',
+    '.pb-mascot.s-smoke-3  .mascot-exhaust{opacity:0!important;}',
 
     /* ── v2 additions ─────────────────────────────────────────────────── */
 
@@ -222,7 +222,7 @@
   ].join('\n');
 
   /* ── SVG ──────────────────────────────────────────────────────────────── */
-  var SVG = '<svg id="mascot-svg" viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+  var SVG = '<svg class="mascot-svg" viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
     + '<defs>'
     + '<linearGradient id="mc-bf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".48" stop-color="#f8fbff"/><stop offset="1" stop-color="#dbe6f2"/></linearGradient>'
     + '<linearGradient id="mc-bs" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff" stop-opacity=".94"/><stop offset=".64" stop-color="#ffffff" stop-opacity=".08"/><stop offset="1" stop-color="#8ea4bc" stop-opacity=".34"/></linearGradient>'
@@ -234,7 +234,7 @@
     + '<clipPath id="mc-bc"><path d="M180 42 C117 89 89 163 91 251 C92 309 119 348 180 378 C241 348 268 309 269 251 C271 163 243 89 180 42Z"/></clipPath>'
     + '</defs>'
     /* Confetti */
-    + '<g class="confetti" id="mascot-effects">'
+    + '<g class="confetti mascot-effects">'
     + '<g fill="none" stroke="#76b8ff" stroke-width="7" stroke-linecap="round" opacity="0"><path d="M64 272 Q48 294 61 319"/><path d="M47 260 Q24 292 43 329"/></g>'
     + '<g fill="none" stroke="#76b8ff" stroke-width="7" stroke-linecap="round" opacity="0"><path d="M296 272 Q312 294 299 319"/><path d="M313 260 Q336 292 317 329"/></g>'
     + '<g opacity="0"><path d="M53 102 l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#ffd12f"/><path d="M305 94 l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#62dd43"/><circle cx="67" cy="164" r="5" fill="#ff5a4f"/><circle cx="300" cy="168" r="5" fill="#ff9f1c"/></g>'
@@ -243,9 +243,9 @@
     /* Shadow */
     + '<ellipse cx="180" cy="434" rx="72" ry="13" fill="#000" opacity=".18"/>'
     /* Body group */
-    + '<g id="mascot-body">'
+    + '<g class="mascot-body">'
     /* Flame */
-    + '<g id="mascot-exhaust" class="flame">'
+    + '<g class="flame mascot-exhaust">'
     + '<path d="M180 354 C213 385 207 419 180 446 C153 419 147 385 180 354Z" fill="url(#mc-fo)" stroke="#102957" stroke-width="8" stroke-linejoin="round"/>'
     + '<path d="M180 368 C197 389 194 411 180 428 C166 411 163 389 180 368Z" fill="url(#mc-fi)"/>'
     + '</g>'
@@ -267,10 +267,10 @@
     + '<path d="M105 283 C132 298 156 304 180 304 C204 304 228 298 255 283" fill="none" stroke="#b3ff70" stroke-width="5" opacity=".8"/>'
     + '</g>'
     /* Nose */
-    + '<g id="mascot-nose" class="mascot-nose" style="transform-box:fill-box;transform-origin:50% 0%">'
+    + '<g class="mascot-nose" style="transform-box:fill-box;transform-origin:50% 0%">'
     + '<path d="M180 42 C151 64 129 88 113 116 C137 105 157 100 180 100 C203 100 223 105 247 116 C231 88 209 64 180 42Z" fill="url(#mc-rf)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>'
     + '<path d="M205 56 C220 72 229 85 236 102" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity=".9"/>'
-    + '<circle id="mascot-nose-light" cx="180" cy="50" r="8" fill="#ffdc2f" opacity="0"/>'
+    + '<circle class="mascot-nose-light" cx="180" cy="50" r="8" fill="#ffdc2f" opacity="0"/>'
     + '</g>'
     /* Eyes */
     + '<path d="M126 161 Q145 146 160 158" fill="none" stroke="#102957" stroke-width="8" stroke-linecap="round"/>'
@@ -283,7 +283,7 @@
     + '<ellipse cx="121" cy="244" rx="15" ry="8" fill="#ff7272" opacity=".55"/>'
     + '<ellipse cx="239" cy="244" rx="15" ry="8" fill="#ff7272" opacity=".55"/>'
     /* Mouths */
-    + '<g id="mouths">'
+    + '<g class="mascot-mouths">'
     + '<path class="mouth-happy" d="M145 238 Q180 270 215 238 Q208 286 180 291 Q152 286 145 238Z" fill="#102957"/>'
     + '<path class="mouth-happy" d="M162 273 Q180 287 198 273 Q187 269 180 270 Q173 269 162 273Z" fill="#ff4d57"/>'
     + '<ellipse class="mouth-working" cx="180" cy="259" rx="17" ry="21" fill="#102957"/>'
@@ -293,17 +293,17 @@
     + '<path class="mouth-ask" d="M163 260 Q180 268 197 260" fill="none" stroke="#102957" stroke-width="8" stroke-linecap="round"/>'
     + '</g>'
     /* Badge */
-    + '<g id="mascot-badge"><circle cx="180" cy="316" r="29" fill="#102957"/><circle cx="180" cy="316" r="23" fill="url(#mc-gf)" stroke="#b9ff78" stroke-width="4"/><path d="M169 299 H183 C198 299 202 314 192 320 C202 325 198 337 183 337 H169Z" fill="#fff"/><path d="M177 306 H184 C191 306 191 314 184 314 H177ZM177 321 H185 C192 321 192 329 185 329 H177Z" fill="#2c9e1d"/></g>'
+    + '<g class="mascot-badge"><circle cx="180" cy="316" r="29" fill="#102957"/><circle cx="180" cy="316" r="23" fill="url(#mc-gf)" stroke="#b9ff78" stroke-width="4"/><path d="M169 299 H183 C198 299 202 314 192 320 C202 325 198 337 183 337 H169Z" fill="#fff"/><path d="M177 306 H184 C191 306 191 314 184 314 H177ZM177 321 H185 C192 321 192 329 185 329 H177Z" fill="#2c9e1d"/></g>'
     /* Waist lights */
-    + '<g id="mascot-lights-waist"><circle class="w-light" cx="122" cy="289" r="9" fill="#ff4040" opacity="0"/><circle class="w-light" cx="140" cy="296" r="9" fill="#ff9900" opacity="0"/><circle class="w-light" cx="160" cy="300" r="9" fill="#ffe033" opacity="0"/><circle class="w-light" cx="180" cy="301" r="9" fill="#39ff14" opacity="0"/><circle class="w-light" cx="200" cy="300" r="9" fill="#00cfff" opacity="0"/><circle class="w-light" cx="220" cy="296" r="9" fill="#7b5eff" opacity="0"/><circle class="w-light" cx="238" cy="289" r="9" fill="#ff4db8" opacity="0"/></g>'
+    + '<g class="mascot-lights-waist"><circle class="w-light" cx="122" cy="289" r="9" fill="#ff4040" opacity="0"/><circle class="w-light" cx="140" cy="296" r="9" fill="#ff9900" opacity="0"/><circle class="w-light" cx="160" cy="300" r="9" fill="#ffe033" opacity="0"/><circle class="w-light" cx="180" cy="301" r="9" fill="#39ff14" opacity="0"/><circle class="w-light" cx="200" cy="300" r="9" fill="#00cfff" opacity="0"/><circle class="w-light" cx="220" cy="296" r="9" fill="#7b5eff" opacity="0"/><circle class="w-light" cx="238" cy="289" r="9" fill="#ff4db8" opacity="0"/></g>'
     /* Arms */
-    + '<g id="mascot-arms">'
+    + '<g class="mascot-arms">'
     + '<g class="mascot-arm mascot-arm-wave" opacity="0"><path d="M113 261 C84 253 73 229 82 207" fill="none" stroke="#102957" stroke-width="19" stroke-linecap="round"/><path d="M113 261 C84 253 73 229 82 207" fill="none" stroke="#f8fbff" stroke-width="11" stroke-linecap="round"/><g transform="translate(78 199) rotate(-18)"><circle cx="0" cy="0" r="16" fill="#fff" stroke="#102957" stroke-width="6"/><path d="M-12 -7 L-22 -22 M-4 -13 L-7 -31 M5 -13 L10 -31 M12 -8 L23 -22" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/><path d="M-12 -7 L-22 -22 M-4 -13 L-7 -31 M5 -13 L10 -31 M12 -8 L23 -22" fill="none" stroke="#102957" stroke-width="4" stroke-linecap="round"/></g></g>'
     + '<g class="mascot-arm mascot-arm-point" opacity="0"><path d="M247 259 C277 250 292 235 307 220" fill="none" stroke="#102957" stroke-width="19" stroke-linecap="round"/><path d="M247 259 C277 250 292 235 307 220" fill="none" stroke="#f8fbff" stroke-width="11" stroke-linecap="round"/><g transform="translate(311 216) rotate(-20)"><circle cx="0" cy="0" r="15" fill="#fff" stroke="#102957" stroke-width="6"/><path d="M9 -3 L34 -11" fill="none" stroke="#102957" stroke-width="11" stroke-linecap="round"/><path d="M9 -3 L34 -11" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/></g></g>'
     + '</g>'
-    + '</g>' /* end #mascot-body */
+    + '</g>' /* end .mascot-body */
     /* Smoke */
-    + '<g id="mascot-smoke"><ellipse class="smoke-puff" cx="180" cy="410" rx="14" ry="14" fill="#c8c8c8" opacity="0"/><ellipse class="smoke-puff" cx="156" cy="422" rx="14" ry="14" fill="#b8b8b8" opacity="0"/><ellipse class="smoke-puff" cx="204" cy="418" rx="14" ry="14" fill="#d0d0d0" opacity="0"/></g>'
+    + '<g class="mascot-smoke"><ellipse class="smoke-puff" cx="180" cy="410" rx="14" ry="14" fill="#c8c8c8" opacity="0"/><ellipse class="smoke-puff" cx="156" cy="422" rx="14" ry="14" fill="#b8b8b8" opacity="0"/><ellipse class="smoke-puff" cx="204" cy="418" rx="14" ry="14" fill="#d0d0d0" opacity="0"/></g>'
     + '</svg>';
 
   /* ── DATA ─────────────────────────────────────────────────────────────── */
@@ -337,19 +337,93 @@
     's-arrive-land': 'Landed! 🛬'
   };
 
-  /* ── v2 internal state ─────────────────────────────────────────────── */
-  var _gazeActive   = false;
-  var _gazeHandler  = null;
-  var _parkTimer    = null;
-  var _parkDelay    = 0;
-  var _dragging     = null;
-  var _lastPos      = null;
-  var _isDraggable  = false;
+  /* ── Helpers ──────────────────────────────────────────────────────────── */
 
-  /* ── API v1 ───────────────────────────────────────────────────────────── */
+  var _seq = 0;
 
-  /* setMood(moodOrSpec) */
-  function setMood(moodOrSpec) {
+  function _resolve(ref, scope) {
+    if (!ref) return null;
+    if (typeof ref === 'string') return (scope || document).querySelector(ref);
+    return ref && ref.nodeType === 1 ? ref : null;
+  }
+
+  function _reduced() {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  /* The artwork carries internal ids (gradients, clip paths) that are
+     referenced with url(#id).  Two mascots on one page would both define the
+     same ids, so every reference would resolve to whichever appeared first —
+     a second mascot with different artwork would silently borrow the first
+     one's colours.  Rewrite them to be unique per instance. */
+  function _uniquifyDefs(markup, suffix) {
+    var ids = [];
+    var re = /\sid="([^"]+)"/g;
+    var m;
+    while ((m = re.exec(markup)) !== null) {
+      if (ids.indexOf(m[1]) === -1) ids.push(m[1]);
+    }
+    ids.forEach(function (id) {
+      var safe = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      markup = markup
+        .replace(new RegExp('id="' + safe + '"', 'g'), 'id="' + id + '-' + suffix + '"')
+        .replace(new RegExp('url\\(#' + safe + '\\)', 'g'), 'url(#' + id + '-' + suffix + ')');
+    });
+    return markup;
+  }
+
+  function injectCSS() {
+    if (document.getElementById('pb-mascot-css')) return;
+    var s = document.createElement('style');
+    s.id = 'pb-mascot-css';
+    s.textContent = CSS;
+    document.head.appendChild(s);
+  }
+
+  /* ── Instance ─────────────────────────────────────────────────────────── */
+
+  /* create(target, options)
+       target   element or selector the mascot is drawn into
+       options  { name, svg, zone, caption, storageKey }
+     Returns an instance whose methods act only on that mascot, so any number
+     of them can coexist on one page. */
+  function Mascot(target, options) {
+    var opts = options || {};
+    var root = _resolve(target);
+    if (!root) throw new Error('PBMascot.create: target not found');
+
+    this.id      = ++_seq;
+    this.root    = root;
+    this.name    = opts.name || 'Assistant';
+    this.zone    = _resolve(opts.zone) || root.closest('.pb-mascot-zone');
+    this.caption = _resolve(opts.caption) ||
+                   (this.zone ? this.zone.querySelector('.pb-mascot-caption') : null);
+    this.storageKey = opts.storageKey || ('pb-mascot-pos' + (this.id === 1 ? '' : ':' + this.id));
+
+    /* Classes the page put on the container are preserved across mood changes */
+    this._base = (root.className || '')
+      .split(/\s+/)
+      .filter(function (c) { return c && c.indexOf('s-') !== 0 && c !== 'pb-confetti-active'; });
+    if (this._base.indexOf('pb-mascot') === -1) this._base.unshift('pb-mascot');
+
+    this._moodTimer  = null;
+    this._confettiTimer = null;
+    this._gazeHandler = null;
+    this._parkTimer  = null;
+    this._parkDelay  = 0;
+    this._dragging   = null;
+    this._lastPos    = null;
+    this._isDraggable = false;
+
+    injectCSS();
+    /* A container that already holds artwork keeps it — a page may be
+       supplying its own on purpose. */
+    if (!root.querySelector('svg')) {
+      root.innerHTML = _uniquifyDefs(opts.svg || SVG, this.id);
+    }
+  }
+
+  Mascot.prototype.setMood = function (moodOrSpec) {
     var spec   = typeof moodOrSpec === 'string' ? { mood: moodOrSpec } : (moodOrSpec || { mood: 's-ask' });
     var mood   = spec.mood || 's-ask';
     var merged = Object.assign({}, DEFAULT_ANIM[mood] || {}, spec);
@@ -362,27 +436,266 @@
       merged.mouth || '',
       merged.limbs || ''
     ].filter(Boolean);
-    var el = document.getElementById('pb-mascot');
-    if (!el) return;
-    el.className = 'pb-mascot s-arrive';
-    void el.offsetWidth;
-    el.className = ['pb-mascot', 's-arrive', mood].concat(extra).join(' ');
-    setTimeout(function () {
-      if (el.className.indexOf(mood) !== -1)
-        el.className = ['pb-mascot', mood].concat(extra).join(' ');
+
+    var el   = this.root;
+    var base = this._base;
+    el.className = base.concat(['s-arrive']).join(' ');
+    void el.offsetWidth; /* reflow so the arrive pop replays */
+    el.className = base.concat(['s-arrive', mood], extra).join(' ');
+
+    if (this._moodTimer) clearTimeout(this._moodTimer);
+    var self = this;
+    this._moodTimer = setTimeout(function () {
+      self._moodTimer = null;
+      if (el.className.indexOf(mood) !== -1) el.className = base.concat([mood], extra).join(' ');
     }, 500);
-    var cap = document.getElementById('pb-mascot-caption');
-    if (cap) cap.textContent = MOOD_CAPTIONS[mood] || '';
-    _resetParkTimer(); /* activity — reset auto-park countdown */
-  }
+
+    if (this.caption) this.caption.textContent = MOOD_CAPTIONS[mood] || '';
+    this._resetParkTimer(); /* activity — reset auto-park countdown */
+    return this;
+  };
 
   /* setPosition(pos) — 'left' | 'right' | null */
-  function setPosition(pos) {
-    var zone = document.getElementById('pb-mascot-zone');
+  Mascot.prototype.setPosition = function (pos) {
+    if (!this.zone) return this;
+    this.zone.classList.remove('mascot-pos-left', 'mascot-pos-right');
+    if (pos) this.zone.classList.add('mascot-pos-' + pos);
+    return this;
+  };
+
+  /* pointTo(el, opts)
+     Scrolls to the element and briefly spotlights it with a ring glow.
+     Also strikes the pointing pose unless opts.gesture === false. */
+  Mascot.prototype.pointTo = function (el, opts) {
+    var target = _resolve(el);
+    if (!target) return this;
+    target.scrollIntoView({ behavior: _reduced() ? 'auto' : 'smooth', block: 'nearest' });
+    target.classList.add('pb-spotlight');
+    setTimeout(function () {
+      target.classList.remove('pb-spotlight');
+    }, (opts && opts.duration) || 2400);
+    if (!opts || opts.gesture !== false) {
+      this.setMood({ mood: 's-working', flame: 's-flame-blue', lights: 's-lights-pulse' });
+    }
+    return this;
+  };
+
+  /* startGaze() / stopGaze()
+     Pupils lean subtly toward the cursor by translating this mascot's artwork. */
+  Mascot.prototype.startGaze = function () {
+    if (this._gazeHandler) return this;
+    var self = this;
+    this._gazeHandler = function (e) {
+      var svgEl = self.root.querySelector('.mascot-svg') || self.root.querySelector('svg');
+      if (!svgEl) return;
+      var r = svgEl.getBoundingClientRect();
+      /* Eye center: ~39% across, ~36% down within the artwork's bounding box */
+      var cx = r.left + r.width * 0.39;
+      var cy = r.top + r.height * 0.36;
+      var dx = Math.max(-2.5, Math.min(2.5, (e.clientX - cx) / 130));
+      var dy = Math.max(-1.5, Math.min(1.5, (e.clientY - cy) / 130));
+      svgEl.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+    };
+    document.addEventListener('pointermove', this._gazeHandler, { passive: true });
+    return this;
+  };
+
+  Mascot.prototype.stopGaze = function () {
+    if (!this._gazeHandler) return this;
+    document.removeEventListener('pointermove', this._gazeHandler);
+    this._gazeHandler = null;
+    var svgEl = this.root.querySelector('.mascot-svg') || this.root.querySelector('svg');
+    if (svgEl) svgEl.style.transform = '';
+    return this;
+  };
+
+  /* confetti() — one-shot burst using the artwork's confetti group. */
+  Mascot.prototype.confetti = function () {
+    if (_reduced()) return this;
+    var el = this.root;
+    el.classList.remove('pb-confetti-active');
+    void el.offsetWidth; /* force reflow so re-triggering replays */
+    el.classList.add('pb-confetti-active');
+    if (this._confettiTimer) clearTimeout(this._confettiTimer);
+    var self = this;
+    this._confettiTimer = setTimeout(function () {
+      self._confettiTimer = null;
+      el.classList.remove('pb-confetti-active');
+    }, 1800);
+    return this;
+  };
+
+  /* setDraggable(enabled)
+     Makes the zone position:fixed and drag-repositionable.  Position is saved
+     to localStorage and restored on the next load. */
+  Mascot.prototype.setDraggable = function (enabled) {
+    var zone = this.zone;
+    if (!zone) return this;
+
+    /* Always tear down first — ensures idempotent enable and clean disable */
+    this._removeDragListeners();
+    this._isDraggable = Boolean(enabled);
+
+    if (!enabled) {
+      zone.classList.remove('is-fixed', 'is-draggable', 'is-dragging');
+      this._dragging = null;
+      return this;
+    }
+
+    /* The drag/park styles are scoped to .pb-mascot-zone; a page may have
+       given its zone a different class, so make sure the hook is present. */
+    zone.classList.add('pb-mascot-zone', 'is-fixed', 'is-draggable');
+
+    /* Restore saved position */
+    try {
+      var saved = JSON.parse(localStorage.getItem(this.storageKey) || 'null');
+      if (saved && saved.position) {
+        zone.style.left   = saved.position.left + 'px';
+        zone.style.top    = saved.position.top  + 'px';
+        zone.style.right  = 'auto';
+        zone.style.bottom = 'auto';
+      }
+    } catch (e) {}
+
+    var self = this;
+    this._onDragStart = function (e) { self._dragStart(e); };
+    this._onDragMove  = function (e) { self._dragMove(e); };
+    this._onDragEnd   = function (e) { self._dragEnd(e); };
+    this._onResize    = function ()  { self._constrainToViewport(); };
+
+    zone.addEventListener('pointerdown', this._onDragStart);
+    window.addEventListener('pointermove',   this._onDragMove, { passive: false });
+    window.addEventListener('pointerup',     this._onDragEnd);
+    window.addEventListener('pointercancel', this._onDragEnd);
+    window.addEventListener('resize',        this._onResize);
+    return this;
+  };
+
+  Mascot.prototype._removeDragListeners = function () {
+    if (this.zone && this._onDragStart) this.zone.removeEventListener('pointerdown', this._onDragStart);
+    if (this._onDragMove) window.removeEventListener('pointermove', this._onDragMove);
+    if (this._onDragEnd) {
+      window.removeEventListener('pointerup',     this._onDragEnd);
+      window.removeEventListener('pointercancel', this._onDragEnd);
+    }
+    if (this._onResize) window.removeEventListener('resize', this._onResize);
+  };
+
+  Mascot.prototype._dragStart = function (e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    var zone = this.zone;
     if (!zone) return;
-    zone.classList.remove('mascot-pos-left', 'mascot-pos-right');
-    if (pos) zone.classList.add('mascot-pos-' + pos);
-  }
+    /* Tap on a parked mascot reopens it */
+    if (zone.classList.contains('is-parked')) { this._unpark(); return; }
+    var r = zone.getBoundingClientRect();
+    this._dragging = { id: e.pointerId, startX: e.clientX, startY: e.clientY, left: r.left, top: r.top, moved: false };
+    if (zone.setPointerCapture) zone.setPointerCapture(e.pointerId);
+    zone.classList.add('is-dragging');
+    this._clearParkTimer();
+  };
+
+  Mascot.prototype._dragMove = function (e) {
+    if (!this._dragging || e.pointerId !== this._dragging.id) return;
+    var zone = this.zone;
+    if (!zone) return;
+    var dx = e.clientX - this._dragging.startX;
+    var dy = e.clientY - this._dragging.startY;
+    if (Math.abs(dx) + Math.abs(dy) > 4) this._dragging.moved = true;
+    var r      = zone.getBoundingClientRect();
+    var margin = 8;
+    var left = Math.min(Math.max(margin, this._dragging.left + dx), Math.max(margin, window.innerWidth  - r.width  - margin));
+    var top  = Math.min(Math.max(margin, this._dragging.top  + dy), Math.max(margin, window.innerHeight - r.height - margin));
+    zone.style.left   = left + 'px';
+    zone.style.top    = top  + 'px';
+    zone.style.right  = 'auto';
+    zone.style.bottom = 'auto';
+    e.preventDefault();
+  };
+
+  Mascot.prototype._dragEnd = function (e) {
+    if (!this._dragging || e.pointerId !== this._dragging.id) return;
+    var zone = this.zone;
+    if (!zone) return;
+    if (zone.releasePointerCapture) zone.releasePointerCapture(e.pointerId);
+    zone.classList.remove('is-dragging');
+    if (this._dragging.moved) {
+      var r = zone.getBoundingClientRect();
+      this._lastPos = { left: r.left, top: r.top };
+      try { localStorage.setItem(this.storageKey, JSON.stringify({ position: this._lastPos })); } catch (err) {}
+    }
+    this._dragging = null;
+    this._resetParkTimer();
+  };
+
+  Mascot.prototype._constrainToViewport = function () {
+    var zone = this.zone;
+    if (!zone || !this._isDraggable) return;
+    var r      = zone.getBoundingClientRect();
+    var margin = 8;
+    var left = Math.min(Math.max(margin, r.left), Math.max(margin, window.innerWidth  - r.width  - margin));
+    var top  = Math.min(Math.max(margin, r.top),  Math.max(margin, window.innerHeight - r.height - margin));
+    zone.style.left   = left + 'px';
+    zone.style.top    = top  + 'px';
+    zone.style.right  = 'auto';
+    zone.style.bottom = 'auto';
+  };
+
+  /* autoPark(delayMs)
+     Collapses the mascot to a compact state after the given idle period.
+     Any setMood() call or drag resets the timer.  Only meaningful when
+     setDraggable(true) has also been called. */
+  Mascot.prototype.autoPark = function (delayMs) {
+    this._parkDelay = delayMs || 12000;
+    this._resetParkTimer();
+    return this;
+  };
+
+  Mascot.prototype._park = function () {
+    var zone = this.zone;
+    if (!zone || zone.classList.contains('is-parked') || !this._isDraggable) return;
+    var r = zone.getBoundingClientRect();
+    this._lastPos = { left: r.left, top: r.top };
+    zone.classList.add('is-parked');
+    zone.setAttribute('aria-label', this.name + ' is parked. Tap to reopen.');
+    try { localStorage.setItem(this.storageKey, JSON.stringify({ position: this._lastPos, parked: true })); } catch (err) {}
+  };
+
+  Mascot.prototype._unpark = function () {
+    var zone = this.zone;
+    if (!zone || !zone.classList.contains('is-parked')) return;
+    zone.classList.remove('is-parked');
+    zone.setAttribute('aria-label', this.name + ' assistant.');
+    if (this._lastPos) {
+      zone.style.left   = this._lastPos.left + 'px';
+      zone.style.top    = this._lastPos.top  + 'px';
+      zone.style.right  = 'auto';
+      zone.style.bottom = 'auto';
+    }
+    this._resetParkTimer();
+  };
+
+  Mascot.prototype._resetParkTimer = function () {
+    this._clearParkTimer();
+    if (!this._parkDelay) return;
+    var self = this;
+    this._parkTimer = setTimeout(function () { self._park(); }, this._parkDelay);
+  };
+
+  Mascot.prototype._clearParkTimer = function () {
+    if (this._parkTimer) { clearTimeout(this._parkTimer); this._parkTimer = null; }
+  };
+
+  /* destroy() — detach every listener and timer this instance owns. */
+  Mascot.prototype.destroy = function () {
+    this.stopGaze();
+    this._clearParkTimer();
+    if (this._moodTimer) { clearTimeout(this._moodTimer); this._moodTimer = null; }
+    if (this._confettiTimer) { clearTimeout(this._confettiTimer); this._confettiTimer = null; }
+    this._removeDragListeners();
+    this._isDraggable = false;
+    this.root.innerHTML = '';
+    return this;
+  };
 
   /* miniSVG(mood) — simplified inline avatar for chat bubbles */
   function miniSVG(mood) {
@@ -408,227 +721,50 @@
       + '</svg>';
   }
 
-  /* ── API v2 ───────────────────────────────────────────────────────────── */
+  /* ── Default instance (back-compat) ───────────────────────────────────── */
+  /* Pages written against the original API call PBMascot.setMood(...) with no
+     instance of their own.  Those calls act on a lazily-created instance bound
+     to the conventional #pb-mascot / #pb-mascot-zone / #pb-mascot-caption
+     markup, so no existing page needs to change. */
 
-  /* pointTo(element, { duration })
-     Scrolls to the element and briefly spotlights it with a ring glow.
-     Works on any selector string or DOM element. */
-  function pointTo(el, opts) {
-    var target = typeof el === 'string' ? document.querySelector(el) : el;
-    if (!target) return;
-    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' });
-    target.classList.add('pb-spotlight');
-    setTimeout(function () {
-      target.classList.remove('pb-spotlight');
-    }, (opts && opts.duration) || 2400);
+  var _defaults = { name: 'Assistant' };
+  var _default  = null;
+
+  function configure(options) {
+    Object.assign(_defaults, options || {});
+    if (_default && options && options.name) _default.name = options.name;
+    return _defaults;
   }
 
-  /* startGaze() / stopGaze()
-     Pupils lean subtly toward the cursor by translating #mascot-svg slightly.
-     This approach doesn't fight the mood-driven pupil CSS classes. */
-  function startGaze() {
-    if (_gazeActive) return;
-    _gazeActive = true;
-    _gazeHandler = function (e) {
-      var svgEl = document.getElementById('mascot-svg');
-      if (!svgEl) return;
-      var r = svgEl.getBoundingClientRect();
-      /* Eye center: ~39% across, ~36% down within the SVG bounding box */
-      var cx = r.left + r.width * 0.39;
-      var cy = r.top + r.height * 0.36;
-      var dx = Math.max(-2.5, Math.min(2.5, (e.clientX - cx) / 130));
-      var dy = Math.max(-1.5, Math.min(1.5, (e.clientY - cy) / 130));
-      svgEl.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+  function getDefault() {
+    if (_default && document.contains(_default.root)) return _default;
+    var root = document.getElementById('pb-mascot');
+    if (!root) return null;
+    _default = new Mascot(root, {
+      name:       _defaults.name,
+      svg:        _defaults.svg,
+      zone:       '#pb-mascot-zone',
+      caption:    '#pb-mascot-caption',
+      storageKey: 'pb-mascot-pos'
+    });
+    return _default;
+  }
+
+  function _delegate(method) {
+    return function () {
+      var inst = getDefault();
+      if (!inst) return undefined;
+      return inst[method].apply(inst, arguments);
     };
-    document.addEventListener('pointermove', _gazeHandler, { passive: true });
   }
 
-  function stopGaze() {
-    if (!_gazeActive) return;
-    _gazeActive = false;
-    if (_gazeHandler) document.removeEventListener('pointermove', _gazeHandler);
-    _gazeHandler = null;
-    var svgEl = document.getElementById('mascot-svg');
-    if (svgEl) svgEl.style.transform = '';
-  }
-
-  /* confetti()
-     Triggers a one-shot confetti burst using the SVG's built-in confetti group.
-     No-op when prefers-reduced-motion is set. */
-  function confetti() {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    var el = document.getElementById('pb-mascot');
-    if (!el) return;
-    el.classList.remove('pb-confetti-active');
-    void el.offsetWidth; /* force reflow so re-triggering replays the animation */
-    el.classList.add('pb-confetti-active');
-    setTimeout(function () { el.classList.remove('pb-confetti-active'); }, 1800);
-  }
-
-  /* setDraggable(enabled)
-     Makes #pb-mascot-zone position:fixed and drag-repositionable.
-     Position is saved to localStorage and restored on next load.
-     Only activate for pages where the mascot is used as a floating overlay. */
-  function _removeDragListeners(zone) {
-    if (zone) zone.removeEventListener('pointerdown', _onDragStart);
-    window.removeEventListener('pointermove',   _onDragMove);
-    window.removeEventListener('pointerup',     _onDragEnd);
-    window.removeEventListener('pointercancel', _onDragEnd);
-    window.removeEventListener('resize',        _constrainToViewport);
-  }
-
-  function setDraggable(enabled) {
-    var zone = document.getElementById('pb-mascot-zone');
-    if (!zone) return;
-    /* Always tear down first — ensures idempotent enable and clean disable */
-    _removeDragListeners(zone);
-    _isDraggable = Boolean(enabled);
-    if (!enabled) {
-      zone.classList.remove('is-fixed', 'is-draggable', 'is-dragging');
-      _dragging = null;
-      return;
-    }
-    zone.classList.add('is-fixed', 'is-draggable');
-
-    /* Restore saved position */
-    try {
-      var saved = JSON.parse(localStorage.getItem('pb-mascot-pos') || 'null');
-      if (saved && saved.position) {
-        zone.style.left   = saved.position.left + 'px';
-        zone.style.top    = saved.position.top  + 'px';
-        zone.style.right  = 'auto';
-        zone.style.bottom = 'auto';
-      }
-    } catch (e) {}
-
-    zone.addEventListener('pointerdown', _onDragStart);
-    window.addEventListener('pointermove',   _onDragMove,   { passive: false });
-    window.addEventListener('pointerup',     _onDragEnd);
-    window.addEventListener('pointercancel', _onDragEnd);
-    window.addEventListener('resize',        _constrainToViewport);
-  }
-
-  function _onDragStart(e) {
-    if (e.button !== undefined && e.button !== 0) return;
-    var zone = document.getElementById('pb-mascot-zone');
-    if (!zone) return;
-    /* Tap on parked mascot unparks it */
-    if (zone.classList.contains('is-parked')) { _unpark(); return; }
-    var r = zone.getBoundingClientRect();
-    _dragging = { id: e.pointerId, startX: e.clientX, startY: e.clientY, left: r.left, top: r.top, moved: false };
-    if (zone.setPointerCapture) zone.setPointerCapture(e.pointerId);
-    zone.classList.add('is-dragging');
-    _clearParkTimer();
-  }
-
-  function _onDragMove(e) {
-    if (!_dragging || e.pointerId !== _dragging.id) return;
-    var dx = e.clientX - _dragging.startX;
-    var dy = e.clientY - _dragging.startY;
-    if (Math.abs(dx) + Math.abs(dy) > 4) _dragging.moved = true;
-    var zone = document.getElementById('pb-mascot-zone');
-    if (!zone) return;
-    var r      = zone.getBoundingClientRect();
-    var margin = 8;
-    var left = Math.min(Math.max(margin, _dragging.left + dx), Math.max(margin, window.innerWidth  - r.width  - margin));
-    var top  = Math.min(Math.max(margin, _dragging.top  + dy), Math.max(margin, window.innerHeight - r.height - margin));
-    zone.style.left   = left + 'px';
-    zone.style.top    = top  + 'px';
-    zone.style.right  = 'auto';
-    zone.style.bottom = 'auto';
-    e.preventDefault();
-  }
-
-  function _onDragEnd(e) {
-    if (!_dragging || e.pointerId !== _dragging.id) return;
-    var zone = document.getElementById('pb-mascot-zone');
-    if (!zone) return;
-    if (zone.releasePointerCapture) zone.releasePointerCapture(e.pointerId);
-    zone.classList.remove('is-dragging');
-    if (_dragging.moved) {
-      var r = zone.getBoundingClientRect();
-      _lastPos = { left: r.left, top: r.top };
-      try { localStorage.setItem('pb-mascot-pos', JSON.stringify({ position: _lastPos })); } catch (err) {}
-    }
-    _dragging = null;
-    _resetParkTimer();
-  }
-
-  function _constrainToViewport() {
-    var zone = document.getElementById('pb-mascot-zone');
-    if (!zone || !_isDraggable) return;
-    var r      = zone.getBoundingClientRect();
-    var margin = 8;
-    var left = Math.min(Math.max(margin, r.left), Math.max(margin, window.innerWidth  - r.width  - margin));
-    var top  = Math.min(Math.max(margin, r.top),  Math.max(margin, window.innerHeight - r.height - margin));
-    zone.style.left   = left + 'px';
-    zone.style.top    = top  + 'px';
-    zone.style.right  = 'auto';
-    zone.style.bottom = 'auto';
-  }
-
-  /* autoPark(delayMs)
-     Collapses the mascot to a compact state after the given idle period.
-     Any setMood() call or drag resets the timer.
-     Only meaningful when setDraggable(true) has also been called. */
-  function autoPark(delayMs) {
-    _parkDelay = delayMs || 12000;
-    _resetParkTimer();
-  }
-
-  function _park() {
-    var zone = document.getElementById('pb-mascot-zone');
-    if (!zone || zone.classList.contains('is-parked') || !_isDraggable) return;
-    var r = zone.getBoundingClientRect();
-    _lastPos = { left: r.left, top: r.top };
-    zone.classList.add('is-parked');
-    zone.setAttribute('aria-label', 'Blasty is parked. Tap to reopen.');
-    try { localStorage.setItem('pb-mascot-pos', JSON.stringify({ position: _lastPos, parked: true })); } catch (err) {}
-  }
-
-  function _unpark() {
-    var zone = document.getElementById('pb-mascot-zone');
-    if (!zone || !zone.classList.contains('is-parked')) return;
-    zone.classList.remove('is-parked');
-    zone.setAttribute('aria-label', 'Blasty onboarding assistant.');
-    if (_lastPos) {
-      zone.style.left   = _lastPos.left + 'px';
-      zone.style.top    = _lastPos.top  + 'px';
-      zone.style.right  = 'auto';
-      zone.style.bottom = 'auto';
-    }
-    _resetParkTimer();
-  }
-
-  function _resetParkTimer() {
-    _clearParkTimer();
-    if (!_parkDelay) return;
-    _parkTimer = setTimeout(_park, _parkDelay);
-  }
-
-  function _clearParkTimer() {
-    if (_parkTimer) { clearTimeout(_parkTimer); _parkTimer = null; }
-  }
-
-  /* ── INJECT ───────────────────────────────────────────────────────────── */
-  function injectCSS() {
-    if (document.getElementById('pb-mascot-css')) return;
-    var s = document.createElement('style');
-    s.id = 'pb-mascot-css';
-    s.textContent = CSS;
-    document.head.appendChild(s);
-  }
-
-  function injectSVG() {
-    var el = document.getElementById('pb-mascot');
-    if (!el || el.querySelector('svg')) return;
-    el.innerHTML = SVG;
+  function create(target, options) {
+    return new Mascot(target, options);
   }
 
   function init() {
     injectCSS();
-    injectSVG();
+    getDefault();
   }
 
   if (document.readyState === 'loading') {
@@ -639,20 +775,26 @@
 
   /* ── EXPORT ───────────────────────────────────────────────────────────── */
   window.PBMascot = {
-    /* v1 */
-    setMood:      setMood,
-    setPosition:  setPosition,
+    /* instances */
+    create:       create,
+    configure:    configure,
+    getDefault:   getDefault,
+    Mascot:       Mascot,
+    /* default-instance shorthands (v1 + v2 API, unchanged for callers) */
+    setMood:      _delegate('setMood'),
+    setPosition:  _delegate('setPosition'),
+    pointTo:      _delegate('pointTo'),
+    startGaze:    _delegate('startGaze'),
+    stopGaze:     _delegate('stopGaze'),
+    confetti:     _delegate('confetti'),
+    setDraggable: _delegate('setDraggable'),
+    autoPark:     _delegate('autoPark'),
+    injectSVG:    function () { return getDefault(); },
+    /* data */
     miniSVG:      miniSVG,
     DEFAULT_ANIM: DEFAULT_ANIM,
     MOOD_CAPTIONS: MOOD_CAPTIONS,
-    injectSVG:    injectSVG,
-    /* v2 */
-    pointTo:      pointTo,
-    startGaze:    startGaze,
-    stopGaze:     stopGaze,
-    confetti:     confetti,
-    setDraggable: setDraggable,
-    autoPark:     autoPark
+    SVG:          SVG
   };
 
 })();

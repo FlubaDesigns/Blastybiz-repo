@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786220013139"/>
+  <link rel="stylesheet" href="global-style.css?v=1786222751751"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -22,162 +22,6 @@
   <div class="ob-blasty-col" id="pb-mascot-zone">
     <div id="blasty-tracker">
     <div class="pb-mascot" id="pb-mascot">
-        <svg id="mascot-svg" viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="ob2-bodyFill" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#ffffff"/><stop offset=".48" stop-color="#f8fbff"/><stop offset="1" stop-color="#dbe6f2"/>
-            </linearGradient>
-            <linearGradient id="ob2-bodyShade" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stop-color="#ffffff" stop-opacity=".94"/><stop offset=".64" stop-color="#ffffff" stop-opacity=".08"/><stop offset="1" stop-color="#8ea4bc" stop-opacity=".34"/>
-            </linearGradient>
-            <linearGradient id="ob2-redFill" x1="0" y1="0" x2=".8" y2="1">
-              <stop offset="0" stop-color="#ff5a4f"/><stop offset=".48" stop-color="#ff2f2f"/><stop offset="1" stop-color="#d70f22"/>
-            </linearGradient>
-            <linearGradient id="ob2-greenFill" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#8ee33f"/><stop offset=".5" stop-color="#49bf24"/><stop offset="1" stop-color="#238b19"/>
-            </linearGradient>
-            <radialGradient id="ob2-eyeFill" cx=".35" cy=".25" r=".9">
-              <stop offset="0" stop-color="#ffffff"/><stop offset=".15" stop-color="#deffd8"/><stop offset=".58" stop-color="#65d84a"/><stop offset="1" stop-color="#1b8e2b"/>
-            </radialGradient>
-            <linearGradient id="ob2-flameOut" x1=".5" y1="0" x2=".5" y2="1">
-              <stop offset="0"   style="stop-color:var(--flame-top,#ffdc2f)"/>
-              <stop offset=".46" style="stop-color:var(--flame-mid,#ff961f)"/>
-              <stop offset="1"   style="stop-color:var(--flame-bot,#ef3d10)"/>
-            </linearGradient>
-            <linearGradient id="ob2-flameIn" x1=".5" y1="0" x2=".5" y2="1">
-              <stop offset="0"   style="stop-color:var(--flamein-top,#fffbd7)"/>
-              <stop offset=".55" style="stop-color:var(--flamein-mid,#fff04c)"/>
-              <stop offset="1"   style="stop-color:var(--flamein-bot,#ffac20)"/>
-            </linearGradient>
-            <clipPath id="ob2-bodyClip">
-              <path d="M180 42 C117 89 89 163 91 251 C92 309 119 348 180 378 C241 348 268 309 269 251 C271 163 243 89 180 42Z"/>
-            </clipPath>
-          </defs>
-
-          <!-- Confetti effects — burst on s-celebrate -->
-          <g class="confetti" id="mascot-effects">
-            <g fill="none" stroke="#76b8ff" stroke-width="7" stroke-linecap="round" opacity="0"><path d="M64 272 Q48 294 61 319"/><path d="M47 260 Q24 292 43 329"/></g>
-            <g fill="none" stroke="#76b8ff" stroke-width="7" stroke-linecap="round" opacity="0"><path d="M296 272 Q312 294 299 319"/><path d="M313 260 Q336 292 317 329"/></g>
-            <g opacity="0"><path d="M53 102 l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#ffd12f"/><path d="M305 94 l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#62dd43"/><circle cx="67" cy="164" r="5" fill="#ff5a4f"/><circle cx="300" cy="168" r="5" fill="#ff9f1c"/></g>
-            <g opacity="0"><rect x="30" y="160" width="9" height="20" rx="3" fill="#ff3c35" transform="rotate(-26 34 170)"/><rect x="313" y="179" width="9" height="20" rx="3" fill="#52ce34" transform="rotate(22 317 189)"/><rect x="56" y="226" width="9" height="20" rx="3" fill="#ffc228" transform="rotate(32 60 236)"/><rect x="294" y="232" width="9" height="20" rx="3" fill="#44a9ff" transform="rotate(-28 298 242)"/><circle cx="37" cy="285" r="6" fill="#43d355"/><circle cx="325" cy="287" r="6" fill="#ff4b3e"/></g>
-          </g>
-
-          <!-- Ground shadow (stays put, outside float group) -->
-          <ellipse cx="180" cy="434" rx="72" ry="13" fill="#000" opacity=".18"/>
-
-          <!-- Whole rocket — floats via CSS -->
-          <g id="mascot-body">
-
-            <!-- Exhaust / flame -->
-            <g id="mascot-exhaust" class="flame">
-              <path d="M180 354 C213 385 207 419 180 446 C153 419 147 385 180 354Z" fill="url(#ob2-flameOut)" stroke="#102957" stroke-width="8" stroke-linejoin="round"/>
-              <path d="M180 368 C197 389 194 411 180 428 C166 411 163 389 180 368Z" fill="url(#ob2-flameIn)"/>
-            </g>
-
-            <!-- Fins -->
-            <path d="M103 240 C68 254 46 286 48 327 C74 312 97 298 116 276Z" fill="url(#ob2-redFill)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>
-            <path d="M257 240 C292 254 314 286 312 327 C286 312 263 298 244 276Z" fill="url(#ob2-redFill)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>
-            <path d="M97 258 C78 271 67 288 61 307" fill="none" stroke="#ff7d72" stroke-width="6" stroke-linecap="round" opacity=".8"/>
-            <path d="M263 258 C282 271 293 288 299 307" fill="none" stroke="#ff7d72" stroke-width="6" stroke-linecap="round" opacity=".8"/>
-
-            <!-- Body hull -->
-            <path d="M180 42 C117 89 89 163 91 251 C92 309 119 348 180 378 C241 348 268 309 269 251 C271 163 243 89 180 42Z" fill="url(#ob2-bodyFill)" stroke="#102957" stroke-width="10" stroke-linejoin="round"/>
-            <g clip-path="url(#ob2-bodyClip)">
-              <path d="M184 36 C138 106 128 245 149 342 C126 329 107 307 98 278 C77 209 103 104 180 42Z" fill="#fff" opacity=".88"/>
-              <path d="M231 76 C265 135 278 240 246 315 C232 340 210 359 180 377 C207 285 214 168 184 43Z" fill="url(#ob2-bodyShade)" opacity=".75"/>
-              <path d="M93 269 C121 289 148 299 180 299 C212 299 239 289 267 269 L265 301 C239 319 211 327 180 327 C149 327 121 319 95 301Z" fill="url(#ob2-greenFill)" stroke="#102957" stroke-width="8"/>
-              <path d="M105 283 C132 298 156 304 180 304 C204 304 228 298 255 283" fill="none" stroke="#b3ff70" stroke-width="5" opacity=".8"/>
-            </g>
-            <!-- Nose cone (wrapped for independent spin) -->
-            <g id="mascot-nose" class="mascot-nose" style="transform-box:fill-box;transform-origin:180px 100px">
-              <path d="M180 42 C151 64 129 88 113 116 C137 105 157 100 180 100 C203 100 223 105 247 116 C231 88 209 64 180 42Z" fill="url(#ob2-redFill)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>
-              <path d="M205 56 C220 72 229 85 236 102" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity=".9"/>
-              <circle id="mascot-nose-light" cx="180" cy="50" r="8" fill="#ffdc2f" opacity="0"/>
-            </g>
-
-            <!-- Face -->
-            <!-- Eyelid arcs -->
-            <path d="M126 161 Q145 146 160 158" fill="none" stroke="#102957" stroke-width="8" stroke-linecap="round"/>
-            <path d="M200 158 Q216 146 234 161" fill="none" stroke="#102957" stroke-width="8" stroke-linecap="round"/>
-            <!-- Left eye -->
-            <ellipse cx="145" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>
-            <g class="pupil-group-l" style="transition:transform .3s ease">
-              <ellipse cx="148" cy="200" rx="18" ry="24" fill="url(#ob2-eyeFill)" stroke="#102957" stroke-width="5"/>
-              <ellipse cx="151" cy="202" rx="8" ry="13" fill="#071329"/>
-              <circle cx="143" cy="190" r="6" fill="#fff"/>
-              <circle cx="155" cy="211" r="3" fill="#fff" opacity=".8"/>
-            </g>
-            <!-- Right eye -->
-            <ellipse cx="215" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>
-            <g class="pupil-group-r" style="transition:transform .3s ease">
-              <ellipse cx="212" cy="200" rx="18" ry="24" fill="url(#ob2-eyeFill)" stroke="#102957" stroke-width="5"/>
-              <ellipse cx="209" cy="202" rx="8" ry="13" fill="#071329"/>
-              <circle cx="204" cy="190" r="6" fill="#fff"/>
-              <circle cx="216" cy="211" r="3" fill="#fff" opacity=".8"/>
-            </g>
-            <!-- Cheeks -->
-            <ellipse cx="121" cy="244" rx="15" ry="8" fill="#ff7272" opacity=".55"/>
-            <ellipse cx="239" cy="244" rx="15" ry="8" fill="#ff7272" opacity=".55"/>
-            <!-- Mouths — CSS toggles visibility per mood -->
-            <g id="mouths">
-              <path class="mouth-happy" d="M145 238 Q180 270 215 238 Q208 286 180 291 Q152 286 145 238Z" fill="#102957"/>
-              <path class="mouth-happy" d="M162 273 Q180 287 198 273 Q187 269 180 270 Q173 269 162 273Z" fill="#ff4d57"/>
-              <ellipse class="mouth-working" cx="180" cy="259" rx="17" ry="21" fill="#102957"/>
-              <ellipse class="mouth-working" cx="180" cy="268" rx="10" ry="6" fill="#ff4d57"/>
-              <ellipse class="mouth-celebrate" cx="180" cy="258" rx="26" ry="32" fill="#102957"/>
-              <path class="mouth-celebrate" d="M161 274 Q180 289 199 274 Q180 267 161 274Z" fill="#ff4d57"/>
-              <path class="mouth-ask" d="M163 260 Q180 268 197 260" fill="none" stroke="#102957" stroke-width="8" stroke-linecap="round"/>
-            </g>
-            <!-- Green band B-badge -->
-            <g id="mascot-badge">
-              <circle cx="180" cy="316" r="29" fill="#102957"/>
-              <circle cx="180" cy="316" r="23" fill="url(#ob2-greenFill)" stroke="#b9ff78" stroke-width="4"/>
-              <path d="M169 299 H183 C198 299 202 314 192 320 C202 325 198 337 183 337 H169Z" fill="#fff"/>
-              <path d="M177 306 H184 C191 306 191 314 184 314 H177ZM177 321 H185 C192 321 192 329 185 329 H177Z" fill="#2c9e1d"/>
-            </g>
-
-            <!-- Waist lights — CSS animates per mood -->
-            <g id="mascot-lights-waist">
-              <circle class="w-light" cx="122" cy="289" r="5" fill="#39ff14" opacity="0"/>
-              <circle class="w-light" cx="140" cy="296" r="5" fill="#39ff14" opacity="0"/>
-              <circle class="w-light" cx="160" cy="300" r="5" fill="#39ff14" opacity="0"/>
-              <circle class="w-light" cx="180" cy="301" r="5" fill="#39ff14" opacity="0"/>
-              <circle class="w-light" cx="200" cy="300" r="5" fill="#39ff14" opacity="0"/>
-              <circle class="w-light" cx="220" cy="296" r="5" fill="#39ff14" opacity="0"/>
-              <circle class="w-light" cx="238" cy="289" r="5" fill="#39ff14" opacity="0"/>
-            </g>
-
-            <!-- Arms — CSS reveals per mood -->
-            <g id="mascot-arms">
-              <g class="mascot-arm mascot-arm-wave" opacity="0">
-                <path d="M113 261 C84 253 73 229 82 207" fill="none" stroke="#102957" stroke-width="19" stroke-linecap="round"/>
-                <path d="M113 261 C84 253 73 229 82 207" fill="none" stroke="#f8fbff" stroke-width="11" stroke-linecap="round"/>
-                <g transform="translate(78 199) rotate(-18)">
-                  <circle cx="0" cy="0" r="16" fill="#fff" stroke="#102957" stroke-width="6"/>
-                  <path d="M-12 -7 L-22 -22 M-4 -13 L-7 -31 M5 -13 L10 -31 M12 -8 L23 -22" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/>
-                  <path d="M-12 -7 L-22 -22 M-4 -13 L-7 -31 M5 -13 L10 -31 M12 -8 L23 -22" fill="none" stroke="#102957" stroke-width="4" stroke-linecap="round"/>
-                </g>
-              </g>
-              <g class="mascot-arm mascot-arm-point" opacity="0">
-                <path d="M247 259 C277 250 292 235 307 220" fill="none" stroke="#102957" stroke-width="19" stroke-linecap="round"/>
-                <path d="M247 259 C277 250 292 235 307 220" fill="none" stroke="#f8fbff" stroke-width="11" stroke-linecap="round"/>
-                <g transform="translate(311 216) rotate(-20)">
-                  <circle cx="0" cy="0" r="15" fill="#fff" stroke="#102957" stroke-width="6"/>
-                  <path d="M9 -3 L34 -11" fill="none" stroke="#102957" stroke-width="11" stroke-linecap="round"/>
-                  <path d="M9 -3 L34 -11" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
-                </g>
-              </g>
-            </g>
-
-          </g><!-- end #mascot-body -->
-
-          <!-- Smoke puffs — outside float group so they settle independently -->
-          <g id="mascot-smoke">
-            <ellipse class="smoke-puff" cx="180" cy="415" rx="2" ry="2" fill="#c8c8c8" opacity="0"/>
-            <ellipse class="smoke-puff" cx="158" cy="428" rx="2" ry="2" fill="#b8b8b8" opacity="0"/>
-            <ellipse class="smoke-puff" cx="202" cy="422" rx="2" ry="2" fill="#d0d0d0" opacity="0"/>
-          </g>
-        </svg>
       </div>
       <div class="ob-q-bubble" id="ob-q-bubble"><p id="ob-q-text"></p></div>
     </div><!-- /blasty-tracker -->
@@ -192,12 +36,13 @@
   </div><!-- /ob-form-col -->
 </div><!-- /ob-page -->
 <!-- ── Form guide + mascot v2 ─────────────────────────────────────── -->
+<script src="mascot.js?v=5"></script>
 <script src="form-guide.js?v=2"></script>
 <!-- ── Conversation engine ────────────────────────────────────────── -->
 <script>
 (function() {
   // ── Use the existing Blasty column as the fixed float ──────────────────────
-  // (mascot.js already bound to the SVG inside it — don't inject a duplicate)
+  // (mascot.js owns the artwork inside it)
   var floatEl = document.getElementById('pb-mascot-zone');
 
   function positionBlasty(anchorEl) {
@@ -530,121 +375,14 @@
     });
   };
 
-  const DEFAULT_ANIM = {
-    's-wave':        { flame: 's-flame-green',  lights: 's-lights-sequence' },
-    's-wave-2':      { flame: 's-flame-green',  lights: 's-lights-sequence', noseSpin: 's-nose-spin-r' },
-    's-ask':         {},
-    's-ask-2':       {},
-    's-ask-3':       { lights: 's-lights-pulse' },
-    's-happy':       { flame: 's-flame-green',  noseSpin: 's-nose-spin-r' },
-    's-working':     { flame: 's-flame-blue',   lights: 's-lights-pulse' },
-    's-celebrate':   { flame: 's-flame-green',  lights: 's-lights-flash', smoke: 's-smoke-3' },
-    's-spin':        { flame: 's-flame-purple', noseSpin: 's-nose-spin-r' },
-    's-tilt-left':   { eyes: 's-eyes-left' },
-    's-tilt-right':  { eyes: 's-eyes-right' },
-    's-arrive-land': { flame: 's-flame-blue',   lights: 's-lights-pulse' },
-  };
-
-  const MOOD_CAPTIONS = {
-    's-wave':        'Hey there! 👋',
-    's-wave-2':      'So great to meet you! 🚀',
-    's-ask':         'Tell me more...',
-    's-ask-2':       'Hmm, interesting...',
-    's-ask-3':       'I have a question!',
-    's-happy':       'Looking good! 🎉',
-    's-working':     'On it...',
-    's-celebrate':   'Let\'s blast! 🚀',
-    's-spin':        'Woohoo! 🌀',
-    's-tilt-left':   'Thinking...',
-    's-tilt-right':  'Almost there...',
-    's-arrive-land': 'Landed! 🛬',
-  };
-
-  /* setMood accepts a plain string OR a composition object:
-     { mood, eyes, flame, lights, smoke, noseSpin }           */
-  function setMood(moodOrSpec) {
-    const spec  = typeof moodOrSpec === 'string'
-                  ? { mood: moodOrSpec }
-                  : (moodOrSpec || { mood: 's-ask' });
-    const mood     = spec.mood || 's-ask';
-    const merged   = Object.assign({}, DEFAULT_ANIM[mood] || {}, spec);
-    const extra = [
-      merged.eyes, merged.flame, merged.lights,
-      merged.smoke === true ? 's-smoke-3' : (merged.smoke || ''),
-      merged.noseSpin === true ? 's-nose-shake' : (merged.noseSpin || '')
-    ].filter(Boolean);
-    const el = document.getElementById('pb-mascot');
-    el.className = 'pb-mascot s-arrive';
-    void el.offsetWidth;
-    el.className = ['pb-mascot', 's-arrive', mood, ...extra].join(' ');
-    setTimeout(() => {
-      if (el.className.includes(mood))
-        el.className = ['pb-mascot', mood, ...extra].join(' ');
-    }, 500);
-    const cap = document.getElementById('pb-mascot-caption');
-    if (cap) cap.textContent = MOOD_CAPTIONS[mood] || '';
-  }
-
-  function setPosition(pos) {
-    const zone = document.getElementById('pb-mascot-zone');
-    if (!zone) return;
-    zone.classList.remove('mascot-pos-left', 'mascot-pos-right');
-    if (pos) zone.classList.add('mascot-pos-' + pos);
-  }
-
-  /* ── PBMascot shim ───────────────────────────────────────────────── *
-   * Exposes the minimal PBMascot API expected by FormGuide's mascot
-   * option without loading the full mascot.js.  pointTo() scrolls the
-   * newly-active section into view and adds a temporary spotlight ring.
-   * setMood is available in this closure for future gesture hooks.
-   * ────────────────────────────────────────────────────────────────── */
-  (function() {
-    if (!document.getElementById('pb-spotlight-css')) {
-      var st = document.createElement('style');
-      st.id = 'pb-spotlight-css';
-      st.textContent =
-        '.pb-spotlight{outline:3px solid rgba(57,255,20,.85)!important;outline-offset:4px;' +
-        'box-shadow:0 0 0 8px rgba(57,255,20,.15),0 0 24px rgba(57,255,20,.25)!important;' +
-        'border-radius:10px;transition:outline .25s ease,box-shadow .25s ease;}' +
-        '@media(prefers-reduced-motion:reduce){.pb-spotlight{transition:none;}}';
-      document.head.appendChild(st);
-    }
-  }());
-  window.PBMascot = {
-    pointTo: function(el, opts) {
-      if (!el) return;
-      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' });
-      el.classList.add('pb-spotlight');
-      setTimeout(function() { el.classList.remove('pb-spotlight'); }, (opts && opts.duration) || 2400);
-      /* Show the pointing-arm mood briefly; showStep() will override with the
-         per-step mood ~5 ms later via its own setMood() call, so this fires
-         during the s-arrive pop and the arm is visible for the pop duration. */
-      setMood({ mood: 's-working', flame: 's-flame-blue', lights: 's-lights-pulse' });
-    }
-  };
+  /* Mood, position and pointing all run through the shared mascot
+     component (mascot.js).  These keep the short local names this page's
+     call sites already use. */
+  function setMood(moodOrSpec) { if (window.PBMascot) window.PBMascot.setMood(moodOrSpec); }
+  function setPosition(pos)    { if (window.PBMascot) window.PBMascot.setPosition(pos); }
 
   function _miniMascotSVG(mood) {
-    const py = { 's-ask': 204, 's-working': 207, 's-wave': 198, 's-happy': 205, 's-celebrate': 198 }[mood] || 202;
-    return `<svg viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg">
-      <path d="M180 354 C213 385 207 419 180 446 C153 419 147 385 180 354Z" fill="#ff8c1a"/>
-      <path d="M103 240 C68 254 46 286 48 327 C74 312 97 298 116 276Z" fill="#ff2f2f" stroke="#102957" stroke-width="9"/>
-      <path d="M257 240 C292 254 314 286 312 327 C286 312 263 298 244 276Z" fill="#ff2f2f" stroke="#102957" stroke-width="9"/>
-      <path d="M180 42 C117 89 89 163 91 251 C92 309 119 348 180 378 C241 348 268 309 269 251 C271 163 243 89 180 42Z" fill="#f0f6ff" stroke="#102957" stroke-width="10"/>
-      <path d="M93 269 C121 289 148 299 180 299 C212 299 239 289 267 269 L265 301 C239 319 211 327 180 327 C149 327 121 319 95 301Z" fill="#49bf24" stroke="#102957" stroke-width="8"/>
-      <path d="M180 42 C151 64 129 88 113 116 C137 105 157 100 180 100 C203 100 223 105 247 116 C231 88 209 64 180 42Z" fill="#ff2f2f" stroke="#102957" stroke-width="9"/>
-      <ellipse cx="145" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>
-      <ellipse cx="148" cy="${py-2}" rx="16" ry="22" fill="#49d834"/>
-      <ellipse cx="151" cy="${py}" rx="8" ry="13" fill="#071329"/>
-      <circle cx="143" cy="190" r="5" fill="#fff"/>
-      <ellipse cx="215" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>
-      <ellipse cx="212" cy="${py-2}" rx="16" ry="22" fill="#49d834"/>
-      <ellipse cx="209" cy="${py}" rx="8" ry="13" fill="#071329"/>
-      <circle cx="204" cy="190" r="5" fill="#fff"/>
-      <ellipse cx="121" cy="244" rx="15" ry="8" fill="#ff7272" opacity=".55"/>
-      <ellipse cx="239" cy="244" rx="15" ry="8" fill="#ff7272" opacity=".55"/>
-      <path d="M155 248 Q180 265 205 248" stroke="#102957" stroke-width="9" fill="none" stroke-linecap="round"/>
-    </svg>`;
+    return window.PBMascot ? window.PBMascot.miniSVG(mood) : '';
   }
 
 

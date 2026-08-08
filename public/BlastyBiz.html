@@ -5,7 +5,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1786220013139" />
+<link rel="stylesheet" href="global-style.css?v=1786222751751" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -136,7 +136,7 @@
 </script>
   <script type="module" src="./auth-guard.js"></script>
 <script src="blastybiz-menu.js?v=6"></script>
-<script src="mascot.js"></script>
+<script src="mascot.js?v=5"></script>
 </head>
 <body class="has-site-header create-page">
 <div id="header__inject"></div>
@@ -7050,13 +7050,19 @@ window.confirmDeleteAccount = async function() {
     var floatEl = document.createElement('div');
     floatEl.id = 'dash-blasty-float';
     floatEl.innerHTML =
-      '<div class="pb-mascot s-happy" id="dash-blasty-mascot"></div>' +
+      '<div class="pb-mascot s-happy" id="dash-mascot" style="width:70px"></div>' +
       '<div id="dash-blasty-bubble">🎉 You\'re in! Your account is all set — create your first campaign and start blasting!</div>' +
       '<button id="dash-blasty-close" aria-label="Dismiss">✕</button>';
     floatEl.style.cssText =
       'position:fixed;bottom:24px;right:20px;display:flex;align-items:flex-end;gap:10px;z-index:9000;' +
       'opacity:0;transition:opacity .4s ease;pointer-events:none;';
     document.body.appendChild(floatEl);
+
+    // Second mascot on this page — its own instance, independent of the
+    // page's default one.
+    if (window.PBMascot) {
+      window.PBMascot.create('#dash-mascot', { name: 'Blasty' }).setMood('s-happy');
+    }
 
     var bubble = document.getElementById('dash-blasty-bubble');
     if (bubble) {
