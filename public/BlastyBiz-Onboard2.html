@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786151848869"/>
+  <link rel="stylesheet" href="global-style.css?v=1786152261571"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -1142,11 +1142,15 @@
       inputType: 'multiselect',
       key: 'campaignPlatforms',
       choices: [
-        { value: 'google',    label: '🔍 Google Business' },
-        { value: 'facebook',  label: '📘 Facebook Page' },
-        { value: 'instagram', label: '📸 Instagram',     proOnly: true },
-        { value: 'x',         label: '𝕏 X (Twitter)',   proOnly: true },
-        { value: 'linkedin',  label: '💼 LinkedIn',       proOnly: true }
+        { value: 'google',    label: '🔍 Google Business',        proOnly: true  },
+        { value: 'facebook',  label: '📘 Facebook Page',           proOnly: true  },
+        { value: 'instagram', label: '📸 Instagram',               proOnly: true  },
+        { value: 'fbmarket',  label: '🛒 Facebook Marketplace',    proOnly: false },
+        { value: 'yelp',      label: '⭐ Yelp',                    proOnly: false },
+        { value: 'craigslist',label: '📋 Craigslist',              proOnly: false },
+        { value: 'nextdoor',  label: '🏘️ Nextdoor',               proOnly: false },
+        { value: 'linkedin',  label: '💼 LinkedIn',                proOnly: false },
+        { value: 'x',         label: '𝕏 X (Twitter)',             proOnly: false }
       ],
       validate: v => (v && v.length) ? null : 'Pick at least one platform!'
     },
@@ -1780,7 +1784,7 @@ import {
   getFirestore, doc, getDoc, setDoc, updateDoc, deleteField, collection, serverTimestamp, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { loadPlatforms } from './platforms-config.js';
+import { loadPlatforms } from './platforms-config.js?v=2';
 
 const db = getFirestore(getApp());
 
@@ -1790,12 +1794,12 @@ const db = getFirestore(getApp());
 (async () => {
   try {
     const platforms = await loadPlatforms(db, getDoc, doc);
-    const plan = window._ob2Plan || 'trial';
-    const isPro = plan === 'pro' || plan === 'agency';
+    // Store raw proOnly — renderInput evaluates isPro at render time to avoid
+    // a race condition where auth hasn't resolved yet at this point.
     window._bbPlatformChoices = platforms.map(p => ({
       value:   p.slug,
       label:   p.icon + ' ' + p.name,
-      proOnly: p.proOnly && !isPro,
+      proOnly: p.proOnly,
     }));
   } catch(e) {
     console.warn('[ob2] platform list load failed, using fallback:', e.message);
