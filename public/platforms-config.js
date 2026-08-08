@@ -3,21 +3,23 @@
 // Public page (BlastyBiz-Platforms.html) uses the REST API helper below instead.
 
 export const PLATFORM_DEFAULTS = [
-  { slug: 'google',     name: 'Google Business Profile', icon: '🔍', capabilityLevel: 'full_auto',       order: 1,  enabled: true, proOnly: false },
-  { slug: 'facebook',   name: 'Facebook Page',           icon: '📘', capabilityLevel: 'partial_auto',    order: 2,  enabled: true, proOnly: false },
-  { slug: 'instagram',  name: 'Instagram',               icon: '📸', capabilityLevel: 'partial_auto',    order: 3,  enabled: true, proOnly: false },
-  { slug: 'fbmarket',   name: 'Facebook Marketplace',    icon: '🛒', capabilityLevel: 'manual_assisted', order: 4,  enabled: true, proOnly: true  },
-  { slug: 'yelp',       name: 'Yelp',                    icon: '⭐', capabilityLevel: 'manual_assisted', order: 5,  enabled: true, proOnly: true  },
-  { slug: 'craigslist', name: 'Craigslist',              icon: '📋', capabilityLevel: 'manual_assisted', order: 6,  enabled: true, proOnly: true  },
-  { slug: 'nextdoor',   name: 'Nextdoor',                icon: '🏘️',  capabilityLevel: 'manual_assisted', order: 7,  enabled: true, proOnly: true  },
-  { slug: 'linkedin',   name: 'LinkedIn',                icon: '💼', capabilityLevel: 'manual_assisted', order: 8,  enabled: true, proOnly: true  },
-  { slug: 'pinterest',  name: 'Pinterest',               icon: '📌', capabilityLevel: 'manual_assisted', order: 9,  enabled: true, proOnly: true  },
-  { slug: 'x',          name: 'X (Twitter)',             icon: '𝕏',  capabilityLevel: 'manual_assisted', order: 10, enabled: true, proOnly: true  },
-  { slug: 'bing',       name: 'Bing Places',             icon: '🔵', capabilityLevel: 'manual_assisted', order: 11, enabled: true, proOnly: true  },
-  { slug: 'applemaps',  name: 'Apple Maps',              icon: '🍎', capabilityLevel: 'manual_assisted', order: 12, enabled: true, proOnly: true  },
-  { slug: 'alignable',  name: 'Alignable',               icon: '🤝', capabilityLevel: 'manual_assisted', order: 13, enabled: true, proOnly: true  },
-  { slug: 'thumbtack',  name: 'Thumbtack',               icon: '📌', capabilityLevel: 'manual_assisted', order: 14, enabled: true, proOnly: true  },
-  { slug: 'angi',       name: 'Angi',                    icon: '🔧', capabilityLevel: 'manual_assisted', order: 15, enabled: true, proOnly: true  },
+  // Pro = automated posting (requires connected OAuth accounts)
+  // Free = manual/copy-paste (works for anyone)
+  { slug: 'google',     name: 'Google Business Profile', icon: '🔍', capabilityLevel: 'full_auto',       order: 1,  enabled: true, proOnly: true  },
+  { slug: 'facebook',   name: 'Facebook Page',           icon: '📘', capabilityLevel: 'partial_auto',    order: 2,  enabled: true, proOnly: true  },
+  { slug: 'instagram',  name: 'Instagram',               icon: '📸', capabilityLevel: 'partial_auto',    order: 3,  enabled: true, proOnly: true  },
+  { slug: 'fbmarket',   name: 'Facebook Marketplace',    icon: '🛒', capabilityLevel: 'manual_assisted', order: 4,  enabled: true, proOnly: false },
+  { slug: 'yelp',       name: 'Yelp',                    icon: '⭐', capabilityLevel: 'manual_assisted', order: 5,  enabled: true, proOnly: false },
+  { slug: 'craigslist', name: 'Craigslist',              icon: '📋', capabilityLevel: 'manual_assisted', order: 6,  enabled: true, proOnly: false },
+  { slug: 'nextdoor',   name: 'Nextdoor',                icon: '🏘️',  capabilityLevel: 'manual_assisted', order: 7,  enabled: true, proOnly: false },
+  { slug: 'linkedin',   name: 'LinkedIn',                icon: '💼', capabilityLevel: 'manual_assisted', order: 8,  enabled: true, proOnly: false },
+  { slug: 'pinterest',  name: 'Pinterest',               icon: '📌', capabilityLevel: 'manual_assisted', order: 9,  enabled: true, proOnly: false },
+  { slug: 'x',          name: 'X (Twitter)',             icon: '𝕏',  capabilityLevel: 'manual_assisted', order: 10, enabled: true, proOnly: false },
+  { slug: 'bing',       name: 'Bing Places',             icon: '🔵', capabilityLevel: 'manual_assisted', order: 11, enabled: true, proOnly: false },
+  { slug: 'applemaps',  name: 'Apple Maps',              icon: '🍎', capabilityLevel: 'manual_assisted', order: 12, enabled: true, proOnly: false },
+  { slug: 'alignable',  name: 'Alignable',               icon: '🤝', capabilityLevel: 'manual_assisted', order: 13, enabled: true, proOnly: false },
+  { slug: 'thumbtack',  name: 'Thumbtack',               icon: '📌', capabilityLevel: 'manual_assisted', order: 14, enabled: true, proOnly: false },
+  { slug: 'angi',       name: 'Angi',                    icon: '🔧', capabilityLevel: 'manual_assisted', order: 15, enabled: true, proOnly: false },
 ];
 
 /**

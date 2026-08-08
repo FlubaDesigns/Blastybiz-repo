@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786151024547"/>
+  <link rel="stylesheet" href="global-style.css?v=1786151590378"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -138,6 +138,17 @@
       padding: 7px 0;
       display: block;
     }
+    .obf-row.answered { cursor: pointer; }
+    .obf-row.answered:hover,
+    .obf-row.answered:active { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.1); }
+    .obf-edit-hint {
+      font-size: 11px; color: var(--muted,#666);
+      margin-left: 6px; opacity: 0;
+      transition: opacity .2s;
+      white-space: nowrap;
+    }
+    .obf-row.answered:hover .obf-edit-hint,
+    .obf-row.answered:active .obf-edit-hint { opacity: 1; }
     /* User speech bubble (in active slot) — tail points RIGHT (away from Blasty on the left) */
     .obf-bubble {
       position: relative;
@@ -914,6 +925,7 @@
   let currentBubble = null;
   let currentInput  = null;
   let currentStepKey = null;
+  let _resumeStep = null; // set when user taps a past answer to edit it
 
   const STEPS = [
     {
@@ -1339,10 +1351,12 @@
     if (!row) return;
     row.classList.remove('active','future','bb-field-blur');
     row.classList.add('answered','bb-field-done');
+    row.onclick = () => window._ob2JumpToKey(key);
     const slot = document.getElementById('obfs-'+key);
     if (slot) {
       const safe = String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      slot.innerHTML = '<span class="obf-answered-val">'+safe+'</span>';
+      slot.innerHTML = '<span class="obf-answered-val">'+safe
+        +'<span class="obf-edit-hint">✏️ tap to edit</span></span>';
     }
     if (window.innerWidth <= 860) {
       row.classList.add('just-answered');
@@ -1410,6 +1424,7 @@
         if (r.id === 'obfr-'+s.key) {
           r.classList.remove('future','answered','just-answered','bb-field-blur','bb-field-done');
           r.classList.add('active');
+          r.onclick = null;
           _activeRowEl = r;
         } else if (!r.classList.contains('answered')) {
           r.classList.remove('active','bb-field-done'); r.classList.add('future','bb-field-blur');
@@ -1619,8 +1634,22 @@
       if (currentBubble) lockBubble(currentBubble, val.trim());
     }
     step++;
+    // If the user was editing a past answer, jump back to where they were
+    if (_resumeStep !== null && step <= _resumeStep) {
+      step = _resumeStep;
+      _resumeStep = null;
+    }
     if (window._ob2SaveProgress) window._ob2SaveProgress(answers, toggles, step);
     setTimeout(showStep, 380);
+  };
+
+  // Jump back to an already-answered step for editing, then return here when done
+  window._ob2JumpToKey = function(key) {
+    const idx = STEPS.findIndex(s => s.key === key);
+    if (idx < 0 || idx >= step) return; // only past steps
+    _resumeStep = step;
+    step = idx;
+    showStep();
   };
 
   async function finish() {
