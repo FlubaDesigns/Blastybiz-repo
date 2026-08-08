@@ -84,13 +84,20 @@ exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_AP
   if (!(await checkUidRateLimit('suggestCategoryRateLimit', decoded.uid, 20, 60 * 60 * 1000))) {
     return res.status(429).json({ error: 'Rate limit exceeded' });
   }
-  const { bizName } = req.body;
+  const { bizName, story, different, awards, customer, offer } = req.body;
   if (!bizName) return res.status(400).json({ error: 'bizName required' });
+  const context = [
+    story     && `About the business: ${story}`,
+    different && `What makes it different: ${different}`,
+    awards    && `Awards/recognition: ${awards}`,
+    customer  && `Ideal customer: ${customer}`,
+    offer     && `Current offer: ${offer}`,
+  ].filter(Boolean).join('\n');
+  const prompt = context
+    ? `A business called "${bizName}" provided this description:\n${context}\n\nBased on this, what is the most accurate business category? Reply with ONLY the category, 1-4 words. Examples: "Hair Salon", "Mexican Restaurant", "Auto Repair Shop", "Digital Marketing Agency", "Landscaping Company", "Coffee Shop". No punctuation, no explanation — just the category.`
+    : `What type of business is "${bizName}"? Reply with ONLY the business category, 1-4 words. Examples: "Hair Salon", "Mexican Restaurant", "Auto Repair Shop", "Digital Marketing Agency", "Landscaping Company", "Coffee Shop". No punctuation, no explanation — just the category.`;
   try {
-    const { text } = await callAI(
-      `What type of business is "${bizName}"? Reply with ONLY the business category, 1-4 words. Examples: "Hair Salon", "Mexican Restaurant", "Auto Repair Shop", "Digital Marketing Agency", "Landscaping Company", "Coffee Shop". No punctuation, no explanation — just the category.`,
-      { tier: 'fast', maxTokens: 20 }
-    );
+    const { text } = await callAI(prompt, { tier: 'fast', maxTokens: 20 });
     res.json({ category: text.trim().replace(/^["']+|["']+$/g, '') });
   } catch (e) {
     res.status(500).json({ error: e.message });
