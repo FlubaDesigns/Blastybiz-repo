@@ -126,14 +126,18 @@ Be specific and vivid. Preserve anything quirky or unusual — that is what make
     const key = process.env.GEMINI_API_KEY;
     if (!key) throw new Error('GEMINI_API_KEY not set');
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${key}`,
       { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: maxTok } }) }
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: maxTok }
+        }) }
     );
     if (!r.ok) throw new Error(`Gemini ${r.status}: ${(await r.text()).slice(0, 300)}`);
     const j = await r.json();
-    return j.candidates[0].content.parts[0].text.trim();
+    const text = j.candidates?.[0]?.content?.parts?.find(p => p.text)?.text;
+    if (!text) throw new Error(`Gemini empty response: ${JSON.stringify(j).slice(0, 200)}`);
+    return text.trim();
   }
 
   try {

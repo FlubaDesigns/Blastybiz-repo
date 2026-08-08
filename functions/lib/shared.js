@@ -118,8 +118,8 @@ let _aiSettingsCacheAt = 0;
 const AI_SETTINGS_TTL = 60_000;
 const AI_DEFAULTS = {
   provider:   'gemini',
-  fastModel:  'gemini-3.1-flash-lite',
-  smartModel: 'gemini-3.1-flash-lite',
+  fastModel:  'gemini-flash-lite-latest',
+  smartModel: 'gemini-flash-lite-latest',
 };
 
 async function getAiSettings() {
