@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Set up your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786152737087"/>
+  <link rel="stylesheet" href="global-style.css?v=1786152788963"/>
   <title>BlastyBiz — Your Business</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -1652,11 +1652,18 @@
 
   window._ob2Continue = function() {
     const s = STEPS[step];
-    // On platforms step: immediately reset Blasty's bubble so the factoid doesn't hang
+    // On platforms step: fire a Blasty blast factoid when the button is tapped
     if (s.key === 'campaignPlatforms') {
-      const n = [...document.querySelectorAll('.ob2-ms-check:checked')].length;
-      setBlastyBubble(n === 1 ? "Great pick! Let me figure out your perfect category… 🚀"
-                               : "Great picks! Let me figure out your perfect category… 🚀");
+      const _blastFacts = [
+        "📈 Businesses that post consistently across 3+ platforms see <strong>3× more</strong> customer inquiries.",
+        "🔁 The average customer needs to see your brand <strong>7 times</strong> before they act — BlastyBiz gets you there fast.",
+        "📊 Businesses that blast weekly generate <strong>67% more leads</strong> than those that post once a month.",
+        "💬 <strong>92% of consumers</strong> trust word-of-mouth and social proof more than any ad. Let's get you out there.",
+        "⚡ Companies that respond to leads within <strong>1 hour</strong> are 7× more likely to close. Blasty helps you move fast.",
+        "🌐 <strong>76% of people</strong> who search for a local business on their phone visit within 24 hours.",
+        "🏆 Consistent posting builds <strong>brand recognition</strong> — the #1 reason customers choose one local business over another."
+      ];
+      setBlastyBubble(_blastFacts[Math.floor(Math.random() * _blastFacts.length)]);
     }
     if ((s.inputType === 'url' || s.key === 'website') && currentInput) {
       var rv = currentInput.value.trim();
