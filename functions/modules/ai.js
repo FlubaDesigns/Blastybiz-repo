@@ -363,6 +363,61 @@ Rules:
   return res.json({ aiContext: extracted, source: sourceLabel });
 }));
 
+// ── Admin platform-docs cache ────────────────────────────────────────────────
+// settings/platformDocs holds admin overrides written by BlastyBiz-Admin-Platforms.html.
+// We cache it in memory (5-min TTL) so each adaptListing call gets up-to-date rules
+// without a Firestore round-trip on every request.
+let _adminPlatformDocsCache = null;
+let _adminPlatformDocsCacheAt = 0;
+const PLATFORM_DOCS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+async function _getAdminPlatformDocs() {
+  const now = Date.now();
+  if (_adminPlatformDocsCache && (now - _adminPlatformDocsCacheAt) < PLATFORM_DOCS_CACHE_TTL_MS) {
+    return _adminPlatformDocsCache;
+  }
+  try {
+    const snap = await db.collection('settings').doc('platformDocs').get();
+    _adminPlatformDocsCache = snap.exists ? snap.data() : {};
+  } catch(e) {
+    console.warn('[adaptListing] failed to fetch admin platformDocs, using defaults:', e.message);
+    if (!_adminPlatformDocsCache) _adminPlatformDocsCache = {};
+  }
+  _adminPlatformDocsCacheAt = now;
+  return _adminPlatformDocsCache;
+}
+
+// Merge a Firestore admin override doc onto a PLATFORM_DOCS base entry.
+// Admin overrides win; absent fields fall through to the base.
+// The admin UI stores dos/donts as newline-separated strings — convert to arrays here.
+// The admin UI stores imageRequired + imageNotes separately — map to the images object.
+function _mergeAdminPlatformDoc(baseDoc, fsDoc) {
+  if (!fsDoc || !Object.keys(fsDoc).length) return baseDoc;
+  const merged = Object.assign({}, baseDoc);
+  if (fsDoc.purpose)   merged.purpose   = fsDoc.purpose;
+  if (fsDoc.maxChars)  merged.maxChars  = Number(fsDoc.maxChars) || baseDoc.maxChars;
+  if (fsDoc.format)    merged.format    = fsDoc.format;
+  if (fsDoc.tone)      merged.tone      = fsDoc.tone;
+  if (fsDoc.dos != null) {
+    merged.dos = typeof fsDoc.dos === 'string'
+      ? fsDoc.dos.split('\n').map(s => s.trim()).filter(Boolean)
+      : (Array.isArray(fsDoc.dos) ? fsDoc.dos : baseDoc.dos);
+  }
+  if (fsDoc.donts != null) {
+    merged.donts = typeof fsDoc.donts === 'string'
+      ? fsDoc.donts.split('\n').map(s => s.trim()).filter(Boolean)
+      : (Array.isArray(fsDoc.donts) ? fsDoc.donts : baseDoc.donts);
+  }
+  if (fsDoc.imageRequired != null || fsDoc.imageNotes != null) {
+    const base = baseDoc.images || {};
+    merged.images = Object.assign({}, base, {
+      required: fsDoc.imageRequired != null ? fsDoc.imageRequired : base.required,
+      notes:    fsDoc.imageNotes    != null ? fsDoc.imageNotes    : base.notes,
+    });
+  }
+  return merged;
+}
+
 exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'], timeoutSeconds: 120 }, withAuth(async (req, res, decoded) => {
   const fnStartMs = Date.now();
 
@@ -405,9 +460,12 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
     console.error('[reserveAiAction] adaptListing transaction failed:', e.message);
     return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
   }
+  // Fetch admin writing-guide overrides and merge with hardcoded defaults.
+  // Admin values win; missing fields fall back to PLATFORM_DOCS.
+  const adminPlatformDocs = await _getAdminPlatformDocs();
   const platformList = (platforms || []).map(p => ({
     id: p.id, name: p.name, type: p.type,
-    doc: PLATFORM_DOCS[p.id] || {},
+    doc: _mergeAdminPlatformDoc(PLATFORM_DOCS[p.id] || {}, adminPlatformDocs[p.id] || {}),
     cat: (platformCats || {})[p.id] ? ` (category: ${platformCats[p.id]})` : ''
   }));
 
