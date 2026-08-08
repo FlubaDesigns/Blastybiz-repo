@@ -1392,7 +1392,9 @@ function buildPlatformCard(p) {
        </div>`
     : `<div class="copy-box" id="copy-${p.id}"></div>`;
 
-  const starterLocked = p.type === 'api' && (window._bbUserPlan || 'starter') === 'starter';
+  // Use admin-controlled proOnly flag when available; fall back to capability-based rule
+  const proOnly = p.proOnly != null ? p.proOnly : (p.type === 'api');
+  const starterLocked = proOnly && !['pro', 'agency'].includes(window._bbUserPlan || 'starter');
   const actionBtn = starterLocked
     ? `<a href="BlastyBiz-Dashboard.html?checkout=pro" class="btn btn-outline btn-sm btn-upgrade-inline">⚡ Upgrade to Auto-Post</a>`
     : p.type === 'api'
@@ -2496,7 +2498,9 @@ function renderStep3Platforms() {
   el.innerHTML = '';
   platforms.forEach(p => {
     const isApi = p.type === 'api';
-    const starterLocked = isApi && (window._bbUserPlan || 'starter') === 'starter';
+    // Use admin-controlled proOnly flag when available; fall back to capability-based rule
+    const proOnly = p.proOnly != null ? p.proOnly : isApi;
+    const starterLocked = proOnly && !['pro', 'agency'].includes(window._bbUserPlan || 'starter');
     const row = document.createElement('div');
     row.className = 's3-plat-row';
     row.id = 's3-row-' + p.id;
@@ -4943,29 +4947,19 @@ function showToast(msg) {
 // ══════════════════════════════════════════
 init();
 
-// ── Apply config/platforms admin overrides (name, icon, type, order, enabled) ──
+// ── Apply config/platforms admin overrides (name, icon, type, order, enabled, proOnly) ──
+// Uses platforms-config.js (the canonical source shared with onboarding/admin pages).
 // Runs after init() so user-enabled state from localStorage is already applied.
 // Falls back silently if config/platforms doesn't exist yet.
 (async function _applyAdminPlatformConfig() {
   try {
-    const res = await fetch('https://firestore.googleapis.com/v1/projects/blastybiz-9523e/databases/(default)/documents/config/platforms');
-    if (!res.ok) return;
-    const data = await res.json();
-    if (!data.fields) return;
-    function _fsVal(v) {
-      if (!v) return null;
-      if ('stringValue'  in v) return v.stringValue;
-      if ('booleanValue' in v) return v.booleanValue;
-      if ('integerValue' in v) return parseInt(v.integerValue, 10);
-      if ('mapValue'     in v) {
-        const out = {};
-        for (const [k, fv] of Object.entries(v.mapValue.fields || {})) out[k] = _fsVal(fv);
-        return out;
-      }
-      return null;
-    }
+    const { PLATFORM_DEFAULTS, loadPlatformsREST } = await import('./platforms-config.js');
+    const activePlatforms = await loadPlatformsREST();
+    // Build a complete adminMap: mark all defaults disabled first, then enable the active ones.
+    // This ensures admin-disabled platforms are properly excluded by _bbSetPlatforms.
     const adminMap = {};
-    for (const [slug, val] of Object.entries(data.fields)) adminMap[slug] = _fsVal(val);
+    PLATFORM_DEFAULTS.forEach(d => { adminMap[d.slug] = { ...d, enabled: false }; });
+    activePlatforms.forEach(p => { adminMap[p.slug] = p; }); // re-enable with admin overrides
     // Cache admin config — _bbSetPlatforms applies it on every subsequent call
     window._bbAdminPlatformConfig = adminMap;
     // Apply immediately to current platform state (re-render via _bbSetPlatforms)
@@ -4977,8 +4971,8 @@ init();
 
 // Window setters — module script calls these to push Firestore data into UI
 window._bbSetPlatforms = function(updatedPlatforms) {
-  // Always apply the admin display overlay (name, icon, type, order, globally-disabled).
-  // window._bbAdminPlatformConfig is populated by _applyAdminPlatformConfig() below.
+  // Always apply the admin display overlay (name, icon, type, order, proOnly, globally-disabled).
+  // window._bbAdminPlatformConfig is populated by _applyAdminPlatformConfig() / module script.
   const adminMap = window._bbAdminPlatformConfig;
   if (adminMap) {
     updatedPlatforms = updatedPlatforms
@@ -4986,10 +4980,13 @@ window._bbSetPlatforms = function(updatedPlatforms) {
       .map(p => {
         const a = adminMap[p.id];
         if (!a) return p;
+        const isManual = a.capabilityLevel === 'manual_assisted';
         return Object.assign({}, p, {
-          name: a.name || p.name,
-          icon: a.icon || p.icon,
-          type: a.capabilityLevel === 'manual_assisted' ? 'manual' : 'api',
+          name:    a.name    || p.name,
+          icon:    a.icon    || p.icon,
+          type:    isManual ? 'manual' : 'api',
+          // proOnly from admin config; fall back to capability-based rule
+          proOnly: a.proOnly != null ? a.proOnly : !isManual,
         });
       })
       .sort((a, b) => ((adminMap[a.id]?.order || 99) - (adminMap[b.id]?.order || 99)));
@@ -5173,6 +5170,7 @@ import {
   doc, getDoc, setDoc, addDoc, collection, serverTimestamp, writeBatch, deleteDoc,
   query, where, getDocs, orderBy, limit, updateDoc, arrayUnion, arrayRemove, increment
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js';
 import {
   ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
@@ -5573,6 +5571,19 @@ onAuthStateChanged(auth, async (user) => {
       window._globalMemory = biz.globalMemory || '';
       window._bbPlatPrefs  = biz.platformPrefs || {};
       if (window.loadInsights) window.loadInsights(biz.bizInsights || []);
+
+      // Refresh admin platform config via authenticated Firestore (more reliable than the
+      // pre-auth REST call). Must run before restoring user selections so _bbSetPlatforms
+      // has the latest admin config when it applies the enabled/proOnly/name/icon overrides.
+      try {
+        const activePlatforms = await loadPlatforms(db, getDoc, doc);
+        const adminMap = {};
+        PLATFORM_DEFAULTS.forEach(d => { adminMap[d.slug] = { ...d, enabled: false }; });
+        activePlatforms.forEach(p => { adminMap[p.slug] = p; });
+        window._bbAdminPlatformConfig = adminMap;
+      } catch(e) {
+        console.warn('[BlastyBiz] loadPlatforms (auth) failed:', e.message);
+      }
 
       // Restore saved platform selections (cross-device)
       if (biz.enabledPlatforms && Array.isArray(biz.enabledPlatforms)) {
