@@ -507,7 +507,16 @@ function _mergeAdminPlatformDoc(baseDoc, fsDoc) {
 exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'], timeoutSeconds: 120 }, withAuth(async (req, res, decoded) => {
   const fnStartMs = Date.now();
 
+  if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+    return res.status(400).json({ error: 'Request body must be a JSON object' });
+  }
+
   const { listing, platforms, tone, platformCats } = req.body;
+
+  if (!listing || typeof listing !== 'object' || Array.isArray(listing)) {
+    return res.status(400).json({ error: 'Missing required field: listing (must be an object)' });
+  }
+
   const isRegeneration = req.body.isRegeneration === true;
   const regenDraftId   = req.body.draftId || null;
   const now = new Date();
@@ -665,7 +674,19 @@ ${platformList.map(p => `    "${p.id}": "adapted text for ${p.name}"`).join(',\n
 exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
   const fnStartMs = Date.now();
 
+  if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+    return res.status(400).json({ error: 'Request body must be a JSON object' });
+  }
+
   const { businessName, ownerName, city, state, description, specialNotes, followUpAnswers, platformCatLists, locationType, requestId: rcRequestId } = req.body;
+
+  if (!platformCatLists || typeof platformCatLists !== 'object' || Array.isArray(platformCatLists)) {
+    return res.status(400).json({ error: 'Missing required field: platformCatLists (must be an object)' });
+  }
+  const invalidPlatformEntry = Object.entries(platformCatLists).find(([, cats]) => !Array.isArray(cats));
+  if (invalidPlatformEntry) {
+    return res.status(400).json({ error: `platformCatLists["${invalidPlatformEntry[0]}"] must be an array` });
+  }
 
   if (rcRequestId) {
     try {

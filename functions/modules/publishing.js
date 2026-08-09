@@ -195,7 +195,25 @@ exports.approvePendingPost = onRequest({ invoker: 'public' }, withAuth(async (re
 
 exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, withAuth(async (req, res, decoded) => {
 
+  if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+    return res.status(400).json({ error: 'Request body must be a JSON object' });
+  }
+
   const { draftId, businessId, platforms: legacyPlatforms, platformKeys } = req.body;
+
+  if (!businessId || typeof businessId !== 'string') {
+    return res.status(400).json({ error: 'Missing required field: businessId' });
+  }
+  if (businessId.includes('/')) {
+    return res.status(400).json({ error: 'Invalid businessId: must not contain "/"' });
+  }
+  if (!draftId || typeof draftId !== 'string') {
+    return res.status(400).json({ error: 'Missing required field: draftId' });
+  }
+  if (draftId.includes('/')) {
+    return res.status(400).json({ error: 'Invalid draftId: must not contain "/"' });
+  }
+
   const platformIds = Array.isArray(platformKeys) && platformKeys.length > 0
     ? platformKeys
     : (Array.isArray(legacyPlatforms) ? legacyPlatforms.map(p => p.id) : []);
