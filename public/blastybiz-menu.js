@@ -16,6 +16,15 @@ function _revealAdminNav() {
       // Mark body as logged-in so CSS reveals app nav links
       document.body.classList.add('logged-in');
 
+      // ── Mascot animation setting ────────────────────────────────────────
+      // Read once per page load. Applies immediately via body.mascot-static so
+      // every page that includes mascot.js respects the admin toggle.
+      try {
+        const uiSnap = await getDoc(doc(db, 'config', 'ui'));
+        const mascotAnimations = uiSnap.exists() ? uiSnap.data().mascotAnimations : true;
+        document.body.classList.toggle('mascot-static', mascotAnimations === false);
+      } catch(e) { /* non-fatal — animations stay on if config unreadable */ }
+
       // ── Admin nav link ──────────────────────────────
       let isAdmin = user.email === 'info@blastybiz.com';
       if (!isAdmin) {

@@ -208,6 +208,16 @@
     '.pb-mascot.pb-confetti-active .confetti>g{transform-box:fill-box;transform-origin:center;',
     '  animation:confetti-burst 1.6s ease-out forwards!important;}',
 
+    /* ── Admin kill-switch: body.mascot-static stops ALL movement ──────── */
+    /* Set via config/ui.mascotAnimations=false; applied by blastybiz-menu.js */
+    'body.mascot-static .mascot-body{animation:none!important;transform:none!important;}',
+    'body.mascot-static .mascot-arm-wave{animation:none!important;}',
+    'body.mascot-static .mascot-fin-l,'
+    + 'body.mascot-static .mascot-fin-r{animation:none!important;transform:none!important;}',
+    'body.mascot-static .flame{animation:none!important;}',
+    'body.mascot-static .smoke-puff{animation:none!important;}',
+    'body.mascot-static .confetti>g{animation:none!important;}',
+
     /* Drag — applied to the zone when setDraggable(true) */
     '.pb-mascot-zone.is-fixed{position:fixed!important;z-index:9990;}',
     '.pb-mascot-zone.is-draggable{cursor:grab;user-select:none;}',
