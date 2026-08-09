@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="escape-utils.js?v=1"></script>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1786226767930" />
+<link rel="stylesheet" href="global-style.css?v=1786234750365" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -2536,6 +2537,21 @@ function getStep5Platforms() {
   return platforms.filter(p => p.enabled);
 }
 
+// Bring a platform's review card into view and treat it as the current one.
+// Step 5 used to show one platform at a time; it now renders every card at once,
+// so "go to" means scroll rather than swap. Approving or excluding a platform
+// calls this to jump to the next unresolved card — without it those handlers
+// threw ReferenceError and the auto-advance silently stopped working.
+function step5GoTo(idx) {
+  const enabled = getStep5Platforms();
+  if (!enabled.length) return;
+  _step5PlatIdx = Math.max(0, Math.min(idx, enabled.length - 1));
+  const card = document.getElementById('step5-card-' + enabled[_step5PlatIdx].id);
+  if (!card) return;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  card.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+}
+
 function renderStep5Review() {
   const container = document.getElementById('step5-review-container');
   if (!container) return;
@@ -2677,10 +2693,10 @@ function updateStep5UI() {
 
   if (allDone) {
     finalBtn.disabled = false;
-    finalBtn.textContent = '✅ Save to History →';
+    finalBtn.textContent = '🚀 Send It →';
     if (wasDisabled || wasHidden) {
       setTimeout(() => finalBtn.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-      showToast('✅ All platforms done — tap Save to History below');
+      showToast('✅ All platforms done — tap Send It below');
     }
   } else {
     finalBtn.disabled = true;
@@ -2693,25 +2709,56 @@ function updateStep5UI() {
 
 async function completeBlast() {
   const finalBtn = document.getElementById('step5-final-btn');
-  if (finalBtn) { finalBtn.disabled = true; finalBtn.textContent = '⏳ Saving…'; }
+  const resetBtn = () => {
+    if (finalBtn) { finalBtn.disabled = false; finalBtn.textContent = '🚀 Send It →'; }
+  };
+  if (finalBtn) { finalBtn.disabled = true; finalBtn.textContent = '⏳ Getting it ready…'; }
 
-  // Write one history entry per approved platform
   const approved = getStep5Platforms().filter(p => p._reviewStatus === 'approved');
-  approved.forEach(p => addHistory(p.name));
+  if (!approved.length) { showToast('Approve at least one platform first'); resetBtn(); return; }
 
-  // Mark draft complete in Firestore
   const draftId = window._currentDraftId;
-  if (draftId && typeof window._bbUpdateDraft === 'function') {
-    try { await window._bbUpdateDraft(draftId, { status: 'completed' }); } catch(_) {}
+  if (!draftId || typeof window._bbUpdateDraft !== 'function') {
+    showToast('⚠️ This blast has not saved yet — give it a moment and try again');
+    resetBtn();
+    return;
   }
 
-  showToast('🎉 Blast saved to history!');
+  // Carry the photos picked on each card through to publishing. Auto-post platforms
+  // upload them; copy-and-paste platforms show them for download on the send page.
+  const photoSel = window._bbPlatformPhotoSel || {};
+  const imagesByPlatform = {};
+  approved.forEach(p => {
+    const urls = Array.from(photoSel[p.id] || []).filter(u => typeof u === 'string' && u);
+    if (urls.length) imagesByPlatform[p.id] = urls;
+  });
 
-  // Return to main app on History tab
-  setTimeout(() => {
-    if (typeof showTab === 'function') showTab('schedule');
-    if (typeof createWizClose === 'function') createWizClose();
-  }, 600);
+  // Platforms the user approved — anything they excluded or skipped is marked so the
+  // send page doesn't offer it.
+  const platformStatus = {};
+  getStep5Platforms().forEach(p => {
+    platformStatus[p.id] = p._reviewStatus === 'approved' ? 'approved' : 'excluded';
+  });
+
+  try {
+    await window._bbUpdateDraft(draftId, {
+      imagesByPlatform,
+      platformStatus,
+      status: 'ready_to_publish',
+    });
+  } catch (e) {
+    console.error('completeBlast: could not save draft', e);
+    showToast('⚠️ Could not save — check your connection and try again');
+    resetBtn();
+    return;
+  }
+
+  // Write one history entry per approved platform
+  approved.forEach(p => addHistory(p.name));
+
+  // Hand off to the send page: it fires the auto-post platforms and holds the
+  // copy-and-paste ones with their text and photos ready to grab.
+  window.location.href = 'BlastyBiz-Listing-Preview.html?draftId=' + encodeURIComponent(draftId);
 }
 
 // ══════════════════════════════════════════
@@ -7016,7 +7063,6 @@ window.confirmDeleteAccount = async function() {
 
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 
-<script src="escape-utils.js?v=1"></script>
 <script src="header-loader.js?v=1"></script>
 <script src="session.js?v=1"></script>
 
@@ -7027,7 +7073,7 @@ window.confirmDeleteAccount = async function() {
     <h2 class="cbm-title">Add a New Business</h2>
     <p class="cbm-sub">How do you want to set it up?</p>
     <div class="cbm-opts">
-      <a href="BlastyBiz-Onboard2.html?new=1" class="cbm-opt">
+      <a href="BlastyBiz-CreateBiz.html?new=1&guide=1" class="cbm-opt">
         <span class="cbm-opt-icon">🚀</span>
         <span class="cbm-opt-title">Blasty Wizard</span>
         <span class="cbm-opt-desc">Let Blasty walk you through it — step by step, with AI guiding the way</span>

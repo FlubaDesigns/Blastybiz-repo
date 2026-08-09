@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="global-style.css?v=1786226767930" />
+  <link rel="stylesheet" href="global-style.css?v=1786234750365" />
   <title>BlastyBiz — Publish Your Blast</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -84,6 +84,13 @@
 .manual-note{font-size:12px;color:var(--muted,#888);line-height:1.5;}
 .copy-platform-btn{font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;border:1px solid var(--border,#333);background:transparent;color:var(--light,#fff);cursor:pointer;font-family:inherit;flex-shrink:0;}
 .copy-platform-btn:active{opacity:.7;}
+.pub-photos{margin-top:12px;}
+.pub-photos-label{font-size:12px;font-weight:700;color:var(--muted,#888);margin-bottom:6px;}
+.pub-photo-strip{display:flex;gap:8px;flex-wrap:wrap;}
+.pub-photo{display:block;width:74px;height:74px;border-radius:9px;overflow:hidden;border:1px solid var(--border,#333);position:relative;text-decoration:none;}
+.pub-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+.pub-photo-save{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.66);color:#fff;font-size:10px;font-weight:700;text-align:center;padding:3px 0;}
+.pub-photo:active{opacity:.7;}
 
 /* ── Section spacing ────────────────────────── */
 .section-mt{margin-top:16px;}
@@ -287,6 +294,27 @@ function togglePreview(pid) {
   if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(90deg)';
 }
 
+// Photo strip shown under a platform's copy. Auto-post platforms upload these themselves;
+// copy-and-paste platforms get a tap-to-open link so the owner can save each photo.
+function photoStripHtml(pid, isAuto) {
+  var imgs = (drafts[pid] && drafts[pid].images) || [];
+  if (!imgs.length) return '';
+  var label = isAuto
+    ? '📷 ' + imgs.length + ' photo' + (imgs.length > 1 ? 's' : '') + ' will be posted with this'
+    : '📷 Tap a photo to open it, then save and upload it with your post';
+  return '<div class="pub-photos">'
+    + '<div class="pub-photos-label">' + label + '</div>'
+    + '<div class="pub-photo-strip">'
+    + imgs.map(function(url){
+        var safe = escHtml(url);
+        return '<a class="pub-photo" href="' + safe + '" target="_blank" rel="noopener noreferrer">'
+          + '<img src="' + safe + '" alt="" loading="lazy" />'
+          + (isAuto ? '' : '<span class="pub-photo-save">Open</span>')
+          + '</a>';
+      }).join('')
+    + '</div></div>';
+}
+
 function copyPreviewText(pid) {
   var d = drafts[pid];
   if (!d) return;
@@ -299,10 +327,17 @@ function copyPreviewText(pid) {
 function populateFromDraftData(draftData) {
   currentDraftData = draftData;
   window._draftRevision = draftData.revision || 0; // F8: track revision for stale-publish guard
-  var adaptations = draftData.adaptations || {};
+  var adaptations    = draftData.adaptations    || {};
+  var platformStatus = draftData.platformStatus || {};
+  var draftImages    = draftData.imagesByPlatform || {};
   Object.entries(adaptations).forEach(function(entry){
     var pid = entry[0], text = entry[1];
-    drafts[pid] = { text: text, headline: '', cta: '' };
+    // Anything the owner excluded during review never reaches this page
+    if (platformStatus[pid] === 'excluded') return;
+    drafts[pid] = {
+      text: text, headline: '', cta: '',
+      images: Array.isArray(draftImages[pid]) ? draftImages[pid] : [],
+    };
   });
 
   var sbName     = document.getElementById('sb-name');
@@ -316,8 +351,7 @@ function populateFromDraftData(draftData) {
   if (sbArea)     sbArea.textContent     = draftData.region   || draftData.address || '—';
   if (sbOffer)    sbOffer.textContent    = draftData.offer    || '—';
 
-  var platformStatus = draftData.platformStatus || {};
-  var platformIds   = Object.keys(adaptations).filter(function(pid){ return platformStatus[pid] !== 'excluded'; });
+  var platformIds   = Object.keys(drafts);
   var autoCount     = platformIds.filter(function(k){ var m = PLATFORM_META[k]; return m && m.capabilityLevel !== 'manual_assisted'; }).length;
   var manualCount   = platformIds.filter(function(k){ var m = PLATFORM_META[k]; return m && m.capabilityLevel === 'manual_assisted'; }).length;
 
@@ -366,6 +400,7 @@ function populateFromDraftData(draftData) {
         + '<div class="pub-preview-body" id="pub-prev-body-' + pid + '">'
         +   '<div class="pub-preview-text">' + escHtml(text) + '</div>'
         +   '<button class="pub-copy-btn" onclick="copyPreviewText(\'' + pid + '\')">📋 Copy this copy</button>'
+        +   photoStripHtml(pid, meta.capabilityLevel !== 'manual_assisted')
         + '</div>'
         + '</div>';
     }).join('');
@@ -411,6 +446,7 @@ function renderManualPanel() {
       +   '<button onclick="copyPlatformText(\'' + k + '\')" class="copy-platform-btn">📋 Copy</button>'
       + '</div>'
       + '<textarea id="manual-text-' + k + '" readonly class="manual-textarea">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</textarea>'
+      + photoStripHtml(k, false)
       + (meta.manualInstructions ? '<div class="manual-note mt-8">👉 ' + meta.manualInstructions + '</div>' : '')
       + '</div>';
   }).join('');

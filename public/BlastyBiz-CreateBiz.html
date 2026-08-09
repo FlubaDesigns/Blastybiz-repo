@@ -121,6 +121,13 @@
   .cb-preview-card-head { font-size:13px; font-weight:700; color:var(--text); margin-bottom:4px; line-height:1.3; }
   .cb-preview-card-body { font-size:12px; color:#7aab82; line-height:1.55; white-space:pre-wrap; word-break:break-word; }
 
+  /* ── "Walk me through it" launcher for the Blasty guide layer ── */
+  .cb-guide-start { margin:-4px 0 18px; }
+  .cb-guide-start-btn { font-family:inherit; font-size:14px; font-weight:700; padding:10px 18px;
+    border-radius:10px; border:1.5px solid var(--green); background:transparent; color:var(--green);
+    cursor:pointer; transition:background .15s,color .15s; }
+  .cb-guide-start-btn:hover { background:var(--green); color:#06210c; }
+
   /* ── Spotlight ring — pb-spotlight class applied by FormGuide's mascot shim ── */
   .pb-spotlight {
     outline: 3px solid rgba(0,200,83,.85) !important;
@@ -191,7 +198,12 @@
 
 <div class="cb-main">
   <div class="cb-page-title">Create Business</div>
-  <p class="cb-page-sub">No wizard, no waiting — fill in your details and blast.</p>
+  <p class="cb-page-sub">Fill it in yourself, or let Blasty walk you through it one question at a time.</p>
+  <div id="cb-guide-start" class="cb-guide-start">
+    <button type="button" class="cb-guide-start-btn" onclick="window._cbStartGuide()">
+      💬 Walk me through it
+    </button>
+  </div>
 
   <!-- Preview banner: shown when user arrives from BlastyBiz-Preview.html -->
   <div id="cb-preview-banner" class="cb-preview-banner" style="display:none" aria-live="polite">
@@ -236,6 +248,12 @@
             <input class="cb-input" id="f-phone" type="tel" placeholder="(555) 555-5555" autocomplete="tel"/>
           </div>
           <div class="cb-field">
+            <label class="cb-label">Business email</label>
+            <input class="cb-input" id="f-email" type="email" placeholder="you@yourbusiness.com" autocomplete="email"/>
+          </div>
+        </div>
+        <div class="cb-row">
+          <div class="cb-field">
             <label class="cb-label">Location type</label>
             <select class="cb-select" id="f-locationType">
               <option value="physical">Physical location</option>
@@ -277,6 +295,10 @@
           <div class="cb-toggle-row">
             <span class="cb-toggle-lbl">Include phone number in marketing copy</span>
             <label class="cb-toggle-sw"><input type="checkbox" id="pref-phone" checked><span class="cb-toggle-sl"></span></label>
+          </div>
+          <div class="cb-toggle-row">
+            <span class="cb-toggle-lbl">Include email in marketing copy</span>
+            <label class="cb-toggle-sw"><input type="checkbox" id="pref-email" checked><span class="cb-toggle-sl"></span></label>
           </div>
           <div class="cb-toggle-row">
             <span class="cb-toggle-lbl">Mention address in marketing copy</span>
@@ -372,7 +394,9 @@
   </div>
 </div>
 
+<script src="mascot.js?v=5"></script>
 <script src="form-guide.js?v=2"></script>
+<script src="guided-setup.js?v=1"></script>
 <script>
 function cbToggle(id) {
   const sec = document.getElementById('cbs-'+id);
@@ -417,6 +441,90 @@ window._cbGuide = new FormGuide({
   mascot: _cbMascotShim
 });
 window._cbGuide.setActive(0);
+
+/* ── Blasty guide layer ──────────────────────────────────────────────
+   This page is the ONLY setup page. The old conversational wizard used to be a
+   separate page with its own inputs and its own save — this replaces it with a
+   layer over the real form, so there is one set of fields and one save path.
+   ?guide=1 starts it automatically; otherwise it's a button. */
+function cbOpenSection(id) {
+  var sec = document.getElementById(id);
+  if (!sec || sec.classList.contains('open')) return;
+  sec.classList.add('open');
+  var btn = sec.querySelector('.cb-sec-head');
+  if (btn) btn.setAttribute('aria-expanded', 'true');
+  if (window._cbGuide) window._cbGuide.setActiveEl(sec);
+}
+function cbIsOnline(a) { return a['f-locationType'] === 'online'; }
+
+var CB_GUIDE_STEPS = [
+  { field:'f-ownerName', section:'cbs-info', required:true, mood:'s-wave',
+    ask:"Hey! I'm Blasty — I'll write your ads. First up, what should I call you?",
+    hint:'First name is fine.' },
+  { field:'f-bizName', section:'cbs-info', required:true, mood:'s-ask',
+    ask:function(a){ return (a['f-ownerName'] ? 'Good to meet you, ' + a['f-ownerName'].split(' ')[0] + '. ' : '') + "What's the business called?"; },
+    hint:'Exactly how you want it to appear in your ads.' },
+  { field:'f-role', section:'cbs-info', ask:"What's your title there?", hint:'Owner, Manager, Founder…' },
+  { field:'f-email', section:'cbs-info', ask:'What email should customers reach you at?',
+    validate:function(v){ return (v && v.indexOf('@') < 1) ? "That doesn't look like an email address." : ''; } },
+  { field:'f-phone', section:'cbs-info', ask:'Best phone number for customers?' },
+  { field:'f-locationType', section:'cbs-info', ask:'Do customers come to you, or are you online only?' },
+  { field:'f-street', section:'cbs-info', skipIf:cbIsOnline, ask:"What's the street address?" },
+  { field:'f-city',   section:'cbs-info', skipIf:cbIsOnline, ask:'Which city?' },
+  { field:'f-state',  section:'cbs-info', skipIf:cbIsOnline, ask:'And the state?' },
+  { field:'f-zip',    section:'cbs-info', skipIf:cbIsOnline, ask:'ZIP code?' },
+  { field:'f-website', section:'cbs-info', ask:'Got a website I should point people to?' },
+  { field:'f-story', section:'cbs-story', mood:'s-ask',
+    ask:'Now the good stuff — how did the business get started?',
+    hint:'The more you tell me, the less generic your ads sound.' },
+  { field:'f-different', section:'cbs-story', ask:'What makes you different from the competition?' },
+  { field:'f-awards', section:'cbs-story', ask:'Any awards, press or milestones worth bragging about?' },
+  { field:'f-customer', section:'cbs-story', ask:'Who is your ideal customer?' },
+  { field:'f-other', section:'cbs-story', ask:'Anything else I should always keep in mind?' },
+  { field:'f-campName', section:'cbs-campaign', required:true, mood:'s-working',
+    ask:"Last stretch. What do you want to call this first campaign?", hint:'e.g. Summer Sale, Grand Opening' },
+  { field:'f-about', section:'cbs-campaign', required:true,
+    ask:"What's this campaign about?", hint:'What are you promoting right now?' },
+  { field:'f-offer', section:'cbs-campaign', ask:'Any special offer or call to action?' },
+  { field:'f-audience', section:'cbs-campaign', ask:'Who should see it?' },
+  { group:'plat-grid-wrap', section:'cbs-campaign', mood:'s-celebrate',
+    ask:'Where do you want me to blast this?', hint:'Tick as many as you like — you can change these later.' }
+];
+
+window._cbStartGuide = function(at) {
+  if (window._cbBlasty) return;
+  var start = document.getElementById('cb-guide-start');
+  if (start) start.style.display = 'none';
+  window._cbBlasty = new GuidedSetup({
+    name: 'Blasty',
+    steps: CB_GUIDE_STEPS,
+    openSection: cbOpenSection,
+    finishLabel: '🚀 Launch it →',
+    onFinish: function() { window.cbSubmit(); },
+    onStop: function() {
+      window._cbBlasty = null;
+      if (start) start.style.display = '';
+    }
+  });
+  try {
+    window._cbBlasty.start(at || 0);
+  } catch (e) {
+    console.error('[cb guide]', e);
+    window._cbBlasty = null;
+    if (start) start.style.display = '';
+  }
+};
+
+(function () {
+  var p = new URLSearchParams(location.search);
+  if (p.get('guide') === '1' || p.get('guide') === 'true') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function(){ window._cbStartGuide(); });
+    } else {
+      window._cbStartGuide();
+    }
+  }
+})();
 </script>
 
 <script type="module">
@@ -567,13 +675,28 @@ function prefill(d) {
   s('f-ownerName', d.ownerName||'');
   s('f-role',      d.ownerRole||'');
   s('f-phone',     d.phone||'');
+  s('f-email',     d.email||'');
   s('f-website',   d.website||'');
-  if (d.address) {
-    s('f-street', d.address.street||'');
-    s('f-city',   d.address.city||'');
-    s('f-state',  d.address.state||'');
-    s('f-zip',    d.address.zip||'');
-  }
+  // Address may be top-level (canonical) or nested (older docs) — prefer whichever has data.
+  const addr = d.address || {};
+  s('f-street', d.street || addr.street || '');
+  s('f-city',   d.city   || addr.city   || '');
+  s('f-state',  d.state  || addr.state  || '');
+  s('f-zip',    d.zip    || addr.zip    || '');
+  // Mention preferences: canonical ynMention* strings, falling back to the older toggles object.
+  const tg = d.toggles || {};
+  const pref = (id, ynKey, tgKey, dflt) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (d[ynKey] !== undefined)          el.checked = d[ynKey] === 'yes';
+    else if (tg[tgKey] !== undefined)    el.checked = !!tg[tgKey];
+    else                                 el.checked = dflt;
+  };
+  pref('pref-name',    'ynMentionName',    'ynMentionName',    false);
+  pref('pref-role',    'ynMentionRole',    'ynMentionRole',    false);
+  pref('pref-phone',   'ynMentionPhone',   'ynMentionPhone',   true);
+  pref('pref-address', 'ynMentionAddress', 'ynMentionAddress', true);
+  pref('pref-email',   'ynMentionEmail',   'ynMentionEmail',   true);
   if (d.locationType) s('f-locationType', d.locationType);
   s('f-story',     d.story||'');
   s('f-different', d.different||'');
@@ -614,6 +737,7 @@ window.cbSubmit = async function() {
     ynMentionRole:    document.getElementById('pref-role').checked,
     ynMentionPhone:   document.getElementById('pref-phone').checked,
     ynMentionAddress: document.getElementById('pref-address').checked,
+    ynMentionEmail:   document.getElementById('pref-email').checked,
   };
 
   try {
@@ -643,6 +767,7 @@ window.cbSubmit = async function() {
     const customer  = document.getElementById('f-customer').value.trim();
     const other     = document.getElementById('f-other').value.trim();
     const phone     = document.getElementById('f-phone').value.trim();
+    const email     = document.getElementById('f-email').value.trim();
     const website   = document.getElementById('f-website').value.trim();
     const category  = document.getElementById('f-category').value.trim();
     const audience  = document.getElementById('f-audience').value.trim();
@@ -661,9 +786,25 @@ window.cbSubmit = async function() {
       other       && other,
     ].filter(Boolean).join('\n');
 
+    // Canonical business schema. The rest of the app (Create tab, Profile, the
+    // adaptListing prompt) reads street/city/state/zip, ynMention* and aiContext
+    // at the TOP LEVEL — writing only a nested address/toggles object here is how
+    // businesses made on this page used to lose their address and mention
+    // preferences downstream. The nested copies are kept for older readers.
+    const yn = b => (b ? 'yes' : 'no');
     const bizData = {
       name: bizName, businessName: bizName, ownerName, ownerRole: role,
-      phone, website, locationType: locType, address,
+      email, phone, website, locationType: locType,
+      street: address.street || '', city: address.city || '',
+      state:  address.state  || '', zip:  address.zip  || '',
+      address,
+      ynMentionName:    yn(toggles.ynMentionName),
+      ynMentionRole:    yn(toggles.ynMentionRole),
+      ynMentionAddress: yn(toggles.ynMentionAddress),
+      ynMentionPhone:   yn(toggles.ynMentionPhone),
+      ynMentionEmail:   yn(toggles.ynMentionEmail),
+      ynMentionWebsite: 'yes',
+      aiContext: { story, different, awards, customer, other },
       story, different, awards, customer, otherInfo: other,
       businessDescription: [story, different].filter(Boolean).join(' '),
       globalMemory, toggles,
@@ -677,10 +818,17 @@ window.cbSubmit = async function() {
       audience && 'Target audience: '     + audience,
     ].filter(Boolean).join('\n');
 
+    // Campaign doc — same shape the app expects everywhere else. campaignStory and
+    // onboardingPlatforms are what the Create tab reads when it auto-generates the
+    // first blast; the empty collections keep later writers from having to create them.
     const campData = {
-      name: campName, story: campaignStory, audience, offer,
+      id: campId,
+      name: campName, story: campaignStory, campaignStory, audience, offer,
       platformsEnabled: platforms,
+      onboardingPlatforms: platforms,
       category: category || '',
+      lastUsedAt: '', photos: [], adName: '', price: '',
+      factoids: [], platformHistory: {},
       createdAt: serverTimestamp(), businessId: bizId, uid: currentUser.uid, status: 'active',
     };
 
@@ -698,6 +846,7 @@ window.cbSubmit = async function() {
     await batch.commit();
 
     cbSetMood((window._ob2Anim&&window._ob2Anim.success)||'s-celebrate s-flame-green s-lights-flash s-smoke');
+    if (window._cbBlasty) window._cbBlasty.stop();   // guide layer has done its job
     document.getElementById('cb-form').style.display   = 'none';
     document.getElementById('cb-success').style.display = 'block';
 

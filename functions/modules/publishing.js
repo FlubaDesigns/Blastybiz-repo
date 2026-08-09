@@ -236,22 +236,81 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
     pinterest:  { name: 'Pinterest',               capabilityLevel: 'manual_assisted', manualInstructions: 'Go to pinterest.com → sign in → create a pin → paste your text.' },
   };
 
-  const draftAdaptations = draftSnap.data().adaptations || {};
+  const draftRef = userBizDraftsRef(uid, businessId).doc(draftId);
 
-  const batch = db.batch();
+  // Claiming the draft and creating its jobs happen in ONE transaction. Checking
+  // status first and committing a batch afterwards is not enough: two requests
+  // that arrive together both read the draft as unapproved and both commit, so
+  // the blast goes out twice.
+  const ALREADY = 'already_approved';
+  const NOTHING = 'nothing_to_publish';
 
-  batch.update(userBizDraftsRef(uid, businessId).doc(draftId), {
-    status: 'approved', approvedAt: admin.firestore.FieldValue.serverTimestamp()
-  });
+  let publishedCount = 0;
+  try {
+    publishedCount = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(draftRef);
+      if (!snap.exists || snap.data().uid !== uid) throw new Error('forbidden');
 
-  platformIds.forEach(pid => {
+      const draftData = snap.data();
+      if (draftData.status === 'approved') throw new Error(ALREADY);
+
+      const draftAdaptations = draftData.adaptations || {};
+      const platformStatus   = draftData.platformStatus || {};
+      const hasStatusMap     = Object.keys(platformStatus).length > 0;
+
+      // The DRAFT decides what may publish — never the request body. A caller can ask
+      // for a subset, but asking for a platform that was excluded, never generated, or
+      // simply invented must not create a job (an empty-content job would otherwise be
+      // dispatched for the auto-posting platforms).
+      const eligible = Object.keys(draftAdaptations).filter(pid => {
+        const content = draftAdaptations[pid];
+        if (typeof content !== 'string' || !content.trim()) return false;
+        return hasStatusMap ? platformStatus[pid] === 'approved' : true;
+      });
+
+      const publishIds = [...new Set(
+        platformIds.length ? platformIds.filter(pid => eligible.includes(pid)) : eligible
+      )];
+      if (publishIds.length === 0) throw new Error(NOTHING);
+
+      // Photos are read from the draft, never from the request body — the client only tells us
+      // which platforms to publish. Cap at 10 (the most permissive platform limit) and keep only
+      // https URLs so a malformed draft can't feed a publisher junk.
+      const draftImages = draftData.imagesByPlatform || {};
+      const imagesFor = (pid) => (Array.isArray(draftImages[pid]) ? draftImages[pid] : [])
+        .filter(u => typeof u === 'string' && /^https:\/\//.test(u))
+        .slice(0, 10);
+
+      tx.update(draftRef, {
+        status: 'approved', approvedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      publishIds.forEach(pid => buildJob(tx, pid, draftAdaptations, imagesFor));
+      return publishIds.length;
+    });
+  } catch (e) {
+    if (e.message === ALREADY) return res.status(409).json({ error: 'This blast has already been sent.' });
+    if (e.message === NOTHING) {
+      return res.status(400).json({
+        error: 'Nothing to publish — no approved platform on this draft has generated copy.'
+      });
+    }
+    if (e.message === 'forbidden') {
+      return res.status(403).json({ error: 'Forbidden: draft does not belong to you' });
+    }
+    throw e;
+  }
+
+  res.json({ success: true, plan: userPlan, published: publishedCount });
+
+  function buildJob(tx, pid, draftAdaptations, imagesFor) {
     const cap = PLATFORM_CAPABILITY_MAP[pid] || { name: pid, capabilityLevel: 'manual_assisted', manualInstructions: '' };
     const adaptedContent = draftAdaptations[pid] || '';
     const jobRef = userBizJobsRef(uid, businessId).doc();
     const isNativelyManual = ['manual_assisted', 'unsupported'].includes(cap.capabilityLevel);
     const isManual = isNativelyManual || isStarter;
     const starterBlocked = isStarter && !isNativelyManual;
-    batch.set(jobRef, {
+    tx.set(jobRef, {
       jobId: jobRef.id, businessId, uid, draftId,
       platform: pid,
       capabilityLevel: cap.capabilityLevel,
@@ -266,15 +325,12 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
           : `Your ${cap.name} listing is waiting to publish.`,
       planGated: starterBlocked,
       manualInstructions: cap.manualInstructions,
-      adminError: '', payload: { adaptedContent },
+      adminError: '', payload: { adaptedContent, imageUrls: imagesFor(pid) },
       apiResponse: {}, customerNotified: false,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
-  });
-
-  await batch.commit();
-  res.json({ success: true, plan: userPlan });
+  }
 }));
 
 exports.postToBing = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {

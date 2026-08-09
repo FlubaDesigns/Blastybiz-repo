@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786226767930" />
+  <link rel="stylesheet" href="global-style.css?v=1786234750365" />
   <title>BlastyBiz — Sign In</title>
 <!-- All styles in global-style.css -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -711,7 +711,10 @@ function handleSetPassword() {}
       setTimeout(function() {
         var a = document.activeElement;
         if (!a || !a.closest || !a.closest('.auth-card')) {
-          if (_spotEl) { _spotEl.classList.remove('pb-spotlight'); _spotEl = null; }
+          // The spotlight ring is applied by the mascot (PBMascot.pointTo), so clear
+          // whatever currently carries it rather than tracking our own reference.
+          document.querySelectorAll('.pb-spotlight')
+            .forEach(function (n) { n.classList.remove('pb-spotlight'); });
         }
       }, 150);
     }, true);
