@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="global-style.css?v=1786296644943" />
+  <link rel="stylesheet" href="global-style.css?v=1786298517234" />
   <title>BlastyBiz — Publish Your Blast</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -24,81 +24,7 @@
 </script>
   <script type="module" src="./auth-guard.js"></script>
   <script src="blastybiz-menu.js?v=7"></script>
-  <style>
-/* ── Page layout ────────────────────────────── */
-.pub-page-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted,#888);margin-bottom:8px;}
-.pub-hero{padding:20px 18px 18px;}
-.pub-hero .big-title{font-size:clamp(26px,6vw,36px);line-height:1.15;margin:0 0 8px;}
-.pub-hero .sub{font-size:14px;color:var(--muted,#888);margin:0;}
-
-/* ── Summary grid ───────────────────────────── */
-.pub-summary-grid{display:flex;flex-direction:column;gap:8px;}
-.pub-row{display:flex;align-items:baseline;gap:10px;}
-.pub-row .label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted,#888);flex-shrink:0;min-width:72px;}
-.pub-row .val{font-size:14px;color:var(--light,#fff);word-break:break-word;}
-
-/* ── Platform list rows ─────────────────────── */
-.pub-plat-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border,#333);}
-.pub-plat-row:last-child{border-bottom:none;padding-bottom:0;}
-.pub-plat-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;background:rgba(255,255,255,.06);}
-.pub-plat-info{flex:1;min-width:0;}
-.pub-plat-name{font-size:14px;font-weight:600;color:var(--light,#fff);}
-.pub-plat-type{font-size:11px;color:var(--muted,#888);margin-top:1px;}
-
-/* ── Copy preview accordions ────────────────── */
-.pub-preview-item{border:1px solid var(--border,#333);border-radius:12px;margin-bottom:10px;overflow:hidden;}
-.pub-preview-header{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;background:transparent;border:none;width:100%;text-align:left;font-family:inherit;}
-.pub-preview-header:active{background:rgba(255,255,255,.03);}
-.pub-preview-hdr-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;background:rgba(255,255,255,.06);}
-.pub-preview-hdr-name{font-size:14px;font-weight:600;color:var(--light,#fff);flex:1;text-align:left;}
-.pub-preview-chevron{font-size:14px;color:var(--muted,#888);transition:transform .2s;flex-shrink:0;}
-.pub-preview-body{padding:0 14px 14px;display:none;}
-.pub-preview-body.open{display:block;}
-.pub-preview-text{font-size:14px;color:var(--text,#ccc);line-height:1.65;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:9px;padding:12px;white-space:pre-wrap;word-break:break-word;}
-.pub-copy-btn{margin-top:10px;font-size:13px;font-weight:700;padding:9px 16px;border-radius:9px;border:1px solid var(--border,#333);background:transparent;color:var(--light,#fff);cursor:pointer;font-family:inherit;}
-.pub-copy-btn:active{opacity:.7;}
-
-/* ── Schedule ───────────────────────────────── */
-.pub-sched-grid{display:grid;grid-template-columns:1fr;gap:12px;}
-.sched-input{width:100%;padding:10px 12px;background:var(--input-bg,#111);border:1px solid var(--border,#333);border-radius:9px;color:var(--light,#fff);font-size:14px;font-family:inherit;box-sizing:border-box;}
-.sched-input:focus{outline:none;border-color:var(--green,#39ff14);}
-.sched-status-text{font-size:13px;color:var(--muted,#888);margin-left:8px;}
-.sched-saved{font-size:13px;color:var(--text,#ccc);background:rgba(57,255,20,.06);border:1px solid rgba(57,255,20,.2);border-radius:9px;padding:10px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.clear-btn{font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid var(--border,#333);background:transparent;color:var(--muted,#888);cursor:pointer;font-family:inherit;flex-shrink:0;}
-
-/* ── Publish action ─────────────────────────── */
-.pub-action-card{text-align:center;}
-.pub-publish-btn{width:100%;max-width:340px;padding:16px;font-size:16px;font-weight:700;letter-spacing:.3px;border-radius:14px;border:none;background:var(--green,#39ff14);color:#000;cursor:pointer;font-family:inherit;transition:opacity .15s;}
-.pub-publish-btn:active{opacity:.8;}
-.pub-publish-btn:disabled{opacity:.45;cursor:default;}
-.pub-warn{background:rgba(255,168,0,.08);border:1px solid rgba(255,168,0,.3);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--warn,#ffa800);margin-top:14px;text-align:left;}
-
-/* ── Copy-paste panel ───────────────────────── */
-.manual-card{border:1px solid var(--border,#333);border-radius:12px;padding:14px;margin-bottom:12px;}
-.manual-card:last-child{margin-bottom:0;}
-.manual-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-.manual-icon{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;margin-right:10px;}
-.manual-name{font-size:14px;font-weight:600;color:var(--light,#fff);}
-.manual-mode{font-size:11px;color:var(--muted,#888);margin-top:1px;}
-.manual-textarea{width:100%;min-height:110px;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:9px;padding:10px 12px;font-size:13px;color:var(--text,#ccc);line-height:1.6;resize:vertical;font-family:inherit;box-sizing:border-box;}
-.manual-note{font-size:12px;color:var(--muted,#888);line-height:1.5;}
-.copy-platform-btn{font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;border:1px solid var(--border,#333);background:transparent;color:var(--light,#fff);cursor:pointer;font-family:inherit;flex-shrink:0;}
-.copy-platform-btn:active{opacity:.7;}
-.pub-photos{margin-top:12px;}
-.pub-photos-label{font-size:12px;font-weight:700;color:var(--muted,#888);margin-bottom:6px;}
-.pub-photo-strip{display:flex;gap:8px;flex-wrap:wrap;}
-.pub-photo{display:block;width:74px;height:74px;border-radius:9px;overflow:hidden;border:1px solid var(--border,#333);position:relative;text-decoration:none;}
-.pub-photo img{width:100%;height:100%;object-fit:cover;display:block;}
-.pub-photo-save{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.66);color:#fff;font-size:10px;font-weight:700;text-align:center;padding:3px 0;}
-.pub-photo:active{opacity:.7;}
-
-/* ── Section spacing ────────────────────────── */
-.section-mt{margin-top:16px;}
-
-/* ── Loading / no-draft state ───────────────── */
-.pub-no-draft{text-align:center;padding:32px 16px;color:var(--muted,#888);font-size:14px;}
-.pub-no-draft strong{display:block;color:var(--light,#fff);font-size:16px;margin-bottom:8px;}
-  </style>
+  <!-- Page styles live in global-style.css (LISTING PREVIEW PAGE section). -->
 </head>
 <body class="app-page listing-preview-page has-site-header">
 <div id="header__inject"></div>
@@ -114,6 +40,9 @@
     <h1 class="big-title">Publish your blast</h1>
     <p class="sub" id="pub-sub">Review your copy below, set a send time if needed, then tap Publish.</p>
   </section>
+
+  <div class="pub-layout">
+  <div class="pub-flow">
 
   <!-- ── BLAST SUMMARY ──────────────────────────── -->
   <section class="card section-mt" id="pub-summary-card">
@@ -133,13 +62,6 @@
     <div id="pub-platform-list">
       <div class="queue-loading" style="padding:10px 0;color:var(--muted,#888);font-size:14px;">Loading…</div>
     </div>
-  </section>
-
-  <!-- ── CONTENT PREVIEWS ──────────────────────── -->
-  <section class="card section-mt" id="pub-previews-card" style="display:none;">
-    <div class="card-title">✍️ Your AI-written copy</div>
-    <p class="helper mb-14" style="font-size:13px;color:var(--muted,#888);">Tap any platform to expand the copy. This is what BlastyBiz will post.</p>
-    <div id="pub-previews-list"></div>
   </section>
 
   <!-- ── SCHEDULE THIS BLAST ─────────────────────── -->
@@ -196,6 +118,19 @@
     <p class="helper mb-14" style="font-size:13px;color:var(--muted,#888);">These platforms don't allow any app to post on your behalf — that's their policy, not a BlastyBiz limitation. Your copy is written. Tap Copy and paste it in.</p>
     <div id="manual-platform-list"></div>
   </section>
+
+  </div><!-- /.pub-flow -->
+
+  <!-- ── STICKY PREVIEW RAIL ─────────────────────── -->
+  <aside class="pub-rail-col">
+    <section class="card hidden" id="pub-rail-card">
+      <div class="card-title">👀 How it'll look</div>
+      <div class="pub-rail-tabs" id="pub-rail-tabs"></div>
+      <div id="pub-rail-post"></div>
+    </section>
+  </aside>
+
+  </div><!-- /.pub-layout -->
 
 </div><!-- /.main-inner -->
 </main>
@@ -285,19 +220,110 @@ function clearSchedule() {
   showToast('Schedule cleared');
 }
 
-function togglePreview(pid) {
-  var body    = document.getElementById('pub-prev-body-' + pid);
-  var chevron = document.getElementById('pub-prev-chev-' + pid);
-  if (!body) return;
-  var isOpen = body.classList.contains('open');
-  body.classList.toggle('open', !isOpen);
-  if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(90deg)';
+// ── Sticky preview rail ────────────────────────────────────────────────────
+// Shows the approved post the way it will actually appear, one platform at a
+// time. This replaces the old stacked "your AI-written copy" accordions: the
+// owner already approved this copy on the previous screen, so it belongs beside
+// the scheduling controls as a reference, not below them as another step.
+var _railPids = [];
+var _railPid  = null;
+
+// escHtml prevents attribute breakout but does NOT reject a javascript: URL, so
+// anything heading for src/href is scheme-checked first.
+function safePhotoUrl(u) {
+  return /^https?:\/\//i.test(String(u || '')) ? String(u) : '';
+}
+
+function selectRailPlatform(pid) {
+  if (!drafts[pid]) return;
+  _railPid = pid;
+  renderPreviewRail();
+}
+
+var _railBound = false;
+function bindRailEvents(card) {
+  if (_railBound) return;
+  _railBound = true;
+  card.addEventListener('click', function (e) {
+    var tab = e.target.closest && e.target.closest('[data-rail-pid]');
+    if (tab) { selectRailPlatform(tab.getAttribute('data-rail-pid')); return; }
+    var copy = e.target.closest && e.target.closest('[data-rail-copy]');
+    if (copy) copyPreviewText(copy.getAttribute('data-rail-copy'));
+  });
+}
+
+function renderPreviewRail() {
+  var card = document.getElementById('pub-rail-card');
+  var tabs = document.getElementById('pub-rail-tabs');
+  var post = document.getElementById('pub-rail-post');
+  if (!card || !tabs || !post) return;
+  bindRailEvents(card);
+
+  if (!_railPids.length) { card.classList.add('hidden'); return; }
+  card.classList.remove('hidden');
+  if (!_railPid || _railPids.indexOf(_railPid) === -1) _railPid = _railPids[0];
+
+  // Platform switcher — hidden when the blast only targets one platform.
+  tabs.classList.toggle('hidden', _railPids.length <= 1);
+  tabs.innerHTML = _railPids.map(function (pid) {
+    var meta = PLATFORM_META[pid] || { icon: pid[0].toUpperCase(), name: pid };
+    return '<button type="button" class="pub-rail-tab' + (pid === _railPid ? ' active' : '') + '"'
+      + ' aria-pressed="' + (pid === _railPid ? 'true' : 'false') + '"'
+      + ' data-rail-pid="' + escHtml(pid) + '">'
+      + '<span class="pub-rail-tab-icon">' + escHtml(meta.icon) + '</span>'
+      + escHtml(meta.name)
+      + '</button>';
+  }).join('');
+
+  var meta   = PLATFORM_META[_railPid] || { icon: _railPid[0].toUpperCase(), name: _railPid, capabilityLevel: 'manual_assisted' };
+  var d      = drafts[_railPid] || {};
+  var text   = d.text || '';
+  var imgs   = (Array.isArray(d.images) ? d.images : []).map(safePhotoUrl).filter(Boolean);
+  var isAuto = meta.capabilityLevel !== 'manual_assisted';
+  var bizName = (currentDraftData && currentDraftData.name) || 'Your business';
+
+  var media;
+  if (imgs.length) {
+    media = '<div class="pub-post-photo"><img src="' + escHtml(imgs[0]) + '" alt="" loading="lazy" /></div>';
+  } else {
+    // A blast with no photo still publishes fine, so this is a nudge, not an error.
+    media = '<div class="pub-post-nophoto">'
+      + '<div class="pub-post-nophoto-icon">🖼</div>'
+      + '<div class="pub-post-nophoto-title">No photo on this blast</div>'
+      + '<div class="pub-post-nophoto-sub">Posts with a photo get noticeably more attention. You can still publish without one.</div>'
+      + '</div>';
+  }
+
+  var thumbs = imgs.length > 1
+    ? '<div class="pub-post-thumbs">' + imgs.slice(1).map(function (url) {
+        var safe = escHtml(url);
+        return '<a class="pub-post-thumb" href="' + safe + '" target="_blank" rel="noopener noreferrer">'
+          + '<img src="' + safe + '" alt="" loading="lazy" /></a>';
+      }).join('') + '</div>'
+    : '';
+
+  post.innerHTML = '<div class="pub-post">'
+    + '<div class="pub-post-hdr">'
+    +   '<div class="pub-post-avatar">' + escHtml(meta.icon) + '</div>'
+    +   '<div class="pub-post-hdr-body">'
+    +     '<div class="pub-post-biz">' + escHtml(bizName) + '</div>'
+    +     '<div class="pub-post-meta">' + escHtml(meta.name) + ' · ' + (isAuto ? 'Auto-post' : 'Copy &amp; paste') + '</div>'
+    +   '</div>'
+    + '</div>'
+    + media
+    + '<div class="pub-post-text">' + escHtml(text) + '</div>'
+    + thumbs
+    + '<div class="pub-post-foot">'
+    +   '<span class="pub-post-count">' + text.length + ' characters</span>'
+    +   '<button class="pub-copy-btn" data-rail-copy="' + escHtml(_railPid) + '">📋 Copy</button>'
+    + '</div>'
+    + '</div>';
 }
 
 // Photo strip shown under a platform's copy. Auto-post platforms upload these themselves;
 // copy-and-paste platforms get a tap-to-open link so the owner can save each photo.
 function photoStripHtml(pid, isAuto) {
-  var imgs = (drafts[pid] && drafts[pid].images) || [];
+  var imgs = ((drafts[pid] && drafts[pid].images) || []).map(safePhotoUrl).filter(Boolean);
   if (!imgs.length) return '';
   var label = isAuto
     ? '📷 ' + imgs.length + ' photo' + (imgs.length > 1 ? 's' : '') + ' will be posted with this'
@@ -326,6 +352,8 @@ function copyPreviewText(pid) {
 
 function populateFromDraftData(draftData) {
   currentDraftData = draftData;
+  drafts    = {};
+  _railPids = [];
   window._draftRevision = draftData.revision || 0; // F8: track revision for stale-publish guard
   var adaptations    = draftData.adaptations    || {};
   var platformStatus = draftData.platformStatus || {};
@@ -382,29 +410,14 @@ function populateFromDraftData(draftData) {
     }
   }
 
-  // Content previews
-  var previewsCard = document.getElementById('pub-previews-card');
-  var previewsList = document.getElementById('pub-previews-list');
-  if (previewsList && platformIds.length) {
-    if (previewsCard) previewsCard.style.display = '';
-    previewsList.innerHTML = platformIds.map(function(pid){
-      var meta = PLATFORM_META[pid] || { icon: pid[0].toUpperCase(), name: pid };
-      var d    = drafts[pid] || {};
-      var text = d.text || '';
-      return '<div class="pub-preview-item">'
-        + '<button class="pub-preview-header" onclick="togglePreview(\'' + pid + '\')">'
-        +   '<div class="pub-preview-hdr-icon">' + meta.icon + '</div>'
-        +   '<span class="pub-preview-hdr-name">' + meta.name + '</span>'
-        +   '<span class="pub-preview-chevron" id="pub-prev-chev-' + pid + '">›</span>'
-        + '</button>'
-        + '<div class="pub-preview-body" id="pub-prev-body-' + pid + '">'
-        +   '<div class="pub-preview-text">' + escHtml(text) + '</div>'
-        +   '<button class="pub-copy-btn" onclick="copyPreviewText(\'' + pid + '\')">📋 Copy this copy</button>'
-        +   photoStripHtml(pid, meta.capabilityLevel !== 'manual_assisted')
-        + '</div>'
-        + '</div>';
-    }).join('');
-  }
+  // Preview rail — auto-post platforms first, so the default view is the post
+  // that will go out without the owner doing anything.
+  _railPids = platformIds.slice().sort(function (a, b) {
+    var aAuto = (PLATFORM_META[a] || {}).capabilityLevel !== 'manual_assisted';
+    var bAuto = (PLATFORM_META[b] || {}).capabilityLevel !== 'manual_assisted';
+    return (aAuto === bAuto) ? 0 : (aAuto ? -1 : 1);
+  });
+  renderPreviewRail();
 
   // Publish action sub-text
   var actionSub = document.getElementById('pub-action-sub');

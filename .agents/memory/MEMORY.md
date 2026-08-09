@@ -23,6 +23,7 @@
 - [Global helper load order](blastybiz-global-helper-load-order.md) — escape-utils.js/escHtml must be in <head>; a late include throws mid-render and silently blanks whole sections.
 - [Setup is one page](blastybiz-setup-single-page.md) — no second onboarding page/save path; Blasty is a guide LAYER over the real form; the old wizard URL must still complete magic-link sign-in.
 - [BlastyBiz e2e testing](blastybiz-e2e-testing.md) — trim whitespace off the test password; verify persistence in Firestore, not tester DOM probes; deploy+hard-reload before every run.
-- [BlastyBiz HTML escaping](blastybiz-escaping.md) — all owner text must pass escHtml (escape-utils.js loaded in head) or textContent; shared header/admin widgets count too.
+- [BlastyBiz HTML escaping](blastybiz-escaping.md) — all owner text must pass escHtml (escape-utils.js loaded in head) or textContent; escHtml is NOT enough inside inline onclick, and URLs need a scheme check.
+- [Sticky rails](blastybiz-sticky-rails.md) — global overflow-x:hidden on body/.main makes them scroll containers and kills position:sticky; use clip, and keep the rail shorter than the viewport.
 - [BlastyBiz console 404/502 root causes](blastybiz-console-404-502.md) — undeployed CF cloudfunctions.net URLs, missing config/platforms doc, headless probe recipe, benign Firestore aborts.
 - [BlastyBiz hosting deploy verification](blastybiz-hosting-verify.md) — cleanUrls:true means a .html URL returns a 34-byte redirect stub; always curl -sL the extensionless path or you'll misread a good deploy as failed.
