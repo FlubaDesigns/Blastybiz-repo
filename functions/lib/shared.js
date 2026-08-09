@@ -602,6 +602,7 @@ const JOB_STATUS = {
   PROCESSING:         'processing',
   SUCCESS:            'success',
   FAILED:             'failed',
+  NEEDS_CONNECTION:   'needs_connection',
   MANUAL_REQUIRED:    'manual_required',
   MANUAL_FOLLOWUP:    'manual_followup',
   MANUAL_COMPLETED:   'manual_completed',

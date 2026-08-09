@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="global-style.css?v=1786293995352">
+<link rel="stylesheet" href="global-style.css?v=1786294168114">
 
 <style>body{visibility:hidden}</style>
 <script type="importmap">
@@ -224,20 +224,20 @@ onAuthStateChanged(auth, (user) => {
     let queued = 0, posting = 0, attention = 0, completed = 0;
     snap.docs.forEach(d => { jobRefMap[d.id] = d.ref; jobDataMap[d.id] = d.data(); });
     const _esc = window._esc || (s => String(s == null ? '' : s).replace(/[&<>"']/g, function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];})); // canonical — see escape-utils.js').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-    const VALID_STATUS = new Set(['pending','retry_pending','running','success','manual_completed','failed','manual_required','customer_reconnect_required','paused','closed']);
+    const VALID_STATUS = new Set(['pending','retry_pending','running','success','manual_completed','failed','manual_required','customer_reconnect_required','needs_connection','paused','closed']);
     const rows = snap.docs.map(d => {
       const j = d.data();
       const id = d.id; // Firestore auto-ID — alphanumeric, safe in onclick
       const status = VALID_STATUS.has(j.status) ? j.status : 'pending';
       if (status === 'pending' || status === 'retry_pending') queued++;
       else if (status === 'running') posting++;
-      else if (['failed','manual_required','customer_reconnect_required'].includes(status)) attention++;
+      else if (['failed','manual_required','customer_reconnect_required','needs_connection'].includes(status)) attention++;
       else if (status === 'success' || status === 'manual_completed') completed++;
       const sc = {
         pending:'pending', retry_pending:'pending', running:'posting',
         success:'success', manual_completed:'success',
         failed:'failed', manual_required:'manual',
-        customer_reconnect_required:'manual', paused:'pending', closed:'success'
+        customer_reconnect_required:'manual', needs_connection:'manual', paused:'pending', closed:'success'
       }[status] || 'pending';
       const acts = ['failed','customer_reconnect_required'].includes(status)
         ? `<button class="primary" onclick="jobAction('${id}','retry')">Retry</button><button class="light" onclick="jobAction('${id}','notify')">Notify</button><button class="btn-danger" onclick="jobAction('${id}','close')">Close</button>`

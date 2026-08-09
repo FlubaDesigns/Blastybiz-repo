@@ -6,7 +6,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1786293995352" />
+<link rel="stylesheet" href="global-style.css?v=1786294168114" />
 <title>BlastyBiz — Command Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -766,8 +766,8 @@ onAuthStateChanged(auth, async (user) => {
           : 'All API platforms connected — keep posting to grow.';
       }
 
-      const statusLabel = { success: 'Done', failed: 'Failed', pending: 'Queued', processing: 'Running', closed: 'Closed', manual_completed: 'Done', manual_required: 'Manual' };
-      const statusBadge = { success: 'live', failed: 'needs', pending: 'off', processing: 'off', closed: 'off', manual_completed: 'live', manual_required: 'off' };
+      const statusLabel = { success: 'Done', failed: 'Failed', pending: 'Queued', processing: 'Running', closed: 'Closed', manual_completed: 'Done', manual_required: 'Manual', needs_connection: 'Not connected' };
+      const statusBadge = { success: 'live', failed: 'needs', pending: 'off', processing: 'off', closed: 'off', manual_completed: 'live', manual_required: 'off', needs_connection: 'off' };
       const icons = { google: '🔍', facebook: '📘', instagram: '📸', bing: '🔵', apple_maps: '🍎', nextdoor: '🏘️', craigslist: '🏔️', facebook_marketplace: '🛒' };
 
       let actRows = '';

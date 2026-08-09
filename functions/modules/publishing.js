@@ -395,9 +395,10 @@ exports.dispatchPublishJob = onDocumentCreated(
 
       if (!connSnap.exists || connSnap.data().status !== 'connected') {
         await jobRef.update({
-          status: 'failed',
+          status: 'needs_connection',
           adminError: `No connected ${job.platform} account for business ${_pathBizId}`,
-          customerVisibleMessage: `Your ${job.platform} account isn't connected. Go to Connect Platforms to link it.`,
+          customerLabel: 'Not connected yet',
+          customerVisibleMessage: `Your ${job.platform} account isn't connected yet. Connect it to publish this post automatically.`,
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
         return;
