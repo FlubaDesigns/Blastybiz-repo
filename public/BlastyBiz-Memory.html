@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1786234750365"/>
+  <link rel="stylesheet" href="global-style.css?v=1786231050437"/>
   <style>
     body { visibility: hidden; }
     .mem-wrap { padding: 28px 0 60px; }
@@ -56,7 +56,8 @@
 }
 </script>
   <script type="module" src="./auth-guard.js"></script>
-  <script src="blastybiz-menu.js?v=6"></script>
+  <script src="blastybiz-menu.js?v=7"></script>
+  <script src="escape-utils.js"></script>
 </head>
 <body class="has-site-header app-page">
 
@@ -182,7 +183,7 @@ function renderFacts() {
       <span class="mem-fact-num">${i + 1}.</span>
       <span class="mem-score ${sc}">${lbl}</span>
       <span class="mem-fact-text">${txt}</span>
-      <button class="mem-fact-del" onclick="window._memDelete('${f.id}')" title="Delete this fact">✕</button>
+      <button class="mem-fact-del" onclick="window._memDelete('${window.escHtml(String(f.id).replace(/['\\]/g, ''))}')" title="Delete this fact">✕</button>
     </li>`;
   }).join('');
 }

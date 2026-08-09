@@ -6,7 +6,7 @@
 <meta charset="UTF-8"/>
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<link rel="stylesheet" href="global-style.css?v=1786234750365" />
+<link rel="stylesheet" href="global-style.css?v=1786231050437" />
 <title>BlastyBiz — Let's Get You Set Up</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -27,7 +27,8 @@
 }
 </script>
   <script type="module" src="./auth-guard.js"></script>
-<script src="blastybiz-menu.js?v=6"></script>
+<script src="blastybiz-menu.js?v=7"></script>
+<script src="escape-utils.js"></script>
 </head>
 <body class="onboarding-page">
 <div id="header__inject"></div>
@@ -924,7 +925,7 @@ async function resolveCats(followUpAnswers) {
         <p class="cat-qs-note">A couple quick questions to get you better matches:</p>
         ${questions.map((q, i) => `
           <div class="cat-q-field">
-            <label class="cat-q-label">${q}</label>
+            <label class="cat-q-label">${window.escHtml(q)}</label>
             <input type="text" id="fuq-${i}" placeholder="Your answer…" class="cat-q-input" />
           </div>
         `).join('')}

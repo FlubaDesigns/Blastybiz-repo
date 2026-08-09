@@ -6,13 +6,1097 @@
   <meta name="robots" content="noindex"/>
   <title>BlastyBiz — Setting things up…</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <style>
-    html,body{margin:0;height:100%;background:#0d1a0d;color:#7aab82;
-      font-family:'DM Sans',system-ui,sans-serif;display:flex;align-items:center;
-      justify-content:center;text-align:center;font-size:14px;padding:20px;}
-    a{color:#00C853}
-  </style>
-  <script type="importmap">
+  <meta name="description" content="Set up your BlastyBiz business profile."/>
+  <link rel="stylesheet" href="global-style.css?v=1786231050437"/>
+  <title>BlastyBiz — Your Business</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet"/>
+  <script src="blastybiz-menu.js?v=7"></script>
+</head>
+<body class="has-site-header">
+<div id="header__inject"></div>
+
+<div class="ob-page">
+  <!-- Blasty: sticky left column (desktop) / top strip (mobile) -->
+  <div class="ob-blasty-col" id="pb-mascot-zone">
+    <div id="blasty-tracker">
+    <div class="pb-mascot" id="pb-mascot">
+      </div>
+      <div class="ob-q-bubble" id="ob-q-bubble"><p id="ob-q-text"></p></div>
+    </div><!-- /blasty-tracker -->
+      <div class="pb-mascot-caption" id="pb-mascot-caption"></div>
+  </div><!-- /ob-blasty-col -->
+
+  <!-- Form column -->
+  <div class="ob-form-col">
+    <div class="ob-progress-wrap"><div class="ob-progress-bar" id="ob-progress-bar" style="width:0%"></div></div>
+    <div id="ob-form-body"></div>
+    <div class="ob-status" id="ob-status" style="display:none"></div>
+  </div><!-- /ob-form-col -->
+</div><!-- /ob-page -->
+<!-- ── Form guide + mascot v2 ─────────────────────────────────────── -->
+<script src="mascot.js?v=5"></script>
+<script src="form-guide.js?v=2"></script>
+<!-- ── Conversation engine ────────────────────────────────────────── -->
+<script>
+(function() {
+  // ── Use the existing Blasty column as the fixed float ──────────────────────
+  // (mascot.js owns the artwork inside it)
+  var floatEl = document.getElementById('pb-mascot-zone');
+
+  function positionBlasty(anchorEl) {
+    if (!anchorEl) return;
+    var rect = anchorEl.getBoundingClientRect();
+    if (window.innerWidth < 700) {
+      var top  = Math.max(60, Math.min(rect.top + Math.min(rect.height / 2, 50) - 20, window.innerHeight - 160));
+      var left = window.innerWidth - 118;
+      floatEl.style.top  = top  + 'px';
+      floatEl.style.left = left + 'px';
+      floatEl.classList.add('visible');
+      return;
+    }
+    var gap     = 12;
+    var fW      = 80;
+    var elemMid = rect.top + rect.height / 2;
+    var top     = Math.max(60, Math.min(elemMid - 35, window.innerHeight - 220));
+    var left    = Math.min(rect.right + gap, window.innerWidth - fW - 210);
+    floatEl.style.top  = top  + 'px';
+    floatEl.style.left = left + 'px';
+    floatEl.classList.add('visible');
+  }
+
+  const answers = {};
+  const toggles = { ynMentionName: false, ynMentionRole: false, ynMentionAddress: true, ynMentionPhone: true };
+  let step = 0;
+  let currentBubble = null;
+  let currentInput  = null;
+  let currentStepKey = null;
+  let _resumeStep = null; // set when user taps a past answer to edit it
+
+  const STEPS = [
+    {
+      mood: 's-wave',   pos: 'right',
+      anim: { mood: 's-wave', flame: 's-flame-green', lights: 's-lights-sequence' },
+      blastyMsg: "Hi there! 👋 I'm Blasty — your AI marketing co-pilot. I'll help you blast your business across every platform in minutes. First though... what's your name?",
+      inputType: 'text',
+      key: 'ownerName',
+      placeholder: 'e.g. Dave',
+      hint: 'Your first name, or full name — your call',
+      validate: v => v.trim().length >= 1 ? null : 'Please enter your name.',
+      toggle: { stateKey: 'ynMentionName', label: 'Include my name in marketing copy' }
+    },
+    {
+      mood: 's-happy',  pos: 'left',
+      blastyMsgFn: a => 'Nice to meet you, ' + _ob2Esc(a.ownerName || 'you') + '! What\'s the name of your business?',
+      inputType: 'text',
+      key: 'bizName',
+      placeholder: "e.g. Mike's Auto Repair",
+      hint: 'This is how customers will find you everywhere',
+      validate: v => v.trim().length >= 1 ? null : 'Please enter your business name.'
+    },
+    {
+      mood: 's-ask',    pos: 'right',
+      blastyMsgFn: a => 'Great, ' + _ob2Esc(a.ownerName || 'you') + '! What\'s your title at ' + _ob2Esc(a.bizName) + '?',
+      inputType: 'text',
+      key: 'role',
+      placeholder: 'e.g. Owner, Marketing Director, GM',
+      hint: 'How you\'d introduce yourself to a customer',
+      validate: v => v.trim().length >= 1 ? null : 'Please enter your title.',
+      toggle: { stateKey: 'ynMentionRole', label: 'Include my title in marketing copy' }
+    },
+    {
+      mood: 's-ask',    pos: 'right',
+      blastyMsgFn: a => 'Great! What\'s the best email address for ' + _ob2Esc(a.bizName) + '?',
+      inputType: 'email',
+      key: 'email',
+      placeholder: 'you@yourbusiness.com',
+      hint: 'Used for customer inquiries and marketing',
+      skipIf: a => !!a.email,
+      validate: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? null : 'Please enter a valid email address.',
+      toggle: { stateKey: 'ynMentionEmail', label: 'Include email in marketing copy' }
+    },
+    {
+      mood: 's-happy',  pos: 'left',
+      blastyMsgFn: a => 'Perfect. What\'s the best phone number for ' + _ob2Esc(a.bizName) + '?',
+      inputType: 'tel',
+      key: 'phone',
+      placeholder: '555-867-5309',
+      hint: 'Customers can call or text this number',
+      validate: v => v.replace(/\D/g,'').length >= 7 ? null : 'Please enter a phone number.',
+      toggle: { stateKey: 'ynMentionPhone', label: 'Include phone number in marketing copy' }
+    },
+    {
+      mood: 's-ask',    pos: 'right',
+      blastyMsgFn: a => 'Got it! Is ' + _ob2Esc(a.bizName) + ' a physical location, online only, or both?',
+      inputType: 'choice',
+      key: 'locationType',
+      choices: [
+        { value: 'brick',  label: '🏪  Physical Location' },
+        { value: 'online', label: '🌐  Online Only' },
+        { value: 'both',   label: '🏪🌐  Both' }
+      ],
+      validate: v => v ? null : 'Please choose one.'
+    },
+    {
+      mood: 's-ask',    pos: 'left',
+      blastyMsgFn: () => 'What\'s the street address?',
+      inputType: 'text',
+      key: 'street',
+      placeholder: 'e.g. 123 Main St',
+      hint: 'Street number and street name',
+      skipIf: a => a.locationType === 'online',
+      validate: v => v.trim().length >= 2 ? null : 'Please enter a street address.',
+      toggle: { stateKey: 'ynMentionAddress', label: 'Mention address in marketing copy' }
+    },
+    {
+      mood: 's-happy',  pos: 'right',
+      blastyMsgFn: () => 'City?',
+      inputType: 'text',
+      key: 'city',
+      placeholder: 'e.g. Springfield',
+      hint: '',
+      skipIf: a => a.locationType === 'online',
+      validate: v => v.trim().length >= 2 ? null : 'Please enter a city.'
+    },
+    {
+      mood: 's-ask',    pos: 'left',
+      blastyMsgFn: () => 'State?',
+      inputType: 'text',
+      key: 'state',
+      placeholder: 'e.g. IL',
+      hint: 'Two-letter abbreviation or full name',
+      skipIf: a => a.locationType === 'online',
+      validate: v => v.trim().length >= 2 ? null : 'Please enter a state.'
+    },
+    {
+      mood: 's-happy',  pos: 'right',
+      blastyMsgFn: () => 'ZIP code?',
+      inputType: 'text',
+      key: 'zip',
+      placeholder: 'e.g. 62701',
+      hint: '',
+      skipIf: a => a.locationType === 'online',
+      validate: v => /^\d{5}(-\d{4})?$/.test(v.trim()) ? null : 'Please enter a valid ZIP code.'
+    },
+    {
+      mood: 's-working', pos: 'left',
+      blastyMsgFn: a => 'Almost there! What\'s the website for ' + _ob2Esc(a.bizName) + '?',
+      inputType: 'text',
+      key: 'website',
+      placeholder: 'e.g. yourbusiness.com',
+      hint: 'Leave blank if you don\'t have one yet — no worries!',
+      skipIf: a => a.locationType === 'brick',
+      validate: v => {
+        if (!v.trim()) return null;
+        return /\.\S{2,}/.test(v.trim())
+          ? null
+          : 'Please include the full address — e.g. yourbusiness.com.';
+      }
+    },
+
+    /* ══════════════════════════════════════════════════════════
+       PHASE 2 — Story questions (always run)
+    ══════════════════════════════════════════════════════════ */
+    {
+      mood: 's-celebrate', pos: 'right',
+      anim: { mood: 's-celebrate', flame: 's-flame-green', lights: 's-lights-flash', smoke: true },
+      blastyMsgFn: a => 'You\'re set up! Now I need to get to know ' + _ob2Esc(a.bizName) + '. The more I know about you, the better every blast gets — sharper copy, better targeting, more you. Let\'s start with the origin story: how did ' + _ob2Esc(a.bizName) + ' get started?',
+      inputType: 'textarea',
+      key: 'story',
+      placeholder: 'e.g. We opened in 1987 after my father emigrated from Mexico with nothing but a family recipe and a dream…',
+      hint: 'As much or as little as you like',
+      validate: () => null
+    },
+    {
+      mood: 's-happy', pos: 'right',
+      blastyMsgFn: a => 'Good stuff! What makes ' + _ob2Esc(a.bizName) + ' different from the competition?',
+      inputType: 'textarea',
+      key: 'different',
+      placeholder: 'e.g. Everything is made from scratch daily. Our head chef trained in Lyon for 3 years…',
+      hint: 'Why should someone choose you?',
+      validate: () => null
+    },
+    {
+      mood: 's-ask', pos: 'left',
+      blastyMsg: 'Any awards, press coverage, or milestones worth mentioning?',
+      inputType: 'textarea',
+      key: 'awards',
+      placeholder: 'e.g. Best Pizza 3 years running. Featured in the Tribune. 4.9 stars across 600+ reviews…',
+      hint: 'Leave blank if none — totally fine!',
+      validate: () => null
+    },
+    {
+      mood: 's-happy', pos: 'right',
+      blastyMsgFn: a => 'Who\'s your ideal customer for ' + _ob2Esc(a.bizName) + '?',
+      inputType: 'textarea',
+      key: 'customer',
+      placeholder: 'e.g. Homeowners aged 35–60 who value quality over price and have been burned by cheap contractors before…',
+      hint: 'Who gets the most value from what you do?',
+      validate: () => null
+    },
+    {
+      mood: 's-ask', pos: 'left',
+      blastyMsg: 'Anything else I should always know about your business?',
+      inputType: 'textarea',
+      key: 'other',
+      placeholder: 'e.g. Free estimates. Loyalty program. Family-owned since 1995. We sponsor the local little league…',
+      hint: 'Special services, team, community involvement — anything',
+      validate: () => null
+    },
+
+    /* ══════════════════════════════════════════════════════════
+       PHASE 3 — Campaign questions (always run)
+    ══════════════════════════════════════════════════════════ */
+    {
+      mood: 's-working', pos: 'right',
+      blastyMsgFn: a => 'Perfect — I know you so much better now! Let\'s build your first campaign. What do you want to call it?',
+      inputType: 'text',
+      key: 'campaignName',
+      placeholder: 'e.g. Summer Sale, Grand Opening, New Menu Drop',
+      validate: v => v.trim().length >= 1 ? null : 'Give this campaign a name!'
+    },
+    {
+      mood: 's-ask', pos: 'left',
+      blastyMsg: 'What\'s this campaign about? What are you promoting?',
+      inputType: 'textarea',
+      key: 'campaignAbout',
+      placeholder: 'e.g. Grand reopening after renovations. New fall menu just dropped. Announcing our second location…',
+      hint: 'The more detail, the better the copy',
+      validate: v => v.trim().length >= 3 ? null : 'Tell me a bit more!'
+    },
+    {
+      mood: 's-happy', pos: 'right',
+      blastyMsg: 'Who is this campaign targeting?',
+      inputType: 'textarea',
+      key: 'campaignAudience',
+      placeholder: 'e.g. Local families, young professionals, pet owners in the area…',
+      hint: 'Who do you want to reach with this one?',
+      validate: v => v.trim().length >= 3 ? null : 'Tell me about your audience!'
+    },
+    {
+      mood: 's-ask', pos: 'left',
+      blastyMsg: 'Any special offer or call to action for this campaign?',
+      inputType: 'textarea',
+      key: 'campaignOffer',
+      placeholder: 'e.g. 20% off this weekend only · Free consultation · Book now and save $50…',
+      hint: 'Leave blank for pure awareness — totally fine!',
+      validate: () => null
+    },
+    {
+      mood: 's-working', pos: 'left',
+      anim: { mood: 's-working', flame: 's-flame-blue', lights: 's-lights-pulse' },
+      blastyMsgFn: a => 'Almost there! Let me figure out the right <strong>category</strong> for ' + _ob2Esc(a.bizName) + ' — the right one gets you found on every platform...',
+      inputType: 'ai-suggest',
+      key: 'category',
+      fetchFn: async a => {
+        // Best-effort only: suggestCategory runs before the magic-link sign-in,
+        // so there is usually no user yet and the CF does not require a token.
+        // Must never throw — a failure here would blank out the whole step.
+        let token = null;
+        try {
+          const _auth = window._ob2Auth;
+          if (_auth && _auth.currentUser) token = await _auth.currentUser.getIdToken();
+        } catch (_) { token = null; }
+        // Every throw below carries `kind` (and `status` where relevant) so the
+        // failure UI can tell the owner what actually went wrong instead of
+        // collapsing every cause into the same blank text box.
+        let res;
+        try {
+          res = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/suggestCategory', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+            },
+            body: JSON.stringify({
+              bizName:         a.bizName          || '',
+              ownerName:       a.ownerName        || '',
+              role:            a.role             || '',
+              story:           a.story            || '',
+              different:       a.different        || '',
+              awards:          a.awards           || '',
+              customer:        a.customer         || '',
+              locationType:    a.locationType     || '',
+              campaignName:    a.campaignName     || '',
+              campaignAbout:   a.campaignAbout    || '',
+              campaignAudience:a.campaignAudience || '',
+              offer:           a.campaignOffer    || ''
+            })
+          });
+        } catch (netErr) {
+          const e = new Error('Network request failed: ' + ((netErr && netErr.message) || netErr));
+          e.kind = 'network';
+          throw e;
+        }
+        if (!res.ok) {
+          const txt = await res.text().catch(() => '');
+          const e = new Error('HTTP ' + res.status + ' from suggestCategory'
+                              + (txt ? ' \u2014 ' + txt.slice(0, 300) : ''));
+          e.kind   = 'http';
+          e.status = res.status;
+          throw e;
+        }
+        let data;
+        try { data = await res.json(); }
+        catch (parseErr) {
+          const e = new Error('Response was not valid JSON: ' + ((parseErr && parseErr.message) || parseErr));
+          e.kind = 'badjson';
+          throw e;
+        }
+        if (data && data.globalMemory) window._ob2GlobalMemory = data.globalMemory;
+        if (!data || !data.category) {
+          const e = new Error('No category in response: ' + JSON.stringify(data).slice(0, 300));
+          e.kind = 'nocategory';
+          throw e;
+        }
+        return data.category;
+      }
+    },
+    {
+      mood: 's-working', pos: 'right',
+      blastyMsgFn: a => 'Last one, ' + _ob2Esc(a.ownerName || 'friend') + '! Which platforms do you want to blast <strong>' + _ob2Esc(a.bizName || 'your business') + '</strong> on?',
+      inputType: 'multiselect',
+      key: 'campaignPlatforms',
+      // No hardcoded choices — list comes entirely from admin config (Firestore → platforms-config.js)
+      validate: v => (v && v.length) ? null : 'Pick at least one platform!'
+    }
+  ];
+
+  /* Expose override applicator — called by module script after loading config/ob1Steps */
+  window._ob2ApplyOverrides = function(ov) {
+    if (!ov) return;
+    STEPS.forEach(function(s) {
+      if (s.key && ov[s.key]) {
+        var o = ov[s.key];
+        if (o.blastyMsg) { s.blastyMsg = o.blastyMsg; delete s.blastyMsgFn; }
+        if (o.anim)      s.anim = o.anim;
+      }
+    });
+  };
+
+  /* Mood, position and pointing all run through the shared mascot
+     component (mascot.js).  These keep the short local names this page's
+     call sites already use. */
+  function setMood(moodOrSpec) { if (window.PBMascot) window.PBMascot.setMood(moodOrSpec); }
+  function setPosition(pos)    { if (window.PBMascot) window.PBMascot.setPosition(pos); }
+
+  function _miniMascotSVG(mood) {
+    return window.PBMascot ? window.PBMascot.miniSVG(mood) : '';
+  }
+
+
+  function buildFormRows() {
+    const LABELS = {
+      ownerName:'Your Name', bizName:'Business Name', role:'Your Title',
+      email:'Email', phone:'Phone', locationType:'Location Type',
+      street:'Street', city:'City', state:'State', zip:'ZIP', website:'Website',
+      story:'Business Story', different:"What's Different",
+      awards:'Awards / Press', customer:'Ideal Customer', other:'Other Info',
+      campaignName:'Campaign Name', campaignAbout:"What It's About",
+      campaignAudience:'Target Audience', campaignOffer:'Offer / CTA',
+      campaignPlatforms:'Platforms', category:'Category'
+    };
+    const SECTIONS = [
+      { title:'Business Info', keys:['ownerName','bizName','role','email','phone','locationType','street','city','state','zip','website'] },
+      { title:'Your Story', keys:['story','different','awards','customer','other'] },
+      { title:'Campaign', keys:['campaignName','campaignAbout','campaignAudience','campaignOffer','category','campaignPlatforms'] }
+    ];
+    const container = document.getElementById('ob-form-body');
+    if (!container) return;
+    container.innerHTML = '';
+    SECTIONS.forEach((sec, secIdx) => {
+      const sd = document.createElement('div');
+      sd.className = 'obf-section';
+      sd.dataset.guideStep = String(secIdx + 1);
+      sd.innerHTML = '<div class="obf-sec-title">'+sec.title+'</div>';
+      sec.keys.forEach(key => {
+        const row = document.createElement('div');
+        row.className = 'obf-row future bb-field-blur';
+        row.id = 'obfr-'+key;
+        row.dataset.key = key;
+        row.innerHTML = '<div class="obf-label">'+(LABELS[key]||key)+'</div>'
+          +'<div class="obf-slot" id="obfs-'+key+'"><span class="obf-dash">\u2014</span></div>';
+        sd.appendChild(row);
+      });
+      container.appendChild(sd);
+    });
+  }
+
+  function setBlastyBubble(msg) {
+    const el     = document.getElementById('ob-q-text');
+    const bubble = document.getElementById('ob-q-bubble');
+    if (!el) return;
+    if (bubble) bubble.style.opacity = '0';
+    setTimeout(() => {
+      el.innerHTML = msg;
+      if (bubble) bubble.style.opacity = '1';
+    }, 160);
+  }
+
+  function lockField(key, text) {
+    const row = document.getElementById('obfr-'+key);
+    if (!row) return;
+    row.classList.remove('active','future','bb-field-blur');
+    row.classList.add('answered','bb-field-done');
+    // Attach on the next tick. The click that locked this field originated on a
+    // button INSIDE this row and is still bubbling upward. Assigning the handler
+    // synchronously means that same tap immediately fires _ob2JumpToKey and
+    // bounces the user back into the step they just answered — on the AI category
+    // step that re-runs the entire lookup the moment you accept the suggestion.
+    setTimeout(() => { row.onclick = () => window._ob2JumpToKey(key); }, 0);
+    const slot = document.getElementById('obfs-'+key);
+    if (slot) {
+      const safe = _ob2Esc(text);
+      slot.innerHTML = '<span class="obf-answered-val">'+safe
+        +'<span class="obf-edit-hint">✏️ tap to edit</span></span>';
+    }
+    if (window.innerWidth <= 860) {
+      row.classList.add('just-answered');
+      setTimeout(() => row.classList.remove('just-answered'), 800);
+    }
+  }
+
+  function addMascotBubble(msg) {
+    setBlastyBubble(msg);
+    const status = document.getElementById('ob-status');
+    if (status && status.style.display !== 'none') {
+      const p = document.createElement('p'); p.innerHTML = msg; status.appendChild(p);
+    }
+    return { innerHTML: '' };
+  }
+
+  function addUserBubble(id) {
+    const key = currentStepKey;
+    const el = document.createElement('div');
+    el.className = 'obf-bubble';
+    if (id) el.id = id;
+    if (key) {
+      const slot = document.getElementById('obfs-'+key);
+      if (slot) { slot.innerHTML = ''; slot.appendChild(el); }
+    }
+    return el;
+  }
+
+  function lockBubble(el, text) {
+    lockField(currentStepKey, text);
+  }
+
+  function showStep() {
+    if (step >= STEPS.length) { finish(); return; }
+    const s = STEPS[step];
+    if (s.skipIf && s.skipIf(answers)) {
+      if (s.key && answers[s.key]) {
+        const display = Array.isArray(answers[s.key]) ? answers[s.key].join(', ') : String(answers[s.key]);
+        lockField(s.key, display);
+      }
+      step++; showStep(); return;
+    }
+    currentStepKey = s.key;
+    // Set per-step mood first so the shim's s-working flash (pointing arm)
+    // is not immediately squashed by a subsequent setMood() call.
+    setMood(s.anim || s.mood);
+    // Advance form guide to the section that contains this key.
+    if (window._ob2Guide) {
+      const activeRow = document.getElementById('obfr-' + s.key);
+      if (activeRow) {
+        const sec = activeRow.closest('[data-guide-step]');
+        if (sec) {
+          window._ob2Guide.setActiveEl(sec);
+          const _stepMood = s.anim || s.mood;
+          setTimeout(function() { setMood(_stepMood); }, 600);
+        }
+      }
+    }
+    const msg = s.blastyMsgFn ? s.blastyMsgFn(answers) : interpolate(s.blastyMsg, answers);
+    setBlastyBubble(msg);
+    // Spotlight active field row + position Blasty float next to it
+    var _activeRowEl = null;
+    {
+      document.querySelectorAll('.obf-row').forEach(r => {
+        if (r.id === 'obfr-'+s.key) {
+          r.classList.remove('future','answered','just-answered','bb-field-blur','bb-field-done');
+          r.classList.add('active');
+          r.onclick = null;
+          _activeRowEl = r;
+        } else if (!r.classList.contains('answered')) {
+          r.classList.remove('active','bb-field-done'); r.classList.add('future','bb-field-blur');
+        } else {
+          r.classList.remove('active');
+        }
+      });
+    }
+    if (_activeRowEl) setTimeout(() => positionBlasty(_activeRowEl), 80);
+    // Progress bar
+    const totalSteps = STEPS.filter(st => !st.skipIf || !st.skipIf(answers)).length;
+    const pct = Math.round((step / Math.max(totalSteps, 1)) * 100);
+    const bar = document.getElementById('ob-progress-bar');
+    if (bar) bar.style.width = pct+'%';
+    const delay = step === 0 ? 700 : 380;
+    setTimeout(() => {
+      renderInput(s);
+      if (s.inputType === 'ai-suggest' && s.fetchFn) _ob2RunAiSuggest(s);
+    }, delay);
+  }
+  function renderInput(s) {
+    currentBubble = addUserBubble();
+    const bubble = currentBubble;
+    let html = '';
+
+    if (s.inputType === 'choice') {
+      html += '<div class="ob2-choices" id="ob2-choices">';
+      s.choices.forEach(c => {
+        html += '<button type="button" class="ob2-choice-btn" data-val="' + c.value + '" onclick="window._ob2PickChoice(this)">' + c.label + '</button>';
+      });
+      html += '</div>';
+      html += '<input type="hidden" id="ob2-input" value=""/>';
+    } else if (s.inputType === 'multiselect') {
+      const plan = window._ob2Plan || 'trial';
+      const isPro = plan === 'pro' || plan === 'agency';
+      const platformList = s.key === 'campaignPlatforms' ? (window._bbPlatformChoices || null) : (s.choices || []);
+      if (!platformList) {
+        // Admin platform list not loaded yet — show spinner and retry in 600 ms
+        html += '<div style="color:var(--muted,#888);font-size:13px;padding:8px 0;display:flex;align-items:center;gap:8px">'
+          + '<span style="display:inline-block;animation:spin 1s linear infinite">⚙️</span> Loading platforms…</div>';
+        html += '<input type="hidden" id="ob2-input" value=""/>';
+        bubble.innerHTML = html;
+        currentInput = document.getElementById('ob2-input');
+        setTimeout(() => renderInput(s), 600);
+        return;
+      }
+      html += '<div class="ob2-multiselect" id="ob2-multiselect">';
+      platformList.forEach(c => {
+        const locked = c.proOnly && !isPro;
+        // Unlocked: factoid fires from onchange (guaranteed after checkbox toggle, no interference)
+        // Locked: factoid fires from onclick on the label (disabled checkbox never fires onchange)
+        html += '<label class="ob2-ms-label' + (locked ? ' ob2-ms-locked' : '') + '"'
+          + (locked ? ' onclick="window._ob2ShowPlatformFactoid(\'' + c.value + '\')"' : '')
+          + '>'
+          + '<input type="checkbox" class="ob2-ms-check" value="' + c.value + '"'
+          + (locked ? ' disabled' : ' onchange="window._ob2MsChange(this)"')
+          + '/>'
+          + c.label
+          + (locked ? ' <span class="ob2-pro-badge">PRO</span>' : '')
+          + '</label>';
+      });
+      html += '</div>';
+      html += '<input type="hidden" id="ob2-input" value=""/>';
+      html += '<button type="button" class="bubble-action-btn" id="ob2-btn" onclick="window._ob2Continue()">Blast! 🚀</button>';
+    } else if (s.inputType === 'ai-suggest') {
+      html += '<div id="ob2-ai-suggest-wrap" style="padding:4px 0">'
+        + '<div style="color:var(--muted,#888);font-size:13px;display:flex;align-items:center;gap:8px">'
+        + '<span style="display:inline-block;animation:spin 1s linear infinite;font-size:16px">⚙️</span> Thinking...</div>'
+        + '</div>'
+        + '<input type="hidden" id="ob2-input" value=""/>';
+    } else if (s.inputType === 'textarea') {
+      html += '<textarea id="ob2-input" class="bubble-textarea" placeholder="' + (s.placeholder || '') + '" rows="3"></textarea>';
+      if (s.hint) html += '<div class="bubble-hint">' + s.hint + '</div>';
+      html += '<button type="button" class="bubble-action-btn" id="ob2-btn" onclick="window._ob2Continue()">Continue →</button>';
+    } else {
+      var urlBlur = (s.inputType === 'url' || s.key === 'website') ? ' onblur="var v=this.value.trim();if(v){if(!/^https?:\/\//i.test(v))v=\'https://\'+v;this.value=v;}" ' : '';
+      html += '<input id="ob2-input" type="' + s.inputType + '" class="bubble-input" placeholder="' + (s.placeholder || '') + '" autocomplete="off"' + urlBlur + '/>';
+      if (s.hint) html += '<div class="bubble-hint">' + s.hint + '</div>';
+      const toggleDefs = s.toggles || (s.toggle ? [s.toggle] : []);
+      toggleDefs.forEach((t, i) => {
+        html += '<div class="toggle-row">'
+              + '<span class="toggle-label">' + t.label + '</span>'
+              + '<label class="toggle-switch">'
+              + '<input type="checkbox" id="ob2-toggle-' + i + '"' + (toggles[t.stateKey] ? ' checked' : '')
+              + ' onchange="window._ob2ToggleChange(\'' + t.stateKey + '\',this.checked)"/>'
+              + '<span class="toggle-slider"></span>'
+              + '</label>'
+              + '</div>';
+      });
+      html += '<button type="button" class="bubble-action-btn" id="ob2-btn" onclick="window._ob2Continue()">Continue →</button>';
+    }
+
+    html += '<div class="pb-err" id="ob2-err"></div>';
+    bubble.innerHTML = html;
+
+    currentInput = document.getElementById('ob2-input');
+    // Pre-fill with existing answer when editing a past step
+    if (currentInput && _resumeStep !== null && answers[s.key] !== undefined && s.inputType !== 'multiselect') {
+      var prefillVal = Array.isArray(answers[s.key]) ? answers[s.key].join(',') : String(answers[s.key]);
+      // For website: strip the protocol so the user just sees dave.com
+      if (s.key === 'website') prefillVal = prefillVal.replace(/^https?:\/\//i, '');
+      currentInput.value = prefillVal;
+    }
+    if (currentInput && s.inputType !== 'choice') {
+      currentInput.focus();
+      if (s.inputType !== 'textarea') {
+        currentInput.addEventListener('keydown', e => { if (e.key === 'Enter') window._ob2Continue(); });
+      }
+    }
+    if (s.inputType === 'tel' && currentInput) {
+      currentInput.addEventListener('input', function() {
+        let digits = this.value.replace(/\D/g, '').slice(0, 10);
+        if (digits.length >= 7)      this.value = digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6);
+        else if (digits.length >= 4) this.value = digits.slice(0,3) + '-' + digits.slice(3);
+        else                         this.value = digits;
+      });
+    }
+    setTimeout(() => {
+      var activeRow = document.querySelector('.obf-row.active');
+      var target = activeRow || bubble;
+      var rect = target.getBoundingClientRect();
+      // Only scroll if the row isn't already comfortably in the upper half;
+      // aim to land its top ~80 px below the viewport top (clears fixed header).
+      var idealTop = window.scrollY + rect.top - 80;
+      if (rect.top < 60 || rect.bottom > window.innerHeight * 0.55) {
+        window.scrollTo({ top: Math.max(0, idealTop), behavior: 'smooth' });
+      }
+    }, 80);
+    setTimeout(retrackBlasty, 250);
+  }
+
+  function interpolate(msg, ans) {
+    if (!msg || !ans) return msg;
+    return msg.replace(/\{(\w+)\}/g, (_, k) => (ans[k] !== undefined ? _ob2Esc(ans[k]) : '{' + k + '}'));
+  }
+
+  function retrackBlasty() {
+    var activeRow = document.querySelector('.obf-row.active');
+    if (activeRow) positionBlasty(activeRow);
+  }
+
+
+  window._ob2AcceptSuggestion = function(value) {
+    answers[STEPS[step].key] = value;
+    if (currentBubble) lockBubble(currentBubble, value);
+    step++;
+    if (window._ob2SaveProgress) window._ob2SaveProgress(answers, toggles, step);
+    setTimeout(showStep, 380);
+  };
+
+  window._ob2ChangeSuggestion = function() {
+    const wrap = document.getElementById('ob2-ai-suggest-wrap');
+    if (!wrap) return;
+    wrap.innerHTML =
+      '<input id="ob2-input-cat" type="text" class="bubble-input" placeholder="e.g. Hair Salon, Mexican Restaurant…" autocomplete="off"/>'
+      + '<button type="button" class="bubble-action-btn" style="margin-top:8px" '
+      + 'onclick="window._ob2AcceptSuggestion(document.getElementById(\'ob2-input-cat\').value.trim()||\'Local Business\')">Looks good →</button>';
+    const inp = document.getElementById('ob2-input-cat');
+    if (inp) { inp.focus(); inp.addEventListener('keydown', e => { if (e.key === 'Enter') window._ob2AcceptSuggestion(inp.value.trim() || 'Local Business'); }); }
+  };
+
+  // ── AI suggestion: run, retry, and explain failures ─────────────────────────
+  // A failed suggestion must say why. Previously every cause — dead model, bad
+  // key, rate limit, dropped connection, client-side ReferenceError — collapsed
+  // into an identical blank text box, which hid real bugs completely.
+  function _ob2Esc(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function _ob2ClassifySuggestError(err) {
+    const kind   = err && err.kind;
+    const status = err && err.status;
+    const raw    = (err && (err.stack || err.message)) || String(err);
+    if (kind === 'network') return {
+      bubble: "I couldn't reach my brain just then \u2014 looks like a connection hiccup.",
+      title:  'Connection problem',
+      body:   'Check your signal and try again. Nothing you have entered has been lost.',
+      raw: raw };
+    if (status === 429) return {
+      bubble: "Whoa \u2014 I've had a lot of questions this hour. Give me a minute?",
+      title:  'Too many requests',
+      body:   'This device hit the hourly limit for category suggestions. Wait a minute and try again, or type your category in yourself.',
+      raw: raw };
+    if (status === 400) return {
+      bubble: "Hmm \u2014 I didn't get enough detail about the business to work with.",
+      title:  'Missing business details',
+      body:   'Your business name did not reach me. Type your category in below and carry on.',
+      raw: raw };
+    if (status === 401 || status === 403) return {
+      bubble: "I couldn't verify this session \u2014 that one's on me, not you.",
+      title:  'Not authorised',
+      body:   'Type your category in below and keep going. This will not affect the rest of your setup.',
+      raw: raw };
+    if (typeof status === 'number' && status >= 500) return {
+      bubble: 'My AI service just fell over. Not your fault!',
+      title:  'AI service error (' + status + ')',
+      body:   'This is a problem on our side. Try again in a moment, or type your category in yourself.',
+      raw: raw };
+    if (kind === 'nocategory' || kind === 'badjson') return {
+      bubble: "I got an answer back but couldn't make sense of it.",
+      title:  'Unexpected response',
+      body:   'Try again, or type your category in yourself.',
+      raw: raw };
+    return {
+      bubble: 'Something went wrong on my end working out your category.',
+      title:  'Unexpected error',
+      body:   'Try again, or type your category in yourself.',
+      raw: raw };
+  }
+
+  // Short, non-sensitive identifier an owner can quote to support.
+  function _ob2ErrCode(err) {
+    const kind = err && err.kind, status = err && err.status;
+    if (kind === 'http' && status) return 'http-' + status;
+    if (kind) return String(kind);
+    return err && err.name ? String(err.name).toLowerCase() : 'client';
+  }
+
+  // Full stacks and upstream response bodies are diagnostic gold but leak
+  // backend detail to ordinary owners. Show them only when explicitly asked
+  // for via ?debug=1 — which is also how to read them on a phone with no
+  // developer console.
+  const _ob2Debug = /[?&]debug=1(?:&|$)/.test(window.location.search || '');
+
+  function _ob2RenderSuggestError(err) {
+    try { console.error('[suggestCategory]', err); } catch (_) {}
+    const wrap = document.getElementById('ob2-ai-suggest-wrap');
+    if (!wrap) return;
+    const info = _ob2ClassifySuggestError(err);
+    const code = _ob2ErrCode(err);
+    try { setMood('s-ask'); setBlastyBubble(_ob2Esc(info.bubble)); } catch (_) {}
+    let html =
+        '<div style="padding:2px 0">'
+      +   '<div style="font-weight:600;color:#c0392b;font-size:14px;margin-bottom:4px">' + _ob2Esc(info.title) + '</div>'
+      +   '<div style="color:var(--muted,#888);font-size:13px;line-height:1.45">' + _ob2Esc(info.body) + '</div>'
+      +   '<div class="ob2-choices" style="margin-top:10px">'
+      +     '<button type="button" class="ob2-choice-btn" id="ob2-cat-retry">\u{1F504} Try again</button>'
+      +     '<button type="button" class="ob2-choice-btn" id="ob2-cat-manual">\u270F\uFE0F I\'ll type it myself</button>'
+      +   '</div>'
+      +   '<div style="margin-top:8px;color:var(--muted,#888);font-size:11px">Reference: ' + _ob2Esc(code) + '</div>';
+    if (_ob2Debug) {
+      html +=
+          '<details style="margin-top:10px" open>'
+        +   '<summary style="cursor:pointer;color:var(--muted,#888);font-size:12px">Technical details</summary>'
+        +   '<pre style="white-space:pre-wrap;word-break:break-word;font-size:11px;line-height:1.4;'
+        +        'color:var(--muted,#888);background:rgba(0,0,0,.05);padding:8px;border-radius:6px;'
+        +        'margin-top:6px;max-height:220px;overflow:auto">'
+        +     _ob2Esc(String(info.raw).slice(0, 1500))
+        +   '</pre>'
+        + '</details>';
+    }
+    html += '</div>';
+    wrap.innerHTML = html;
+    const rt = document.getElementById('ob2-cat-retry');
+    const mn = document.getElementById('ob2-cat-manual');
+    if (rt) rt.addEventListener('click', function() { window._ob2RetrySuggest(); });
+    if (mn) mn.addEventListener('click', function() { window._ob2ChangeSuggestion(); });
+  }
+
+  function _ob2RunAiSuggest(s) {
+    // Pin the step this run belongs to. A slow response that lands after the
+    // owner has already moved on must not repaint the suggestion UI (or an
+    // error) over whatever step they are now looking at.
+    const myStep = step;
+    const stale = () => step !== myStep;
+    const wrap = document.getElementById('ob2-ai-suggest-wrap');
+    if (wrap) {
+      wrap.innerHTML = '<div style="color:var(--muted,#888);font-size:13px;display:flex;align-items:center;gap:8px">'
+        + '<span style="display:inline-block;animation:spin 1s linear infinite;font-size:16px">\u2699\uFE0F</span> Thinking...</div>';
+    }
+    let p;
+    try { p = s.fetchFn(answers); }
+    catch (syncErr) { _ob2RenderSuggestError(syncErr); return; }
+    if (!p || typeof p.then !== 'function') {
+      _ob2RenderSuggestError(new Error('fetchFn did not return a promise'));
+      return;
+    }
+    p.then(suggestion => {
+        if (stale()) return;
+        const w = document.getElementById('ob2-ai-suggest-wrap');
+        if (!w) return;
+        setMood('s-happy');
+        setTimeout(() => {
+          if (stale()) return;
+          // setBlastyBubble assigns via innerHTML, and both the AI-returned
+          // category and the owner-typed business name are untrusted. Escape
+          // both; never interpolate either raw.
+          setBlastyBubble('The best category for ' + _ob2Esc(answers.bizName)
+            + ' on the platforms is <strong>' + _ob2Esc(suggestion) + '</strong>'
+            + ' \u2014 does that sound right?');
+          // Bind the value in a closure rather than serialising it into an
+          // inline onclick — that escaping is fragile (newlines, backslashes,
+          // quotes) and is an injection sink waiting to happen.
+          w.innerHTML = '<div class="ob2-choices">'
+            +'<button type="button" class="ob2-choice-btn" id="ob2-cat-yes">✅ Yep, that\'s it</button>'
+            +'<button type="button" class="ob2-choice-btn" id="ob2-cat-no">✏️ Not quite</button>'
+            +'</div>';
+          const yes = document.getElementById('ob2-cat-yes');
+          const no  = document.getElementById('ob2-cat-no');
+          if (yes) yes.addEventListener('click', function() { window._ob2AcceptSuggestion(String(suggestion)); });
+          if (no)  no.addEventListener('click',  function() { window._ob2ChangeSuggestion(); });
+        }, 200);
+      })
+      .catch(err => { if (stale()) return; _ob2RenderSuggestError(err); });
+  }
+
+  window._ob2RetrySuggest = function() {
+    const s = STEPS[step];
+    if (s && s.inputType === 'ai-suggest' && s.fetchFn) _ob2RunAiSuggest(s);
+  };
+
+  window._ob2MsChange = function(el) {
+    const checked = [...document.querySelectorAll('.ob2-ms-check:checked')].map(c => c.value);
+    const inp = document.getElementById('ob2-input');
+    if (inp) inp.value = checked.join(',');
+    // Show factoid for the platform that was just toggled
+    if (el && el.value) window._ob2ShowPlatformFactoid(el.value);
+  };
+
+  const _PLATFORM_FACTS = {
+    google:     "🔍 Google Business is the #1 driver of local foot traffic — people searching nearby are ready to buy <em>right now</em>.",
+    facebook:   "📘 Facebook Pages reach 3 billion people and are still the top platform for local word-of-mouth, events, and promos.",
+    instagram:  "📸 Instagram has the highest engagement rate of any platform — and visual businesses that post consistently see real walk-ins.",
+    fbmarket:   "🛒 Facebook Marketplace gets your offers in front of local buyers who are already in purchase mode.",
+    yelp:       "⭐ 88% of consumers read Yelp reviews before visiting a local business. A strong profile here builds instant trust.",
+    craigslist: "📋 Craigslist still drives millions of local service inquiries every month — and it's completely free to post.",
+    nextdoor:   "🏘️ Nextdoor is where neighbors recommend local businesses to each other. A single recommendation here spreads fast.",
+    linkedin:   "💼 LinkedIn is the go-to for B2B leads and professional services — if businesses buy from you, this is your lane.",
+    pinterest:  "📌 83% of Pinterest users have bought something they discovered there. Great for visual products and home services.",
+    x:          "𝕏 X moves fast — perfect for time-sensitive offers, trending topics, and building a public-facing brand voice.",
+    bing:       "🔵 Bing Places reaches 30% of US desktop searches and is often completely ignored by local competitors. Easy win.",
+    applemaps:  "🍎 Apple Maps is the default on every iPhone. If you're not there, you're invisible to half of mobile searchers.",
+    alignable:  "🤝 Alignable connects you with nearby business owners for referrals — your next big customer might come from a fellow local.",
+    thumbtack:  "📌 Thumbtack matches you with people actively requesting your exact service. They're not browsing — they're buying.",
+    angi:       "🔧 Angi sends pre-screened home-service leads straight to you. High intent, local, ready to book."
+  };
+
+  // Show factoid only — the label's native behavior handles checkbox toggling
+  window._ob2ShowPlatformFactoid = function(slug) {
+    if (_PLATFORM_FACTS[slug]) setBlastyBubble(_PLATFORM_FACTS[slug]);
+  };
+
+  window._ob2ToggleChange = function(stateKey, checked) {
+    toggles[stateKey] = checked;
+  };
+
+  window._ob2PickChoice = function(btn) {
+    document.querySelectorAll('.ob2-choice-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const choiceVal = btn.dataset.val || '';
+    // Primary: set via currentInput. Fallback: find hidden input within the same bubble.
+    if (currentInput) {
+      currentInput.value = choiceVal;
+    } else {
+      const bubble = btn.closest('.ob-fork-prompt, .obf-bubble');
+      const inp = bubble ? bubble.querySelector('input[type="hidden"]') : null;
+      if (inp) inp.value = choiceVal;
+    }
+    const errEl = currentBubble ? currentBubble.querySelector('#ob2-err') : null;
+    if (errEl) errEl.style.display = 'none';
+    setTimeout(() => window._ob2Continue(), 220);
+  };
+
+  // Re-evaluate skipIf conditions between the just-edited step and the resume point.
+  // Returns the step index to jump to: either the first newly-visible unanswered step,
+  // or origResume if everything is already answered / skipped correctly.
+  function _ob2ResumeAfterEdit(fromStep, origResume) {
+    let firstNeeded = origResume;
+    for (let i = fromStep; i < origResume; i++) {
+      const si = STEPS[i];
+      if (!si || !si.key) continue;
+      const shouldSkip = si.skipIf ? si.skipIf(answers) : false;
+      if (shouldSkip) {
+        // Field is now skipped — clear any stale answer and reset its row to "future"
+        if (si.key in answers) {
+          delete answers[si.key];
+          const row = document.getElementById('obfr-' + si.key);
+          if (row) {
+            row.classList.remove('answered', 'bb-field-done', 'active', 'just-answered');
+            row.classList.add('future', 'bb-field-blur');
+            row.onclick = null;
+            const slot = document.getElementById('obfs-' + si.key);
+            if (slot) slot.innerHTML = '<span class="obf-dash">\u2014</span>';
+          }
+        }
+      } else {
+        // Field should be visible — if it has no valid answer, user must fill it in
+        const ans = answers[si.key];
+        const isEmpty = ans === undefined || ans === null || ans === '' ||
+                        (Array.isArray(ans) && ans.length === 0);
+        if (isEmpty && i < firstNeeded) firstNeeded = i;
+      }
+    }
+    return firstNeeded;
+  }
+
+  window._ob2Continue = function() {
+    const s = STEPS[step];
+    // On platforms step: fire a Blasty blast factoid when the button is tapped
+    if (s.key === 'campaignPlatforms') {
+      const _blastFacts = [
+        "📈 Businesses that post consistently across 3+ platforms see <strong>3× more</strong> customer inquiries.",
+        "🔁 The average customer needs to see your brand <strong>7 times</strong> before they act — BlastyBiz gets you there fast.",
+        "📊 Businesses that blast weekly generate <strong>67% more leads</strong> than those that post once a month.",
+        "💬 <strong>92% of consumers</strong> trust word-of-mouth and social proof more than any ad. Let's get you out there.",
+        "⚡ Companies that respond to leads within <strong>1 hour</strong> are 7× more likely to close. Blasty helps you move fast.",
+        "🌐 <strong>76% of people</strong> who search for a local business on their phone visit within 24 hours.",
+        "🏆 Consistent posting builds <strong>brand recognition</strong> — the #1 reason customers choose one local business over another."
+      ];
+      setBlastyBubble(_blastFacts[Math.floor(Math.random() * _blastFacts.length)]);
+    }
+    if ((s.inputType === 'url' || s.key === 'website') && currentInput) {
+      var rv = currentInput.value.trim();
+      if (rv) { if (!/^https?:\/\//i.test(rv)) rv = 'https://' + rv; currentInput.value = rv; }
+    }
+    let val = currentInput ? currentInput.value : '';
+    // Fallback for choice steps: if hidden input is stale/empty, read from selected button
+    if (!val && s.inputType === 'choice' && currentBubble) {
+      const sel = currentBubble.querySelector('.ob2-choice-btn.selected');
+      if (sel) val = sel.dataset.val || '';
+    }
+    // When editing a past step and nothing was entered, silently keep the original answer
+    if (!val.trim() && _resumeStep !== null && answers[s.key] !== undefined) {
+      const kept = Array.isArray(answers[s.key]) ? answers[s.key].join(', ') : String(answers[s.key]);
+      const keptDisplay = s.key === 'website' ? kept.replace(/^https?:\/\//i, '') : kept;
+      if (currentBubble) lockBubble(currentBubble, keptDisplay);
+      step = _resumeStep;
+      _resumeStep = null;
+      if (window._ob2SaveProgress) window._ob2SaveProgress(answers, toggles, step);
+      setTimeout(showStep, 380);
+      return;
+    }
+    const errEl = currentBubble ? currentBubble.querySelector('#ob2-err') : null;
+    if (s.validate) {
+      const err = s.validate(val);
+      if (err) {
+        if (errEl) { errEl.textContent = err; errEl.style.display = 'block'; }
+        return;
+      }
+    }
+    if (s.inputType === 'multiselect') {
+      answers[s.key] = val.split(',').filter(Boolean);
+      if (currentBubble) lockBubble(currentBubble, answers[s.key].join(', ') || '(none selected)');
+    } else {
+      answers[s.key] = val.trim();
+      // For website: display without the protocol
+      const displayVal = s.key === 'website' ? val.trim().replace(/^https?:\/\//i, '') : val.trim();
+      if (currentBubble) lockBubble(currentBubble, displayVal);
+    }
+    step++;
+    // If the user was editing a past answer, re-evaluate skip conditions before resuming
+    if (_resumeStep !== null && step <= _resumeStep) {
+      step = _ob2ResumeAfterEdit(step, _resumeStep);
+      _resumeStep = null;
+    }
+    if (window._ob2SaveProgress) window._ob2SaveProgress(answers, toggles, step);
+    setTimeout(showStep, 380);
+  };
+
+  // Jump back to an already-answered step for editing, then return here when done
+  window._ob2JumpToKey = function(key) {
+    const idx = STEPS.findIndex(s => s.key === key);
+    if (idx < 0 || idx >= step) return; // only past steps
+    _resumeStep = step;
+    step = idx;
+    showStep();
+  };
+
+  async function finish() {
+    setMood('s-working');
+    setPosition('right');
+    setTimeout(() => {
+      addMascotBubble("On it! Saving everything and firing up your first blast... 🚀");
+    }, 440);
+    try {
+      const { bizId, campId } = await window._ob2Save(answers, toggles);
+      // Clear saved progress now that onboarding is fully committed
+      if (window._ob2ClearProgress) window._ob2ClearProgress();
+      // #2 Post-onboarding summary — show "Here's what we built" before redirect
+      const safeBizName = (answers.bizName || 'Your business').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      setTimeout(() => {
+        addMascotBubble(
+          "Here's what we just built: <strong>" + safeBizName + "</strong> is set up with your first campaign ready to go. " +
+          "AI is about to generate your content — let's launch! 🚀"
+        );
+        setTimeout(() => {
+          window.location.href = 'BlastyBiz.html?bizId=' + bizId + '&cid=' + campId + '&autogenerate=1';
+        }, 2400);
+      }, 600);
+    } catch (e) {
+      console.error('[ob2 save]', e);
+      // Every save failure used to look identical here — which is exactly how a
+      // Firestore rules rejection (one unlisted field aborting the whole atomic
+      // batch) passed for an AI/generation bug. Name the cause instead.
+      const _code   = (e && (e.code || e.name)) || 'unknown';
+      const _denied = _code === 'permission-denied';
+      addMascotBubble("Something went wrong saving — let's try again."
+        + (_denied ? " The database refused the write, so this is a permissions rule — not anything you typed." : ''));
+      setMood('s-ask');
+      const _st0 = document.getElementById('ob-status');
+      if (_st0) {
+        _st0.style.display = 'block';
+        const _d = document.createElement('div');
+        _d.style.cssText = 'font-size:12px;color:#888;margin-top:6px;text-align:center;';
+        _d.textContent = 'Error: ' + _code;
+        _st0.appendChild(_d);
+        if (_ob2Debug) {
+          const _pre = document.createElement('pre');
+          _pre.style.cssText = 'font-size:11px;color:#666;white-space:pre-wrap;text-align:left;max-height:180px;overflow:auto;';
+          _pre.textContent = (e && (e.stack || e.message)) || String(e);
+          _st0.appendChild(_pre);
+        }
+      }
+      const retryBtn = document.createElement('button');
+      retryBtn.textContent = '↩ Try again';
+      retryBtn.style.cssText = 'margin:10px auto;display:block;padding:10px 24px;background:#ff6b00;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;';
+      retryBtn.onclick = () => { retryBtn.remove(); finish(); };
+      const _st = document.getElementById('ob-status');
+      if (_st) { _st.style.display = 'block'; _st.appendChild(retryBtn); }
+    }
+  }
+
+  window._ob2StartConvo = function() {
+    buildFormRows();
+    // Initialise section-level form guide (requires form-guide.js + mascot.js v2)
+    window._ob2Guide = new FormGuide({
+      steps:  document.querySelectorAll('[data-guide-step]'),
+      mascot: window.PBMascot || null
+    });
+    // Restore saved progress (from email-verification resume) before prefill
+    const resume = window._ob2ResumeData;
+    if (resume && resume.answers) {
+      Object.assign(answers, resume.answers);
+      if (resume.toggles) Object.assign(toggles, resume.toggles);
+    }
+    if (window._ob2Prefill) Object.assign(answers, window._ob2Prefill);
+
+    const savedStep = resume && resume.stepIndex > 0 ? resume.stepIndex : 0;
+
+    if (savedStep > 0) {
+      // Lock all rows that were already answered before the saved step
+      step = savedStep;
+      STEPS.slice(0, savedStep).forEach(function(s) {
+        if (!s.key) return;
+        var val = answers[s.key];
+        if (val === undefined || val === '') return;
+        var display = Array.isArray(val) ? val.join(', ') : String(val);
+        lockField(s.key, display);
+      });
+      setMood('s-arrive-land');
+      setTimeout(function() {
+        setBlastyBubble("Welcome back! I saved your progress — let's pick up right where we left off 🚀");
+        setTimeout(showStep, 1800);
+      }, 600);
+    } else if (window._ob2EditBizId) {
+      setMood('s-wave');
+      setTimeout(() => {
+        addMascotBubble("Welcome back! Let's update your business profile. I'll walk through each step — just edit anything that's changed. 👋");
+        setTimeout(showStep, 1400);
+      }, 600);
+    } else {
+      setMood('s-wave');
+      setTimeout(showStep, 600);
+    }
+  };
+  if (window._ob2Ready) window._ob2StartConvo();
+  window.addEventListener('scroll',  retrackBlasty, { passive: true });
+  window.addEventListener('resize',  retrackBlasty, { passive: true });
+  // Also track on form-col internal scroll
+  var _formCol = document.querySelector('.ob-form-col');
+  if (_formCol) _formCol.addEventListener('scroll', retrackBlasty, { passive: true });
+})();
+</script>
+
+<!-- ── Firebase ───────────────────────────────────────────────────── -->
+<script type="importmap">
 {
   "integrity": {
     "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js":       "sha384-wY0ZJNz4V101UNldqXjHz0zuQq2LFWQg9C6MejyUaw58KxejR+Fq3MinHCx/5y77",

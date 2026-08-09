@@ -6,7 +6,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1786234750365" />
+<link rel="stylesheet" href="global-style.css?v=1786231050437" />
 <title>BlastyBiz — Command Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -27,7 +27,8 @@ body{visibility:hidden}
 }
 </script>
   <script type="module" src="./auth-guard.js"></script>
-<script src="blastybiz-menu.js?v=6"></script>
+<script src="blastybiz-menu.js?v=7"></script>
+<script src="escape-utils.js"></script>
 </head>
 <body class="has-site-header">
 <div id="header__inject"></div>
@@ -246,7 +247,7 @@ function renderSwitcherBar() {
   const select = document.getElementById('biz-select');
   if (select) {
     select.innerHTML = currentBizList.map(b =>
-      `<option value="${b.id}"${b.id === currentBizId ? ' selected' : ''}>${b.name}</option>`
+      `<option value="${escHtml(b.id)}"${b.id === currentBizId ? ' selected' : ''}>${escHtml(b.name)}</option>`
     ).join('');
   }
 
@@ -260,7 +261,7 @@ function renderSwitcherBar() {
   if (list) {
     list.innerHTML = currentBizList.map(b => `
       <button type="button" class="biz-dd-item${b.id === currentBizId ? ' active' : ''}"
-              onclick="selectBizOption('${b.id}')">
+              onclick="selectBizOption('${escHtml(String(b.id).replace(/['\\]/g,''))}')">
         <span class="biz-dd-item-name">${escHtml(b.name)}</span>
         ${b.id === currentBizId ? '<span class="biz-dd-check">✓</span>' : ''}
       </button>`).join('');
@@ -323,12 +324,12 @@ function renderDashboardCampaigns(campaigns) {
     const lastUsed = fmtDate(c.lastUsedAt);
     const created  = fmtDate(c.createdAt);
     return `<div style="position:relative;border-bottom:1px solid var(--border,#333);">
-      <a href="BlastyBiz.html?cid=${c.id}" style="display:block;padding:14px 52px 14px 0;text-decoration:none;-webkit-tap-highlight-color:rgba(0,200,83,0.12);">
+      <a href="BlastyBiz.html?cid=${escHtml(encodeURIComponent(c.id))}" style="display:block;padding:14px 52px 14px 0;text-decoration:none;-webkit-tap-highlight-color:rgba(0,200,83,0.12);">
         <div style="font-size:16px;font-weight:700;color:var(--light,#fff);line-height:1.3;">${escHtml(c.name || '(unnamed)')}</div>
         <div style="font-size:12px;color:var(--muted,#888);margin-top:4px;">Created ${created} · Last used ${lastUsed}</div>
         ${preview ? `<div style="font-size:12px;color:var(--muted,#888);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(preview)}</div>` : ''}
       </a>
-      <button type="button" class="del-camp-btn" onclick="event.preventDefault();window.deleteCampaign&&window.deleteCampaign('${c.id}')" title="Delete campaign" style="position:absolute;right:0;top:50%;transform:translateY(-50%);">🗑</button>
+      <button type="button" class="del-camp-btn" onclick="event.preventDefault();window.deleteCampaign&&window.deleteCampaign('${escHtml(String(c.id).replace(/['\\]/g,''))}')" title="Delete campaign" style="position:absolute;right:0;top:50%;transform:translateY(-50%);">🗑</button>
     </div>`;
   }).join('');
 }
@@ -482,8 +483,8 @@ window.openCampaignSheet = async function(draftId) {
     insightsEl.innerHTML = insights.length
       ? insights.map(i =>
           '<div class="cs-insight-row">'
-          + '<span class="cs-insight-q">' + i.question + '</span>'
-          + '<span class="cs-insight-a">' + i.answer + '</span>'
+          + '<span class="cs-insight-q">' + escHtml(i.question) + '</span>'
+          + '<span class="cs-insight-a">' + escHtml(i.answer) + '</span>'
           + '</div>'
         ).join('')
       : '<span class="cs-empty">No AI insights recorded for this listing.</span>';
@@ -493,7 +494,7 @@ window.openCampaignSheet = async function(draftId) {
     platsEl.innerHTML = platforms.length
       ? platforms.map(([pid]) =>
           '<div class="cost-line">'
-          + '<span>' + pid.replace(/_/g, ' ') + '</span>'
+          + '<span>' + escHtml(pid.replace(/_/g, ' ')) + '</span>'
           + '<span class="badge live">Adapted</span>'
           + '</div>'
         ).join('')
@@ -705,7 +706,7 @@ onAuthStateChanged(auth, async (user) => {
       API_PLATFORMS.forEach(p => {
         const isConn = p.conn && p.conn.status === 'connected';
         if (isConn) connectedCount++;
-        const sub  = isConn ? p.connectedSub(p.conn) : 'Not connected — <a href="BlastyBiz-Connect.html" class="link-green">Connect</a>';
+        const sub  = isConn ? escHtml(p.connectedSub(p.conn)) : 'Not connected — <a href="BlastyBiz-Connect.html" class="link-green">Connect</a>';
         const badge = isConn ? '<span class="badge live">Live</span>' : '<span class="badge off">Off</span>';
         rows += `<div class="platform-row"><div class="platform-icon">${p.icon}</div><div class="row-main"><div class="row-title">${p.label}</div><div class="row-sub">${sub}</div></div>${badge}</div>`;
       });
@@ -775,11 +776,11 @@ onAuthStateChanged(auth, async (user) => {
       } else {
         jobs.slice(0, 5).forEach(j => {
           const icon  = icons[j.platform] || '📡';
-          const title = j.platform ? `${j.platform.replace(/_/g,' ')} · ${j.offerTitle || 'Post'}` : (j.offerTitle || 'Post');
+          const title = escHtml(j.platform ? `${j.platform.replace(/_/g,' ')} · ${j.offerTitle || 'Post'}` : (j.offerTitle || 'Post'));
           const ts    = j.createdAt?.toDate ? timeAgo(j.createdAt.toDate()) : '';
           const badge = `<span class="badge ${statusBadge[j.status] || 'off'}">${statusLabel[j.status] || j.status}</span>`;
           const _clickable = j.draftId ? ' clickable' : '';
-          const _onclick   = j.draftId ? ` onclick="window.openCampaignSheet&&window.openCampaignSheet('${j.draftId}')"` : '';
+          const _onclick   = j.draftId ? ` onclick="window.openCampaignSheet&&window.openCampaignSheet('${escHtml(String(j.draftId).replace(/['\\]/g,''))}')"` : '';
           actRows += `<div class="activity-row${_clickable}"${_onclick}><div class="platform-icon">${icon}</div><div class="row-main"><div class="row-title text-cap">${title}</div><div class="row-sub">${ts}</div></div>${badge}</div>`;
         });
       }

@@ -24,6 +24,7 @@
 }
 </script>
   <script type="module" src="./auth-guard.js"></script>
+  <script src="escape-utils.js"></script>
 <style>
   *,*::before,*::after { box-sizing:border-box; }
   :root { --green:#00C853; --blue:#1565c0; --dark:#0d1a0d; --card:#111f11; --border:#1e3320; --text:#e0f0e3; --sub:#7aab82; --red:#ef5350; }
@@ -555,7 +556,7 @@ function renderPlatformGrid(platforms) {
   const checked = (window._cbPrefillPlatforms instanceof Set) ? window._cbPrefillPlatforms : _DEFAULT_CHECKED;
   _platLabels = Object.fromEntries(platforms.map(p => [p.slug, p.icon + ' ' + p.name]));
   grid.innerHTML = platforms.map(p =>
-    `<label class="plat-chk"><input type="checkbox" value="${p.slug}"${checked.has(p.slug) ? ' checked' : ''}> <span>${p.icon} ${p.name}</span></label>`
+    `<label class="plat-chk"><input type="checkbox" value="${_cbEsc(p.slug)}"${checked.has(p.slug) ? ' checked' : ''}> <span>${_cbEsc(p.icon)} ${_cbEsc(p.name)}</span></label>`
   ).join('');
 }
 

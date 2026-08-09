@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="global-style.css?v=1786234750365">
+<link rel="stylesheet" href="global-style.css?v=1786231050437">
 
 <style>body{visibility:hidden}</style>
 <script type="importmap">
@@ -25,7 +25,8 @@
 }
 </script>
   <script type="module" src="./admin-guard.js"></script>
-<script src="blastybiz-menu.js?v=6"></script>
+<script src="blastybiz-menu.js?v=7"></script>
+<script src="escape-utils.js"></script>
 </head>
 <body class="admin-page">
 <header>
@@ -477,7 +478,7 @@ onAuthStateChanged(auth, async (user) => {
     const billingTr = el('admin-billing-trials');
     if (billingTr) billingTr.querySelector('.row-title').textContent = trial + ' trials active';
 
-    const _esc = window._esc || (s => String(s == null ? '' : s).replace(/[&<>"']/g, function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];})); // canonical — see escape-utils.js').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const _esc = window._esc || (s => String(s == null ? '' : s).replace(/[&<>"']/g, function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];})); // canonical — see escape-utils.js
     const SUB_BADGE = { active:'live', trial:'info', past_due:'error', canceled:'off' };
     const SAFE_PLANS = new Set(['starter','pro','agency','free']);
 
@@ -551,7 +552,7 @@ onAuthStateChanged(auth, async (user) => {
           ...Object.entries(callCounts).map(([fn, n]) => [fn, n + ' calls', '—']),
         ];
         tbody.innerHTML = rows.map(([m, v, t]) =>
-          '<tr><td>' + m + '</td><td>' + v + '</td><td class="muted">' + t + '</td></tr>'
+          '<tr><td>' + window.escHtml(m) + '</td><td>' + window.escHtml(v) + '</td><td class="muted">' + window.escHtml(t) + '</td></tr>'
         ).join('');
         const note = el('admin-ai-note');
         if (note) note.textContent = logs.length
@@ -586,7 +587,7 @@ onAuthStateChanged(auth, async (user) => {
         const pct = Math.round((s.count / maxCount) * 100);
         return `<div style="margin-bottom:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
-            <span style="font-size:13px;font-weight:600;color:#111;">${s.label}</span>
+            <span style="font-size:13px;font-weight:600;color:#111;">${_esc(s.label)}</span>
             <span style="font-size:13px;font-weight:700;color:#FF6D00;min-width:32px;text-align:right;">${s.count}</span>
           </div>
           <div style="height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;">
@@ -623,7 +624,7 @@ onAuthStateChanged(auth, async (user) => {
         ? failed.slice(0,5).map(d => {
             const j = d.data();
             const ic = icons[j.platform] || (j.platform||'?')[0].toUpperCase();
-            return '<div class="list-item"><div class="icon">' + ic + '</div><div class="row-main"><div class="row-title">' + (j.platform||'Unknown') + ' failed</div><div class="row-sub">' + (j.businessName||j.uid||'—') + ' • ' + (j.customerVisibleMessage||j.error||'See logs') + '</div></div><span class="badge error">Failed</span></div>';
+            return '<div class="list-item"><div class="icon">' + window.escHtml(ic) + '</div><div class="row-main"><div class="row-title">' + window.escHtml(j.platform||'Unknown') + ' failed</div><div class="row-sub">' + window.escHtml(j.businessName||j.uid||'—') + ' • ' + window.escHtml(j.customerVisibleMessage||j.error||'See logs') + '</div></div><span class="badge error">Failed</span></div>';
           }).join('')
         : '<div class="list-item"><div class="icon">✓</div><div class="row-main"><div class="row-title">No failed jobs</div><div class="row-sub">All clear.</div></div><span class="badge live">Good</span></div>';
     }

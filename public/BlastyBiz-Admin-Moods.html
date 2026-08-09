@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=1786234750365">
+  <link rel="stylesheet" href="global-style.css?v=1786231050437">
   <style>
     body { visibility:hidden }
     .mp-grid { display:grid; grid-template-columns:1fr 220px; gap:24px; align-items:start; }
@@ -65,7 +65,8 @@
 }
 </script>
   <script type="module" src="./admin-guard.js"></script>
-  <script src="blastybiz-menu.js?v=6"></script>
+  <script src="blastybiz-menu.js?v=7"></script>
+  <script src="escape-utils.js"></script>
   <script src="/mascot.js"></script>
 </head>
 <body class="admin-page">
@@ -203,7 +204,7 @@ function renderList() {
     ].filter(Boolean);
     return `<div class="preset-card">
       <div class="preset-head">
-        <span class="preset-name">${p.label}</span>
+        <span class="preset-name">${window.escHtml(p.label)}</span>
         <div class="preset-tags">${tags.map(t=>`<span class="ptag">${t}</span>`).join('')}</div>
         <button class="btn-prv2" onclick="window._previewPreset(${i})">▶ Preview</button>
         <button class="btn-del"  onclick="window._deletePreset(${i})">✕ Delete</button>
@@ -314,7 +315,7 @@ onAuthStateChanged(auth, async user => {
       document.getElementById('prev-cap').textContent = presets[0].label;
     }
   } catch(e) {
-    document.getElementById('preset-list').innerHTML = '<div class="empty-state">Error loading presets: '+e.message+'</div>';
+    document.getElementById('preset-list').innerHTML = '<div class="empty-state">Error loading presets: '+window.escHtml(e.message)+'</div>';
   }
   document.body.style.visibility = '';
 });

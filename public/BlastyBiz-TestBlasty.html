@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="stylesheet" href="global-style.css?v=1786234750365"/>
+  <link rel="stylesheet" href="global-style.css?v=1786231050437"/>
   <title>BlastyBiz — Test Console</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -24,7 +24,8 @@
 }
 </script>
   <script type="module" src="./admin-guard.js"></script>
-  <script src="blastybiz-menu.js?v=6"></script>
+  <script src="blastybiz-menu.js?v=7"></script>
+  <script src="escape-utils.js"></script>
   <script src="mascot.js?v=5"></script>
   <style>
     .tc-wrap {
@@ -439,15 +440,15 @@ if (!user || !user.emailVerified) {
           const created = b.createdAt?.seconds
             ? new Date(b.createdAt.seconds * 1000).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
             : '?';
-          return `<div class="tc-card" style="margin-bottom:8px" data-biz-id="${b.id}">
+          return `<div class="tc-card" style="margin-bottom:8px" data-biz-id="${window.escHtml(b.id)}">
             <div class="tc-card-head">
               <div class="tc-card-info">
-                <h3>${name}${isActive ? ' <span class="tc-admin-badge" style="color:var(--green,#39ff14);border-color:rgba(57,255,20,.3)">Active</span>' : ''}</h3>
-                <p style="font-family:monospace;font-size:11px;margin-top:2px">${b.id} &nbsp;·&nbsp; ${created}</p>
+                <h3>${window.escHtml(name)}${isActive ? ' <span class="tc-admin-badge" style="color:var(--green,#39ff14);border-color:rgba(57,255,20,.3)">Active</span>' : ''}</h3>
+                <p style="font-family:monospace;font-size:11px;margin-top:2px">${window.escHtml(b.id)} &nbsp;·&nbsp; ${created}</p>
               </div>
               ${isActive
                 ? '<span style="font-size:12px;color:var(--muted,#888);flex-shrink:0">Protected</span>'
-                : `<button class="tc-btn tc-btn-danger" onclick="window._tcDeleteBiz('${b.id}', this)">Delete</button>`
+                : `<button class="tc-btn tc-btn-danger" onclick="window._tcDeleteBiz('${window.escHtml(String(b.id).replace(/['\\]/g, ''))}', this)">Delete</button>`
               }
             </div>
           </div>`;

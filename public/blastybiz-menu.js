@@ -51,13 +51,25 @@ function _revealAdminNav() {
         var tabBar = document.getElementById('header__biz-tabs');
         if (!tabBar) return;
 
-        tabBar.innerHTML = bizzes.map(function(b) {
+        // Build with DOM APIs + textContent so unusual business names
+        // (e.g. containing <, &, quotes) can never be parsed as markup.
+        tabBar.innerHTML = '';
+        bizzes.forEach(function(b) {
           var isActive = b.id === activeBizId;
           var name = b.bizName || b.name || b.businessName || '(unnamed)';
-          return isActive
-            ? '<span class="header__biz-tab active">' + name + '</span>'
-            : '<button type="button" class="header__biz-tab" onclick="window._bbHeaderSwitchBiz(\'' + b.id + '\')">' + name + '</button>';
-        }).join('');
+          var el;
+          if (isActive) {
+            el = document.createElement('span');
+            el.className = 'header__biz-tab active';
+          } else {
+            el = document.createElement('button');
+            el.type = 'button';
+            el.className = 'header__biz-tab';
+            el.addEventListener('click', function() { window._bbHeaderSwitchBiz(b.id); });
+          }
+          el.textContent = name;
+          tabBar.appendChild(el);
+        });
         tabBar.style.display = 'flex';
 
         // Switch handler — update activeBusiness then reload the current page

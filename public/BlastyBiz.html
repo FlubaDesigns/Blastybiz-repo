@@ -6,7 +6,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1786234750365" />
+<link rel="stylesheet" href="global-style.css?v=1786231050437" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -136,7 +136,8 @@
 }
 </script>
   <script type="module" src="./auth-guard.js"></script>
-<script src="blastybiz-menu.js?v=6"></script>
+<script src="blastybiz-menu.js?v=7"></script>
+<script src="escape-utils.js?v=1"></script>
 <script src="mascot.js?v=5"></script>
 </head>
 <body class="has-site-header create-page">
@@ -1389,7 +1390,7 @@ function buildPlatformCard(p) {
     ? `<div class="copy-box visible" id="copy-${p.id}">
          <span class="copy-box-label">⚡ AI-Generated Copy</span>
          <button type="button" class="copy-btn-float" onclick="copyText('${p.id}')">Copy</button>
-         ${p.adaptedContent}
+         ${escHtml(p.adaptedContent)}
        </div>`
     : `<div class="copy-box" id="copy-${p.id}"></div>`;
 
@@ -1407,7 +1408,7 @@ function buildPlatformCard(p) {
       <div class="platform-info">
         <div class="platform-icon" style="background:${p.color}22;">${p.icon}</div>
         <div>
-          <div class="platform-name">${p.name}</div>
+          <div class="platform-name">${escHtml(p.name)}</div>
           <div class="platform-type ${p.type}">${p.type === 'api' ? (starterLocked ? '🔒 Pro only' : '⚡ Auto-Post') : '✋ Copy & Paste'}</div>
         </div>
       </div>
@@ -1416,7 +1417,7 @@ function buildPlatformCard(p) {
         <span class="toggle-slider"></span>
       </label>
     </div>
-    <div class="platform-note-text">${p.note}</div>
+    <div class="platform-note-text">${escHtml(p.note || '')}</div>
     <div class="platform-actions">
       ${actionBtn}
       ${p.type !== 'api' ? `<button type="button" class="pcard-dismiss-btn" onclick="dismissPlatform('${p.id}')" title="Remove from list">✕ Not using</button>` : ''}
@@ -3940,7 +3941,7 @@ function populateTAICampaignDropdown() {
   const sel = document.getElementById('tai-campaign-select');
   if (!sel) return;
   sel.innerHTML = '<option value="">— Pick a campaign —</option>' +
-    campaigns.map(c => `<option value="${c.id}"${c.id === activeCampaignId ? ' selected' : ''}>${c.name || 'Untitled campaign'}</option>`).join('');
+    campaigns.map(c => `<option value="${escHtml(c.id)}"${c.id === activeCampaignId ? ' selected' : ''}>${escHtml(c.name || 'Untitled campaign')}</option>`).join('');
   if (activeCampaignId) sel.value = activeCampaignId;
 }
 
@@ -5094,7 +5095,7 @@ function renderSwitcherBar() {
   // Keep hidden select in sync (used elsewhere)
   const select = document.getElementById('biz-select');
   if (select) select.innerHTML = bizList.map(b =>
-    `<option value="${b.id}"${b.id===currentId?' selected':''}>${b.name||b.businessName||''}</option>`
+    `<option value="${escHtml(b.id)}"${b.id===currentId?' selected':''}>${escHtml(b.name||b.businessName||'')}</option>`
   ).join('');
 
   // Keep workspace info bar in sync
@@ -5112,8 +5113,8 @@ function renderSwitcherBar() {
       const isActive = b.id === currentId;
       const name = b.name || b.businessName || '(unnamed)';
       return isActive
-        ? `<button type="button" class="biz-tab active" disabled>${name}</button>`
-        : `<button type="button" class="biz-tab" onclick="switchBusiness('${b.id}')">${name}</button>`;
+        ? `<button type="button" class="biz-tab active" disabled>${window.escHtml(name)}</button>`
+        : `<button type="button" class="biz-tab" onclick="switchBusiness('${window.escHtml(String(b.id).replace(/['\\]/g,''))}')">${window.escHtml(name)}</button>`;
     }).join('');
   }
 }

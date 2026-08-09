@@ -5,7 +5,7 @@
 <meta charset="UTF-8"/>
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="stylesheet" href="global-style.css?v=1786234750365" />
+<link rel="stylesheet" href="global-style.css?v=1786231050437" />
 <title>BlastyBiz — Connected!</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -23,7 +23,8 @@
 }
 </script>
   <script type="module" src="./auth-guard.js"></script>
-<script src="blastybiz-menu.js?v=6"></script>
+<script src="blastybiz-menu.js?v=7"></script>
+<script src="escape-utils.js"></script>
 </head>
 <body class="app-page connected-page has-site-header">
 
@@ -173,7 +174,7 @@ auth.authStateReady().then(() => {
         <div class="account-icon" style="background:${meta.iconBg};color:${meta.iconColor}">${meta.icon}</div>
         <div class="account-info">
           <div class="account-platform">${meta.label}</div>
-          <div class="account-name">${accountName}</div>
+          <div class="account-name">${window.escHtml(accountName)}</div>
           <div class="account-detail">Connected · Posts will go here when you approve</div>
         </div>
         <div class="account-check">✓</div>

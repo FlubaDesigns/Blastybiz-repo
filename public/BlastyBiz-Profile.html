@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="description" content="Your BlastyBiz business profile."/>
-  <link rel="stylesheet" href="global-style.css?v=1786234750365"/>
+  <link rel="stylesheet" href="global-style.css?v=1786231050437"/>
   <title>BlastyBiz — Profile</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -24,7 +24,7 @@
 }
 </script>
   <script type="module" src="./auth-guard.js"></script>
-  <script src="blastybiz-menu.js?v=6"></script>
+  <script src="blastybiz-menu.js?v=7"></script>
   <script src="mascot.js?v=5"></script>
   <style>
     /* ── Blasty float ──────────────────────────────────────────── */
@@ -367,7 +367,7 @@
 
   function setBlasty(key) {
     var el = document.getElementById('bb-q-text');
-    if (el) { el.style.opacity='0'; setTimeout(function(){ el.innerHTML=(MESSAGES[key]||function(){ return ''; })(answers); el.style.opacity='1'; }, 150); }
+    if (el) { el.style.opacity='0'; setTimeout(function(){ el.textContent=(MESSAGES[key]||function(){ return ''; })(answers); el.style.opacity='1'; }, 150); }
     if (window.PBMascot) window.PBMascot.setMood(MOODS[key]||'s-ask');
   }
 
