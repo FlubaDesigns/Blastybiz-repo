@@ -26,4 +26,5 @@
 - [BlastyBiz HTML escaping](blastybiz-escaping.md) — all owner text must pass escHtml (escape-utils.js loaded in head) or textContent; escHtml is NOT enough inside inline onclick, and URLs need a scheme check.
 - [Sticky rails](blastybiz-sticky-rails.md) — global overflow-x:hidden on body/.main makes them scroll containers and kills position:sticky; use clip, and keep the rail shorter than the viewport.
 - [BlastyBiz console 404/502 root causes](blastybiz-console-404-502.md) — undeployed CF cloudfunctions.net URLs, missing config/platforms doc, headless probe recipe, benign Firestore aborts.
+- [BlastyBiz scheduled CF verification](blastybiz-scheduler-force-run.md) — force-run via Cloud Scheduler :run API; index exemptions take time to build after deploy, confirm state READY first.
 - [BlastyBiz hosting deploy verification](blastybiz-hosting-verify.md) — cleanUrls:true means a .html URL returns a 34-byte redirect stub; always curl -sL the extensionless path or you'll misread a good deploy as failed.
