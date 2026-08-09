@@ -110,6 +110,16 @@
   ],
   "fieldOverrides": [
     {
+      "collectionGroup": "platformConnections",
+      "fieldPath": "status",
+      "indexes": [
+        { "order": "ASCENDING",  "queryScope": "COLLECTION" },
+        { "order": "DESCENDING", "queryScope": "COLLECTION" },
+        { "arrayConfig": "CONTAINS", "queryScope": "COLLECTION" },
+        { "order": "ASCENDING",  "queryScope": "COLLECTION_GROUP" }
+      ]
+    },
+    {
       "collectionGroup": "businesses",
       "fieldPath": "postingSchedule.enabled",
       "indexes": [

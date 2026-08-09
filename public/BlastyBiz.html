@@ -6,7 +6,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1786296587970" />
+<link rel="stylesheet" href="global-style.css?v=1786296644943" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -3499,7 +3499,8 @@ function saveProfile() {
   if (nameInput) nameInput.style.borderColor = hasNameInline ? '' : '#FFA726';
   const missingBanner = document.getElementById('biz-name-missing-banner');
   if (missingBanner) { if (hasNameInline) missingBanner.classList.add('hidden'); else missingBanner.classList.remove('hidden'); }
-  document.getElementById('profile-biz-cat').textContent  = profile.category || 'Set up your profile below';
+  const catDisplayInline = document.getElementById('profile-biz-cat');
+  if (catDisplayInline) catDisplayInline.textContent = profile.category || 'Set up your profile below';
 
   // Pre-fill create form if empty
   if (!document.getElementById('biz-name').value && profile.name)       document.getElementById('biz-name').value     = profile.name;
@@ -3529,12 +3530,16 @@ function loadProfile() {
   document.getElementById('profile-tone').value    = profile.tone     || 'friendly';
   const hasName = !!profile.name;
   const nameDisplay = document.getElementById('profile-biz-name');
-  nameDisplay.textContent = hasName ? profile.name : '⚠️ Business name not set';
-  nameDisplay.style.color = hasName ? 'var(--green)' : 'var(--warn)';
-  document.getElementById('profile-name').style.borderColor = hasName ? '' : '#FFA726';
+  if (nameDisplay) {
+    nameDisplay.textContent = hasName ? profile.name : '⚠️ Business name not set';
+    nameDisplay.style.color = hasName ? 'var(--green)' : 'var(--warn)';
+  }
+  const _pnameInput = document.getElementById('profile-name');
+  if (_pnameInput) _pnameInput.style.borderColor = hasName ? '' : '#FFA726';
   const _mnb = document.getElementById('biz-name-missing-banner'); if (_mnb) { if (hasName) _mnb.classList.add('hidden'); else _mnb.classList.remove('hidden'); }
   renderPlatformCats(profile.platformCats || {});
-  document.getElementById('profile-biz-cat').textContent  = profile.category || 'Set up your profile below';
+  const _pcat = document.getElementById('profile-biz-cat');
+  if (_pcat) _pcat.textContent = profile.category || 'Set up your profile below';
   if (profile.locationType) setProfileLocationType(profile.locationType);
   // Pre-fill main create form with business data (only if fields are empty)
   if (!document.getElementById('biz-name').value && profile.name)         document.getElementById('biz-name').value     = profile.name;
