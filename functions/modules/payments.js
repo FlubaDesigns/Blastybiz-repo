@@ -138,8 +138,8 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
 exports.createPortalSession = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   const uid = decoded.uid;
   const subSnap = await db.collection('subscriptions').doc(uid).get();
-  if (!subSnap.exists) return res.status(404).json({ error: 'No subscription found' });
-  res.json({ url: 'mailto:info@blastybiz.com?subject=Manage%20BlastyBiz%20Subscription' });
+  if (!subSnap.exists) return res.json({ hasSubscription: false, url: null });
+  res.json({ hasSubscription: true, url: 'mailto:info@blastybiz.com?subject=Manage%20BlastyBiz%20Subscription' });
 }));
 
 exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_WEBHOOK_SIGNATURE_KEY', 'RESEND_API_KEY'] }, async (req, res) => {

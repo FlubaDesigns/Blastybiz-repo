@@ -89,9 +89,7 @@ const FUNCTIONS = [
 
   // ── Payments (modules/payments.js) ──────────────────────────────────────
   { name: 'createCheckoutSession',       type: 'http', method: 'POST' },
-  { name: 'createPortalSession',         type: 'http', method: 'GET',
-    skipCall: true,
-    skipReason: 'returns 404 when test account has no subscription — function is deployed and healthy, test account just has no sub' },
+  { name: 'createPortalSession',         type: 'http', method: 'GET' },
   { name: 'squareWebhook',               type: 'http', method: 'POST',
     skipCall: true,
     skipReason: 'webhook — requires Square HMAC signature; calling bare would fail the HMAC gate, not reach the function body' },
