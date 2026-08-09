@@ -280,6 +280,26 @@ if (deadFunctionFiles === 0) {
   console.log(`  ✅ All ${allFunctionsJs.length} JS file(s) in functions/ reachable from index.js`);
 }
 
+// ── Check 9: Cloud Function endpoints referenced from public/ ────────────────
+// Every cloudfunctions.net/<name> URL used by live pages must answer an
+// OPTIONS preflight with 204 — a 404 means the function was never deployed
+// there (the previewAds/extractBizContext failure mode). Network check;
+// skip with SKIP_CF_ENDPOINT_CHECK=1 when offline.
+console.log('\n── 9. Cloud Function endpoints (OPTIONS preflight) ────────────────');
+if (process.env.SKIP_CF_ENDPOINT_CHECK === '1') {
+  console.log('  ⏭  Skipped (SKIP_CF_ENDPOINT_CHECK=1)');
+} else {
+  const { spawnSync } = require('child_process');
+  const res = spawnSync(process.execPath, [path.join(__dirname, 'check-cf-endpoints.cjs')], {
+    stdio: 'inherit',
+    timeout: 120_000,
+  });
+  if (res.status !== 0) {
+    console.log('  ❌ Cloud Function endpoint check failed (see output above)');
+    failures++;
+  }
+}
+
 // ── Summary ───────────────────────────────────────────────────────────────────
 console.log('\n── Summary ───────────────────────────────────────────────────────');
 if (failures === 0) {
