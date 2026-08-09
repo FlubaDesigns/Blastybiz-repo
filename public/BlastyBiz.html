@@ -2617,8 +2617,11 @@ function buildStep5Card(p) {
   const needsUrl = !rawHint || !rawHint.startsWith('Leave blank');
   const urlHint  = escHtml(rawHint || 'Paste your ' + p.name + ' page URL');
   const savedUrl = escHtml((window._bbPlatformUrls || {})[p.id] || '');
-  const statusClass = p._reviewStatus === 'approved' ? 'approved' : hasContent ? 'needs-review' : isPending ? 'pending' : 'failed';
-  const statusLabel = p._reviewStatus === 'approved' ? '✓ Approved' : hasContent ? 'Needs Review' : isPending ? 'Writing…' : 'No Copy';
+  // Two pending signals merged: the shared _bbGeneratingPlatforms set (covers all
+  // entry points) and the per-platform status:'generating' flag set by runAdaptation.
+  const isWriting = isPending || (!hasContent && p.status === 'generating');
+  const statusClass = p._reviewStatus === 'approved' ? 'approved' : hasContent ? 'needs-review' : isWriting ? 'pending' : 'failed';
+  const statusLabel = p._reviewStatus === 'approved' ? '✓ Approved' : hasContent ? 'Needs Review' : isWriting ? 'Writing…' : 'No Copy';
   const photoNote = isApi
     ? 'These photos will be uploaded automatically when this post goes live.'
     : 'Tap a photo to copy it, then paste it into your post.';
@@ -2659,7 +2662,7 @@ function buildStep5Card(p) {
       +   '</div>'
       + '</div>'
       + '</div>';
-  } else if (isPending) {
+  } else if (isWriting) {
     // Still writing — no retry/exclude yet, those would only invite the owner to
     // interrupt a generation that is about to succeed.
     inner += '<div class="s5-card-body">'
@@ -3035,8 +3038,12 @@ async function runAdaptation() {
   const enabledPlatforms = platforms.filter(p => p.enabled);
   if (!enabledPlatforms.length) { _bbSetGenerating([]); renderStep5Review(); showToast('Select at least one platform'); return; }
 
-  // Reset per-platform review status for this fresh generation
-  platforms = platforms.map(p => ({ ...p, _reviewStatus: undefined }));
+  // Reset per-platform review status for this fresh generation and mark enabled
+  // platforms as generating so Step 5 shows a pending state instead of "No Copy"
+  platforms = platforms.map(p => p.enabled
+    ? { ...p, _reviewStatus: undefined, status: 'generating' }
+    : { ...p, _reviewStatus: undefined });
+  renderStep5Review();
 
   // Covers entry points other than createWizGoTo (e.g. the Rewrite button)
   _bbSetGenerating(enabledPlatforms.map(p => p.id));
@@ -3117,7 +3124,7 @@ async function runAdaptation() {
       const adapted = adaptations[p.id];
       return adapted
         ? { ...p, adaptedContent: adapted.replace(/\n/g, '<br/>'), status: 'ready' }
-        : { ...p, status: 'idle' };
+        : { ...p, status: 'idle' };  // settled with no copy — failure state (retry available)
     });
 
     savePlatforms();
@@ -3198,6 +3205,9 @@ async function runAdaptation() {
     _completeAiProgress();
     console.error(err);
     showToast('❌ AI error — check connection');
+    // Generation settled (failed) — clear pending state so cards show the failure/retry UI
+    platforms = platforms.map(p => p.status === 'generating' ? { ...p, status: 'idle' } : p);
+    renderStep5Review();
   } finally {
     if (btn) btn.style.display = 'flex';
     loader.classList.remove('visible');

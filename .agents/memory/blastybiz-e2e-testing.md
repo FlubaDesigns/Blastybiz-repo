@@ -11,8 +11,12 @@ The Playwright test-account password secret carries surrounding whitespace. Test
 that paste it literally get "Wrong email or password" and then waste the run trying
 to create an account that already exists.
 
-**How to apply:** always tell the tester to TRIM the secret before typing it, and to
-use the Sign In form only — never fall back to Create Account.
+**How to apply:** tell the tester to strip ALL whitespace anywhere in the secret
+(tr -d '[:space:]' equivalent — plain trim has failed testers before), fill the field
+programmatically rather than typing, and use the Sign In form only — never fall back
+to Create Account. Test email is playwright@blastybiz.dev. If a tester still reports
+"Wrong email or password", verify the credential yourself via the Identity Toolkit
+signInWithPassword REST call before believing it.
 
 ## Nothing is testable until it is deployed
 
