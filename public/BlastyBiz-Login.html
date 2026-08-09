@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sign in to BlastyBiz to create AI-adapted marketing listings for every platform. New to BlastyBiz? Create your free account in seconds."/>
-  <link rel="stylesheet" href="global-style.css?v=1786303641000" />
+  <link rel="stylesheet" href="global-style.css?v=1786304468729" />
   <title>BlastyBiz — Sign In</title>
 <!-- All styles in global-style.css -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -1174,8 +1174,38 @@ window.handleSignUp = async function() {
     }
   } catch (e) {
     setLoading('btn-signup', false);
-    const msg = e.code === 'auth/email-already-in-use' ? 'Account already exists — sign in instead' : e.message;
-    showToast(msg, true);
+    if (e.code === 'auth/email-already-in-use') {
+      // Point the email field at the problem and offer a one-click way to switch
+      // to sign-in with the email already filled in. Also clear the encouraging
+      // guide bubble so Blasty isn't cheering and blocking at the same time.
+      const emailVal = (document.getElementById('su-email') || {}).value || '';
+      showErr('su-email', 'This email already has an account —\u00a0');
+      const errEl = document.getElementById('su-email-err');
+      if (errEl) {
+        const link = document.createElement('button');
+        link.type = 'button';
+        link.textContent = 'sign in instead';
+        link.style.cssText = 'background:none;border:none;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit;';
+        link.onclick = function() {
+          switchTab('signin');
+          const siEmail = document.getElementById('si-email');
+          if (siEmail && emailVal) {
+            siEmail.value = emailVal;
+            siEmail.dispatchEvent(new Event('input'));
+          }
+          clearErr('su-email');
+        };
+        errEl.appendChild(link);
+        errEl.appendChild(document.createTextNode('\u00a0→'));
+      }
+      // Silence the mascot guide — it was in "almost there!" mode which now
+      // contradicts the error.
+      const bubble = document.getElementById('login-bubble');
+      if (bubble) bubble.textContent = 'Already have an account? Just sign in!';
+      if (window.PBMascot) window.PBMascot.setMood({ mood: 's-tilt-left' });
+    } else {
+      showToast(e.message, true);
+    }
   }
 };
 
