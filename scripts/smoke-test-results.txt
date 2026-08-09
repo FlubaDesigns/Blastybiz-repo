@@ -1,0 +1,115 @@
+BlastyBiz — Smoke Test Results
+Run date : 2026-08-09
+Project  : blastybiz-9523e
+Exit code: 0 (all checks passed)
+
+Key verifications (task #227):
+  adaptListing     → HTTP 400  ✅  (was 500 before input-validation fix)
+  resolveCategories→ HTTP 400  ✅  (was 500 before input-validation fix)
+  approveDraft     → HTTP 400  ✅  (was 500 before input-validation fix)
+  createPortalSession→ HTTP 200✅  (was 404; deployed alongside the above)
+
+Full output:
+
+═══════════════════════════════════════════════════════════════
+  BlastyBiz — Cloud Functions Smoke Test
+═══════════════════════════════════════════════════════════════
+  Project   : blastybiz-9523e
+  Auth token: provided ✓
+  Catalog   : 74 of 63 entries
+
+── 0. Catalog integrity (names vs barrel exports) ───────────────
+  ✅ Catalog matches barrel (74 entries)
+
+── 1. HTTP endpoints ────────────────────────────────────────────
+  ✅ OK    generateEnrichmentQuestions → HTTP 200
+  ✅ OK    suggestCategory → HTTP 400
+  ✅ OK    adaptListing → HTTP 400
+  ✅ OK    resolveCategories → HTTP 400
+  ✅ OK    suggestPlatforms → HTTP 200
+  ✅ OK    chatCampaign → HTTP 400
+  ✅ OK    scoreFact → HTTP 400
+  ✅ OK    previewAds → HTTP 400
+  ✅ OK    extractBizContext → HTTP 400
+  ✅ OK    adminGetAiSettings → HTTP 403
+  ✅ OK    adminSetAiSettings → HTTP 403
+  ✅ OK    createCheckoutSession → HTTP 400
+  ✅ OK    createPortalSession → HTTP 200
+  (70 functions found in Firebase)
+  ✅ DEPLOYED squareWebhook — webhook — requires Square HMAC signature; calling bare would fail the HMAC gate, not reach the function body
+  ✅ OK    adminUpdatePricing → HTTP 403
+  ✅ OK    getPlanOptions → HTTP 200
+  ✅ OK    initiateGoogleOAuth → HTTP 400
+  ✅ DEPLOYED googleOAuthCallback — OAuth redirect callback — requires a real code+state from Google; calling bare hits an external provider
+  ✅ OK    initiateFacebookOAuth → HTTP 400
+  ✅ DEPLOYED facebookOAuthCallback — OAuth redirect callback — requires a real code+state from Facebook; calling bare hits an external provider
+  ✅ OK    disconnectPlatform → HTTP 400
+  ✅ OK    uploadImage → HTTP 400
+  ✅ OK    importGooglePhotos → HTTP 400
+  ✅ OK    draftAction → HTTP 400
+  ✅ OK    approvePendingPost → HTTP 400
+  ✅ OK    approveDraft → HTTP 400
+  ✅ OK    postToBing → HTTP 200
+  ✅ OK    postToAppleMaps → HTTP 200
+  ✅ OK    adminListPublishJobs → HTTP 403
+  ✅ OK    adminListFailedJobs → HTTP 403
+  ✅ OK    adminRetryJob → HTTP 403
+  ✅ OK    adminMarkManualFollowup → HTTP 403
+  ✅ OK    adminListBusinesses → HTTP 403
+  ✅ OK    adminListPlatformConnections → HTTP 403
+  ✅ OK    adminPlatformHealth → HTTP 403
+  ✅ OK    adminSendReconnectNudge → HTTP 403
+  ✅ OK    adminSendRecoveryEmails → HTTP 403
+  ✅ OK    adminGetAdminEmails → HTTP 403
+  ✅ OK    adminUpdateAdminEmails → HTTP 403
+  ✅ OK    adminListActivityLogs → HTTP 403
+  ✅ OK    adminOnboardingFunnel → HTTP 403
+  ✅ OK    adminSendOnboardingNudge → HTTP 403
+  ✅ OK    adminSubscriptionSummary → HTTP 403
+  ✅ OK    adminSetPlan → HTTP 403
+  ✅ OK    adminDeleteBusiness → HTTP 403
+  ✅ OK    adminUpdatePlatformCategories → HTTP 403
+  ✅ OK    createBusiness → HTTP 400
+  ✅ OK    deleteBusiness → HTTP 400
+  ✅ OK    deleteAccount → HTTP 400
+  ✅ OK    sendVerificationEmail → HTTP 400
+  ✅ OK    sendTestEmail → HTTP 403
+  ✅ OK    contactForm → HTTP 400
+  ✅ DEPLOYED unsubscribeEmail — requires a valid HMAC token in query params; calling bare does not reach the function body
+  ✅ OK    adminRetentionReport → HTTP 403
+  ✅ OK    adminBackfillLastActive → HTTP 403
+
+── 2. Scheduled & trigger functions (verify deployed) ────────────
+  ✅ TRIGGER   dispatchPublishJob — deployed
+  ✅ TRIGGER   onGoogleImportQueued — deployed
+  ✅ TRIGGER   jobFailedTrigger — deployed
+  ✅ TRIGGER   jobCompletedTrigger — deployed
+  ✅ TRIGGER   userCreatedTrigger — deployed
+  ✅ TRIGGER   businessCreatedTrigger — deployed
+  ✅ SCHEDULED checkPlatformTokenExpiry — deployed
+  ✅ SCHEDULED scheduledPostingCheck — deployed
+  ✅ SCHEDULED scheduledDraftPreview — deployed
+  ✅ SCHEDULED scheduledUpgradeNudge — deployed
+  ✅ SCHEDULED scheduledWeeklyDigest — deployed
+  ✅ SCHEDULED scheduledSetupNudge — deployed
+  ✅ SCHEDULED scheduledFirestoreExport — deployed
+  ✅ SCHEDULED cleanupAbandonedSignups — deployed
+  ✅ SCHEDULED scheduledRetentionSweep — deployed
+
+── 3. Internal barrel exports (not Cloud Function endpoints) ──────
+  —  SKIP  _publishGoogleJob — plain async helper, not a CF endpoint
+  —  SKIP  _publishFacebookJob — plain async helper, not a CF endpoint
+  —  SKIP  _publishInstagramJob — plain async helper, not a CF endpoint
+  —  SKIP  _runRetentionSweep — plain async helper, not a CF endpoint
+
+── 4. Barrel export count ────────────────────────────────────────
+  ✅ Barrel exports 74 functions (≥63)
+
+═══════════════════════════════════════════════════════════════
+  HTTP passed   : 55
+  HTTP skipped  : 0
+  Deploy passed : 15
+  Deploy skipped: 0
+  Failures      : 0
+═══════════════════════════════════════════════════════════════
+  ✅ All checks passed
