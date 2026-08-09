@@ -1,5 +1,6 @@
 import { auth } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { pingActivity } from './activity-ping.js';
 
 // Safety valve: if auth never resolves, redirect to login — never reveal protected content.
 const _safetyTimer = setTimeout(() => {
@@ -19,6 +20,7 @@ auth.authStateReady()
         clearTimeout(_safetyTimer);
         document.body.classList.add('logged-in');
         document.body.style.visibility = 'visible';
+        pingActivity(user);
       } else if (user && !user.emailVerified) {
         // Signed in but email not verified — redirect to Login where verify-view shows
         clearTimeout(_safetyTimer);

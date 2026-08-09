@@ -5,7 +5,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1786302781360" />
+<link rel="stylesheet" href="global-style.css?v=1786303641000" />
 <title>BlastyBiz — Account Settings</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -47,6 +47,8 @@ body{visibility:hidden}
     <div class="cost-line"><span>Plan</span><strong id="acct-plan-label">—</strong></div>
     <div class="cost-line"><span>AI requests used</span><strong id="acct-ai-usage">—</strong></div>
     <div class="cost-line"><span>Resets on</span><strong id="acct-renewal">—</strong></div>
+    <div class="cost-line hidden" id="acct-retention-row"><span>Data kept until</span><strong id="acct-retention-val">—</strong></div>
+    <p class="helper acct-retention-note hidden" id="acct-retention-note"></p>
     <div class="btn-row" style="margin-top:12px;">
       <a class="btn btn-primary" id="acct-billing-btn" href="#" onclick="handleBilling(event)">View Billing</a>
     </div>
@@ -172,6 +174,33 @@ auth.authStateReady().then(() => {
       document.getElementById('acct-renewal').textContent = resetAt
         ? resetAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         : '—';
+
+      // ── Data retention (free plans only) ──────────────────────────────────
+      // Free accounts are deleted after a long dormancy. Owners should be able
+      // to see that here rather than only finding out in a warning email.
+      if (userPlan === 'starter' || userPlan === 'trial') {
+        try {
+          const idToken = await user.getIdToken();
+          const r = await fetch(CF + '/getPlanOptions', { headers: { 'Authorization': 'Bearer ' + idToken } });
+          const opts = r.ok ? await r.json() : null;
+          const dormantDays = opts?.retention?.dormantDays;
+          if (dormantDays) {
+            const lastActive = userData.lastActiveAt?.toDate?.() || userData.createdAt?.toDate?.() || new Date();
+            const keepUntil = userData.dormancyPurgeAt?.toDate?.()
+              || new Date(lastActive.getTime() + dormantDays * 86400000);
+            const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+            document.getElementById('acct-retention-val').textContent = fmt(keepUntil);
+            document.getElementById('acct-retention-row').classList.remove('hidden');
+
+            const note = document.getElementById('acct-retention-note');
+            note.textContent = userData.dormancyPurgeAt
+              ? `Your account is scheduled for deletion on ${fmt(keepUntil)} because it has been inactive. Using BlastyBiz again cancels this — no action needed beyond signing in.`
+              : `Free accounts that go unused for ${Math.round(dormantDays / 30)} months are deleted. We'll email you well before that happens, and any activity resets the clock.`;
+            note.classList.remove('hidden');
+          }
+        } catch (e) { console.warn('[Account] retention info unavailable', e); }
+      }
 
       // Activation toast
       const urlParams = new URLSearchParams(window.location.search);

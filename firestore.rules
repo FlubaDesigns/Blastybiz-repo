@@ -30,11 +30,16 @@ service cloud.firestore {
             'activeBusiness', 'onboardingVersion', 'onboardingProgress',
             'onboardingCompleted'
           ]);
+      // ✅ ALLOWLIST — new fields fail CLOSED. A field missing from this list
+      //    silently aborts the whole write, including atomic onboarding batches.
+      //    'lastActiveAt' is the dormancy signal for free-account retention; it
+      //    is client-writable on purpose (activity-ping.js). Worst case an owner
+      //    keeps their own account alive, which is the safe direction.
       allow update: if request.auth != null && request.auth.uid == userId
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'ownerName', 'email', 'displayName', 'onboarded', 'activeBusiness',
             'updatedAt', 'onboardingProgress', 'onboardingVersion',
-            'onboardingCompleted'
+            'onboardingCompleted', 'lastActiveAt'
           ]);
 
       // Businesses — nested under users/{uid}/businesses/{bizId}

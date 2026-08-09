@@ -6,10 +6,10 @@
 
 const {
   onRequest, admin, db,
-  APP_BASE_URL, sendResendEmail, getSquare,
-  userBizRef, userBizCol, userBizDraftsRef, userBizJobsRef, userBizPostsRef, userBizConnsRef,
+  APP_BASE_URL, sendResendEmail,
+  userBizRef, userBizCol,
   checkUidRateLimit, setCors, withAuth,
-  getPlanConfig,
+  getPlanConfig, purgeUserData,
 } = require('../lib/shared');
 
 exports.createBusiness = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
@@ -100,114 +100,10 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
   }
 
   try {
-    const subSnap = await db.collection('subscriptions').doc(uid).get();
-    if (subSnap.exists) {
-      const { squareSubscriptionId } = subSnap.data();
-      if (squareSubscriptionId) {
-        try { await getSquare().subscriptions.cancel({ subscriptionId: squareSubscriptionId }); } catch (_) {}
-      }
-    }
-
-    const [bizSnap, activitySnap] =
-      await Promise.all([
-        userBizCol(uid).get(),
-        db.collection('activityLogs').where('uid', '==', uid).get(),
-      ]);
-
-    const bizSubRefs = [];
-    for (const bizDoc of bizSnap.docs) {
-      const bizId = bizDoc.id;
-      const [draftsSnap, jobsSnap, connsSnap, pendingSnap, libSnap,
-             bizFactsSnap, bizImagesSnap] = await Promise.all([
-        userBizDraftsRef(uid, bizId).get(),
-        userBizJobsRef(uid, bizId).get(),
-        userBizConnsRef(uid, bizId).get(),
-        userBizPostsRef(uid, bizId).get(),
-        userBizRef(uid, bizId).collection('documents').get(),
-        userBizRef(uid, bizId).collection('facts').get(),
-        userBizRef(uid, bizId).collection('images').get(),
-      ]);
-      [draftsSnap, jobsSnap, connsSnap, pendingSnap, libSnap,
-       bizFactsSnap, bizImagesSnap]
-        .forEach(snap => snap.docs.forEach(d => bizSubRefs.push(d.ref)));
-
-      // Revoke OAuth tokens at provider, then collect private subcollection refs for deletion.
-      // Revocation must happen BEFORE docs are deleted — once gone, tokens are unreadable
-      // but remain valid at Google/Facebook. disconnectPlatform uses the same revoke calls.
-      // Firestore does NOT cascade-delete subcollections when a parent doc is deleted.
-      for (const connDoc of connsSnap.docs) {
-        const platformId = connDoc.id;
-        const privSnap = await connDoc.ref.collection('private').get();
-        privSnap.docs.forEach(d => bizSubRefs.push(d.ref));
-
-        const privData = privSnap.docs[0]?.data() || {};
-        const { accessToken, refreshToken } = privData;
-
-        if (platformId === 'google') {
-          for (const tok of [accessToken, refreshToken].filter(Boolean)) {
-            try {
-              await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(tok)}`, { method: 'POST' });
-            } catch (e) { console.warn('[deleteAccount] Google revoke failed:', e.message); }
-          }
-        }
-        if (platformId === 'facebook' || platformId === 'instagram') {
-          if (accessToken) {
-            try {
-              await fetch(`https://graph.facebook.com/v20.0/me/permissions?access_token=${encodeURIComponent(accessToken)}`, { method: 'DELETE' });
-            } catch (e) { console.warn('[deleteAccount] Facebook revoke failed:', e.message); }
-          }
-        }
-      }
-
-      const campSnap = await userBizRef(uid, bizId).collection('campaigns').get();
-      for (const campDoc of campSnap.docs) {
-        const campId = campDoc.id;
-        const [cFacts, cImages, cDocs, cCopy, cAds] = await Promise.all([
-          userBizRef(uid, bizId).collection('campaigns').doc(campId).collection('facts').get(),
-          userBizRef(uid, bizId).collection('campaigns').doc(campId).collection('images').get(),
-          userBizRef(uid, bizId).collection('campaigns').doc(campId).collection('documents').get(),
-          userBizRef(uid, bizId).collection('campaigns').doc(campId).collection('copy').get(),
-          userBizRef(uid, bizId).collection('campaigns').doc(campId).collection('advertising').get(),
-        ]);
-        [cFacts, cImages, cDocs, cCopy, cAds]
-          .forEach(snap => snap.docs.forEach(d => bizSubRefs.push(d.ref)));
-        bizSubRefs.push(campDoc.ref);
-      }
-    }
-
-    const allRefs = [
-      db.collection('users').doc(uid),
-      db.collection('subscriptions').doc(uid),
-      ...bizSnap.docs.map(d => d.ref),
-      ...bizSubRefs,
-      ...activitySnap.docs.map(d => d.ref),
-    ];
-
-    const CHUNK = 450;
-    for (let i = 0; i < allRefs.length; i += CHUNK) {
-      const batch = db.batch();
-      allRefs.slice(i, i + CHUNK).forEach(ref => batch.delete(ref));
-      await batch.commit();
-    }
-
-    try {
-      const storageBucket = admin.storage().bucket();
-      const storageDeletes = [
-        storageBucket.deleteFiles({ prefix: `users/${uid}/images/` }),
-        storageBucket.deleteFiles({ prefix: `photos/${uid}/` }),
-      ];
-      for (const bizDoc of bizSnap.docs) {
-        storageDeletes.push(
-          storageBucket.deleteFiles({ prefix: `businesses/${bizDoc.id}/` })
-        );
-      }
-      await Promise.allSettled(storageDeletes);
-    } catch(e) {
-      console.error('[deleteAccount] Storage cleanup failed:', e.message);
-    }
-
-    await admin.auth().deleteUser(uid);
-
+    // Same walker the dormancy sweep uses, so an owner-initiated delete and an
+    // automatic purge can never clean up different amounts of data.
+    const result = await purgeUserData(uid);
+    if (result.errors.length) console.warn('[deleteAccount] non-fatal:', result.errors.join('; '));
     res.json({ success: true });
   } catch (e) {
     console.error('deleteAccount error:', e);

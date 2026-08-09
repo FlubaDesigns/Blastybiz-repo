@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="global-style.css?v=1786302781360"/>
+<link rel="stylesheet" href="global-style.css?v=1786303641000"/>
 <script src="blastybiz-menu.js?v=7"></script>
 </head>
 <body class="has-site-header">
@@ -97,10 +97,20 @@
     <p>Photos you upload are stored in <strong>Firebase Storage</strong> under your user account path. Only you (and BlastyBiz systems) can access your photos. We do not analyze, sell, or share your photos.</p>
   </section>
 
+  <!--
+    ⚠️ These retention numbers are a privacy promise and must match the
+    `retention` block in the Firestore config/plans document (dormantDays and
+    warningDays). If you change the config, change this section in the same
+    breath — the whole point of the warning window is that we told people.
+  -->
   <section>
     <h2>Data Retention</h2>
-    <p>Your data is kept as long as your account is active. If you cancel, your business profile and listing history are retained so you can reactivate later.</p>
-    <p>To permanently delete your account and all associated data, email <strong>info@blastybiz.com</strong>. We will process deletion requests within 30 days.</p>
+    <p><strong>Paid accounts.</strong> Your data is kept as long as your account is active. If you cancel your subscription, your business profile and listing history are retained so you can reactivate later — cancelling removes paid features, not your data.</p>
+    <p><strong>Free accounts.</strong> If a free account goes unused for <strong>12 months</strong>, we delete it. "Unused" means nobody has signed in or done anything in the app during that time — simply visiting our public website does not count.</p>
+    <p>Before anything is deleted we email you at least <strong>14 days</strong> beforehand, with a second reminder shortly before the deletion date. <strong>Signing in once cancels the deletion</strong> and resets the clock. Upgrading to a paid plan also cancels it.</p>
+    <p>When a free account is deleted we remove your account record, business profile, campaigns, saved listings, drafts, uploaded photos, publishing history and stored platform connections, and we revoke any access tokens you had granted us. This is permanent and cannot be undone.</p>
+    <p>You can see when your account was last active, and how long we will keep it, on your <a href="BlastyBiz-Account.html">Account page</a>.</p>
+    <p>To permanently delete your account and all associated data at any time, use the delete option on your Account page or email <strong>info@blastybiz.com</strong>. We will process deletion requests within 30 days.</p>
   </section>
 
   <section>

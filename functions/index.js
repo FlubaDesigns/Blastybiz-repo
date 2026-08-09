@@ -34,6 +34,7 @@
  *                       scheduledFirestoreExport
  *     business.js     — createBusiness, deleteBusiness, deleteAccount, sendVerificationEmail
  *     misc.js         — sendTestEmail, contactForm, unsubscribeEmail
+ *     retention.js    — scheduledRetentionSweep, adminRetentionReport, adminBackfillLastActive
  *
  * To deploy a single group:
  *   firebase deploy --only functions:adaptListing,functions:suggestPlatforms
@@ -58,3 +59,4 @@ Object.assign(exports, require('./modules/admin'));
 Object.assign(exports, require('./modules/scheduled'));
 Object.assign(exports, require('./modules/business'));
 Object.assign(exports, require('./modules/misc'));
+Object.assign(exports, require('./modules/retention'));

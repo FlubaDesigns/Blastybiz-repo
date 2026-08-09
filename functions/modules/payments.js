@@ -76,6 +76,13 @@ exports.getPlanOptions = onRequest({ invoker: 'public', region: 'us-central1' },
     // approveDraft will do — not what client-side platform metadata (which an
     // admin can override in config/platforms) happens to say.
     autoPlatforms: AUTO_POST_PLATFORMS,
+    // Free-account retention window, so the Account page can tell an owner how
+    // long we keep their data without hardcoding a number that could drift from
+    // the config (and from the privacy policy).
+    retention: {
+      dormantDays: planCfg.retention.dormantDays,
+      warningDays: planCfg.retention.warningDays,
+    },
     // Which checkout buttons can actually complete — a plan whose Square
     // catalog id is missing would 503 on click, so the page hides it instead.
     checkoutReady: {

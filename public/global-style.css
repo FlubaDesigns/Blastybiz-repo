@@ -3816,3 +3816,13 @@ body.listing-preview-page .pub-upsell-btn         { display: inline-block; width
 body.listing-preview-page .pub-upsell-note        { font-size: 12px; color: var(--muted); margin: 12px 0 0; }
 body.listing-preview-page .pub-plat-row.is-locked .pub-plat-icon { opacity: .5; }
 body.listing-preview-page .badge.locked           { background: #151f15; color: var(--muted); border: 1px dashed var(--border); }
+
+/* ── ACCOUNT PAGE: DATA RETENTION NOTICE ──────────────────────────────────── */
+.acct-retention-note {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--muted, #8a8a8a);
+  border-left: 2px solid var(--border, #2a2a2a);
+  padding-left: 10px;
+}

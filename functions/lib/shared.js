@@ -472,6 +472,9 @@ function withAuth(fn, opts = {}) {
         }
       }
     }
+    // Any authenticated call is proof the account is in use. Fire and forget,
+    // throttled per instance, so it costs nothing on the hot path.
+    if (decoded && decoded.uid) touchLastActive(decoded.uid);
     return fn(req, res, decoded);
   };
 }
@@ -568,6 +571,19 @@ const _PLAN_CONFIG_DEFAULTS = {
   aiLimits:  { trial: 10, starter: 10, pro: 100, agency: 500 },
   bizLimits: { trial: 1,  starter: 1,  pro: 3,   agency: 10  },
   prices:    { proMonthly: null, agencyMonthly: null, proAnnual: null, agencyAnnual: null },
+  // Free-account data retention. Editable in config/plans — never hardcode these
+  // numbers at a call site, they are a business decision and a privacy promise.
+  //   mode 'report' — count only, send nothing, delete nothing (the safe default)
+  //   mode 'warn'   — send warning emails, still delete nothing
+  //   mode 'purge'  — warn AND delete accounts whose warning window has expired
+  retention: {
+    mode: 'report',
+    dormantDays: 365,
+    warningDays: 14,
+    finalReminderDays: 3,
+    maxWarnPerRun: 100,
+    maxPurgePerRun: 25,
+  },
 };
 let _planConfigCache = null;
 let _planConfigCachedAt = 0;
@@ -583,6 +599,7 @@ async function getPlanConfig() {
       aiLimits:  { ..._PLAN_CONFIG_DEFAULTS.aiLimits,  ...(d.aiLimits  || {}) },
       bizLimits: { ..._PLAN_CONFIG_DEFAULTS.bizLimits, ...(d.bizLimits || {}) },
       prices:    { ..._PLAN_CONFIG_DEFAULTS.prices,    ...(d.prices    || {}) },
+      retention: { ..._PLAN_CONFIG_DEFAULTS.retention, ...(d.retention || {}) },
     };
   } catch(e) {
     console.warn('[getPlanConfig] Firestore read failed, using defaults:', e.message);
@@ -590,6 +607,9 @@ async function getPlanConfig() {
       aiLimits:  { ..._PLAN_CONFIG_DEFAULTS.aiLimits  },
       bizLimits: { ..._PLAN_CONFIG_DEFAULTS.bizLimits },
       prices:    { ..._PLAN_CONFIG_DEFAULTS.prices    },
+      // Falling back to defaults means falling back to 'report' — a config read
+      // failure must never be able to start deleting accounts.
+      retention: { ..._PLAN_CONFIG_DEFAULTS.retention },
     };
   }
   _planConfigCachedAt = now;
@@ -775,6 +795,218 @@ function buildPlatformBlock(p) {
   ].filter(Boolean).join('\n');
 }
 
+// ── Account activity signal ───────────────────────────────────────────────────
+// `lastActiveAt` on users/{uid} is what the retention sweep measures dormancy
+// against. Getting it wrong deletes a live owner's data, so it is written from
+// two independent places: here (any authenticated Cloud Function call) and from
+// the client on app load. Either one alone is enough to keep an account alive.
+//
+// A missing lastActiveAt is deliberately NOT treated as dormant — Firestore
+// range queries skip documents without the field, so accounts that predate this
+// or somehow lose it can never be swept. Backfill sets it from real evidence.
+const _LAST_ACTIVE_THROTTLE_MS = 6 * 60 * 60 * 1000;
+const _lastActiveTouched = new Map();
+
+function touchLastActive(uid) {
+  if (!uid) return;
+  const now = Date.now();
+  const prev = _lastActiveTouched.get(uid);
+  if (prev && now - prev < _LAST_ACTIVE_THROTTLE_MS) return;
+  _lastActiveTouched.set(uid, now);
+  // Instances are ephemeral and this map is per-instance, so the throttle is
+  // best-effort — worst case is a few redundant writes, never a missed one.
+  if (_lastActiveTouched.size > 5000) _lastActiveTouched.clear();
+
+  // Fire and forget: activity tracking must never fail or slow a real request.
+  // Coming back also cancels any pending purge — clearing the warning markers in
+  // the same write costs nothing and means an owner who returns after a warning
+  // email is safe immediately, not merely at the next sweep.
+  db.collection('users').doc(uid)
+    .set({
+      lastActiveAt:        admin.firestore.FieldValue.serverTimestamp(),
+      dormancyWarnedAt:    admin.firestore.FieldValue.delete(),
+      dormancyPurgeAt:     admin.firestore.FieldValue.delete(),
+      dormancyReminderAt:  admin.firestore.FieldValue.delete(),
+    }, { merge: true })
+    .catch(e => console.warn('[touchLastActive]', uid, e.message));
+}
+
+// Best available evidence that an account was genuinely used, for backfilling
+// lastActiveAt onto accounts that predate the field. Walks the owner's real
+// work — drafts, publish jobs, campaigns — not just the signup date, so a
+// long-standing account that has been in use is never mistaken for dormant.
+async function resolveLastActive(uid, userData = null) {
+  let best = 0;
+  const consider = (ts) => {
+    if (!ts) return;
+    const ms = typeof ts.toMillis === 'function' ? ts.toMillis()
+             : (ts instanceof Date ? ts.getTime() : 0);
+    if (ms > best) best = ms;
+  };
+
+  const data = userData || (await db.collection('users').doc(uid).get()).data() || {};
+  consider(data.lastActiveAt);
+  consider(data.createdAt);
+  consider(data.updatedAt);
+
+  try {
+    const bizSnap = await userBizCol(uid).get();
+    for (const bizDoc of bizSnap.docs) {
+      const b = bizDoc.data() || {};
+      consider(b.createdAt); consider(b.updatedAt);
+
+      const [drafts, jobs, camps] = await Promise.all([
+        userBizDraftsRef(uid, bizDoc.id).orderBy('updatedAt', 'desc').limit(1).get().catch(() => null),
+        userBizJobsRef(uid, bizDoc.id).orderBy('createdAt', 'desc').limit(1).get().catch(() => null),
+        userBizRef(uid, bizDoc.id).collection('campaigns').get().catch(() => null),
+      ]);
+      if (drafts && !drafts.empty) consider(drafts.docs[0].data().updatedAt);
+      if (jobs   && !jobs.empty)   consider(jobs.docs[0].data().createdAt);
+      if (camps) camps.docs.forEach(c => {
+        const cd = c.data() || {};
+        consider(cd.lastUsedAt); consider(cd.updatedAt); consider(cd.createdAt);
+      });
+    }
+  } catch (e) {
+    console.warn('[resolveLastActive] partial scan for', uid, e.message);
+  }
+
+  return best ? admin.firestore.Timestamp.fromMillis(best) : null;
+}
+
+// ── purgeUserData ─────────────────────────────────────────────────────────────
+// The single deletion walker, shared by the owner-initiated account deletion and
+// the dormancy sweep. Firestore does NOT cascade-delete subcollections, so every
+// nested path has to be walked explicitly — deleting users/{uid} alone silently
+// orphans every business, campaign, draft and job underneath it.
+//
+// Pass dryRun to get the exact same counts without deleting anything.
+async function purgeUserData(uid, opts = {}) {
+  const {
+    dryRun = false,
+    cancelSubscription = true,
+    revokeOAuth = true,
+    deleteAuthUser = true,
+  } = opts;
+
+  const result = {
+    uid, dryRun,
+    businesses: 0, docsDeleted: 0, storagePrefixes: [],
+    subscriptionCancelled: false, authUserDeleted: false, errors: [],
+  };
+
+  if (cancelSubscription && !dryRun) {
+    try {
+      const subSnap = await db.collection('subscriptions').doc(uid).get();
+      const squareSubscriptionId = subSnap.exists ? subSnap.data().squareSubscriptionId : null;
+      if (squareSubscriptionId) {
+        try {
+          await getSquare().subscriptions.cancel({ subscriptionId: squareSubscriptionId });
+          result.subscriptionCancelled = true;
+        } catch (e) { result.errors.push('square:' + e.message); }
+      }
+    } catch (e) { result.errors.push('subscription-read:' + e.message); }
+  }
+
+  const [bizSnap, activitySnap] = await Promise.all([
+    userBizCol(uid).get(),
+    db.collection('activityLogs').where('uid', '==', uid).get(),
+  ]);
+  result.businesses = bizSnap.size;
+
+  const bizSubRefs = [];
+  for (const bizDoc of bizSnap.docs) {
+    const bizId = bizDoc.id;
+    const [draftsSnap, jobsSnap, connsSnap, pendingSnap, libSnap,
+           bizFactsSnap, bizImagesSnap] = await Promise.all([
+      userBizDraftsRef(uid, bizId).get(),
+      userBizJobsRef(uid, bizId).get(),
+      userBizConnsRef(uid, bizId).get(),
+      userBizPostsRef(uid, bizId).get(),
+      userBizRef(uid, bizId).collection('documents').get(),
+      userBizRef(uid, bizId).collection('facts').get(),
+      userBizRef(uid, bizId).collection('images').get(),
+    ]);
+    [draftsSnap, jobsSnap, connsSnap, pendingSnap, libSnap, bizFactsSnap, bizImagesSnap]
+      .forEach(snap => snap.docs.forEach(d => bizSubRefs.push(d.ref)));
+
+    // Revoke OAuth at the provider BEFORE deleting the tokens — once the docs are
+    // gone the tokens are unreadable here but still valid at Google/Facebook.
+    for (const connDoc of connsSnap.docs) {
+      const platformId = connDoc.id;
+      const privSnap = await connDoc.ref.collection('private').get();
+      privSnap.docs.forEach(d => bizSubRefs.push(d.ref));
+      if (!revokeOAuth || dryRun) continue;
+
+      const { accessToken, refreshToken } = privSnap.docs[0]?.data() || {};
+      if (platformId === 'google') {
+        for (const tok of [accessToken, refreshToken].filter(Boolean)) {
+          try {
+            await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(tok)}`, { method: 'POST' });
+          } catch (e) { console.warn('[purgeUserData] Google revoke failed:', e.message); }
+        }
+      }
+      if ((platformId === 'facebook' || platformId === 'instagram') && accessToken) {
+        try {
+          await fetch(`https://graph.facebook.com/v20.0/me/permissions?access_token=${encodeURIComponent(accessToken)}`, { method: 'DELETE' });
+        } catch (e) { console.warn('[purgeUserData] Facebook revoke failed:', e.message); }
+      }
+    }
+
+    const campSnap = await userBizRef(uid, bizId).collection('campaigns').get();
+    for (const campDoc of campSnap.docs) {
+      const campRef = userBizRef(uid, bizId).collection('campaigns').doc(campDoc.id);
+      const subs = await Promise.all(
+        ['facts', 'images', 'documents', 'copy', 'advertising'].map(c => campRef.collection(c).get())
+      );
+      subs.forEach(snap => snap.docs.forEach(d => bizSubRefs.push(d.ref)));
+      bizSubRefs.push(campDoc.ref);
+    }
+  }
+
+  const allRefs = [
+    db.collection('users').doc(uid),
+    db.collection('subscriptions').doc(uid),
+    ...bizSnap.docs.map(d => d.ref),
+    ...bizSubRefs,
+    ...activitySnap.docs.map(d => d.ref),
+  ];
+  result.docsDeleted = allRefs.length;
+
+  const storagePrefixes = [`users/${uid}/images/`, `photos/${uid}/`,
+    ...bizSnap.docs.map(d => `businesses/${d.id}/`)];
+  result.storagePrefixes = storagePrefixes;
+
+  if (dryRun) return result;
+
+  const CHUNK = 450;
+  for (let i = 0; i < allRefs.length; i += CHUNK) {
+    const batch = db.batch();
+    allRefs.slice(i, i + CHUNK).forEach(ref => batch.delete(ref));
+    await batch.commit();
+  }
+
+  try {
+    const bucket = admin.storage().bucket();
+    await Promise.allSettled(storagePrefixes.map(prefix => bucket.deleteFiles({ prefix })));
+  } catch (e) {
+    result.errors.push('storage:' + e.message);
+    console.error('[purgeUserData] Storage cleanup failed:', e.message);
+  }
+
+  if (deleteAuthUser) {
+    try {
+      await admin.auth().deleteUser(uid);
+      result.authUserDeleted = true;
+    } catch (e) {
+      // A already-missing auth user is not a failure.
+      if (e.code !== 'auth/user-not-found') result.errors.push('auth:' + e.message);
+    }
+  }
+
+  return result;
+}
+
 module.exports = {
   // firebase-functions v2
   onRequest, onSchedule, onDocumentUpdated, onDocumentCreated,
@@ -808,4 +1040,6 @@ module.exports = {
   // constants
   JOB_STATUS, PLATFORM_DOCS, buildPlatformBlock,
   PLATFORM_CAPABILITY_MAP, AUTO_POST_PLATFORMS,
+  // retention / account lifecycle
+  touchLastActive, resolveLastActive, purgeUserData,
 };
