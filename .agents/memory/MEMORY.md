@@ -29,3 +29,4 @@
 - [BlastyBiz console 404/502 root causes](blastybiz-console-404-502.md) — undeployed CF cloudfunctions.net URLs, missing config/platforms doc, headless probe recipe, benign Firestore aborts.
 - [BlastyBiz scheduled CF verification](blastybiz-scheduler-force-run.md) — force-run via Cloud Scheduler :run API; index exemptions take time to build after deploy, confirm state READY first.
 - [BlastyBiz hosting deploy verification](blastybiz-hosting-verify.md) — cleanUrls:true means a .html URL returns a 34-byte redirect stub; always curl -sL the extensionless path or you'll misread a good deploy as failed.
+- [BlastyBiz smoke test](blastybiz-smoke-test.md) — 74 functions, token via Firebase REST sign-in with playwright@blastybiz.dev; 3 skip-called CFs crash on empty body (pre-existing input-val gap); catalog in scripts/smoke-test.cjs.
