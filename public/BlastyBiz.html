@@ -6,7 +6,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1786294168114" />
+<link rel="stylesheet" href="global-style.css?v=1786295173784" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -75,6 +75,11 @@
 .step5-status-pill.needs-review{background:rgba(255,168,0,.12);color:var(--warn,#ffa800);}
 .step5-status-pill.approved{background:rgba(57,255,20,.12);color:var(--green,#39ff14);}
 .step5-status-pill.failed{background:rgba(255,59,59,.12);color:#ff3b3b;}
+.step5-status-pill.pending{background:rgba(160,160,160,.14);color:var(--muted,#9a9a9a);}
+.s5-writing{display:flex;align-items:center;gap:10px;padding:14px 4px;color:var(--muted,#9a9a9a);font-size:13px;}
+.s5-writing-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(160,160,160,.25);border-top-color:var(--green,#39ff14);animation:s5spin .8s linear infinite;flex-shrink:0;}
+@keyframes s5spin{to{transform:rotate(360deg);}}
+@media (prefers-reduced-motion:reduce){.s5-writing-dot{animation-duration:2.4s;}}
 .step5-copy-text{width:100%;min-height:130px;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);border-radius:10px;padding:12px;font-size:14px;color:var(--text,#ccc);line-height:1.6;resize:vertical;font-family:inherit;box-sizing:border-box;white-space:pre-wrap;}.step5-copy-text:focus-visible{outline:none;box-shadow:0 0 0 2px var(--green,#39ff14);}
 .step5-copy-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
 .step5-action-btn{font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;border:1px solid var(--border,#333);background:transparent;color:var(--muted,#888);cursor:pointer;font-family:inherit;white-space:nowrap;}
@@ -2082,6 +2087,11 @@ async function regeneratePlatformCopy(pid) {
   const platform = platforms.find(p => p.id === pid);
   if (!platform) return;
   const previousContent = platform.adaptedContent || '';
+  const startedEmpty = !previousContent;
+
+  // Retrying an empty card: swap to the writing state so the failure block and its
+  // Retry button aren't left on screen during the call.
+  if (startedEmpty) { _bbMarkGenerating([pid]); renderStep5Review(); }
 
   const regenBtn  = document.getElementById('qp-regen-' + pid);
   const copyTextEl = document.getElementById('qp-copy-text-' + pid);
@@ -2267,6 +2277,13 @@ async function regeneratePlatformCopy(pid) {
     if (freshRegenBtn) { freshRegenBtn.disabled = false; freshRegenBtn.textContent = window._bbDraftFreeRegenUsed ? '🔄 Try again (1 credit)' : '🔄 Try again (free)'; }
     const freshCopyEl = document.getElementById('qp-copy-text-' + pid);
     if (freshCopyEl) freshCopyEl.style.opacity = '1';
+    // A retry that produced nothing must fall back to the failure card, or the
+    // owner is left watching a spinner that will never resolve.
+    if (startedEmpty) {
+      _bbClearGenerating([pid]);
+      const settled = platforms.find(p => p.id === pid);
+      if (!settled || !settled.adaptedContent) renderStep5Review();
+    }
   }
 }
 
@@ -2458,9 +2475,12 @@ function createWizGoTo(step) {
     const _s5enabled = platforms.filter(p => p.enabled);
     const _s5firstUnresolved = _s5enabled.findIndex(p => p._reviewStatus !== 'approved' && p._reviewStatus !== 'skipped');
     _step5PlatIdx = _s5firstUnresolved >= 0 ? _s5firstUnresolved : 0;
-    renderStep5Review();
     // Auto-generate only if platforms don't already have copy — guards against re-firing on back/forward nav
     const hasContent = platforms.some(p => p.enabled && p.adaptedContent);
+    // Mark BEFORE the first render, or the cards paint as "No copy" for a frame
+    // before generation starts.
+    if (!hasContent) _bbSetGenerating(_s5enabled.map(p => p.id));
+    renderStep5Review();
     if (!hasContent) runAdaptation();
   }
 }
@@ -2591,13 +2611,14 @@ function buildStep5Card(p) {
   card.className = 'step5-review-card';
   card.id = 'step5-card-' + p.id;
   const hasContent = !!p.adaptedContent;
+  const isPending  = !hasContent && _bbIsGenerating(p.id);
   const isApi = p.type === 'api';
   const rawHint  = PLATFORM_URL_HINTS[p.id] || '';
   const needsUrl = !rawHint || !rawHint.startsWith('Leave blank');
   const urlHint  = escHtml(rawHint || 'Paste your ' + p.name + ' page URL');
   const savedUrl = escHtml((window._bbPlatformUrls || {})[p.id] || '');
-  const statusClass = p._reviewStatus === 'approved' ? 'approved' : hasContent ? 'needs-review' : 'failed';
-  const statusLabel = p._reviewStatus === 'approved' ? '✓ Approved' : hasContent ? 'Needs Review' : 'No Copy';
+  const statusClass = p._reviewStatus === 'approved' ? 'approved' : hasContent ? 'needs-review' : isPending ? 'pending' : 'failed';
+  const statusLabel = p._reviewStatus === 'approved' ? '✓ Approved' : hasContent ? 'Needs Review' : isPending ? 'Writing…' : 'No Copy';
   const photoNote = isApi
     ? 'These photos will be uploaded automatically when this post goes live.'
     : 'Tap a photo to copy it, then paste it into your post.';
@@ -2637,6 +2658,16 @@ function buildStep5Card(p) {
       +     '<div id="qp-photo-strip-' + p.id + '" class="qp-photo-strip"></div>'
       +   '</div>'
       + '</div>'
+      + '</div>';
+  } else if (isPending) {
+    // Still writing — no retry/exclude yet, those would only invite the owner to
+    // interrupt a generation that is about to succeed.
+    inner += '<div class="s5-card-body">'
+      + '<div class="s5-writing" role="status" aria-live="polite">'
+      +   '<div class="s5-writing-dot"></div>'
+      +   '<div>Writing your ' + escHtml(p.name) + ' ad…</div>'
+      + '</div>'
+      + '<div id="qp-copy-text-' + p.id + '" style="display:none;"></div>'
       + '</div>';
   } else {
     inner += '<div class="s5-card-body">'
@@ -2905,6 +2936,28 @@ window.renderAllPhotos = function() {
 };
 
 // ══════════════════════════════════════════
+// IN-FLIGHT GENERATION TRACKING
+// ══════════════════════════════════════════
+// A platform with no copy is only a FAILURE once its generation has settled.
+// While the AI is still working, its card must show a pending state — otherwise
+// the review screen tells the owner it failed seconds before the copy arrives.
+window._bbGeneratingPlatforms = window._bbGeneratingPlatforms || new Set();
+
+function _bbSetGenerating(ids) {
+  window._bbGeneratingPlatforms = new Set(ids || []);
+}
+function _bbMarkGenerating(ids) {
+  (ids || []).forEach(id => window._bbGeneratingPlatforms.add(id));
+}
+function _bbClearGenerating(ids) {
+  if (!ids) { window._bbGeneratingPlatforms.clear(); return; }
+  ids.forEach(id => window._bbGeneratingPlatforms.delete(id));
+}
+function _bbIsGenerating(pid) {
+  return window._bbGeneratingPlatforms.has(pid);
+}
+
+// ══════════════════════════════════════════
 // AI GENERATION PROGRESS BAR
 // ══════════════════════════════════════════
 let _aiProgressInterval = null;
@@ -2975,13 +3028,19 @@ async function runAdaptation() {
   const includeName = ynState.name === 'yes' && profile.ownerName;
   const includeRole = ynState.role === 'yes' && profile.ownerRole;
 
-  if (!offer) { showToast('Add your offer description first'); return; }
+  // Both guards can fire after createWizGoTo(5) has already marked platforms as
+  // generating — clear it or the cards stay stuck on "Writing…" forever.
+  if (!offer) { _bbSetGenerating([]); renderStep5Review(); showToast('Add your offer description first'); return; }
 
   const enabledPlatforms = platforms.filter(p => p.enabled);
-  if (!enabledPlatforms.length) { showToast('Select at least one platform'); return; }
+  if (!enabledPlatforms.length) { _bbSetGenerating([]); renderStep5Review(); showToast('Select at least one platform'); return; }
 
   // Reset per-platform review status for this fresh generation
   platforms = platforms.map(p => ({ ...p, _reviewStatus: undefined }));
+
+  // Covers entry points other than createWizGoTo (e.g. the Rewrite button)
+  _bbSetGenerating(enabledPlatforms.map(p => p.id));
+  renderStep5Review();
 
   // Show loading, hide button (adapt-btn no longer in DOM — guard is safe)
   const btn = document.getElementById('adapt-btn');
@@ -3063,6 +3122,10 @@ async function runAdaptation() {
 
     savePlatforms();
 
+    // Generation has settled — any platform still without copy is a genuine
+    // failure now, so let those cards fall through to the retry state.
+    _bbSetGenerating([]);
+
     // Save draft to Firestore in background, then show copy inside accordions
     _completeAiProgress();
     const loadingSub2 = document.getElementById('ai-loading-sub');
@@ -3138,6 +3201,9 @@ async function runAdaptation() {
   } finally {
     if (btn) btn.style.display = 'flex';
     loader.classList.remove('visible');
+    // Belt and braces: never leave a card spinning if an unexpected throw skipped
+    // the success path.
+    if (window._bbGeneratingPlatforms.size) { _bbSetGenerating([]); renderStep5Review(); }
   }
 }
 
