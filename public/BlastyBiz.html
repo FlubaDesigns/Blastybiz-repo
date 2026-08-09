@@ -6,7 +6,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1786295173784" />
+<link rel="stylesheet" href="global-style.css?v=1786296587970" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -1315,11 +1315,17 @@ function _tabsScroll(dir) {
 
 function showTab(name) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  // aria-selected must move with the highlight, or screen readers keep announcing
+  // whichever tab was marked selected in the markup (Profile) on every screen.
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.remove('active');
+    t.setAttribute('aria-selected', 'false');
+  });
   document.getElementById('section-' + name).classList.add('active');
   const activeTab = document.getElementById('tab-' + name);
   if (activeTab) {
     activeTab.classList.add('active');
+    activeTab.setAttribute('aria-selected', 'true');
     activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
   }
   if (name === 'platforms') updateStats();
@@ -2126,7 +2132,7 @@ async function regeneratePlatformCopy(pid) {
       ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken }
       : { 'Content-Type': 'application/json' };
 
-    const response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/adaptListing', {
+    const response = await _bbFetchWithTimeout('https://us-central1-blastybiz-9523e.cloudfunctions.net/adaptListing', {
       method: 'POST',
       headers: authHeaders,
       body: JSON.stringify({
@@ -2270,7 +2276,9 @@ async function regeneratePlatformCopy(pid) {
     }
   } catch (err) {
     console.error('regeneratePlatformCopy error:', err);
-    showToast('❌ Regenerate failed — try again');
+    showToast(err && err._isTimeout
+      ? '⏱️ That took too long — try again'
+      : '❌ Regenerate failed — try again');
   } finally {
     // Use fresh element refs — card may have been rebuilt
     const freshRegenBtn = document.getElementById('qp-regen-' + pid);
@@ -2443,6 +2451,24 @@ const SLIDE_TITLES = {
 };
 
 function createWizGoTo(step) {
+  // Some callers jump straight into a wizard step without going through
+  // showTab(), which showed the Create screen while another tab stayed
+  // highlighted. Entering the wizard owns the tab strip too.
+  const _cwSection = document.getElementById('section-create');
+  if (_cwSection && !_cwSection.classList.contains('active')) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    _cwSection.classList.add('active');
+  }
+  const _cwTab = document.getElementById('tab-create');
+  if (_cwTab && !_cwTab.classList.contains('active')) {
+    document.querySelectorAll('.tab').forEach(t => {
+      t.classList.remove('active');
+      t.setAttribute('aria-selected', 'false');
+    });
+    _cwTab.classList.add('active');
+    _cwTab.setAttribute('aria-selected', 'true');
+  }
+
   const stepNum  = SLIDE_IDS.indexOf(step) + 1;   // 1-based position
   const total    = SLIDE_IDS.length;
   for (const id of SLIDE_IDS) {
@@ -2946,6 +2972,30 @@ window.renderAllPhotos = function() {
 // the review screen tells the owner it failed seconds before the copy arrives.
 window._bbGeneratingPlatforms = window._bbGeneratingPlatforms || new Set();
 
+// A hung request never settles on its own, so without this the pending card
+// spins forever and the owner has no way back. Aborting turns a hang into a
+// normal failure that the existing retry path already handles.
+const AI_REQUEST_TIMEOUT_MS = 120000;
+
+async function _bbFetchWithTimeout(url, options, timeoutMs) {
+  const ms = timeoutMs || AI_REQUEST_TIMEOUT_MS;
+  if (typeof AbortController === 'undefined') return fetch(url, options);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { ...options, signal: ctrl.signal });
+  } catch (err) {
+    if (err && err.name === 'AbortError') {
+      const e = new Error('AI request timed out after ' + Math.round(ms / 1000) + 's');
+      e._isTimeout = true;
+      throw e;
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function _bbSetGenerating(ids) {
   window._bbGeneratingPlatforms = new Set(ids || []);
 }
@@ -3086,7 +3136,7 @@ async function runAdaptation() {
       ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken }
       : { 'Content-Type': 'application/json' };
 
-    const response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/adaptListing', {
+    const response = await _bbFetchWithTimeout('https://us-central1-blastybiz-9523e.cloudfunctions.net/adaptListing', {
       method: 'POST',
       headers: authHeaders,
       body: JSON.stringify({
@@ -3204,7 +3254,9 @@ async function runAdaptation() {
   } catch (err) {
     _completeAiProgress();
     console.error(err);
-    showToast('❌ AI error — check connection');
+    showToast(err && err._isTimeout
+      ? '⏱️ Generation took too long — tap Retry Generation to try again'
+      : '❌ AI error — check connection');
     // Generation settled (failed) — clear pending state so cards show the failure/retry UI
     platforms = platforms.map(p => p.status === 'generating' ? { ...p, status: 'idle' } : p);
     renderStep5Review();
@@ -5301,6 +5353,29 @@ import {
 
 window.doSignOut = () => window._bbSignOut(auth, signOut);
 
+// ── Bridge to the classic <script> block further down ────────────────────────
+// That block (Story tab, Business Library, Account tab) is NOT a module, so it
+// cannot see anything imported or declared here — every bare `getDoc`, `db`,
+// `currentUser` or `activeBizId` in it resolves against window instead. Without
+// this bridge those tabs throw ReferenceError the moment they are opened.
+// Session values are accessors, not snapshots, so the classic block always sees
+// the current signed-in user rather than the null captured at load time. The
+// setters keep the existing `window.activeBizId = …` / `window.userPlan = …`
+// assignments in that block working, and write back to the module's variables.
+Object.assign(window, { db, doc, getDoc, setDoc, addDoc, getDocs, deleteDoc, updateDoc, collection, query, orderBy });
+// Account deletion needs to sign out, but it lives in the classic block and cannot
+// see `auth`. Exposed as a narrow helper rather than putting `auth` on window.
+window._bbAuthSignOut = () => signOut(auth);
+Object.defineProperty(window, 'currentUser', {
+  configurable: true, get: () => currentUser, set: (v) => { currentUser = v; },
+});
+Object.defineProperty(window, 'activeBizId', {
+  configurable: true, get: () => activeBizId, set: (v) => { activeBizId = v; },
+});
+Object.defineProperty(window, 'userPlan', {
+  configurable: true, get: () => userPlan, set: (v) => { userPlan = v; },
+});
+
 // ── Magic-link trial sign-in ─────────────────────────────────────────
 if (isSignInWithEmailLink(auth, window.location.href)) {
   let _mlEmail = window.localStorage.getItem('bb_trial_email');
@@ -7124,7 +7199,15 @@ window.confirmDeleteAccount = async function() {
     const idToken = await currentUser.getIdToken();
     const r = await fetch(`${CF_BASE}/deleteAccount`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${idToken}`}, body: JSON.stringify({}) });
     const data = await r.json();
-    if (data.success) { await auth.signOut(); window.location.href = 'BlastyBiz-Home.html'; }
+    if (data.success) {
+      // session.js owns the canonical key list — clearing it stops a deleted
+      // account's cached profile from surviving on a shared device.
+      if (window._bbClearStorage) window._bbClearStorage();
+      // The account is already gone server-side, so a failed sign-out must not
+      // strand the user on this page.
+      try { await window._bbAuthSignOut(); } catch (_) {}
+      window.location.href = 'BlastyBiz-Home.html';
+    }
     else {
       if (errEl) { errEl.textContent = data.error || 'Delete failed. Please try again.'; errEl.style.display = 'block'; }
       if (btn) { btn.textContent = 'Delete Everything'; btn.disabled = false; }

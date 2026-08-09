@@ -28,5 +28,18 @@ Keys in that file: `tokens.access_token`, `tokens.refresh_token`
 Reads return typed fields: `{ stringValue, integerValue, booleanValue, arrayValue, mapValue, timestampValue, nullValue }`.
 Writes must use the same typed format. Always write converter helpers (`fromFirestore` / `toFirestore`) before attempting REST operations.
 
+## Reserved field names (silent 400 on create)
+Field names wrapped in double underscores (`__seeded__`, `__meta__`) are **reserved** by
+Firestore and rejected with a bare HTTP 400 on write. Rename to a normal identifier
+(`seededNote`). Note the admin UI legitimately stores keys like `__stepOrder__` inside a
+**map value** — the restriction applies to top-level document field names.
+
+## A missing doc is a real 404 on the wire
+`GET .../documents/<col>/<id>` returns **404** when the document does not exist — it is not an
+empty 200. Any page that fetches an optional config doc over REST will therefore log a console
+404 until that doc exists, even when the code handles the absence correctly. Seeding a
+placeholder document is the fix; it does not indicate a rules or auth problem (denied reads
+return **403**).
+
 ## CF deploy timeout workaround
 If you need to deploy a single function: start with `nohup ... &` or just fire the deploy and accept the bash tool timeout — the GCP Cloud Build job continues running. Then confirm with `firebase functions:list` afterward.

@@ -47,6 +47,40 @@ the plain-script line range for bare module-scoped identifiers *before* investig
 keys, models, auth tokens, CORS, or rate limits. Cheap check:
 `awk 'NR>=<plainStart> && NR<=<plainEnd>' page.html | grep -nE "[^._A-Za-z0-9](auth|db|getDoc|setDoc)\s*[(.]"`
 
+## The main app page has the same split — and a whole tab range depended on it
+
+`BlastyBiz.html` is not just the wizard: it has a `<script type="module">` holding every
+Firebase import plus the session state (`currentUser`, `activeBizId`, `userPlan`), followed by
+a large classic `<script>` block that implements the Story tab, Business Library and Account
+tab. That classic block calls bare `getDoc`, `doc`, `db`, `currentUser`, `activeBizId` — all
+module-scoped, therefore all `undefined` there. Every one of those tabs threw
+`ReferenceError` on click.
+
+**Why it survived so long:** each tab loader wraps its body in `try/catch` and logs
+`loadStory: …` / `loadAccount: …`. The tab still *renders* (the markup is static), it just
+never populates. It reads as "empty state", not "crash", unless you open the console.
+
+**How to apply:** the fix is a one-time bridge at the TOP of the module block, not edits at
+40+ call sites — a classic script resolves a bare identifier against `window`, so publishing
+the names there makes existing code work untouched:
+- Plain values for the imports: `Object.assign(window, { db, doc, getDoc, setDoc, … })`.
+- Mutable session state must be **accessors, not snapshots** — `Object.defineProperty(window,
+  'currentUser', { get: () => currentUser, set: v => { currentUser = v; } })`. A plain
+  `window.currentUser = currentUser` at module top captures `null`, because the user is not
+  signed in yet at that point.
+- Always give those accessors a **setter**. The classic block already does
+  `window.activeBizId = …` and `window.userPlan = …`; a getter-only property makes those
+  assignments throw in strict mode / silently no-op otherwise.
+- Ordering is safe even though the bridge sits above the `let currentUser = null;`
+  declarations: the accessor bodies only run when a tab is opened, long after the module has
+  finished. But do not read `window.currentUser` in the gap between the two, or you hit TDZ.
+- Remember classic inline scripts execute *before* deferred module scripts, so the bridge
+  cannot be consumed at classic-block parse time — only from inside functions called later.
+
+**Diagnostic heuristic (generalised):** a tab or panel that renders its chrome but stays
+empty, with a `someLoader: ReferenceError` in the console, is this bug. Check which script
+block the function literally sits in before assuming the data or rules are at fault.
+
 ## Diagnostics on the onboarding wizard are debug-gated on purpose
 
 The category step's failure UI shows a short message plus a `Reference: <code>` only.
