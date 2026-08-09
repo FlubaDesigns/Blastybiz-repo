@@ -45,3 +45,15 @@ can throw, and the user must still be able to dismiss the guide.
 **How to apply:** in any dismiss/close path, detach the visible element before
 running cleanup that reaches into code you don't control, and wrap that cleanup so
 a failure only logs.
+
+## Dead wizard code inside Onboard2.html
+
+The old conversational wizard (lockField / tap-to-edit rows / _ob2JumpToKey engine)
+is still fully present in BlastyBiz-Onboard2.html but NEVER renders: a module
+script at the bottom redirects every visitor to CreateBiz.html?guide=1 (after
+completing magic-link sign-in when present). Tasks planned against that wizard UI
+cannot be exercised in production — test the guide layer on CreateBiz instead.
+
+**How to apply:** on the guide layer, choice/select steps do NOT auto-advance;
+the owner taps "Next →". Back moves exactly one step and the real form fields are
+always directly tappable/editable — there are no locked "tap to edit" rows.
