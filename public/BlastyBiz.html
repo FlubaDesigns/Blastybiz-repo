@@ -6,7 +6,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1786298517234" />
+<link rel="stylesheet" href="global-style.css?v=1786302781360" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -1148,6 +1148,15 @@
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+<!-- PAYMENT CONFIRMING — only shown when arriving back from Square checkout -->
+<div class="pay-confirm" id="pay-confirm" role="status" aria-live="polite" hidden>
+  <div class="pay-confirm-inner">
+    <div class="pay-confirm-spinner"></div>
+    <h2 class="pay-confirm-title" id="pay-confirm-title">Confirming your payment…</h2>
+    <p class="pay-confirm-sub" id="pay-confirm-sub">Square is letting us know it went through. This usually takes a few seconds.</p>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" integrity="sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e" crossorigin="anonymous"></script>
 <script src="platform-categories.js"></script>
@@ -5349,8 +5358,78 @@ import { auth, db, storage } from './firebase-init-v2.js';
 import { onAuthStateChanged, signOut, isSignInWithEmailLink, signInWithEmailLink } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   doc, getDoc, setDoc, addDoc, collection, serverTimestamp, writeBatch, deleteDoc,
-  query, where, getDocs, orderBy, limit, updateDoc, arrayUnion, arrayRemove, increment
+  query, where, getDocs, orderBy, limit, updateDoc, arrayUnion, arrayRemove, increment,
+  onSnapshot
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ── awaitPaidPlan ────────────────────────────────────────────────────────────
+// Called only when the owner has just come back from Square checkout. Payment
+// confirmation arrives via the squareWebhook Cloud Function, not via the
+// redirect, so the plan on users/{uid} can still say 'starter' at this moment.
+// Rather than briefly showing free-plan limits to someone who just paid, hold
+// on a confirming state until the webhook lands (or we give up waiting).
+const PAY_CONFIRM_TIMEOUT_MS = 90000;
+
+function awaitPaidPlan(uid) {
+  const el = document.getElementById('pay-confirm');
+  if (el) el.hidden = false;
+
+  return new Promise((resolve) => {
+    let settled = false;
+    let unsub = null;
+    let timer = null;
+
+    const applyPlan = (plan) => {
+      userPlan = plan;
+      window.userPlan = plan;
+      window._bbUserPlan = plan;
+      const defLimits = { starter: 1, pro: 3, agency: 10 };
+      window._bizLimit = defLimits[plan] || window._bizLimit || 1;
+      if (typeof window._applyPlanOverlays === 'function') window._applyPlanOverlays();
+    };
+
+    const finish = (plan) => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      if (unsub) { try { unsub(); } catch (_) {} }
+      if (plan) applyPlan(plan);
+      if (el) el.hidden = true;
+      resolve(plan || null);
+    };
+
+    try {
+      unsub = onSnapshot(doc(db, 'users', uid), (snap) => {
+        const plan = snap.exists() ? (snap.data().plan || 'starter') : 'starter';
+        if (plan === 'pro' || plan === 'agency') finish(plan);
+      }, (e) => {
+        console.error('[awaitPaidPlan] snapshot error', e);
+        finish(null);
+      });
+    } catch (e) {
+      console.error('[awaitPaidPlan] listener failed', e);
+      finish(null);
+      return;
+    }
+
+    timer = setTimeout(async () => {
+      // Still unconfirmed. One last direct read in case the listener missed it
+      // (offline mode, dropped stream), then let them get on with their blast
+      // rather than trap them here — the paid-welcome email will catch up.
+      try {
+        const snap = await getDoc(doc(db, 'users', uid));
+        const plan = snap.exists() ? (snap.data().plan || 'starter') : 'starter';
+        if (plan === 'pro' || plan === 'agency') { finish(plan); return; }
+      } catch (e) { console.warn('[awaitPaidPlan] final read failed', e); }
+
+      const t = document.getElementById('pay-confirm-title');
+      const s = document.getElementById('pay-confirm-sub');
+      if (t) t.textContent = 'Still confirming…';
+      if (s) s.textContent = 'Your payment is going through but the confirmation is slow. Carry on — we\u2019ll email you and unlock everything the moment it lands.';
+      setTimeout(() => finish(null), 4000);
+    }, PAY_CONFIRM_TIMEOUT_MS);
+  });
+}
 import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js';
 import {
   ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject
@@ -5866,8 +5945,13 @@ onAuthStateChanged(auth, async (user) => {
           /* ── Auto-generate first blast from onboarding ──────── */
           if (_qp.get('autogenerate') === '1') {
             window._bbFromOnboarding = true;
+            /* Square sent them back here after paying — the webhook that flips
+               their plan is server-to-server and may not have landed yet. Read
+               the flag before replaceState strips it. */
+            const _cameFromCheckout = _qp.get('checkout') === '1';
             window.history.replaceState({}, '', window.location.pathname + '?bizId=' + activeBizId);
-            setTimeout(() => {
+
+            const _startGeneration = () => {
               /* Enable platforms from onboarding selection, fallback to first available */
               const onboardingPlats = _qpCamp.onboardingPlatforms || [];
               if (onboardingPlats.length) {
@@ -5880,7 +5964,13 @@ onAuthStateChanged(auth, async (user) => {
               }
               /* Kick off wizard at generation step */
               createWizGoTo(5);
-            }, 800);
+            };
+
+            if (_cameFromCheckout) {
+              awaitPaidPlan(user.uid).then(_startGeneration);
+            } else {
+              setTimeout(_startGeneration, 800);
+            }
           }
         }
       } else if (campaigns.length && !_qp.get('newcampaign')) {

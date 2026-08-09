@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta charset="UTF-8"/>
+  <meta name="theme-color" content="#000000"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>BlastyBiz — Pick Your Plan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="global-style.css?v=1786302781360"/>
+  <style>body{visibility:hidden}</style>
+  <script type="importmap">
+{
+  "integrity": {
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js":       "sha384-wY0ZJNz4V101UNldqXjHz0zuQq2LFWQg9C6MejyUaw58KxejR+Fq3MinHCx/5y77",
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js":      "sha384-zgcbfcVBtrcOc7CwpMfyGnYBfuol1tUBzdw+qfnzk43mD50+D2shQKuddFaWQfsc",
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js": "sha384-wrbWJmwwo/g58yNujR9u0v2HlcTvuGH1Pb8q0J3RR0EyaqypirmzeoG8+qkopilb",
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js":   "sha384-MiuhCiy/+BHXhKiAgD/lPmYfVJHJMXdXL6BVfwPkfeg7UCfcjV6EMGCWk+LqguU1"
+  }
+}
+</script>
+  <!-- escHtml must exist before any render runs — a late include throws mid-render. -->
+  <script src="escape-utils.js?v=1"></script>
+  <script type="module" src="./auth-guard.js"></script>
+  <script src="blastybiz-menu.js?v=7"></script>
+</head>
+<body class="app-page choose-plan-page has-site-header">
+<div id="header__inject"></div>
+<script src="header-loader.js?v=1"></script>
+
+<main class="main">
+<div class="main-inner">
+
+  <!-- ── HERO ─────────────────────────────────────── -->
+  <section class="card cp-hero">
+    <div class="cp-eyebrow">Setup saved · Last step</div>
+    <h1 class="big-title" id="cp-title">Pick how you want to post</h1>
+    <p class="sub" id="cp-sub">Loading your platforms…</p>
+  </section>
+
+  <!-- ── PERSONALISED PLATFORM BREAKDOWN ──────────── -->
+  <section class="card section-mt hidden" id="cp-plat-card">
+    <div class="card-title">📣 The platforms you picked</div>
+    <div id="cp-plat-list"></div>
+    <p class="cp-plat-note" id="cp-plat-note"></p>
+  </section>
+
+  <!-- ── BILLING PERIOD ───────────────────────────── -->
+  <div class="cp-billing hidden" id="cp-billing" role="group" aria-label="Billing period">
+    <button type="button" class="cp-billing-opt active" data-period="monthly" aria-pressed="true">Monthly</button>
+    <button type="button" class="cp-billing-opt" data-period="annual" aria-pressed="false">Annual <span class="cp-billing-save">2 months free</span></button>
+  </div>
+
+  <!-- ── PLAN CARDS ───────────────────────────────── -->
+  <div class="cp-plans" id="cp-plans">
+    <div class="cp-loading">Loading plans…</div>
+  </div>
+
+  <p class="cp-foot" id="cp-foot"></p>
+
+</div><!-- /.main-inner -->
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { auth, db } from './firebase-init-v2.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js';
+
+const escHtml = window.escHtml;   // escape-utils.js
+const CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
+
+const params = new URLSearchParams(location.search);
+const bizId  = params.get('bizId') || '';
+const cid    = params.get('cid')   || '';
+
+// Where the owner ends up once they've chosen. Both the free path and the
+// post-payment return land on the generation step of the campaign they just
+// set up — never back at the start of setup.
+function generateUrl(withCheckout) {
+  if (!bizId || !cid) return 'BlastyBiz.html';
+  return 'BlastyBiz.html?bizId=' + encodeURIComponent(bizId)
+       + '&cid=' + encodeURIComponent(cid)
+       + '&autogenerate=1'
+       + (withCheckout ? '&checkout=1' : '');
+}
+
+let currentUser  = null;
+let billingPeriod = 'monthly';
+let planOptions   = null;
+let picked        = [];   // [{ slug, name, icon, auto }]
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function money(n) {
+  if (n == null || isNaN(n)) return '—';
+  return '$' + (Number(n) % 1 === 0 ? Number(n) : Number(n).toFixed(2));
+}
+
+// ── Personalised platform breakdown ─────────────────────────────────────────
+// "auto" here means the platform is technically capable of being posted to by
+// an app. On the free plan the server forces every platform to copy-paste
+// regardless, which is exactly the difference this page is selling.
+function renderPlatforms() {
+  const card = document.getElementById('cp-plat-card');
+  const list = document.getElementById('cp-plat-list');
+  const note = document.getElementById('cp-plat-note');
+  const sub  = document.getElementById('cp-sub');
+  if (!picked.length) {
+    card.classList.add('hidden');
+    sub.textContent = 'Auto-posting is the difference between the free plan and a paid one.';
+    return;
+  }
+  card.classList.remove('hidden');
+
+  const autos   = picked.filter(p => p.auto);
+  const manuals = picked.filter(p => !p.auto);
+
+  list.innerHTML =
+    '<div class="cp-plat-row cp-plat-head">'
+    + '<span class="cp-plat-icon"></span>'
+    + '<span class="cp-plat-name">Platform</span>'
+    + '<span class="cp-plat-col">On Free</span>'
+    + '<span class="cp-plat-col">On Pro</span>'
+    + '</div>'
+    + picked.map(p =>
+      '<div class="cp-plat-row' + (p.auto ? ' is-auto' : '') + '">'
+      + '<span class="cp-plat-icon">' + escHtml(p.icon) + '</span>'
+      + '<span class="cp-plat-name">' + escHtml(p.name) + '</span>'
+      + '<span class="cp-plat-col cp-plat-free">✋ You paste it</span>'
+      + '<span class="cp-plat-col' + (p.auto ? ' cp-plat-win' : '') + '">'
+      +   (p.auto ? '⚡ Posts itself' : '✋ You paste it') + '</span>'
+      + '</div>'
+    ).join('');
+
+  const titleEl = document.getElementById('cp-title');
+  if (autos.length) {
+    const names = autos.map(p => p.name).join(', ').replace(/, ([^,]*)$/, ' and $1');
+    titleEl.textContent = autos.length === 1
+      ? 'BlastyBiz can post to ' + autos[0].name + ' for you'
+      : 'BlastyBiz can post to ' + autos.length + ' of these for you';
+    sub.textContent = names + ' can publish automatically on a paid plan. '
+      + 'On the free plan you copy and paste all ' + picked.length
+      + ' post' + (picked.length > 1 ? 's' : '') + ' by hand, every time.';
+    note.textContent = manuals.length
+      ? (manuals.length === 1
+          ? manuals[0].name + ' doesn\u2019t let any app post on your behalf — that\u2019s their policy, so it stays copy-paste on every plan.'
+          : manuals.length + ' of your platforms (' + manuals.map(p => p.name).join(', ')
+            + ') don\u2019t let any app post on your behalf — that\u2019s their policy, so those stay copy-paste on every plan.')
+      : '';
+  } else {
+    titleEl.textContent = 'Your platforms are all copy-paste';
+    sub.textContent = 'None of the platforms you picked let an app post on your behalf — that\u2019s their policy, not ours. '
+      + 'Paid plans still get you more AI writes a month and more businesses.';
+    note.textContent = 'Add Google, Facebook or Instagram later and a paid plan will publish to those automatically.';
+  }
+}
+
+// ── Plan cards ──────────────────────────────────────────────────────────────
+function renderPlans() {
+  const wrap = document.getElementById('cp-plans');
+  if (!planOptions) return;
+
+  const ai   = planOptions.aiLimits  || {};
+  const biz  = planOptions.bizLimits || {};
+  const pr   = planOptions.prices    || {};
+  const rdy  = planOptions.checkoutReady || {};
+  const per  = billingPeriod === 'annual' ? '/yr' : '/mo';
+  const autoCount = picked.filter(p => p.auto).length;
+
+  document.getElementById('cp-billing').classList.remove('hidden');
+
+  function planCard(key, opts) {
+    const ready = key === 'free' ? true : !!(rdy[key] && rdy[key][billingPeriod]);
+    const feats = opts.features.map(f =>
+      '<li' + (f.off ? ' class="off"' : '') + '>' + escHtml(f.text) + '</li>'
+    ).join('');
+    let cta;
+    if (key === 'free') {
+      cta = '<button type="button" class="pricing__btn pricing__btn--outline" data-cp-free="1">'
+          + escHtml(opts.cta) + '</button>';
+    } else if (ready) {
+      cta = '<button type="button" class="pricing__btn pricing__btn--primary" data-cp-plan="' + escHtml(key) + '">'
+          + escHtml(opts.cta) + '</button>';
+    } else {
+      cta = '<button type="button" class="pricing__btn pricing__btn--outline" disabled>Not available right now</button>';
+    }
+    return '<div class="pricing__card' + (opts.featured ? ' pricing__card--featured' : '') + '">'
+      + (opts.badge ? '<span class="pricing__badge">' + escHtml(opts.badge) + '</span>' : '')
+      + '<div class="pricing__tier">' + escHtml(opts.tier) + '</div>'
+      + '<div class="pricing__amount"><span class="pricing__num">' + escHtml(opts.price) + '</span>'
+      +   '<span class="pricing__per">' + escHtml(opts.per) + '</span></div>'
+      + '<p class="cp-card-line">' + escHtml(opts.line) + '</p>'
+      + '<ul class="pricing__features">' + feats + '</ul>'
+      + cta
+      + '</div>';
+  }
+
+  const freeAutoLine = autoCount
+    ? 'You paste all ' + picked.length + ' by hand'
+    : 'Copy-paste posting';
+
+  wrap.innerHTML =
+    planCard('free', {
+      tier: 'Free', price: '$0', per: '/mo',
+      line: 'Keep everything you just set up. Post it yourself.',
+      cta: 'Continue free →',
+      features: [
+        { text: freeAutoLine },
+        { text: (ai.starter ?? 10) + ' AI writes a month' },
+        { text: (biz.starter ?? 1) + ' business' },
+        { text: 'Auto-posting to Google, Facebook & Instagram', off: true },
+        { text: 'Copy Library & AI business memory', off: true },
+      ],
+    })
+    + planCard('pro', {
+      tier: 'Pro', featured: true, badge: 'Most popular',
+      price: money(billingPeriod === 'annual' ? pr.proAnnual : pr.proMonthly), per,
+      line: autoCount
+        ? 'BlastyBiz posts to ' + autoCount + ' of your platform' + (autoCount > 1 ? 's' : '') + ' without you.'
+        : 'More AI writes, more businesses, auto-posting when you add it.',
+      cta: 'Go Pro →',
+      features: [
+        { text: autoCount ? autoCount + ' of your platforms post automatically' : 'Auto-posting to Google, Facebook & Instagram' },
+        { text: (ai.pro ?? 100) + ' AI writes a month' },
+        { text: (biz.pro ?? 3) + ' businesses' },
+        { text: 'Copy Library & AI business memory' },
+        { text: 'Scheduling and posting history' },
+      ],
+    })
+    + planCard('agency', {
+      tier: 'Agency',
+      price: money(billingPeriod === 'annual' ? pr.agencyAnnual : pr.agencyMonthly), per,
+      line: 'For running this on behalf of other people\u2019s businesses.',
+      cta: 'Go Agency →',
+      features: [
+        { text: 'Everything in Pro' },
+        { text: (ai.agency ?? 500) + ' AI writes a month' },
+        { text: (biz.agency ?? 10) + ' businesses' },
+        { text: 'Priority publishing queue' },
+      ],
+    });
+
+  document.getElementById('cp-foot').textContent =
+    'Cancel any time. Choosing free now doesn\u2019t lose anything — your business, your story answers and this campaign are already saved.';
+}
+
+// ── Actions ─────────────────────────────────────────────────────────────────
+async function startCheckout(plan, btn) {
+  if (!currentUser) return;
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Setting up checkout…';
+  try {
+    const idToken = await currentUser.getIdToken();
+    const r = await fetch(CF + '/createCheckoutSession', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+      body: JSON.stringify({ plan, billingPeriod, returnPath: '/' + generateUrl(true) }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (r.ok && data.url) { window.location.href = data.url; return; }
+    showToast(data.error || 'Checkout is unavailable right now.');
+  } catch (e) {
+    console.error('[choose-plan] checkout', e);
+    showToast('Checkout is unavailable right now.');
+  }
+  btn.disabled = false;
+  btn.textContent = original;
+}
+
+document.getElementById('cp-plans').addEventListener('click', (e) => {
+  const paid = e.target.closest('[data-cp-plan]');
+  if (paid) { startCheckout(paid.getAttribute('data-cp-plan'), paid); return; }
+  const free = e.target.closest('[data-cp-free]');
+  if (free) { window.location.href = generateUrl(false); }
+});
+
+document.getElementById('cp-billing').addEventListener('click', (e) => {
+  const opt = e.target.closest('[data-period]');
+  if (!opt) return;
+  billingPeriod = opt.getAttribute('data-period');
+  document.querySelectorAll('#cp-billing .cp-billing-opt').forEach(b => {
+    const on = b === opt;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  renderPlans();
+});
+
+// ── Boot ────────────────────────────────────────────────────────────────────
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;   // auth-guard.js owns the redirect
+  currentUser = user;
+
+  // Already paying? Nothing to sell — go straight on to generation.
+  try {
+    const uSnap = await getDoc(doc(db, 'users', user.uid));
+    const plan  = (uSnap.exists() ? uSnap.data().plan : '') || 'starter';
+    if (plan === 'pro' || plan === 'agency') {
+      window.location.replace(generateUrl(false));
+      return;
+    }
+  } catch (e) { console.warn('[choose-plan] plan read failed', e); }
+
+  // Read the platform picks from the campaign we just saved rather than the
+  // URL — the saved doc is what generation and publishing will actually use.
+  const [platMeta, campPlats] = await Promise.all([
+    loadPlatforms(db, getDoc, doc).catch(() => PLATFORM_DEFAULTS),
+    (async () => {
+      if (!bizId || !cid) return [];
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid, 'businesses', bizId, 'campaigns', cid));
+        if (!snap.exists()) return [];
+        const d = snap.data();
+        const p = d.platformsEnabled || d.onboardingPlatforms;
+        return Array.isArray(p) ? p : [];
+      } catch (e) { console.warn('[choose-plan] campaign read failed', e); return []; }
+    })(),
+  ]);
+
+  let planFailed = false;
+  try {
+    const idToken = await user.getIdToken();
+    const r = await fetch(CF + '/getPlanOptions', { headers: { 'Authorization': 'Bearer ' + idToken } });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    planOptions = await r.json();
+  } catch (e) {
+    console.error('[choose-plan] plan options failed', e);
+    planFailed = true;
+  }
+
+  // Which platforms auto-post is the server's call, not the client's — an admin
+  // override in config/platforms must not make this page promise something
+  // approveDraft will then force to copy-paste. Fall back to the display
+  // metadata only if the server didn't answer.
+  const serverAuto = Array.isArray(planOptions && planOptions.autoPlatforms)
+    ? new Set(planOptions.autoPlatforms) : null;
+  const bySlug = Object.fromEntries((platMeta || []).map(p => [p.slug, p]));
+  picked = campPlats.map(slug => {
+    const m = bySlug[slug] || { slug, name: slug, icon: '•', capabilityLevel: 'manual_assisted' };
+    return {
+      slug,
+      name: m.name,
+      icon: m.icon,
+      auto: serverAuto ? serverAuto.has(slug) : m.capabilityLevel !== 'manual_assisted',
+    };
+  });
+  renderPlatforms();
+
+  if (planFailed) {
+    // Without live config we can't show a price we're sure of, so don't guess.
+    document.getElementById('cp-plans').innerHTML =
+      '<div class="cp-loading">Couldn\u2019t load plan pricing right now. '
+      + '<button type="button" class="pricing__btn pricing__btn--outline cp-inline-btn" data-cp-free="1">Continue free →</button></div>';
+    return;
+  }
+  renderPlans();
+});
+</script>
+
+<div id="site-footer-inject"></div>
+<script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
+</body>
+</html>

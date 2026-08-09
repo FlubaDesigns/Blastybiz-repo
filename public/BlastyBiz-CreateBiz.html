@@ -851,9 +851,19 @@ window.cbSubmit = async function() {
     document.getElementById('cb-form').style.display   = 'none';
     document.getElementById('cb-success').style.display = 'block';
 
-    setTimeout(() => {
-      window.location.href = 'BlastyBiz.html?bizId=' + bizId + '&cid=' + campId + '&autogenerate=1';
-    }, 2200);
+    // Everything the owner typed is now committed. Only after that do we send
+    // them anywhere — a new business goes to the plan step (which forwards
+    // paid accounts straight through), editing an existing one does not.
+    const nextUrl = editBizId
+      ? 'BlastyBiz.html?bizId=' + bizId + '&cid=' + campId + '&autogenerate=1'
+      : 'BlastyBiz-Choose-Plan.html?bizId=' + bizId + '&cid=' + campId;
+
+    if (!editBizId) {
+      const sp = document.getElementById('cb-success-p');
+      if (sp) sp.textContent = 'Your business and first campaign are saved. One last thing — how you want to post.';
+    }
+
+    setTimeout(() => { window.location.href = nextUrl; }, 2200);
 
   } catch(e) {
     console.error('[cb save]', e);

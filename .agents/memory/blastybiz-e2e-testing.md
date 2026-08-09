@@ -25,6 +25,17 @@ function) deploy before a tester can see it, and the tester must hard-reload to
 beat the cache. A tester reporting old behaviour usually means one of those two
 steps was skipped.
 
+## The Playwright account is on a PAID plan
+
+`playwright@blastybiz.dev` sits on the pro plan, so every free-plan/paywall path
+silently forwards or renders the paid variant — a tester will report this as a broken
+page when it is actually correct behaviour.
+
+**How to apply:** to exercise free-plan paths, flip that user's `plan` field to
+`starter` over the Firestore REST API (see the REST-access note), run the tester, then
+**restore it to `pro`** in the same session. Tell the tester in the prompt which plan
+it is on, or it will misdiagnose an intentional redirect as a failure.
+
 ## Testers report false failures on persistence
 
 Testers probe element ids that don't exist and conclude data didn't save. Confirm

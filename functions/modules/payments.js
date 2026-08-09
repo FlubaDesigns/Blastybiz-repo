@@ -7,8 +7,83 @@
 const {
   onRequest, admin, db, crypto,
   APP_BASE_URL, sendResendEmail, getSquare,
-  userBizCol, checkUidRateLimit, withAuth,
+  userBizCol, checkUidRateLimit, withAuth, getPlanConfig,
+  AUTO_POST_PLATFORMS,
 } = require('../lib/shared');
+
+// ── Pricing ───────────────────────────────────────────────────────────────────
+// settings/pricing is the source of truth for what the owner is actually charged
+// (adminUpdatePricing writes it alongside the Square catalog plan ids). Both the
+// checkout endpoint and the plan-comparison endpoint read through this helper so
+// the price shown on the plan step can never drift from the price charged.
+const PRICING_DEFAULTS = { proMonthly: 19, agencyMonthly: 99, proAnnual: 199, agencyAnnual: 999 };
+
+async function loadPricing() {
+  const out = { ...PRICING_DEFAULTS, planIds: { pro: {}, agency: {} } };
+  try {
+    const snap = await db.collection('settings').doc('pricing').get();
+    if (snap.exists) {
+      const d = snap.data();
+      if (d.proMonthly)    out.proMonthly    = d.proMonthly;
+      if (d.agencyMonthly) out.agencyMonthly = d.agencyMonthly;
+      if (d.proAnnual)     out.proAnnual     = d.proAnnual;
+      if (d.agencyAnnual)  out.agencyAnnual  = d.agencyAnnual;
+      out.planIds.pro.monthly    = d.squareProMonthlyPlanId;
+      out.planIds.pro.annual     = d.squareProAnnualPlanId;
+      out.planIds.agency.monthly = d.squareAgencyMonthlyPlanId;
+      out.planIds.agency.annual  = d.squareAgencyAnnualPlanId;
+    }
+  } catch (e) {
+    console.warn('[loadPricing] Firestore pricing read failed, using defaults:', e.message);
+  }
+  return out;
+}
+
+// ── Checkout return path ──────────────────────────────────────────────────────
+// The plan step and the publish page each want the owner dropped back where they
+// left off rather than on the dashboard. Square redirects to whatever absolute
+// URL we hand it, so the caller-supplied path is validated against an allowlist
+// shape before it's appended to APP_BASE_URL — an unvalidated value here is an
+// open redirect out of the app.
+const RETURN_PATH_RE = /^\/BlastyBiz[A-Za-z0-9._-]*\.html(\?[A-Za-z0-9=&_%.~-]{0,240})?$/;
+
+function safeReturnPath(p) {
+  if (typeof p !== 'string' || !p || p.length > 300) return null;
+  if (p.includes('//') || p.includes('\\') || p.includes('..')) return null;
+  // %2F is a slash Square might normalise before following the redirect. The
+  // path segment is allowlisted so the origin can't move either way, but there
+  // is no legitimate reason for an encoded slash in one of our return paths.
+  if (/%2f/i.test(p)) return null;
+  return RETURN_PATH_RE.test(p) ? p : null;
+}
+
+// ── getPlanOptions — what the in-app plan step renders ────────────────────────
+// Prices come from settings/pricing and the AI / business caps come from
+// getPlanConfig(), the same call reserveAiAction() enforces against. Nothing
+// about plan entitlements is hardcoded in the page.
+exports.getPlanOptions = onRequest({ invoker: 'public', region: 'us-central1' }, withAuth(async (req, res) => {
+  const [pricing, planCfg] = await Promise.all([loadPricing(), getPlanConfig()]);
+  res.json({
+    prices: {
+      proMonthly:    pricing.proMonthly,
+      proAnnual:     pricing.proAnnual,
+      agencyMonthly: pricing.agencyMonthly,
+      agencyAnnual:  pricing.agencyAnnual,
+    },
+    aiLimits:  planCfg.aiLimits,
+    bizLimits: planCfg.bizLimits,
+    // The plan step sells auto-posting, so it must promise exactly what
+    // approveDraft will do — not what client-side platform metadata (which an
+    // admin can override in config/platforms) happens to say.
+    autoPlatforms: AUTO_POST_PLATFORMS,
+    // Which checkout buttons can actually complete — a plan whose Square
+    // catalog id is missing would 503 on click, so the page hides it instead.
+    checkoutReady: {
+      pro:    { monthly: !!pricing.planIds.pro.monthly,    annual: !!pricing.planIds.pro.annual },
+      agency: { monthly: !!pricing.planIds.agency.monthly, annual: !!pricing.planIds.agency.annual },
+    },
+  });
+}));
 
 exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN', 'SQUARE_LOCATION_ID'] }, withAuth(async (req, res, decoded) => {
   const uid   = decoded.uid;
@@ -20,44 +95,22 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
     return res.status(429).json({ error: 'Too many checkout attempts. Please try again in an hour.' });
   }
 
-  let proMonthly = 19, agencyMonthly = 99;
-  let proAnnual  = 199, agencyAnnual  = 999;
-  let squareProMonthlyPlanId, squareProAnnualPlanId;
-  let squareAgencyMonthlyPlanId, squareAgencyAnnualPlanId;
-  try {
-    const pricingSnap = await db.collection('settings').doc('pricing').get();
-    if (pricingSnap.exists) {
-      const d = pricingSnap.data();
-      if (d.proMonthly)               proMonthly               = d.proMonthly;
-      if (d.agencyMonthly)            agencyMonthly            = d.agencyMonthly;
-      if (d.proAnnual)                proAnnual                = d.proAnnual;
-      if (d.agencyAnnual)             agencyAnnual             = d.agencyAnnual;
-      if (d.squareProMonthlyPlanId)   squareProMonthlyPlanId   = d.squareProMonthlyPlanId;
-      if (d.squareProAnnualPlanId)    squareProAnnualPlanId    = d.squareProAnnualPlanId;
-      if (d.squareAgencyMonthlyPlanId) squareAgencyMonthlyPlanId = d.squareAgencyMonthlyPlanId;
-      if (d.squareAgencyAnnualPlanId)  squareAgencyAnnualPlanId  = d.squareAgencyAnnualPlanId;
-    }
-  } catch(e) {
-    console.warn('createCheckoutSession: Firestore pricing read failed, using defaults:', e.message);
-  }
-
   if (!['pro', 'agency'].includes(plan)) return res.status(400).json({ error: 'Invalid plan' });
 
-  const planIdMap = {
-    pro:    { monthly: squareProMonthlyPlanId,    annual: squareProAnnualPlanId },
-    agency: { monthly: squareAgencyMonthlyPlanId, annual: squareAgencyAnnualPlanId },
-  };
-  const subscriptionPlanId = planIdMap[plan][billingPeriod];
+  const pricing = await loadPricing();
+  const subscriptionPlanId = pricing.planIds[plan][billingPeriod];
   if (!subscriptionPlanId) {
     return res.status(503).json({ error: 'Subscription plans not yet configured. Run adminUpdatePricing first.' });
   }
+
+  const returnPath = safeReturnPath(req.body.returnPath) || '/BlastyBiz-Dashboard.html?success=1';
 
   const idempotencyKey = `checkout-${uid}-${plan}-${billingPeriod}-${Math.floor(Date.now() / 3600000)}`;
 
   const response = await getSquare().checkout.paymentLinks.create({
     idempotencyKey,
     checkoutOptions: {
-      redirectUrl: `${APP_BASE_URL}/BlastyBiz-Dashboard.html?success=1`,
+      redirectUrl: `${APP_BASE_URL}${returnPath}`,
       merchantSupportEmail: 'info@blastybiz.com',
       subscriptionPlanId,
     },

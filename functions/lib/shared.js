@@ -448,7 +448,7 @@ function setCors(req, res) {
     res.set('Vary', 'Origin');
   }
   res.set('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-  res.set('Access-Control-Allow-Methods', 'POST,OPTIONS');
+  res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
 }
 
 // ── withAuth ──────────────────────────────────────────────────────────────────
@@ -608,6 +608,36 @@ const JOB_STATUS = {
   MANUAL_COMPLETED:   'manual_completed',
   CLOSED:             'closed',
 };
+
+// ── PLATFORM_CAPABILITY_MAP ───────────────────────────────────────────────────
+// The single server-side authority on what BlastyBiz can actually publish to.
+// approveDraft decides manual-vs-auto from this, so anything that *promises*
+// auto-posting to an owner (the plan step, upgrade prompts) must derive its
+// claim from here too. Client-side platform metadata is display data and can be
+// overridden by an admin in config/platforms — it must never be the basis of a
+// sales promise, or we'd advertise auto-posting the server then forces manual.
+const PLATFORM_CAPABILITY_MAP = {
+  google:     { name: 'Google Business Profile', capabilityLevel: 'full_auto',       manualInstructions: '' },
+  facebook:   { name: 'Facebook Page',           capabilityLevel: 'partial_auto',    manualInstructions: '' },
+  instagram:  { name: 'Instagram',               capabilityLevel: 'partial_auto',    manualInstructions: '' },
+  bing:       { name: 'Bing Places',             capabilityLevel: 'manual_assisted', manualInstructions: 'Go to bingplaces.com → sign in → add or edit listing → paste your text.' },
+  applemaps:  { name: 'Apple Maps',              capabilityLevel: 'manual_assisted', manualInstructions: 'Go to mapsconnect.apple.com → sign in → add or edit your business → paste your text.' },
+  yelp:       { name: 'Yelp',                    capabilityLevel: 'manual_assisted', manualInstructions: 'Go to biz.yelp.com → sign in → edit your business info or post an update → paste your text.' },
+  nextdoor:   { name: 'Nextdoor',                capabilityLevel: 'manual_assisted', manualInstructions: 'Go to nextdoor.com → Post → For Sale & Free → paste your listing.' },
+  craigslist: { name: 'Craigslist',              capabilityLevel: 'manual_assisted', manualInstructions: 'Go to craigslist.org → your city → Services → paste your listing.' },
+  fbmarket:   { name: 'FB Marketplace',          capabilityLevel: 'manual_assisted', manualInstructions: 'Go to facebook.com/marketplace → Create listing → paste your text.' },
+  alignable:  { name: 'Alignable',               capabilityLevel: 'manual_assisted', manualInstructions: 'Go to alignable.com → sign in → Post an Update → paste your text.' },
+  thumbtack:  { name: 'Thumbtack',               capabilityLevel: 'manual_assisted', manualInstructions: 'Go to thumbtack.com/pro → sign in → edit your profile or services → paste your text.' },
+  angi:       { name: 'Angi',                    capabilityLevel: 'manual_assisted', manualInstructions: 'Go to pro.angi.com → sign in → edit your business profile → paste your text.' },
+  linkedin:   { name: 'LinkedIn',                capabilityLevel: 'manual_assisted', manualInstructions: 'Go to linkedin.com → sign in → create a post from your business page → paste your text.' },
+  x:          { name: 'X (Twitter)',             capabilityLevel: 'manual_assisted', manualInstructions: 'Go to x.com → sign in → compose a new post → paste your text.' },
+  pinterest:  { name: 'Pinterest',               capabilityLevel: 'manual_assisted', manualInstructions: 'Go to pinterest.com → sign in → create a pin → paste your text.' },
+};
+
+// Slugs approveDraft will publish automatically for a paid plan. Derived, so it
+// can never fall out of step with the map above.
+const AUTO_POST_PLATFORMS = Object.keys(PLATFORM_CAPABILITY_MAP)
+  .filter(k => !['manual_assisted', 'unsupported'].includes(PLATFORM_CAPABILITY_MAP[k].capabilityLevel));
 
 const PLATFORM_DOCS = {
   google: {
@@ -777,4 +807,5 @@ module.exports = {
   getPlanConfig,
   // constants
   JOB_STATUS, PLATFORM_DOCS, buildPlatformBlock,
+  PLATFORM_CAPABILITY_MAP, AUTO_POST_PLATFORMS,
 };

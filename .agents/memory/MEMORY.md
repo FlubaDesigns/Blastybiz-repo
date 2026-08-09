@@ -13,6 +13,7 @@
 - [BlastyBiz memory docs](blastybiz-memory-docs.md) — globalMemory (business) + campaignMemory (per-campaign) are the primary AI context; stored on Firestore biz/campaign docs; injected at top of adaptListing prompt; window._globalMemory set on profile load in BlastyBiz.html.
 - [BlastyBiz draft revision guard](blastybiz-draft-revision.md) — drafts carry revision:0→increment(1) on every re-gen; Final Review checks freshRevision===_draftRevision before publish.
 - [BlastyBiz platformConnections fields](blastybiz-platformconn-fields.md) — only connection-health fields (uid,businessId,platform,platformName,updatedAt); blast-specific enabled/status must NOT go here or they overwrite OAuth connected/disconnected status.
+- [Auto-post capability promises](blastybiz-capability-promises.md) — anything selling auto-posting must read the server capability map, not client platform metadata; free plan forces ALL platforms manual.
 - [BlastyBiz approveDraft CF trust model](blastybiz-approvedraft-trust.md) — client sends only platformKeys[]; CF uses server-side PLATFORM_CAPABILITY_MAP + draftSnap.data().adaptations; never trust client-supplied capabilityLevel or adaptedContent.
 - [BlastyBiz anim variants](blastybiz-anim-variants.md) — smoke/nose saved as CSS class strings not booleans; backward-compat for legacy true values; pattern for adding future variant families.
 - [BlastyBiz mascot portability](blastybiz-mascot-portability.md) — NO "Blasty" in component names; self-contained single file; portable to other sites; descriptive class names not generic "anim".

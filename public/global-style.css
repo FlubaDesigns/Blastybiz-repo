@@ -3741,3 +3741,78 @@ button, a, [role="button"], input[type="submit"], input[type="reset"], input[typ
       font-weight: 700;
     }
 
+
+/* ══════════════════════════════════════════════════════════════
+   CHOOSE PLAN PAGE  (body.choose-plan-page)
+   The in-app plan step shown at the end of setup, once the business
+   and campaign are already saved. Reuses the .pricing__* card system
+   from the marketing pages so pricing looks the same everywhere.
+══════════════════════════════════════════════════════════════ */
+
+body.choose-plan-page .cp-eyebrow       { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 8px; }
+body.choose-plan-page .cp-hero          { text-align: center; }
+body.choose-plan-page .cp-hero .sub     { max-width: 640px; margin-left: auto; margin-right: auto; }
+
+/* ── Personalised platform breakdown ───────────────────────── */
+.cp-plat-row      { display: grid; grid-template-columns: 28px minmax(0,1fr) 130px 130px; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.cp-plat-row:last-child { border-bottom: none; }
+.cp-plat-head     { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); padding-bottom: 6px; }
+.cp-plat-icon     { font-size: 18px; text-align: center; }
+.cp-plat-name     { font-size: 15px; color: var(--light); font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.cp-plat-col      { font-size: 13px; color: var(--muted); }
+.cp-plat-free     { color: var(--muted); }
+.cp-plat-win      { color: var(--green); font-weight: 700; }
+.cp-plat-note     { font-size: 13px; color: var(--muted); line-height: 1.6; margin: 14px 0 0; }
+
+/* ── Billing period switch ─────────────────────────────────── */
+.cp-billing       { display: flex; justify-content: center; gap: 8px; margin: 24px 0 18px; }
+.cp-billing-opt   { background: var(--card); border: 1px solid var(--border); color: var(--silver); border-radius: 10px; padding: 10px 18px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: border-color .2s, color .2s, background-color .2s; }
+.cp-billing-opt:hover  { border-color: var(--green); }
+.cp-billing-opt.active { border-color: var(--green); color: var(--green); background: rgba(var(--green-rgb),.10); }
+.cp-billing-save  { font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; background: var(--green); color: var(--dark); border-radius: 20px; padding: 2px 8px; }
+
+/* ── Plan cards ────────────────────────────────────────────── */
+.cp-plans         { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; align-items: stretch; }
+.cp-card-line     { font-size: 14px; color: var(--silver); line-height: 1.6; margin: 0 0 18px; }
+.cp-loading       { grid-column: 1 / -1; text-align: center; color: var(--muted); font-size: 14px; padding: 32px 0; }
+.cp-inline-btn    { display: inline-block; width: auto; margin-top: 14px; padding: 12px 22px; }
+.pricing__btn:disabled          { opacity: .5; cursor: not-allowed; }
+.pricing__btn:disabled:hover    { transform: none; box-shadow: none; filter: none; }
+.cp-foot          { text-align: center; font-size: 13px; color: var(--muted); line-height: 1.7; margin: 22px auto 0; max-width: 620px; }
+
+@media (max-width: 899px) {
+  .cp-plans      { grid-template-columns: 1fr; }
+  .cp-plat-row   { grid-template-columns: 24px minmax(0,1fr) 96px 96px; gap: 8px; }
+  .cp-plat-col   { font-size: 12px; }
+  .cp-billing    { flex-wrap: wrap; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PAYMENT CONFIRMING OVERLAY  (Create screen, post-Square return)
+   Square confirms payment server-to-server, so the owner can land back
+   here before the webhook has flipped their plan. Showing free-plan
+   limits to someone who just paid is worse than making them wait.
+══════════════════════════════════════════════════════════════ */
+.pay-confirm            { position: fixed; inset: 0; z-index: 9500; background: rgba(4,10,4,.94); display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; }
+.pay-confirm[hidden]    { display: none; }
+.pay-confirm-inner      { max-width: 380px; }
+.pay-confirm-spinner    { width: 44px; height: 44px; margin: 0 auto 20px; border: 3px solid rgba(var(--green-rgb),.25); border-top-color: var(--green); border-radius: 50%; animation: pay-confirm-spin .9s linear infinite; }
+@keyframes pay-confirm-spin { to { transform: rotate(360deg); } }
+.pay-confirm-title      { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 1.5px; color: var(--light); margin: 0 0 10px; }
+.pay-confirm-sub        { font-size: 14px; color: var(--muted); line-height: 1.7; margin: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .pay-confirm-spinner  { animation-duration: 3s; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   UPGRADE PROMPT — publish page (body.listing-preview-page)
+   Second, softer ask: shown only when the owner is on the free plan
+   AND at least one platform in this blast could have posted itself.
+══════════════════════════════════════════════════════════════ */
+body.listing-preview-page .pub-upsell             { border-color: var(--green); }
+body.listing-preview-page .pub-upsell-body        { font-size: 14px; color: var(--silver); line-height: 1.7; margin: 0 0 14px; }
+body.listing-preview-page .pub-upsell-body strong { color: var(--green); }
+body.listing-preview-page .pub-upsell-btn         { display: inline-block; width: auto; padding: 13px 26px; }
+body.listing-preview-page .pub-upsell-note        { font-size: 12px; color: var(--muted); margin: 12px 0 0; }
+body.listing-preview-page .pub-plat-row.is-locked .pub-plat-icon { opacity: .5; }
+body.listing-preview-page .badge.locked           { background: #151f15; color: var(--muted); border: 1px dashed var(--border); }
