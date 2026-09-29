@@ -54,6 +54,7 @@ jobs:
           node scripts/test-audit2-corrections.cjs
           node scripts/test-retirement-guards.cjs
           node scripts/test-backend-audit.cjs
+          node scripts/test-backup-verification.cjs
       - name: Ad controls and gesture DOM checks
         run: |
           npm install --prefix "$RUNNER_TEMP/blasty-dom" --no-audit --no-fund jsdom@26.1.0
