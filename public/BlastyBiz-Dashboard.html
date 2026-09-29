@@ -634,21 +634,24 @@ onAuthStateChanged(auth, async (user) => {
     if (list.length === 1) { showToast('You need at least one business.'); return; }
     if (!confirm(`Delete "${biz.name}"? This cannot be undone.`)) return;
     try {
-      await deleteDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId));
+      const token = await currentUser.getIdToken();
+      const response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/deleteBusiness', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ bizId })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Could not delete business.');
       window.BUSINESSES = list.filter(b => b.id !== bizId);
       BUSINESSES = window.BUSINESSES;
-      if (window.activeBizId === bizId) {
-        window.activeBizId = window.BUSINESSES[0].id;
-        activeBizId = window.activeBizId;
-        await setDoc(doc(db, 'users', currentUser.uid), { activeBusiness: window.activeBizId }, { merge: true });
-      }
+      window.activeBizId = result.activeBusiness;
+      activeBizId = result.activeBusiness;
       renderSwitcherBar();
       renderAgencyBar();
       await loadBusinessContextFirestore(window.activeBizId);
       showToast(`"${biz.name}" deleted.`);
     } catch(e) {
       console.error('[deleteBusiness]', e);
-      showToast('Could not delete business.');
+      showToast(e.message || 'Could not delete business.');
     }
   };
 
@@ -880,7 +883,8 @@ async function startCheckout(plan) {
       body: JSON.stringify({ plan, billingPeriod: _upgradeBillingPeriod })
     });
     const data = await r.json();
-    if (data.url) { window.location.href = data.url; }
+    if (data.code === 'EXISTING_SUBSCRIPTION') { showToast(data.error, true); return; }
+    if (r.ok && data.url) { window.location.href = data.url; }
     else showToast(data.error || 'Checkout setup failed — check Square config', true);
   } catch(e) {
     showToast('Checkout unavailable', true);

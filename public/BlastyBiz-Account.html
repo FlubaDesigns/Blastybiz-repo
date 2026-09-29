@@ -39,6 +39,7 @@ body{visibility:hidden}
 
   <h1 class="page-title" style="margin-bottom:4px;">Account <span>Settings</span></h1>
   <p class="page-sub" style="margin-bottom:24px;">Manage your plan, billing, and account.</p>
+  <p id="acct-deletion-status" role="status" hidden></p>
 
   <!-- ── Plan & Billing ── -->
   <div class="card">
@@ -134,7 +135,9 @@ let userPlan = 'starter';
 function showToast(msg, isErr) {
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.className = 'toast' + (isErr ? ' toast-error' : ' toast-show');
+  t.className = 'toast show' + (isErr ? ' error-toast' : '');
+  t.style.whiteSpace = 'normal';
+  t.style.maxWidth = 'calc(100vw - 32px)';
   setTimeout(() => { t.className = 'toast'; }, 3200);
 }
 
@@ -199,6 +202,19 @@ auth.authStateReady().then(() => {
       }
     } catch(e) {
       console.error('[Account] load failed:', e);
+      const status = document.getElementById('acct-deletion-status');
+      status.hidden = false;
+      status.textContent = 'Account details could not be loaded. Please retry.';
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch(CF + '/getPlanOptions', { headers: { Authorization: 'Bearer ' + token } });
+        const result = await response.json().catch(() => ({}));
+        if (response.status === 409 && result.code === 'ACCOUNT_DELETION_PENDING') {
+          status.textContent = 'Deletion in progress. Retry Delete Account to finish.';
+          document.querySelector('.delete-account-btn').textContent = 'Retry Delete Account';
+          document.getElementById('acct-billing-btn').style.display = 'none';
+        }
+      } catch (_) { /* Keep the load error and deletion retry button available. */ }
     }
   });
 });
@@ -213,13 +229,15 @@ async function startCheckout(plan) {
       body: JSON.stringify({ plan })
     });
     const data = await r.json();
-    if (data.url) { window.location.href = data.url; }
-    else showToast('Checkout setup failed', true);
+    if (data.code === 'EXISTING_SUBSCRIPTION') { showToast(data.error, true); return; }
+    if (r.ok && data.url) { window.location.href = data.url; }
+    else showToast(data.error || 'Checkout setup failed', true);
   } catch(e) {
     showToast('Checkout unavailable', true);
   }
 }
 
+window.startCheckout = startCheckout;
 window.handleBilling = async function(e) {
   e && e.preventDefault();
   if (!currentUser) return;

@@ -15,14 +15,53 @@ function preservedRestoreTarget(id){
  if(!/^\d+$/.test(id||''))throw Error('Invalid preserved restore run');
  return 'bb-restore-check-'+id;
 }
-async function verifyRestore(request,source,destination){
+async function captureRestoreBaseline(request,base){
   const crypto=require('node:crypto');
-  const fingerprint=async(base,path)=>{const d=await request(base+'/documents/'+path);return crypto.createHash('sha256').update(canonical(d.fields||{})).digest('hex');};
-  for(const path of ['config/plans','settings/pricing'])if(await fingerprint(source,path)!==await fingerprint(destination,path))throw Error('Restored configuration does not match source: '+path);
-  async function count(base){const rows=await request(base+'/documents:runAggregationQuery','POST',{structuredAggregationQuery:{structuredQuery:{from:[{collectionId:'users'}]},aggregations:[{alias:'total',count:{}}]}});return Number(rows[0]?.result?.aggregateFields?.total?.integerValue||0);}
-  const sourceCount=await count(source),restoreCount=await count(destination);
-  if(sourceCount!==restoreCount)throw Error('Account count changed or restore mismatched; review required');
-  return restoreCount;
+  const out={configuration:{},counts:{}};
+  for(const path of ['config/plans','settings/pricing']){
+    const d=await request(base+'/documents/'+path);
+    out.configuration[path]=crypto.createHash('sha256').update(canonical(d.fields||{})).digest('hex');
+  }
+  for(const collectionId of ['users','businesses','listingDrafts','publishJobs']){
+    const rows=await request(base+'/documents:runAggregationQuery','POST',{structuredAggregationQuery:{structuredQuery:{from:[{collectionId,...(collectionId==='users'?{}:{allDescendants:true})}]},aggregations:[{alias:'total',count:{}}]}});
+    const values=rows.filter(r=>r.result?.aggregateFields?.total).map(r=>Number(r.result.aggregateFields.total.integerValue));
+    if(values.length!==1||!Number.isSafeInteger(values[0])||values[0]<0)throw Error('Invalid restore count: '+collectionId);
+    out.counts[collectionId]=values[0];
+  }
+  return out;
+}
+async function verifyRestore(request,baseline,destination){
+  const restored=await captureRestoreBaseline(request,destination),comparison={};
+  for(const path of Object.keys(baseline.configuration))if(baseline.configuration[path]!==restored.configuration[path])throw Error('Restored configuration does not match pre-export source: '+path);
+  for(const [name,before]of Object.entries(baseline.counts)){
+    // Accounts and small collections must match exactly. Larger collection
+    // groups allow at most 1%, capped at two documents, for export-time writes.
+    const allowedDrift=name==='users'?0:Math.min(2,Math.floor(before*0.01));
+    const after=restored.counts[name];
+    comparison[name]={before,restored:after,allowedDrift};
+    if(!Number.isSafeInteger(after)||Math.abs(after-before)>allowedDrift||(before>0&&after===0))throw Error('Restore count mismatch: '+name);
+  }
+  return comparison;
+}
+async function cleanupExpiredRestores(request,currentId,report,save,{now=Date.now(),wait=waitOperation}={}){
+  const base=`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases`;
+  const prefix=`projects/${PROJECT}/databases/`;
+  const inventory=await request(base);
+  if(inventory.nextPageToken||inventory.unreachable?.length)throw Error('Incomplete restore database inventory');
+  report.expiredRestoreCleanup=[];save();
+  for(const d of inventory.databases||[]){
+    const id=d.name?.startsWith(prefix)?d.name.slice(prefix.length):'';
+    if(!/^bb-restore-check-\d+$/.test(id)||id===currentId)continue;
+    const created=Date.parse(d.createTime);
+    if(!Number.isFinite(created)||now-created<=7*86400000)continue;
+    if(d.type!=='FIRESTORE_NATIVE'||d.deleteProtectionState!=='DELETE_PROTECTION_DISABLED')continue;
+    // Recheck immutable identity and age immediately before destructive work.
+    const fresh=await request(base+'/'+id);
+    if(fresh.name!==d.name||fresh.uid!==d.uid||fresh.createTime!==d.createTime||fresh.deleteProtectionState!=='DELETE_PROTECTION_DISABLED')throw Error('Restore cleanup target changed: '+id);
+    const entry={database:id,createdAt:d.createTime,removed:false};report.expiredRestoreCleanup.push(entry);save();
+    await wait(request,await request(base+'/'+id,'DELETE'));
+    entry.removed=true;save();
+  }
 }
 async function run(args){
  const restoreId=target(args),token=execFileSync('gcloud',['auth','print-access-token'],{encoding:'utf8'}).trim();
@@ -40,6 +79,7 @@ async function run(args){
  const destination=api+restoreId;
  let createdHere=false,restored=false;
  try{
+  await cleanupExpiredRestores(request,restoreId,report,save);
   const database=await request(api+'(default)');
   const storage='https://storage.googleapis.com/storage/v1/b/'+BUCKET;
   let bucket=await request(storage,'GET',null,true);
@@ -60,21 +100,9 @@ async function run(args){
    const op=await request(api+'(default)?updateMask=pointInTimeRecoveryEnablement','PATCH',{name:database.name,pointInTimeRecoveryEnablement:'POINT_IN_TIME_RECOVERY_ENABLED'});
    await waitOperation(request,op);report.steps.push('Enabled default database PITR');save();
   }
-  // Recheck and remove only an explicitly reviewed disposable restore from a
-  // prior failed run. Never imports into it; mismatches preserve it for diagnosis.
-  if(process.env.PRESERVED_RESTORE_RUN_ID){
-   const priorId=preservedRestoreTarget(process.env.PRESERVED_RESTORE_RUN_ID);
-   const prior=api+priorId,exists=await request(prior,'GET',null,true);
-   report.preservedRestore={database:priorId};save();
-   if(exists){
-    const count=await verifyRestore(request,api+'(default)',prior);
-    report.preservedRestore.configurationMatches=true;report.preservedRestore.accountCount=count;save();
-    await waitOperation(request,await request(prior,'DELETE'));
-    report.preservedRestore.removed=true;
-   }else report.preservedRestore.alreadyAbsent=true;
-   save();
-  }
   // Export all collections. Data stays in the private project bucket.
+  const baseline=await captureRestoreBaseline(request,api+'(default)');
+  report.preExport=baseline;save();
   const output=`gs://${BUCKET}/recovery-${process.env.GITHUB_RUN_ID}-${Date.now()}`;
   const exported=await waitOperation(request,await request(api+'(default):exportDocuments','POST',{outputUriPrefix:output}));
   const prefix=exported.response?.outputUriPrefix;
@@ -84,9 +112,9 @@ async function run(args){
   const created=await request(api.slice(0,-1)+'?databaseId='+restoreId,'POST',{locationId:database.locationId,type:'FIRESTORE_NATIVE',deleteProtectionState:'DELETE_PROTECTION_DISABLED'});
   createdHere=true;await waitOperation(request,created);report.steps.push('Created isolated restore-check database');save();
   const imported=await waitOperation(request,await request(destination+':importDocuments','POST',{inputUriPrefix:prefix}));
-  // Read only stable configuration and aggregate account count; never emit data.
-  const restoreCount=await verifyRestore(request,api+'(default)',destination);
-  restored=true;report.restore={completed:true,operation:imported.name,configurationMatches:true,accountCount:restoreCount};save();
+  // Compare exact aggregate counts and configuration hashes; never emit data.
+  const counts=await verifyRestore(request,baseline,destination);
+  restored=true;report.restore={completed:true,operation:imported.name,configurationMatches:true,counts};save();
   const live=await request(api+'(default)');
   if(live.pointInTimeRecoveryEnablement!=='POINT_IN_TIME_RECOVERY_ENABLED')throw Error('PITR not enabled');
   report.pitr={enabled:true,earliestVersionTime:live.earliestVersionTime,versionRetentionPeriod:live.versionRetentionPeriod};
@@ -115,4 +143,4 @@ async function run(args){
  console.log('RECOVERY_VERIFIED '+JSON.stringify({exportCompleted:!!report.export?.completed,restoreCompleted:!!report.restore?.completed,pitr:report.pitr?.enabled,restoreDatabaseRemoved:report.restoreDatabaseRemoved}));
 }
 if(require.main===module)run(process.argv.slice(2)).catch(e=>{console.error(e.message);process.exitCode=1;});
-module.exports={target,canonical,preservedRestoreTarget};
+module.exports={target,canonical,preservedRestoreTarget,captureRestoreBaseline,verifyRestore,cleanupExpiredRestores};

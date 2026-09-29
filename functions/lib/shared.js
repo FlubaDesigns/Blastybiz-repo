@@ -22,7 +22,7 @@ const crypto    = require('crypto');
 async function sendResendEmail({ to, subject, html, strict=false, idempotencyKey }) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey || apiKey === 'placeholder') {
-    if(strict)throw Error('Email service is not configured.');
+    if(strict)throw Object.assign(Error('Email service is not configured.'),{providerRejected:true});
     console.log('[email] RESEND_API_KEY not configured — skipping email to', to);
     return;
   }
@@ -487,10 +487,10 @@ function withAuth(fn, opts = {}) {
         }
       }
     }
-    // Any authenticated call is proof the account is in use. Fire and forget,
-    // throttled per instance, so it costs nothing on the hot path.
+    // Check the deletion journal on every authenticated request. Activity
+    // writes are throttled; failures remain fail-closed.
     if (decoded && decoded.uid) {
-      try {await touchLastActive(decoded.uid);}catch(e){return res.status(e.httpStatus||503).json({error:e.message});}
+      try {await touchLastActive(decoded.uid);}catch(e){return res.status(e.httpStatus||503).json({error:e.message,...(e.code?{code:e.code}:{})});}
     }
     return fn(req, res, decoded);
   };
@@ -668,13 +668,17 @@ const _LAST_ACTIVE_THROTTLE_MS = 6 * 60 * 60 * 1000;
 
 async function touchLastActive(uid) {
   if(!uid)return;
+  const ref=db.collection('users').doc(uid),journal=db.collection('accountDeletions').doc(uid);
+  const needsWrite=(user,deletion)=>{
+    if(deletion.exists)throw Object.assign(Error('Deletion in progress. Retry Delete Account to finish.'),{httpStatus:409,code:'ACCOUNT_DELETION_PENDING'});
+    return user.exists&&(Date.now()-(user.data().lastActiveAt?.toMillis?.()||0)>=_LAST_ACTIVE_THROTTLE_MS||!!user.data().dormancyPurgeAt);
+  };
+  const snapshots=await db.getAll(ref,journal);
+  if(!needsWrite(...snapshots))return;
   // Claiming deletion and accepting activity serialize on the same user document.
   await db.runTransaction(async tx=>{
-    const ref=db.collection('users').doc(uid),journal=db.collection('accountDeletions').doc(uid);
     const [user,deletion]=await Promise.all([tx.get(ref),tx.get(journal)]);
-    if(deletion.exists)throw Object.assign(Error('Account deletion is pending. Retry Delete Account to finish.'),{httpStatus:409});
-    if(!user.exists)return; // Never recreate an account from an activity ping.
-    if(Date.now()-(user.data().lastActiveAt?.toMillis?.()||0)<_LAST_ACTIVE_THROTTLE_MS&&!user.data().dormancyPurgeAt)return;
+    if(!needsWrite(user,deletion))return; // Recheck after the initial read; never recreate an account.
     tx.update(ref,{lastActiveAt:admin.firestore.FieldValue.serverTimestamp(),dormancyWarnedAt:admin.firestore.FieldValue.delete(),dormancyWarningPending:admin.firestore.FieldValue.delete(),dormancyPurgeAt:admin.firestore.FieldValue.delete(),dormancyReminderAt:admin.firestore.FieldValue.delete()});
   });
 }

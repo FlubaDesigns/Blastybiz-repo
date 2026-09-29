@@ -597,7 +597,7 @@ exports.scheduledSetupNudge = onSchedule(
 // Private export bucket and PITR are established by the reviewed Engine recovery
 // script. A recorded operation is resumed; only completed exports count as success.
 exports.scheduledFirestoreExport = onSchedule(
-  { schedule: '0 2 * * 0', timeZone: 'America/Los_Angeles', region: 'us-central1', timeoutSeconds: 540 },
+  { schedule: '0 2 * * 0', timeZone: 'America/Los_Angeles', region: 'us-central1', timeoutSeconds: 540, serviceAccount: require('../lib/firestore-backup').BACKUP_SERVICE_ACCOUNT },
   async () => {
     const {GoogleAuth}=require('google-auth-library');
     const auth=new GoogleAuth({scopes:['https://www.googleapis.com/auth/cloud-platform']});

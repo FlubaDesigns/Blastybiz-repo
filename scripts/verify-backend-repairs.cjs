@@ -1,7 +1,7 @@
 'use strict';
 // Read-only query checks, plus an explicit run of the repaired backup scheduler.
 const fs=require('node:fs'),{execFileSync}=require('node:child_process');
-const {PROJECT,BUCKET}=require('../functions/lib/firestore-backup');
+const {PROJECT,BUCKET,BACKUP_SERVICE_ACCOUNT}=require('../functions/lib/firestore-backup');
 function revision(snapshot){
  if(!snapshot.exists)return null;
  const t=snapshot.updateTime;
@@ -22,8 +22,12 @@ async function verifyScheduledBackup({read,invoke,clock=Date.now,sleep=ms=>new P
   if(!baseline.has(date))throw Error('Backup verification exceeded captured UTC dates');
   const snapshot=await read(date),r=snapshot.data(),version=revision(snapshot);
   if(r?.status==='completed'){
+   if(r.serviceAccount!==BACKUP_SERVICE_ACCOUNT){
+    if(version!==baseline.get(date))throw Error('Completed backup has an unexpected runtime identity');
+    await sleep(Math.min(5000,Math.max(0,deadline-clock())));continue;
+   }
    if(!r.operation?.startsWith(`projects/${PROJECT}/databases/(default)/operations/`)||!r.outputUriPrefix?.startsWith(`gs://${BUCKET}/`))throw Error('Unexpected completed backup target');
-   return {completed:true,date,operation:r.operation,outputUriPrefix:r.outputUriPrefix,
+   return {completed:true,date,serviceAccount:r.serviceAccount,operation:r.operation,outputUriPrefix:r.outputUriPrefix,
     evidence:version===baseline.get(date)?'existing-completed-daily-backup':'completion-observed-after-dispatch',ignoredStaleFailures};
   }
   if(r?.status==='failed'){
@@ -45,6 +49,8 @@ async function run(){
   probes.push(['connections_platform',db.collectionGroup('platformConnections').where('platform','==','google')],['connections_status_platform',db.collectionGroup('platformConnections').where('status','==','connected').where('platform','==','google')],['setup_pending',db.collection('setupNudges').where('sent','==',false).where('sendAfter','<=',admin.firestore.Timestamp.now())]);
   for(const [name,q]of probes){const r=await q.limit(1).get();report.queries.push({name,ok:true,count:r.size});save();}
   const token=execFileSync('gcloud',['auth','print-access-token'],{encoding:'utf8'}).trim();
+  const runtime=await fetch(`https://cloudfunctions.googleapis.com/v2/projects/${PROJECT}/locations/us-central1/functions/scheduledFirestoreExport`,{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(30000)});
+  if(!runtime.ok||(await runtime.json()).serviceConfig?.serviceAccountEmail!==BACKUP_SERVICE_ACCOUNT)throw Error('Dedicated backup runtime identity is not deployed');
   report.scheduledBackup=await verifyScheduledBackup({
    read:date=>db.collection('backupRuns').doc(date).get(),
    invoke:async()=>{

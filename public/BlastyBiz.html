@@ -7266,7 +7266,10 @@ window.handleBilling = async function() {
     const idToken = await currentUser.getIdToken();
     if (plan === 'starter') {
       const r = await fetch(`${CF_BASE}/createCheckoutSession`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${idToken}`}, body: JSON.stringify({ plan:'pro' }) });
-      const d = await r.json(); if (d.url) window.location.href = d.url; else showToast('Checkout unavailable', true);
+      const d = await r.json();
+      if (d.code === 'EXISTING_SUBSCRIPTION') showToast(d.error, true);
+      else if (r.ok && d.url) window.location.href = d.url;
+      else showToast(d.error || 'Checkout unavailable', true);
     } else {
       const r = await fetch(`${CF_BASE}/createPortalSession`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${idToken}`}, body: JSON.stringify({}) });
       const d = await r.json(); if (d.url) window.location.href = d.url; else showToast('Billing portal unavailable', true);

@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const {verifyScheduledBackup}=require('./verify-backend-repairs.cjs');
 const operation='projects/blastybiz-9523e/databases/(default)/operations/test';
 const outputUriPrefix='gs://blastybiz-firestore-backups/test';
-const record=(status,version=1,extra={})=>({exists:true,updateTime:{seconds:1,nanoseconds:version},data:()=>({status,operation,outputUriPrefix,...extra})});
+const record=(status,version=1,extra={})=>({exists:true,updateTime:{seconds:1,nanoseconds:version},data:()=>({status,operation,outputUriPrefix,serviceAccount:'firestore-backup@blastybiz-9523e.iam.gserviceaccount.com',...extra})});
 const absent={exists:false,data:()=>undefined};
 let checks=0;
 async function test(name,fn){await fn();checks++;console.log('PASS '+name);}
@@ -87,6 +87,15 @@ function fixture({before=record('failed'),polls=[],start='2026-09-29T12:00:00Z',
  await test('completed export to another bucket is rejected',async()=>{
   const f=fixture({polls:[record('completed',2,{outputUriPrefix:'gs://other/test'})]});
   await assert.rejects(()=>verifyScheduledBackup(f.args),/Unexpected completed backup target/);
+ });
+ await test('old shared-runtime completion waits for the dedicated export',async()=>{
+  const old=record('completed',1,{serviceAccount:undefined});
+  const f=fixture({before:old,polls:[old,record('running',2),record('completed',3)]});
+  assert.equal((await verifyScheduledBackup(f.args)).evidence,'completion-observed-after-dispatch');assert.equal(f.sleeps.length,2);
+ });
+ await test('old runtime completion alone cannot pass identity verification',async()=>{
+  const old=record('completed',1,{serviceAccount:undefined});
+  const f=fixture({before:old,polls:[old]});await assert.rejects(()=>verifyScheduledBackup(f.args),/before timeout/);
  });
  console.log(checks+' backup verification scenarios passed; actual verifier, fake clock and providers, no live writes.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
