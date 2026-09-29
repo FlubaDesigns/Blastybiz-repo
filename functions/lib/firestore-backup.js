@@ -7,14 +7,14 @@ async function waitOperation(request,operation,{sleep=ms=>new Promise(r=>setTime
   if(clock()>deadline)throw Error('Backup operation still pending: '+operation.name);
   await sleep(4000);current=await request('https://firestore.googleapis.com/v1/'+operation.name);
  }
- if(current.error)throw Error('Backup operation failed: '+current.error.code);
+ if(current.error)throw Object.assign(Error('Backup operation failed: '+current.error.code),{operationFailed:true});
  return current;
 }
 async function runBackup({db,admin,request,clock=()=>new Date(),wait=waitOperation}) {
  const day=clock().toISOString().slice(0,10),ref=db.collection('backupRuns').doc(day);
  const prior=(await ref.get()).data();
  if(prior?.status==='completed')return prior;
- let operation=prior?.operation?{name:prior.operation}:null;
+ let operation=prior?.operation&&!prior.operationFailed?{name:prior.operation}:null;
  try{
   if(!operation){
    const output=`gs://${BUCKET}/${day}-${require('node:crypto').randomUUID()}`;
@@ -27,7 +27,7 @@ async function runBackup({db,admin,request,clock=()=>new Date(),wait=waitOperati
   if(!result.outputUriPrefix?.startsWith(`gs://${BUCKET}/`))throw Error('Unexpected export destination');
   await ref.set(result,{merge:true});return result;
  }catch(e){
-  await ref.set({status:'failed',lastError:String(e.message).slice(0,300),updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true}).catch(()=>{});
+  await ref.set({status:'failed',operationFailed:!!e.operationFailed,lastError:String(e.message).slice(0,300),updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true}).catch(()=>{});
   throw e; // Scheduler must see failure; API acceptance alone is not completion.
  }
 }

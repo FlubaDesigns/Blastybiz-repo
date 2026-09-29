@@ -731,30 +731,30 @@ async function _runGooglePhotoImport(uid, bizId, jobRef) {
     const connRef = userBizConnsRef(uid, bizId).doc('google');
     const connSnap = await connRef.get();
     if (!connSnap.exists || connSnap.data().status !== 'connected') {
-      await jobRef.set({ status: 'skipped', reason: 'not_connected', uid, bizId,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      await jobRef.update({ status: 'skipped', reason: 'not_connected', uid, bizId,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp() });
       return;
     }
     const conn = connSnap.data();
     const tokens = await _getConnTokens(connRef);
     if (!tokens?.accessToken) {
-      await jobRef.set({ status: 'skipped', reason: 'no_token', uid, bizId,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      await jobRef.update({ status: 'skipped', reason: 'no_token', uid, bizId,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp() });
       return;
     }
 
     const { accountId, locationId } = conn;
     if (!accountId || !locationId) {
-      await jobRef.set({ status: 'skipped', reason: 'no_location', uid, bizId,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      await jobRef.update({ status: 'skipped', reason: 'no_location', uid, bizId,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp() });
       return;
     }
 
-    await jobRef.set({
+    await jobRef.update({
       uid, bizId, status: 'running', total: 0, done: 0,
       startedAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt:  admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
+    });
 
     // Fetch GBP media list
     let mediaItems = [];
@@ -836,13 +836,18 @@ async function _runGooglePhotoImport(uid, bizId, jobRef) {
         await file.makePublic();
         const url = `https://storage.googleapis.com/${bucket.name}/${storePath}`;
 
-        await userBizRef(uid, bizId).collection('images').doc('google-'+contentHash).set({
-          uid, bizId, url, contentHash, source: 'google_import', mimeType,
-          originalGoogleUrl: googleUrl,
-          mediaFormat:  item.mediaFormat || 'PHOTO',
-          createTime:   item.createTime  || null,
-          createdAt:    admin.firestore.FieldValue.serverTimestamp(),
-        });
+        try {
+          await db.runTransaction(async tx=>{
+            const br=userBizRef(uid,bizId),ur=db.collection('users').doc(uid);
+            const [business,owner]=await Promise.all([tx.get(br),tx.get(ur)]);
+            if(!business.exists||!owner.exists||owner.data().deletionRequestedAt)throw Error('Account or business was removed during import');
+            tx.set(br.collection('images').doc('google-'+contentHash),{
+              uid,bizId,url,contentHash,source:'google_import',mimeType,originalGoogleUrl:googleUrl,
+              mediaFormat:item.mediaFormat||'PHOTO',createTime:item.createTime||null,
+              createdAt:admin.firestore.FieldValue.serverTimestamp(),
+            });
+          });
+        }catch(e){await file.delete({ignoreNotFound:true});throw e;}
         existingHashes.add(contentHash); imported++;
 
       } catch(e) {

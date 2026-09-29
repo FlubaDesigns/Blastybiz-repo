@@ -56,14 +56,15 @@ async function imports(){
 }
 async function photoCounts(){
  const m=database({'users/u':{},[B]:{},[B+'/platformConnections/google']:{status:'connected',accountId:'a',locationId:'l'},'importJobs/photo':{status:'queued'}});
- let saves=0;
- const a={...admin,storage:()=>({bucket:()=>({name:'fixture-bucket',file:()=>({save:async()=>{saves++;},makePublic:async()=>{}})})})};
+ let saves=0,deleting=false,removedFiles=0;
+ const a={...admin,storage:()=>({bucket:()=>({name:'fixture-bucket',file:()=>({save:async()=>{saves++;if(deleting)await m.db.doc('users/u').update({deletionRequestedAt:{stamp:1}});},makePublic:async()=>{},delete:async()=>{removedFiles++;}})})})};
  const c=load('publishing',{...wrappers,db:m.db,admin:a,crypto:require('node:crypto'),userBizRef:(u,b)=>m.db.doc(`users/${u}/businesses/${b}`),userBizConnsRef:()=>m.db.collection(B+'/platformConnections'),_getConnTokens:async()=>({accessToken:'fixture'}),axios:{get:async url=>{
   if(url.endsWith('/media'))return {data:{mediaItems:['one','duplicate','invalid','failure'].map(googleUrl=>({googleUrl}))}};
   if(url==='failure')throw Error('download failed');return {data:Buffer.from(url==='invalid'?[0,0]:[255,216,255])};
  }}});
  await c._runGooglePhotoImport('u','b',m.db.doc('importJobs/photo'));
  const result=m.get('importJobs/photo');ok(result.status==='partial'&&result.done===4&&result.imported===1&&result.skipped===2&&result.failed===1,'import progress distinguishes imported, skipped and failed items');ok(saves===1,'duplicate bytes are not uploaded twice');
+ const images=await m.db.collection(B+'/images').get();for(const d of images.docs)await d.ref.delete();deleting=true;await c._runGooglePhotoImport('u','b',m.db.doc('importJobs/photo'));ok((await m.db.collection(B+'/images').get()).empty&&removedFiles===2,'in-flight imports remove uploaded files and create no images after deletion is claimed');
 }
 async function backups(){
  const {target}=require('./repair-backup-recovery.cjs');
@@ -77,5 +78,8 @@ async function backups(){
  const m=database();let starts=0;const request=async()=>{starts++;return {name:'projects/blastybiz-9523e/databases/(default)/operations/x'};};
  await rejects(()=>runBackup({db:m.db,admin,request,wait:async()=>{throw Error('export failed');}}),/export failed/);ok(Object.values(m.all())[0].status==='failed','failed backup is recorded and thrown to Scheduler');
  const result=await runBackup({db:m.db,admin,request,wait:async()=>({done:true,response:{outputUriPrefix:'gs://blastybiz-firestore-backups/export'}})});ok(starts===1&&result.status==='completed','retry resumes recorded operation and waits for completion');
+ const failed=database();let count=0;const retryRequest=async()=>({name:'projects/blastybiz-9523e/databases/(default)/operations/'+(++count)});
+ await rejects(()=>runBackup({db:failed.db,admin,request:retryRequest,wait:async()=>{throw Object.assign(Error('terminal'),{operationFailed:true});}}),/terminal/);
+ await runBackup({db:failed.db,admin,request:retryRequest,wait:async()=>({done:true,response:{outputUriPrefix:'gs://blastybiz-firestore-backups/retry'}})});ok(count===2,'confirmed terminal backup failure permits a new operation on retry');
 }
 (async()=>{for(const test of [deletion,payments,aiAndEmail,imports,photoCounts,backups]){await test();console.log('PASS '+test.name);}console.log(checks+' backend audit repair assertions passed; isolated providers, no live side effects.');})().catch(e=>{console.error(e);process.exitCode=1;});
