@@ -84,6 +84,10 @@ exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_
       const fresh = await tx.get(jobRef);
       if (!fresh.exists) throw Object.assign(new Error('Job not found'), { httpStatus: 404 });
       const current = fresh.data();
+      if(current.campaignId) {
+        const campaign=await tx.get(userBizRef(uid,businessId).collection('campaigns').doc(current.campaignId));
+        if(!campaign.exists || campaign.data().status==='archived')throw Object.assign(Error('Campaign removed; this post cannot be retried.'),{httpStatus:409});
+      }
       if (current.planGated) {
         throw Object.assign(new Error("This job is held by the customer's plan."), { httpStatus: 409 });
       }

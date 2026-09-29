@@ -1321,6 +1321,7 @@ window._buildProfileData = function() {
 };
 
 const origNextStep = window.nextStep;
+let onboardingSaveTarget = null;
 window.nextStep = async function() {
   const TOTAL_STEPS = 6;
   if (window.currentStep === TOTAL_STEPS) {
@@ -1328,8 +1329,23 @@ window.nextStep = async function() {
     if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
     const data = window._buildProfileData();
     try {
+      if (!currentUser) throw new Error('Please sign in again.');
       if (currentUser) {
         // createBusiness CF: enforces plan limits server-side, writes users+business atomically.
+        // Keep the target through retries, including a lost response after commit.
+        if (!onboardingSaveTarget || onboardingSaveTarget.uid !== currentUser.uid) {
+          let existingId = null;
+          if (!_isNew()) {
+            const [owned, account] = await Promise.all([
+              getDocs(collection(db, 'users', currentUser.uid, 'businesses')),
+              getDoc(doc(db, 'users', currentUser.uid))
+            ]);
+            const active = account.exists() ? account.data().activeBusiness : null;
+            existingId = owned.docs.find(d => d.id === active)?.id
+              || owned.docs.find(d => d.id === currentUser.uid)?.id || owned.docs[0]?.id || null;
+          }
+          onboardingSaveTarget = { uid: currentUser.uid, bizId: existingId || crypto.randomUUID(), isNew: !existingId };
+        }
         const idToken = await currentUser.getIdToken();
         const { updatedAt: _dropTs, ...profilePayload } = data;
         const cfResp = await fetch(
@@ -1337,7 +1353,7 @@ window.nextStep = async function() {
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-            body: JSON.stringify({ profileData: profilePayload, isNew: _isNew() }),
+            body: JSON.stringify({ profileData: profilePayload, bizId: onboardingSaveTarget.bizId, isNew: onboardingSaveTarget.isNew }),
           }
         );
         // Parse JSON defensively — IAM or network errors may return non-JSON bodies

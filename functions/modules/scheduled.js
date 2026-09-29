@@ -9,272 +9,133 @@
 const {
   onRequest, onSchedule, admin, db, axios, crypto,
   APP_BASE_URL, sendResendEmail,
-  userBizRef, userBizCol, userBizPostsRef, userBizConnsRef,
+  userBizRef, userBizCol, userBizPostsRef, userBizConnsRef, userBizJobsRef, PLATFORM_CAPABILITY_MAP,
   _getConnTokens,
   makeUnsubSig, _unsubSecret,
   makeActionSig, _actionSecret, computeNextRunAt, normalizeSchedule,
 } = require('../lib/shared');
 
-// ── Platform helpers for scheduled posting ────────────────────────────────────
-const SCHED_PLATFORMS = {
-  google:   { name: 'Google Business Profile', publish: publishGoogle   },
-  facebook: { name: 'Facebook Page',           publish: publishFacebook },
-  instagram:{ name: 'Instagram',               publish: publishInstagram},
-};
-
-// _computeNextRunAt is now imported as computeNextRunAt from lib/shared
-
-async function publishGoogle(uid, bizId, content, imageUrls) {
-  const connRef  = userBizConnsRef(uid, bizId).doc('google');
-  const connSnap = await connRef.get();
-  if (!connSnap.exists || connSnap.data().status !== 'connected') {
-    throw new Error('Google not connected');
+// Read bounded pages of due work. Persist the cursor so blocked records cannot
+// monopolize every invocation when the queue exceeds one invocation's budget.
+async function* scheduledDraftPages(worker, until, from = null) {
+  const cursorRef = db.collection('maintenance').doc(worker);
+  let cursor = (await cursorRef.get()).data() || {};
+  for (let page = 0; page < 25; page++) {
+    let query = db.collectionGroup('listingDrafts')
+      .where('schedule.enabled', '==', true)
+      .where('schedule.nextRunAt', '<=', until.toISOString());
+    if (from) query = query.where('schedule.nextRunAt', '>=', from.toISOString());
+    query = query.orderBy('schedule.nextRunAt').orderBy(admin.firestore.FieldPath.documentId()).limit(200);
+    if (cursor.nextRunAt && cursor.path) query = query.startAfter(cursor.nextRunAt, db.doc(cursor.path));
+    const snap = await query.get();
+    if (!snap.docs.length) { await cursorRef.delete(); return; }
+    yield snap.docs;
+    const last = snap.docs[snap.docs.length - 1];
+    cursor = { nextRunAt: last.data().schedule.nextRunAt, path: last.ref.path };
+    if (snap.docs.length < 200) { await cursorRef.delete(); return; }
+    await cursorRef.set(cursor);
   }
-  const tokens = await _getConnTokens(connRef);
-  const conn   = { ...connSnap.data(), ...tokens };
-  let accessToken = conn.accessToken;
-  if (!accessToken) throw new Error('No Google access token');
+}
 
-  async function tryPost(tok) {
-    return axios.post(
-      `https://mybusinesspostings.googleapis.com/v1/locations/${conn.locationId}/localPosts`,
-      { languageCode: 'en-US', summary: content,
-        media: (imageUrls||[]).map(u=>({mediaFormat:'PHOTO',sourceUrl:u})) },
-      { headers: { Authorization: `Bearer ${tok}` } }
-    );
-  }
-  try {
-    const r = await tryPost(accessToken);
-    return { postId: r.data.name };
-  } catch(e) {
-    if (e.response?.status === 401 && conn.refreshToken) {
-      const rResp = await axios.post('https://oauth2.googleapis.com/token', null, {
-        params: { client_id: process.env.GOOGLE_CLIENT_ID, client_secret: process.env.GOOGLE_CLIENT_SECRET,
-                  refresh_token: conn.refreshToken, grant_type: 'refresh_token' }
-      });
-      const newToken = rResp.data.access_token;
-      const { _setConnTokens } = require('../lib/shared');
-      await _setConnTokens(connRef, { accessToken: newToken });
-      await connRef.update({ updatedAt: admin.firestore.FieldValue.serverTimestamp() });
-      const r = await tryPost(newToken);
-      return { postId: r.data.name };
+async function queueScheduledDraft(draftRef, now) {
+  return db.runTransaction(async tx => {
+    const snap = await tx.get(draftRef);
+    if (!snap.exists) return;
+    const draft = snap.data(), schedule = normalizeSchedule(draft.schedule || {});
+    if (!schedule.enabled) {
+      if (schedule.unsupportedFrequency) tx.update(draftRef, { schedule });
+      return;
     }
-    throw new Error('Google API: ' + (e.response?.data?.error?.message || e.message));
-  }
+    let nextRunAt;
+    try { nextRunAt = computeNextRunAt(schedule, now); }
+    catch(e) { tx.update(draftRef, { 'schedule.enabled': false, 'schedule.pauseReason': e.message }); return; }
+    const due = new Date(schedule.nextRunAt);
+    if (!Number.isFinite(due.getTime())) {
+      tx.update(draftRef, { 'schedule.enabled': false, 'schedule.pauseReason': 'Invalid next posting date.' }); return;
+    }
+    if (due > now) return;
+    const parts = draftRef.path.split('/'), uid = parts[1], bizId = parts[3];
+    const bizRef = userBizRef(uid, bizId);
+    const bizSnap = await tx.get(bizRef);
+    const userSnap = await tx.get(db.collection('users').doc(uid));
+    const campaignRef = draft.campaignId ? bizRef.collection('campaigns').doc(draft.campaignId) : null;
+    const campaignSnap = campaignRef ? await tx.get(campaignRef) : null;
+    if (!bizSnap.exists || !userSnap.exists || (campaignRef && (!campaignSnap.exists || campaignSnap.data().status === 'archived'))) {
+      tx.update(draftRef, { 'schedule.enabled': false, 'schedule.pauseReason': 'Business or campaign is no longer active.' }); return;
+    }
+    const cycle = due.toISOString();
+    const runId = 'scheduled_' + crypto.createHash('sha256').update(JSON.stringify([uid,bizId,snap.id,cycle])).digest('hex');
+    const receiptRef = draftRef.collection('private').doc(runId);
+    const receipt = await tx.get(receiptRef);
+    if (receipt.exists) return;
+    const advance = {
+      'schedule.nextRunAt': nextRunAt.toISOString(), 'schedule.lastRunAt': now.toISOString(),
+      'schedule.approved': admin.firestore.FieldValue.delete(),
+      'schedule.skipCycle': admin.firestore.FieldValue.delete(),
+      'schedule.previewSentAt': admin.firestore.FieldValue.delete(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+    if (schedule.skipCycle) { tx.create(receiptRef,{cycle,skipped:true}); tx.update(draftRef,advance); return; }
+    const biz = bizSnap.data(), user = userSnap.data();
+    if (biz.schedulingPaused) return;
+    const explicit = schedule.approved === true;
+    if (!explicit) {
+      if ((biz.approvalCount || 0) < 3) return;
+      const engaged = user.lastEmailEngagedAt || user.createdAt;
+      const engagedMs = engaged?.toMillis ? engaged.toMillis() : new Date(engaged || now).getTime();
+      if (!Number.isFinite(engagedMs) || now.getTime() - engagedMs > 30 * 86400000) return;
+      if (Object.values(draft.adaptations || {}).some(v=>v && typeof v==='object' && v.lowConfidence)) return;
+    }
+    // Only an explicit saved selection authorizes recurring delivery. Legacy
+    // drafts lacking it are paused for owner selection instead of guessing.
+    const ids = [...new Set(Array.isArray(draft.enabledPlatforms) ? draft.enabledPlatforms : [])].filter(id=>draft.platformStatus?.[id]!=='excluded');
+    if (!ids.length || ids.length > 100 || ids.some(id=>typeof id!=='string'||!id||id.length>128||id.includes('/'))) {
+      tx.update(draftRef, { 'schedule.enabled': false, 'schedule.pauseReason': 'Select destinations before resuming this schedule.' }); return;
+    }
+    const jobs = ids.map(pid => {
+      const copy = draft.adaptations?.[pid];
+      const content = typeof copy === 'string' ? copy : copy?.text;
+      if (typeof content !== 'string' || !content.trim()) return null;
+      const cap = PLATFORM_CAPABILITY_MAP[pid] || {name:pid,capabilityLevel:'manual_assisted',manualInstructions:''};
+      const manual = !['google','facebook','instagram'].includes(pid);
+      const images = draft.imagesByPlatform?.[pid] ?? draft.imageUrls ?? [];
+      const jobRef = userBizJobsRef(uid,bizId).doc(runId+'_'+pid);
+      return {ref:jobRef,data:{
+        jobId:jobRef.id,uid,businessId:bizId,draftId:snap.id,campaignId:draft.campaignId || '',
+        scheduledRunId:runId,scheduledCycle:cycle,scheduledExplicitApproval:explicit,
+        platform:pid,platformName:cap.name,capabilityLevel:cap.capabilityLevel,
+        jobType:'scheduled_approved',status:manual?'manual_required':'pending',
+        attempts:0,maxAttempts:5,customerNotified:false,
+        customerLabel:manual?'Action needed':'Waiting to publish',
+        customerVisibleMessage:manual?'Your scheduled copy is ready to post manually.':'Your scheduled post is waiting to publish.',
+        manualInstructions:cap.manualInstructions || '',
+        payload:{adaptedContent:content,imageUrls:(Array.isArray(images)?images:[]).filter(u=>typeof u==='string'&&/^https:\/\//i.test(u)).slice(0,10)},
+        createdAt:admin.firestore.FieldValue.serverTimestamp(),updatedAt:admin.firestore.FieldValue.serverTimestamp(),
+      }};
+    }).filter(Boolean);
+    if (jobs.length !== ids.length) {
+      tx.update(draftRef, { 'schedule.enabled': false, 'schedule.pauseReason': 'A selected destination has no saved copy. Generate or deselect it before resuming.' }); return;
+    }
+    // Advancing is safe only with durable, individually retryable jobs in the
+    // same transaction. Provider calls belong exclusively to the dispatcher.
+    for (const job of jobs) tx.create(job.ref,job.data);
+    tx.create(receiptRef,{cycle,jobIds:jobs.map(j=>j.ref.id),approvalCounted:false});
+    tx.update(draftRef,advance);
+  });
 }
 
-async function publishFacebook(uid, bizId, content) {
-  const connRef  = userBizConnsRef(uid, bizId).doc('facebook');
-  const connSnap = await connRef.get();
-  if (!connSnap.exists || connSnap.data().status !== 'connected') throw new Error('Facebook not connected');
-  const tokens = await _getConnTokens(connRef);
-  const conn   = { ...connSnap.data(), ...tokens };
-  if (!conn.pageId || !conn.accessToken) throw new Error('Missing Facebook page credentials');
-  const r = await axios.post(
-    `https://graph.facebook.com/v18.0/${conn.pageId}/feed`,
-    { message: content, access_token: conn.accessToken }
-  );
-  return { postId: r.data.id };
-}
-
-async function publishInstagram(uid, bizId, content, imageUrls) {
-  const connRef  = userBizConnsRef(uid, bizId).doc('instagram');
-  const connSnap = await connRef.get();
-  if (!connSnap.exists || connSnap.data().status !== 'connected') throw new Error('Instagram not connected');
-  const tokens = await _getConnTokens(connRef);
-  const conn   = { ...connSnap.data(), ...tokens };
-  const imageUrl = (imageUrls||[])[0];
-  if (!imageUrl) return { manualFallback: true, reason: 'no_image', message: 'Instagram requires an image.' };
-  const media = await axios.post(
-    `https://graph.facebook.com/v18.0/${conn.igUserId}/media`,
-    { image_url: imageUrl, caption: content, access_token: conn.accessToken }
-  );
-  const pub = await axios.post(
-    `https://graph.facebook.com/v18.0/${conn.igUserId}/media_publish`,
-    { creation_id: media.data.id, access_token: conn.accessToken }
-  );
-  return { postId: pub.data.id };
-}
-
-async function _runScheduledPost(schedule) {
-  const { uid, bizId, platformId, content, imageUrls } = schedule;
-  const platform = SCHED_PLATFORMS[platformId];
-  if (!platform) throw new Error(`Unsupported scheduled platform: ${platformId}`);
-  return platform.publish(uid, bizId, content, imageUrls);
-}
-
-// ── scheduledPostingCheck ─────────────────────────────────────────────────────
-// Runs hourly. Evaluates every enabled schedule draft and applies four guards
-// before posting: skip-cycle, global-pause, first-three approval gate, and
-// silence-is-approval (owner-gone-dark + lowConfidence checks).
 exports.scheduledPostingCheck = onSchedule(
-  { schedule: 'every 1 hours', region: 'us-central1',
-    secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
+  { schedule: 'every 1 hours', region: 'us-central1' },
   async () => {
     const now = new Date();
-    const API_PLATFORMS = ['google', 'facebook', 'instagram'];
     try {
-      const snap = await db.collectionGroup('listingDrafts')
-        .where('schedule.enabled', '==', true)
-        .limit(200)
-        .get();
-
-      for (const draftSnap of snap.docs) {
-        let scheduleValidated = false;
-        try {
-          const draft    = draftSnap.data();
-          const schedule = normalizeSchedule(draft.schedule || {});
-          if (schedule.unsupportedFrequency) {
-            await draftSnap.ref.update({ schedule, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
-            continue;
-          }
-          const nextRunAt = computeNextRunAt(schedule, now);
-          scheduleValidated = true;
-
-          if (!schedule.nextRunAt || new Date(schedule.nextRunAt) > now) continue;
-
-          // Path shape: users/{uid}/businesses/{bizId}/listingDrafts/{id}
-          const parts = draftSnap.ref.path.split('/');
-          const uid   = parts[1];
-          const bizId = parts[3];
-          const adaptations      = draft.adaptations || {};
-          const isExplicitApproval = schedule.approved === true;
-
-          // ── Guard 0: skip-cycle ─────────────────────────────────────────────
-          if (schedule.skipCycle === true) {
-            await draftSnap.ref.update({
-              'schedule.nextRunAt':     nextRunAt.toISOString(),
-              'schedule.lastRunAt':     now.toISOString(),
-              'schedule.skipCycle':     admin.firestore.FieldValue.delete(),
-              'schedule.approved':      admin.firestore.FieldValue.delete(),
-              'schedule.previewSentAt': admin.firestore.FieldValue.delete(),
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
-            console.log(`[scheduledPostingCheck] skipCycle ${uid}/${bizId} — advanced to ${nextRunAt.toISOString()}`);
-            continue;
-          }
-
-          // ── Guard 1: global pause ───────────────────────────────────────────
-          let bizData = {};
-          try {
-            const bizSnap = await userBizRef(uid, bizId).get();
-            bizData = bizSnap.exists ? bizSnap.data() : {};
-          } catch(e) {
-            console.warn(`[scheduledPostingCheck] biz read failed ${uid}/${bizId}: ${e.message}`);
-            continue;
-          }
-          if (bizData.schedulingPaused === true) {
-            // Do NOT advance nextRunAt — post will run once unpaused
-            console.log(`[scheduledPostingCheck] schedulingPaused ${uid}/${bizId} — skipping`);
-            continue;
-          }
-
-          // ── Guard 2 & 3: approval gates ─────────────────────────────────────
-          const approvalCount = bizData.approvalCount || 0;
-
-          if (approvalCount < 3) {
-            // First-three gate: explicit approval required for every post
-            if (!isExplicitApproval) {
-              console.log(`[scheduledPostingCheck] awaiting explicit approval (count=${approvalCount}) ${uid}/${bizId}`);
-              continue; // Do not advance nextRunAt — wait for owner to approve
-            }
-          } else {
-            // Silence-is-approval — but apply two extra safety checks
-            if (!isExplicitApproval) {
-              // Check 1: owner-gone-dark (no email engagement in 30 days)
-              let ownerDark = false;
-              try {
-                const userSnap = await db.collection('users').doc(uid).get();
-                const userData = userSnap.exists ? userSnap.data() : {};
-                const lastEngaged = userData.lastEmailEngagedAt;
-                if (lastEngaged) {
-                  const ms = lastEngaged.toMillis ? lastEngaged.toMillis() : new Date(lastEngaged).getTime();
-                  ownerDark = Date.now() - ms > 30 * 24 * 60 * 60 * 1000;
-                } else {
-                  // Never clicked an action link — use account age as proxy
-                  const createdAt = userData.createdAt;
-                  const ageMs = createdAt
-                    ? Date.now() - (createdAt.toMillis ? createdAt.toMillis() : new Date(createdAt).getTime())
-                    : 0;
-                  ownerDark = ageMs > 30 * 24 * 60 * 60 * 1000;
-                }
-              } catch(e) { /* non-fatal — treat as not dark */ }
-
-              if (ownerDark) {
-                console.log(`[scheduledPostingCheck] owner-gone-dark ${uid}/${bizId} — requiring explicit approval`);
-                continue;
-              }
-
-              // Check 2: any content flagged lowConfidence
-              const hasLowConf = Object.values(adaptations).some(v =>
-                v && typeof v === 'object' && v.lowConfidence === true
-              );
-              if (hasLowConf) {
-                console.log(`[scheduledPostingCheck] lowConfidence content ${uid}/${bizId} — requiring explicit approval`);
-                continue;
-              }
-            }
-          }
-
-          // ── Post to each API platform ────────────────────────────────────────
-          let anyPosted = false;
-          for (const platformId of API_PLATFORMS) {
-            const content = typeof adaptations[platformId] === 'string'
-              ? adaptations[platformId]
-              : adaptations[platformId]?.text || adaptations[platformId];
-            if (!content) continue;
-            try {
-              const result = await _runScheduledPost({
-                uid, bizId, platformId, content, imageUrls: draft.imageUrls || [],
-              });
-              if (result.manualFallback) {
-                console.warn(`[scheduledPostingCheck] manual fallback ${uid}/${bizId}/${platformId}: ${result.reason}`);
-              } else {
-                anyPosted = true;
-              }
-            } catch(e) {
-              console.error(`[scheduledPostingCheck] failed ${uid}/${bizId}/${platformId}:`, e.message);
-            }
-          }
-
-          // ── Advance schedule, clear per-cycle flags ──────────────────────────
-          await draftSnap.ref.update({
-            'schedule.nextRunAt':     nextRunAt.toISOString(),
-            'schedule.lastRunAt':     now.toISOString(),
-            'schedule.approved':      admin.firestore.FieldValue.delete(),
-            'schedule.skipCycle':     admin.firestore.FieldValue.delete(),
-            'schedule.previewSentAt': admin.firestore.FieldValue.delete(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
-
-          // Increment approvalCount on an explicit-approval post so we track trust milestones
-          if (anyPosted && isExplicitApproval) {
-            await userBizRef(uid, bizId).update({
-              approvalCount: admin.firestore.FieldValue.increment(1),
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            }).catch(e => console.warn(`[scheduledPostingCheck] approvalCount increment failed: ${e.message}`));
-          }
-        } catch(e) {
-          console.error('[scheduledPostingCheck] draft failed ' + draftSnap.ref.path + ':', e.message);
-          // Invalid recurrence must not remain due and block later drafts. A
-          // transient failure after validation must not disable a valid schedule.
-          if (!scheduleValidated) {
-            try {
-              await draftSnap.ref.update({
-                'schedule.enabled': false,
-                'schedule.pauseReason': e.message,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-              });
-            } catch(pauseError) {
-              console.error('[scheduledPostingCheck] pause failed ' + draftSnap.ref.path + ':', pauseError.message);
-            }
-          }
-          continue;
+      for await (const page of scheduledDraftPages('scheduledPostingCursor', now)) {
+        for (const draftSnap of page) {
+          try { await queueScheduledDraft(draftSnap.ref,now); }
+          catch(e) { console.error('[scheduledPostingCheck] draft failed '+draftSnap.ref.path+':',e.message); }
         }
       }
-    } catch(e) {
-      console.error('[scheduledPostingCheck] error:', e.message);
-    }
+    } catch(e) { console.error('[scheduledPostingCheck] error:',e.message); }
   }
 );
 
@@ -292,12 +153,8 @@ exports.scheduledDraftPreview = onSchedule(
     const h48  = new Date(now.getTime() + 48 * 60 * 60 * 1000);
 
     try {
-      const snap = await db.collectionGroup('listingDrafts')
-        .where('schedule.enabled', '==', true)
-        .limit(200)
-        .get();
-
-      for (const draftSnap of snap.docs) {
+      for await (const page of scheduledDraftPages('scheduledPreviewCursor', h48, now)) {
+      for (const draftSnap of page) {
         let scheduleValidated = false;
         try {
           const draft    = draftSnap.data();
@@ -327,6 +184,13 @@ exports.scheduledDraftPreview = onSchedule(
           const uid   = parts[1];
           const bizId = parts[3];
           const draftId = draftSnap.id;
+          if(draft.campaignId) {
+            const campaign=await userBizRef(uid,bizId).collection('campaigns').doc(draft.campaignId).get();
+            if(!campaign.exists || campaign.data().status==='archived') {
+              await draftSnap.ref.update({'schedule.enabled':false,'schedule.pauseReason':'Campaign archived.'});
+              continue;
+            }
+          }
 
           // Get owner details
           let email, ownerName, plan;
@@ -349,8 +213,11 @@ exports.scheduledDraftPreview = onSchedule(
           } catch(_) { continue; }
 
           const adaptations = draft.adaptations || {};
-          const platforms   = Object.keys(adaptations);
-          if (!platforms.length) continue;
+          const platforms = [...new Set(Array.isArray(draft.enabledPlatforms)?draft.enabledPlatforms:[])].filter(pid=>draft.platformStatus?.[pid]!=='excluded'&&adaptations[pid]);
+          if (!platforms.length) {
+            await draftSnap.ref.update({'schedule.enabled':false,'schedule.pauseReason':'Select destinations with saved copy before resuming.'});
+            continue;
+          }
 
           // ── Build signed action links ──────────────────────────────────────
           const key = _actionSecret();
@@ -458,6 +325,7 @@ exports.scheduledDraftPreview = onSchedule(
           }
           continue;
         }
+      }
       }
     } catch(e) {
       console.error('[scheduledDraftPreview] error:', e.message);

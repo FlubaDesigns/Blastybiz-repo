@@ -79,15 +79,25 @@ async function _publishGoogleJob(job, conn, pathUserId, pathBizId) {
 
 async function _publishFacebookJob(job, conn) {
   const content = job.payload?.adaptedContent || '';
+  const images = (Array.isArray(job.payload?.imageUrls) ? job.payload.imageUrls : []).filter(u=>typeof u==='string'&&/^https:\/\//i.test(u)).slice(0,10);
+  const base = `https://graph.facebook.com/v18.0/${conn.pageId}`;
   try {
-    const r = await _publicationPost(
-      `https://graph.facebook.com/v18.0/${conn.pageId}/feed`,
-      { message: content, access_token: conn.accessToken }
-    );
+    if(images.length===1) {
+      const r=await _publicationPost(base+'/photos',{url:images[0],caption:content,published:true,access_token:conn.accessToken});
+      return {postId:r.data.post_id || r.data.id};
+    }
+    const attached=[];
+    for(const url of images) {
+      // Unpublished staging is not a visible post. Only the final feed request
+      // is classified as potentially published when its response is lost.
+      const r=await axios.post(base+'/photos',{url,published:false,access_token:conn.accessToken},{timeout:30000});
+      attached.push({media_fbid:r.data.id});
+    }
+    const r = await _publicationPost(base+'/feed', {
+      message:content,access_token:conn.accessToken,...(attached.length?{attached_media:attached}:{}),
+    });
     return { postId: r.data.id };
-  } catch(e) {
-    throw _publisherError('Facebook', e);
-  }
+  } catch(e) { throw _publisherError('Facebook',e); }
 }
 
 async function _publishInstagramJob(job, conn) {
@@ -286,6 +296,10 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
       if (!snap.exists || snap.data().uid !== uid) throw new Error('forbidden');
 
       const draftData = snap.data();
+      if(draftData.campaignId) {
+        const campaign=await tx.get(userBizRef(uid,businessId).collection('campaigns').doc(draftData.campaignId));
+        if(!campaign.exists || campaign.data().status==='archived')throw new Error('campaign_archived');
+      }
       if (draftData.status === 'approved') throw new Error(ALREADY);
 
       const draftAdaptations = draftData.adaptations || {};
@@ -319,10 +333,11 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
         status: 'approved', approvedAt: admin.firestore.FieldValue.serverTimestamp()
       });
 
-      publishIds.forEach(pid => buildJob(tx, pid, draftAdaptations, imagesFor));
+      publishIds.forEach(pid => buildJob(tx, pid, draftAdaptations, imagesFor, draftData.campaignId || ''));
       return publishIds.length;
     });
   } catch (e) {
+    if (e.message === 'campaign_archived') return res.status(409).json({error:'Campaign removed. This draft cannot be sent.'});
     if (e.message === ALREADY) return res.status(409).json({ error: 'This blast has already been sent.' });
     if (e.message === NOTHING) {
       return res.status(400).json({
@@ -337,7 +352,7 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
 
   res.json({ success: true, plan: userPlan, published: publishedCount });
 
-  function buildJob(tx, pid, draftAdaptations, imagesFor) {
+  function buildJob(tx, pid, draftAdaptations, imagesFor, campaignId) {
     const cap = PLATFORM_CAPABILITY_MAP[pid] || { name: pid, capabilityLevel: 'manual_assisted', manualInstructions: '' };
     const adaptedContent = draftAdaptations[pid] || '';
     const jobRef = userBizJobsRef(uid, businessId).doc();
@@ -345,7 +360,7 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
     const isManual = isNativelyManual || isStarter;
     const starterBlocked = isStarter && !isNativelyManual;
     tx.set(jobRef, {
-      jobId: jobRef.id, businessId, uid, draftId,
+      jobId: jobRef.id, businessId, uid, draftId, campaignId,
       platform: pid,
       capabilityLevel: cap.capabilityLevel,
       jobType: 'publish_listing',
@@ -417,6 +432,14 @@ exports.dispatchPublishJob = onDocumentCreated(
         if (!fresh.exists || fresh.data().status !== 'pending' || fresh.data().planGated) {
           throw Object.assign(new Error('already-claimed'), { code: 'ALREADY_CLAIMED' });
         }
+        const current = fresh.data();
+        if (current.campaignId) {
+          const campaign = await tx.get(userBizRef(_pathUserId,_pathBizId).collection('campaigns').doc(current.campaignId));
+          if (!campaign.exists || campaign.data().status === 'archived') {
+            tx.update(jobRef,{status:'canceled',customerLabel:'Canceled',customerVisibleMessage:'Campaign removed; this post will not be sent.',updatedAt:admin.firestore.FieldValue.serverTimestamp()});
+            return null;
+          }
+        }
         tx.update(jobRef, { status: 'processing', adminRetry: false, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
         return fresh.data();
       });
@@ -425,6 +448,7 @@ exports.dispatchPublishJob = onDocumentCreated(
       throw txErr;
     }
 
+    if (!job) return;
     let providerReturned = false;
     try {
       const connSnap = await userBizConnsRef(_pathUserId, _pathBizId).doc(job.platform).get();
@@ -600,6 +624,16 @@ exports.jobCompletedTrigger = onDocumentUpdated(
 
     const uid = event.params.userId;
     if (!uid) return;
+    if (after.scheduledRunId && after.scheduledExplicitApproval && after.draftId) {
+      const bizRef=userBizRef(uid,event.params.bizId);
+      const receiptRef=bizRef.collection('listingDrafts').doc(after.draftId).collection('private').doc(after.scheduledRunId);
+      await db.runTransaction(async tx=>{
+        const receipt=await tx.get(receiptRef),biz=await tx.get(bizRef);
+        if(!receipt.exists || !biz.exists || receipt.data().approvalCounted)return;
+        tx.update(receiptRef,{approvalCounted:true});
+        tx.update(bizRef,{approvalCount:admin.firestore.FieldValue.increment(1)});
+      });
+    }
     let toEmail, ownerName, businessName;
     try {
       const userSnap = await db.collection('users').doc(uid).get();

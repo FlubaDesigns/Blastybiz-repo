@@ -12,59 +12,63 @@ const {
   getPlanConfig, purgeUserData,
 } = require('../lib/shared');
 
+// Server-owned creation; capacity counts every saved business, including setup
+// drafts. The account write serializes concurrent creations and deletion.
 exports.createBusiness = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
-  const uid = decoded.uid;
-  const { profileData, isNew } = req.body || {};
-  if (!profileData || typeof profileData !== 'object') {
-    return res.status(400).json({ error: 'Missing profileData' });
-  }
-  const planCfg = await getPlanConfig();
+  const {profileData,bizId,isNew,campaignData} = req.body || {};
+  const validId = x=>typeof x==='string'&&x.length>0&&x.length<=128&&!x.includes('/');
+  if (!profileData || typeof profileData!=='object' || Array.isArray(profileData) || !validId(bizId)) return res.status(400).json({error:'Business details and a stable bizId are required.'});
+  if (campaignData && (!validId(campaignData.id) || typeof campaignData!=='object')) return res.status(400).json({error:'Invalid campaign.'});
+  const fields = ['businessName','name','ownerName','ownerRole','category','phone','email','street','city','state','zip','address','website','hours','locationType','region','tone','ynMentionName','ynMentionRole','ynMentionAddress','ynMentionPhone','ynMentionWebsite','ynMentionEmail','story','different','awards','customer','otherInfo','businessDescription','toggles','onboarded','onboardingVersion','activeCampaign','enabledPlatforms','globalMemory','featuredPhoto','aiContext','bizInsights','platformCats','postingSchedule','platformPrefs'];
+  const clean = Object.fromEntries(fields.filter(k=>profileData[k]!==undefined).map(k=>[k,profileData[k]]));
+  const uid=decoded.uid,userRef=db.collection('users').doc(uid),bizRef=userBizRef(uid,bizId);
   try {
-    const userSnap = await db.collection('users').doc(uid).get();
-    const userData = userSnap.exists ? userSnap.data() : {};
-    const plan = userData.plan || 'starter';
-    const cap = planCfg.bizLimits[plan] ?? 1;
-    let dedupedBizId = null;
-    if (isNew && profileData.businessName && profileData.address) {
-      const existingSnap = await userBizCol(uid)
-        .where('businessName', '==', profileData.businessName)
-        .where('address', '==', profileData.address)
-        .limit(1)
-        .get();
-      if (!existingSnap.empty) {
-        dedupedBizId = existingSnap.docs[0].id;
+    const cfg=await getPlanConfig();
+    await db.runTransaction(async tx=>{
+      const user=await tx.get(userRef), owned=await tx.get(userBizCol(uid)), existing=await tx.get(bizRef);
+      const campRef=campaignData ? bizRef.collection('campaigns').doc(campaignData.id) : null;
+      const camp=campRef ? await tx.get(campRef) : null;
+      if(!user.exists)throw Object.assign(Error('Account not found'),{httpStatus:404});
+      const plan=user.data().plan || 'starter',cap=cfg.bizLimits[plan] ?? 1;
+      if(!existing.exists && !isNew)throw Object.assign(Error('Business not found'),{httpStatus:404});
+      if(!existing.exists && owned.docs.length>=cap)throw Object.assign(Error('Business limit reached for your plan.'),{httpStatus:403});
+      const stamp=admin.firestore.FieldValue.serverTimestamp();
+      tx.set(bizRef,{...clean,uid,...(!existing.exists?{createdAt:stamp,currentPlan:plan}:{}),updatedAt:stamp},{merge:true});
+      tx.set(userRef,{onboarded:true,activeBusiness:bizId,businessIds:[...new Set([...owned.docs.map(d=>d.id),bizId])],...(clean.ownerName?{displayName:clean.ownerName}:{}),updatedAt:stamp},{merge:true});
+      if(campRef && !camp.exists) {
+        const keys=['id','name','story','campaignStory','audience','offer','platformsEnabled','onboardingPlatforms','category','lastUsedAt','photos','adName','price','factoids','platformHistory'];
+        tx.create(campRef,{...Object.fromEntries(keys.filter(k=>campaignData[k]!==undefined).map(k=>[k,campaignData[k]])),uid,businessId:bizId,status:'active',createdAt:stamp});
       }
+    });
+    return res.json({success:true,bizId});
+  } catch(e) { console.error('[createBusiness]',e.message);return res.status(e.httpStatus||500).json({error:e.httpStatus?e.message:'Business could not be saved. Please retry.'}); }
+}));
+
+// Deletion archives the campaign and its historical records. The status is
+// committed first so workers immediately stop queueing future deliveries.
+exports.deleteCampaign = onRequest({ invoker:'public' },withAuth(async(req,res,decoded)=>{
+  if(req.method!=='POST')return res.status(405).json({error:'POST only'});
+  const {bizId,campaignId}=req.body || {};
+  if([bizId,campaignId].some(x=>typeof x!=='string'||!x||x.includes('/')||x.length>128))return res.status(400).json({error:'Invalid campaign.'});
+  const bizRef=userBizRef(decoded.uid,bizId),campRef=bizRef.collection('campaigns').doc(campaignId);
+  try {
+    await db.runTransaction(async tx=>{
+      const biz=await tx.get(bizRef),camp=await tx.get(campRef);
+      if(!biz.exists || !camp.exists)throw Object.assign(Error('Campaign not found'),{httpStatus:404});
+      tx.update(campRef,{status:'archived',archivedAt:admin.firestore.FieldValue.serverTimestamp()});
+      if(biz.data().activeCampaign===campaignId)tx.update(bizRef,{activeCampaign:null});
+    });
+    let cursor=null;
+    while(true){
+      let q=bizRef.collection('listingDrafts').where('campaignId','==',campaignId).orderBy(admin.firestore.FieldPath.documentId()).limit(200);
+      if(cursor)q=q.startAfter(cursor);
+      const snap=await q.get();if(!snap.docs.length)break;
+      const batch=db.batch();for(const d of snap.docs)batch.update(d.ref,{'schedule.enabled':false,'schedule.pauseReason':'Campaign archived.'});
+      await batch.commit();cursor=snap.docs[snap.docs.length-1];if(snap.docs.length<200)break;
     }
-    const treatAsNew = isNew && !dedupedBizId;
-    if (treatAsNew) {
-      const bizSnap = await userBizCol(uid).where('onboarded', '==', true).get();
-      if (bizSnap.size >= cap) {
-        return res.status(403).json({ error: 'Business limit reached', plan, cap, used: bizSnap.size });
-      }
-    }
-    const bizRef = treatAsNew
-      ? userBizCol(uid).doc()
-      : userBizRef(uid, dedupedBizId || userData.activeBusiness || uid);
-    const { updatedAt: _d1, createdAt: _d2, ...cleanData } = profileData;
-    const batch = db.batch();
-    batch.set(bizRef, {
-      ...cleanData,
-      uid,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
-    batch.set(db.collection('users').doc(uid), {
-      onboarded: true,
-      activeBusiness: bizRef.id,
-      businessIds: admin.firestore.FieldValue.arrayUnion(bizRef.id),
-    }, { merge: true });
-    await batch.commit();
-    return res.json({ success: true, bizId: bizRef.id });
-  } catch(e) {
-    console.error('[createBusiness]', e.message);
-    return res.status(500).json({ error: 'Server error' });
-  }
+    return res.json({success:true,archived:true});
+  }catch(e){console.error('[deleteCampaign]',e.message);return res.status(e.httpStatus||500).json({error:e.httpStatus?e.message:'Campaign removal did not finish. Retry to complete it.'});}
 }));
 
 exports.deleteBusiness = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {

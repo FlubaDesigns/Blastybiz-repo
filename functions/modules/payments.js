@@ -126,10 +126,18 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
 
   const orderId = response.paymentLink?.orderId;
   if (orderId) {
-    await db.collection('pendingCheckouts').doc(orderId).set({
-      uid, plan, billingPeriod,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 48 * 60 * 60 * 1000),
+    const checkoutRef=db.collection('pendingCheckouts').doc(orderId);
+    await db.runTransaction(async tx=>{
+      const existing=await tx.get(checkoutRef);
+      if(existing.exists) {
+        if(existing.data().uid!==uid || existing.data().plan!==plan)throw Error('Checkout linkage mismatch');
+        return; // Reopening the same Square link must retain its fulfillment receipt.
+      }
+      tx.create(checkoutRef,{
+        uid, plan, billingPeriod, subscriptionPlanId,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 48 * 60 * 60 * 1000),
+      });
     });
   }
   res.json({ url: response.paymentLink.url });
@@ -141,6 +149,121 @@ exports.createPortalSession = onRequest({ invoker: 'public' }, withAuth(async (r
   if (!subSnap.exists) return res.json({ hasSubscription: false, url: null });
   res.json({ hasSubscription: true, url: 'mailto:info@blastybiz.com?subject=Manage%20BlastyBiz%20Subscription' });
 }));
+
+// Complete the event and its account effects in the same transaction. Customer
+// linkage and subscription snapshots live in the existing webhook ledger so
+// either event arrival order can recover without a second billing system.
+async function applySquareEvent(event) {
+  const eventId=event.event_id;
+  if(typeof eventId!=='string'||!eventId||eventId.includes('/'))throw Error('Missing webhook event ID');
+  const events=db.collection('webhookEvents'),eventRef=events.doc(eventId);
+  const payment=event.data?.object?.payment,sub=event.data?.object?.subscription;
+  const customerId=payment?.customer_id || payment?.customerId || sub?.customer_id || sub?.customerId || '';
+  const customerRef=customerId ? events.doc('customer_'+crypto.createHash('sha256').update(customerId).digest('hex')) : null;
+  return db.runTransaction(async tx=>{
+    const received=await tx.get(eventRef);
+    if(received.exists && ['completed','needs_review'].includes(received.data().status))return null;
+    const customer=customerRef ? await tx.get(customerRef) : null;
+    const stamp=admin.firestore.FieldValue.serverTimestamp();
+    const done=()=>tx.set(eventRef,{type:event.type,status:'completed',completedAt:stamp},{merge:true});
+    if(event.type==='payment.updated' && payment?.status==='COMPLETED') {
+      const orderId=payment.order_id || payment.orderId;
+      if(!orderId){done();return null;}
+      const checkoutRef=db.collection('pendingCheckouts').doc(orderId),checkout=await tx.get(checkoutRef);
+      if(!checkout.exists) {
+        const createdMs=Date.parse(event.created_at);
+        if(Number.isFinite(createdMs) && Date.now()-createdMs<24*60*60*1000)throw Error('Checkout linkage not available yet');
+        const validTime=Number.isFinite(createdMs);
+        const record={type:event.type,status:validTime?'completed':'needs_review',unlinked:true,
+          reason:validTime?'checkout_missing':'invalid_event_timestamp',orderId,paymentId:payment.id || '',customerId,
+          eventCreatedAt:event.created_at || '',...(validTime?{completedAt:stamp}:{receivedAt:stamp})};
+        tx.set(eventRef,record,{merge:true});
+        return {kind:'reconciliation_required',eventId,...record};
+      }
+      const pending=checkout.data();
+      if(pending.fulfilledPaymentId){done();return null;}
+      const {uid,plan}=pending;
+      if(!uid || !['pro','agency'].includes(plan))throw Error('Invalid checkout linkage');
+      if(customer?.data()?.uid && customer.data().uid!==uid) {
+        const record={type:event.type,status:'needs_review',reason:'customer_account_mismatch',
+          uid,linkedUid:customer.data().uid,orderId,paymentId:payment.id || '',customerId,
+          eventCreatedAt:event.created_at || '',receivedAt:stamp};
+        tx.set(eventRef,record,{merge:true});
+        return {kind:'reconciliation_required',eventId,...record};
+      }
+      const subscriptionRef=db.collection('subscriptions').doc(uid);
+      const current=await tx.get(subscriptionRef),user=await tx.get(db.collection('users').doc(uid));
+      const businesses=await tx.get(userBizCol(uid));
+      const records=customerId ? await tx.get(events.where('customerId','==',customerId)) : {docs:[]};
+      const started=pending.createdAt?.toMillis?.() || 0;
+      const candidates=records.docs.map(d=>d.data()).filter(d=>d.recordType==='subscription' &&
+        (!started || new Date(d.createdAt).getTime()>=started) &&
+        (!pending.subscriptionPlanId || d.planVariationId===pending.subscriptionPlanId || d.planId===pending.subscriptionPlanId));
+      candidates.sort((a,b)=>String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+      const linked=candidates[0] || null;
+      const canceled=linked && ['CANCELED','DEACTIVATED'].includes(linked.status);
+      if(!user.exists)throw Error('Checkout account not found');
+      const old=current.exists?current.data():{};
+      // A delayed old checkout must not replace a newer paid subscription.
+      const checkoutMs=pending.createdAt?.toMillis?.() || 0;
+      const currentMs=old.checkoutCreatedAt?.toMillis?.() || 0;
+      if(checkoutMs && currentMs && checkoutMs<currentMs){tx.update(checkoutRef,{fulfilledPaymentId:payment.id,fulfilledAt:stamp});done();return null;}
+      const activePlan=canceled?'starter':plan,billingPeriod=pending.billingPeriod || 'monthly';
+      tx.set(db.collection('users').doc(uid),{plan:activePlan,planActive:!canceled,billingPeriod},{merge:true});
+      for(const biz of businesses.docs)tx.update(biz.ref,{currentPlan:activePlan,subscriptionStatus:canceled?'canceled':'active'});
+      tx.set(subscriptionRef,{
+        uid,squareCustomerId:customerId,squarePaymentId:payment.id,plan,billingPeriod,status:canceled?'canceled':'active',
+        squareCheckoutPlanId:pending.subscriptionPlanId || '',
+        squareSubscriptionId:linked?.subscriptionId || '',squareSubscriptionCreatedAt:linked?.createdAt || '',
+        checkoutCreatedAt:pending.createdAt || stamp,updatedAt:stamp,
+      },{merge:true});
+      tx.update(checkoutRef,{fulfilledPaymentId:payment.id,fulfilledAt:stamp});
+      if(customerRef)tx.set(customerRef,{recordType:'customer',uid,updatedAt:stamp},{merge:true});
+      done();
+      return canceled?null:{kind:'paid',uid,plan,billingPeriod,bizSnaps:businesses,payment};
+    }
+    if(['subscription.created','subscription.updated'].includes(event.type) && sub?.id && customerRef) {
+      const summaryRef=events.doc('subscription_'+crypto.createHash('sha256').update(sub.id).digest('hex'));
+      const prior=await tx.get(summaryRef),previous=prior.exists?prior.data():{};
+      const version=Number(sub.version || 0);
+      if(previous.version && version && version<previous.version){done();return null;}
+      if(!version && previous.eventAt && event.created_at && event.created_at<previous.eventAt){done();return null;}
+      const record={recordType:'subscription',customerId,subscriptionId:sub.id,version,
+        status:String(sub.status || previous.status || '').toUpperCase(),
+        planVariationId:sub.plan_variation_id || sub.planVariationId || previous.planVariationId || '',
+        planId:sub.plan_id || sub.planId || previous.planId || '',
+        createdAt:sub.created_at || previous.createdAt || event.created_at || '',eventAt:event.created_at || '',updatedAt:stamp};
+      let uid=customer?.data()?.uid;
+      if(!uid){const matches=await tx.get(db.collection('subscriptions').where('squareCustomerId','==',customerId).limit(2));if(matches.docs.length===1)uid=matches.docs[0].data().uid || matches.docs[0].id;}
+      const subscriptionRef=uid?db.collection('subscriptions').doc(uid):null;
+      const linked=subscriptionRef?await tx.get(subscriptionRef):null;
+      const account=uid?await tx.get(db.collection('users').doc(uid)):null;
+      const current=linked?.exists?linked.data():{};
+      const canceled=['CANCELED','DEACTIVATED'].includes(record.status);
+      const same=current.squareSubscriptionId===sub.id;
+      const planMatches=!current.squareCheckoutPlanId || [record.planId,record.planVariationId].includes(current.squareCheckoutPlanId);
+      const checkoutStart=current.checkoutCreatedAt?.toMillis?.() || 0;
+      const belongsToCheckout=!checkoutStart || new Date(record.createdAt).getTime()>=checkoutStart;
+      const mayLink=!!linked?.exists && planMatches && belongsToCheckout && (!current.squareSubscriptionId ||
+        (!canceled && event.type==='subscription.created' && record.createdAt && record.createdAt>(current.squareSubscriptionCreatedAt || '')));
+      const revoke=!!linked?.exists && canceled && (same || (!current.squareSubscriptionId && mayLink));
+      const businesses=revoke?await tx.get(userBizCol(uid)):null;
+      // No writes occur before all reads above, including the legacy linkage query.
+      tx.set(summaryRef,record,{merge:true});
+      tx.set(customerRef,{recordType:'customer',...(uid?{uid}:{}),updatedAt:stamp},{merge:true});
+      if(subscriptionRef && (same || mayLink))tx.set(subscriptionRef,{squareSubscriptionId:sub.id,squareSubscriptionCreatedAt:record.createdAt,updatedAt:stamp},{merge:true});
+      if(revoke) {
+        tx.set(db.collection('users').doc(uid),{plan:'starter',planActive:false},{merge:true});
+        tx.update(subscriptionRef,{status:'canceled',updatedAt:stamp});
+        for(const biz of businesses.docs)tx.update(biz.ref,{currentPlan:'starter',subscriptionStatus:'canceled'});
+      }
+      done();
+      return revoke?{kind:'canceled',uid,bizSnaps:businesses,priorPlanName:account?.data()?.plan==='agency'?'Agency':'Pro'}:null;
+    }
+    done();
+    return event.type==='payment.updated' && payment?.status==='FAILED'?{kind:'failed',payment}:null;
+  });
+}
 
 exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_WEBHOOK_SIGNATURE_KEY', 'RESEND_API_KEY'] }, async (req, res) => {
   const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
@@ -158,57 +281,17 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
     }
   } catch { return res.status(403).json({ error: 'Invalid signature' }); }
 
-  const event = req.body;
-
-  const eventId = event.event_id;
-  if (eventId) {
-    try {
-      await db.collection('webhookEvents').doc(eventId).create({
-        receivedAt: admin.firestore.FieldValue.serverTimestamp(),
-        type: event.type || ''
-      });
-    } catch(e) {
-      if (e.code === 6) {
-        console.log(`[squareWebhook] Duplicate event ${eventId} — skipping`);
-        return res.json({ received: true });
-      }
-      throw e;
-    }
+  let effect;
+  try { effect = await applySquareEvent(req.body || {}); }
+  catch(e) { console.error('[squareWebhook] durable update failed:',e.message);return res.status(503).json({error:'Payment update not committed; retry required.'}); }
+  if(effect?.kind==='reconciliation_required') {
+    console.error('[squareWebhook] payment requires reconciliation:', {
+      eventId:effect.eventId,status:effect.status,reason:effect.reason,orderId:effect.orderId,
+      paymentId:effect.paymentId,customerId:effect.customerId,...(effect.uid?{uid:effect.uid,linkedUid:effect.linkedUid}:{})
+    });
   }
-
-  if (event.type === 'payment.updated' && event.data?.object?.payment?.status === 'COMPLETED') {
-    const payment = event.data?.object?.payment;
-    if (!payment) return res.json({ received: true });
-    const orderId = payment.order_id || payment.orderId;
-    if (!orderId) return res.json({ received: true });
-    try {
-      const pendingSnap = await db.collection('pendingCheckouts').doc(orderId).get();
-      if (!pendingSnap.exists) return res.json({ received: true });
-      const { uid, plan, billingPeriod: pendingBillingPeriod } = pendingSnap.data();
-      const billingPeriod = pendingBillingPeriod || 'monthly';
-      if (!uid) return res.json({ received: true });
-      await db.collection('pendingCheckouts').doc(orderId).delete();
-      const bizSnaps = await userBizCol(uid).get();
-      const syncBatch = db.batch();
-      syncBatch.set(
-        db.collection('users').doc(uid),
-        { plan, planActive: true, billingPeriod },
-        { merge: true }
-      );
-      bizSnaps.docs.forEach(biz => {
-        syncBatch.update(biz.ref, { currentPlan: plan, subscriptionStatus: 'active' });
-      });
-      await syncBatch.commit();
-      await db.collection('subscriptions').doc(uid).set({
-        uid,
-        squareCustomerId: payment.customer_id || '',
-        squarePaymentId: payment.id,
-        plan,
-        billingPeriod,
-        status: 'active',
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      }, { merge: true });
-
+  if(effect?.kind==='paid') {
+    const {uid,plan,billingPeriod,bizSnaps,payment}=effect;
       try {
         const userSnap = await db.collection('users').doc(uid).get();
         const userData = userSnap.data() || {};
@@ -292,61 +375,9 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
 </div>`,
         });
       } catch(e) { console.warn('[squareWebhook] admin new-paying alert failed:', e.message); }
-    } catch (e) {
-      console.error('squareWebhook order lookup error:', e.message);
-    }
   }
-
-  if (event.type === 'subscription.created') {
-    const sub = event.data?.object?.subscription;
-    if (sub) {
-      const subscriptionId = sub.id;
-      const customerId = sub.customer_id || sub.customerId;
-      if (subscriptionId && customerId) {
-        try {
-          const snap = await db.collection('subscriptions')
-            .where('squareCustomerId', '==', customerId).limit(1).get();
-          if (!snap.empty) {
-            await snap.docs[0].ref.update({
-              squareSubscriptionId: subscriptionId,
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
-          }
-        } catch (e) {
-          console.error('squareWebhook subscription.created error:', e.message);
-        }
-      }
-    }
-  }
-
-  if (event.type === 'subscription.updated') {
-    const sub = event.data?.object?.subscription;
-    if (sub) {
-      const status = (sub.status || '').toUpperCase();
-      const isCanceled = status === 'CANCELED' || status === 'DEACTIVATED';
-      if (isCanceled) {
-        const customerId = sub.customer_id || sub.customerId;
-        if (customerId) {
-          try {
-            const snap = await db.collection('subscriptions')
-              .where('squareCustomerId', '==', customerId).limit(1).get();
-            if (!snap.empty) {
-              const uid = snap.docs[0].data().uid;
-              const priorUserSnap = await db.collection('users').doc(uid).get();
-              const priorPlan = priorUserSnap.data()?.plan || 'pro';
-              const priorPlanName = priorPlan === 'agency' ? 'Agency' : 'Pro';
-              await db.collection('users').doc(uid).set(
-                { plan: 'starter', planActive: false }, { merge: true }
-              );
-              await snap.docs[0].ref.update({
-                status: 'canceled',
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-              });
-              const bizSnaps = await userBizCol(uid).get();
-              for (const biz of bizSnaps.docs) {
-                await biz.ref.update({ currentPlan: 'starter', subscriptionStatus: 'canceled' });
-              }
-
+  if(effect?.kind==='canceled') {
+    const {uid,bizSnaps,priorPlanName}=effect;
               try {
                 const userSnap = await db.collection('users').doc(uid).get();
                 const userData = userSnap.data() || {};
@@ -405,17 +436,9 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
                   await sendResendEmail({ to: toEmail, subject: cancelSubject, html: cancelHtml });
                 }
               } catch(e) { console.error('[squareWebhook] cancellation email failed:', e.message); }
-            }
-          } catch (e) {
-            console.error('squareWebhook subscription.updated error:', e.message);
-          }
-        }
-      }
-    }
   }
-
-  if (event.type === 'payment.updated' && event.data?.object?.payment?.status === 'FAILED') {
-    const payment = event.data?.object?.payment;
+  if (effect?.kind === 'failed') {
+    const payment = effect.payment;
     if (payment) {
       try {
         const customerId = payment.customer_id || payment.customerId;

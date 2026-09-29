@@ -896,16 +896,17 @@ window.cbSubmit = async function() {
 
     if (editBizId) {
       batch.set(bizRef, bizData, { merge: true });
+      if (!existingCampaignId) batch.set(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'campaigns', campId), campData);
+      await batch.commit();
     } else {
-      batch.set(bizRef, { ...bizData, uid: currentUser.uid, createdAt: serverTimestamp() });
-      batch.set(doc(db, 'users', currentUser.uid), {
-        activeBusiness: bizId, onboarded: true, onboardingVersion: 'ob2',
-        updatedAt: serverTimestamp()
-      }, { merge: true });
+      const token = await currentUser.getIdToken();
+      const response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/createBusiness', {
+        method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+        body:JSON.stringify({bizId,isNew:true,profileData:bizData,campaignData:campData})
+      });
+      const result = await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(result.error || 'Business could not be saved.');
     }
-    if (!existingCampaignId) batch.set(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'campaigns', campId), campData);
-
-    await batch.commit();
 
     cbSetMood((window._ob2Anim&&window._ob2Anim.success)||'s-celebrate s-flame-green s-lights-flash s-smoke');
     if (window._cbBlasty) window._cbBlasty.stop();   // guide layer has done its job
@@ -931,7 +932,7 @@ window.cbSubmit = async function() {
   } catch(e) {
     console.error('[cb save]', e);
     cbSetMood('s-ask');
-    err.textContent = 'Something went wrong. Please try again.';
+    err.textContent = e.message || 'Something went wrong. Please try again.';
     saving = false;
     btn.disabled=false; btn.textContent=window._cbNeedsCampaign ? 'Save Business & Campaign' : 'Save Business';
   }

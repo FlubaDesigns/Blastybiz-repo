@@ -52,21 +52,8 @@ service cloud.firestore {
       match /businesses/{bizId} {
         allow read: if request.auth != null &&
           (request.auth.uid == userId || isAdmin());
-        allow create: if request.auth != null &&
-          request.auth.uid == userId &&
-          request.resource.data.keys().hasOnly([
-              'businessName', 'name', 'ownerName', 'ownerRole', 'category',
-              'phone', 'email', 'street', 'city', 'state', 'zip', 'address',
-              'website', 'hours', 'locationType', 'region', 'tone',
-              'ynMentionName', 'ynMentionRole', 'ynMentionAddress',
-              'ynMentionPhone', 'ynMentionWebsite', 'ynMentionEmail',
-              'story', 'different', 'awards', 'customer', 'otherInfo',
-              'businessDescription', 'toggles', 'onboarded', 'onboardingVersion',
-              'activeCampaign', 'enabledPlatforms',
-              'globalMemory', 'featuredPhoto', 'aiContext', 'bizInsights',
-              'platformCats', 'postingSchedule', 'platformPrefs',
-              'businessId', 'uid', 'status', 'createdAt', 'updatedAt'
-            ]);
+        // Creation and capacity enforcement are owned by createBusiness.
+        allow create: if isAdmin();
         allow update: if request.auth != null &&
           request.auth.uid == userId &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -117,8 +104,10 @@ service cloud.firestore {
             (request.auth.uid == userId || isAdmin());
           allow create: if request.auth != null &&
             request.auth.uid == userId;
-          allow update, delete: if request.auth != null &&
-            (request.auth.uid == userId || isAdmin());
+          allow update: if isAdmin() || (request.auth != null && request.auth.uid == userId &&
+            resource.data.get('status','active') != 'archived' &&
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'archivedAt']));
+        allow delete: if isAdmin();
 
           // Campaign facts subcollection
           // bizId and campaignId fields must match path segments on create.

@@ -122,6 +122,14 @@
         { "fieldPath": "status",    "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "listingDrafts",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "schedule.enabled", "order": "ASCENDING" },
+        { "fieldPath": "schedule.nextRunAt", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [

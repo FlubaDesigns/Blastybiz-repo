@@ -25,20 +25,24 @@ async function generation() {
   ok(requests[1].draftId==='draft1'&&next===1,'existing draft generation reuses its identity');
 }
 async function schedules(worker,invalid,failPause=false) {
-  const source=read('functions/modules/scheduled.js'),writes=[],sent=[];
+  const {database,admin}=require('./lib/test-firestore.cjs'),sent=[];
   const future=worker==='scheduledDraftPreview';
   const schedule={enabled:true,frequency:'daily',timeSlot:'morning',nextRunAt:new Date(Date.now()+(future?3600000:-3600000)).toISOString(),approved:true};
-  const docs=[invalid,null].map((bad,i)=>({id:'d'+i,data:()=>({schedule:{...schedule,...bad},adaptations:{facebook:'Copy'}}),ref:{path:'users/u/businesses/b/listingDrafts/d'+i,update:async data=>{if(i===0&&failPause)throw Error('write offline');writes.push({id:i,data});}}}));
-  const query={where(){return this},limit(){return this},get:async()=>({docs})};
-  const c={exports:{},console:quiet,onSchedule:(_,f)=>f,...calendar,admin:{firestore:{FieldValue:{serverTimestamp:()=>1,delete:()=>null,increment:n=>n}}},
-    db:{collectionGroup:()=>query,collection:()=>({doc:()=>({get:async()=>({exists:true,data:()=>({email:'owner@example.com',plan:'pro'})})})})},
-    userBizRef:()=>({get:async()=>({exists:true,data:()=>({approvalCount:3})}),update:async()=>{}}),_runScheduledPost:async()=>{sent.push('post');return {}},
-    sendResendEmail:async()=>sent.push('email'),makeActionSig:()=> 'signature',_actionSecret:()=> 'key',makeUnsubSig:()=> 'unsub',_unsubSecret:()=> 'key',APP_BASE_URL:'https://example.com',CF_BASE:'https://example.com'};
-  const end=worker==='scheduledPostingCheck'?'// ── scheduledDraftPreview':'// ── scheduledUpgradeNudge';
-  vm.runInNewContext(cut(source,'exports.'+worker+' =',end),c);await c.exports[worker]();
-  ok(sent.length===1,worker+' must process valid draft only; sends='+sent.length+'; invalid='+JSON.stringify(invalid));
-  if(!failPause)ok(writes.some(x=>x.id===0&&x.data['schedule.enabled']===false&&x.data['schedule.pauseReason']),worker+' pauses only invalid draft with reason');
-  ok(writes.some(x=>x.id===1)&&!writes.some(x=>x.id===1&&x.data['schedule.enabled']===false),worker+' advances valid draft normally');
+  const path=i=>'users/u/businesses/b/listingDrafts/d'+i;
+  const store=database({'users/u':{email:'owner@example.com',plan:'pro'},'users/u/businesses/b':{approvalCount:3},
+    [path(0)]:{schedule:{...schedule,...invalid},enabledPlatforms:['facebook'],adaptations:{facebook:'Copy'}},
+    [path(1)]:{schedule,enabledPlatforms:['facebook'],adaptations:{facebook:'Copy'}}});
+  if(failPause)store.beforeCommit(async ops=>{if(ops.some(([,ref])=>ref.path===path(0)))throw Error('write offline');});
+  const c={exports:{},console:quiet,onSchedule:(_,f)=>f,...calendar,admin,crypto:require('node:crypto'),db:store.db,
+    userBizRef:(u,b)=>store.db.doc('users/'+u+'/businesses/'+b),userBizJobsRef:(u,b)=>store.db.collection('users/'+u+'/businesses/'+b+'/publishJobs'),PLATFORM_CAPABILITY_MAP:{facebook:{name:'Facebook',capabilityLevel:'partial_auto'}},
+    sendResendEmail:async()=>sent.push('email'),makeActionSig:()=> 'signature',_actionSecret:()=> 'key',makeUnsubSig:()=> 'unsub',_unsubSecret:()=> 'key',APP_BASE_URL:'https://example.com'};
+  vm.runInNewContext(cut(read('functions/modules/scheduled.js'),'async function* scheduledDraftPages','// ── scheduledUpgradeNudge'),c);
+  await c.exports[worker]();
+  const count=future?sent.length:Object.keys(store.all()).filter(p=>p.includes('/publishJobs/')).length;
+  ok(count===1,worker+' must process only valid draft; deliveries='+count+'; invalid='+JSON.stringify(invalid));
+  if(!failPause)ok(store.get(path(0)).schedule.enabled===false&&store.get(path(0)).schedule.pauseReason,worker+' pauses invalid draft with reason');
+  const valid=store.get(path(1)).schedule;
+  ok(valid.enabled&&(future?valid.previewSentAt:valid.lastRunAt),worker+' advances valid draft normally');
 }
 async function connections() {
   const c={axios:{post:async()=>{throw c.failure}}};

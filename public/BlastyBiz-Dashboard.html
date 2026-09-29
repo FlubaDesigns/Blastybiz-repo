@@ -608,14 +608,21 @@ onAuthStateChanged(auth, async (user) => {
 
   window.deleteCampaign = async function(campId) {
     if (!currentUser || !window.activeBizId) return;
-    if (!confirm('Delete this campaign? This cannot be undone.')) return;
+    if (!confirm('Remove campaign? Scheduled posts will stop. Its history will be kept.')) return;
+    const bizId = window.activeBizId;
     try {
-      await deleteDoc(doc(db, 'users', currentUser.uid, 'businesses', window.activeBizId, 'campaigns', campId));
+      const token = await currentUser.getIdToken();
+      const response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/deleteCampaign', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ bizId, campaignId: campId })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Campaign could not be removed.');
       await loadBusinessContextFirestore(window.activeBizId);
-      showToast('Campaign deleted.');
+      showToast('Campaign removed. History kept.');
     } catch(e) {
       console.error('[deleteCampaign]', e);
-      showToast('Could not delete campaign.');
+      showToast('Could not remove campaign. Please retry.');
     }
   };
 
@@ -664,7 +671,7 @@ onAuthStateChanged(auth, async (user) => {
     try {
       const campSnap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', bizId, 'campaigns'));
       const bizCampaigns = campSnap.docs
-        .map(d => ({ ...d.data(), id: d.id }))
+        .map(d => ({ ...d.data(), id: d.id })).filter(c=>c.status!=='archived')
         .sort((a, b) => new Date(b.lastUsedAt || b.createdAt || 0) - new Date(a.lastUsedAt || a.createdAt || 0));
       renderDashboardCampaigns(bizCampaigns);
     } catch(e2) {

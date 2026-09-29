@@ -583,7 +583,7 @@
 })();
 </script>
 
-<div id="profile-save-error" role="alert" hidden style="margin:24px;padding:16px;border:1px solid #c44;border-radius:8px;">Your profile could not be saved. Your answers are still here. <button type="button" onclick="window._bbRetryProfile()">Retry save</button></div>
+<div id="profile-save-error" role="alert" hidden style="margin:24px;padding:16px;border:1px solid #c44;border-radius:8px;"><span id="profile-save-error-message">Your profile could not be saved.</span> Your answers are still here. <button type="button" onclick="window._bbRetryProfile()">Retry save</button></div>
 
 <!-- ── Firebase ─────────────────────────────────────────────────── -->
 <script type="module">
@@ -607,8 +607,7 @@ window._bbSaveProfile = async function(answers, toggles, forkVal) {
     }
     const bizRef = pendingProfileRef.ref;
     bizId = bizRef.id;
-    const batch = writeBatch(db);
-    batch.set(bizRef, {
+    const profileData = {
       name:             answers.bizName      || '',
       businessName:     answers.bizName      || '',
       ownerName:        answers.ownerName    || '',
@@ -627,19 +626,18 @@ window._bbSaveProfile = async function(answers, toggles, forkVal) {
       ynMentionPhone:   toggles.ynMentionPhone   ? 'yes' : 'no',
       ynMentionEmail:   'yes',
       ynMentionWebsite: 'yes',
-      updatedAt: serverTimestamp()
-    }, { merge: true });
-
-    batch.set(doc(db, 'users', uid), {
-      activeBusiness: bizId,
-      onboarded:      true,
-      displayName:    answers.ownerName || ''
-    }, { merge: true });
-
-    await batch.commit();
+    };
+    const token = await auth.currentUser.getIdToken();
+    const response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/createBusiness', {
+      method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+      body:JSON.stringify({bizId,isNew:!sessionStorage.getItem('bb_bizId'),profileData})
+    });
+    const result = await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(result.error || 'Business could not be saved.');
     sessionStorage.setItem('bb_bizId', bizId);
   } catch(e) {
     console.error('[profile save]', e);
+    document.getElementById('profile-save-error-message').textContent = e.message || 'Your profile could not be saved.';
     errorBox.hidden = false;
     errorBox.scrollIntoView({ block: 'center' });
     return false;

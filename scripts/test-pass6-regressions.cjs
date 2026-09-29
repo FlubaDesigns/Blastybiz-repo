@@ -48,11 +48,12 @@ async function setupTests() {
     const html=read('public/BlastyBiz-'+name+'.html');
     const code=section(html,'let '+name.toLowerCase()+'Saving =','await auth.authStateReady()');
     const nodes={},storage=new Map([['bb_bizId','b']]),writes=[];let fail=true;
-    const c={window:{_bbUid:'u',location:{href:'unchanged'}},console:quiet,auth:{currentUser:{uid:'u'}},db:{},
+    const c={window:{_bbUid:'u',location:{href:'unchanged'}},console:quiet,auth:{currentUser:{uid:'u',getIdToken:async()=>'token'}},db:{},
       document:{getElementById:id=>nodes[id]||(nodes[id]={hidden:true,scrollIntoView(){}})},
       sessionStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},
       doc:(_, ...p)=>({path:p.join('/'),id:p.at(-1)||'new'}),collection:()=>({}),serverTimestamp:()=>1,
       writeBatch:()=>{const pending=[];return {set:(r,d)=>pending.push({r,d}),commit:async()=>{if(fail)throw Error('offline');writes.push(...pending);}}},
+      fetch:async(_,options)=>{if(fail)throw Error('offline');writes.push(JSON.parse(options.body));return {ok:true,json:async()=>({success:true})};},
       setDoc:async(r,d)=>{if(fail)throw Error('offline');writes.push({r,d});}
     };
     // Include only the save declaration, excluding the auth listener below it.
@@ -69,7 +70,7 @@ async function setupTests() {
         ok(c.window.location.href==='BlastyBiz-CreateBiz.html'&&writes.length===before&&nodes['story-save-error'].hidden,'missing '+missing+' context redirects without a write or dead-end retry');
       }
     }
-    if(name==='Profile')ok(writes.length===2&&!('email' in writes[1].d)&&writes[0].d.email==='business@example.com','profile batch keeps business contact separate from account email');
+    if(name==='Profile')ok(writes.length===1&&writes[0].profileData.email==='business@example.com'&&writes[0].bizId==='b'&&!('email' in writes[0]),'profile uses server creation/update with stable identity and separate business email');
   }
 }
 async function chatTests() {

@@ -36,6 +36,8 @@ jobs:
           node scripts/sync-schedule.cjs --check
           node scripts/test-pass7-regressions.cjs
           node scripts/test-pass7-corrections.cjs
+          node scripts/test-pass8-regressions.cjs
+          node scripts/test-pass8-corrections.cjs
 
   deploy:
     needs: check-release
@@ -60,7 +62,7 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools@15.29.0
       - name: Deploy reviewed backend, rules, and indexes
-        run: firebase deploy --project blastybiz-9523e --non-interactive --only firestore:rules,firestore:indexes,storage,functions:adminRetryJob,functions:adminMarkManualFollowup,functions:adminListActivityLogs,functions:dispatchPublishJob,functions:jobFailedTrigger,functions:jobCompletedTrigger,functions:approvePendingPost,functions:chatCampaign,functions:deleteBusiness
+        run: firebase deploy --project blastybiz-9523e --non-interactive --only firestore:rules,firestore:indexes,storage,functions:adminRetryJob,functions:adminMarkManualFollowup,functions:adminListActivityLogs,functions:dispatchPublishJob,functions:jobFailedTrigger,functions:jobCompletedTrigger,functions:approvePendingPost,functions:chatCampaign,functions:deleteBusiness,functions:approveDraft,functions:createBusiness,functions:deleteCampaign,functions:createCheckoutSession,functions:squareWebhook,functions:scheduledPostingCheck,functions:scheduledDraftPreview,functions:draftAction,functions:adaptListing,functions:generateEnrichmentQuestions,functions:suggestCategory,functions:previewAds,functions:extractBizContext,functions:resolveCategories,functions:suggestPlatforms,functions:scoreFact
       - name: Identify deployed source
         run: node -e 'require("fs").writeFileSync("public/release.json", JSON.stringify({commit:process.env.GITHUB_SHA, deployedAt:new Date().toISOString()}))'
       - name: Deploy website
