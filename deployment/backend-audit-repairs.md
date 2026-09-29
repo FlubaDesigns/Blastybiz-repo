@@ -36,7 +36,8 @@ B07–B12, plus the audited duplicate-checkout and AI-provider-switch gaps.
   after the provider idempotency window; no duplicate-send guarantee is invented.
 - Weekly exports wait for completion and record failures as failures. Recovery
   setup creates a private project-owned bucket with 35-day lifecycle retention,
-  grants only the Firestore service agent bucket object access, enables PITR,
+  grants the Firestore service agent bucket object access, enables the standard
+  Firebase Storage service-agent role needed for cross-service deletion rules, enables PITR,
   performs a managed export, restores into a newly created disposable named
   database, checks stable configuration/account counts, then removes that test
   database. Default is never an import/restore/delete target. Customer data stays

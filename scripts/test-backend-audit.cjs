@@ -54,7 +54,23 @@ async function imports(){
  m.failNext();await rejects(()=>c.exports.importGooglePhotos({body:{bizId:'b'}},response(),{uid:'u'}),/offline/);
  const ref=m.db.doc('importJobs/'+r1.body.jobId);await m.db.doc('users/u').update({deletionRequestedAt:{stamp:1}});await c.exports.onGoogleImportQueued({data:await ref.get()});ok(m.get(ref.path).status==='skipped','queued import does not recreate deleted account data');
 }
+async function photoCounts(){
+ const m=database({'users/u':{},[B]:{},[B+'/platformConnections/google']:{status:'connected',accountId:'a',locationId:'l'},'importJobs/photo':{status:'queued'}});
+ let saves=0;
+ const a={...admin,storage:()=>({bucket:()=>({name:'fixture-bucket',file:()=>({save:async()=>{saves++;},makePublic:async()=>{}})})})};
+ const c=load('publishing',{...wrappers,db:m.db,admin:a,crypto:require('node:crypto'),userBizRef:(u,b)=>m.db.doc(`users/${u}/businesses/${b}`),userBizConnsRef:()=>m.db.collection(B+'/platformConnections'),_getConnTokens:async()=>({accessToken:'fixture'}),axios:{get:async url=>{
+  if(url.endsWith('/media'))return {data:{mediaItems:['one','duplicate','invalid','failure'].map(googleUrl=>({googleUrl}))}};
+  if(url==='failure')throw Error('download failed');return {data:Buffer.from(url==='invalid'?[0,0]:[255,216,255])};
+ }}});
+ await c._runGooglePhotoImport('u','b',m.db.doc('importJobs/photo'));
+ const result=m.get('importJobs/photo');ok(result.status==='partial'&&result.done===4&&result.imported===1&&result.skipped===2&&result.failed===1,'import progress distinguishes imported, skipped and failed items');ok(saves===1,'duplicate bytes are not uploaded twice');
+}
 async function backups(){
+ const {target}=require('./repair-backup-recovery.cjs');
+ const env={GITHUB_ACTIONS:'true',GITHUB_REF:'refs/heads/main',GITHUB_RUN_ID:'123'};
+ ok(target(['--project=blastybiz-9523e'],env)==='bb-restore-check-123','restore target is isolated and bound to current run');
+ assert.throws(()=>target(['--project=other'],env));checks++;
+ assert.throws(()=>target(['--project=blastybiz-9523e'],{...env,GITHUB_REF:'refs/heads/preview'}));checks++;
  let now=0;const opts={sleep:async()=>{now+=1;},clock:()=>now,timeoutMs:10};
  await rejects(()=>waitOperation(async()=>({done:true,error:{code:13}}),{name:'projects/blastybiz-9523e/databases/(default)/operations/x'},opts),/failed/);
  await rejects(()=>waitOperation(async()=>({done:true}),{name:'projects/other/databases/(default)/operations/x'},opts),/target/);
@@ -62,4 +78,4 @@ async function backups(){
  await rejects(()=>runBackup({db:m.db,admin,request,wait:async()=>{throw Error('export failed');}}),/export failed/);ok(Object.values(m.all())[0].status==='failed','failed backup is recorded and thrown to Scheduler');
  const result=await runBackup({db:m.db,admin,request,wait:async()=>({done:true,response:{outputUriPrefix:'gs://blastybiz-firestore-backups/export'}})});ok(starts===1&&result.status==='completed','retry resumes recorded operation and waits for completion');
 }
-(async()=>{for(const test of [deletion,payments,aiAndEmail,imports,backups]){await test();console.log('PASS '+test.name);}console.log(checks+' backend audit repair assertions passed; isolated providers, no live side effects.');})().catch(e=>{console.error(e);process.exitCode=1;});
+(async()=>{for(const test of [deletion,payments,aiAndEmail,imports,photoCounts,backups]){await test();console.log('PASS '+test.name);}console.log(checks+' backend audit repair assertions passed; isolated providers, no live side effects.');})().catch(e=>{console.error(e);process.exitCode=1;});
