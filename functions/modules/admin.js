@@ -612,18 +612,16 @@ exports.adminDeleteBusiness = onRequest({ invoker: 'public' }, async (req, res) 
   if (req.method === 'OPTIONS') return res.status(204).send('');
   try { await requireAdmin(req); } catch(e) { return res.status(403).json({ error: e.message }); }
 
-  const { uid: targetUid, bizId } = req.body;
-  if (!targetUid || !bizId) return res.status(400).json({ error: 'uid and bizId required' });
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+  const { uid: targetUid, bizId } = req.body || {};
+  if (![targetUid, bizId].every(v => typeof v === 'string' && v.trim() && v.length <= 128 && !v.includes('/'))) return res.status(400).json({ error: 'Valid uid and bizId required' });
   try {
-    const bizRef = userBizRef(targetUid, bizId);
-    const bizSnap = await bizRef.get();
-    if (!bizSnap.exists) return res.status(404).json({ error: 'Business not found' });
-    await db.recursiveDelete(bizRef);
+    const activeBusiness = await require('../lib/delete-business').deleteBusinessData(db, targetUid, bizId, {allowLast:true});
     console.log(`[adminDeleteBusiness] deleted ${bizId} for uid ${targetUid}`);
-    res.json({ ok: true });
+    res.json({ ok: true, activeBusiness });
   } catch(e) {
     console.error('[adminDeleteBusiness]', e.message);
-    res.status(500).json({ error: e.message });
+    res.status(e.httpStatus || 500).json({ error: e.httpStatus ? e.message : 'Deletion did not finish. Retry to complete cleanup.' });
   }
 });
 

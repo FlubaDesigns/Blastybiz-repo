@@ -17,6 +17,7 @@ concurrency:
 jobs:
   check-release:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -49,12 +50,23 @@ jobs:
           node scripts/test-pass10-corrections.cjs
           node scripts/test-pass11-lifecycle.cjs
           node scripts/test-pass11-corrections.cjs
+          node scripts/test-audit2-repairs.cjs
+          node scripts/test-audit2-corrections.cjs
       - name: Ad controls and gesture DOM checks
         run: |
           npm install --prefix "$RUNNER_TEMP/blasty-dom" --no-audit --no-fund jsdom@26.1.0
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-pass10-ui.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-pass11-ui.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-pass11-status.cjs
+          JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-audit2-ui.cjs
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Actual Firestore authorization boundary tests
+        run: |
+          npm install --prefix "$RUNNER_TEMP/blasty-rules" --no-audit --no-fund @firebase/rules-unit-testing@4.0.1 firebase@11.10.0 firebase-tools@14.17.0
+          RULES_TEST_PATH="$RUNNER_TEMP/blasty-rules/node_modules/@firebase/rules-unit-testing" FIREBASE_CLIENT_PATH="$RUNNER_TEMP/blasty-rules/node_modules/firebase/firestore" "$RUNNER_TEMP/blasty-rules/node_modules/.bin/firebase" emulators:exec --only firestore --project demo-blastybiz-audit2 --config firebase.audit2.json 'node scripts/test-audit2-rules.cjs'
 
 # Production deployment uses Fluba's existing Authorization Engine workflow:
 # FlubaDesigns/fluba-designs/.github/workflows/blastybiz-release.yml.

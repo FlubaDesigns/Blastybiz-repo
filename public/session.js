@@ -16,6 +16,7 @@ window.BB_KEYS = [
   'bb_trial_name',
   'bb_platforms_enabled',
   'bb_ml',       // magic-link email-for-sign-in
+  'bb_start_choice', 'bb_guided_new', 'bb_selected_plan', 'bb_billing_period',
   'bb_answers',  // onboarding session answers
 ];
 

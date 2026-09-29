@@ -722,8 +722,17 @@ function handleSetPassword() {}
       new MutationObserver(function(_, obs) {
         if (!wrap.classList.contains('ready')) return;
         obs.disconnect();
-        var startChoice = localStorage.getItem('bb_start_choice') ||
-                          new URLSearchParams(window.location.search).get('start');
+        var intent = new URLSearchParams(window.location.search);
+        var startChoice = ['guided', 'forms'].includes(intent.get('start')) ? intent.get('start') : null;
+        if (intent.get('intent') === 'signin') startChoice = null;
+        if (startChoice) localStorage.setItem('bb_start_choice', startChoice);
+        else localStorage.removeItem('bb_start_choice');
+        if (intent.get('intent') === 'signin') {
+          removeTabPrompt();
+          if (tabsRow) tabsRow.style.display = '';
+          window.switchTab('signin');
+          return;
+        }
 
         if (localStorage.getItem('bb_guide_done') && !startChoice) {
           // Returning user who didn't come from the Start page — skip guide entirely.
@@ -732,9 +741,9 @@ function handleSetPassword() {}
 
         if (startChoice) {
           // Visitor already picked their path on the Start page — don't gate them again.
-          // Hide the whole tabs row (no reason to choose Sign In here) and go straight to signup.
+          // Start with signup while keeping Sign In available.
           removeTabPrompt();
-          if (tabsRow) tabsRow.style.display = 'none';
+          if (tabsRow) tabsRow.style.display = ''; // Keep returning sign-in accessible.
           if (typeof window.switchTab === 'function') window.switchTab('signup');
           _fieldEls = _suFields;
           var welcomeKey = startChoice === 'guided' ? 'signupWelcomeGuided'
@@ -781,6 +790,7 @@ function handleSetPassword() {}
 }
 </script>
   <script type="module">
+import { restoreAuthReturn } from './auth-return.js';
 import { auth, db } from './firebase-init-v2.js';
 import {
   onAuthStateChanged,
@@ -989,16 +999,18 @@ async function afterAuth(user) {
   try {
     const savedDraft = sessionStorage.getItem('bb_draft_return');
     if (savedDraft) {
-      let target;
-      try { target = JSON.parse(savedDraft); } catch(_) {}
-      if (target && ['bizId','draftId','ownerUid'].every(k => typeof target[k] === 'string' && target[k].length > 0 && target[k].length <= 128 && !target[k].includes('/'))) {
-        if (target.ownerUid !== user.uid) {
+      const target = restoreAuthReturn(savedDraft);
+      if (target) {
+        const ownerMatches = !target.params.ownerUid || target.params.ownerUid === user.uid;
+        const business = ownerMatches ? await getDoc(doc(db, 'users', user.uid, 'businesses', target.params.bizId)) : null;
+        if (!ownerMatches || !business.exists()) {
           showLoginForm();
-          window.showToast('This preview belongs to another account. Sign out and sign in with the account that received it.', true);
+          window.showToast('This link belongs to another account or a business that is no longer available. Sign in with the account that received it.', true);
           return;
         }
         sessionStorage.removeItem('bb_draft_return');
-        window.location.href = 'BlastyBiz.html?' + new URLSearchParams(target);
+        localStorage.removeItem('bb_start_choice');
+        window.location.href = target.page + '?' + new URLSearchParams(target.params);
         return;
       }
       sessionStorage.removeItem('bb_draft_return');
@@ -1024,8 +1036,7 @@ async function afterAuth(user) {
     localStorage.setItem('bb_guide_done', '1');
     if (userData.onboarded) {
       // Carry guided flag to dashboard so Blasty can greet them there too
-      const _sc = localStorage.getItem('bb_start_choice');
-      if (_sc === 'guided') localStorage.setItem('bb_guided_new', '1');
+      localStorage.removeItem('bb_start_choice');
       window.location.href = 'BlastyBiz.html';
     } else {
       // New user — respect the choice made on the Start page

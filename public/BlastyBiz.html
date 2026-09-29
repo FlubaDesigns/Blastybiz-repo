@@ -6513,7 +6513,7 @@ window.savePlatformUrl = async function(pid, url) {
   try {
     await setDoc(
       doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'platformConnections', pid),
-      { profileUrl: url, updatedAt: serverTimestamp() },
+      { uid: currentUser.uid, businessId: activeBizId, platform: pid, profileUrl: url, updatedAt: serverTimestamp() },
       { merge: true }
     );
   } catch(e) { console.error('savePlatformUrl error:', e); }

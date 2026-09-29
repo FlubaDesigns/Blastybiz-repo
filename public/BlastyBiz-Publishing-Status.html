@@ -223,6 +223,8 @@ import { collection, query, where, orderBy, limit, onSnapshot, getDoc, doc } fro
 auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
   if (!user) return; // auth-guard.js handles redirect
+  const ownerUid=new URLSearchParams(window.location.search).get('ownerUid');
+  if(ownerUid && ownerUid!==user.uid){document.getElementById('loading-state').textContent='This Blast belongs to another account. Sign out and use the account that received the link.';return;}
 
   try {
     const userSnap = await getDoc(doc(db, 'users', user.uid));

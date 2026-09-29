@@ -7,7 +7,7 @@ const ok=(v,m)=>{assert(v,m);checks++;};
 const result=()=>({code:200,status(n){this.code=n;return this},json(body){this.body=body;return this}});
 function context(seed={}){
  const state=database(seed),{db}=state;
- const c={db,admin,console:quiet,crypto,Date,require:p=>require('../functions/lib/ads'),exports:{},onRequest:(_,f)=>f,withAuth:f=>f,onSchedule:(_,f)=>f,onDocumentCreated:(_,f)=>f,onDocumentUpdated:(_,f)=>f,
+ const c={...require('../functions/lib/provider-api'),db,admin,console:quiet,crypto,Date,require:p=>require('../functions/lib/ads'),exports:{},onRequest:(_,f)=>f,withAuth:f=>f,onSchedule:(_,f)=>f,onDocumentCreated:(_,f)=>f,onDocumentUpdated:(_,f)=>f,
  userBizRef:(u,b)=>db.doc(`users/${u}/businesses/${b}`),userBizCol:u=>db.collection(`users/${u}/businesses`),userBizJobsRef:(u,b)=>db.collection(`users/${u}/businesses/${b}/publishJobs`),
  getPlanConfig:async()=>({bizLimits:{starter:1,pro:3,agency:10}}),...require('../functions/lib/schedule'),
  PLATFORM_CAPABILITY_MAP:require('../functions/lib/platforms').PLATFORM_CAPABILITY_MAP,sendResendEmail:async()=>{},APP_BASE_URL:'https://example.com'};

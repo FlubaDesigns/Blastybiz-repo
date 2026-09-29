@@ -8,6 +8,8 @@
  * draftAction
  */
 'use strict';
+const {saveGoogleRefresh}=require('../lib/connection-state');
+const { META_GRAPH_VERSION, META_GRAPH_BASE, providerId, googlePostsUrl } = require('../lib/provider-api');
 
 const {
   onRequest, onDocumentUpdated, onDocumentCreated, admin, db, axios,
@@ -50,37 +52,46 @@ function _publisherError(platform, e) {
 }
 
 async function _publishGoogleJob(job, conn, pathUserId, pathBizId) {
+  const endpoint=googlePostsUrl(conn);
   const content   = job.payload?.adaptedContent || '';
   const imageUrls = job.payload?.imageUrls || [];
-  async function tryPost(token) {
+  async function tryPost(token,target=endpoint) {
     return _publicationPost(
-      `https://mybusinesspostings.googleapis.com/v1/locations/${conn.locationId}/localPosts`,
-      { languageCode: 'en-US', summary: content,
+      target,
+      { languageCode: 'en-US', topicType: 'STANDARD', summary: content,
         media: imageUrls.map(u => ({ mediaFormat: 'PHOTO', sourceUrl: u })) },
       { headers: { Authorization: `Bearer ${token}` } }
     );
   }
   try {
     const r = await tryPost(conn.accessToken);
+    if(!r.data.name)throw Object.assign(Error('Google accepted the request without a post identifier. Check the destination before retrying.'),{publicationUncertain:true});
     return { postId: r.data.name };
   } catch(e) {
     if (e.response?.status === 401 && conn.refreshToken) {
       const newToken = await _googleRefreshToken(conn.refreshToken);
       // 2.8: use path-derived uid/bizId, never trust doc-data fields for path construction
       const gConnRef = userBizConnsRef(pathUserId, pathBizId).doc('google');
-      await _setConnTokens(gConnRef, { accessToken: newToken });
-      await gConnRef.update({ updatedAt: admin.firestore.FieldValue.serverTimestamp() });
-      const r = await tryPost(newToken);
-      return { postId: r.data.name };
+      const saved=await saveGoogleRefresh(db,admin,gConnRef,conn,newToken);
+      const retry=saved.connection;
+      if(!retry || retry.status!=='connected' || !retry.accessToken)throw Error('Google connection changed. Reconnect before posting.');
+      try {
+        // The original request was rejected with 401. Retry once with a matched
+        // current destination/token pair, never the old token and new location.
+        const r = await tryPost(retry.accessToken,googlePostsUrl(retry));
+        if(!r.data.name)throw Object.assign(Error('Google returned no post identifier. Check the destination before retrying.'),{publicationUncertain:true});
+        return { postId: r.data.name };
+      } catch(retryError) { throw _publisherError('Google',retryError); }
     }
     throw _publisherError('Google', e);
   }
 }
 
 async function _publishFacebookJob(job, conn) {
+  if(!providerId(conn.pageId))throw Error('Reconnect Facebook and choose a Page before posting.');
   const content = job.payload?.adaptedContent || '';
   const images = (Array.isArray(job.payload?.imageUrls) ? job.payload.imageUrls : []).filter(u=>typeof u==='string'&&/^https:\/\//i.test(u)).slice(0,10);
-  const base = `https://graph.facebook.com/v18.0/${conn.pageId}`;
+  const base = `${META_GRAPH_BASE}/${conn.pageId}`;
   try {
     if(images.length===1) {
       const r=await _publicationPost(base+'/photos',{url:images[0],caption:content,published:true,access_token:conn.accessToken});
@@ -101,6 +112,7 @@ async function _publishFacebookJob(job, conn) {
 }
 
 async function _publishInstagramJob(job, conn) {
+  if(!providerId(conn.igUserId) || !providerId(conn.pageId))throw Error('Reconnect the Facebook Page linked to this Instagram account.');
   const content  = job.payload?.adaptedContent || '';
   const imageUrl = job.payload?.imageUrls?.[0] || '';
   if (!imageUrl) {
@@ -109,11 +121,20 @@ async function _publishInstagramJob(job, conn) {
   }
   try {
     const media = await axios.post(
-      `https://graph.facebook.com/v18.0/${conn.igUserId}/media`,
+      `${META_GRAPH_BASE}/${conn.igUserId}/media`,
       { image_url: imageUrl, caption: content, access_token: conn.accessToken }
     );
+    if(!providerId(media.data.id))throw Error('Instagram did not create a media container.');
+    let finished=false;
+    for(let attempt=0;attempt<5;attempt++) {
+      const check=await axios.get(`${META_GRAPH_BASE}/${media.data.id}`,{params:{fields:'status_code',access_token:conn.accessToken},timeout:10000});
+      if(check.data.status_code==='FINISHED'){finished=true;break;}
+      if(check.data.status_code!=='IN_PROGRESS')throw Error('Instagram media is not ready: '+(check.data.status_code||'unknown'));
+      if(attempt<4)await new Promise(resolve=>setTimeout(resolve,1000));
+    }
+    if(!finished)throw Error('Instagram is still processing the image. Retry when the image is ready.');
     const pub = await _publicationPost(
-      `https://graph.facebook.com/v18.0/${conn.igUserId}/media_publish`,
+      `${META_GRAPH_BASE}/${conn.igUserId}/media_publish`,
       { creation_id: media.data.id, access_token: conn.accessToken }
     );
     return { postId: pub.data.id };

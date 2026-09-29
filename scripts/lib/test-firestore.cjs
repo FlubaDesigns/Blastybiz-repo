@@ -16,6 +16,7 @@ function database(seed={}){
   class Doc{
     constructor(path){this.path=path;this.id=path.split('/').at(-1);}
     collection(name){return new Query(this.path+'/'+name);}
+    get parent(){return new Query(this.path.slice(0,this.path.lastIndexOf('/')));}
     async get(){return snapshot(this);}
     async set(data,options){const ops=[['set',this,data,options]];if(beforeCommit)await beforeCommit(ops);commit(ops);}
     async update(data){const ops=[['update',this,data]];if(beforeCommit)await beforeCommit(ops);commit(ops);}
@@ -27,13 +28,15 @@ function database(seed={}){
     constructor(path,group=false,filters=[],orders=[],limit=Infinity,cursor=null){Object.assign(this,{path,group,filters,orders,cap:limit,cursor});}
     copy(p){return Object.assign(new Query(this.path,this.group,[...this.filters],[...this.orders],this.cap,this.cursor),p);}
     doc(id){return new Doc(this.path+'/'+id);}
+    get parent(){return new Doc(this.path.slice(0,this.path.lastIndexOf('/')));}
+    async add(data){const ref=this.doc('added-'+Math.random());await ref.set(data);return ref;}
     where(k,op,v){return this.copy({filters:[...this.filters,[k,op,v]]});}
     orderBy(k,d='asc'){return this.copy({orders:[...this.orders,[k,d]]});}
     limit(n){return this.copy({cap:n});}
     startAfter(...args){return this.copy({cursor:args.length===1&&args[0].ref?this.orders.map(([k])=>k==='__name__'?args[0].ref.path:field(args[0].data(),k)):args.map(x=>x?.path||x)});}
     async get(){
       reads.push(this);let found=[...rows.keys()].filter(p=>this.group?p.split('/').at(-2)===this.path:p.slice(0,p.lastIndexOf('/'))===this.path).map(p=>snapshot(new Doc(p)));
-      found=found.filter(d=>this.filters.every(([k,op,v])=>{const a=field(d.data(),k);return op==='=='?a===v:op==='<='?a!==undefined&&a<=v:op==='>='?a!==undefined&&a>=v:false;}));
+      found=found.filter(d=>this.filters.every(([k,op,v])=>{const raw=field(d.data(),k),scalar=x=>x?.toMillis?.()??x?.stamp??x;const a=scalar(raw),b=scalar(v);return op==='=='?a===b:op==='<'?a!==undefined&&a<b:op==='<='?a!==undefined&&a<=b:op==='>='?a!==undefined&&a>=b:false;}));
       const orders=this.orders.length?this.orders:[['__name__','asc']];
       const values=d=>orders.map(([k])=>k==='__name__'?d.ref.path:field(d.data(),k));
       const cmp=(a,b)=>{for(let i=0;i<orders.length;i++){if(a[i]===b[i])continue;return (a[i]<b[i]?-1:1)*(orders[i][1]==='desc'?-1:1);}return 0;};
