@@ -10,8 +10,10 @@ const assert = require('node:assert/strict');
     for (const [page, text] of [
       ['BlastyBiz', 'async function deletePhotoRecords'],
       ['BlastyBiz', 'async function retryGeneratedDraftSave'],
-      ['BlastyBiz-Profile', 'profile-save-error'],
-      ['BlastyBiz-Story', 'story-save-error'],
+      ['BlastyBiz', '_bbUpdateDraftSchedule'],
+      ['BlastyBiz-Admin-OnboardSteps', 'blasty-admin.js'],
+      ['BlastyBiz-Profile', 'BlastyBiz-CreateBiz.html'],
+      ['BlastyBiz-Story', 'BlastyBiz-CreateBiz.html'],
       ['BlastyBiz-Publishing-Status', 'manual_followup'],
       ['BlastyBiz-Account', 'Plan &amp; Billing'],
       ['BlastyBiz-CreateBiz', 'cbNormalizeWebsite'],

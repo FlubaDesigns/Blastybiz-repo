@@ -802,7 +802,7 @@ async function purgeUserData(uid, opts = {}) {
     for (const campDoc of campSnap.docs) {
       const campRef = userBizRef(uid, bizId).collection('campaigns').doc(campDoc.id);
       const subs = await Promise.all(
-        ['facts', 'images', 'documents', 'copy', 'advertising'].map(c => campRef.collection(c).get())
+        ['facts', 'images', 'documents', 'copy', 'advertising', 'ads'].map(c => campRef.collection(c).get())
       );
       subs.forEach(snap => snap.docs.forEach(d => bizSubRefs.push(d.ref)));
       bizSubRefs.push(campDoc.ref);

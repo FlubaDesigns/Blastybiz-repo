@@ -44,34 +44,14 @@ async function pendingTests() {
   }
 }
 async function setupTests() {
-  for (const name of ['Profile','Story']) {
-    const html=read('public/BlastyBiz-'+name+'.html');
-    const code=section(html,'let '+name.toLowerCase()+'Saving =','await auth.authStateReady()');
-    const nodes={},storage=new Map([['bb_bizId','b']]),writes=[];let fail=true;
-    const c={window:{_bbUid:'u',location:{href:'unchanged'}},console:quiet,auth:{currentUser:{uid:'u',getIdToken:async()=>'token'}},db:{},
-      document:{getElementById:id=>nodes[id]||(nodes[id]={hidden:true,scrollIntoView(){}})},
-      sessionStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},
-      doc:(_, ...p)=>({path:p.join('/'),id:p.at(-1)||'new'}),collection:()=>({}),serverTimestamp:()=>1,
-      writeBatch:()=>{const pending=[];return {set:(r,d)=>pending.push({r,d}),commit:async()=>{if(fail)throw Error('offline');writes.push(...pending);}}},
-      fetch:async(_,options)=>{if(fail)throw Error('offline');writes.push(JSON.parse(options.body));return {ok:true,json:async()=>({success:true})};},
-      setDoc:async(r,d)=>{if(fail)throw Error('offline');writes.push({r,d});}
-    };
-    // Include only the save declaration, excluding the auth listener below it.
-    vm.runInNewContext(code,c);
-    await c.window['_bbSave'+name]({email:'business@example.com',bizName:'Floors',story:'Original answers'}, {}, 'skip');
-    ok(c.window.location.href==='unchanged'&&!writes.length&&!nodes[name.toLowerCase()+'-save-error'].hidden,name+' failed write stays on page with retry');
-    fail=false;await c.window['_bbRetry'+name]();
-    ok(c.window.location.href.includes('BlastyBiz-CreateBiz.html')&&writes.length>0,name+' retry saves before advancing');
-    if(name==='Story') {
-      for (const missing of ['business','user']) {
-        storage.set('bb_bizId',missing==='business'?'':'b');c.window._bbUid=missing==='user'?null:'u';
-        c.window.location.href='unchanged';const before=writes.length;
-        await c.window._bbSaveStory({story:'Retained answers'});
-        ok(c.window.location.href==='BlastyBiz-CreateBiz.html'&&writes.length===before&&nodes['story-save-error'].hidden,'missing '+missing+' context redirects without a write or dead-end retry');
-      }
-    }
-    if(name==='Profile')ok(writes.length===1&&writes[0].profileData.email==='business@example.com'&&writes[0].bizId==='b'&&!('email' in writes[0]),'profile uses server creation/update with stable identity and separate business email');
-  }
+ for(const [name,sectionName] of [['Profile','info'],['Story','story']]){
+  let target='';const link={};const c={URLSearchParams,location:{search:'?bizId=b&guide=1',replace:url=>target=url},document:{getElementById:()=>link}};
+  const html=read('public/BlastyBiz-'+name+'.html');vm.runInNewContext(html.match(/<script>([\s\S]*?)<\/script>/)[1],c);
+  const query=new URLSearchParams(target.split('?')[1]);
+  ok(target.startsWith('BlastyBiz-CreateBiz.html?'),name+' routes to canonical setup');
+  ok(query.get('bizId')==='b'&&query.get('guide')==='1'&&query.get('section')===sectionName,name+' retains business, presentation and section');
+  ok(!html.includes('setDoc')&&!html.includes('writeBatch'),name+' owns no competing save path');
+ }
 }
 async function chatTests() {
   const ai=read('functions/modules/ai.js');

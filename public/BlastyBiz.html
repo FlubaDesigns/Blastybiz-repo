@@ -145,6 +145,11 @@
 <script src="blastybiz-menu.js?v=7"></script>
 <script src="escape-utils.js?v=1"></script>
 <script src="mascot.js?v=5"></script>
+<script src="blasty-registry.js"></script>
+<script src="blasty-events.js"></script>
+<script src="blasty-guidance.js"></script>
+<script src="business-form.js"></script>
+<script type="module" src="blasty-runtime.js"></script>
 </head>
 <body class="has-site-header create-page">
 <div id="header__inject"></div>
@@ -2361,6 +2366,7 @@ function _updateSelectAllBtn() {
 }
 
 function togglePlatform(id, val) {
+  window.BBAds?.markDirty();
   platforms = platforms.map(p => p.id === id ? {...p, enabled: val} : p);
   savePlatformSelections();
   savePlatforms();
@@ -3064,6 +3070,7 @@ async function retryGeneratedDraftSave() {
 }
 
 async function runAdaptation() {
+  if(!window.BBAds?.active){showToast('Choose or create an Ad in this campaign first.');return;}
   if (window._bbDraftSavePending) { showToast('Save your generated copy with Retry save first.'); return; }
   updateCampaignMemory(); // ensure campaign object reflects current DOM before prompt is built
   // Profile is the dossier — always primary source for business identity fields
@@ -3158,6 +3165,9 @@ async function runAdaptation() {
           libraryDocs: window._libraryDocs || [],
           businessId: window.activeBizId || '',
           campaignId: activeCampaignId || '',
+          adId: window.BBAds?.active?.id || '',
+          adContext: document.getElementById('ad-context')?.value || '',
+          cta: document.getElementById('ad-cta')?.value || '',
           requestId: generationAttemptId,  // used by server for dedup; placed inside listing per spec
         },
         platforms: enabledPlatforms,
@@ -3308,6 +3318,7 @@ function deployPlatform(id) {
   const p = platforms.find(x => x.id === id);
   if (!p) return;
   if (!p.adaptedContent) { showToast('Run adaptation first'); return; }
+  if(window.BBAds?.active){window.BBAds.prepareCurrent();return;}
   const draftId = window._currentDraftId;
   window.location.href = 'BlastyBiz-Listing-Preview.html' + (draftId ? '?draftId=' + draftId : '');
 }
@@ -3552,6 +3563,7 @@ function loadProfile() {
 
 function setYN(field, val) {
   ynState[field] = val;
+  window.BBAds?.markDirty();
   const yes = document.getElementById('yn-' + field + '-yes');
   const no  = document.getElementById('yn-' + field + '-no');
   if (yes) { yes.classList.toggle('yn-active', val === 'yes'); }
@@ -3559,7 +3571,7 @@ function setYN(field, val) {
   // Write to the active campaign object so _bbSaveCampaigns persists it
   const _ynCam = (typeof campaigns !== 'undefined') && activeCampaignId &&
     campaigns.find(c => c.id === activeCampaignId);
-  if (_ynCam) _ynCam['ynMention' + field.charAt(0).toUpperCase() + field.slice(1)] = val;
+  if (_ynCam && !window.BBAds?.active) _ynCam['ynMention' + field.charAt(0).toUpperCase() + field.slice(1)] = val;
   debounceCampaignSave();
 }
 
@@ -3618,13 +3630,13 @@ async function _persistSchedule(did, changes, quick) {
   if (_scheduleSaving.has(key)) { showToast('Please wait for the schedule save.'); return false; }
   _scheduleSaving.add(key);
   try {
-    if (!did || !window._bbUpdateDraft) throw new Error('Save your generated draft before setting a schedule.');
+    if (!did || !window._bbUpdateDraftSchedule) throw new Error('Save your generated draft before setting a schedule.');
     const candidate = BBSchedule.normalizeSchedule({ ..._defaultSched(), ...prior, ...changes });
     if (candidate.unsupportedFrequency) throw new Error('Choose daily, weekly, or monthly, then enable the schedule.');
     candidate.nextRunAt = candidate.enabled ? _computeNextRunDate(candidate).toISOString() : null;
     // A changed schedule invalidates the previous email's approval/skip state.
     delete candidate.approved; delete candidate.skipCycle; delete candidate.previewSentAt; delete candidate.pauseReason;
-    await window._bbUpdateDraft(did, { schedule: candidate });
+    await window._bbUpdateDraftSchedule(did, candidate);
     if (window.activeBizId !== bizId) return false;
     if (_draftSchedules[did]) _draftSchedules[did].schedule = candidate;
     if (did === window._currentDraftId) loadQuickSchedFromDraft(candidate);
@@ -4634,9 +4646,12 @@ function renderCampaignChips() {
 }
 
 function selectCampaign(id, name) {
+  if(window.BBAds?.busy){showToast('Wait for the current Ad action to finish.');return;}
+  if(window.BBAds?.dirty && !confirm('Discard unsaved Ad changes before switching campaigns?'))return;
   if (window._bbDraftSavePending) { showToast('Use Retry save before switching campaigns.'); return; }
   activeCampaignId   = id;
   activeCampaignName = name;
+  window.BBAds?.open();
   showTab('create');
   document.getElementById('campaign-content')?.classList.remove('hidden');
 
@@ -4741,6 +4756,7 @@ async function saveNewCampaign() {
   try {
     if (!window._bbSaveCampaigns) throw new Error('Saving is not ready yet');
     await window._bbSaveCampaigns([newCampaign]);
+    if(window.BBAds)await window.BBAds.api('create',{businessId,campaignId:id,adId:'first',requestId:'first',creative:{name:name+' — First Ad',offer:ccCol.offer||'',price:ccCol.price||'',context:'',platforms:platforms.filter(p=>p.enabled).map(p=>p.id)}});
   } catch(e) {
     showToast('Campaign was not saved. Your entries are still here — tap Quick Create to retry.');
     return;
@@ -4808,9 +4824,6 @@ function updateCampaignMemory() {
   if (!activeCampaignId) return;
   const cam = campaigns.find(c => c.id === activeCampaignId);
   if (!cam) return;
-  cam.offer         = document.getElementById('biz-offer')?.value        || '';
-  cam.adName        = document.getElementById('biz-ad-name')?.value      || '';
-  cam.price         = document.getElementById('biz-price')?.value        || '';
   cam.campaignStory = document.getElementById('campaign-context')?.value || '';
 }
 
@@ -4845,7 +4858,7 @@ function debounceCampaignSave() {
     cam.lastUsedAt = new Date().toISOString();
     try {
       await window._bbSaveCampaigns(campaigns);
-      _showAdDraftStatus('Draft saved ✓');
+      _showAdDraftStatus(window.BBAds?.active?'Campaign context saved; choose Update the Ad for creative.':'Draft saved ✓');
     } catch(e) {
       console.warn('Campaign auto-save failed:', e);
     }
@@ -5318,7 +5331,7 @@ function awaitPaidPlan(uid) {
 }
 import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js';
 import {
-  ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject
+  ref as storageRef, uploadBytesResumable, getDownloadURL
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 window.doSignOut = () => window._bbSignOut(auth, signOut);
@@ -5419,7 +5432,8 @@ window._bbSaveCampaigns = async function(cams) {
   const batch = writeBatch(db);
   cams.forEach(cam => {
     const ref = doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', cam.id);
-    batch.set(ref, { ...cam, uid: currentUser.uid, bizId: activeBizId }, { merge: true });
+    const safe={...cam};for(const key of ['adName','offer','price','cta','mentions','adaptations','ynMentionName','ynMentionRole','ynMentionAddress','ynMentionPhone','ynMentionEmail','ynMentionWebsite'])delete safe[key];
+    batch.set(ref, { ...safe, uid: currentUser.uid, bizId: activeBizId }, { merge: true });
   });
   await batch.commit();
 };
@@ -5442,6 +5456,7 @@ window._bbSaveLibraryItem = async function(item) {
     uid: currentUser.uid,
     bizId: activeBizId,
     ...item,
+    adId:window.BBAds?.active?.id||item.adId||null,
   });
 };
 
@@ -5455,7 +5470,7 @@ window._bbLoadLibrary = async function(campaignId) {
     orderBy('savedAt', 'desc')
   );
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+  return snap.docs.filter(d=>!d.data().retired).map(d => ({ docId: d.id, ...d.data() }));
 };
 
 window._bbDeleteLibraryItem = async function(docId) {
@@ -5511,7 +5526,7 @@ window._bbDeleteGlobalFact = async function(factId) {
 window._bbLoadGlobalFacts = async function() {
   if (!activeBizId || !currentUser) return [];
   const snap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'facts'));
-  return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  return snap.docs.filter(d=>!d.data().retired).map(d => ({ ...d.data(), id: d.id }));
 };
 
 // ── Global business images (images subcollection) ─────────────────────────────
@@ -5527,7 +5542,7 @@ window._bbSaveGlobalImage = async function(imageData, bizId = activeBizId) {
 window._bbLoadGlobalImages = async function() {
   if (!activeBizId || !currentUser) return [];
   const snap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'images'));
-  return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  return snap.docs.filter(d=>!d.data().retired).map(d => ({ ...d.data(), id: d.id }));
 };
 
 // Delete every representation of the same image together, using the existing records.
@@ -5552,7 +5567,7 @@ async function deletePhotoRecords(image, campId = null) {
       tx.update(campRef, {photos: remainingPhotos});
     }
     if (clearedFeatured) tx.update(bizRef, {featuredPhoto: ''});
-    refs.forEach(ref => tx.delete(ref));
+    refs.forEach(ref => tx.update(ref,{retired:true,retiredAt:serverTimestamp()}));
   });
   if (activeBizId === bizId) {
     if (clearedFeatured && window._bbFeaturedPhotoUrl === image.url) window._bbFeaturedPhotoUrl = '';
@@ -5571,7 +5586,7 @@ window._bbLoadCampaignFactoids = async function(campId) {
   const snap = await getDocs(
     collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', campId, 'facts')
   );
-  return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  return snap.docs.filter(d=>!d.data().retired).map(d => ({ ...d.data(), id: d.id }));
 };
 
 window._bbSaveCampaignFact = async function(campId, fact) {
@@ -5589,7 +5604,7 @@ window._bbLoadCampaignImages = async function(campId) {
   const snap = await getDocs(
     collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', campId, 'images')
   );
-  return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  return snap.docs.filter(d=>!d.data().retired).map(d => ({ ...d.data(), id: d.id }));
 };
 
 window._bbSaveCampaignImage = async function(campId, imageData, bizId = activeBizId) {
@@ -6005,7 +6020,7 @@ onAuthStateChanged(auth, async (user) => {
       if (window.showToast) window.showToast('Only image files can be uploaded here.');
       return;
     }
-    const scope = uploadContext.scope || photoScope || 'campaign';
+    const scope = activeCampaignId ? 'campaign' : (uploadContext.scope || photoScope || 'global');
     const cid = uploadContext.campaignId !== undefined ? uploadContext.campaignId : activeCampaignId;
     const bizId = uploadContext.bizId || activeBizId;
     // Guard: campaign upload requires an active campaign
@@ -6082,6 +6097,7 @@ onAuthStateChanged(auth, async (user) => {
           item.url = dlUrl;
           item.localUrl = dlUrl;
           item.done = true;
+          window.BBAds?.refreshImages();
           item.progress = 100;
           window._bbPhotoUploads.delete(item);
           if (photoUploadMatchesView(item) && !window._bbPhotoItems.some(photo => photo === item || photo.id === id)) {
@@ -6158,18 +6174,9 @@ onAuthStateChanged(auth, async (user) => {
       items.splice(currentIndex, 1);
     }
     if (window.renderAllPhotos) window.renderAllPhotos();
-    try {
-      // Persisted URLs are also used by saved drafts/publish jobs and historical posts.
-      // Retire the library entry without breaking those references; only failed,
-      // unsaved uploads are safe to clean up here without reference accounting.
-      if (item.path && !item.done) await deleteObject(storageRef(storage, item.path));
-    } catch(e) {
-      if (e.code === 'storage/object-not-found') return;
-      console.error('Photo file delete error:', e);
-      if (window.showToast) window.showToast('Photo removed from the library, but its stored file could not be deleted.');
-    } finally {
-      item.deleting = false;
-    }
+    // Retain stored bytes, including unsuccessful uploads, for the V06 policy.
+    // Complete account deletion remains responsible for removing owned storage.
+    item.deleting = false;
   };
 
   // Live-listen for pending posts needing approval
@@ -6328,6 +6335,13 @@ window._bbUpdateDraft = async function(draftId, updates) {
   await updateDoc(ref, { ...updates, updatedAt: serverTimestamp(), revision: increment(1) });
 };
 
+// Schedule changes do not modify the frozen creative packet or its revision.
+window._bbUpdateDraftSchedule = async function(draftId, schedule) {
+  if (!currentUser || !activeBizId || !draftId) throw new Error('No signed-in draft');
+  const ref = doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'listingDrafts', draftId);
+  await updateDoc(ref, { schedule, updatedAt: serverTimestamp() });
+};
+
 window._bbPrepareGenerationDraft = function() {
   if (!currentUser || !activeBizId) throw new Error('No signed-in business');
   if (window._currentDraftId) return window._currentDraftId;
@@ -6380,6 +6394,7 @@ window._afterAdaptation = async function(adaptedPlatforms) {
       adName:       document.getElementById('biz-ad-name')?.value || '',
       campaignContext: document.getElementById('campaign-context')?.value?.trim() || '',
       campaignId:   activeCampaignId || '',
+      adId: window.BBAds?.active?.id || '',
       campaignName: activeCampaignName || '',
       status:       'draft',
       revision:     0,
@@ -6727,36 +6742,7 @@ function ccSetWaiting(w) {
 }
 
 // ── Scripted Steps ────────────────────────────────────────
-const CC_STEPS = [
-  {
-    msg: () => {
-      const n = $cc('new-campaign-input')?.value?.trim();
-      if (n) { ccCol.campaignName = n; return `Building the brief for "${n}" — sounds great! 🚀\n\nWhat's the main offer or message for this campaign? (e.g. "25% off all services", "Grand reopening with live music")`; }
-      return 'What are you calling this campaign? (e.g. "Summer Sale", "Grand Reopening", "Holiday Special")';
-    },
-    field: () => ccCol.campaignName ? 'offer' : 'campaignName',
-    label: 'Campaign Name',
-    validate: v => v.trim().length > 1,
-    placeholder: () => ccCol.campaignName ? 'e.g. 20% off everything through the end of the month' : 'e.g. Christmas Sale',
-    optional: () => !!ccCol.campaignName,
-  },
-  {
-    msg: () => ccCol.campaignName && !ccCol.offer
-      ? `Got it — "${ccCol.campaignName}"! What's the main offer or hook for this one?`
-      : `Any pricing to know about? (Skip if there's nothing specific)`,
-    field: () => ccCol.campaignName && !ccCol.offer ? 'offer' : 'price',
-    label: 'Campaign Details',
-    optional: true,
-    placeholder: () => ccCol.campaignName && !ccCol.offer ? 'e.g. Free consultation with any booking' : 'e.g. Starting at $49, or 30% off',
-  },
-  {
-    msg: () => `When does this campaign run? (Skip if it's ongoing)`,
-    field: () => 'dates',
-    label: 'Campaign Dates',
-    optional: true,
-    placeholder: () => 'e.g. July 4–10, or "through end of summer"',
-  },
-];
+const CC_STEPS = BBBlasty.campaignSteps();
 
 function ccAdvance() {
   if (ccIdx >= CC_STEPS.length) { ccStartAI(); return; }
@@ -6932,6 +6918,7 @@ async function ccCreateCampaign(aiData) {
   try {
     if (!window._bbSaveCampaigns) throw new Error('Saving is not ready yet');
     await window._bbSaveCampaigns([newCampaign]);
+    if(window.BBAds)await window.BBAds.api('create',{businessId,campaignId:id,adId:'first',requestId:'first',creative:{name:name+' — First Ad',offer:ccCol.offer||'',price:ccCol.price||'',context:'',platforms:platforms.filter(p=>p.enabled).map(p=>p.id)}});
   } catch(e) {
     ccSetLabel('Campaign not saved');
     ccAddMsg('ai', 'Your campaign brief is still here. Retry saving it below.');
@@ -6959,6 +6946,7 @@ async function ccCreateCampaign(aiData) {
     document.getElementById('campaign-content')?.classList.remove('hidden');
     const ctxEl = document.getElementById('campaign-context');
     if (ctxEl) ctxEl.value = ccCol.offer || '';
+    window.BBAds?.open();
     if (typeof showToast === 'function') showToast('Campaign "' + name + '" created');
   }, 1500);
 }
@@ -7343,69 +7331,7 @@ window.confirmDeleteAccount = async function() {
     </div>
   </div>
 </div>
-<script>
-(function () {
-  if (!localStorage.getItem('bb_guided_new')) return;
-  localStorage.removeItem('bb_guided_new');
-
-  // Wait until mascot.js has had a chance to run
-  function injectBlastyWelcome() {
-    var floatEl = document.createElement('div');
-    floatEl.id = 'dash-blasty-float';
-    floatEl.innerHTML =
-      '<div class="pb-mascot s-happy" id="dash-mascot" style="width:70px"></div>' +
-      '<div id="dash-blasty-bubble">🎉 You\'re in! Your account is all set — create your first campaign and start blasting!</div>' +
-      '<button id="dash-blasty-close" aria-label="Dismiss">✕</button>';
-    floatEl.style.cssText =
-      'position:fixed;bottom:24px;right:20px;display:flex;align-items:flex-end;gap:10px;z-index:9000;' +
-      'opacity:0;transition:opacity .4s ease;pointer-events:none;';
-    document.body.appendChild(floatEl);
-
-    // Second mascot on this page — its own instance, independent of the
-    // page's default one.
-    if (window.PBMascot) {
-      window.PBMascot.create('#dash-mascot', { name: 'Blasty' }).setMood('s-happy');
-    }
-
-    var bubble = document.getElementById('dash-blasty-bubble');
-    if (bubble) {
-      bubble.style.cssText =
-        'background:#0d2b0d;border:1.5px solid #1e3a1e;border-radius:14px 14px 4px 14px;' +
-        'padding:12px 36px 12px 14px;font-size:13px;color:#e0f0e3;line-height:1.5;' +
-        'max-width:240px;box-shadow:0 4px 20px rgba(0,0,0,.5);position:relative;';
-    }
-    var closeBtn = document.getElementById('dash-blasty-close');
-    if (closeBtn) {
-      closeBtn.style.cssText =
-        'position:absolute;top:8px;right:8px;background:none;border:none;color:#4a7a52;' +
-        'font-size:14px;cursor:pointer;line-height:1;padding:2px 4px;';
-      closeBtn.onclick = function () { dismiss(); };
-    }
-
-    // Fade in
-    requestAnimationFrame(function () {
-      floatEl.style.opacity = '1';
-      floatEl.style.pointerEvents = 'auto';
-    });
-
-    // Auto-dismiss after 8 seconds
-    var timer = setTimeout(dismiss, 8000);
-
-    function dismiss() {
-      clearTimeout(timer);
-      floatEl.style.opacity = '0';
-      floatEl.style.pointerEvents = 'none';
-      setTimeout(function () { if (floatEl.parentNode) floatEl.parentNode.removeChild(floatEl); }, 400);
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', injectBlastyWelcome);
-  } else {
-    injectBlastyWelcome();
-  }
-})();
-</script>
+<script>BBBlasty.fire('campaign.first_open_explain');</script>
 
 <style>
 .cbm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
@@ -7422,5 +7348,12 @@ window.confirmDeleteAccount = async function() {
 .cbm-opt-title{font-size:15px;font-weight:700;color:#e0f0e3}
 .cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
 </style>
+<script src="ad-workspace.js"></script>
+<script>
+document.addEventListener('click',function(e){
+ const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');
+ if(a && BBAds.active){e.preventDefault();BBAds.prepareCurrent();}
+},true);
+</script>
 </body>
 </html>

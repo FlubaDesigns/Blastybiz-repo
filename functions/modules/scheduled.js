@@ -41,7 +41,9 @@ async function queueScheduledDraft(draftRef, now) {
   return db.runTransaction(async tx => {
     const snap = await tx.get(draftRef);
     if (!snap.exists) return;
-    const draft = snap.data(), schedule = normalizeSchedule(draft.schedule || {});
+    const rawDraft = snap.data();
+    const draft = rawDraft.packet ? {...rawDraft,...rawDraft.packet} : rawDraft;
+    const schedule = normalizeSchedule(draft.schedule || {});
     if (!schedule.enabled) {
       if (schedule.unsupportedFrequency) tx.update(draftRef, { schedule });
       return;
@@ -103,6 +105,7 @@ async function queueScheduledDraft(draftRef, now) {
       return {ref:jobRef,data:{
         jobId:jobRef.id,uid,businessId:bizId,draftId:snap.id,campaignId:draft.campaignId || '',
         scheduledRunId:runId,scheduledCycle:cycle,scheduledExplicitApproval:explicit,
+        ...(draft.adId?{adId:draft.adId,adName:draft.adName||'',blastId:runId}:{}),
         platform:pid,platformName:cap.name,capabilityLevel:cap.capabilityLevel,
         jobType:'scheduled_approved',status:manual?'manual_required':'pending',
         attempts:0,maxAttempts:5,customerNotified:false,
@@ -119,7 +122,11 @@ async function queueScheduledDraft(draftRef, now) {
     // Advancing is safe only with durable, individually retryable jobs in the
     // same transaction. Provider calls belong exclusively to the dispatcher.
     for (const job of jobs) tx.create(job.ref,job.data);
-    tx.create(receiptRef,{cycle,jobIds:jobs.map(j=>j.ref.id),approvalCounted:false});
+    tx.create(receiptRef,{cycle,jobIds:jobs.map(j=>j.ref.id),approvalCounted:false,
+      packet:{campaignId:draft.campaignId||'',adId:draft.adId||null,adName:draft.adName||'',campaignName:draft.campaignName||'',copyBehavior:'reuse',
+        imageRefs:draft.imageRefs||draft.packet?.imageRefs||[],enabledPlatforms:ids,
+        adaptations:Object.fromEntries(jobs.map(j=>[j.data.platform,j.data.payload.adaptedContent])),
+        imagesByPlatform:Object.fromEntries(jobs.map(j=>[j.data.platform,j.data.payload.imageUrls]))}});
     tx.update(draftRef,advance);
   });
 }

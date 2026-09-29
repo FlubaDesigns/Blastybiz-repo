@@ -62,6 +62,15 @@ if (require.main === module) {
     throw Error('Explicit --project=blastybiz-9523e required; optional --apply');
   }
   const admin = require('../functions/node_modules/firebase-admin');
-  admin.initializeApp({projectId:'blastybiz-9523e'});
+  const options={projectId:'blastybiz-9523e'};
+  // Reuse the release workflow's existing Firebase authorization, never log it.
+  if(process.env.FIREBASE_TOKEN){
+    const auth=require('firebase-tools/lib/auth');
+    options.credential={getAccessToken:async()=>{
+      const token=await auth.getAccessToken(process.env.FIREBASE_TOKEN,['https://www.googleapis.com/auth/cloud-platform']);
+      return {access_token:token.access_token,expires_in:Math.max(60,Math.floor(((token.expires_at||Date.now()+3600000)-Date.now())/1000))};
+    }};
+  }
+  admin.initializeApp(options);
   migrate(admin.firestore(), args.includes('--apply')).then(result => console.log(JSON.stringify(result,null,2))).catch(e=>{console.error(e.message);process.exitCode=1;});
 }

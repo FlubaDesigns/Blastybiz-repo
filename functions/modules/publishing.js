@@ -293,7 +293,12 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
       const snap = await tx.get(draftRef);
       if (!snap.exists || snap.data().uid !== uid) throw new Error('forbidden');
 
-      const draftData = snap.data();
+      let draftData = snap.data();
+      // A prepared packet is server-owned. Mutable display fields cannot change
+      // the approved publication payload or its Ad/Campaign attribution.
+      const frozenPacket = draftData.packet || null;
+      if (frozenPacket) draftData = {...draftData,...frozenPacket,
+        platformStatus:Object.fromEntries(frozenPacket.enabledPlatforms.map(p=>[p,'approved']))};
       if(draftData.campaignId) {
         const campaign=await tx.get(userBizRef(uid,businessId).collection('campaigns').doc(draftData.campaignId));
         if(!campaign.exists || campaign.data().status==='archived')throw new Error('campaign_archived');
@@ -328,10 +333,11 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
         .slice(0, 10);
 
       tx.update(draftRef, {
-        status: 'approved', approvedAt: admin.firestore.FieldValue.serverTimestamp()
+        status: 'approved', approvedAt: admin.firestore.FieldValue.serverTimestamp(),
+        ...(frozenPacket?{packetFrozenAt:admin.firestore.FieldValue.serverTimestamp()}:{} )
       });
 
-      publishIds.forEach(pid => buildJob(tx, pid, draftAdaptations, imagesFor, draftData.campaignId || ''));
+      publishIds.forEach(pid => buildJob(tx, pid, draftAdaptations, imagesFor, draftData.campaignId || '',draftData.adId || '',frozenPacket));
       return publishIds.length;
     });
   } catch (e) {
@@ -350,13 +356,14 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
 
   res.json({ success: true, plan: userPlan, published: publishedCount });
 
-  function buildJob(tx, pid, draftAdaptations, imagesFor, campaignId) {
+  function buildJob(tx, pid, draftAdaptations, imagesFor, campaignId, adId, packet) {
     const cap = PLATFORM_CAPABILITY_MAP[pid] || { name: pid, capabilityLevel: 'manual_assisted', manualInstructions: '' };
     const adaptedContent = draftAdaptations[pid] || '';
     const jobRef = userBizJobsRef(uid, businessId).doc();
     const isManual = cap.capabilityLevel !== 'full_auto';
     tx.set(jobRef, {
       jobId: jobRef.id, businessId, uid, draftId, campaignId,
+      ...(adId ? {adId,blastId:draftId,adName:packet?.adName||'',packetRevision:packet?.adRevision||0}:{}),
       platform: pid,
       capabilityLevel: cap.capabilityLevel,
       jobType: 'publish_listing',

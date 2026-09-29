@@ -649,6 +649,8 @@ BUSINESS INFO:
 - Category: ${listing.category || 'General'}
 - Campaign: ${listing.campaignName || 'General'}
 - Ad: ${listing.adName || listing.offer}
+- Ad context: ${listing.adContext || 'not provided'}
+- Call to action: ${listing.cta || 'not specified'}
 - Offer description: ${listing.offer}
 ${listing.adDetails ? `- Additional ad details: ${listing.adDetails}\n` : ''}- Price/Range: ${listing.price || 'not specified'}
 - Phone: ${listing.phone || 'not provided'}

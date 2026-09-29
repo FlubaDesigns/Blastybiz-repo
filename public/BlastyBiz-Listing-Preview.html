@@ -25,6 +25,11 @@
   <script type="module" src="./auth-guard.js"></script>
   <script src="blastybiz-menu.js?v=7"></script>
   <!-- Page styles live in global-style.css (LISTING PREVIEW PAGE section). -->
+<script src="blasty-registry.js"></script>
+<script src="blasty-events.js"></script>
+<script src="blasty-guidance.js"></script>
+<script src="business-form.js"></script>
+<script type="module" src="blasty-runtime.js"></script>
 </head>
 <body class="app-page listing-preview-page has-site-header">
 <div id="header__inject"></div>
@@ -544,7 +549,7 @@ onAuthStateChanged(auth, async (user) => {
 
   const userSnap = await getDoc(doc(db, 'users', user.uid));
   const userData = userSnap.exists() ? userSnap.data() : {};
-  window.businessId = userData.activeBusiness || user.uid;
+  window.businessId = new URLSearchParams(location.search).get('bizId') || userData.activeBusiness || user.uid;
   // Must be set before the draft renders — every capability label on this page
   // is plan-dependent, and the server will gate on this same value.
   window.setPubPlan(userData.plan || 'starter');
@@ -560,7 +565,9 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   if (draftData) {
+    if(draftData.packet)draftData={...draftData,...draftData.packet};
     window.populateFromDraftData(draftData);
+    if(draftData.adId){const title=document.getElementById('pub-sub');if(title)title.textContent=(draftData.campaignName||'Campaign')+' / '+(draftData.adName||'Ad');}
   } else {
     // No draft — show placeholder state
     const subEl = document.getElementById('pub-sub');
@@ -597,6 +604,7 @@ onAuthStateChanged(auth, async (user) => {
   };
 
   window._firestoreApprove = async function(platformKeys) {
+    BBBlasty.fire('publish.working');
     const btn = document.getElementById('publish-btn');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Publishing…'; }
     try {

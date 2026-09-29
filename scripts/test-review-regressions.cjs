@@ -33,7 +33,7 @@ async function photos() {
   const code=html.slice(html.indexOf('async function deletePhotoRecords'), html.indexOf('window._bbDeleteGlobalImage'));
   function env({fail=false,featured='photo',active='b'}={}) {
     const writes=[], business={featuredPhoto:featured}, campaign={photos:['photo',{url:'photo'},'keep']};
-    const c={db:{},activeBizId:active,currentUser:{uid:'u'},campaigns:[{id:'c',photos:[...campaign.photos]}],window:{_bbFeaturedPhotoUrl:'photo'},
+    const c={serverTimestamp:()=>1,db:{},activeBizId:active,currentUser:{uid:'u'},campaigns:[{id:'c',photos:[...campaign.photos]}],window:{_bbFeaturedPhotoUrl:'photo'},
       doc:(_, ...p)=>({path:p.join('/')}),
       runTransaction:async(_,fn)=>{const pending=[];await fn({get:async r=>({exists:()=>true,data:()=>r.path.endsWith('/c')?campaign:business}),update:(r,d)=>pending.push({path:r.path,data:d}),delete:r=>pending.push({path:r.path,deleted:true})});if(fail)throw Error('denied');writes.push(...pending);}
     }; vm.runInNewContext(code,c); return {c,writes};
@@ -42,7 +42,7 @@ async function photos() {
   ok(e.writes.some(w=>w.data?.featuredPhoto===''),'featured record cleared');
   ok(e.c.window._bbFeaturedPhotoUrl==='','featured cache cleared');
   ok(JSON.stringify(e.c.campaigns[0].photos)==='["keep"]','both legacy representations removed');
-  ok(e.writes.some(w=>w.deleted&&w.path.endsWith('/images/i')),'image document removed');
+  ok(e.writes.some(w=>w.data?.retired&&w.path.endsWith('/images/i')),'image record retired; historical asset metadata remains');
   e=env({fail:true});await assert.rejects(e.c.deletePhotoRecords({id:'i',url:'photo'},'c'));
   ok(!e.writes.length&&e.c.window._bbFeaturedPhotoUrl==='photo'&&e.c.campaigns[0].photos.length===3,'failed transaction preserves cached records');
   e=env({featured:'other'});await e.c.deletePhotoRecords({id:'i',url:'photo'},'c');ok(!e.writes.some(w=>w.data?.featuredPhoto===''),'unrelated featured image preserved');

@@ -27,6 +27,11 @@ body{visibility:hidden}
 </script>
   <script type="module" src="./auth-guard.js"></script>
 <script src="blastybiz-menu.js?v=7"></script>
+<script src="blasty-registry.js"></script>
+<script src="blasty-events.js"></script>
+<script src="blasty-guidance.js"></script>
+<script src="business-form.js"></script>
+<script type="module" src="blasty-runtime.js"></script>
 </head>
 <body class="app-page connect-page has-site-header">
 
@@ -306,6 +311,7 @@ function renderPlatform(platformId, conn, bizId, uid) {
   const statusEl  = document.getElementById('status-' + platformId);
   const cardEl    = document.getElementById('card-' + platformId);
   if (!actionsEl) return;
+  if(!conn||conn.status!=='connected')window.BBBlasty?.fire('platform.connection_needed',{needed:true,platformName:platformId});
 
   if (platformId === 'instagram') {
     if (conn && conn.status === 'connected') {
@@ -462,5 +468,6 @@ onAuthStateChanged(auth, async (user) => {
 </script>
 <div id="site-footer-inject"></div>
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html});</script>
+
 </body>
 </html>

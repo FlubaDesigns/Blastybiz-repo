@@ -1,0 +1,31 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {database,admin}=require('./lib/test-firestore.cjs');
+const {createAdService}=require('../functions/lib/ads');
+let checks=0;const ok=(v,m)=>{assert(v,m);checks++;};
+const root='users/u/businesses/b',camp=root+'/campaigns/c',ref=camp+'/ads/a';
+async function main(){
+ const original={id:'a',campaignId:'c',businessId:'b',name:'Ad',offer:'Sale',price:'10',cta:'Book',context:'Local',mentions:{phone:'yes'},platforms:['facebook','google'],imageRefs:[],adaptations:{facebook:'Original Facebook',google:'Original Google'},platformStatus:{facebook:'approved',google:'approved'},revision:1,events:Array.from({length:200},(_,i)=>({eventId:'old'+i}))};
+ const state=database({[root]:{},[camp]:{name:'Campaign'},[ref]:original,[root+'/listingDrafts/sent']:{campaignId:'c',adId:'a',packet:{},status:'approved'},[root+'/listingDrafts/working']:{campaignId:'c',adId:'a',status:'draft'}});
+ const service=createAdService(state.db,admin),call=(action,extra={})=>service('u',{action,businessId:'b',campaignId:'c',adId:'a',...extra});
+ const transaction=state.db.runTransaction;state.db.runTransaction=()=>{throw Error('List must not open a transaction');};
+ ok((await call('list')).ads[0].blastCount===1,'list counts only packets without a transaction');state.db.runTransaction=transaction;
+ let changed=(await call('save',{expectedRevision:1,requestId:'price',creative:{price:'20',platformStatus:{facebook:'approved',google:'approved'}},reviewed:true})).ad;
+ ok(changed.platformStatus.facebook==='needs-review'&&changed.platformStatus.google==='needs-review','forged reviewed flag cannot keep unchanged copy approved');
+ ok(changed.events.length===200&&changed.events[0].eventId==='old1','events keep newest 200 entries');
+ await assert.rejects(call('prepare',{expectedRevision:changed.revision,blastId:'blocked'}),/approve/);checks++;
+ changed=(await call('save',{expectedRevision:changed.revision,requestId:'copy',creative:{offer:'Updated sale',adaptations:{facebook:'Updated Facebook',google:'Original Google'},platformStatus:{facebook:'approved',google:'approved'}}})).ad;
+ ok(changed.platformStatus.facebook==='approved'&&changed.platformStatus.google==='needs-review','only changed platform copy can retain same-save approval');
+ changed=(await call('save',{expectedRevision:changed.revision,requestId:'review',creative:{platformStatus:{facebook:'approved',google:'approved'}}})).ad;
+ ok(changed.platformStatus.google==='approved','explicit later review can approve unchanged copy');
+ await assert.rejects(call('prepare',{expectedRevision:changed.revision,blastId:'override',scope:'this_run',creative:{price:'30',platformStatus:{facebook:'approved',google:'approved'}}}),/approve/);checks++;
+ const page=fs.readFileSync('public/BlastyBiz.html','utf8'),writes=[];
+ const ctx={window:{},currentUser:{uid:'u'},activeBizId:'b',db:{},doc:(...p)=>p.slice(1).join('/'),updateDoc:async(ref,data)=>writes.push({ref,data}),serverTimestamp:()=> 'stamp'};
+ const start=page.indexOf('window._bbUpdateDraftSchedule ='),end=page.indexOf('window._bbPrepareGenerationDraft',start);
+ vm.runInNewContext(page.slice(start,end),ctx);await ctx.window._bbUpdateDraftSchedule('blast',{enabled:true});
+ ok(Object.keys(writes[0].data).sort().join(',')==='schedule,updatedAt'&&writes[0].ref===root+'/listingDrafts/blast','schedule bridge writes only rule-allowed fields to the correct owner draft');
+ const rules=fs.readFileSync('firestore.rules','utf8'),block=rules.match(/match \/config\/blasty\s*\{([^}]+)\}/)?.[1];
+ ok(block?.includes('allow read: if true;')&&block.includes('allow write: if isAdmin();'),'public guidance read retains admin-only mutation');
+ console.log('PASS: '+checks+' Pass 10 correction assertions.');
+}
+main().catch(e=>{console.error(e);process.exitCode=1;});

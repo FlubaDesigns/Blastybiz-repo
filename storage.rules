@@ -4,18 +4,20 @@ service firebase.storage {
     // Active upload path: photos/{uid}/global/ and photos/{uid}/campaigns/{cid}/
     match /photos/{uid}/{allPaths=**} {
       allow read:  if request.auth != null && request.auth.uid == uid;
-      allow create, update: if request.auth != null && request.auth.uid == uid
+      allow create: if request.auth != null && request.auth.uid == uid
         && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
-      allow delete: if request.auth != null && request.auth.uid == uid;
+      // Published image bytes are immutable. Library removal retires references.
+      allow update, delete: if false;
     }
     // Legacy path kept for backward compatibility
     match /users/{uid}/images/{allPaths=**} {
       allow read:  if request.auth != null && request.auth.uid == uid;
-      allow create, update: if request.auth != null && request.auth.uid == uid
+      allow create: if request.auth != null && request.auth.uid == uid
         && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
-      allow delete: if request.auth != null && request.auth.uid == uid;
+      // Published image bytes are immutable. Library removal retires references.
+      allow update, delete: if false;
     }
   }
 }

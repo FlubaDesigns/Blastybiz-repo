@@ -140,6 +140,11 @@
   }
   @media (prefers-reduced-motion: reduce) { .pb-spotlight { transition: none; } }
 </style>
+<script src="blasty-registry.js"></script>
+<script src="blasty-events.js"></script>
+<script src="blasty-guidance.js"></script>
+<script src="business-form.js"></script>
+<script type="module" src="blasty-runtime.js"></script>
 </head>
 <body>
 
@@ -244,17 +249,17 @@
           </div>
           <div class="cb-field">
             <label class="cb-label">Your title / role</label>
-            <input class="cb-input" id="f-role" type="text" placeholder="e.g. Owner, Manager"/>
+            <input class="cb-input" id="f-role" required type="text" placeholder="e.g. Owner, Manager"/>
           </div>
         </div>
         <div class="cb-row">
           <div class="cb-field">
             <label class="cb-label">Phone</label>
-            <input class="cb-input" id="f-phone" type="tel" placeholder="(555) 555-5555" autocomplete="tel"/>
+            <input class="cb-input" id="f-phone" required type="tel" placeholder="(555) 555-5555" autocomplete="tel"/>
           </div>
           <div class="cb-field">
             <label class="cb-label">Business email</label>
-            <input class="cb-input" id="f-email" type="email" placeholder="you@yourbusiness.com" autocomplete="email"/>
+            <input class="cb-input" id="f-email" required type="email" placeholder="you@yourbusiness.com" autocomplete="email"/>
           </div>
         </div>
         <div class="cb-row">
@@ -359,7 +364,7 @@
             <input class="cb-input" id="f-campName" required type="text" placeholder="e.g. Summer Sale"/>
           </div>
           <div class="cb-field">
-            <label class="cb-label">Special offer / CTA</label>
+            <label class="cb-label">First Ad offer / CTA</label>
             <input class="cb-input" id="f-offer" type="text" placeholder="e.g. 20% off this week"/>
           </div>
         </div>
@@ -432,6 +437,8 @@ function cbNormalizeWebsite(value) { return BBWebsite.normalize(value); }
 function cbFieldError(field) {
   const el = document.getElementById(field);
   if (!el || el.disabled) return '';
+  const shared=BBSetup.fields.find(f=>f.setup===field);
+  if(shared){if(!window._cbNeedsCampaign&&!el.value.trim()&&!['ownerName','businessName'].includes(shared.key))return '';return BBSetup.error(shared.key,el.value);}
   if (field === 'f-website') {
     el.value = cbNormalizeWebsite(el.value);
     const problem = BBWebsite.error(el.value, el.required);
@@ -476,39 +483,7 @@ function cbOpenSection(id) {
 }
 function cbIsOnline(a) { return a['f-locationType'] === 'online'; }
 
-var CB_GUIDE_STEPS = [
-  { field:'f-ownerName', section:'cbs-info', mood:'s-wave',
-    ask:"Hey! I'm Blasty — I'll write your ads. First up, what should I call you?",
-    hint:'First name is fine.' },
-  { field:'f-bizName', section:'cbs-info', mood:'s-ask',
-    ask:function(a){ return (a['f-ownerName'] ? 'Good to meet you, ' + a['f-ownerName'].split(' ')[0] + '. ' : '') + "What's the business called?"; },
-    hint:'Exactly how you want it to appear in your ads.' },
-  { field:'f-role', section:'cbs-info', ask:"What's your title there?", hint:'Owner, Manager, Founder…' },
-  { field:'f-email', section:'cbs-info', ask:'What email should customers reach you at?' },
-  { field:'f-phone', section:'cbs-info', ask:'Best phone number for customers?' },
-  { field:'f-locationType', section:'cbs-info', ask:'Do customers come to you, or are you online only?' },
-  { field:'f-street', section:'cbs-info', skipIf:cbIsOnline, ask:"What's the street address?" },
-  { field:'f-city',   section:'cbs-info', skipIf:cbIsOnline, ask:'Which city?' },
-  { field:'f-state',  section:'cbs-info', skipIf:cbIsOnline, ask:'And the state?' },
-  { field:'f-zip',    section:'cbs-info', skipIf:cbIsOnline, ask:'ZIP code?' },
-  { field:'f-hasWebsite', section:'cbs-info', skipIf:cbIsOnline, ask:'Does your business have a website?' },
-  { field:'f-website', section:'cbs-info', skipIf:a=>!cbIsOnline(a)&&a['f-hasWebsite']==='no', ask:'Got a website I should point people to?' },
-  { field:'f-story', section:'cbs-story', mood:'s-ask',
-    ask:'Now the good stuff — how did the business get started?',
-    hint:'The more you tell me, the less generic your ads sound.' },
-  { field:'f-different', section:'cbs-story', ask:'What makes you different from the competition?' },
-  { field:'f-awards', section:'cbs-story', ask:'Any awards, reviews, certifications or milestones? You can choose Nothing yet.' },
-  { field:'f-customer', section:'cbs-story', ask:'Who is your ideal customer?' },
-  { field:'f-other', section:'cbs-story', ask:'Anything else I should always keep in mind? You can choose Nothing else.' },
-  { field:'f-campName', section:'cbs-campaign', mood:'s-working',
-    ask:"Last stretch. What do you want to call this first campaign?", hint:'e.g. Summer Sale, Grand Opening' },
-  { field:'f-about', section:'cbs-campaign',
-    ask:"What's this campaign about?", hint:'What are you promoting right now?' },
-  { field:'f-offer', section:'cbs-campaign', ask:'Any special offer or call to action?' },
-  { field:'f-audience', section:'cbs-campaign', ask:'Who should see it?' },
-  { group:'plat-grid-wrap', section:'cbs-campaign', mood:'s-celebrate',
-    ask:'Where do you want me to blast this?', hint:'Tick as many as you like — you can change these later.' }
-];
+var CB_GUIDE_STEPS = BBBlasty.setupSteps();
 
 CB_GUIDE_STEPS.forEach(function(step) {
   if (step.field) {
@@ -665,7 +640,17 @@ onAuthStateChanged(auth, async user => {
     } else {
       const userSnap = await getDoc(doc(db, 'users', user.uid));
       const saved = userSnap.exists() ? userSnap.data() : {};
-      // Only restore account identity here; don't copy another business's details.
+      if(saved.activeBusiness && urlP.get('new')!=='1') {
+        editBizId=saved.activeBusiness;
+        const existing=await getDoc(doc(db,'users',user.uid,'businesses',editBizId));
+        if(!existing.exists())throw new Error('Saved business could not be found.');
+        existingCampaignId=existing.data().activeCampaign||null;
+        window._cbNeedsCampaign=!existingCampaignId;
+        prefill(existing.data());
+      } else if(urlP.get('new')!=='1' && saved.setupHandoff) {
+        BBSetup.fields.forEach(f=>{document.getElementById(f.setup).value=saved.setupHandoff[f.key]||'';});
+      }
+      // Account identity is distinct from the business contact email.
       const name = document.getElementById('f-ownerName');
       const email = document.getElementById('f-email');
       if (!name.value) name.value = saved.ownerName || saved.displayName || user.displayName || '';
@@ -676,6 +661,8 @@ onAuthStateChanged(auth, async user => {
     window._cbRestoredFields = new Set(['f-ownerName','f-bizName','f-role','f-email','f-phone'].filter(id =>
       document.getElementById(id).value.trim() && !cbFieldError(id)));
     window._cbReady = true;
+    if(urlP.get('section')==='story'){cbOpenSection('cbs-story');document.getElementById('cbs-story').scrollIntoView({block:'start'});}
+    BBBlasty.fire('onboard.email_return_success');
     if (window._cbGuideRequested) window._cbStartGuide();
   } catch(e) {
     console.warn('[cb prefill]', e);
@@ -894,19 +881,14 @@ window.cbSubmit = async function() {
       createdAt: serverTimestamp(), businessId: bizId, uid: currentUser.uid, status: 'active',
     };
 
-    if (editBizId) {
-      batch.set(bizRef, bizData, { merge: true });
-      if (!existingCampaignId) batch.set(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'campaigns', campId), campData);
-      await batch.commit();
-    } else {
-      const token = await currentUser.getIdToken();
-      const response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/createBusiness', {
-        method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
-        body:JSON.stringify({bizId,isNew:true,profileData:bizData,campaignData:campData})
-      });
-      const result = await response.json().catch(()=>({}));
-      if(!response.ok)throw new Error(result.error || 'Business could not be saved.');
-    }
+    const token = await currentUser.getIdToken();
+    const response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/createBusiness', {
+      method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+      body:JSON.stringify({bizId,isNew:!editBizId,profileData:bizData,...(!existingCampaignId?{campaignData:campData,initialAd:{name:campName+' — First Ad',offer,price:'',cta:'',context:about,platforms,mentions:Object.fromEntries(Object.entries(toggles).map(([k,v])=>[k.replace('ynMention','').toLowerCase(),v?'yes':'no']))}}:{})})
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(result.error||'Business could not be saved.');
+    sessionStorage.removeItem('bb_setup_handoff');
 
     cbSetMood((window._ob2Anim&&window._ob2Anim.success)||'s-celebrate s-flame-green s-lights-flash s-smoke');
     if (window._cbBlasty) window._cbBlasty.stop();   // guide layer has done its job

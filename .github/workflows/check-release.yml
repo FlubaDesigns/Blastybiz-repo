@@ -45,6 +45,12 @@ jobs:
           node scripts/test-pass8-corrections.cjs
           node scripts/test-pass9-regressions.cjs
           node scripts/test-pass9-corrections.cjs
+          node scripts/test-pass10-regressions.cjs
+          node scripts/test-pass10-corrections.cjs
+      - name: Ad controls and gesture DOM checks
+        run: |
+          npm install --prefix "$RUNNER_TEMP/blasty-dom" --no-audit --no-fund jsdom@26.1.0
+          JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-pass10-ui.cjs
 
   deploy:
     needs: check-release
@@ -68,8 +74,15 @@ jobs:
         working-directory: functions
       - name: Install Firebase CLI
         run: npm install -g firebase-tools@15.29.0
-      - name: Deploy reviewed backend, rules, and indexes
-        run: firebase deploy --project blastybiz-9523e --non-interactive --only firestore:rules,firestore:indexes,storage,functions:adminRetryJob,functions:adminMarkManualFollowup,functions:adminListActivityLogs,functions:dispatchPublishJob,functions:jobFailedTrigger,functions:jobCompletedTrigger,functions:approvePendingPost,functions:chatCampaign,functions:deleteBusiness,functions:approveDraft,functions:businessCreatedTrigger,functions:createBusiness,functions:deleteCampaign,functions:createCheckoutSession,functions:squareWebhook,functions:scheduledPostingCheck,functions:scheduledDraftPreview,functions:draftAction,functions:adaptListing,functions:generateEnrichmentQuestions,functions:suggestCategory,functions:previewAds,functions:extractBizContext,functions:resolveCategories,functions:suggestPlatforms,functions:scoreFact
+      - name: Deploy rules and indexes
+        run: firebase deploy --project blastybiz-9523e --non-interactive --only firestore:rules,firestore:indexes,storage
+      - name: Deploy reviewed backend
+        run: firebase deploy --project blastybiz-9523e --non-interactive --only functions:adminRetryJob,functions:adminMarkManualFollowup,functions:adminListActivityLogs,functions:dispatchPublishJob,functions:jobFailedTrigger,functions:jobCompletedTrigger,functions:approvePendingPost,functions:chatCampaign,functions:deleteBusiness,functions:manageAd,functions:approveDraft,functions:businessCreatedTrigger,functions:createBusiness,functions:deleteCampaign,functions:createCheckoutSession,functions:squareWebhook,functions:scheduledPostingCheck,functions:scheduledDraftPreview,functions:draftAction,functions:adaptListing,functions:generateEnrichmentQuestions,functions:suggestCategory,functions:previewAds,functions:extractBizContext,functions:resolveCategories,functions:suggestPlatforms,functions:scoreFact
+      - name: Review and apply non-publishing platform migration
+        run: |
+          export NODE_PATH="$(npm root -g)"
+          node scripts/migrate-platform-config.cjs --project=blastybiz-9523e
+          node scripts/migrate-platform-config.cjs --project=blastybiz-9523e --apply
       - name: Identify deployed source
         run: node -e 'require("fs").writeFileSync("public/release.json", JSON.stringify({commit:process.env.GITHUB_SHA, deployedAt:new Date().toISOString()}))'
       - name: Deploy website

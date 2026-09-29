@@ -28,7 +28,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly([
             'ownerName', 'email', 'displayName', 'plan', 'onboarded', 'createdAt',
             'activeBusiness', 'onboardingVersion', 'onboardingProgress',
-            'onboardingCompleted'
+            'onboardingCompleted', 'setupHandoff', 'blastySeen'
           ]);
       // ✅ ALLOWLIST — new fields fail CLOSED. A field missing from this list
       //    silently aborts the whole write, including atomic onboarding batches.
@@ -39,7 +39,7 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'ownerName', 'email', 'displayName', 'onboarded', 'activeBusiness',
             'updatedAt', 'onboardingProgress', 'onboardingVersion',
-            'onboardingCompleted', 'lastActiveAt'
+            'onboardingCompleted', 'lastActiveAt', 'setupHandoff', 'blastySeen', 'loginGuideDone'
           ]);
 
       // Businesses — nested under users/{uid}/businesses/{bizId}
@@ -109,6 +109,12 @@ service cloud.firestore {
             !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'archivedAt']));
         allow delete: if isAdmin();
 
+          // Reusable Ads and their event history are written by manageAd.
+          match /ads/{adId} {
+            allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+            allow write: if false;
+          }
+
           // Campaign facts subcollection
           // bizId and campaignId fields must match path segments on create.
           match /facts/{factId} {
@@ -153,12 +159,14 @@ service cloud.firestore {
             (request.auth.uid == userId || isAdmin());
           allow create: if request.auth != null &&
             request.auth.uid == userId &&
-            !request.resource.data.keys().hasAny(['freeRegenUsed', 'freeRegenEligible']);
+            !request.resource.data.keys().hasAny(['freeRegenUsed', 'freeRegenEligible', 'packet', 'packetFrozenAt']);
           allow update: if request.auth != null &&
             request.auth.uid == userId &&
-            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid', 'freeRegenUsed', 'freeRegenEligible']);
-          allow delete: if request.auth != null &&
-            request.auth.uid == userId;
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid', 'freeRegenUsed', 'freeRegenEligible', 'packet', 'packetFrozenAt']) &&
+            (!resource.data.keys().hasAny(['packet']) ||
+              request.resource.data.diff(resource.data).affectedKeys().hasOnly(['schedule','updatedAt']));
+          allow delete: if request.auth != null && request.auth.uid == userId &&
+            !resource.data.keys().hasAny(['packet']);
           match /private/{document} { allow read, write: if false; }
         }
 
@@ -315,6 +323,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+
+    // Admin-authored guidance is public, including the signed-out setup page.
+    match /config/blasty {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
 
     // Admin config (admin email list, feature flags, plans, etc.) — admin only
     match /config/{doc} {

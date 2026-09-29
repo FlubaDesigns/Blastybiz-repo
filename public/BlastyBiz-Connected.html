@@ -25,6 +25,11 @@
   <script type="module" src="./auth-guard.js"></script>
 <script src="blastybiz-menu.js?v=7"></script>
 <script src="escape-utils.js"></script>
+<script src="blasty-registry.js"></script>
+<script src="blasty-events.js"></script>
+<script src="blasty-guidance.js"></script>
+<script src="business-form.js"></script>
+<script type="module" src="blasty-runtime.js"></script>
 </head>
 <body class="app-page connected-page has-site-header">
 
@@ -118,6 +123,7 @@ auth.authStateReady().then(() => {
 
     const meta = PLATFORM_META[platform];
 
+    BBBlasty.fire('platform.connection_success');
     // Load user's bizId and platform connection doc
     let bizId = user.uid;
     let connData = null;

@@ -42,7 +42,7 @@ async function emailTests(){
 async function scheduleSaveTests(){
   const html=read('public/BlastyBiz.html'),messages=[],saved=[],nodes={};let fail=true;
   const initial={enabled:false,frequency:'weekly',timeSlot:'morning',timezone:'America/New_York',dayOfWeek:1};
-  const c={window:{activeBizId:'b',_currentDraftId:'d',_bbUpdateDraft:async(id,change)=>{saved.push(change);if(fail)throw Error('offline')}},BBSchedule:schedule,_quickSched:{...initial},_draftSchedules:{d:{schedule:{...initial}}},_defaultSched:()=>({...initial}),_computeNextRunDate:s=>schedule.computeNextRunAt(s),_getDraftSchedEntry:()=>c._draftSchedules.d,loadQuickSchedFromDraft:s=>c._quickSched=s,_renderSchedTabFromData(){},showToast:m=>messages.push(m),document:{getElementById:id=>nodes[id]}};
+  const c={window:{activeBizId:'b',_currentDraftId:'d',_bbUpdateDraftSchedule:async(id,change)=>{saved.push({schedule:change});if(fail)throw Error('offline')}},BBSchedule:schedule,_quickSched:{...initial},_draftSchedules:{d:{schedule:{...initial}}},_defaultSched:()=>({...initial}),_computeNextRunDate:s=>schedule.computeNextRunAt(s),_getDraftSchedEntry:()=>c._draftSchedules.d,loadQuickSchedFromDraft:s=>c._quickSched=s,_renderSchedTabFromData(){},showToast:m=>messages.push(m),document:{getElementById:id=>nodes[id]}};
   vm.runInNewContext(cut(html,'var _scheduleSaving =','function _saveQuickSchedToDraft('),c);
   ok(await c._persistSchedule('d',{enabled:true},true)===false&&!c._quickSched.enabled&&!c._draftSchedules.d.schedule.enabled&&messages.at(-1).includes('not saved'),'failed quick schedule restores saved state');
   fail=false;ok(await c._persistSchedule('d',{enabled:true},false)===true&&c._draftSchedules.d.schedule.enabled&&c._quickSched.enabled,'successful per-draft save updates both views after persistence');
@@ -74,7 +74,7 @@ async function allowanceTests(){
   e=env({uid:'other',freeRegenUsed:false});ok(!(await e.run()).freeRegen&&e.used===1,'grant must belong to requesting user');
   e=env({uid:'u',freeRegenUsed:false});const results=await Promise.all([e.run(),e.run()]);ok(results.filter(x=>x.freeRegen).length===1&&e.used===1,'one server grant supports only one concurrent free regeneration');
   ok(!(await e.run()).freeRegen&&e.used===2,'resetting public marker cannot reset consumed private grant');
-  const rules=cut(read('firestore.rules'),'match /listingDrafts/{draftId}','// Publish jobs');ok(rules.includes("hasAny(['uid', 'freeRegenUsed', 'freeRegenEligible'])")&&rules.includes('match /private/{document} { allow read, write: if false; }'),'draft rules protect markers and private grant');
+  const rules=cut(read('firestore.rules'),'match /listingDrafts/{draftId}','// Publish jobs');ok(rules.includes("hasAny(['uid', 'freeRegenUsed', 'freeRegenEligible', 'packet', 'packetFrozenAt'])")&&rules.includes('match /private/{document} { allow read, write: if false; }'),'draft rules protect markers and private grant');
 }
 async function logTests(){
   const source=read('functions/modules/ai.js'),events=[];let done,fail=false;
@@ -89,8 +89,7 @@ function websiteTests(){
   ok(c.BBWebsite.normalize(' example.com ')==='https://example.com','bare website normalized');
   ok(!!c.BBWebsite.error('',true)&&!c.BBWebsite.error('',false),'online website required while explicit No may omit it');
   for(const bad of ['javascript:alert(1)','ftp://example.com','not a website','https://user:pass@example.com'])ok(!!c.BBWebsite.error(bad,true),'invalid website rejected '+bad);
-  const html=read('public/BlastyBiz-Profile.html'),e={answers:{locationType:'brick',hasWebsite:'no'}};vm.runInNewContext(cut(html,'function skipField','function setBlasty'),e);
-  ok(e.skipField('website')&&!e.skipField('hasWebsite'),'brick No skips URL but asks Yes/No');e.answers.hasWebsite='yes';ok(!e.skipField('website'),'brick Yes requires website step');e.answers.locationType='online';ok(e.skipField('hasWebsite')&&!e.skipField('website')&&e.skipField('street'),'online requires URL and skips physical address');
+  const html=read('public/BlastyBiz-Profile.html');ok(html.includes('BlastyBiz-CreateBiz.html')&&html.includes('location.replace'),'retired profile routes to canonical validated form; website branches covered by setup suite');
 }
 async function destinationTests(){
   const saved=new Map(),guard=read('public/auth-guard.js');

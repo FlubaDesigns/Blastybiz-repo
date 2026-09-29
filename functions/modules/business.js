@@ -16,7 +16,7 @@ const {
 // drafts. The account write serializes concurrent creations and deletion.
 exports.createBusiness = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
-  const {profileData,bizId,isNew,campaignData} = req.body || {};
+  const {profileData,bizId,isNew,campaignData,initialAd} = req.body || {};
   const validId = x=>typeof x==='string'&&x.length>0&&x.length<=128&&!x.includes('/');
   if (!profileData || typeof profileData!=='object' || Array.isArray(profileData) || !validId(bizId)) return res.status(400).json({error:'Business details and a stable bizId are required.'});
   if (campaignData && (!validId(campaignData.id) || typeof campaignData!=='object')) return res.status(400).json({error:'Invalid campaign.'});
@@ -29,6 +29,7 @@ exports.createBusiness = onRequest({ invoker: 'public' }, withAuth(async (req, r
       const user=await tx.get(userRef), owned=await tx.get(userBizCol(uid)), existing=await tx.get(bizRef);
       const campRef=campaignData ? bizRef.collection('campaigns').doc(campaignData.id) : null;
       const camp=campRef ? await tx.get(campRef) : null;
+      const firstAd=initialAd ? require('../lib/ads').cleanCreative(initialAd) : null;
       if(!user.exists)throw Object.assign(Error('Account not found'),{httpStatus:404});
       const plan=user.data().plan || 'starter',cap=cfg.bizLimits[plan] ?? 1;
       if(!existing.exists && !isNew)throw Object.assign(Error('Business not found'),{httpStatus:404});
@@ -38,7 +39,9 @@ exports.createBusiness = onRequest({ invoker: 'public' }, withAuth(async (req, r
       tx.set(userRef,{onboarded:true,activeBusiness:bizId,businessIds:[...new Set([...owned.docs.map(d=>d.id),bizId])],...(clean.ownerName?{displayName:clean.ownerName}:{}),updatedAt:stamp},{merge:true});
       if(campRef && !camp.exists) {
         const keys=['id','name','story','campaignStory','audience','offer','platformsEnabled','onboardingPlatforms','category','lastUsedAt','photos','adName','price','factoids','platformHistory'];
-        tx.create(campRef,{...Object.fromEntries(keys.filter(k=>campaignData[k]!==undefined).map(k=>[k,campaignData[k]])),uid,businessId:bizId,status:'active',createdAt:stamp});
+        tx.create(campRef,{...Object.fromEntries(keys.filter(k=>campaignData[k]!==undefined&&(!firstAd||!['offer','adName','price'].includes(k))).map(k=>[k,campaignData[k]])),uid,businessId:bizId,status:'active',createdAt:stamp});
+        if(firstAd)tx.create(campRef.collection('ads').doc('first'),{...firstAd,id:'first',uid,businessId:bizId,campaignId:campaignData.id,
+          name:firstAd.name||'First Ad',imageRefs:[],adaptations:{},platformStatus:{},revision:1,status:'draft',events:[{eventId:'first',type:'created',fields:Object.keys(firstAd),at:new Date().toISOString()}],createdAt:stamp,updatedAt:stamp});
       }
     });
     return res.json({success:true,bizId});
@@ -171,3 +174,12 @@ exports.sendVerificationEmail = onRequest({ invoker: 'public', secrets: ['RESEND
     return res.status(500).json({ error: e.message });
   }
 });
+
+// Pass 10: the only write API for reusable Ads and prepared Blast packets.
+const { createAdService } = require('../lib/ads');
+const manageAd = createAdService(db, admin);
+exports.manageAd = onRequest({ invoker:'public' }, withAuth(async (req,res,decoded)=>{
+  if(req.method!=='POST')return res.status(405).json({error:'POST only'});
+  try { return res.json(await manageAd(decoded.uid,req.body||{})); }
+  catch(e) { console.error('[manageAd]',e.message);return res.status(e.httpStatus||500).json({error:e.httpStatus?e.message:'The Ad could not be saved. Retry without leaving this page.'}); }
+}));

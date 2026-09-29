@@ -9,7 +9,7 @@ const ok=(v,m)=>{assert(v,m);checks++;};
 const result=()=>({code:200,status(n){this.code=n;return this;},json(body){this.body=body;return this;}});
 function server(seed={}){
  const state=database(seed),{db}=state;
- const c={db,admin,crypto,Date,console:quiet,exports:{},onRequest:(_,f)=>f,withAuth:f=>f,userBizRef:(u,b)=>db.doc(`users/${u}/businesses/${b}`),userBizCol:u=>db.collection(`users/${u}/businesses`),getPlanConfig:async()=>({bizLimits:{starter:1,pro:3}})};
+ const c={db,admin,crypto,Date,console:quiet,require:p=>require('../functions/lib/ads'),exports:{},onRequest:(_,f)=>f,withAuth:f=>f,userBizRef:(u,b)=>db.doc(`users/${u}/businesses/${b}`),userBizCol:u=>db.collection(`users/${u}/businesses`),getPlanConfig:async()=>({bizLimits:{starter:1,pro:3}})};
  vm.runInNewContext(cut(read('functions/modules/business.js'),'exports.createBusiness =','exports.deleteBusiness ='),c);
  return {state,c};
 }
@@ -29,28 +29,15 @@ async function dashboard(){
  mode='offline';await c.window.deleteCampaign('c');ok(reloads.length===1,'network failure does not remove the campaign locally');
  mode='ok';await c.window.deleteCampaign('c');ok(reloads.length===2,'Dashboard removal remains retryable');
 }
-function onboardingEnv(seed,addingNew=false){
- const e=server(seed),calls=[],messages=[],button={disabled:false,textContent:''};let mode='ok',cleared=0;
- const c={window:{currentStep:6,_buildProfileData:()=>({businessName:'Test',updatedAt:1}),escHtml:s=>s},currentUser:{uid:'u',getIdToken:async()=> 'token'},crypto,console:quiet,document:{getElementById:id=>id==='btn-next'?button:null,querySelector:()=>null},showToast:m=>messages.push(m),_isNew:()=>addingNew,_clearDraft:()=>cleared++,db:e.c.db,collection:(db,...p)=>db.collection(p.join('/')),doc:(db,...p)=>db.doc(p.join('/')),getDocs:q=>q.get(),getDoc:async ref=>{const s=await ref.get();return {...s,exists:()=>s.exists};},fetch:async(url,options)=>{
-  calls.push({url,...options,body:JSON.parse(options.body)});if(mode==='offline')throw Error('offline');
-  const r=result();await e.c.exports.createBusiness({method:options.method,body:JSON.parse(options.body)},r,{uid:'u'});if(mode==='lost-response')throw Error('response lost after commit');return {ok:r.code===200,status:r.code,json:async()=>r.body};
- }};
- vm.runInNewContext(cut(read('public/BlastyBiz-Onboarding.html'),'const origNextStep =','</script>'),c);
- const submit=c.window.nextStep;
- return {...e,c,calls,messages,button,submit,setMode:m=>mode=m,cleared:()=>cleared};
-}
 async function onboarding(){
- let e=onboardingEnv({'users/u':{plan:'starter'}});await e.submit();
- ok(e.calls[0].body.bizId&&e.calls[0].body.isNew===true&&e.cleared()===1,'default first-time onboarding sends a stable ID and creation mode');
- ok(e.state.get('users/u').activeBusiness===e.calls[0].body.bizId,'first-time Onboarding actually creates a business through the server');
- e=onboardingEnv({'users/u':{plan:'pro'}},true);e.setMode('lost-response');await e.submit();const id=e.calls[0].body.bizId;
- ok(e.cleared()===0&&!e.button.disabled,'lost response retains form and enables retry');
- e.setMode('ok');await e.submit();ok(e.calls[1].body.bizId===id&&Object.keys(e.state.all()).filter(p=>/^users\/u\/businesses\/[^/]+$/.test(p)).length===1,'retry after committed save reuses the same business ID');
- e=onboardingEnv({'users/u':{plan:'starter',activeBusiness:'saved'},'users/u/businesses/saved':{onboarded:false}});await e.submit();
- ok(e.calls[0].body.bizId==='saved'&&e.calls[0].body.isNew===false&&e.cleared()===1,'unfinished active business is resumed rather than duplicating capacity');
- e=onboardingEnv({'users/u':{plan:'starter'},'users/u/businesses/u':{onboarded:false}});await e.submit();ok(e.calls[0].body.bizId==='u'&&e.cleared()===1,'legacy UID-based unfinished business still saves');
- e=onboardingEnv({'users/u':{plan:'starter'},'users/u/businesses/existing':{onboarded:true}},true);await e.submit();ok(e.cleared()===0&&!e.button.disabled&&!e.state.get('users/u').activeBusiness,'Add New still enforces capacity and retains answers on rejection');
- e=onboardingEnv({'users/u':{plan:'starter'}});e.c.currentUser=null;await e.submit();ok(!e.calls.length&&e.cleared()===0,'signed-out completion cannot show false save success');
+ for(const name of ['Onboarding','Onboard2']){
+  let target='';const c={URLSearchParams,location:{search:'?new=1',replace:url=>target=url},document:{getElementById:()=>({})}};
+  const html=read('public/BlastyBiz-'+name+'.html');vm.runInNewContext(html.match(/<script>([\s\S]*?)<\/script>/)[1],c);
+  ok(target.startsWith('BlastyBiz-CreateBiz.html?')&&new URLSearchParams(target.split('?')[1]).get('new')==='1','legacy entry preserves Add New intent in canonical form');
+ }
+ const e=server({'users/u':{plan:'pro'}}),body={bizId:'stable',isNew:true,profileData:{businessName:'Test'}};
+ for(let i=0;i<2;i++){const r=result();await e.c.exports.createBusiness({method:'POST',body},r,{uid:'u'});ok(r.code===200,'stable business retry succeeds');}
+ ok(Object.keys(e.state.all()).filter(p=>/^users\/u\/businesses\/[^/]+$/.test(p)).length===1,'repeated canonical setup save creates one business');
 }
 const NOW=Date.parse('2026-09-29T12:00:00Z');
 function payment(id,age=0,order='missing'){return {event_id:id,type:'payment.updated',created_at:new Date(NOW-age).toISOString(),data:{object:{payment:{id:'payment-'+id,status:'COMPLETED',order_id:order,customer_id:'customer'}}}};}

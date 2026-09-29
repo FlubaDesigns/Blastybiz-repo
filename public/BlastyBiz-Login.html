@@ -15,6 +15,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="blastybiz-menu.js?v=7"></script>
 <script src="mascot.js?v=5"></script>
+<script src="blasty-registry.js"></script>
+<script src="blasty-events.js"></script>
+<script src="blasty-guidance.js"></script>
+<script src="business-form.js"></script>
+<script type="module" src="blasty-runtime.js"></script>
 </head>
 <body class="login-page has-site-header">
 
@@ -126,12 +131,15 @@
                   <div class="field-error" id="su-name-err">Name is required</div>
                 </div>
 
+<div class="field"><label for="su-business">Business name</label><input id="su-business" type="text" required maxlength="300"><div class="field-error" id="su-business-err"></div></div>
+<div class="field"><label for="su-role">Role or title</label><input id="su-role" type="text" required maxlength="300"><div class="field-error" id="su-role-err"></div></div>
                 <div class="field">
                   <label for="su-email">Email</label>
                   <input type="email" id="su-email" placeholder="you@yourbusiness.com" oninput="clearErr('su-email')" />
                   <div class="field-error" id="su-email-err">Please enter a valid email</div>
                 </div>
 
+<div class="field"><label for="su-phone">Phone</label><input id="su-phone" type="tel" required maxlength="40"><div class="field-error" id="su-phone-err"></div></div>
                 <div class="field">
                   <label for="su-password">Password</label>
                   <div class="pw-wrap">
@@ -402,25 +410,7 @@ function handleSetPassword() {}
   document.body.appendChild(floatEl);
 
   // Default messages + moods per step
-  var DEFAULTS = {
-    pickTab:         { text: "👆 Pick Sign In or Create Account — or use Google / Facebook below!",  mood: 's-wave'      },
-    signinWelcome:   { text: "Welcome back! Sign in to keep blasting. 🚀",                          mood: 's-wave'      },
-    signinEmail:     { text: "Enter the email you signed up with — or sign in with Google or Facebook below!",  mood: 's-ask' },
-    signinPassword:  { text: "Enter your BlastyBiz password.",                                      mood: 's-ask'       },
-    signupWelcome:       { text: "Create your account — or sign up instantly with Google or Facebook below! 🚀",                                   mood: 's-wave'      },
-    signupWelcomeGuided: { text: "Let's get you set up! 🚀 Create your account — or tap Google / Facebook below to sign up in one click.",         mood: 's-wave'      },
-    signupWelcomeForms:  { text: "Fast lane it is! 📋 Create your account — or use Google / Facebook below to jump straight in.",                  mood: 's-happy'     },
-    billing:         { text: "Annual saves you two months free and locks in your rate. Switch anytime.",               mood: 's-wave'  },
-    planStarter:     { text: "Starter is free forever — great for getting your first location blasting.",              mood: 's-ask'   },
-    planPro:         { text: "Smart choice! 🔥 Pro gives you room for more businesses and a larger AI budget!",  mood: 's-happy' },
-    planAgency:      { text: "Agency lets you manage multiple businesses from one dashboard. Built for franchises and multi-location brands. 💼", mood: 's-happy' },
-    name:            { text: "What's your name? We'll personalize your experience.",               mood: 's-ask'       },
-    email:           { text: "Use your business email — we'll send your login link here.",         mood: 's-ask'       },
-    password:        { text: "8+ characters with letters and numbers.",                            mood: 's-ask'       },
-    confirmPassword: { text: "Type it one more time — almost there!",                              mood: 's-happy'     },
-    reset:           { text: "We'll send a reset link right away.",                                mood: 's-tilt-left' },
-    signupDone:      { text: "🎉 You're in! Check your email — we just sent you a verification link to activate your account.", mood: 's-happy' },
-  };
+  var DEFAULTS = BBBlasty.loginDefaults;
 
   // Allow the module script (which fetches live pricing) to update step texts
   window._blastySetStepText = function(key, text) {
@@ -454,6 +444,8 @@ function handleSetPassword() {}
   function getStep(key) {
     var def = DEFAULTS[key] || { text: '', mood: 's-ask' };
     var ov  = adminGuide[key] || {};
+    const fieldId={name:'profile.ownerName',businessName:'profile.businessName',ownerRole:'profile.role',email:'profile.contactEmail',phone:'profile.phone'}[key];
+    if(fieldId){const spec=BBBlasty.record(fieldId,true);if(spec)return {text:spec.enabled?BBBlasty.message(fieldId,{},true):'',mood:def.mood,flame:'',lights:''};}
     return {
       text:   ov.msg                     || def.text,
       mood:   (ov.anim && ov.anim.mood)  || def.mood,
@@ -636,7 +628,10 @@ function handleSetPassword() {}
       _fieldKeys.set(picker, 'planStarter'); // default; overridden per click below
     }
     wire('su-name',      'name',           _suFields);
-    wire('su-email',     'email',          _suFields);
+    wire('su-business', 'businessName', _suFields);
+    wire('su-role', 'ownerRole', _suFields);
+    wire('su-email', 'email', _suFields);
+    wire('su-phone', 'phone', _suFields);
     wire('su-password',  'password',       _suFields);
     wire('su-password2', 'confirmPassword',_suFields);
 
@@ -1042,7 +1037,7 @@ async function afterAuth(user) {
         window.location.href = 'BlastyBiz-CreateBiz.html';
       } else {
         // Default (guided or no choice): Blasty wizard
-        window.location.href = 'BlastyBiz-Onboard2.html';
+        window.location.href = 'BlastyBiz-CreateBiz.html?guide=1';
       }
     }
   } catch (e) {
@@ -1167,14 +1162,18 @@ window.handleSignUp = async function() {
   if (!isValidEmail(email))valid = showErr('su-email', 'Please enter a valid email');
   if (pass.length < 8)     valid = showErr('su-password', 'Password must be at least 8 characters');
   if (pass !== pass2)      valid = showErr('su-password2', "Passwords don't match");
+  const setupHandoff=BBSetup.collect('signup');
+  for(const problem of BBSetup.validate(setupHandoff)){showErr(problem.field.signup,problem.error);valid=false;}
   if (!valid) return;
+  sessionStorage.setItem('bb_setup_handoff',JSON.stringify(setupHandoff));
   setLoading('btn-signup', true);
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     // Always start as starter — the Square webhook upgrades the plan after payment
     await setDoc(doc(db, 'users', cred.user.uid), {
-      ownerName: name, email, plan: 'starter', onboarded: false, createdAt: serverTimestamp()
+      ownerName: name, email, setupHandoff, plan: 'starter', onboarded: false, createdAt: serverTimestamp()
     });
+    BBBlasty.fire('onboard.email_handoff_explain');
     // Account created — attempt verification email.
     // If BOTH paths fail, still show verify view (account exists); user can Resend from there.
     let emailSent = true;

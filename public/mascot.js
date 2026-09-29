@@ -280,14 +280,15 @@
     + '<g class="mascot-nose" style="transform-box:fill-box;transform-origin:50% 0%">'
     + '<path d="M180 42 C151 64 129 88 113 116 C137 105 157 100 180 100 C203 100 223 105 247 116 C231 88 209 64 180 42Z" fill="url(#mc-rf)" stroke="#102957" stroke-width="9" stroke-linejoin="round"/>'
     + '<path d="M205 56 C220 72 229 85 236 102" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity=".9"/>'
+    + '<text class="mascot-cone-mark" x="180" y="91" text-anchor="middle" fill="white" font-size="30" font-weight="900">B</text>'
     + '<circle class="mascot-nose-light" cx="180" cy="50" r="8" fill="#ffdc2f" opacity="0"/>'
     + '</g>'
     /* Eyes */
     + '<path d="M126 161 Q145 146 160 158" fill="none" stroke="#102957" stroke-width="8" stroke-linecap="round"/>'
     + '<path d="M200 158 Q216 146 234 161" fill="none" stroke="#102957" stroke-width="8" stroke-linecap="round"/>'
-    + '<ellipse cx="145" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>'
+    + '<ellipse class="mascot-eye-l" cx="145" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>'
     + '<g class="pupil-group-l" style="transition:transform .3s ease"><ellipse cx="148" cy="200" rx="18" ry="24" fill="url(#mc-ef)" stroke="#102957" stroke-width="5"/><ellipse cx="151" cy="202" rx="8" ry="13" fill="#071329"/><circle cx="143" cy="190" r="6" fill="#fff"/><circle cx="155" cy="211" r="3" fill="#fff" opacity=".8"/></g>'
-    + '<ellipse cx="215" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>'
+    + '<ellipse class="mascot-eye-r" cx="215" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>'
     + '<g class="pupil-group-r" style="transition:transform .3s ease"><ellipse cx="212" cy="200" rx="18" ry="24" fill="url(#mc-ef)" stroke="#102957" stroke-width="5"/><ellipse cx="209" cy="202" rx="8" ry="13" fill="#071329"/><circle cx="204" cy="190" r="6" fill="#fff"/><circle cx="216" cy="211" r="3" fill="#fff" opacity=".8"/></g>'
     /* Cheeks */
     + '<ellipse cx="121" cy="244" rx="15" ry="8" fill="#ff7272" opacity=".55"/>'
@@ -310,6 +311,7 @@
     + '<g class="mascot-arms">'
     + '<g class="mascot-arm mascot-arm-wave" opacity="0"><path d="M113 261 C84 253 73 229 82 207" fill="none" stroke="#102957" stroke-width="19" stroke-linecap="round"/><path d="M113 261 C84 253 73 229 82 207" fill="none" stroke="#f8fbff" stroke-width="11" stroke-linecap="round"/><g transform="translate(78 199) rotate(-18)"><circle cx="0" cy="0" r="16" fill="#fff" stroke="#102957" stroke-width="6"/><path d="M-12 -7 L-22 -22 M-4 -13 L-7 -31 M5 -13 L10 -31 M12 -8 L23 -22" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/><path d="M-12 -7 L-22 -22 M-4 -13 L-7 -31 M5 -13 L10 -31 M12 -8 L23 -22" fill="none" stroke="#102957" stroke-width="4" stroke-linecap="round"/></g></g>'
     + '<g class="mascot-arm mascot-arm-point" opacity="0"><path d="M247 259 C277 250 292 235 307 220" fill="none" stroke="#102957" stroke-width="19" stroke-linecap="round"/><path d="M247 259 C277 250 292 235 307 220" fill="none" stroke="#f8fbff" stroke-width="11" stroke-linecap="round"/><g transform="translate(311 216) rotate(-20)"><circle cx="0" cy="0" r="15" fill="#fff" stroke="#102957" stroke-width="6"/><path d="M9 -3 L34 -11" fill="none" stroke="#102957" stroke-width="11" stroke-linecap="round"/><path d="M9 -3 L34 -11" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/></g></g>'
+    + '<g class="gesture-hand-open-left" opacity="0" transform=""><path d="M114 262 Q87 276 73 251" fill="none" stroke="#102957" stroke-width="18" stroke-linecap="round"/><path d="M114 262 Q87 276 73 251" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/><circle cx="75" cy="248" r="15" fill="#fff" stroke="#102957" stroke-width="5"/><path d="M62 245 L42 238 M65 239 L51 225 M72 236 L66 219 M80 237 L83 220" fill="none" stroke="#102957" stroke-width="7" stroke-linecap="round"/></g><g class="gesture-hand-thumb-left" opacity="0" transform=""><path d="M114 262 Q87 276 73 251" fill="none" stroke="#102957" stroke-width="18" stroke-linecap="round"/><path d="M114 262 Q87 276 73 251" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/><circle cx="75" cy="248" r="15" fill="#fff" stroke="#102957" stroke-width="5"/><path d="M72 241 C58 231 59 214 68 214 L76 235 L92 235 L92 260 L68 260" fill="none" stroke="#102957" stroke-width="7" stroke-linecap="round"/></g><g class="gesture-hand-open-right" opacity="0" transform="translate(360 0) scale(-1 1)"><path d="M114 262 Q87 276 73 251" fill="none" stroke="#102957" stroke-width="18" stroke-linecap="round"/><path d="M114 262 Q87 276 73 251" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/><circle cx="75" cy="248" r="15" fill="#fff" stroke="#102957" stroke-width="5"/><path d="M62 245 L42 238 M65 239 L51 225 M72 236 L66 219 M80 237 L83 220" fill="none" stroke="#102957" stroke-width="7" stroke-linecap="round"/></g><g class="gesture-hand-thumb-right" opacity="0" transform="translate(360 0) scale(-1 1)"><path d="M114 262 Q87 276 73 251" fill="none" stroke="#102957" stroke-width="18" stroke-linecap="round"/><path d="M114 262 Q87 276 73 251" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/><circle cx="75" cy="248" r="15" fill="#fff" stroke="#102957" stroke-width="5"/><path d="M72 241 C58 231 59 214 68 214 L76 235 L92 235 L92 260 L68 260" fill="none" stroke="#102957" stroke-width="7" stroke-linecap="round"/></g>'
     + '</g>'
     + '</g>' /* end .mascot-body */
     /* Smoke */
@@ -717,11 +719,11 @@
       + '<path d="M180 42 C117 89 89 163 91 251 C92 309 119 348 180 378 C241 348 268 309 269 251 C271 163 243 89 180 42Z" fill="#f0f6ff" stroke="#102957" stroke-width="10"/>'
       + '<path d="M93 269 C121 289 148 299 180 299 C212 299 239 289 267 269 L265 301 C239 319 211 327 180 327 C149 327 121 319 95 301Z" fill="#49bf24" stroke="#102957" stroke-width="8"/>'
       + '<path d="M180 42 C151 64 129 88 113 116 C137 105 157 100 180 100 C203 100 223 105 247 116 C231 88 209 64 180 42Z" fill="#ff2f2f" stroke="#102957" stroke-width="9"/>'
-      + '<ellipse cx="145" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>'
+      + '<ellipse class="mascot-eye-l" cx="145" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>'
       + '<ellipse cx="148" cy="' + (py - 2) + '" rx="16" ry="22" fill="#49d834"/>'
       + '<ellipse cx="151" cy="' + py + '" rx="8" ry="13" fill="#071329"/>'
       + '<circle cx="143" cy="190" r="5" fill="#fff"/>'
-      + '<ellipse cx="215" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>'
+      + '<ellipse class="mascot-eye-r" cx="215" cy="196" rx="29" ry="37" fill="#fff" stroke="#102957" stroke-width="7"/>'
       + '<ellipse cx="212" cy="' + (py - 2) + '" rx="16" ry="22" fill="#49d834"/>'
       + '<ellipse cx="209" cy="' + py + '" rx="8" ry="13" fill="#071329"/>'
       + '<circle cx="204" cy="190" r="5" fill="#fff"/>'
@@ -783,8 +785,53 @@
     init();
   }
 
+  // Independently callable zones; no full-body mood change for a hand/eye cue.
+  function gestureParts(instance,selectors,keyframes,duration) {
+    if(!instance || !instance.root || window.matchMedia('(prefers-reduced-motion: reduce)').matches || document.body.classList.contains('mascot-static'))return;
+    instance.root.querySelectorAll(selectors).forEach(function(node){
+      if(!node.animate)return;
+      node.style.transformBox='fill-box';node.style.transformOrigin='center';
+      node.animate(keyframes,{duration:duration||650,easing:'ease-in-out'});
+    });
+  }
+Mascot.prototype.openHandLeft=function(){gestureParts(this,".gesture-hand-open-left",[{"opacity": 0}, {"opacity": 1, "offset": 0.2}, {"opacity": 1, "offset": 0.8}, {"opacity": 0}]);};
+Mascot.prototype.openHandRight=function(){gestureParts(this,".gesture-hand-open-right",[{"opacity": 0}, {"opacity": 1, "offset": 0.2}, {"opacity": 1, "offset": 0.8}, {"opacity": 0}]);};
+Mascot.prototype.openHandsBoth=function(){gestureParts(this,".gesture-hand-open-left,.gesture-hand-open-right",[{"opacity": 0}, {"opacity": 1, "offset": 0.2}, {"opacity": 1, "offset": 0.8}, {"opacity": 0}]);};
+Mascot.prototype.pointRight=function(){gestureParts(this,".mascot-arm-point",[{"opacity": 0}, {"opacity": 1, "offset": 0.2}, {"opacity": 1, "offset": 0.8}, {"opacity": 0}]);};
+Mascot.prototype.winkLeft=function(){gestureParts(this,".mascot-eye-l,.pupil-group-l",[{"transform": "scaleY(1)"}, {"transform": "scaleY(.08)"}, {"transform": "scaleY(1)"}]);};
+Mascot.prototype.winkRight=function(){gestureParts(this,".mascot-eye-r,.pupil-group-r",[{"transform": "scaleY(1)"}, {"transform": "scaleY(.08)"}, {"transform": "scaleY(1)"}]);};
+Mascot.prototype.eyePop=function(){gestureParts(this,".mascot-eye-l,.mascot-eye-r,.pupil-group-l,.pupil-group-r",[{"transform": "scale(1)"}, {"transform": "scale(1.15)"}, {"transform": "scale(1)"}]);};
+Mascot.prototype.flameBoost=function(){gestureParts(this,".mascot-exhaust",[{"transform": "scaleY(1)"}, {"transform": "scaleY(1.2)"}, {"transform": "scaleY(1)"}]);};
+Mascot.prototype.conePop=function(){gestureParts(this,".mascot-nose",[{"transform": "translateY(0)"}, {"transform": "translateY(-10px)"}, {"transform": "translateY(0)"}]);};
+Mascot.prototype.coneSpin=function(){gestureParts(this,".mascot-cone-mark",[{transform:"translateX(0)",opacity:1},{transform:"translateX(35px)",opacity:0,offset:.45},{transform:"translateX(-35px)",opacity:0,offset:.55},{transform:"translateX(0)",opacity:1}]);gestureParts(this,".mascot-nose",[{"transform": "translateY(0) scaleX(1)"}, {"transform": "translateY(-6px) scaleX(.7)"}, {"transform": "translateY(-6px) scaleX(1)"}, {"transform": "translateY(0) scaleX(1)"}]);};
+Mascot.prototype.nod=function(){gestureParts(this,".mascot-body",[{"transform": "translateY(0)"}, {"transform": "translateY(3px)"}, {"transform": "translateY(0)"}]);};
+Mascot.prototype.reassureHand=function(){gestureParts(this,".gesture-hand-open-left",[{"opacity": 0, "transform": "translateY(-3px)"}, {"opacity": 1, "transform": "translateY(3px)"}, {"opacity": 0, "transform": "translateY(0)"}]);};
+Mascot.prototype.thumbUpLeft=function(){gestureParts(this,".gesture-hand-thumb-left",[{"opacity": 0}, {"opacity": 1, "offset": 0.2}, {"opacity": 1, "offset": 0.8}, {"opacity": 0}]);};
+Mascot.prototype.thumbUpRight=function(){gestureParts(this,".gesture-hand-thumb-right",[{"opacity": 0}, {"opacity": 1, "offset": 0.2}, {"opacity": 1, "offset": 0.8}, {"opacity": 0}]);};
+Mascot.prototype.thumbUpBoth=function(){gestureParts(this,".gesture-hand-thumb-left,.gesture-hand-thumb-right",[{"opacity": 0}, {"opacity": 1, "offset": 0.2}, {"opacity": 1, "offset": 0.8}, {"opacity": 0}]);};
+Mascot.prototype.pointLeft=function(){
+ if(!this.root)return;let layer=this.root.querySelector('.gesture-point-left');
+ if(!layer){const source=this.root.querySelector('.mascot-arm-point');if(!source)return;layer=source.cloneNode(true);layer.setAttribute('class','gesture-point-left');layer.style.opacity='0';layer.setAttribute('transform','translate(360 0) scale(-1 1)');source.parentNode.appendChild(layer);}
+ gestureParts(this,'.gesture-point-left',[{opacity:0},{opacity:1,offset:.2},{opacity:1,offset:.8},{opacity:0}]);
+};
   /* ── EXPORT ───────────────────────────────────────────────────────────── */
   window.PBMascot = {
+    openHandLeft:_delegate('openHandLeft'),
+    openHandRight:_delegate('openHandRight'),
+    openHandsBoth:_delegate('openHandsBoth'),
+    pointRight:_delegate('pointRight'),
+    winkLeft:_delegate('winkLeft'),
+    winkRight:_delegate('winkRight'),
+    eyePop:_delegate('eyePop'),
+    flameBoost:_delegate('flameBoost'),
+    conePop:_delegate('conePop'),
+    coneSpin:_delegate('coneSpin'),
+    nod:_delegate('nod'),
+    reassureHand:_delegate('reassureHand'),
+    thumbUpLeft:_delegate('thumbUpLeft'),
+    thumbUpRight:_delegate('thumbUpRight'),
+    thumbUpBoth:_delegate('thumbUpBoth'),
+    pointLeft:_delegate('pointLeft'),
     /* instances */
     create:       create,
     configure:    configure,
