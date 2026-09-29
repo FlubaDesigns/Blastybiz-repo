@@ -4,6 +4,8 @@
  * disconnectPlatform, checkPlatformTokenExpiry
  */
 'use strict';
+const {sameConnection,saveGoogleRefresh}=require('../lib/connection-state');
+const {metaRevokeToken,revokeMeta}=require('../lib/meta-revoke');
 const { META_GRAPH_VERSION, META_GRAPH_BASE, providerId, googlePostsUrl } = require('../lib/provider-api');
 
 const {
@@ -32,7 +34,7 @@ exports.oauthDestination = onRequest({invoker:'public'}, withAuth(async (req,res
   try {
     if (!['GET','POST'].includes(req.method)) return res.status(405).json({error:'GET or POST only'});
     const input=req.method==='GET'?req.query:req.body||{};
-    const result=req.method==='GET'?await selection.inspect(input.selection,decoded.uid):await selection.confirm(input.selection,decoded.uid,input.choiceId);
+    const result=req.method==='GET'?await selection.inspect(input.selection,decoded.uid):input.cancel===true?await selection.cancel(input.selection,decoded.uid):await selection.confirm(input.selection,decoded.uid,input.choiceId);
     return res.json(result);
   } catch(e) {
     return res.status(e.httpStatus||502).json({error:e.httpStatus?e.message:'Could not verify the provider destination. Reconnect or try again.'});
@@ -202,11 +204,8 @@ exports.disconnectPlatform = onRequest(async (req, res) => {
       }
     }
     if (platformId === 'facebook' || platformId === 'instagram') {
-      if (conn.accessToken) {
-        try {
-          await fetch(`${META_GRAPH_BASE}/me/permissions?access_token=${encodeURIComponent(conn.accessToken)}`, { method: 'DELETE' });
-        } catch(e) { console.warn('[disconnectPlatform] Facebook revoke failed:', e.message); }
-      }
+      const token=await metaRevokeToken(connRef,platformId,privTokens,_getConnTokens);
+      await revokeMeta(token,fetch,console.warn);
     }
 
     await connRef.update({ status: 'disconnected', disconnectedAt: admin.firestore.FieldValue.serverTimestamp() });
@@ -261,7 +260,10 @@ exports.checkPlatformTokenExpiry = onSchedule(
     const toNotify = [];
 
     for (const docSnap of snap.docs) {
-      const conn = docSnap.data();
+      const parts=docSnap.ref.path.split('/');
+      if(parts.length!==6 || parts[0]!=='users' || parts[2]!=='businesses' || parts[4]!=='platformConnections' || !['google','facebook','instagram'].includes(docSnap.id)){skipped++;continue;}
+      // Document fields are historical/client data; paths define ownership/provider.
+      const conn = {...docSnap.data(),uid:parts[1],businessId:parts[3],platform:docSnap.id};
 
       if (!conn.expiresAt) { skipped++; continue; }
 
@@ -288,7 +290,7 @@ exports.checkPlatformTokenExpiry = onSchedule(
           const newExpiresAt=new Date(Date.now()+(resp.data.expires_in||60*24*3600)*1000);
           await db.runTransaction(async tx=>{
             const current=await tx.get(docSnap.ref),igSnap=await tx.get(igRef);
-            if(!current.exists || current.data().status!=='connected' || current.data().pageId!==conn.pageId)throw Error('Connection changed during refresh.');
+            if(!sameConnection(conn,current.data()))throw Error('Connection changed during refresh.');
             tx.set(docSnap.ref.collection('private').doc('tokens'),{accessToken:page.data.access_token,userAccessToken:userToken});
             tx.update(docSnap.ref,{expiresAt:newExpiresAt,updatedAt:admin.firestore.FieldValue.serverTimestamp()});
             if(igSnap.exists && igSnap.data().status==='connected') {
@@ -308,22 +310,9 @@ exports.checkPlatformTokenExpiry = onSchedule(
         } catch (e) {
           console.warn(`[checkPlatformTokenExpiry] Facebook refresh failed for biz ${conn.businessId}:`,
             e.response?.data || e.message);
-          try {
-            const igSnap  = await igRef.get();
-            if (igSnap.exists && igSnap.data().status === 'connected') {
-              await igRef.update({
-                status:    'expired',
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-              });
-              console.log(`[checkPlatformTokenExpiry] Marked expired (paired with failed FB) instagram for biz ${conn.businessId}`);
-            }
-          } catch (igErr) {
-            console.error(`[checkPlatformTokenExpiry] Failed to mark IG expired for business ${conn.businessId}:`, igErr.message);
-          }
+          // A failed proactive refresh does not invalidate a still-valid grant.
         }
       }
-
-      if (conn.platform === 'instagram') { skipped++; continue; }
 
       if (conn.platform === 'google' && privTokens.refreshToken) {
         try {
@@ -336,11 +325,8 @@ exports.checkPlatformTokenExpiry = onSchedule(
             },
           });
           const { access_token, expires_in } = resp.data;
-          await _setConnTokens(docSnap.ref, { accessToken: access_token });
-          await docSnap.ref.update({
-            expiresAt: new Date(Date.now() + (expires_in || 3600) * 1000),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
+          const saved=await saveGoogleRefresh(db,admin,docSnap.ref,conn,access_token,new Date(Date.now()+(expires_in||3600)*1000));
+          if(saved.changed)throw Error('Connection changed during refresh.');
           console.log(`[checkPlatformTokenExpiry] Refreshed Google token for ${docSnap.id}`);
           refreshed++;
           continue;
@@ -350,15 +336,21 @@ exports.checkPlatformTokenExpiry = onSchedule(
         }
       }
 
+      if(expiresAt.getTime()>Date.now()){skipped++;continue;}
       try {
-        await docSnap.ref.update({
-          status:    'expired',
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        // Re-read both generation and expiry: another worker may have refreshed
+        // or the owner may have reconnected while this network call was pending.
+        const marked=await db.runTransaction(async tx=>{
+          const current=(await tx.get(docSnap.ref)).data();
+          const expiry=current?.expiresAt?.toMillis?.() || new Date(current?.expiresAt).getTime();
+          if(!sameConnection(conn,current) || !Number.isFinite(expiry) || expiry>Date.now())return false;
+          tx.update(docSnap.ref,{status:'expired',updatedAt:admin.firestore.FieldValue.serverTimestamp()});
+          return true;
         });
-        console.log(`[checkPlatformTokenExpiry] Marked expired: ${docSnap.id} (platform: ${conn.platform})`);
+        if(!marked){skipped++;continue;}
         expired++;
-      } catch (e) {
-        console.error(`[checkPlatformTokenExpiry] Failed to mark expired for ${docSnap.id}:`, e.message);
+      } catch(e) {
+        console.error(`[checkPlatformTokenExpiry] Failed to mark expired for ${docSnap.id}:`,e.message);
         continue;
       }
 

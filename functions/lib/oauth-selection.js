@@ -70,6 +70,16 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
     if (!(await business(p).get()).exists) fail(404,'Business no longer exists.');
     return {businessId:p.businessId,platform:p.platform,returnTo:p.returnTo||'',choices:p.choices.map(c=>({id:c.id,label:c.label}))};
   }
+  async function cancel(id,uid) {
+    const ref=nonceRef(id);
+    return db.runTransaction(async tx=>{
+      const p=(await tx.get(ref)).data();
+      if(!p)return {cancelled:true}; // Safe, idempotent retry after deletion.
+      if(p.uid!==uid || p.phase!=='selection')fail(403,'This connection request belongs to another account.');
+      tx.delete(ref); // Owner can discard even an expired choice immediately.
+      return {cancelled:true};
+    });
+  }
   async function confirm(id, uid, choiceId) {
     const ref=nonceRef(id), p=(await ref.get()).data(); validate(p,uid);
     const choice=p.choices.find(c=>c.id===choiceId);
@@ -110,6 +120,6 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
     }
     return {businessId:p.businessId,platform:p.platform,returnTo:p.returnTo||''};
   }
-  return {googleChoices,facebookChoices,prepare,inspect,confirm};
+  return {googleChoices,facebookChoices,prepare,inspect,confirm,cancel};
 }
 module.exports={createOAuthSelection};

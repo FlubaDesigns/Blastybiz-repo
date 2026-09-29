@@ -3,6 +3,7 @@
  * Every module does:  const { db, withAuth, bbLog, ... } = require('../lib/shared');
  */
 'use strict';
+const {metaRevokeToken,revokeMeta}=require('./meta-revoke');
 const { META_GRAPH_VERSION, META_GRAPH_BASE, providerId, googlePostsUrl } = require('./provider-api');
 
 const { onRequest }                             = require('firebase-functions/v2/https');
@@ -794,7 +795,8 @@ async function purgeUserData(uid, opts = {}) {
       privSnap.docs.forEach(d => bizSubRefs.push(d.ref));
       if (!revokeOAuth || dryRun) continue;
 
-      const { accessToken, refreshToken } = privSnap.docs[0]?.data() || {};
+      const tokens=privSnap.docs.find(d=>d.id==='tokens')?.data()||{};
+      const { accessToken, refreshToken } = tokens;
       if (platformId === 'google') {
         for (const tok of [accessToken, refreshToken].filter(Boolean)) {
           try {
@@ -802,10 +804,9 @@ async function purgeUserData(uid, opts = {}) {
           } catch (e) { console.warn('[purgeUserData] Google revoke failed:', e.message); }
         }
       }
-      if ((platformId === 'facebook' || platformId === 'instagram') && accessToken) {
-        try {
-          await fetch(`${META_GRAPH_BASE}/me/permissions?access_token=${encodeURIComponent(accessToken)}`, { method: 'DELETE' });
-        } catch (e) { console.warn('[purgeUserData] Facebook revoke failed:', e.message); }
+      if (platformId === 'facebook' || platformId === 'instagram') {
+        const token=await metaRevokeToken(connDoc.ref,platformId,tokens,_getConnTokens);
+        await revokeMeta(token,fetch,console.warn);
       }
     }
 

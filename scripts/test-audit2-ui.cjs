@@ -38,13 +38,14 @@ function intentTests(){
 }
 async function connectedTests(){
  const code=[...connected.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)][0][1].replace(/^import .*;$/gm,'');
- async function page(query,{record,readFailure=false,selection=false,owner='u'}={}){
-  const dom=new JSDOM('<div id="page-content"></div>',{url:'https://example.com/BlastyBiz-Connected.html?'+query,runScripts:'dangerously',virtualConsole:new VirtualConsole()}),w=dom.window,calls=[],fires=[];
+ async function page(query,{record,readFailure=false,selection=false,owner='u',cancelResponse}={}){
+  const navigation=[],vc=new VirtualConsole();vc.on('jsdomError',e=>{if(e.message.includes('navigation'))navigation.push(e);});
+  const dom=new JSDOM('<div id="page-content"></div>',{url:'https://example.com/BlastyBiz-Connected.html?'+query,runScripts:'dangerously',virtualConsole:vc}),w=dom.window,calls=[],fires=[];
   w.eval(read('public/escape-utils.js'));Object.assign(w,{auth:{authStateReady:()=>Promise.resolve()},db:{},onAuthStateChanged:(_a,cb)=>cb({uid:owner,getIdToken:async()=>'fixture'}),doc:(_db,...parts)=>parts.join('/'),getDoc:async path=>{
    calls.push(path);if(readFailure)throw Error('Connection read unavailable');const data=path.endsWith('/facebook')?record:path.endsWith('/instagram')?null:{};return {exists:()=>!!data,data:()=>data};
   },BBBlasty:{fire:name=>fires.push(name)},fetch:async(url,options)=>{
-   calls.push({url,options});return {ok:true,json:async()=>options.method==='POST'?{businessId:'b',platform:'facebook'}:{businessId:'b',platform:'facebook',choices:[{id:'one',label:'First'},{id:'two',label:'<img onerror=alert(1)> Intended'}]}};
-  }});w.eval(code);await settle();return {dom,w,calls,fires};
+   calls.push({url,options});if(options.method==='POST'&&JSON.parse(options.body).cancel&&cancelResponse)return cancelResponse();return {ok:true,json:async()=>options.method==='POST'?{businessId:'b',platform:'facebook'}:{businessId:'b',platform:'facebook',choices:[{id:'one',label:'First'},{id:'two',label:'<img onerror=alert(1)> Intended'}]}};
+  }});w.eval(code);await settle();return {dom,w,calls,fires,navigation};
  }
  let e=await page('error='+encodeURIComponent('<img src=x onerror="document.body.dataset.pwned=1">'));
  ok(!e.w.document.querySelector('img[onerror]')&&!e.w.document.body.dataset.pwned,'reflected error markup cannot execute');e.dom.window.close();
@@ -57,6 +58,23 @@ async function connectedTests(){
  e=await page('connected=facebook&bizId=b&ownerUid=u&selection=nonce');
  const select=e.w.document.querySelector('select'),button=e.w.document.querySelector('button');ok(select.options.length===3&&button.disabled&&!e.w.document.querySelector('img'),'destination choice has no default and renders provider label as text');
  select.value='two';select.dispatchEvent(new e.w.Event('change'));button.click();await settle();ok(JSON.parse(e.calls.find(c=>c.options?.method==='POST').options.body).choiceId==='two','actual second option submits its identity');e.dom.window.close();
+ let finishCancel;
+ e=await page('connected=facebook&bizId=b&ownerUid=u&selection=nonce',{cancelResponse:()=>new Promise(resolve=>{finishCancel=resolve;})});
+ let cancel=[...e.w.document.querySelectorAll('button')].find(b=>b.textContent==='Cancel');cancel.click();await settle();
+ let request=e.calls.find(c=>c.options?.method==='POST');
+ ok(JSON.parse(request.options.body).cancel===true&&JSON.parse(request.options.body).selection==='nonce','Cancel submits authenticated deletion for exact pending selection');
+ ok(request.options.headers.Authorization==='Bearer fixture','Cancel carries signed-in owner token');
+ ok(cancel.disabled&&e.w.document.querySelector('select').disabled&&e.w.document.querySelector('button').disabled,'Cancel locks choice controls while deletion is pending');
+ ok(!e.navigation.length,'Cancel does not navigate before deletion confirmation');
+ finishCancel({ok:true,json:async()=>({cancelled:true})});await settle();
+ ok(e.navigation.length===1,'Cancel navigates only after server confirms cleanup');e.dom.window.close();
+ for(const response of [{ok:false,json:async()=>({error:'Try again'})},{ok:true,json:async()=>({})}]){
+  e=await page('connected=facebook&bizId=b&ownerUid=u&selection=nonce',{cancelResponse:async()=>response});
+  cancel=[...e.w.document.querySelectorAll('button')].find(b=>b.textContent==='Cancel');cancel.click();await settle();
+  ok(!e.navigation.length&&!cancel.disabled&&!e.w.document.querySelector('select').disabled,'Failed or unconfirmed deletion retains page and enables retry');
+  ok(e.w.document.querySelector('button').disabled,'Failed cancellation cannot submit an unselected destination');e.dom.window.close();
+ }
+
 }
 (async()=>{await returnTests();intentTests();await connectedTests();
  // Parse every changed page's scripts: a successful fixture must not hide a syntax error elsewhere.

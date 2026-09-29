@@ -154,16 +154,24 @@ auth.authStateReady().then(() => {
         const feedback=document.createElement('p');feedback.setAttribute('role','status');
         select.addEventListener('change',()=>{button.disabled=!select.value;});
         button.addEventListener('click',async()=>{
-          button.disabled=true;select.disabled=true;feedback.textContent='Saving your choice…';
+          button.disabled=true;cancel.disabled=true;select.disabled=true;feedback.textContent='Saving your choice…';
           try {
             const r=await fetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+await user.getIdToken(),'Content-Type':'application/json'},body:JSON.stringify({selection:selectionId,choiceId:select.value})});
             const result=await r.json();if(!r.ok)throw Error(result.error||'Your choice was not saved.');
             const next=new URLSearchParams({connected:result.platform,bizId:result.businessId,ownerUid:user.uid});
             if(result.returnTo==='onboarding')next.set('returnTo','onboarding');
             window.location.replace('BlastyBiz-Connected.html?'+next);
-          }catch(e){feedback.textContent=e.message;button.disabled=false;select.disabled=false;}
+          }catch(e){feedback.textContent=e.message;button.disabled=false;cancel.disabled=false;select.disabled=false;}
         });
-        const cancel=document.createElement('a');cancel.href='BlastyBiz-Connect.html?bizId='+encodeURIComponent(bizId);cancel.className='btn-secondary';cancel.textContent='Cancel';
+        const cancel=document.createElement('button');cancel.type='button';cancel.className='btn-secondary';cancel.textContent='Cancel';
+        cancel.addEventListener('click',async()=>{
+          cancel.disabled=true;button.disabled=true;select.disabled=true;feedback.textContent='Discarding your connection choice…';
+          try {
+            const r=await fetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+await user.getIdToken(),'Content-Type':'application/json'},body:JSON.stringify({selection:selectionId,cancel:true})});
+            const result=await r.json();if(!r.ok || !result.cancelled)throw Error(result.error||'Could not discard this choice. Please try Cancel again.');
+            window.location.replace('BlastyBiz-Connect.html?bizId='+encodeURIComponent(bizId));
+          }catch(e){feedback.textContent=e.message;cancel.disabled=false;button.disabled=!select.value;select.disabled=false;}
+        });
         content.append(h,label,select,button,feedback,cancel);
       }catch(e){fail(e.message);}
       return;

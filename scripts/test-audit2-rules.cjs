@@ -33,8 +33,20 @@ const {doc,getDoc,setDoc}=firestore;
   await testing.assertFails(getDoc(doc(other,'users/owner/businesses/business')));checks++;
   await testing.assertFails(getDoc(doc(env.unauthenticatedContext().firestore(),'users/owner')));checks++;
   await testing.assertFails(setDoc(doc(owner,'users/owner/businesses/business/platformConnections/google'),{status:'connected',accountId:'forged',locationId:'forged'}));checks++;
-  await testing.assertSucceeds(setDoc(doc(owner,'users/owner/businesses/business/platformConnections/google'),{platform:'google',profileUrl:'https://example.com'}));checks++;
+  await testing.assertSucceeds(setDoc(doc(owner,'users/owner/businesses/business/platformConnections/google'),{uid:'owner',businessId:'business',platform:'google',profileUrl:'https://example.com'}));checks++;
   await testing.assertFails(setDoc(doc(owner,'users/owner/businesses/business/platformConnections/google'),{status:'connected'},{merge:true}));checks++;
-  assert(checks===34);console.log(checks+' actual Firestore emulator authorization assertions passed.');
+  for(const provider of ['google','facebook','instagram']) {
+   const ref=doc(owner,'users/owner/businesses/business/platformConnections/'+provider);
+   await testing.assertSucceeds(setDoc(ref,{uid:'owner',businessId:'business',platform:provider,profileUrl:'https://example.com'},{merge:true}));checks++;
+   for(const [field,value] of [['uid','other'],['businessId','other'],['platform','other']]){
+    await testing.assertFails(setDoc(ref,{[field]:value},{merge:true}));checks++;
+   }
+  }
+  for(const forged of [{uid:'other',businessId:'creation-test',platform:'google'},{uid:'owner',businessId:'wrong-business',platform:'google'},{uid:'owner',businessId:'creation-test',platform:'facebook'}]){
+   // A separate business path ensures this exercises CREATE, not UPDATE.
+   await testing.assertFails(setDoc(doc(owner,'users/owner/businesses/creation-test/platformConnections/google'),forged));checks++;
+  }
+  await testing.assertFails(setDoc(doc(owner,'users/owner/businesses/new/platformConnections/google'),{profileUrl:'https://example.com'}));checks++;
+  assert(checks===50);console.log(checks+' actual Firestore emulator authorization assertions passed.');
  } finally {await env.cleanup();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

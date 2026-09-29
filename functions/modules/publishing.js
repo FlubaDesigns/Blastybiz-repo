@@ -8,6 +8,7 @@
  * draftAction
  */
 'use strict';
+const {saveGoogleRefresh}=require('../lib/connection-state');
 const { META_GRAPH_VERSION, META_GRAPH_BASE, providerId, googlePostsUrl } = require('../lib/provider-api');
 
 const {
@@ -54,9 +55,9 @@ async function _publishGoogleJob(job, conn, pathUserId, pathBizId) {
   const endpoint=googlePostsUrl(conn);
   const content   = job.payload?.adaptedContent || '';
   const imageUrls = job.payload?.imageUrls || [];
-  async function tryPost(token) {
+  async function tryPost(token,target=endpoint) {
     return _publicationPost(
-      endpoint,
+      target,
       { languageCode: 'en-US', topicType: 'STANDARD', summary: content,
         media: imageUrls.map(u => ({ mediaFormat: 'PHOTO', sourceUrl: u })) },
       { headers: { Authorization: `Bearer ${token}` } }
@@ -71,10 +72,13 @@ async function _publishGoogleJob(job, conn, pathUserId, pathBizId) {
       const newToken = await _googleRefreshToken(conn.refreshToken);
       // 2.8: use path-derived uid/bizId, never trust doc-data fields for path construction
       const gConnRef = userBizConnsRef(pathUserId, pathBizId).doc('google');
-      await _setConnTokens(gConnRef, { accessToken: newToken });
-      await gConnRef.update({ updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+      const saved=await saveGoogleRefresh(db,admin,gConnRef,conn,newToken);
+      const retry=saved.connection;
+      if(!retry || retry.status!=='connected' || !retry.accessToken)throw Error('Google connection changed. Reconnect before posting.');
       try {
-        const r = await tryPost(newToken);
+        // The original request was rejected with 401. Retry once with a matched
+        // current destination/token pair, never the old token and new location.
+        const r = await tryPost(retry.accessToken,googlePostsUrl(retry));
         if(!r.data.name)throw Object.assign(Error('Google returned no post identifier. Check the destination before retrying.'),{publicationUncertain:true});
         return { postId: r.data.name };
       } catch(retryError) { throw _publisherError('Google',retryError); }
