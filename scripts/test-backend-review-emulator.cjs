@@ -12,7 +12,9 @@ admin.initializeApp({projectId:'demo-blastybiz-audit2'});const db=admin.firestor
  const wrapper=(...a)=>a.at(-1),shared={db,admin,onRequest:wrapper,onDocumentUpdated:wrapper,onDocumentCreated:wrapper,withAuth:f=>f,checkUidRateLimit:async()=>true,userBizRef:(u,b)=>db.doc(`users/${u}/businesses/${b}`)};
  vm.runInNewContext(fs.readFileSync(filename,'utf8'),{exports,module:{exports},require:p=>p==='../lib/shared'?shared:req(p),console,process:{env:{}},Date,URL,URLSearchParams,Buffer,AbortSignal});
  const invoke=async()=>{const r={status(n){this.code=n;return this;},json(body){this.body=body;}};await exports.importGooglePhotos({body:{bizId:biz}},r,{uid});return r.body.jobId;};
- const ids=await Promise.all([invoke(),invoke(),invoke()]);assert.equal(new Set(ids).size,1);
+ const concurrent=await Promise.allSettled([invoke(),invoke(),invoke()]);
+ for(const result of concurrent)if(result.status==='rejected')throw result.reason;
+ const ids=concurrent.map(r=>r.value);assert.equal(new Set(ids).size,1);
  assert.equal((await db.collection('importJobs').where('uid','==',uid).get()).size,1);
  await db.doc('importJobs/'+ids[0]).update({status:'completed'});const next=await invoke();assert.notEqual(next,ids[0]);
  await db.doc('accountDeletions/'+uid).set({status:'running'});await assert.rejects(invoke,/unavailable/);
