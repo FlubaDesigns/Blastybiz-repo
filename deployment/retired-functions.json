@@ -1,0 +1,75 @@
+{
+  "project": "blastybiz-9523e",
+  "region": "us-central1",
+  "reason": "Owner-requested single-source-of-truth cleanup after static, data, trigger, and traffic blast-radius review. No customer data deletion.",
+  "functions": [
+    {
+      "name": "archiveCampaign",
+      "expectedUpdateTime": "2026-09-04T04:51:35.685679356Z"
+    },
+    {
+      "name": "backfillCanonicalAds",
+      "expectedUpdateTime": "2026-09-04T04:51:36.427576881Z"
+    },
+    {
+      "name": "canonicalScheduleCheck",
+      "expectedUpdateTime": "2026-09-04T04:51:38.822623337Z"
+    },
+    {
+      "name": "completeFirstBlast",
+      "expectedUpdateTime": "2026-09-04T04:41:52.789349915Z"
+    },
+    {
+      "name": "consumeOnboardingDraft",
+      "expectedUpdateTime": "2026-09-04T04:41:40.834334475Z"
+    },
+    {
+      "name": "createAd",
+      "expectedUpdateTime": "2026-09-04T04:51:41.338947264Z"
+    },
+    {
+      "name": "createCampaign",
+      "expectedUpdateTime": "2026-09-04T04:51:39.763153252Z"
+    },
+    {
+      "name": "createOnboardingDraft",
+      "expectedUpdateTime": "2026-09-04T04:41:40.865683828Z"
+    },
+    {
+      "name": "expireManualRunDeliveries",
+      "expectedUpdateTime": "2026-09-04T05:05:19.025732461Z"
+    },
+    {
+      "name": "manualRunExpiryReminder",
+      "expectedUpdateTime": "2026-09-04T05:26:29.223003675Z"
+    },
+    {
+      "name": "manualRunReadyReminder",
+      "expectedUpdateTime": "2026-09-04T05:13:13.459749489Z"
+    },
+    {
+      "name": "postToAppleMaps",
+      "expectedUpdateTime": "2026-09-29T17:45:51.829995325Z"
+    },
+    {
+      "name": "postToBing",
+      "expectedUpdateTime": "2026-09-29T17:45:43.855452042Z"
+    },
+    {
+      "name": "reviewAdPlatform",
+      "expectedUpdateTime": "2026-09-04T04:51:38.647208169Z"
+    },
+    {
+      "name": "saveAdSchedule",
+      "expectedUpdateTime": "2026-09-04T04:51:39.541815807Z"
+    },
+    {
+      "name": "scheduledAuthGateProbe",
+      "expectedUpdateTime": "2026-09-04T05:36:54.342557646Z"
+    },
+    {
+      "name": "updateManualDelivery",
+      "expectedUpdateTime": "2026-09-04T04:41:41.003575164Z"
+    }
+  ]
+}

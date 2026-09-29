@@ -254,7 +254,9 @@ async function main() {
   process.exit(1);
 }
 
-main().catch(e => {
+module.exports = { collectReferences, collectReferencesFromSources };
+
+if (require.main === module) main().catch(e => {
   console.error('\nFatal error:', e.message);
   process.exit(1);
 });

@@ -145,11 +145,6 @@ service cloud.firestore {
           match /copy/{copyId} {
             allow read, write, delete: if request.auth != null && request.auth.uid == userId;
           }
-
-          // Campaign advertising (individual ad pieces)
-          match /advertising/{adId} {
-            allow read, write, delete: if request.auth != null && request.auth.uid == userId;
-          }
         }
 
         // Listing drafts — owner only; admin can read any
