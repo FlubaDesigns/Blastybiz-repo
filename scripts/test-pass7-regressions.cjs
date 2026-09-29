@@ -52,7 +52,7 @@ async function scheduleSaveTests(){
 }
 async function publisherTests(){
   const source=read('functions/modules/publishing.js');let reject=Object.assign(Error('timeout'),{code:'ETIMEDOUT'});
-  const c={axios:{post:async()=>{throw reject}},module:{exports:{}},console:quiet};
+  const c={...require('../functions/lib/provider-api'),axios:{post:async()=>{throw reject}},module:{exports:{}},console:quiet};
   vm.runInNewContext(cut(source,'async function _publicationPost','// Export for use'),c);
   await assert.rejects(c._publishFacebookJob({payload:{adaptedContent:'copy'}},{pageId:'p'}),e=>e.publicationUncertain===true);checks++;
   reject=Object.assign(Error('rejected'),{response:{status:400,data:{}}});await assert.rejects(c._publishFacebookJob({},{pageId:'p'}),e=>e.publicationUncertain===false);checks++;
@@ -94,12 +94,13 @@ function websiteTests(){
 async function destinationTests(){
   const saved=new Map(),guard=read('public/auth-guard.js');
   const c={URLSearchParams,JSON,sessionStorage:{setItem:(k,v)=>saved.set(k,v)},window:{location:{pathname:'/BlastyBiz.html',search:'?bizId=b&draftId=d&ownerUid=u'}}};
+  vm.runInNewContext(read('public/auth-return.js').replace(/^export /gm,''),c);
   vm.runInNewContext(cut(guard,'function rememberDraftDestination','// Safety valve:'),c);c.rememberDraftDestination();
-  ok(JSON.parse(saved.get('bb_draft_return')).draftId==='d','auth redirect retains exact draft destination');
-  const d={URLSearchParams,JSON,sessionStorage:{getItem:k=>saved.get(k),removeItem:k=>saved.delete(k)},window:{location:{href:''},showToast(){}},showLoginForm(){}};
+  ok(JSON.parse(saved.get('bb_draft_return')).params.draftId==='d','auth redirect retains exact draft destination');
+  const d={restoreAuthReturn:c.restoreAuthReturn,db:{},doc(){},getDoc:async()=>({exists:()=>true}),localStorage:{removeItem(){}},URLSearchParams,JSON,sessionStorage:{getItem:k=>saved.get(k),removeItem:k=>saved.delete(k)},window:{location:{href:''},showToast(){}},showLoginForm(){}};
   vm.runInNewContext(cut(read('public/BlastyBiz-Login.html'),'async function afterAuth','function showLoginForm'),d);
   await d.afterAuth({uid:'other'});ok(!d.window.location.href&&saved.has('bb_draft_return'),'different signed-in account cannot consume draft return');
-  await d.afterAuth({uid:'u'});ok(d.window.location.href==='BlastyBiz.html?bizId=b&draftId=d&ownerUid=u'&&!saved.size,'sign-in resumes exact draft in correct account');
+  await d.afterAuth({uid:'u'});ok(d.window.location.href==='BlastyBiz.html?bizId=b&ownerUid=u&draftId=d'&&!saved.size,'sign-in resumes exact draft in correct account');
   const html=read('public/BlastyBiz.html'),e={window:{_bbLoadDraft:async()=>({campaignId:'c',campaignName:'Original',adaptations:{facebook:'Saved copy'},enabledPlatforms:['facebook'],schedule:{enabled:false}})},campaigns:[{id:'c',name:'Original'}],platforms:[{id:'facebook'},{id:'google'}],selectCampaign:(id)=>e.selected=id,loadQuickSchedFromDraft:s=>e.schedule=s,showToast(){},showTab(){},createWizGoTo(){},console:quiet};
   vm.runInNewContext(cut(html,'async function loadHistoryDraft','function timeAgo'),e);await e.loadHistoryDraft('d');
   ok(e.window._currentDraftId==='d'&&e.selected==='c'&&e.platforms[0].adaptedContent==='Saved copy'&&e.platforms[0].enabled&&!e.platforms[1].enabled,'draft loader restores exact campaign, copy, destinations and schedule');

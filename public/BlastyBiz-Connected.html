@@ -64,7 +64,7 @@ const PLATFORM_META = {
     iconBg: 'rgba(66,133,244,0.12)',
     iconColor: '#4285F4',
     docId: suffix => suffix + '_google',
-    nameField: 'accountId',
+    nameField: 'locationName',
     steps: [
       { title: 'You create a listing', desc: 'Fill in your business info — BlastyBiz uses it across every platform.' },
       { title: 'AI writes your post', desc: 'BlastyBiz adapts your listing into a Google-optimised update automatically.' },
@@ -96,7 +96,7 @@ auth.authStateReady().then(() => {
 
     // ── ERROR STATE ──
     if (errorPlatform) {
-      const meta = PLATFORM_META[errorPlatform] || { label: errorPlatform };
+      const meta = Object.hasOwn(PLATFORM_META, errorPlatform) ? PLATFORM_META[errorPlatform] : { label: 'this platform' };
       content.innerHTML = `
         <div class="hero">
           <div class="hero-icon icon-danger">⚠️</div>
@@ -117,31 +117,77 @@ auth.authStateReady().then(() => {
       `;
       return}
 
-    if (!platform || !PLATFORM_META[platform]) {
+    if (!platform || !Object.hasOwn(PLATFORM_META, platform)) {
       window.location.href = 'BlastyBiz-Connect.html';
       return}
 
     const meta = PLATFORM_META[platform];
 
-    BBBlasty.fire('platform.connection_success');
-    // Load user's bizId and platform connection doc
-    let bizId = user.uid;
+    const bizId = params.get('bizId');
+    const ownerUid = params.get('ownerUid');
+    const fail = message => {
+      content.replaceChildren();
+      const heading=document.createElement('h1'); heading.textContent='Connection not confirmed';
+      const text=document.createElement('p'); text.textContent=message;
+      const retry=document.createElement('a'); retry.className='btn-primary'; retry.textContent='Return to connections';
+      retry.href='BlastyBiz-Connect.html'+(bizId&&/^[A-Za-z0-9_-]{1,128}$/.test(bizId)?'?bizId='+encodeURIComponent(bizId):'');
+      content.append(heading,text,retry);
+    };
+    if (!bizId || !/^[A-Za-z0-9_-]{1,128}$/.test(bizId) || (ownerUid && ownerUid!==user.uid)) {
+      fail('Open this connection with the account and business that started it.'); return;
+    }
+    const selectionId=params.get('selection');
+    if(selectionId) {
+      try {
+        const token=await user.getIdToken();
+        const endpoint='https://us-central1-blastybiz-9523e.cloudfunctions.net/oauthDestination';
+        const response=await fetch(endpoint+'?selection='+encodeURIComponent(selectionId),{headers:{Authorization:'Bearer '+token}});
+        const data=await response.json(); if(!response.ok)throw Error(data.error||'Could not load your destinations.');
+        if(data.businessId!==bizId || data.platform!==platform)throw Error('This connection belongs to a different business.');
+        content.replaceChildren();
+        const h=document.createElement('h1');h.textContent='Choose where BlastyBiz will post';
+        const label=document.createElement('label');label.htmlFor='destination-choice';label.textContent=platform==='google'?'Google Business Profile':'Facebook Page';
+        const select=document.createElement('select');select.id='destination-choice';select.style.cssText='display:block;width:100%;padding:12px;margin:16px 0';
+        const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Choose a destination';select.append(placeholder);
+        for(const choice of data.choices){const option=document.createElement('option');option.value=choice.id;option.textContent=choice.label;select.append(option);}
+        const button=document.createElement('button');button.type='button';button.className='btn-primary';button.textContent='Connect this destination';button.disabled=true;
+        const feedback=document.createElement('p');feedback.setAttribute('role','status');
+        select.addEventListener('change',()=>{button.disabled=!select.value;});
+        button.addEventListener('click',async()=>{
+          button.disabled=true;select.disabled=true;feedback.textContent='Saving your choice…';
+          try {
+            const r=await fetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+await user.getIdToken(),'Content-Type':'application/json'},body:JSON.stringify({selection:selectionId,choiceId:select.value})});
+            const result=await r.json();if(!r.ok)throw Error(result.error||'Your choice was not saved.');
+            const next=new URLSearchParams({connected:result.platform,bizId:result.businessId,ownerUid:user.uid});
+            if(result.returnTo==='onboarding')next.set('returnTo','onboarding');
+            window.location.replace('BlastyBiz-Connected.html?'+next);
+          }catch(e){feedback.textContent=e.message;button.disabled=false;select.disabled=false;}
+        });
+        const cancel=document.createElement('a');cancel.href='BlastyBiz-Connect.html?bizId='+encodeURIComponent(bizId);cancel.className='btn-secondary';cancel.textContent='Cancel';
+        content.append(h,label,select,button,feedback,cancel);
+      }catch(e){fail(e.message);}
+      return;
+    }
     let connData = null;
     let igData = null;
     try {
-      const userSnap = await getDoc(doc(db, 'users', user.uid));
-      if (userSnap.exists()) bizId = userSnap.data().activeBusiness || user.uid;
-
+      const bizSnap=await getDoc(doc(db,'users',user.uid,'businesses',bizId));
+      if(!bizSnap.exists())throw Error('This business is no longer available.');
       const connSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', bizId, 'platformConnections', platform));
       if (connSnap.exists()) connData = connSnap.data();
-
+      const expires=connData?.expiresAt?.toMillis?.() || Date.parse(connData?.expiresAt);
+      if (!connData || connData.status!=='connected' || !Number.isFinite(expires) || expires<=Date.now() ||
+          (platform==='google' ? !(connData.accountId && connData.locationId) : !connData.pageId)) {
+        throw Error('No usable destination was saved. Check your provider permissions, then reconnect and choose your business.');
+      }
       if (platform === 'facebook') {
         const igSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', bizId, 'platformConnections', 'instagram'));
-        if (igSnap.exists() && igSnap.data().status === 'connected') igData = igSnap.data()}
-    } catch(e) { /* connection data optional — still show success */ }
+        if (igSnap.exists() && igSnap.data().status === 'connected' && igSnap.data().pageId===connData.pageId && igSnap.data().igUserId) igData = igSnap.data();
+      }
+    } catch(e) { fail(e.message || 'Could not verify your saved connection. Please try again.'); return; }
+    BBBlasty.fire('platform.connection_success');
 
     const accountName = connData?.[meta.nameField] || connData?.pageName || connData?.accountId || 'Your account';
-    const hasListing = false; // future: check Firestore for existing listings
 
     // ── SUCCESS STATE ──
     const stepsHTML = meta.steps.map((s,i) => `
@@ -202,7 +248,12 @@ auth.authStateReady().then(() => {
              <a href="BlastyBiz-Dashboard.html" class="btn-secondary">Go to Dashboard</a>`
         }
       </div>
-    `})});
+    `;
+    for(const link of content.querySelectorAll('a[href]')) {
+      const url=new URL(link.href,window.location.href);url.searchParams.set('bizId',bizId);link.href=url.href;
+    }
+  });
+});
 </script>
 <div id="site-footer-inject"></div>
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html});</script>

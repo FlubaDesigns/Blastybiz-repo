@@ -179,12 +179,12 @@
     </button>
   </div>
 
-  <p class="start-signin"><span id="start-signin-text">Already have an account?</span> <a href="BlastyBiz-Login.html">Sign in</a></p>
+  <p class="start-signin"><span id="start-signin-text">Already have an account?</span> <a href="BlastyBiz-Login.html?intent=signin">Sign in</a></p>
 
   <script>
     function choose(guided) {
       localStorage.setItem('bb_start_choice', guided ? 'guided' : 'forms');
-      window.location.href = 'BlastyBiz-Login.html';
+      window.location.href = 'BlastyBiz-Login.html?start=' + (guided ? 'guided' : 'forms');
     }
   </script>
 

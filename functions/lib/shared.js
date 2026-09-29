@@ -3,6 +3,7 @@
  * Every module does:  const { db, withAuth, bbLog, ... } = require('../lib/shared');
  */
 'use strict';
+const { META_GRAPH_VERSION, META_GRAPH_BASE, providerId, googlePostsUrl } = require('./provider-api');
 
 const { onRequest }                             = require('firebase-functions/v2/https');
 const { onSchedule }                            = require('firebase-functions/v2/scheduler');
@@ -679,6 +680,7 @@ function touchLastActive(uid) {
     .set({
       lastActiveAt:        admin.firestore.FieldValue.serverTimestamp(),
       dormancyWarnedAt:    admin.firestore.FieldValue.delete(),
+      dormancyWarningPending: admin.firestore.FieldValue.delete(),
       dormancyPurgeAt:     admin.firestore.FieldValue.delete(),
       dormancyReminderAt:  admin.firestore.FieldValue.delete(),
     }, { merge: true })
@@ -802,7 +804,7 @@ async function purgeUserData(uid, opts = {}) {
       }
       if ((platformId === 'facebook' || platformId === 'instagram') && accessToken) {
         try {
-          await fetch(`https://graph.facebook.com/v20.0/me/permissions?access_token=${encodeURIComponent(accessToken)}`, { method: 'DELETE' });
+          await fetch(`${META_GRAPH_BASE}/me/permissions?access_token=${encodeURIComponent(accessToken)}`, { method: 'DELETE' });
         } catch (e) { console.warn('[purgeUserData] Facebook revoke failed:', e.message); }
       }
     }

@@ -4,6 +4,7 @@
  * disconnectPlatform, checkPlatformTokenExpiry
  */
 'use strict';
+const { META_GRAPH_VERSION, META_GRAPH_BASE, providerId, googlePostsUrl } = require('../lib/provider-api');
 
 const {
   onRequest, onSchedule, admin, db, axios,
@@ -14,11 +15,35 @@ const {
   makeUnsubSig, _unsubSecret,
 } = require('../lib/shared');
 
+const selection = require('../lib/oauth-selection').createOAuthSelection({db,admin,axios});
+function connectionUrl(platform, businessId, uid, returnTo, extra={}) {
+  return APP_BASE_URL + '/BlastyBiz-Connected.html?' + new URLSearchParams({connected:platform,bizId:businessId,ownerUid:uid,...(returnTo==='onboarding'?{returnTo}:{}),...extra});
+}
+async function consumeState(state, platform) {
+  if (!providerId(state)) throw Error('Invalid OAuth state.');
+  const ref=db.collection('oauthNonces').doc(state);
+  return db.runTransaction(async tx=>{
+    const snap=await tx.get(ref), p=snap.data();
+    if (!p || p.platform!==platform || p.phase!=='oauth' || p.expiresAt.toMillis()<=Date.now()) throw Error('Expired or mismatched OAuth state.');
+    tx.delete(ref); return p;
+  });
+}
+exports.oauthDestination = onRequest({invoker:'public'}, withAuth(async (req,res,decoded)=>{
+  try {
+    if (!['GET','POST'].includes(req.method)) return res.status(405).json({error:'GET or POST only'});
+    const input=req.method==='GET'?req.query:req.body||{};
+    const result=req.method==='GET'?await selection.inspect(input.selection,decoded.uid):await selection.confirm(input.selection,decoded.uid,input.choiceId);
+    return res.json(result);
+  } catch(e) {
+    return res.status(e.httpStatus||502).json({error:e.httpStatus?e.message:'Could not verify the provider destination. Reconnect or try again.'});
+  }
+}));
+
 exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID'] }, withAuth(async (req, res, decoded) => {
   res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   const uid = decoded.uid;
   const { businessId, returnTo } = req.query;
-  if (!businessId) { res.status(400).json({ error: 'Missing businessId' }); return; }
+  if (!providerId(businessId)) { res.status(400).json({ error: 'Invalid businessId' }); return; }
   if (!(await checkUidRateLimit('oauthInitRateLimit', uid, 20, 60 * 60 * 1000))) {
     return res.status(429).json({ error: 'Too many connection attempts. Please try again in an hour.' });
   }
@@ -28,7 +53,7 @@ exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
   if (!clientId) { res.status(503).json({ error: 'Google OAuth not configured' }); return; }
   const nonce = require('crypto').randomUUID();
   await db.collection('oauthNonces').doc(nonce).set({
-    uid, businessId, returnTo: returnTo || '',
+    uid, businessId, platform: 'google', phase: 'oauth', returnTo: returnTo === 'onboarding' ? returnTo : '',
     expiresAt: new Date(Date.now() + 10 * 60 * 1000)
   });
   const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback';
@@ -46,24 +71,12 @@ exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
 
 exports.googleOAuthCallback = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, async (req, res) => {
   const { code, state } = req.query;
-  if (!code) { res.redirect(`${APP_BASE_URL}/BlastyBiz-Connect.html?error=google`); return; }
-
-  let businessId = '', uid = '', returnTo = '';
-  try {
-    const nonce = decodeURIComponent(state || '');
-    const nonceRef = db.collection('oauthNonces').doc(nonce);
-    const nonceSnap = await nonceRef.get();
-    if (!nonceSnap.exists || nonceSnap.data().expiresAt.toDate() < new Date()) {
-      return res.status(400).send('Invalid or expired OAuth state. Please try connecting again.');
-    }
-    ({ businessId, uid, returnTo = '' } = nonceSnap.data());
-    await nonceRef.delete();
-  } catch(e) {
-    console.error('googleOAuthCallback nonce error:', e.message);
-    return res.status(400).send('OAuth state verification failed.');
-  }
-  const connectedRedirect = `${APP_BASE_URL}/BlastyBiz-Connected.html?connected=google${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
-  const errorRedirect     = `${APP_BASE_URL}/BlastyBiz-Connected.html?error=google${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
+  let businessId, uid, returnTo;
+  try { ({businessId,uid,returnTo} = await consumeState(state, 'google')); }
+  catch(e) { return res.status(400).send('Invalid or expired OAuth state. Please try connecting again.'); }
+  const connectedRedirect = connectionUrl('google',businessId,uid,returnTo);
+  const errorRedirect = connectionUrl('google',businessId,uid,returnTo,{error:'google'});
+  if (!code) return res.redirect(errorRedirect);
 
   try {
     const tokenResp = await axios.post('https://oauth2.googleapis.com/token', null, {
@@ -76,41 +89,15 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', region: 'us-central
     });
     const { access_token, refresh_token, expires_in } = tokenResp.data;
 
-    let accountId = '', locationId = '';
-    try {
-      const acctResp = await axios.get(
-        'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
-        { headers: { Authorization: `Bearer ${access_token}` } }
-      );
-      const account = acctResp.data.accounts?.[0];
-      accountId = account?.name?.replace('accounts/', '') || '';
-      if (accountId) {
-        const locResp = await axios.get(
-          `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations`,
-          { headers: { Authorization: `Bearer ${access_token}` } }
-        );
-        locationId = locResp.data.locations?.[0]?.name?.split('/').pop() || '';
-      }
-    } catch(e) { /* accounts/locations can be resolved on first use */ }
-
-    const googleConnRef = userBizConnsRef(uid, businessId).doc('google');
-    await googleConnRef.set({
-      businessId, uid, platform: 'google', status: 'connected',
-      accountId, locationId,
-      connectedAt: admin.firestore.FieldValue.serverTimestamp(),
-      expiresAt: new Date(Date.now() + (expires_in || 3600) * 1000)
-    }, { merge: true });
-    await _setConnTokens(googleConnRef, { accessToken: access_token, refreshToken: refresh_token || '' });
-
-    // Queue Google photos import — fire-and-forget, never await (callback must stay fast)
-    db.collection('importJobs').doc(uid + '_google').set({
-      status: 'queued', uid, bizId: businessId,
-      queuedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }).catch(e => console.warn('[googleOAuthCallback] importJobs queue failed:', e.message));
-
-    res.redirect(connectedRedirect);
+    if (!access_token) throw Error('Google did not return an access token.');
+    const choices=await selection.googleChoices(access_token);
+    const selectionId=await selection.prepare({uid,businessId,returnTo,platform:'google',choices,accessToken:access_token,refreshToken:refresh_token||'',tokenExpiresAt:new Date(Date.now()+(expires_in||3600)*1000)});
+    if (choices.length===1) {
+      await selection.confirm(selectionId,uid,choices[0].id);
+      res.redirect(connectedRedirect);
+    } else res.redirect(connectionUrl('google',businessId,uid,returnTo,{selection:selectionId}));
   } catch(e) {
-    console.error('googleOAuthCallback error:', e.response?.data || e.message);
+    console.error('googleOAuthCallback failed:', e.response?.status || e.httpStatus || 'provider_error');
     res.redirect(errorRedirect);
   }
 });
@@ -119,7 +106,7 @@ exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBO
   res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   const uid = decoded.uid;
   const { businessId, returnTo } = req.query;
-  if (!businessId) { res.status(400).json({ error: 'Missing businessId' }); return; }
+  if (!providerId(businessId)) { res.status(400).json({ error: 'Invalid businessId' }); return; }
   if (!(await checkUidRateLimit('oauthInitRateLimit', uid, 20, 60 * 60 * 1000))) {
     return res.status(429).json({ error: 'Too many connection attempts. Please try again in an hour.' });
   }
@@ -129,13 +116,13 @@ exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBO
   if (!appId) { res.status(503).json({ error: 'Facebook OAuth not configured' }); return; }
   const nonce = require('crypto').randomUUID();
   await db.collection('oauthNonces').doc(nonce).set({
-    uid, businessId, returnTo: returnTo || '',
+    uid, businessId, platform: 'facebook', phase: 'oauth', returnTo: returnTo === 'onboarding' ? returnTo : '',
     expiresAt: new Date(Date.now() + 10 * 60 * 1000)
   });
   const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/facebookOAuthCallback';
-  const scope = 'pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish';
+  const scope = 'pages_show_list,pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish';
   const url =
-    `https://www.facebook.com/v18.0/dialog/oauth` +
+    `https://www.facebook.com/${META_GRAPH_VERSION}/dialog/oauth` +
     `?client_id=${encodeURIComponent(appId)}` +
     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
     `&scope=${encodeURIComponent(scope)}` +
@@ -145,28 +132,16 @@ exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBO
 
 exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['FACEBOOK_APP_ID', 'FACEBOOK_APP_SECRET'] }, async (req, res) => {
   const { code, state } = req.query;
-  if (!code) { res.redirect(`${APP_BASE_URL}/BlastyBiz-Connect.html?error=facebook`); return; }
-
-  let businessId = '', uid = '', returnTo = '';
-  try {
-    const nonce = decodeURIComponent(state || '');
-    const nonceRef = db.collection('oauthNonces').doc(nonce);
-    const nonceSnap = await nonceRef.get();
-    if (!nonceSnap.exists || nonceSnap.data().expiresAt.toDate() < new Date()) {
-      return res.status(400).send('Invalid or expired OAuth state. Please try connecting again.');
-    }
-    ({ businessId, uid, returnTo = '' } = nonceSnap.data());
-    await nonceRef.delete();
-  } catch(e) {
-    console.error('facebookOAuthCallback nonce error:', e.message);
-    return res.status(400).send('OAuth state verification failed.');
-  }
-  const fbConnectedRedirect = `${APP_BASE_URL}/BlastyBiz-Connected.html?connected=facebook${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
-  const fbErrorRedirect     = `${APP_BASE_URL}/BlastyBiz-Connected.html?error=facebook${returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : ''}`;
+  let businessId, uid, returnTo;
+  try { ({businessId,uid,returnTo} = await consumeState(state, 'facebook')); }
+  catch(e) { return res.status(400).send('Invalid or expired OAuth state. Please try connecting again.'); }
+  const connectedRedirect = connectionUrl('facebook',businessId,uid,returnTo);
+  const errorRedirect = connectionUrl('facebook',businessId,uid,returnTo,{error:'facebook'});
+  if (!code) return res.redirect(errorRedirect);
 
   try {
     const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/facebookOAuthCallback';
-    const tokenResp = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
+    const tokenResp = await axios.get(META_GRAPH_BASE + '/oauth/access_token', {
       params: {
         client_id: process.env.FACEBOOK_APP_ID,
         client_secret: process.env.FACEBOOK_APP_SECRET,
@@ -175,7 +150,7 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-centr
     });
     const { access_token: shortLivedToken } = tokenResp.data;
 
-    const longLivedResp = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
+    const longLivedResp = await axios.get(META_GRAPH_BASE + '/oauth/access_token', {
       params: {
         grant_type: 'fb_exchange_token',
         client_id: process.env.FACEBOOK_APP_ID,
@@ -187,66 +162,16 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-centr
     const expiresIn = longLivedResp.data.expires_in || (60 * 24 * 3600);
     const expiresAt = new Date(Date.now() + expiresIn * 1000);
 
-    const pagesResp = await axios.get('https://graph.facebook.com/v18.0/me/accounts', {
-      params: { access_token: longLivedToken }
-    });
-    const pages = pagesResp.data.data || [];
-    const page = pages[0];
-    const pageToken = page?.access_token || longLivedToken;
-
-    let igUserId = '';
-    if (page?.id) {
-      try {
-        const igResp = await axios.get(`https://graph.facebook.com/v18.0/${page.id}`, {
-          params: { fields: 'instagram_business_account', access_token: pageToken }
-        });
-        igUserId = igResp.data.instagram_business_account?.id || '';
-      } catch(e) { /* no IG account linked */ }
-    }
-
-    let existingIgDoc = null;
-    if (!igUserId) {
-      try {
-        const igSnap = await userBizConnsRef(uid, businessId).doc('instagram').get();
-        if (igSnap.exists) existingIgDoc = igSnap.data();
-      } catch(e) { /* ignore */ }
-    }
-
-    const fbConnRef = userBizConnsRef(uid, businessId).doc('facebook');
-    const igConnRef = userBizConnsRef(uid, businessId).doc('instagram');
-    const batch = db.batch();
-    batch.set(fbConnRef, {
-      businessId, uid, platform: 'facebook', status: 'connected',
-      pageId: page?.id || '',
-      pageName: page?.name || '',
-      allPages: pages.map(p => ({ id: p.id, name: p.name })),
-      expiresAt,
-      connectedAt: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
-    batch.set(fbConnRef.collection('private').doc('tokens'), { accessToken: pageToken }, { merge: true });
-
-    if (igUserId) {
-      batch.set(igConnRef, {
-        businessId, uid, platform: 'instagram', status: 'connected',
-        igUserId, pageId: page?.id || '',
-        expiresAt,
-        connectedAt: admin.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-      batch.set(igConnRef.collection('private').doc('tokens'), { accessToken: pageToken }, { merge: true });
-    } else if (existingIgDoc) {
-      batch.set(igConnRef, {
-        status: 'connected',
-        expiresAt,
-        connectedAt: admin.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-      batch.set(igConnRef.collection('private').doc('tokens'), { accessToken: pageToken }, { merge: true });
-    }
-
-    await batch.commit();
-    res.redirect(fbConnectedRedirect);
+    if (!longLivedToken) throw Error('Facebook did not return an access token.');
+    const choices=await selection.facebookChoices(longLivedToken);
+    const selectionId=await selection.prepare({uid,businessId,returnTo,platform:'facebook',choices,userAccessToken:longLivedToken,tokenExpiresAt:expiresAt});
+    if (choices.length===1) {
+      await selection.confirm(selectionId,uid,choices[0].id);
+      res.redirect(connectedRedirect);
+    } else res.redirect(connectionUrl('facebook',businessId,uid,returnTo,{selection:selectionId}));
   } catch(e) {
-    console.error('facebookOAuthCallback error:', e.response?.data || e.message);
-    res.redirect(fbErrorRedirect);
+    console.error('facebookOAuthCallback failed:', e.response?.status || e.httpStatus || 'provider_error');
+    res.redirect(errorRedirect);
   }
 });
 
@@ -256,7 +181,7 @@ exports.disconnectPlatform = onRequest(async (req, res) => {
   try {
     const decoded = await verifyBearer(req);
     const { bizId, platformId } = req.body;
-    if (!bizId || !platformId) return res.status(400).json({ error: 'Missing bizId or platformId' });
+    if (!providerId(bizId) || !platformId) return res.status(400).json({ error: 'Missing bizId or platformId' });
     if (!['google', 'facebook', 'instagram'].includes(platformId)) {
       return res.status(400).json({ error: 'Invalid platformId' });
     }
@@ -279,20 +204,22 @@ exports.disconnectPlatform = onRequest(async (req, res) => {
     if (platformId === 'facebook' || platformId === 'instagram') {
       if (conn.accessToken) {
         try {
-          await fetch(`https://graph.facebook.com/v20.0/me/permissions?access_token=${encodeURIComponent(conn.accessToken)}`, { method: 'DELETE' });
+          await fetch(`${META_GRAPH_BASE}/me/permissions?access_token=${encodeURIComponent(conn.accessToken)}`, { method: 'DELETE' });
         } catch(e) { console.warn('[disconnectPlatform] Facebook revoke failed:', e.message); }
       }
     }
 
     await connRef.update({ status: 'disconnected', disconnectedAt: admin.firestore.FieldValue.serverTimestamp() });
+    await connRef.collection('private').doc('tokens').delete();
 
-    if (platformId === 'facebook') {
+    if (platformId === 'facebook' || platformId === 'instagram') {
       const igRef = db.collection('users').doc(decoded.uid)
         .collection('businesses').doc(bizId)
-        .collection('platformConnections').doc('instagram');
+        .collection('platformConnections').doc(platformId === 'facebook' ? 'instagram' : 'facebook');
       const igSnap = await igRef.get();
       if (igSnap.exists) {
         await igRef.update({ status: 'disconnected', disconnectedAt: admin.firestore.FieldValue.serverTimestamp() });
+        await igRef.collection('private').doc('tokens').delete();
       }
     }
 
@@ -310,6 +237,9 @@ exports.checkPlatformTokenExpiry = onSchedule(
     secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'RESEND_API_KEY', 'FACEBOOK_APP_ID', 'FACEBOOK_APP_SECRET'],
   },
   async () => {
+    // OAuth selections contain private credentials; erase abandoned expired choices.
+    const abandoned=await db.collection('oauthNonces').where('expiresAt','<=',new Date()).limit(200).get();
+    if(!abandoned.empty){const cleanup=db.batch();abandoned.docs.forEach(d=>cleanup.delete(d.ref));await cleanup.commit();}
     const cutoffShort = new Date(Date.now() + 5 * 60 * 1000);
     const cutoffFb    = new Date(Date.now() + 7 * 24 * 3600 * 1000);
 
@@ -347,33 +277,31 @@ exports.checkPlatformTokenExpiry = onSchedule(
 
       if (conn.platform === 'facebook' && privTokens.accessToken) {
         try {
-          const resp = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
-            params: {
-              grant_type:       'fb_exchange_token',
-              client_id:        process.env.FACEBOOK_APP_ID,
-              client_secret:    process.env.FACEBOOK_APP_SECRET,
-              fb_exchange_token: privTokens.accessToken,
-            },
+          // Exchange the stored USER token, then reacquire the token for this exact Page.
+          // Legacy bindings without a user token require an explicit reconnect.
+          if (!privTokens.userAccessToken || !providerId(conn.pageId)) throw Error('Reconnect Facebook to refresh this Page.');
+          const resp=await axios.get(META_GRAPH_BASE+'/oauth/access_token',{params:{grant_type:'fb_exchange_token',client_id:process.env.FACEBOOK_APP_ID,client_secret:process.env.FACEBOOK_APP_SECRET,fb_exchange_token:privTokens.userAccessToken},timeout:20000});
+          const userToken=resp.data.access_token;
+          if(!userToken)throw Error('Facebook refresh returned no user token.');
+          const page=await axios.get(META_GRAPH_BASE+'/'+conn.pageId,{params:{fields:conn.instagramAuthorized===false?'id,access_token':'id,access_token,instagram_business_account',access_token:userToken},timeout:20000});
+          if(page.data.id!==conn.pageId || !page.data.access_token)throw Error('Facebook Page access is no longer available.');
+          const newExpiresAt=new Date(Date.now()+(resp.data.expires_in||60*24*3600)*1000);
+          await db.runTransaction(async tx=>{
+            const current=await tx.get(docSnap.ref),igSnap=await tx.get(igRef);
+            if(!current.exists || current.data().status!=='connected' || current.data().pageId!==conn.pageId)throw Error('Connection changed during refresh.');
+            tx.set(docSnap.ref.collection('private').doc('tokens'),{accessToken:page.data.access_token,userAccessToken:userToken});
+            tx.update(docSnap.ref,{expiresAt:newExpiresAt,updatedAt:admin.firestore.FieldValue.serverTimestamp()});
+            if(igSnap.exists && igSnap.data().status==='connected') {
+              const ig=igSnap.data();
+              if(conn.instagramAuthorized!==false && ig.pageId===conn.pageId && ig.igUserId===page.data.instagram_business_account?.id) {
+                tx.set(igRef.collection('private').doc('tokens'),{accessToken:page.data.access_token});
+                tx.update(igRef,{expiresAt:newExpiresAt,updatedAt:admin.firestore.FieldValue.serverTimestamp()});
+              } else {
+                tx.update(igRef,{status:'disconnected',disconnectedAt:admin.firestore.FieldValue.serverTimestamp()});
+                tx.delete(igRef.collection('private').doc('tokens'));
+              }
+            }
           });
-          const { access_token, expires_in } = resp.data;
-          const newExpiresAt = new Date(Date.now() + (expires_in || 60 * 24 * 3600) * 1000);
-
-          await _setConnTokens(docSnap.ref, { accessToken: access_token });
-          await docSnap.ref.update({
-            expiresAt: newExpiresAt,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
-          console.log(`[checkPlatformTokenExpiry] Refreshed Facebook token for biz ${conn.businessId}`);
-
-          const igSnap  = await igRef.get();
-          if (igSnap.exists && igSnap.data().status === 'connected') {
-            await _setConnTokens(igRef, { accessToken: access_token });
-            await igRef.update({
-              expiresAt: newExpiresAt,
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
-            console.log(`[checkPlatformTokenExpiry] Mirrored refreshed token to instagram for biz ${conn.businessId}`);
-          }
 
           refreshed++;
           continue;

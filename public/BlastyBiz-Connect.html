@@ -399,14 +399,10 @@ const params = new URLSearchParams(window.location.search);
 const connectedParam = params.get('connected');
 const errorParam     = params.get('error');
 
-if (connectedParam) {
-  const names = { google: 'Google Business Profile', facebook: 'Facebook Pages' };
-  setTimeout(() => showToast('✅ ' + (names[connectedParam] || connectedParam) + ' connected!'), 300);
-  history.replaceState({}, '', window.location.pathname)}
 if (errorParam) {
   const names = { google: 'Google', facebook: 'Facebook' };
   setTimeout(() => showToast('Connection failed for ' + (names[errorParam] || errorParam) + '. Try again.', true), 300);
-  history.replaceState({}, '', window.location.pathname)}
+  params.delete('error');history.replaceState({}, '', window.location.pathname+'?'+params)}
 
 auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
@@ -414,7 +410,8 @@ onAuthStateChanged(auth, async (user) => {
 
   const userSnap = await getDoc(doc(db, 'users', user.uid));
   const userData = userSnap.exists() ? userSnap.data() : {};
-  const bizId = userData.activeBusiness || user.uid;
+  const bizId = params.get('bizId') || userData.activeBusiness || user.uid;
+  if(!/^[A-Za-z0-9_-]{1,128}$/.test(bizId) || !(await getDoc(doc(db,'users',user.uid,'businesses',bizId))).exists()){showToast('This business is no longer available. Choose one of your businesses.',true);return;}
 
   const q = query(collection(db, 'users', user.uid, 'businesses', bizId, 'platformConnections'));
   const snap = await getDocs(q);

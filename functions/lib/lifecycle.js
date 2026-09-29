@@ -31,7 +31,7 @@ function createLifecycle({db,admin,refreshCopy,sendEmail,appUrl='https://blastyb
  const biz=(uid,b)=>db.doc('users/'+uid+'/businesses/'+id(b));
  const draft=(uid,b,d)=>biz(uid,b).collection('listingDrafts').doc(id(d));
  const adref=(uid,b,c,a)=>biz(uid,b).collection('campaigns').doc(id(c)).collection('ads').doc(id(a));
- const statusUrl=(b,d)=>appUrl+'/BlastyBiz-Publishing-Status.html?'+new URLSearchParams({bizId:b,draftId:d});
+ const statusUrl=(uid,b,d)=>appUrl+'/BlastyBiz-Publishing-Status.html?'+new URLSearchParams({bizId:b,draftId:d,ownerUid:uid});
  async function list(uid,b) {
    const br=biz(uid,b),business=await br.get();if(!business.exists)fail(404,'Business not found.');
    const cs=await br.collection('campaigns').get(),rows=[];
@@ -319,7 +319,7 @@ function createLifecycle({db,admin,refreshCopy,sendEmail,appUrl='https://blastyb
    if(kind==='preview'&&(v.status!=='scheduled'||v.approvalStatus!=='required'))return;
    if(kind!=='preview') {const j=await br.collection('publishJobs').where('draftId','==',dr.id).get();names=j.docs.filter(x=>manual.has(x.data().status)).map(x=>x.data().platformName||x.data().platform);if(!names.length)return;}
    const name=(v.campaignName||'Campaign')+' / '+(v.adName||'Ad');
-   const link=kind==='preview'?appUrl+'/BlastyBiz.html?'+new URLSearchParams({bizId:b,tab:'schedule',scheduleCampaign:v.campaignId,scheduleAd:v.adId,scheduledBlastId:dr.id}):statusUrl(b,dr.id);
+   const link=kind==='preview'?appUrl+'/BlastyBiz.html?'+new URLSearchParams({bizId:b,ownerUid:uid,tab:'schedule',scheduleCampaign:v.campaignId,scheduleAd:v.adId,scheduledBlastId:dr.id}):statusUrl(uid,b,dr.id);
    const subject=kind==='preview'?'Review required: '+name:kind==='final'?'Still want to post these?':names.length+' destinations need you — '+name;
    const preview=kind==='preview'?Object.entries(v.packet?.adaptations||{}).map(([p,copy])=>'<h3>'+esc(p)+'</h3><p>'+esc(copy)+'</p>').join('')+(v.packet?.imageRefs||[]).filter(i=>/^https:\/\//.test(i.url||'')).map(i=>'<a href="'+esc(i.url)+'"><img width="120" src="'+esc(i.url)+'" alt="'+esc(i.alt||'Selected image')+'"></a>').join(''):'';
    await sendEmail({to:user.data().email,subject,html:'<h2>'+esc(name)+'</h2><p>'+(kind==='preview'?'Approval is required before this Blast goes out. Review copy and images, then Approve, Change, Skip, or Pause.':esc(names.join(', '))+' '+(names.length===1?'is':'are')+' ready for you. Manual posts count only after you confirm them.')+'</p>'+preview+'<a href="'+esc(link)+'">'+(kind==='preview'?'REVIEW THIS BLAST':'FINISH MY BLAST')+'</a>'+(kind==='final'?'<p><a href="'+esc(link+'&action=skipRemaining')+'">SKIP REMAINING</a> — opens a confirmation in the app.</p>':''),idempotencyKey:dr.id+'-'+kind});

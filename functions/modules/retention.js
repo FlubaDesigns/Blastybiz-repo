@@ -53,6 +53,7 @@ function clearDormancyMarkers() {
     dormancyWarnedAt:   admin.firestore.FieldValue.delete(),
     dormancyPurgeAt:    admin.firestore.FieldValue.delete(),
     dormancyReminderAt: admin.firestore.FieldValue.delete(),
+    dormancyWarningPending: admin.firestore.FieldValue.delete(),
   };
 }
 
@@ -61,7 +62,7 @@ function clearDormancyMarkers() {
 // preference; this is notice that we are about to delete someone's data, and
 // silently skipping it would mean deleting without warning. The unsubscribe
 // link is still present so the footer stays consistent and honest.
-async function sendRetentionEmail(uid, userData, { type, subjectFallback, htmlFallback, mergeData }) {
+async function sendRetentionEmail(uid, userData, { type, subjectFallback, htmlFallback, mergeData, idempotencyKey }) {
   const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail`
     + `?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, _unsubSecret())}`;
   const tags = { ...mergeData, appUrl: APP_BASE_URL, unsubscribeUrl: unsubUrl };
@@ -82,7 +83,7 @@ async function sendRetentionEmail(uid, userData, { type, subjectFallback, htmlFa
   }
   if (!html) html = apply(htmlFallback);
 
-  await sendResendEmail({ to: userData.email, subject, html });
+  await sendResendEmail({ to: userData.email, subject, html, strict: true, idempotencyKey });
   return true;
 }
 
@@ -157,7 +158,7 @@ async function runRetentionSweep({ trigger = 'schedule', forceMode = null } = {}
       if (d.dormancyWarnedAt) continue;           // already in the warning window
       if (!d.email) { run.skippedNoEmail++; continue; }  // can't warn → never purge
 
-      const purgeAtMs = now + warningDays * DAY_MS;
+      let purgeAtMs = now + warningDays * DAY_MS;
       if (run.sampleWarn.length < 25) {
         run.sampleWarn.push({
           uid: docSnap.id, email: d.email,
@@ -169,22 +170,41 @@ async function runRetentionSweep({ trigger = 'schedule', forceMode = null } = {}
       if (mode === 'report') { run.wouldWarn++; continue; }
 
       try {
+        // Freeze notice content and its key before attempting delivery. Retried sends
+        // within the provider's 24-hour idempotency window use the same payload.
+        const pending = await db.runTransaction(async tx => {
+          const latest = (await tx.get(docSnap.ref)).data();
+          if (!latest || !FREE_PLANS.includes(latest.plan) || latest.dormancyWarnedAt ||
+              toMillis(latest.lastActiveAt) !== toMillis(d.lastActiveAt) || latest.email !== d.email) return null;
+          const prior=latest.dormancyWarningPending;
+          if (prior && prior.lastActiveMs===toMillis(d.lastActiveAt) && prior.email===d.email && now-prior.createdAt<23*60*60*1000) return prior;
+          const next={key:'retention-warning-'+require('node:crypto').randomUUID(),createdAt:now,purgeAtMs,lastActiveMs:toMillis(d.lastActiveAt),email:d.email,name:d.ownerName||d.displayName||'there',warningDays};
+          tx.update(docSnap.ref,{dormancyWarningPending:next}); return next;
+        });
+        if (!pending) continue;
+        purgeAtMs=pending.purgeAtMs;
         await sendRetentionEmail(docSnap.id, d, {
-          type: 'dormancy-warning',
+          type: 'dormancy-warning', idempotencyKey: pending.key,
           subjectFallback: `{{name}}, your BlastyBiz account will be deleted on {{deleteDate}}`,
           htmlFallback: WARNING_HTML,
           mergeData: {
-            name: d.ownerName || d.displayName || 'there',
+            name: pending.name,
             dashboardUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html',
             deleteDate: fmtDate(purgeAtMs),
-            daysLeft: String(warningDays),
+            daysLeft: String(pending.warningDays),
           },
         });
-        await docSnap.ref.update({
-          dormancyWarnedAt: admin.firestore.FieldValue.serverTimestamp(),
-          dormancyPurgeAt:  admin.firestore.Timestamp.fromMillis(purgeAtMs),
+        const marked=await db.runTransaction(async tx=>{
+          const latest=(await tx.get(docSnap.ref)).data();
+          if(!latest || !FREE_PLANS.includes(latest.plan) || latest.dormancyWarnedAt ||
+             toMillis(latest.lastActiveAt)!==pending.lastActiveMs || latest.email!==pending.email || latest.dormancyWarningPending?.key!==pending.key) return false;
+          tx.update(docSnap.ref,{
+            dormancyWarnedAt:admin.firestore.FieldValue.serverTimestamp(),
+            dormancyPurgeAt:admin.firestore.Timestamp.fromMillis(Math.max(purgeAtMs,Date.now()+pending.warningDays*DAY_MS)),
+            dormancyWarningPending:admin.firestore.FieldValue.delete(),
+          });return true;
         });
-        run.warned++;
+        if(marked)run.warned++;
       } catch (e) {
         run.errors.push(`warn:${docSnap.id}:${e.message}`);
       }
@@ -235,14 +255,14 @@ async function runRetentionSweep({ trigger = 'schedule', forceMode = null } = {}
       if (mode === 'report') { run.reminded++; continue; }
       try {
         await sendRetentionEmail(uid, d, {
-          type: 'dormancy-final',
+          type: 'dormancy-final', idempotencyKey: 'retention-final-' + require('node:crypto').createHash('sha256').update(uid+':'+toMillis(d.dormancyWarnedAt)).digest('hex'),
           subjectFallback: `Final reminder — your BlastyBiz data is deleted on {{deleteDate}}`,
           htmlFallback: FINAL_HTML,
           mergeData: {
             name: d.ownerName || d.displayName || 'there',
             dashboardUrl: APP_BASE_URL + '/BlastyBiz-Dashboard.html',
             deleteDate: fmtDate(purgeAtMs),
-            daysLeft: String(daysLeft),
+            daysLeft: 'a few',
           },
         });
         await docSnap.ref.update({ dormancyReminderAt: admin.firestore.FieldValue.serverTimestamp() });

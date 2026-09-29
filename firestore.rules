@@ -6,7 +6,7 @@ service cloud.firestore {
     // info@blastybiz.com is the permanent bootstrap admin (cannot be removed via UI).
     // Additional admins are stored in config/admins and managed from Admin-Operate.html.
     function isAdmin() {
-      return request.auth != null && (
+      return request.auth != null && request.auth.token.email_verified == true && (
         request.auth.token.email == 'info@blastybiz.com' ||
         (exists(/databases/$(database)/documents/config/admins) &&
          request.auth.token.email in get(/databases/$(database)/documents/config/admins).data.emails)
@@ -188,11 +188,13 @@ service cloud.firestore {
             (request.auth.uid == userId || isAdmin());
           allow write: if isAdmin();
           allow create: if request.auth != null &&
-            request.auth.uid == userId;
+            request.auth.uid == userId &&
+            (!(connId in ['google','facebook','instagram']) || request.resource.data.keys().hasOnly(['uid','businessId','platform','platformName','profileUrl','updatedAt']));
           allow update: if request.auth != null &&
             request.auth.uid == userId &&
             !request.resource.data.diff(resource.data).affectedKeys()
-              .hasAny(['accessToken', 'refreshToken', 'locationId', 'pageId', 'pageToken', 'code', 'tokenExpiry']);
+              .hasAny(['accessToken', 'refreshToken', 'locationId', 'pageId', 'pageToken', 'code', 'tokenExpiry']) &&
+            (!(connId in ['google','facebook','instagram']) || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status','instagramAuthorized','accountId','igUserId','expiresAt','connectedAt','disconnectedAt','locationName','pageName']));
 
           // Private subcollection — OAuth tokens. Denied to ALL browser clients.
           // Only Cloud Functions (Admin SDK) may read or write these documents.

@@ -2,15 +2,12 @@ import { auth } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { pingActivity } from './activity-ping.js';
 
-// Preserve only the signed-email draft destination across sign-in; never an arbitrary URL.
+import { parseAuthReturn } from './auth-return.js';
 function rememberDraftDestination() {
-  const q = new URLSearchParams(window.location.search);
-  if (!/\/BlastyBiz(?:\.html)?$/.test(window.location.pathname)) return;
-  const ids = ['bizId','draftId','ownerUid'].map(k => q.get(k));
-  if (!ids.every(x => x && x.length <= 128 && !x.includes('/'))) return;
-  try { sessionStorage.setItem('bb_draft_return', JSON.stringify({bizId:ids[0],draftId:ids[1],ownerUid:ids[2]})); } catch(_) {}
+  const target = parseAuthReturn(window.location.pathname, window.location.search);
+  if (target) { try { sessionStorage.setItem('bb_draft_return', JSON.stringify(target)); } catch (_) {} }
 }
-function redirectToLogin() { rememberDraftDestination(); window.location.href = 'BlastyBiz-Login.html'; }
+function redirectToLogin() { rememberDraftDestination(); window.location.href = 'BlastyBiz-Login.html?intent=signin'; }
 
 // Safety valve: if auth never resolves, redirect to login — never reveal protected content.
 const _safetyTimer = setTimeout(() => {

@@ -1,0 +1,40 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const testing=require(process.env.RULES_TEST_PATH||'@firebase/rules-unit-testing');
+const firestore=require(process.env.FIREBASE_CLIENT_PATH||'firebase/firestore');
+const {doc,getDoc,setDoc}=firestore;
+(async()=>{
+ const env=await testing.initializeTestEnvironment({projectId:'demo-blastybiz-audit2',firestore:{host:'127.0.0.1',port:8089,rules:fs.readFileSync('firestore.rules','utf8')}});
+ let checks=0;
+ try {
+  await env.withSecurityRulesDisabled(async c=>{const db=c.firestore();await Promise.all([
+   setDoc(doc(db,'users/owner'),{email:'owner@example.com',plan:'pro'}),
+   setDoc(doc(db,'users/owner/businesses/business'),{businessName:'Test'}),
+   setDoc(doc(db,'config/admins'),{emails:['listed@example.com']}),
+   setDoc(doc(db,'config/plans'),{aiLimits:{pro:1000}}),
+   setDoc(doc(db,'oauthNonces/secret-choice'),{accessToken:'fixture'}),
+   setDoc(doc(db,'users/owner/businesses/business/platformConnections/facebook/private/tokens'),{accessToken:'fixture'})
+  ]);});
+  for(const email of ['info@blastybiz.com','listed@example.com'])for(const verified of [true,false,undefined]){
+   const db=env.authenticatedContext('admin-fixture',{email,...(verified===undefined?{}:{email_verified:verified})}).firestore();
+   const expect=verified===true?testing.assertSucceeds:testing.assertFails;
+   await expect(getDoc(doc(db,'users/owner')));checks++;
+   await expect(setDoc(doc(db,'config/plans'),{aiLimits:{pro:1000}}));checks++;
+   await testing.assertFails(getDoc(doc(db,'oauthNonces/secret-choice')));checks++;
+   await testing.assertFails(getDoc(doc(db,'users/owner/businesses/business/platformConnections/facebook/private/tokens')));checks++;
+  }
+  const owner=env.authenticatedContext('owner',{email:'owner@example.com',email_verified:true}).firestore();
+  await testing.assertSucceeds(getDoc(doc(owner,'users/owner/businesses/business')));checks++;
+  await testing.assertFails(setDoc(doc(owner,'users/owner'),{plan:'agency'},{merge:true}));checks++;
+  await testing.assertFails(setDoc(doc(owner,'users/owner'),{dormancyWarningPending:{key:'fake'}},{merge:true}));checks++;
+  await testing.assertFails(getDoc(doc(owner,'oauthNonces/secret-choice')));checks++;
+  const other=env.authenticatedContext('other',{email:'other@example.com',email_verified:true}).firestore();
+  await testing.assertFails(getDoc(doc(other,'users/owner')));checks++;
+  await testing.assertFails(getDoc(doc(other,'users/owner/businesses/business')));checks++;
+  await testing.assertFails(getDoc(doc(env.unauthenticatedContext().firestore(),'users/owner')));checks++;
+  await testing.assertFails(setDoc(doc(owner,'users/owner/businesses/business/platformConnections/google'),{status:'connected',accountId:'forged',locationId:'forged'}));checks++;
+  await testing.assertSucceeds(setDoc(doc(owner,'users/owner/businesses/business/platformConnections/google'),{platform:'google',profileUrl:'https://example.com'}));checks++;
+  await testing.assertFails(setDoc(doc(owner,'users/owner/businesses/business/platformConnections/google'),{status:'connected'},{merge:true}));checks++;
+  assert(checks===34);console.log(checks+' actual Firestore emulator authorization assertions passed.');
+ } finally {await env.cleanup();}
+})().catch(e=>{console.error(e);process.exitCode=1;});
