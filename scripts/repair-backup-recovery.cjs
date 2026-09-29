@@ -6,6 +6,24 @@ function target(args,env=process.env){
  if(args.length!==1||args[0]!=='--project='+PROJECT||env.GITHUB_ACTIONS!=='true'||env.GITHUB_REF!=='refs/heads/main'||!/^\d+$/.test(env.GITHUB_RUN_ID||''))throw Error('Recovery repair requires the reviewed Main workflow and exact project');
  return 'bb-restore-check-'+env.GITHUB_RUN_ID;
 }
+function canonical(value){
+ if(Array.isArray(value))return '['+value.map(canonical).join(',')+']';
+ if(value&&typeof value==='object')return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+canonical(value[k])).join(',')+'}';
+ return JSON.stringify(value);
+}
+function preservedRestoreTarget(id){
+ if(!/^\d+$/.test(id||''))throw Error('Invalid preserved restore run');
+ return 'bb-restore-check-'+id;
+}
+async function verifyRestore(request,source,destination){
+  const crypto=require('node:crypto');
+  const fingerprint=async(base,path)=>{const d=await request(base+'/documents/'+path);return crypto.createHash('sha256').update(canonical(d.fields||{})).digest('hex');};
+  for(const path of ['config/plans','settings/pricing'])if(await fingerprint(source,path)!==await fingerprint(destination,path))throw Error('Restored configuration does not match source: '+path);
+  async function count(base){const rows=await request(base+'/documents:runAggregationQuery','POST',{structuredAggregationQuery:{structuredQuery:{from:[{collectionId:'users'}]},aggregations:[{alias:'total',count:{}}]}});return Number(rows[0]?.result?.aggregateFields?.total?.integerValue||0);}
+  const sourceCount=await count(source),restoreCount=await count(destination);
+  if(sourceCount!==restoreCount)throw Error('Account count changed or restore mismatched; review required');
+  return restoreCount;
+}
 async function run(args){
  const restoreId=target(args),token=execFileSync('gcloud',['auth','print-access-token'],{encoding:'utf8'}).trim();
  const projectNumber=execFileSync('gcloud',['projects','describe',PROJECT,'--format=value(projectNumber)'],{encoding:'utf8'}).trim();
@@ -42,6 +60,20 @@ async function run(args){
    const op=await request(api+'(default)?updateMask=pointInTimeRecoveryEnablement','PATCH',{name:database.name,pointInTimeRecoveryEnablement:'POINT_IN_TIME_RECOVERY_ENABLED'});
    await waitOperation(request,op);report.steps.push('Enabled default database PITR');save();
   }
+  // Recheck and remove only an explicitly reviewed disposable restore from a
+  // prior failed run. Never imports into it; mismatches preserve it for diagnosis.
+  if(process.env.PRESERVED_RESTORE_RUN_ID){
+   const priorId=preservedRestoreTarget(process.env.PRESERVED_RESTORE_RUN_ID);
+   const prior=api+priorId,exists=await request(prior,'GET',null,true);
+   report.preservedRestore={database:priorId};save();
+   if(exists){
+    const count=await verifyRestore(request,api+'(default)',prior);
+    report.preservedRestore.configurationMatches=true;report.preservedRestore.accountCount=count;save();
+    await waitOperation(request,await request(prior,'DELETE'));
+    report.preservedRestore.removed=true;
+   }else report.preservedRestore.alreadyAbsent=true;
+   save();
+  }
   // Export all collections. Data stays in the private project bucket.
   const output=`gs://${BUCKET}/recovery-${process.env.GITHUB_RUN_ID}-${Date.now()}`;
   const exported=await waitOperation(request,await request(api+'(default):exportDocuments','POST',{outputUriPrefix:output}));
@@ -53,12 +85,7 @@ async function run(args){
   createdHere=true;await waitOperation(request,created);report.steps.push('Created isolated restore-check database');save();
   const imported=await waitOperation(request,await request(destination+':importDocuments','POST',{inputUriPrefix:prefix}));
   // Read only stable configuration and aggregate account count; never emit data.
-  const crypto=require('node:crypto');
-  const fingerprint=async(base,path)=>{const d=await request(base+'/documents/'+path);return crypto.createHash('sha256').update(JSON.stringify(d.fields||{})).digest('hex');};
-  for(const path of ['config/plans','settings/pricing'])if(await fingerprint(api+'(default)',path)!==await fingerprint(destination,path))throw Error('Restored configuration does not match source: '+path);
-  async function count(base){const rows=await request(base+'/documents:runAggregationQuery','POST',{structuredAggregationQuery:{structuredQuery:{from:[{collectionId:'users'}]},aggregations:[{alias:'total',count:{}}]}});return Number(rows[0]?.result?.aggregateFields?.total?.integerValue||0);}
-  const sourceCount=await count(api+'(default)'),restoreCount=await count(destination);
-  if(sourceCount!==restoreCount)throw Error('Account count changed or restore mismatched; review required');
+  const restoreCount=await verifyRestore(request,api+'(default)',destination);
   restored=true;report.restore={completed:true,operation:imported.name,configurationMatches:true,accountCount:restoreCount};save();
   const live=await request(api+'(default)');
   if(live.pointInTimeRecoveryEnablement!=='POINT_IN_TIME_RECOVERY_ENABLED')throw Error('PITR not enabled');
@@ -88,4 +115,4 @@ async function run(args){
  console.log('RECOVERY_VERIFIED '+JSON.stringify({exportCompleted:!!report.export?.completed,restoreCompleted:!!report.restore?.completed,pitr:report.pitr?.enabled,restoreDatabaseRemoved:report.restoreDatabaseRemoved}));
 }
 if(require.main===module)run(process.argv.slice(2)).catch(e=>{console.error(e.message);process.exitCode=1;});
-module.exports={target};
+module.exports={target,canonical,preservedRestoreTarget};

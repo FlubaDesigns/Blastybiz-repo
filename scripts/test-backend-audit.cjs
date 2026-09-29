@@ -67,7 +67,12 @@ async function photoCounts(){
  const images=await m.db.collection(B+'/images').get();for(const d of images.docs)await d.ref.delete();deleting=true;await c._runGooglePhotoImport('u','b',m.db.doc('importJobs/photo'));ok((await m.db.collection(B+'/images').get()).empty&&removedFiles===2,'in-flight imports remove uploaded files and create no images after deletion is claimed');
 }
 async function backups(){
- const {target}=require('./repair-backup-recovery.cjs');
+ const {target,canonical,preservedRestoreTarget}=require('./repair-backup-recovery.cjs');
+ ok(canonical({b:{y:2,x:1},a:3})===canonical({a:3,b:{x:1,y:2}}),'restore equality ignores nested object key order');
+ ok(canonical({a:1})!==canonical({a:2}),'restore equality still rejects changed values');
+ ok(canonical([1,2])!==canonical([2,1]),'restore equality preserves array order');
+ ok(preservedRestoreTarget('36625701679')==='bb-restore-check-36625701679','preserved cleanup targets only an explicit disposable run database');
+ assert.throws(()=>preservedRestoreTarget('(default)'));checks++;
  const env={GITHUB_ACTIONS:'true',GITHUB_REF:'refs/heads/main',GITHUB_RUN_ID:'123'};
  ok(target(['--project=blastybiz-9523e'],env)==='bb-restore-check-123','restore target is isolated and bound to current run');
  assert.throws(()=>target(['--project=other'],env));checks++;
