@@ -6,6 +6,9 @@ const manifest=require('../deployment/retired-functions.json');
 const {inventory}=require('./check-backend-ownership.cjs');
 const PROJECT='blastybiz-9523e',REGION='us-central1';
 const base=`projects/${PROJECT}/locations/${REGION}`;
+function legacyEnabledSchedules(drafts){
+ return drafts.filter(d=>d.schedule?.enabled&&!d.scheduleAdPath).length;
+}
 function validatePreflight({functions,jobs,data,traffic},expected=manifest.functions){
  if(manifest.project!==PROJECT||manifest.region!==REGION)throw Error('Retirement target mismatch');
  const retired=new Set(expected.map(x=>x.name));
@@ -31,7 +34,8 @@ async function run(args){
  if(args.some(a=>!['--project='+PROJECT,'--apply'].includes(a))||args.filter(a=>a==='--project='+PROJECT).length!==1)throw Error('Use --project='+PROJECT+' [--apply]');
  const apply=args.includes('--apply');
  if(apply&&(process.env.GITHUB_ACTIONS!=='true'||process.env.GITHUB_REF!=='refs/heads/main'||!/^[a-f0-9]{40}$/.test(process.env.RELEASE_SHA||'')))throw Error('Retirement applies only through the verified Main release workflow');
- const owned=inventory(),token=execFileSync('gcloud',['auth','print-access-token'],{encoding:'utf8'}).trim();
+ if(manifest.project!==PROJECT||manifest.region!==REGION)throw Error('Retirement target mismatch');
+ const token=execFileSync('gcloud',['auth','print-access-token'],{encoding:'utf8'}).trim();
  async function request(url,method='GET',body){
   const r=await fetch(url,{method,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(30000)});
   if(r.status===404&&method==='DELETE')return {};
@@ -41,19 +45,24 @@ async function run(args){
  const all=await request('https://cloudfunctions.googleapis.com/v2/'+base+'/functions?pageSize=100');
  if(all.nextPageToken)throw Error('Function inventory truncated');
  const functions=all.functions||[],retired=new Set(manifest.functions.map(x=>x.name));
- const active=functions.filter(f=>!retired.has(f.name.split('/').at(-1)));
- if(active.some(f=>f.state!=='ACTIVE')||JSON.stringify(active.map(f=>f.name.split('/').at(-1)).sort())!==JSON.stringify(owned.functions.map(f=>f.name).sort()))throw Error('Active backend does not match the reviewed source inventory');
  const schedules=await request('https://cloudscheduler.googleapis.com/v1/'+base+'/jobs?pageSize=100');
  if(schedules.nextPageToken)throw Error('Scheduler inventory truncated');
  const jobNames=new Set(manifest.functions.map(f=>`firebase-schedule-${f.name}-${REGION}`));
  const jobs=(schedules.jobs||[]).filter(j=>jobNames.has(j.name.split('/').at(-1)));
+ if(!functions.some(f=>retired.has(f.name.split('/').at(-1)))&&!jobs.length){
+  const report={source:process.env.RELEASE_SHA||null,checkedAt:new Date().toISOString(),apply,nothingToRetire:true,verified:true,candidates:[...retired],schedulerJobs:[],deleted:[]};
+  fs.writeFileSync(path.join(process.cwd(),'blastybiz-retirement.json'),JSON.stringify(report,null,2));
+  console.log('Nothing to retire');return report;
+ }
+ const owned=inventory(),active=functions.filter(f=>!retired.has(f.name.split('/').at(-1)));
+ if(active.some(f=>f.state!=='ACTIVE')||JSON.stringify(active.map(f=>f.name.split('/').at(-1)).sort())!==JSON.stringify(owned.functions.map(f=>f.name).sort()))throw Error('Active backend does not match the reviewed source inventory');
  const admin=require('../functions/node_modules/firebase-admin');
  admin.initializeApp({projectId:PROJECT});const db=admin.firestore();
  try{
  await db.initializeIfNeeded();if(db.projectId!==PROJECT)throw Error('Firestore target mismatch');
  async function selected(collection,fields,group=false){const q=group?db.collectionGroup(collection):db.collection(collection);const r=await q.select(...fields).limit(1001).get();if(r.size>1000)throw Error('Data inventory truncated: '+collection);return r.docs.map(d=>d.data());}
- const [ads,runs,onboarding,history,drafts]=await Promise.all([selected('advertising',['status'],true),selected('blastRuns',['state'],true),selected('onboardingDrafts',['expiresAt']),selected('publishJobs',['runId'],true),selected('listingDrafts',['schedule.enabled'],true)]);
- const data={advertising:ads.length,blastRuns:runs.length,onboardingDrafts:onboarding.length,legacyRunJobs:history.filter(j=>j.runId).length,legacyEnabledSchedules:drafts.filter(d=>d.schedule?.enabled).length};
+ const [ads,runs,onboarding,history,drafts]=await Promise.all([selected('advertising',['status'],true),selected('blastRuns',['state'],true),selected('onboardingDrafts',['expiresAt']),selected('publishJobs',['runId'],true),selected('listingDrafts',['schedule.enabled','scheduleAdPath'],true)]);
+ const data={advertising:ads.length,blastRuns:runs.length,onboardingDrafts:onboarding.length,legacyRunJobs:history.filter(j=>j.runId).length,legacyEnabledSchedules:legacyEnabledSchedules(drafts)};
  const since=new Date(Date.now()-7*86400000).toISOString();
  const filter='resource.type="cloud_run_revision" AND ('+[...retired].map(n=>'resource.labels.service_name="'+n.toLowerCase()+'"').join(' OR ')+') AND httpRequest.status < 400 AND httpRequest.requestMethod != "OPTIONS" AND timestamp >= "'+since+'"';
  const logs=await request('https://logging.googleapis.com/v2/entries:list','POST',{resourceNames:['projects/'+PROJECT],filter,orderBy:'timestamp desc',pageSize:1});
@@ -89,4 +98,4 @@ async function run(args){
  }finally{await db.terminate();}
 }
 if(require.main===module)run(process.argv.slice(2)).catch(e=>{console.error(e.message);process.exitCode=1;});
-module.exports={validatePreflight};
+module.exports={validatePreflight,legacyEnabledSchedules,run};
