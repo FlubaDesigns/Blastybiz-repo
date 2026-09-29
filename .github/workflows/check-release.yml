@@ -33,6 +33,9 @@ jobs:
           node scripts/test-photo-regressions.cjs
           node scripts/test-setup-regressions.cjs
           node scripts/test-pass6-regressions.cjs
+          node scripts/sync-schedule.cjs --check
+          node scripts/test-pass7-regressions.cjs
+          node scripts/test-pass7-corrections.cjs
 
   deploy:
     needs: check-release

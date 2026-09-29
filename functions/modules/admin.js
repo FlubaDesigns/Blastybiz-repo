@@ -140,14 +140,14 @@ exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_
   } catch(e) {
     console.error('[adminRetryJob]', e.message);
     if (claimed) {
-      await jobRef.update({ status: providerReturned ? JOB_STATUS.MANUAL_REQUIRED : JOB_STATUS.FAILED,
-        adminRetry: true, publicationUncertain: providerReturned, adminError: e.message,
-        ...(providerReturned ? { customerVisibleMessage: 'Post may be live on the platform. Check before retrying.' } : {}),
+      await jobRef.update({ status: (providerReturned || e.publicationUncertain) ? JOB_STATUS.MANUAL_REQUIRED : JOB_STATUS.FAILED,
+        adminRetry: true, publicationUncertain: !!(providerReturned || e.publicationUncertain), adminError: e.message,
+        ...((providerReturned || e.publicationUncertain) ? { customerVisibleMessage: 'Post may be live on the platform. Check before retrying.' } : {}),
         updatedAt: admin.firestore.FieldValue.serverTimestamp() }).catch(writeError => {
         console.error('[adminRetryJob] could not record failure:', writeError.message);
       });
     }
-    res.status(e.httpStatus || 500).json({ error: providerReturned
+    res.status(e.httpStatus || 500).json({ error: (providerReturned || e.publicationUncertain)
       ? 'Post may be live on the platform. Check before retrying.' : e.message });
   }
 }, { admin: true }));

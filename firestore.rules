@@ -163,12 +163,14 @@ service cloud.firestore {
           allow read: if request.auth != null &&
             (request.auth.uid == userId || isAdmin());
           allow create: if request.auth != null &&
-            request.auth.uid == userId;
+            request.auth.uid == userId &&
+            !request.resource.data.keys().hasAny(['freeRegenUsed', 'freeRegenEligible']);
           allow update: if request.auth != null &&
             request.auth.uid == userId &&
-            !('uid' in request.resource.data.diff(resource.data).affectedKeys());
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid', 'freeRegenUsed', 'freeRegenEligible']);
           allow delete: if request.auth != null &&
             request.auth.uid == userId;
+          match /private/{document} { allow read, write: if false; }
         }
 
         // Publish jobs — read by owner or admin; writes only by admin (browser tools) or backend

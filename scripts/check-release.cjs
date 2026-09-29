@@ -208,20 +208,21 @@ console.log('\n── 7. Dead files in functions/lib/ ────────�
 const LIB_DIR = path.resolve(__dirname, '../functions/lib');
 const MODULES_DIR = path.resolve(__dirname, '../functions/modules');
 const libFiles = fs.readdirSync(LIB_DIR).filter(f => f.endsWith('.js'));
-// Collect all require() calls across modules/ and index.js
-const scanDirs = [MODULES_DIR, path.resolve(__dirname, '../functions')];
-let allFunctionSrc = '';
+// Resolve relative imports from each caller, including library-to-library imports.
+const scanDirs = [MODULES_DIR, LIB_DIR, path.resolve(__dirname, '../functions')];
+const importedLibs = new Set();
 for (const dir of scanDirs) {
   for (const f of fs.readdirSync(dir).filter(f => f.endsWith('.js'))) {
-    allFunctionSrc += fs.readFileSync(path.join(dir, f), 'utf8');
+    const source = fs.readFileSync(path.join(dir, f), 'utf8');
+    for (const match of source.matchAll(/require\(['"](\.[^'"]+)['"]\)/g)) {
+      const target = path.resolve(dir, match[1]);
+      importedLibs.add(target.endsWith('.js') ? target : target + '.js');
+    }
   }
 }
 let deadLibFiles = 0;
 for (const f of libFiles) {
-  const base = path.basename(f, '.js');
-  // Match require('../lib/X') or require('./lib/X') or require('../lib/X.js')
-  const pattern = new RegExp(`require\\(['"]\\.\\./lib/${base}(?:\\.js)?['"]\\)`);
-  if (!pattern.test(allFunctionSrc)) {
+  if (!importedLibs.has(path.join(LIB_DIR, f))) {
     console.log(`  ❌ Dead file: functions/lib/${f} — imported by nothing`);
     deadLibFiles++;
     failures++;

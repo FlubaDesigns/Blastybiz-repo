@@ -16,6 +16,27 @@ const {
 
 const crypto = require('crypto');
 
+function aiRequestContext(body = {}) {
+  body = body || {};
+  const input = body?.listing || body || {};
+  const id = value => typeof value === 'string' && value.length <= 128 ? value : null;
+  return { businessId: id(input.businessId || input.bizId || body.businessId || body.bizId),
+    campaignId: id(input.campaignId || body.campaignId), scheduleId: id(input.scheduleId || body.scheduleId) };
+}
+async function loggedAI(uid, fn, body, prompt, options) {
+  const started = Date.now(), context = aiRequestContext(body);
+  try {
+    const result = await callAI(prompt, options);
+    await trackAiUsage(uid, fn, result.model, result.usage, {context, timing:{aiElapsedMs:Date.now()-started}});
+    return result;
+  } catch(e) {
+    await trackAiUsage(uid, fn, options?.tier === 'smart' ? AI_DEFAULTS.smartModel : AI_DEFAULTS.fastModel, null,
+      {context, failureType:classifyAiError(e), timing:{aiElapsedMs:Date.now()-started}});
+    throw e;
+  }
+}
+
+
 exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
 
   try {
@@ -65,16 +86,16 @@ Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
   let _genModel;
   const aiStartMs = Date.now();
   try {
-    const { text: aiText, usage: aiUsage, model } = await callAI(prompt, { tier: 'fast', maxTokens: 300 });
+    const { text: aiText, usage: aiUsage, model } = await loggedAI(decoded.uid, 'generateEnrichmentQuestions', req.body, prompt, { tier: 'fast', maxTokens: 300 });
     _genModel = model;
     const parsed = JSON.parse(aiText.replace(/```json|```/g, '').trim());
     const aiElapsedMs = Date.now() - aiStartMs;
-    trackAiUsage(decoded.uid, 'followUpQuestions', _genModel, aiUsage, { timing: { aiElapsedMs } });
+
     res.json({ questions: parsed.questions || [] });
   } catch(e) {
     const failureType = classifyAiError(e);
     if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] generateEnrichmentQuestions timed out after 25s — uid:', decoded.uid);
-    trackAiUsage(decoded.uid, 'followUpQuestions', _genModel || AI_DEFAULTS.fastModel, null, { failureType });
+
     console.error('generateEnrichmentQuestions error [' + failureType + ']:', e.message);
     res.status(500).json({ error: e.message });
   }
@@ -137,6 +158,10 @@ Be specific and vivid. Preserve anything quirky or unusual — that is what make
     );
     if (!r.ok) throw new Error(`Gemini ${r.status}: ${(await r.text()).slice(0, 300)}`);
     const j = await r.json();
+    await trackAiUsage(null, 'suggestCategory', 'gemini-flash-lite-latest', {
+      input_tokens: j.usageMetadata?.promptTokenCount || 0,
+      output_tokens: j.usageMetadata?.candidatesTokenCount || 0,
+    }, { context: aiRequestContext(req.body) });
     const text = j.candidates?.[0]?.content?.parts?.find(p => p.text)?.text;
     if (!text) throw new Error(`Gemini empty response: ${JSON.stringify(j).slice(0, 200)}`);
     return text.trim();
@@ -163,6 +188,7 @@ Rules:
     const category = (await _gem(matchPrompt, 20)).replace(/^["']+|["']+$/g, '');
     res.json({ category, globalMemory });
   } catch (e) {
+    await trackAiUsage(null, 'suggestCategory', 'gemini-flash-lite-latest', null, {failureType:classifyAiError(e),context:aiRequestContext(req.body)});
     bbLog('ERROR', 'suggestCategory', { event: 'failed', msg: e.message });
     res.status(500).json({ error: e.message });
   }
@@ -260,7 +286,7 @@ exports.previewAds = onRequest(
     // ── Category inference: fast model, ~20 tokens ───────────────────────────
     let category = '';
     try {
-      const { text: catText } = await callAI(
+      const { text: catText } = await loggedAI(null, 'previewAds', req.body,
         `What type of business is "${bizName}" in "${city}"? Reply with ONLY the business category, 1-4 words. Examples: "Hair Salon", "Mexican Restaurant", "Auto Repair Shop", "Coffee Shop". No punctuation, no explanation.`,
         { tier: 'fast', maxTokens: 20 }
       );
@@ -290,7 +316,7 @@ Write one authentic ad for each platform. Return ONLY valid JSON in exactly this
   }
 }`;
 
-      const { text: adText } = await callAI(adPrompt, { tier: 'smart', maxTokens: 600 });
+      const { text: adText } = await loggedAI(null, 'previewAds', req.body, adPrompt, { tier: 'smart', maxTokens: 600 });
       const parsed = JSON.parse(adText.replace(/```json\n?|```/g, '').trim());
 
       adaptations = {
@@ -421,7 +447,7 @@ Rules:
 
   let extracted;
   try {
-    const { text } = await callAI(prompt, { tier: 'smart', maxTokens: 800 });
+    const { text } = await loggedAI(decoded.uid, 'extractBizContext', req.body, prompt, { tier: 'smart', maxTokens: 800 });
     extracted = JSON.parse(text.replace(/```json|```/g, '').trim());
   } catch(e) {
     bbLog('ERROR', 'extractBizContext/ai', { uid: decoded.uid, msg: e.message });
@@ -534,6 +560,12 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
   // Both draftId and businessId are required for regeneration; without them we
   // cannot scope the doc to this user's tree and cannot grant free regen safely.
   const regenBizId = listing?.businessId || null;
+  if (regenDraftId || regenBizId) {
+    const validId = x => typeof x === 'string' && x.length > 0 && x.length <= 128 && !x.includes('/');
+    if (!validId(regenBizId) || (regenDraftId && !validId(regenDraftId))) return res.status(400).json({error:'Invalid business or draft'});
+    const owned = await db.collection('users').doc(decoded.uid).collection('businesses').doc(regenBizId).get();
+    if (!owned.exists) return res.status(404).json({error:'Business not found'});
+  }
   let draftRef = null;
   if (isRegeneration) {
     if (!regenDraftId || !regenBizId) {
@@ -639,18 +671,15 @@ ${platformList.map(p => `    "${p.id}": "adapted text for ${p.name}"`).join(',\n
   let _adaptModel;
   const aiStartMs = Date.now();
   try {
-    const { text: aiText, usage: aiUsage, model } = await callAI(prompt, { tier: 'smart', maxTokens: 4096, timeoutMs: 110000 });
+    const { text: aiText, usage: aiUsage, model } = await loggedAI(decoded.uid, 'adaptListing', req.body, prompt, { tier: 'smart', maxTokens: 4096, timeoutMs: 110000 });
     _adaptModel = model;
     parsed = JSON.parse(aiText.replace(/```json|```/g, '').trim());
     const aiElapsedMs = Date.now() - aiStartMs;
-    trackAiUsage(decoded.uid, 'adaptListing', _adaptModel, aiUsage, {
-      timing:  { aiElapsedMs, fnElapsedMs: Date.now() - fnStartMs },
-      context: { businessId: listing.businessId || null, campaignId: listing.campaignId || null },
-    });
+
   } catch(e) {
     const failureType = classifyAiError(e);
     if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] adaptListing timed out after 110s — uid:', decoded.uid);
-    trackAiUsage(decoded.uid, 'adaptListing', _adaptModel || AI_DEFAULTS.smartModel, null, { failureType });
+
     console.error('adaptListing AI error [' + failureType + ']:', e.message);
     return res.status(500).json({ error: 'AI adaptation failed: ' + e.message });
   }
@@ -664,6 +693,17 @@ ${platformList.map(p => `    "${p.id}": "adapted text for ${p.name}"`).join(',\n
         expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 30 * 60 * 1000),
       });
     } catch(e) { console.warn('[adaptListing] dedup write failed:', e.message); }
+  }
+
+  if (!isRegeneration && regenDraftId && regenBizId) {
+    const grantRef = db.collection('users').doc(decoded.uid).collection('businesses').doc(regenBizId)
+      .collection('listingDrafts').doc(regenDraftId).collection('private').doc('aiAllowance');
+    try {
+      await db.runTransaction(async tx => {
+        const grant = await tx.get(grantRef);
+        if (!grant.exists) tx.create(grantRef, {uid:decoded.uid, freeRegenUsed:false, createdAt:admin.firestore.FieldValue.serverTimestamp()});
+      });
+    } catch(e) { console.error('[adaptListing] regeneration grant not saved:', e.message); }
   }
 
   // Signal to the client whether the free-regen credit was applied so labels stay accurate
@@ -779,17 +819,15 @@ ${platformBlocks}`;
   let _rcModel;
   const aiStartMs = Date.now();
   try {
-    const { text: aiText, usage: aiUsage, model } = await callAI(prompt, { tier: 'smart', maxTokens: 1024 });
+    const { text: aiText, usage: aiUsage, model } = await loggedAI(decoded.uid, 'resolveCategories', req.body, prompt, { tier: 'smart', maxTokens: 1024 });
     _rcModel = model;
     parsed = JSON.parse(aiText.replace(/```json|```/g, '').trim());
     const aiElapsedMs = Date.now() - aiStartMs;
-    trackAiUsage(decoded.uid, 'resolveCategories', _rcModel, aiUsage, {
-      timing: { aiElapsedMs, fnElapsedMs: Date.now() - fnStartMs },
-    });
+
   } catch(e) {
     const failureType = classifyAiError(e);
     if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] resolveCategories timed out after 25s — uid:', decoded.uid);
-    trackAiUsage(decoded.uid, 'resolveCategories', _rcModel || AI_DEFAULTS.smartModel, null, { failureType });
+
     console.error('resolveCategories AI error [' + failureType + ']:', e.message);
     return res.status(500).json({ error: 'AI category resolution failed: ' + e.message });
   }
@@ -892,13 +930,11 @@ Return ONLY valid JSON, no markdown, no explanation:
   let _spModel;
   const aiStartMs = Date.now();
   try {
-    const { text: aiText, usage: aiUsage, model } = await callAI(prompt, { tier: 'smart', maxTokens: 600 });
+    const { text: aiText, usage: aiUsage, model } = await loggedAI(decoded.uid, 'suggestPlatforms', req.body, prompt, { tier: 'smart', maxTokens: 600 });
     _spModel = model;
     const parsed = JSON.parse(aiText.replace(/```json|```/g, '').trim());
     const aiElapsedMs = Date.now() - aiStartMs;
-    trackAiUsage(decoded.uid, 'suggestPlatforms', _spModel, aiUsage, {
-      timing: { aiElapsedMs, fnElapsedMs: Date.now() - fnStartMs },
-    });
+
     if (spRequestId) {
       try {
         await db.collection('aiRequestDedup').doc(`${decoded.uid}_${spRequestId}`).set({
@@ -913,7 +949,7 @@ Return ONLY valid JSON, no markdown, no explanation:
   } catch(e) {
     const failureType = classifyAiError(e);
     if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] suggestPlatforms timed out after 25s — uid:', decoded.uid);
-    trackAiUsage(decoded.uid, 'suggestPlatforms', _spModel || AI_DEFAULTS.smartModel, null, { failureType });
+
     console.error('suggestPlatforms error [' + failureType + ']:', e.message);
     res.status(500).json({ error: 'AI suggestion failed: ' + e.message });
   }
@@ -973,11 +1009,11 @@ If finished: {"done":true,"message":"brief warm wrap-up line","campaignMemory":"
     : [{ role: 'user', content: `Start the campaign brief for "${cd.campaignName || 'this campaign'}".` }];
 
   try {
-    const { text: aiText, usage: aiUsage, model: aiModel } = await callAI(messages, { tier: 'fast', maxTokens: 600, system: systemPrompt, timeoutMs: 30000 });
+    const { text: aiText, usage: aiUsage, model: aiModel } = await loggedAI(decoded.uid, 'chatCampaign', req.body, messages, { tier: 'fast', maxTokens: 600, system: systemPrompt, timeoutMs: 30000 });
     const raw = aiText.replace(/```json|```/g, '').trim();
     let parsed;
     try { parsed = JSON.parse(raw); } catch(e) { parsed = { done: false, message: raw.slice(0, 300) }; }
-    await trackAiUsage(decoded.uid, 'chatCampaign', aiModel, aiUsage, {});
+
     return res.json(parsed);
   } catch(e) {
     console.error('[chatCampaign] error:', e.message);
@@ -991,13 +1027,14 @@ exports.scoreFact = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'
 
   const authHeader = req.headers.authorization || '';
   if (!authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
-  try { await admin.auth().verifyIdToken(authHeader.slice(7)); } catch(e) { return res.status(401).json({ error: 'Invalid token' }); }
+  let decoded;
+  try { decoded = await admin.auth().verifyIdToken(authHeader.slice(7)); } catch(e) { return res.status(401).json({ error: 'Invalid token' }); }
 
   const { text } = req.body || {};
   if (!text || typeof text !== 'string') return res.status(400).json({ error: 'text required' });
 
   try {
-    const { text: aiText } = await callAI(
+    const { text: aiText } = await loggedAI(decoded.uid, 'scoreFact', req.body,
       `You are a marketing intelligence assistant. A local business owner added this fact to their AI memory bank.\n\nScore it 1–10 for marketing importance:\n10 = foundational brand identity that should appear in most marketing copy (e.g. "family-owned since 1905", "fastest response in the city")\n5 = useful context used when relevant\n1 = very temporary or highly specific detail rarely relevant to copy\n\nFact: "${text.slice(0, 500)}"\n\nReturn ONLY valid JSON with no explanation: {"score": N}`,
       { tier: 'fast', maxTokens: 20, timeoutMs: 10000 }
     );

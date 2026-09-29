@@ -12,7 +12,7 @@ const {
   userBizRef, userBizCol, userBizPostsRef, userBizConnsRef,
   _getConnTokens,
   makeUnsubSig, _unsubSecret,
-  makeActionSig, _actionSecret, computeNextRunAt,
+  makeActionSig, _actionSecret, computeNextRunAt, normalizeSchedule,
 } = require('../lib/shared');
 
 // ── Platform helpers for scheduled posting ────────────────────────────────────
@@ -120,131 +120,156 @@ exports.scheduledPostingCheck = onSchedule(
         .get();
 
       for (const draftSnap of snap.docs) {
-        const draft    = draftSnap.data();
-        const schedule = draft.schedule || {};
-        if (!schedule.nextRunAt || new Date(schedule.nextRunAt) > now) continue;
+        let scheduleValidated = false;
+        try {
+          const draft    = draftSnap.data();
+          const schedule = normalizeSchedule(draft.schedule || {});
+          if (schedule.unsupportedFrequency) {
+            await draftSnap.ref.update({ schedule, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+            continue;
+          }
+          const nextRunAt = computeNextRunAt(schedule, now);
+          scheduleValidated = true;
 
-        // Path shape: users/{uid}/businesses/{bizId}/listingDrafts/{id}
-        const parts = draftSnap.ref.path.split('/');
-        const uid   = parts[1];
-        const bizId = parts[3];
-        const adaptations      = draft.adaptations || {};
-        const nextRunAt        = computeNextRunAt(schedule, now);
-        const isExplicitApproval = schedule.approved === true;
+          if (!schedule.nextRunAt || new Date(schedule.nextRunAt) > now) continue;
 
-        // ── Guard 0: skip-cycle ─────────────────────────────────────────────
-        if (schedule.skipCycle === true) {
+          // Path shape: users/{uid}/businesses/{bizId}/listingDrafts/{id}
+          const parts = draftSnap.ref.path.split('/');
+          const uid   = parts[1];
+          const bizId = parts[3];
+          const adaptations      = draft.adaptations || {};
+          const isExplicitApproval = schedule.approved === true;
+
+          // ── Guard 0: skip-cycle ─────────────────────────────────────────────
+          if (schedule.skipCycle === true) {
+            await draftSnap.ref.update({
+              'schedule.nextRunAt':     nextRunAt.toISOString(),
+              'schedule.lastRunAt':     now.toISOString(),
+              'schedule.skipCycle':     admin.firestore.FieldValue.delete(),
+              'schedule.approved':      admin.firestore.FieldValue.delete(),
+              'schedule.previewSentAt': admin.firestore.FieldValue.delete(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log(`[scheduledPostingCheck] skipCycle ${uid}/${bizId} — advanced to ${nextRunAt.toISOString()}`);
+            continue;
+          }
+
+          // ── Guard 1: global pause ───────────────────────────────────────────
+          let bizData = {};
+          try {
+            const bizSnap = await userBizRef(uid, bizId).get();
+            bizData = bizSnap.exists ? bizSnap.data() : {};
+          } catch(e) {
+            console.warn(`[scheduledPostingCheck] biz read failed ${uid}/${bizId}: ${e.message}`);
+            continue;
+          }
+          if (bizData.schedulingPaused === true) {
+            // Do NOT advance nextRunAt — post will run once unpaused
+            console.log(`[scheduledPostingCheck] schedulingPaused ${uid}/${bizId} — skipping`);
+            continue;
+          }
+
+          // ── Guard 2 & 3: approval gates ─────────────────────────────────────
+          const approvalCount = bizData.approvalCount || 0;
+
+          if (approvalCount < 3) {
+            // First-three gate: explicit approval required for every post
+            if (!isExplicitApproval) {
+              console.log(`[scheduledPostingCheck] awaiting explicit approval (count=${approvalCount}) ${uid}/${bizId}`);
+              continue; // Do not advance nextRunAt — wait for owner to approve
+            }
+          } else {
+            // Silence-is-approval — but apply two extra safety checks
+            if (!isExplicitApproval) {
+              // Check 1: owner-gone-dark (no email engagement in 30 days)
+              let ownerDark = false;
+              try {
+                const userSnap = await db.collection('users').doc(uid).get();
+                const userData = userSnap.exists ? userSnap.data() : {};
+                const lastEngaged = userData.lastEmailEngagedAt;
+                if (lastEngaged) {
+                  const ms = lastEngaged.toMillis ? lastEngaged.toMillis() : new Date(lastEngaged).getTime();
+                  ownerDark = Date.now() - ms > 30 * 24 * 60 * 60 * 1000;
+                } else {
+                  // Never clicked an action link — use account age as proxy
+                  const createdAt = userData.createdAt;
+                  const ageMs = createdAt
+                    ? Date.now() - (createdAt.toMillis ? createdAt.toMillis() : new Date(createdAt).getTime())
+                    : 0;
+                  ownerDark = ageMs > 30 * 24 * 60 * 60 * 1000;
+                }
+              } catch(e) { /* non-fatal — treat as not dark */ }
+
+              if (ownerDark) {
+                console.log(`[scheduledPostingCheck] owner-gone-dark ${uid}/${bizId} — requiring explicit approval`);
+                continue;
+              }
+
+              // Check 2: any content flagged lowConfidence
+              const hasLowConf = Object.values(adaptations).some(v =>
+                v && typeof v === 'object' && v.lowConfidence === true
+              );
+              if (hasLowConf) {
+                console.log(`[scheduledPostingCheck] lowConfidence content ${uid}/${bizId} — requiring explicit approval`);
+                continue;
+              }
+            }
+          }
+
+          // ── Post to each API platform ────────────────────────────────────────
+          let anyPosted = false;
+          for (const platformId of API_PLATFORMS) {
+            const content = typeof adaptations[platformId] === 'string'
+              ? adaptations[platformId]
+              : adaptations[platformId]?.text || adaptations[platformId];
+            if (!content) continue;
+            try {
+              const result = await _runScheduledPost({
+                uid, bizId, platformId, content, imageUrls: draft.imageUrls || [],
+              });
+              if (result.manualFallback) {
+                console.warn(`[scheduledPostingCheck] manual fallback ${uid}/${bizId}/${platformId}: ${result.reason}`);
+              } else {
+                anyPosted = true;
+              }
+            } catch(e) {
+              console.error(`[scheduledPostingCheck] failed ${uid}/${bizId}/${platformId}:`, e.message);
+            }
+          }
+
+          // ── Advance schedule, clear per-cycle flags ──────────────────────────
           await draftSnap.ref.update({
             'schedule.nextRunAt':     nextRunAt.toISOString(),
             'schedule.lastRunAt':     now.toISOString(),
-            'schedule.skipCycle':     admin.firestore.FieldValue.delete(),
             'schedule.approved':      admin.firestore.FieldValue.delete(),
+            'schedule.skipCycle':     admin.firestore.FieldValue.delete(),
             'schedule.previewSentAt': admin.firestore.FieldValue.delete(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           });
-          console.log(`[scheduledPostingCheck] skipCycle ${uid}/${bizId} — advanced to ${nextRunAt.toISOString()}`);
-          continue;
-        }
 
-        // ── Guard 1: global pause ───────────────────────────────────────────
-        let bizData = {};
-        try {
-          const bizSnap = await userBizRef(uid, bizId).get();
-          bizData = bizSnap.exists ? bizSnap.data() : {};
+          // Increment approvalCount on an explicit-approval post so we track trust milestones
+          if (anyPosted && isExplicitApproval) {
+            await userBizRef(uid, bizId).update({
+              approvalCount: admin.firestore.FieldValue.increment(1),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            }).catch(e => console.warn(`[scheduledPostingCheck] approvalCount increment failed: ${e.message}`));
+          }
         } catch(e) {
-          console.warn(`[scheduledPostingCheck] biz read failed ${uid}/${bizId}: ${e.message}`);
-          continue;
-        }
-        if (bizData.schedulingPaused === true) {
-          // Do NOT advance nextRunAt — post will run once unpaused
-          console.log(`[scheduledPostingCheck] schedulingPaused ${uid}/${bizId} — skipping`);
-          continue;
-        }
-
-        // ── Guard 2 & 3: approval gates ─────────────────────────────────────
-        const approvalCount = bizData.approvalCount || 0;
-
-        if (approvalCount < 3) {
-          // First-three gate: explicit approval required for every post
-          if (!isExplicitApproval) {
-            console.log(`[scheduledPostingCheck] awaiting explicit approval (count=${approvalCount}) ${uid}/${bizId}`);
-            continue; // Do not advance nextRunAt — wait for owner to approve
-          }
-        } else {
-          // Silence-is-approval — but apply two extra safety checks
-          if (!isExplicitApproval) {
-            // Check 1: owner-gone-dark (no email engagement in 30 days)
-            let ownerDark = false;
+          console.error('[scheduledPostingCheck] draft failed ' + draftSnap.ref.path + ':', e.message);
+          // Invalid recurrence must not remain due and block later drafts. A
+          // transient failure after validation must not disable a valid schedule.
+          if (!scheduleValidated) {
             try {
-              const userSnap = await db.collection('users').doc(uid).get();
-              const userData = userSnap.exists ? userSnap.data() : {};
-              const lastEngaged = userData.lastEmailEngagedAt;
-              if (lastEngaged) {
-                const ms = lastEngaged.toMillis ? lastEngaged.toMillis() : new Date(lastEngaged).getTime();
-                ownerDark = Date.now() - ms > 30 * 24 * 60 * 60 * 1000;
-              } else {
-                // Never clicked an action link — use account age as proxy
-                const createdAt = userData.createdAt;
-                const ageMs = createdAt
-                  ? Date.now() - (createdAt.toMillis ? createdAt.toMillis() : new Date(createdAt).getTime())
-                  : 0;
-                ownerDark = ageMs > 30 * 24 * 60 * 60 * 1000;
-              }
-            } catch(e) { /* non-fatal — treat as not dark */ }
-
-            if (ownerDark) {
-              console.log(`[scheduledPostingCheck] owner-gone-dark ${uid}/${bizId} — requiring explicit approval`);
-              continue;
-            }
-
-            // Check 2: any content flagged lowConfidence
-            const hasLowConf = Object.values(adaptations).some(v =>
-              v && typeof v === 'object' && v.lowConfidence === true
-            );
-            if (hasLowConf) {
-              console.log(`[scheduledPostingCheck] lowConfidence content ${uid}/${bizId} — requiring explicit approval`);
-              continue;
+              await draftSnap.ref.update({
+                'schedule.enabled': false,
+                'schedule.pauseReason': e.message,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              });
+            } catch(pauseError) {
+              console.error('[scheduledPostingCheck] pause failed ' + draftSnap.ref.path + ':', pauseError.message);
             }
           }
-        }
-
-        // ── Post to each API platform ────────────────────────────────────────
-        let anyPosted = false;
-        for (const platformId of API_PLATFORMS) {
-          const content = typeof adaptations[platformId] === 'string'
-            ? adaptations[platformId]
-            : adaptations[platformId]?.text || adaptations[platformId];
-          if (!content) continue;
-          try {
-            const result = await _runScheduledPost({
-              uid, bizId, platformId, content, imageUrls: draft.imageUrls || [],
-            });
-            if (result.manualFallback) {
-              console.warn(`[scheduledPostingCheck] manual fallback ${uid}/${bizId}/${platformId}: ${result.reason}`);
-            } else {
-              anyPosted = true;
-            }
-          } catch(e) {
-            console.error(`[scheduledPostingCheck] failed ${uid}/${bizId}/${platformId}:`, e.message);
-          }
-        }
-
-        // ── Advance schedule, clear per-cycle flags ──────────────────────────
-        await draftSnap.ref.update({
-          'schedule.nextRunAt':     nextRunAt.toISOString(),
-          'schedule.lastRunAt':     now.toISOString(),
-          'schedule.approved':      admin.firestore.FieldValue.delete(),
-          'schedule.skipCycle':     admin.firestore.FieldValue.delete(),
-          'schedule.previewSentAt': admin.firestore.FieldValue.delete(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-
-        // Increment approvalCount on an explicit-approval post so we track trust milestones
-        if (anyPosted && isExplicitApproval) {
-          await userBizRef(uid, bizId).update({
-            approvalCount: admin.firestore.FieldValue.increment(1),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          }).catch(e => console.warn(`[scheduledPostingCheck] approvalCount increment failed: ${e.message}`));
+          continue;
         }
       }
     } catch(e) {
@@ -273,139 +298,165 @@ exports.scheduledDraftPreview = onSchedule(
         .get();
 
       for (const draftSnap of snap.docs) {
-        const draft    = draftSnap.data();
-        const schedule = draft.schedule || {};
-
-        // Only preview drafts due within the next 48 h
-        if (!schedule.nextRunAt) continue;
-        const nextRun = new Date(schedule.nextRunAt);
-        if (nextRun < now || nextRun > h48) continue;
-
-        // Don't send a second preview in the same cycle
-        if (schedule.previewSentAt) {
-          const sentAt = typeof schedule.previewSentAt === 'string'
-            ? new Date(schedule.previewSentAt)
-            : (schedule.previewSentAt.toDate?.() || new Date(schedule.previewSentAt));
-          if (sentAt > new Date(now.getTime() - 23 * 60 * 60 * 1000)) continue;
-        }
-
-        const parts = draftSnap.ref.path.split('/');
-        const uid   = parts[1];
-        const bizId = parts[3];
-        const draftId = draftSnap.id;
-
-        // Get owner details
-        let email, ownerName, plan;
+        let scheduleValidated = false;
         try {
-          const userSnap = await db.collection('users').doc(uid).get();
-          if (!userSnap.exists) continue;
-          const u = userSnap.data();
-          if (u.emailUnsubscribed) continue;
-          email     = u.email;
-          ownerName = u.ownerName || u.displayName || '';
-          plan      = u.plan || 'starter';
-        } catch(_) { continue; }
+          const draft    = draftSnap.data();
+          const schedule = normalizeSchedule(draft.schedule || {});
+          if (schedule.unsupportedFrequency) {
+            await draftSnap.ref.update({ schedule, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+            continue;
+          }
 
-        if (!email || !['pro', 'agency'].includes(plan)) continue;
+          const nextRunAt = computeNextRunAt(schedule, now);
+          scheduleValidated = true;
 
-        // Check business not paused
-        try {
-          const bizSnap = await userBizRef(uid, bizId).get();
-          if (bizSnap.exists && bizSnap.data().schedulingPaused) continue;
-        } catch(_) { continue; }
+          // Only preview drafts due within the next 48 h
+          if (!schedule.nextRunAt) continue;
+          const nextRun = new Date(schedule.nextRunAt);
+          if (nextRun < now || nextRun > h48) continue;
 
-        const adaptations = draft.adaptations || {};
-        const platforms   = Object.keys(adaptations);
-        if (!platforms.length) continue;
+          // Don't send a second preview in the same cycle
+          if (schedule.previewSentAt) {
+            const sentAt = typeof schedule.previewSentAt === 'string'
+              ? new Date(schedule.previewSentAt)
+              : (schedule.previewSentAt.toDate?.() || new Date(schedule.previewSentAt));
+            if (sentAt > new Date(now.getTime() - 23 * 60 * 60 * 1000)) continue;
+          }
 
-        // ── Build signed action links ──────────────────────────────────────
-        const key = _actionSecret();
-        if (!key) { console.warn('[scheduledDraftPreview] ACTION_SIGNING_KEY not set'); continue; }
-        const cycle = String(now.getTime());
+          const parts = draftSnap.ref.path.split('/');
+          const uid   = parts[1];
+          const bizId = parts[3];
+          const draftId = draftSnap.id;
 
-        function mkLink(act) {
-          // cycle is included in the HMAC so it cannot be modified without breaking the sig
-          const sig = makeActionSig(uid, draftId, act, cycle, key);
-          return `${CF_BASE}/draftAction?uid=${encodeURIComponent(uid)}&biz=${encodeURIComponent(bizId)}&draft=${encodeURIComponent(draftId)}&action=${act}&sig=${sig}&cycle=${cycle}`;
-        }
+          // Get owner details
+          let email, ownerName, plan;
+          try {
+            const userSnap = await db.collection('users').doc(uid).get();
+            if (!userSnap.exists) continue;
+            const u = userSnap.data();
+            if (u.emailUnsubscribed) continue;
+            email     = u.email;
+            ownerName = u.ownerName || u.displayName || '';
+            plan      = u.plan || 'starter';
+          } catch(_) { continue; }
 
-        const approveUrl = mkLink('approve');
-        const skipUrl    = mkLink('skip');
-        const changeUrl  = mkLink('change');
-        const pauseUrl   = mkLink('pause');
-        const unsubUrl   = `${CF_BASE}/unsubscribeEmail?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, _unsubSecret())}`;
+          if (!email || !['pro', 'agency'].includes(plan)) continue;
 
-        // ── Format dates ──────────────────────────────────────────────────
-        const dayName  = nextRun.toLocaleDateString('en-US', { weekday: 'long' });
-        const dateStr  = nextRun.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+          // Check business not paused
+          try {
+            const bizSnap = await userBizRef(uid, bizId).get();
+            if (bizSnap.exists && bizSnap.data().schedulingPaused) continue;
+          } catch(_) { continue; }
 
-        // ── Ad copy preview (first 2 platforms, max 350 chars each) ───────
-        function escHtml(s) {
-          return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-        }
-        const previewPlats = platforms.slice(0, 2);
-        const copyHtml = previewPlats.map(pid => {
-          const raw = typeof adaptations[pid] === 'string'
-            ? adaptations[pid]
-            : (adaptations[pid]?.text || JSON.stringify(adaptations[pid]));
-          const copy = raw.replace(/<br\/?>/gi, '\n').slice(0, 350) + (raw.length > 350 ? '…' : '');
-          return `<div style="background:#f7f7f7;border-radius:8px;padding:14px 16px;margin-bottom:10px">
-  <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${escHtml(pid)}</div>
-  <div style="font-size:14px;color:#333;line-height:1.6;white-space:pre-wrap">${escHtml(copy)}</div>
-</div>`;
-        }).join('');
+          const adaptations = draft.adaptations || {};
+          const platforms   = Object.keys(adaptations);
+          if (!platforms.length) continue;
 
-        const name    = ownerName || 'there';
-        const platStr = platforms.join(', ');
-        const subject = `Your BlastyBiz post goes out ${dayName} — take a look`;
+          // ── Build signed action links ──────────────────────────────────────
+          const key = _actionSecret();
+          if (!key) { console.warn('[scheduledDraftPreview] ACTION_SIGNING_KEY not set'); continue; }
+          const cycle = String(nextRun.getTime());
 
-        const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden">
-  <div style="background:#0d1a0d;padding:28px 32px 22px">
-    <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto"/>
-    <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
-  </div>
-  <div style="padding:32px">
-    <p style="font-size:15px;color:#333;margin:0 0 8px">Hey ${escHtml(name)} —</p>
-    <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 16px">Your post goes out <strong>${escHtml(dateStr)}</strong>.</h1>
-    <p style="font-size:14px;color:#555;line-height:1.65;margin:0 0 20px">Here's a preview of what's going out. If it looks good, do nothing — it posts automatically.</p>
-    ${copyHtml}
-    <p style="font-size:12px;color:#888;margin:8px 0 24px">Platforms: ${escHtml(platStr)}</p>
-    <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px">
-      <tr>
-        <td style="padding-right:10px">
-          <a href="${approveUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:800;font-size:14px">✓ Approve</a>
-        </td>
-        <td style="padding-right:10px">
-          <a href="${skipUrl}" style="display:inline-block;background:#f5f5f5;color:#333;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:700;font-size:14px;border:1px solid #ddd">⏭ Skip</a>
-        </td>
-        <td>
-          <a href="${changeUrl}" style="display:inline-block;background:#f5f5f5;color:#333;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:700;font-size:14px;border:1px solid #ddd">✏️ Change</a>
-        </td>
-      </tr>
-    </table>
-    <div style="background:#e8f5e9;border-radius:8px;padding:14px 18px;margin-bottom:24px">
-      <p style="font-size:13px;color:#1b5e20;margin:0;font-weight:600">⏰ Or do nothing — we'll post it automatically on ${escHtml(dayName)}.</p>
+          function mkLink(act) {
+            // cycle is included in the HMAC so it cannot be modified without breaking the sig
+            const sig = makeActionSig(uid, bizId, draftId, act, cycle, key);
+            return `${CF_BASE}/draftAction?uid=${encodeURIComponent(uid)}&biz=${encodeURIComponent(bizId)}&draft=${encodeURIComponent(draftId)}&action=${act}&sig=${sig}&cycle=${cycle}`;
+          }
+
+          const approveUrl = mkLink('approve');
+          const skipUrl    = mkLink('skip');
+          const changeUrl  = mkLink('change');
+          const pauseUrl   = mkLink('pause');
+          const unsubUrl   = `${CF_BASE}/unsubscribeEmail?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, _unsubSecret())}`;
+
+          // ── Format dates ──────────────────────────────────────────────────
+          const dayName  = nextRun.toLocaleDateString('en-US', { weekday: 'long' });
+          const dateStr  = nextRun.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+          // ── Ad copy preview (first 2 platforms, max 350 chars each) ───────
+          function escHtml(s) {
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+          }
+          const previewPlats = platforms.slice(0, 2);
+          const copyHtml = previewPlats.map(pid => {
+            const raw = typeof adaptations[pid] === 'string'
+              ? adaptations[pid]
+              : (adaptations[pid]?.text || JSON.stringify(adaptations[pid]));
+            const copy = raw.replace(/<br\/?>/gi, '\n').slice(0, 350) + (raw.length > 350 ? '…' : '');
+            return `<div style="background:#f7f7f7;border-radius:8px;padding:14px 16px;margin-bottom:10px">
+    <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${escHtml(pid)}</div>
+    <div style="font-size:14px;color:#333;line-height:1.6;white-space:pre-wrap">${escHtml(copy)}</div>
+  </div>`;
+          }).join('');
+
+          const name    = ownerName || 'there';
+          const platStr = platforms.join(', ');
+          const subject = `Your BlastyBiz post goes out ${dayName} — take a look`;
+
+          const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden">
+    <div style="background:#0d1a0d;padding:28px 32px 22px">
+      <img src="https://blastybiz-9523e.web.app/img/blastybiz-title.png" alt="BlastyBiz" width="160" style="display:block;border:0;height:auto"/>
+      <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
     </div>
-    <a href="${APP_BASE_URL}/BlastyBiz.html" style="font-size:13px;color:#00873a;font-weight:700;text-decoration:none">View Dashboard →</a>
-  </div>
-  <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
-    <p style="font-size:12px;color:#999;margin:0;line-height:1.8">
-      &#169; BlastyBiz &bull;
-      <a href="${pauseUrl}" style="color:#999;text-decoration:underline">Pause all scheduled posts</a> &bull;
-      <a href="${unsubUrl}" style="color:#999;text-decoration:underline">Unsubscribe from all emails</a>
-    </p>
-  </div>
-</div>`;
+    <div style="padding:32px">
+      <p style="font-size:15px;color:#333;margin:0 0 8px">Hey ${escHtml(name)} —</p>
+      <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 16px">Your post goes out <strong>${escHtml(dateStr)}</strong>.</h1>
+      <p style="font-size:14px;color:#555;line-height:1.65;margin:0 0 20px">Here's a preview of what's going out. If it looks good, do nothing — it posts automatically.</p>
+      ${copyHtml}
+      <p style="font-size:12px;color:#888;margin:8px 0 24px">Platforms: ${escHtml(platStr)}</p>
+      <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px">
+        <tr>
+          <td style="padding-right:10px">
+            <a href="${approveUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:800;font-size:14px">✓ Approve</a>
+          </td>
+          <td style="padding-right:10px">
+            <a href="${skipUrl}" style="display:inline-block;background:#f5f5f5;color:#333;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:700;font-size:14px;border:1px solid #ddd">⏭ Skip</a>
+          </td>
+          <td>
+            <a href="${changeUrl}" style="display:inline-block;background:#f5f5f5;color:#333;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:700;font-size:14px;border:1px solid #ddd">✏️ Change</a>
+          </td>
+        </tr>
+      </table>
+      <div style="background:#e8f5e9;border-radius:8px;padding:14px 18px;margin-bottom:24px">
+        <p style="font-size:13px;color:#1b5e20;margin:0;font-weight:600">⏰ Or do nothing — we'll post it automatically on ${escHtml(dayName)}.</p>
+      </div>
+      <a href="${APP_BASE_URL}/BlastyBiz.html" style="font-size:13px;color:#00873a;font-weight:700;text-decoration:none">View Dashboard →</a>
+    </div>
+    <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">
+      <p style="font-size:12px;color:#999;margin:0;line-height:1.8">
+        &#169; BlastyBiz &bull;
+        <a href="${pauseUrl}" style="color:#999;text-decoration:underline">Pause all scheduled posts</a> &bull;
+        <a href="${unsubUrl}" style="color:#999;text-decoration:underline">Unsubscribe from all emails</a>
+      </p>
+    </div>
+  </div>`;
 
-        try {
-          await sendResendEmail({ to: email, subject, html });
-          await draftSnap.ref.update({
-            'schedule.previewSentAt': now.toISOString(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
-          console.log(`[scheduledDraftPreview] sent to ${uid}/${bizId}/${draftId}`);
+          try {
+            await sendResendEmail({ to: email, subject, html });
+            await draftSnap.ref.update({
+              'schedule.previewSentAt': now.toISOString(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log(`[scheduledDraftPreview] sent to ${uid}/${bizId}/${draftId}`);
+          } catch(e) {
+            console.error(`[scheduledDraftPreview] send failed ${uid}/${bizId}/${draftId}: ${e.message}`);
+          }
         } catch(e) {
-          console.error(`[scheduledDraftPreview] send failed ${uid}/${bizId}/${draftId}: ${e.message}`);
+          console.error('[scheduledDraftPreview] draft failed ' + draftSnap.ref.path + ':', e.message);
+          // Invalid recurrence must not remain due and block later drafts. A
+          // transient failure after validation must not disable a valid schedule.
+          if (!scheduleValidated) {
+            try {
+              await draftSnap.ref.update({
+                'schedule.enabled': false,
+                'schedule.pauseReason': e.message,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              });
+            } catch(pauseError) {
+              console.error('[scheduledDraftPreview] pause failed ' + draftSnap.ref.path + ':', pauseError.message);
+            }
+          }
+          continue;
         }
       }
     } catch(e) {

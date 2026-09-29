@@ -924,7 +924,8 @@ window.handleSetPassword = async function() {
       try {
         await auth.currentUser.reload();
         if (auth.currentUser.emailVerified) {
-          window.location.href = 'BlastyBiz-Onboard2.html?new=1';
+          if (sessionStorage.getItem('bb_draft_return')) await afterAuth(auth.currentUser);
+          else window.location.href = 'BlastyBiz-Onboard2.html?new=1';
           return;
         }
       } catch (_) {
@@ -991,6 +992,23 @@ window.selectBilling = function(period) {
 
 async function afterAuth(user) {
   try {
+    const savedDraft = sessionStorage.getItem('bb_draft_return');
+    if (savedDraft) {
+      let target;
+      try { target = JSON.parse(savedDraft); } catch(_) {}
+      if (target && ['bizId','draftId','ownerUid'].every(k => typeof target[k] === 'string' && target[k].length > 0 && target[k].length <= 128 && !target[k].includes('/'))) {
+        if (target.ownerUid !== user.uid) {
+          showLoginForm();
+          window.showToast('This preview belongs to another account. Sign out and sign in with the account that received it.', true);
+          return;
+        }
+        sessionStorage.removeItem('bb_draft_return');
+        window.location.href = 'BlastyBiz.html?' + new URLSearchParams(target);
+        return;
+      }
+      sessionStorage.removeItem('bb_draft_return');
+    }
+
     const picked  = localStorage.getItem('bb_selected_plan');
     const billing = localStorage.getItem('bb_billing_period') || 'monthly';
 

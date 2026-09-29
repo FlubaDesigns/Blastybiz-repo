@@ -73,9 +73,10 @@ async function setupTests() {
   }
 }
 async function chatTests() {
-  const code=section(read('functions/modules/ai.js'),'exports.chatCampaign =','exports.scoreFact =');
+  const ai=read('functions/modules/ai.js');
+  const code=section(ai,'function aiRequestContext','exports.generateEnrichmentQuestions =')+section(ai,'exports.chatCampaign =','exports.scoreFact =');
   let blocked='LIMIT_REACHED',calls=0,reservations=0,logs=0;
-  const c={exports:{},console:quiet,onRequest:(_,f)=>f,withAuth:f=>f,
+  const c={exports:{},console:quiet,AI_DEFAULTS:{},classifyAiError:()=> 'failed',onRequest:(_,f)=>f,withAuth:f=>f,
     reserveAiAction:async()=>{reservations++;if(blocked)throw Error(blocked);},
     callAI:async()=>{calls++;return {text:'{"done":false,"message":"Next?"}',model:'test',usage:{}}},
     trackAiUsage:async()=>{logs++;}

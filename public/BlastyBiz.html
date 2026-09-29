@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="escape-utils.js?v=1"></script>
+  <script src="schedule-utils.js"></script>
+<script src="escape-utils.js?v=1"></script>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
@@ -910,7 +911,7 @@
               <label>How often?</label>
               <div class="sched-chips">
                 <button type="button" class="sched-chip active" id="sched-freq-weekly"   onclick="setSchedFreq('weekly')">Weekly</button>
-                <button type="button" class="sched-chip"        id="sched-freq-biweekly" onclick="setSchedFreq('biweekly')">Every 2 wks</button>
+                <button type="button" class="sched-chip" id="sched-freq-daily" onclick="setSchedFreq('daily')">Daily</button>
                 <button type="button" class="sched-chip"        id="sched-freq-monthly"  onclick="setSchedFreq('monthly')">Monthly</button>
               </div>
               <div id="sched-dow-wrap">
@@ -3205,6 +3206,7 @@ async function runAdaptation() {
       ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken }
       : { 'Content-Type': 'application/json' };
 
+    const generationDraftId = window._bbPrepareGenerationDraft ? window._bbPrepareGenerationDraft() : window._currentDraftId;
     const response = await _bbFetchWithTimeout('https://us-central1-blastybiz-9523e.cloudfunctions.net/adaptListing', {
       method: 'POST',
       headers: authHeaders,
@@ -3229,6 +3231,7 @@ async function runAdaptation() {
         platforms: enabledPlatforms,
         tone,
         platformCats: profile.platformCats || {},
+        draftId: generationDraftId,
         generationAttemptId,  // kept at top level for backward compat
       })
     });
@@ -3465,7 +3468,13 @@ async function loadHistoryDraft(draftId) {
     const draft = await window._bbLoadDraft(draftId);
     if (!draft) { showToast('⚠️ Blast not found'); return; }
 
+    if (draft.campaignId) {
+      const savedCampaign = campaigns.find(c => c.id === draft.campaignId);
+      if (savedCampaign) selectCampaign(savedCampaign.id, savedCampaign.name);
+      else { activeCampaignId = draft.campaignId; activeCampaignName = draft.campaignName || ''; }
+    }
     window._currentDraftId = draftId;
+    loadQuickSchedFromDraft(draft.schedule);
     const adaptations  = draft.adaptations  || {};
     const platStatus   = draft.platformStatus || {};
 
@@ -3475,6 +3484,7 @@ async function loadHistoryDraft(draftId) {
       const excluded = platStatus[p.id] === 'excluded';
       return {
         ...p,
+        enabled: Array.isArray(draft.enabledPlatforms) ? draft.enabledPlatforms.includes(p.id) : !!content,
         adaptedContent: content,
         _reviewStatus:  excluded ? 'skipped' : (content ? 'approved' : undefined),
       };
@@ -3661,68 +3671,63 @@ var _draftSchedules = {};    // { draftId: { schedule, blastName, campaignId, ca
 var _TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 function _defaultSched() {
-  return { enabled: false, frequency: 'weekly', customDays: 7, dayOfWeek: 1, dayOfMonth: 1, timeSlot: 'morning', timezone: _TZ };
+  return { enabled: false, frequency: 'weekly', dayOfWeek: 1, dayOfMonth: 1, timeSlot: 'morning', timezone: _TZ };
 }
 
 // ── Quick-schedule widget (Create-tab accordion) ────────────────────────────
 // All writes go to the current draft doc (single source of truth)
 var _quickSched = _defaultSched();
 
-function _saveQuickSchedToDraft() {
-  const draftId = window._currentDraftId;
-  if (!draftId || !window._bbUpdateDraft) return;
-  const s = Object.assign({}, _quickSched);
-  const nextRun = s.enabled ? _computeNextRunDate(s) : null;
-  s.nextRunAt = nextRun ? nextRun.toISOString() : null;
-  window._bbUpdateDraft(draftId, { schedule: s }).catch(e => console.error('schedule save:', e));
-  _updateQuickSchedPreview();
-  // Also refresh Schedule tab if open
-  if (document.getElementById('section-schedule')?.classList.contains('active')) renderScheduleTab();
+var _scheduleSaving = new Set();
+async function _persistSchedule(did, changes, quick) {
+  const bizId = window.activeBizId;
+  const key = bizId + '/' + did;
+  const prior = { ...(quick ? _quickSched : _getDraftSchedEntry(did).schedule) };
+  if (_scheduleSaving.has(key)) { showToast('Please wait for the schedule save.'); return false; }
+  _scheduleSaving.add(key);
+  try {
+    if (!did || !window._bbUpdateDraft) throw new Error('Save your generated draft before setting a schedule.');
+    const candidate = BBSchedule.normalizeSchedule({ ..._defaultSched(), ...prior, ...changes });
+    if (candidate.unsupportedFrequency) throw new Error('Choose daily, weekly, or monthly, then enable the schedule.');
+    candidate.nextRunAt = candidate.enabled ? _computeNextRunDate(candidate).toISOString() : null;
+    // A changed schedule invalidates the previous email's approval/skip state.
+    delete candidate.approved; delete candidate.skipCycle; delete candidate.previewSentAt;
+    await window._bbUpdateDraft(did, { schedule: candidate });
+    if (window.activeBizId !== bizId) return false;
+    if (_draftSchedules[did]) _draftSchedules[did].schedule = candidate;
+    if (did === window._currentDraftId) loadQuickSchedFromDraft(candidate);
+    if (!quick) _renderSchedTabFromData(_draftSchedules);
+    showToast('Schedule saved.');
+    return true;
+  } catch(e) {
+    if (window.activeBizId === bizId) {
+      if (quick) loadQuickSchedFromDraft(prior);
+      else _renderSchedTabFromData(_draftSchedules);
+      showToast('Schedule not saved. ' + e.message);
+    }
+    return false;
+  } finally { _scheduleSaving.delete(key); }
 }
-
+function _saveQuickSchedToDraft(changes = {}) {
+  return _persistSchedule(window._currentDraftId, changes, true);
+}
 function loadQuickSchedFromDraft(schedule) {
-  _quickSched = Object.assign(_defaultSched(), schedule || {});
+  _quickSched = BBSchedule.normalizeSchedule(Object.assign(_defaultSched(), schedule || {}));
   const en = document.getElementById('sched-enabled');
   if (en) en.checked = _quickSched.enabled;
   const sf = document.getElementById('sched-fields');
-  if (sf) { if (_quickSched.enabled) sf.classList.remove('hidden'); else sf.classList.add('hidden'); }
+  if (sf) sf.classList.toggle('hidden', !_quickSched.enabled && !_quickSched.unsupportedFrequency);
   _renderQuickSchedChips();
   _updateQuickSchedPreview();
 }
-
-function toggleSchedEnabled() {
-  _quickSched.enabled = document.getElementById('sched-enabled')?.checked || false;
-  const sf = document.getElementById('sched-fields');
-  if (sf) { if (_quickSched.enabled) sf.classList.remove('hidden'); else sf.classList.add('hidden'); }
-  _saveQuickSchedToDraft();
-}
-
-function setSchedFreq(f) {
-  _quickSched.frequency = f;
-  _renderQuickSchedChips();
-  _saveQuickSchedToDraft();
-}
-
-function setSchedDay(d) {
-  _quickSched.dayOfWeek = d;
-  _renderQuickSchedChips();
-  _saveQuickSchedToDraft();
-}
-
-function setSchedDom(d) {
-  _quickSched.dayOfMonth = d;
-  _renderQuickSchedChips();
-  _saveQuickSchedToDraft();
-}
-
-function setSchedTime(t) {
-  _quickSched.timeSlot = t;
-  _renderQuickSchedChips();
-  _saveQuickSchedToDraft();
-}
+function toggleSchedEnabled() { return _saveQuickSchedToDraft({enabled: document.getElementById('sched-enabled')?.checked || false}); }
+function setSchedFreq(f) { return _saveQuickSchedToDraft({frequency:f}); }
+function setSchedDay(d) { return _saveQuickSchedToDraft({dayOfWeek:d}); }
+function setSchedDom(d) { return _saveQuickSchedToDraft({dayOfMonth:d}); }
+function setSchedTime(t) { return _saveQuickSchedToDraft({timeSlot:t}); }
 
 function _renderQuickSchedChips() {
-  ['weekly','biweekly','monthly'].forEach(f => {
+  ['daily','weekly','monthly'].forEach(f => {
     const el = document.getElementById('sched-freq-' + f);
     if (el) el.classList.toggle('active', _quickSched.frequency === f);
   });
@@ -3748,10 +3753,11 @@ function _renderQuickSchedChips() {
 function _updateQuickSchedPreview() {
   const el = document.getElementById('sched-next-preview');
   if (!el) return;
+  if (_quickSched.unsupportedFrequency) { el.textContent = 'This old schedule is paused. Choose daily, weekly, or monthly, then enable it.'; return; }
   if (!_quickSched.enabled) { el.textContent = ''; return; }
   try {
     const next = _computeNextRunDate(_quickSched);
-    const label = next.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+    const label = next.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', timeZone: (_quickSched.timezone || _TZ) });
     const slot  = { morning:'9am', midday:'12pm', afternoon:'3pm', evening:'6pm' }[_quickSched.timeSlot] || '';
     el.textContent = '📅 Next post: ' + label + ' at ' + slot;
   } catch(_) {}
@@ -3765,14 +3771,13 @@ function _slotLabel(t) {
 }
 
 function _freqLabel(s) {
-  if (s.frequency === 'custom') return 'Every ' + (s.customDays || 7) + ' days';
-  return { daily:'Daily', weekly:'Weekly', biweekly:'Every 2 wks', monthly:'Monthly' }[s.frequency] || s.frequency;
+  return { daily:'Daily', weekly:'Weekly', monthly:'Monthly' }[s.frequency] || 'Unsupported — paused';
 }
 
 function _schedNextLine(s) {
   try {
-    const next  = _computeNextRunDate(s);
-    const label = next.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+    const next  = s.nextRunAt ? new Date(s.nextRunAt) : _computeNextRunDate(s);
+    const label = next.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', timeZone:s.timezone || _TZ });
     const slot  = { morning:'9am', midday:'12pm', afternoon:'3pm', evening:'6pm' }[s.timeSlot] || '';
     return '📅 Next post: ' + label + ' at ' + slot;
   } catch(_) { return ''; }
@@ -3822,12 +3827,11 @@ function _renderSchedTabFromData(data) {
 
 function _buildBlastSchedCard(entry) {
   const did       = entry.draftId;
-  const s         = entry.schedule || _defaultSched();
+  const s         = BBSchedule.normalizeSchedule(entry.schedule || _defaultSched());
   const isMonthly = s.frequency === 'monthly';
-  const isCustom  = s.frequency === 'custom';
   const isDaily   = s.frequency === 'daily';
   const nextLine  = s.enabled ? _schedNextLine(s) : '';
-  const freqs     = ['daily','weekly','biweekly','monthly','custom'];
+  const freqs     = ['daily','weekly','monthly'];
   const platNames = (entry.platforms || []).join(' · ');
 
   return `<div class="card csched-card" id="csched-card-${escHtml(did)}">
@@ -3841,18 +3845,13 @@ function _buildBlastSchedCard(entry) {
         <span class="sched-toggle-track"></span>
       </label>
     </div>
-    <div class="csched-fields${s.enabled ? '' : ' hidden'}" id="csched-fields-${escHtml(did)}">
+    <div class="csched-fields${s.enabled || s.unsupportedFrequency ? '' : ' hidden'}" id="csched-fields-${escHtml(did)}">
+      ${s.unsupportedFrequency ? '<p role="status">Old schedule paused. Choose a supported frequency, then enable it.</p>' : ''}
       <label class="csched-lbl">How often?</label>
       <div class="sched-chips" id="csched-freq-row-${escHtml(did)}">
         ${freqs.map(f => `<button type="button" class="sched-chip${s.frequency===f?' active':''}" onclick="setDraftSchedFreq('${escHtml(did)}','${f}')">${_freqLabel({frequency:f,customDays:s.customDays})}</button>`).join('')}
       </div>
-      <div class="csched-custom-row${isCustom ? '' : ' hidden'}" id="csched-custom-row-${escHtml(did)}">
-        <span class="csched-lbl" style="margin:0;">Every</span>
-        <input type="number" min="1" max="365" value="${s.customDays||7}" class="csched-custom-input"
-          onchange="setDraftSchedCustomDays('${escHtml(did)}',this.value)" />
-        <span class="csched-custom-unit">days</span>
-      </div>
-      <div id="csched-dow-wrap-${escHtml(did)}"${isMonthly||isCustom||isDaily?' class="hidden"':''}>
+      <div id="csched-dow-wrap-${escHtml(did)}"${isMonthly||isDaily?' class="hidden"':''}>
         <label class="csched-lbl">Which day?</label>
         <div class="sched-chips">
           ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d,i)=>`<button type="button" class="sched-chip${s.dayOfWeek===i?' active':''}" onclick="setDraftSchedDay('${escHtml(did)}',${i})">${d}</button>`).join('')}
@@ -3901,109 +3900,13 @@ function _getDraftSchedEntry(did) {
   return _draftSchedules[did] || { schedule: _defaultSched() };
 }
 
-function _updateDraftSchedAndSave(did, changes) {
-  const entry   = _getDraftSchedEntry(did);
-  const s       = Object.assign(_defaultSched(), entry.schedule || {}, changes);
-  entry.schedule = s;
-  _draftSchedules[did] = entry;
-  const nextRun = s.enabled ? _computeNextRunDate(s) : null;
-  const payload = Object.assign({}, s, { nextRunAt: nextRun ? nextRun.toISOString() : null });
-  if (window._bbUpdateDraft) window._bbUpdateDraft(did, { schedule: payload }).catch(e => console.error('draft sched save:', e));
-  // Update next-post line in card
-  const nextEl = document.getElementById('csched-next-' + did) || document.querySelector('#csched-card-' + did + ' .csched-next');
-  if (nextEl) nextEl.textContent = s.enabled ? _schedNextLine(s) : '';
-  _renderSchedUpcoming();
-}
-
-function toggleDraftSched(did, enabled) {
-  const fieldsEl = document.getElementById('csched-fields-' + did);
-  if (fieldsEl) { if (enabled) fieldsEl.classList.remove('hidden'); else fieldsEl.classList.add('hidden'); }
-  _updateDraftSchedAndSave(did, { enabled });
-}
-
-function setDraftSchedFreq(did, freq) {
-  const row     = document.getElementById('csched-freq-row-' + did);
-  if (row) row.querySelectorAll('.sched-chip').forEach((btn, i) =>
-    btn.classList.toggle('active', ['daily','weekly','biweekly','monthly','custom'][i] === freq));
-  const isMonthly = freq === 'monthly', isCustom = freq === 'custom', isDaily = freq === 'daily';
-  const dowWrap = document.getElementById('csched-dow-wrap-' + did);
-  const domWrap = document.getElementById('csched-dom-wrap-' + did);
-  const custRow = document.getElementById('csched-custom-row-' + did);
-  if (dowWrap) { if (isMonthly||isCustom||isDaily) dowWrap.classList.add('hidden'); else dowWrap.classList.remove('hidden'); }
-  if (domWrap) { if (isMonthly) domWrap.classList.remove('hidden'); else domWrap.classList.add('hidden'); }
-  if (custRow) { if (isCustom)  custRow.classList.remove('hidden'); else custRow.classList.add('hidden'); }
-  _updateDraftSchedAndSave(did, { frequency: freq });
-}
-
-function setDraftSchedCustomDays(did, n) {
-  _updateDraftSchedAndSave(did, { customDays: Math.max(1, parseInt(n) || 7) });
-}
-
-function setDraftSchedDay(did, d) {
-  const wrap = document.getElementById('csched-dow-wrap-' + did);
-  if (wrap) wrap.querySelectorAll('.sched-chip').forEach((btn, i) => btn.classList.toggle('active', i === d));
-  _updateDraftSchedAndSave(did, { dayOfWeek: d });
-}
-
-function setDraftSchedDom(did, v) {
-  const wrap = document.getElementById('csched-dom-wrap-' + did);
-  if (wrap) wrap.querySelectorAll('.sched-chip').forEach((btn, i) => btn.classList.toggle('active', [1,8,15,22][i] === v));
-  _updateDraftSchedAndSave(did, { dayOfMonth: v });
-}
-
-function setDraftSchedTime(did, t) {
-  const card = document.getElementById('csched-card-' + did);
-  if (card) {
-    const timeRow = [...card.querySelectorAll('.sched-chips')].find(r => r.querySelector('[onclick*="setDraftSchedTime"]'));
-    if (timeRow) timeRow.querySelectorAll('.sched-chip').forEach((btn, i) =>
-      btn.classList.toggle('active', ['morning','midday','afternoon','evening'][i] === t));
-  }
-  _updateDraftSchedAndSave(did, { timeSlot: t });
-}
-
-function _computeNextRunDate(sched) {
-  const tz       = sched.timezone || _TZ;
-  const slotHour = { morning: 9, midday: 12, afternoon: 15, evening: 18 }[sched.timeSlot || 'morning'];
-  const now      = new Date();
-
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz, year:'numeric', month:'numeric', day:'numeric',
-    hour:'numeric', minute:'numeric', hour12: false
-  }).formatToParts(now);
-  const gp = (t) => parseInt(parts.find(p => p.type === t)?.value || '0');
-  const lYear = gp('year'), lMonth = gp('month') - 1, lDay = gp('day'), lHour = gp('hour');
-  const lDow  = new Date(lYear, lMonth, lDay).getDay();
-
-  let candYear = lYear, candMonth = lMonth, candDay = lDay;
-
-  if (sched.frequency === 'daily') {
-    if (lHour >= slotHour) { const d = new Date(lYear, lMonth, lDay + 1); candYear = d.getFullYear(); candMonth = d.getMonth(); candDay = d.getDate(); }
-  } else if (sched.frequency === 'custom') {
-    const days = Math.max(1, sched.customDays || 7);
-    const d = new Date(lYear, lMonth, lDay + (lHour >= slotHour ? days : days - 1 || 0));
-    candYear = d.getFullYear(); candMonth = d.getMonth(); candDay = d.getDate();
-  } else if (sched.frequency === 'monthly') {
-    const dom = sched.dayOfMonth || 1;
-    if (lDay < dom || (lDay === dom && lHour < slotHour)) { candDay = dom; }
-    else { const d = new Date(lYear, lMonth + 1, dom); candYear = d.getFullYear(); candMonth = d.getMonth(); candDay = d.getDate(); }
-  } else {
-    const targetDow = sched.dayOfWeek ?? 1;
-    let ahead = (targetDow - lDow + 7) % 7;
-    if (ahead === 0 && lHour >= slotHour) ahead = sched.frequency === 'biweekly' ? 14 : 7;
-    else if (sched.frequency === 'biweekly' && ahead > 0 && ahead < 7) ahead += 7;
-    const d = new Date(lYear, lMonth, lDay + ahead);
-    candYear = d.getFullYear(); candMonth = d.getMonth(); candDay = d.getDate();
-  }
-
-  const approx = new Date(candYear, candMonth, candDay, slotHour, 0, 0);
-  const tzParts = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz, year:'numeric', month:'numeric', day:'numeric',
-    hour:'numeric', minute:'numeric', hour12: false
-  }).formatToParts(approx);
-  const tgp = (t) => parseInt(tzParts.find(p => p.type === t)?.value || '0');
-  const tzLocalMs = Date.UTC(tgp('year'), tgp('month') - 1, tgp('day'), tgp('hour'), tgp('minute'), 0);
-  return new Date(approx.getTime() + (approx.getTime() - tzLocalMs));
-}
+function _updateDraftSchedAndSave(did, changes) { return _persistSchedule(did, changes, false); }
+function toggleDraftSched(did, enabled) { return _updateDraftSchedAndSave(did, { enabled }); }
+function setDraftSchedFreq(did, frequency) { return _updateDraftSchedAndSave(did, { frequency }); }
+function setDraftSchedDay(did, dayOfWeek) { return _updateDraftSchedAndSave(did, { dayOfWeek }); }
+function setDraftSchedDom(did, dayOfMonth) { return _updateDraftSchedAndSave(did, { dayOfMonth }); }
+function setDraftSchedTime(did, timeSlot) { return _updateDraftSchedAndSave(did, { timeSlot }); }
+function _computeNextRunDate(sched) { return BBSchedule.computeNextRunAt(sched, new Date()); }
 
 // ══════════════════════════════════════════
 // PENDING POSTS (review queue)
@@ -5767,6 +5670,11 @@ window._saveInsightToFirestore = async function(insights) {
 auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
   if (!user) return; // auth-guard.js handles redirect
+  const emailOwner = new URLSearchParams(window.location.search).get('ownerUid');
+  if (emailOwner && emailOwner !== user.uid) {
+    showToast('This preview belongs to another account. Sign out and use the account that received it.');
+    return;
+  }
   currentUser = user;
   window._bbUid = currentUser.uid;
   window._bbGetToken  = () => currentUser.getIdToken();
@@ -5988,7 +5896,9 @@ onAuthStateChanged(auth, async (user) => {
       // ?cid=xxx auto-selects an existing campaign
       const _qp = new URLSearchParams(window.location.search);
       const _qpCid = _qp.get('cid');
-      if (_qpCid) {
+      if (_qp.get('draftId')) {
+        await loadHistoryDraft(_qp.get('draftId'));
+      } else if (_qpCid) {
         const _qpCamp = campaigns.find(c => c.id === _qpCid);
         if (_qpCamp) {
           selectCampaign(_qpCamp.id, _qpCamp.name);
@@ -6468,9 +6378,19 @@ window._bbLoadDraft = async function(draftId) {
 
 // Update an existing listingDraft document — used by approvePlatformCopy and regeneratePlatformCopy
 window._bbUpdateDraft = async function(draftId, updates) {
-  if (!currentUser || !activeBizId || !draftId) return;
+  if (!currentUser || !activeBizId || !draftId) throw new Error('No signed-in draft');
   const ref = doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'listingDrafts', draftId);
   await updateDoc(ref, { ...updates, updatedAt: serverTimestamp(), revision: increment(1) });
+};
+
+window._bbPrepareGenerationDraft = function() {
+  if (!currentUser || !activeBizId) throw new Error('No signed-in business');
+  if (window._currentDraftId) return window._currentDraftId;
+  const key = JSON.stringify([currentUser.uid, activeBizId, activeCampaignId || '']);
+  if (!window._bbPendingDraft || window._bbPendingDraft.key !== key) {
+    window._bbPendingDraft = { key, ref: doc(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'listingDrafts')) };
+  }
+  return window._bbPendingDraft.ref.id;
 };
 
 window._afterAdaptation = async function(adaptedPlatforms) {
@@ -6990,6 +6910,8 @@ async function ccCallCF() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({
+        businessId: window.activeBizId || null,
+        campaignId: activeCampaignId || null,
         conversationHistory: ccHistory,
         businessProfile: {
           name:         (window._bbProfileGlobal || {}).name || '',

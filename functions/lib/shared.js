@@ -194,7 +194,7 @@ async function callAI(content, { system = '', maxTokens = 1024, tier = 'smart', 
     );
     if (!resp.ok) {
       const bodyText = (await resp.text()).slice(0, 300);
-      recordAiFailure(provider, model, resp.status, bodyText);
+      await recordAiFailure(provider, model, resp.status, bodyText);
       const err = new Error(`Anthropic ${resp.status}: ${bodyText.slice(0, 200)}`); err._isHttpError = true; throw err;
     }
     const j = await resp.json();
@@ -214,7 +214,7 @@ async function callAI(content, { system = '', maxTokens = 1024, tier = 'smart', 
   );
   if (!resp.ok) {
     const bodyText = (await resp.text()).slice(0, 300);
-    recordAiFailure(provider, model, resp.status, bodyText);
+    await recordAiFailure(provider, model, resp.status, bodyText);
     const err = new Error(`${provider} ${resp.status}: ${bodyText.slice(0, 200)}`); err._isHttpError = true; throw err;
   }
   const j = await resp.json();
@@ -231,8 +231,9 @@ async function reserveAiAction(uid, opts = {}) {
 
     // Read user doc + draft doc (if free-regen path) in one round-trip
     const reads = [tx.get(userRef)];
-    if (isRegeneration && draftRef) reads.push(tx.get(draftRef));
-    const [snap, draftSnap] = await Promise.all(reads);
+    const grantRef = isRegeneration && draftRef ? draftRef.collection('private').doc('aiAllowance') : null;
+    if (grantRef) reads.push(tx.get(draftRef), tx.get(grantRef));
+    const [snap, draftSnap, grantSnap] = await Promise.all(reads);
 
     const data    = snap.exists ? snap.data() : {};
     const plan    = data.plan || 'starter';
@@ -246,7 +247,8 @@ async function reserveAiAction(uid, opts = {}) {
     // Free first-regeneration: skip the credit counter for the first regen per draft.
     // draftSnap.exists must be true — a non-existent or fabricated draftId gets no free regen.
     // Atomically mark freeRegenUsed on the draft so concurrent calls can't both get free.
-    if (isRegeneration && draftRef && draftSnap && draftSnap.exists && !draftSnap.data()?.freeRegenUsed) {
+    if (grantRef && draftSnap?.exists && grantSnap?.exists && grantSnap.data().uid === uid && grantSnap.data().freeRegenUsed === false) {
+      tx.update(grantRef, { freeRegenUsed: true, usedAt: admin.firestore.FieldValue.serverTimestamp() });
       tx.set(draftRef, { freeRegenUsed: true }, { merge: true });
       return { plan, used, cap, freeRegen: true };
     }
@@ -546,25 +548,17 @@ function _unsubSecret() {
 }
 
 // ── HMAC-signed draft action tokens (approve / skip / change / pause) ─────────
-// Signature covers uid + draftId + action + cycle so that none of those params
-// can be tampered with without invalidating the link. cycle is the epoch-ms
-// timestamp embedded in the URL; its integrity is enforced by the signature,
-// and expiry is verified against the same signed value.
-function makeActionSig(uid, draftId, action, cycle, key) {
-  return crypto.createHmac('sha256', key).update(`${uid}:${draftId}:${action}:${cycle}`).digest('hex');
+// V2 binds the account, business, draft, action and scheduled occurrence.
+// Old links intentionally fail validation: they did not bind the business/cycle.
+function makeActionSig(uid, bizId, draftId, action, cycle, key) {
+  return crypto.createHmac('sha256', key).update(JSON.stringify(['v2', uid, bizId, draftId, action, cycle])).digest('hex');
 }
 function _actionSecret() {
   return process.env.ACTION_SIGNING_KEY || process.env.UNSUB_SIGNING_KEY || process.env.RESEND_API_KEY;
 }
 
 // ── Shared schedule helper ────────────────────────────────────────────────────
-function computeNextRunAt(schedule, now) {
-  const DAY_MS = 24 * 60 * 60 * 1000;
-  const freq = (schedule && schedule.frequency) || 'weekly';
-  if (freq === 'daily')   return new Date(now.getTime() + DAY_MS);
-  if (freq === 'monthly') return new Date(now.getTime() + 30 * DAY_MS);
-  return new Date(now.getTime() + 7 * DAY_MS); // weekly default
-}
+const { computeNextRunAt, normalizeSchedule } = require('./schedule');
 
 // ── getPlanConfig — single source of truth for all plan entitlements (4.4) ────
 const _PLAN_CONFIG_DEFAULTS = {
@@ -1034,7 +1028,7 @@ module.exports = {
   // action signing
   makeActionSig, _actionSecret,
   // schedule helper
-  computeNextRunAt,
+  computeNextRunAt, normalizeSchedule,
   // plans
   getPlanConfig,
   // constants

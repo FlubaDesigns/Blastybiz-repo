@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="website-utils.js"></script>
   <meta charset="UTF-8"/>
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -281,14 +282,23 @@
       <div class="bbf-answer" id="bfa-zip"></div>
     </div>
 
+    <div class="bbf future" id="bbf-hasWebsite">
+      <div class="bbf-label">Do you have a website?</div>
+      <div class="bbf-input-zone">
+        <button type="button" class="bbf-choice-btn" data-val="yes" onclick="_bbPickChoice(this,'hasWebsite')">Yes</button>
+        <button type="button" class="bbf-choice-btn" data-val="no" onclick="_bbPickChoice(this,'hasWebsite')">No</button>
+        <div class="bbf-err" id="bfe-hasWebsite"></div>
+      </div>
+      <div class="bbf-answer" id="bfa-hasWebsite"></div>
+    </div>
     <!-- website -->
     <div class="bbf future" id="bbf-website">
       <div class="bbf-label">Website</div>
       <div class="bbf-input-zone">
         <input type="url" class="bbf-input" id="bfi-website" placeholder="e.g. https://www.yourbiz.com" autocomplete="off"
-          onblur="(function(inp){var v=inp.value.trim();if(v&&!/^https?:\/\//i.test(v))v='https://'+v;inp.value=v;var e=document.getElementById('bfe-website');if(e)e.textContent=v&&!/^https?:\/\/[^\s.]+\.[^\s]/.test(v)?'That doesn\u2019t look like a valid website URL':'';})(this)"
+          onblur="this.value=BBWebsite.normalize(this.value)"
           oninput="var e=document.getElementById('bfe-website');if(e)e.textContent='';"/>
-        <div class="bbf-hint">Leave blank if you don't have one — no worries!</div>
+        <div class="bbf-hint">Enter the website customers should visit.</div>
         <button class="bbf-btn" onclick="_bbContinue('website')">Continue →</button>
         <div class="bbf-err" id="bfe-website"></div>
       </div>
@@ -318,7 +328,7 @@
 
   var answers  = {};
   var toggles  = { ynMentionName:false, ynMentionRole:false, ynMentionAddress:true, ynMentionPhone:true, ynMentionEmail:true };
-  var stepKeys = ['ownerName','bizName','role','email','phone','locationType','street','city','state','zip','website','_fork'];
+  var stepKeys = ['ownerName','bizName','role','email','phone','locationType','street','city','state','zip','hasWebsite','website','_fork'];
   var currentKey = null;
   var bizRef  = null;
 
@@ -333,6 +343,7 @@
     city:         function(a){ return 'City?'; },
     state:        function(a){ return 'State?'; },
     zip:          function(a){ return 'ZIP code?'; },
+    hasWebsite:   function(a){ return 'Does your business have a website?'; },
     website:      function(a){ return 'Almost there! What\'s the website for ' + (a.bizName||'your business') + '?'; },
     _fork:        function(a){ return 'You\'re set up! 🎉 Want to tell me your story first, or blast right now?'; }
   };
@@ -340,7 +351,7 @@
   var MOODS = {
     ownerName:'s-wave', bizName:'s-happy', role:'s-ask', email:'s-ask', phone:'s-happy',
     locationType:'s-ask', street:'s-ask', city:'s-happy', state:'s-ask', zip:'s-happy',
-    website:'s-working', _fork:'s-celebrate'
+    hasWebsite:'s-ask', website:'s-working', _fork:'s-celebrate'
   };
 
   var VALIDATES = {
@@ -354,14 +365,16 @@
     city:         function(v){ return v.trim().length >= 2 ? null : 'Please enter a city.'; },
     state:        function(v){ return v.trim().length >= 2 ? null : 'Please enter a state.'; },
     zip:          function(v){ return /^\d{5}(-\d{4})?$/.test(v.trim()) ? null : 'Please enter a valid ZIP.'; },
-    website:      function(v){ return null; },
+    hasWebsite:   function(v){ return ['yes','no'].includes(v) ? null : 'Please choose Yes or No.'; },
+    website:      function(v){ return BBWebsite.error(v, true) || null; },
     _fork:        function(v){ return v ? null : 'Pick one!'; }
   };
 
   function skipField(key) {
     var lt = answers.locationType;
     if ((key==='street'||key==='city'||key==='state'||key==='zip') && lt==='online') return true;
-    if (key==='website' && lt==='brick') return true;
+    if (key==='hasWebsite' && lt!=='brick') return true;
+    if (key==='website' && lt==='brick' && answers.hasWebsite==='no') return true;
     return false;
   }
 
@@ -459,7 +472,7 @@
     var s   = key || currentKey;
     var val = '', displayVal = '';
 
-    if (s === 'locationType' || s === '_fork') {
+    if (s === 'locationType' || s === 'hasWebsite' || s === '_fork') {
       var fieldEl = document.getElementById('bbf-'+s);
       val = (fieldEl && fieldEl.dataset.choiceVal) || '';
       var sel = fieldEl && fieldEl.querySelector('.bbf-choice-btn[data-selected="true"]');
@@ -467,6 +480,7 @@
     } else {
       var inp = document.getElementById('bfi-'+s);
       val = inp ? inp.value.trim() : '';
+      if (s === 'website') { val = BBWebsite.normalize(val); if(inp) inp.value = val; }
       displayVal = val;
     }
 
@@ -483,7 +497,13 @@
         if (el) el.classList.toggle('skipped', val==='online');
       });
       var ws = document.getElementById('bbf-website');
-      if (ws) ws.classList.toggle('skipped', val==='brick');
+      if (ws) ws.classList.toggle('skipped', val==='brick' && answers.hasWebsite==='no');
+      document.getElementById('bbf-hasWebsite').classList.toggle('skipped', val!=='brick');
+    }
+
+    if (s === 'hasWebsite') {
+      document.getElementById('bbf-website').classList.toggle('skipped', val === 'no');
+      if (val === 'no') answers.website = '';
     }
 
     var toggleMap = { ownerName:'ynMentionName', role:'ynMentionRole', email:'ynMentionEmail', phone:'ynMentionPhone', street:'ynMentionAddress' };

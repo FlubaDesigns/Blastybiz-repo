@@ -35,11 +35,25 @@ async function _googleRefreshToken(refreshToken) {
   return resp.data.access_token;
 }
 
+// Only errors from the actual publication request can mean a post was accepted.
+async function _publicationPost(url, data, config = {}) {
+  try { return await axios.post(url, data, { ...config, timeout: 30000 }); }
+  catch(e) {
+    const status = e.response?.status;
+    const mayHaveBeenSent = !e.response && ['ECONNABORTED', 'ETIMEDOUT', 'ECONNRESET', 'EPIPE'].includes(e.code);
+    if (mayHaveBeenSent || status === 408 || status >= 500) e.publicationUncertain = true;
+    throw e;
+  }
+}
+function _publisherError(platform, e) {
+  return Object.assign(new Error(platform + ' API: ' + (e.response?.data?.error?.message || e.message)), { publicationUncertain: e.publicationUncertain === true });
+}
+
 async function _publishGoogleJob(job, conn, pathUserId, pathBizId) {
   const content   = job.payload?.adaptedContent || '';
   const imageUrls = job.payload?.imageUrls || [];
   async function tryPost(token) {
-    return axios.post(
+    return _publicationPost(
       `https://mybusinesspostings.googleapis.com/v1/locations/${conn.locationId}/localPosts`,
       { languageCode: 'en-US', summary: content,
         media: imageUrls.map(u => ({ mediaFormat: 'PHOTO', sourceUrl: u })) },
@@ -59,20 +73,20 @@ async function _publishGoogleJob(job, conn, pathUserId, pathBizId) {
       const r = await tryPost(newToken);
       return { postId: r.data.name };
     }
-    throw new Error('Google API: ' + (e.response?.data?.error?.message || e.message));
+    throw _publisherError('Google', e);
   }
 }
 
 async function _publishFacebookJob(job, conn) {
   const content = job.payload?.adaptedContent || '';
   try {
-    const r = await axios.post(
+    const r = await _publicationPost(
       `https://graph.facebook.com/v18.0/${conn.pageId}/feed`,
       { message: content, access_token: conn.accessToken }
     );
     return { postId: r.data.id };
   } catch(e) {
-    throw new Error('Facebook API: ' + (e.response?.data?.error?.message || e.message));
+    throw _publisherError('Facebook', e);
   }
 }
 
@@ -88,13 +102,13 @@ async function _publishInstagramJob(job, conn) {
       `https://graph.facebook.com/v18.0/${conn.igUserId}/media`,
       { image_url: imageUrl, caption: content, access_token: conn.accessToken }
     );
-    const pub = await axios.post(
+    const pub = await _publicationPost(
       `https://graph.facebook.com/v18.0/${conn.igUserId}/media_publish`,
       { creation_id: media.data.id, access_token: conn.accessToken }
     );
     return { postId: pub.data.id };
   } catch(e) {
-    throw new Error('Instagram API: ' + (e.response?.data?.error?.message || e.message));
+    throw _publisherError('Instagram', e);
   }
 }
 
@@ -464,7 +478,7 @@ exports.dispatchPublishJob = onDocumentCreated(
       });
 
     } catch(e) {
-      if (providerReturned) {
+      if (providerReturned || e.publicationUncertain) {
         // The provider accepted the post. Retrying the create event must not post it again.
         await jobRef.update({
           status: 'manual_required', publicationUncertain: true,
@@ -874,148 +888,69 @@ function _actionHtmlPage(icon, title, body, dashUrl) {
 }
 
 exports.draftAction = onRequest(
-  { invoker: 'public', region: 'us-central1',
-    secrets: ['ACTION_SIGNING_KEY', 'UNSUB_SIGNING_KEY', 'RESEND_API_KEY'] },
+  { invoker: 'public', region: 'us-central1', secrets: ['ACTION_SIGNING_KEY', 'UNSUB_SIGNING_KEY', 'RESEND_API_KEY'] },
   async (req, res) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-    const { uid, biz: bizId, draft: draftId, action, sig, cycle } = req.query;
+    res.set('Referrer-Policy', 'no-referrer');
     const dashUrl = APP_BASE_URL + '/BlastyBiz.html';
-
-    if (!uid || !draftId || !action || !sig || !cycle) {
-      return res.status(400).send(_actionHtmlPage('❌', 'Missing parameters',
-        'This action link is incomplete. Check your email for the correct link.'));
+    const { uid, biz: bizId, draft: draftId, action, sig, cycle } = req.query || {};
+    const validId = x => typeof x === 'string' && x.length > 0 && x.length <= 128 && !x.includes('/');
+    const fail = (status, message) => { throw Object.assign(new Error(message), { httpStatus: status }); };
+    const errorPage = (status, message) => res.status(status).send(_actionHtmlPage('⚠️', 'Action unavailable', message, dashUrl));
+    if (!['GET','POST'].includes(req.method)) return errorPage(405, 'Use the confirmation button in your preview link.');
+    if (![uid,bizId,draftId].every(validId) || !['approve','skip','change','pause'].includes(action) || typeof sig !== 'string' || !/^[a-f0-9]{64}$/.test(sig) || typeof cycle !== 'string' || !/^\d{13}$/.test(cycle)) {
+      return errorPage(400, 'This link is incomplete or from an older preview. Open your dashboard or use your next preview email.');
     }
-    if (!['approve', 'skip', 'change', 'pause'].includes(action)) {
-      return res.status(400).send(_actionHtmlPage('❌', 'Unknown action',
-        'This link contains an unrecognised action type.'));
-    }
-
-    // ── Verify HMAC signature ────────────────────────────────────────────────
     const key = _actionSecret();
-    if (!key) return res.status(500).send(_actionHtmlPage('⚙️', 'Configuration error',
-      'Please contact support@blastybiz.com.'));
-
-    // cycle is included in the signature so it cannot be tampered with
-    const expected = makeActionSig(uid, draftId, action, cycle, key);
-    let sigValid = false;
+    if (!key) return errorPage(503, 'Action links are temporarily unavailable. Please use your dashboard.');
+    const expected = makeActionSig(uid, bizId, draftId, action, cycle, key);
+    if (!crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex'))) return errorPage(400, 'This link is invalid. Use the original preview email.');
+    const cycleTs = Number(cycle);
+    if (Math.abs(Date.now() - cycleTs) > 14 * 86400000) return errorPage(410, 'This preview has expired. Open your current schedule in the dashboard.');
+    const userRef = db.collection('users').doc(uid);
+    const bizRef = userRef.collection('businesses').doc(bizId);
+    const draftRef = bizRef.collection('listingDrafts').doc(draftId);
+    const actionRef = db.collection('draftActions').doc(crypto.createHash('sha256').update(JSON.stringify([uid,bizId,draftId,cycle])).digest('hex'));
+    const validate = (draftSnap, bizSnap) => {
+      if (!draftSnap.exists || !bizSnap.exists) fail(404, 'This business or draft no longer exists.');
+      const draft = draftSnap.data(), schedule = draft.schedule || {};
+      if (draft.uid && draft.uid !== uid) fail(403, 'This draft is not available.');
+      if (draft.businessId && draft.businessId !== bizId) fail(403, 'This draft is not available.');
+      if (!schedule.enabled || new Date(schedule.nextRunAt).getTime() !== cycleTs) fail(409, 'This link belongs to an older schedule. Open the current draft from your dashboard.');
+      return schedule;
+    };
     try {
-      sigValid = crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex'));
-    } catch(_) { /* invalid hex — sigValid stays false */ }
-    if (!sigValid) {
-      return res.status(400).send(_actionHtmlPage('🔒', 'Invalid link',
-        'This action link is not valid or has been tampered with. Links in your original preview email are correct.'));
-    }
-
-    // ── Check link age (14 days) ─────────────────────────────────────────────
-    const cycleTs = parseInt(cycle, 10);
-    if (!cycleTs || Date.now() - cycleTs > 14 * 24 * 60 * 60 * 1000) {
-      return res.status(400).send(_actionHtmlPage('⏱', 'Link expired',
-        'This link has expired — preview links are valid for 14 days. Your next scheduled preview will arrive soon.', dashUrl));
-    }
-
-    // ── "change" — just redirect (no Firestore write needed) ────────────────
-    if (action === 'change') {
-      const target = `${APP_BASE_URL}/BlastyBiz.html${draftId ? '?edit=1' : ''}`;
-      return res.redirect(302, target);
-    }
-
-    // ── Single-use record check (approve / skip / pause) ────────────────────
-    const actionKey = `${uid}_${draftId}_${cycle}`;
-    const actionRef  = db.collection('draftActions').doc(actionKey);
-
-    let actionSnap;
-    try { actionSnap = await actionRef.get(); } catch(e) {
-      return res.status(500).send(_actionHtmlPage('⚙️', 'Error', 'Could not verify link. Please try again.'));
-    }
-    if (actionSnap.exists) {
-      const prev = actionSnap.data().action || 'this';
-      return res.send(_actionHtmlPage('✓', 'Already done',
-        `You already used the <strong>${prev}</strong> action from this email. Check your dashboard to see the current post status.`, dashUrl));
-    }
-
-    // ── Resolve draft path ───────────────────────────────────────────────────
-    // We trust uid (it's in the sig). biz is provided in the URL for direct lookup;
-    // fall back to collectionGroup scan if omitted.
-    let draftRef;
-    if (bizId) {
-      draftRef = db.collection('users').doc(uid).collection('businesses')
-        .doc(bizId).collection('listingDrafts').doc(draftId);
-    } else {
-      try {
-        const q = await db.collectionGroup('listingDrafts')
-          .where('uid', '==', uid).limit(50).get();
-        const found = q.docs.find(d => d.id === draftId);
-        if (found) draftRef = found.ref;
-      } catch(e) { /* non-fatal */ }
-    }
-
-    if (!draftRef) {
-      return res.status(404).send(_actionHtmlPage('🔍', 'Draft not found',
-        'This draft may have been deleted or moved. Head to your dashboard to manage your posts.', dashUrl));
-    }
-
-    // ── Execute action ───────────────────────────────────────────────────────
-    try {
-      if (action === 'pause') {
-        // Resolve bizId for the pause write — prefer URL param, else parse from draftRef path
-        const targetBizId = bizId || draftRef.path.split('/')[3];
-        if (targetBizId) {
-          await db.collection('users').doc(uid).collection('businesses').doc(targetBizId).update({
-            schedulingPaused: true,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
+      if (req.method === 'GET') {
+        // Email scanners may fetch this page. GET never writes or consumes the action.
+        const [draftSnap,bizSnap] = await Promise.all([draftRef.get(),bizRef.get()]);
+        validate(draftSnap,bizSnap);
+        if (action === 'change') {
+          return res.redirect(302, APP_BASE_URL + '/BlastyBiz.html?' + new URLSearchParams({bizId,draftId,ownerUid:uid}));
         }
-        await actionRef.set({ uid, draftId, action: 'pause', cycle,
-          usedAt: admin.firestore.FieldValue.serverTimestamp() });
-        // Track email engagement
-        await db.collection('users').doc(uid).update({
-          lastEmailEngagedAt: admin.firestore.FieldValue.serverTimestamp() }).catch(() => {});
-        return res.send(_actionHtmlPage('⏸', 'Scheduling paused',
-          'Your automated posts have been paused. Log in to BlastyBiz anytime to resume.', dashUrl));
+        const names = {approve:'Approve this post',skip:'Skip this occurrence',pause:'Pause this business’s schedules'};
+        return res.send(_actionHtmlPage('📋', 'Confirm your choice',
+          'Nothing has changed yet. Tap the button to confirm.<form method="post"><input type="hidden" name="confirm" value="1"><button type="submit" style="margin-top:20px;padding:14px 20px;font-size:16px">' + names[action] + '</button></form>', dashUrl));
       }
-
-      const draftSnap = await draftRef.get();
-      if (!draftSnap.exists) {
-        return res.status(404).send(_actionHtmlPage('🔍', 'Draft not found',
-          'This draft no longer exists.', dashUrl));
-      }
-      const schedule = (draftSnap.data().schedule || {});
-
-      if (action === 'approve') {
-        await draftRef.update({
-          'schedule.approved': true,
+      if (action === 'change' || req.body?.confirm !== '1') return errorPage(400, 'Use the confirmation button to perform this action.');
+      const result = await db.runTransaction(async tx => {
+        const [used,draftSnap,bizSnap,userSnap] = await Promise.all([tx.get(actionRef),tx.get(draftRef),tx.get(bizRef),tx.get(userRef)]);
+        if (used.exists) return 'already';
+        validate(draftSnap,bizSnap);
+        if (!userSnap.exists) fail(404, 'This account no longer exists.');
+        if (action === 'pause') tx.update(bizRef, { schedulingPaused: true, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+        else tx.update(draftRef, {
+          ...(action === 'approve' ? {'schedule.approved':true} : {'schedule.skipCycle':true}),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
-        await actionRef.set({ uid, draftId, action: 'approve', cycle,
-          usedAt: admin.firestore.FieldValue.serverTimestamp() });
-        await db.collection('users').doc(uid).update({
-          lastEmailEngagedAt: admin.firestore.FieldValue.serverTimestamp() }).catch(() => {});
-        return res.send(_actionHtmlPage('✅', 'Post approved!',
-          'Your post has been approved and will go out as scheduled. You don\'t need to do anything else.', dashUrl));
-      }
-
-      if (action === 'skip') {
-        // Set skipCycle flag only — do NOT advance nextRunAt here.
-        // scheduledPostingCheck sees the flag, advances nextRunAt exactly once,
-        // then clears it. Advancing here too would skip two cycles.
-        await draftRef.update({
-          'schedule.skipCycle':     true,
-          'schedule.previewSentAt': admin.firestore.FieldValue.delete(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        await actionRef.set({ uid, draftId, action: 'skip', cycle,
-          usedAt: admin.firestore.FieldValue.serverTimestamp() });
-        await db.collection('users').doc(uid).update({
-          lastEmailEngagedAt: admin.firestore.FieldValue.serverTimestamp() }).catch(() => {});
-        const nextRunAt = computeNextRunAt(schedule, new Date(schedule.nextRunAt || Date.now()));
-        const nextFmt = nextRunAt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-        return res.send(_actionHtmlPage('⏭', 'Post skipped',
-          `This cycle has been skipped. Your next scheduled post is due <strong>${nextFmt}</strong>.`, dashUrl));
-      }
+        tx.create(actionRef, { uid, bizId, draftId, action, cycle, usedAt: admin.firestore.FieldValue.serverTimestamp() });
+        tx.update(userRef, {lastEmailEngagedAt:admin.firestore.FieldValue.serverTimestamp()});
+        return action;
+      });
+      const messages = { already:'A choice from this preview was already saved. Open your dashboard to see its status.', approve:'Approval saved for this scheduled occurrence.', skip:'This occurrence will be skipped.', pause:'Scheduling is paused for this business.' };
+      return res.send(_actionHtmlPage('✓', 'Choice saved', messages[result], dashUrl));
     } catch(e) {
-      console.error('[draftAction] error:', e.message);
-      return res.status(500).send(_actionHtmlPage('⚙️', 'Something went wrong',
-        'Please try again or contact support@blastybiz.com.'));
+      console.error('[draftAction]', e.message);
+      return errorPage(e.httpStatus || 500, e.httpStatus ? e.message : 'Your choice could not be saved. Please retry.');
     }
   }
 );

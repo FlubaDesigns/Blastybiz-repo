@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="website-utils.js"></script>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta charset="UTF-8"/>
   <meta name="theme-color" content="#000000"/>
@@ -230,6 +231,8 @@
             <input class="cb-input" id="f-bizName" required type="text" placeholder="e.g. Mike's Auto Repair" autocomplete="organization"/>
           </div>
           <div class="cb-field">
+            <div id="cb-has-website"><label class="cb-label" for="f-hasWebsite">Do you have a website?</label>
+            <select id="f-hasWebsite" class="cb-select" onchange="cbSyncLocation()"><option value="">Choose Yes or No</option><option value="yes">Yes</option><option value="no">No</option></select></div>
             <label class="cb-label">Website</label>
             <input class="cb-input" id="f-website" type="url" placeholder="https://yoursite.com" autocomplete="url"/>
           </div>
@@ -409,20 +412,32 @@ function cbToggle(id) {
 function cbSyncLocation() {
   const online = document.getElementById('f-locationType').value === 'online';
   document.getElementById('cb-address-fields').style.display = online ? 'none' : '';
+  const choice = document.getElementById('f-hasWebsite');
+  const website = document.getElementById('f-website');
+  document.getElementById('cb-has-website').style.display = online ? 'none' : '';
+  choice.required = !online;
+  choice.disabled = online;
+  website.disabled = !online && choice.value === 'no';
+  website.required = online ? (window._cbNeedsCampaign || window._cbStoredWebsite) : choice.value === 'yes';
+  if (website.disabled) website.value = '';
+
 }
 document.getElementById('f-locationType').addEventListener('change', cbSyncLocation);
 window._cbReady = false;
 window._cbNeedsCampaign = true;
+window._cbStoredWebsite = false;
 window._cbRestoredFields = new Set();
-function cbNormalizeWebsite(value) {
-  const trimmed = value.trim();
-  return !trimmed || /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed.replace(/^\/\//, '');
-}
+function cbNormalizeWebsite(value) { return BBWebsite.normalize(value); }
 // The real input constraints are shared by Direct submit and Guided next.
 function cbFieldError(field) {
   const el = document.getElementById(field);
   if (!el || el.disabled) return '';
-  if (field === 'f-website') el.value = cbNormalizeWebsite(el.value);
+  if (field === 'f-website') {
+    el.value = cbNormalizeWebsite(el.value);
+    const problem = BBWebsite.error(el.value, el.required);
+    if (problem) return problem;
+  }
+  if (field === 'f-hasWebsite' && !['yes','no'].includes(el.value)) return 'Please choose Yes or No.';
   if (el.required && !el.value.trim()) return 'Please answer this field.';
   return el.checkValidity() ? '' : el.validationMessage;
 }
@@ -476,7 +491,8 @@ var CB_GUIDE_STEPS = [
   { field:'f-city',   section:'cbs-info', skipIf:cbIsOnline, ask:'Which city?' },
   { field:'f-state',  section:'cbs-info', skipIf:cbIsOnline, ask:'And the state?' },
   { field:'f-zip',    section:'cbs-info', skipIf:cbIsOnline, ask:'ZIP code?' },
-  { field:'f-website', section:'cbs-info', ask:'Got a website I should point people to?' },
+  { field:'f-hasWebsite', section:'cbs-info', skipIf:cbIsOnline, ask:'Does your business have a website?' },
+  { field:'f-website', section:'cbs-info', skipIf:a=>!cbIsOnline(a)&&a['f-hasWebsite']==='no', ask:'Got a website I should point people to?' },
   { field:'f-story', section:'cbs-story', mood:'s-ask',
     ask:'Now the good stuff — how did the business get started?',
     hint:'The more you tell me, the less generic your ads sound.' },
@@ -644,6 +660,7 @@ onAuthStateChanged(auth, async user => {
       const bizData = bizSnap.data();
       existingCampaignId = bizData.activeCampaign || null;
       window._cbNeedsCampaign = !existingCampaignId;
+      window._cbStoredWebsite = !!String(bizData.website || '').trim();
       prefill(bizData);
     } else {
       const userSnap = await getDoc(doc(db, 'users', user.uid));
@@ -707,6 +724,7 @@ function prefill(d) {
   s('f-phone',     d.phone||'');
   s('f-email',     d.email||'');
   s('f-website',   d.website||'');
+  s('f-hasWebsite', d.website ? 'yes' : 'no');
   // Address may be top-level (canonical) or nested (older docs) — prefer whichever has data.
   const addr = d.address || {};
   s('f-street', d.street || addr.street || '');

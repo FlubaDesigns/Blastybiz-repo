@@ -115,7 +115,7 @@ async function adminViews() {
   await photos();revenue();await dispatcherAndQueue();await adminViews();
   const setup=fs.readFileSync('public/BlastyBiz-CreateBiz.html','utf8');
   const normalize=setup.slice(setup.indexOf('function cbNormalizeWebsite'),setup.indexOf('// The real input constraints'));
-  const cc={};vm.runInNewContext(normalize,cc);
+  const cc={URL};vm.runInNewContext(fs.readFileSync('public/website-utils.js','utf8'),cc);vm.runInNewContext(normalize,cc);
   ok(cc.cbNormalizeWebsite(' example.com ')==='https://example.com','bare website normalized');
   ok(cc.cbNormalizeWebsite('https://example.com')==='https://example.com'&&cc.cbNormalizeWebsite('')==='','existing scheme and empty optional value preserved');
   console.log(`PASS: ${checks} review regression assertions (actual code; mocked services).`);
