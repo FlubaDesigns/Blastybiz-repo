@@ -38,6 +38,7 @@ const ALLOWLIST = new Set([
   'index.html',                      // root redirect
   'blastybiz-header.html',           // partial, fetched by header-loader.js
   'blastybiz-footer.html',           // partial, fetched inline
+  'mascot-demo.html',              // standalone noindex component portability proof; intentionally unlinked
   '404.html',                        // Firebase Hosting error page — referenced in firebase.json, not HTML links
   'BlastyBiz-Businesses.html',       // multi-business switcher — future feature, linked from nav conditionally
   'BlastyBiz-Preview.html',          // pre-auth ad preview landing — intentionally not linked from other pages
@@ -74,6 +75,12 @@ for (const f of htmlFiles) {
   for (const [other, content] of Object.entries(fileContents)) {
     if (other === f) continue;
     if (content.includes(basename)) refCount++;
+  }
+  // The platform hub links every configured slug through this existing template.
+  const platformPage = /^BlastyBiz-Platform-([a-z0-9-]+)\.html$/.exec(f);
+  if (platformPage && fileContents['BlastyBiz-Platforms.html']?.includes('BlastyBiz-Platform-${p.slug}.html')) {
+    const config = fs.readFileSync(path.join(PUBLIC, 'platforms-config.js'), 'utf8');
+    if (new RegExp("slug:\\s*['\"]" + platformPage[1] + "['\"]").test(config)) refCount++;
   }
   // Also check JS files
   const jsFiles = fs.readdirSync(PUBLIC).filter(j => j.endsWith('.js'));

@@ -1,4 +1,501 @@
+# Main release reconciliation — 2026-09-29
+
+## What was actually delivered before this reconciliation
+
+All four source ZIPs and Claude responses were read and compared. The Batch 02–04 patches reproduce their delivered source; 134 executable inline scripts parsed in each batch. The prior ZIPs were source handoffs, not deployment evidence. GitHub Main was still `13d21e2144552181343ab9b6e04eed64575486b4`. None of the cumulative Pass 01–05 changes was on that Main commit. Passes 03–04 also counted review corrections as new numbered fixes, contrary to the requested workflow. This reconciliation adds no new numbered pass.
+
+| Delivered scope | Reconciled source |
+| --- | --- |
+| Batch 01, fixes 1–10 and response A–F | Retained in cumulative source; subsequent corrections retained |
+| Batch 02, fixes 11–20 and response G–L | Retained in cumulative source; subsequent corrections retained |
+| Batch 03, fixes 21–30 and response M–Q | Retained; photo deletion, HEIC detection, featured selection, retry wording, scope tracking corrected |
+| Batch 04, fixes 31–40 and response R–V | Retained; remaining retry, notification, recovery, revenue and publication uncertainty issues corrected below |
+| Pass 05, fixes 41–50 and response W–Z | Retained; website normalization, featured deletion and visible guide load errors corrected; Z covered by R–V |
+
+## Review corrections, separate from new passes
+
+- **R:** Both the retry transaction and queue refuse plan-gated jobs. The normal dispatcher rechecks the gate inside its claim transaction.
+- **S:** Operator retry claims persist `adminRetry`; failed-job notification exits before email lookup for these failures. Normal dispatch explicitly clears the flag.
+- **T:** Processing/running jobs at least 15 minutes old offer an explicit platform-check recovery. A fresh processing claim is refused. A confirmed already-published job can be marked complete. Paused queue jobs have an explicit Resume and publish action.
+- **U:** Plan comparisons are case insensitive; prices come from `settings/pricing`. The monthly-rate revenue estimate deduplicates active owners, identifies itself as an estimate, and shows unavailable if prices cannot be read. The active/loaded business ratio is labeled Active accounts share, not Gross Margin. Square remains billing authority; this is not actual annual-adjusted MRR.
+- **V:** If the provider returns success but the success-record write fails, the job becomes manual-required with publication uncertainty; the response warns to check the platform before retrying. Manual fallback is presented as an informational result. A total Firestore outage can also prevent recording the fallback; the error still warns the operator, and stale-processing recovery remains available after restoration.
+- **W:** Bare website domains gain `https://` before shared field validation and persistence.
+- **X:** Photo deletion atomically clears the matching business featured-photo field, image document and matching legacy campaign-array entries. Cache updates wait for database success and respect the captured business.
+- **Y:** Failed initialization is visible beside the guide start button as well as at the form footer. Clicking while loading provides status.
+- **Z:** Batch 04 corrections R–V are incorporated in this same cumulative release.
+
+## Release delivery and verification
+
+The old GitHub workflow had invalid direct secret references in `if` and no deployment job. The replacement runs release checks and focused regression checks, then deploys only the five changed Cloud Functions, Firestore rules/indexes, Storage rules, and Hosting to `blastybiz-9523e`. It requires the existing `FIREBASE_TOKEN` repository secret and fails explicitly if absent. It does not force-delete remote indexes or functions. A release marker and read-only checks verify the Main SHA on both production domains after successful deployment. Commit inclusion alone does not prove deployment; the Actions run must succeed.
+
+Local verification: all 134 executable inline scripts parse; deployment JSON and workflow YAML parse; backend syntax checks pass; release checks pass including 37 OPTIONS responses (204). Actual-source tests cover photo/setup behavior and retry concurrency, held/paused/stale jobs, failure notification suppression, post-success database failure, atomic photo cleanup, plan/pricing estimates, website normalization and visible initialization failure. Dependencies/services are mocked for functional tests; OPTIONS verifies endpoint availability only, not newly deployed code. No real social posts, email sends, charges or customer writes were used for testing. Full device HEIC support and authenticated live customer flows remain unverified.
+
+The historical audit below preserves the original pass records and limitations; its earlier “not deployed” statements describe those handoffs. Broader V1 requirements outside these delivered passes (such as website Yes/No branching and complete Ad migration) are not claimed complete.
+
+---
+
 # BlastyBiz — Bug Fix Audit Log
+
+## Pass 05 — ten document-driven fixes, plus separate review corrections — 2026-09-28
+
+**Actual source changes are included in this ZIP.** Claude's Batch 03 findings are corrections to earlier work; they do not count toward these ten Pass 05 fixes. This package is cumulative through Pass 05. Claude's Pass 04 response has not yet been received or applied. No push or deployment was performed.
+
+### Earlier-work corrections — Claude Batch 03, not Pass 05 fixes
+
+Source: `BlastyBiz-Batch03-Review.zip`. Files: `public/BlastyBiz.html`, `public/BlastyBiz-Admin-Failed-Jobs.html`. Exact delta: `CORRECTIONS-CLAUDE-BATCH03.patch`.
+
+- **M — deletion:** prevent repeated deletion of the same item while its database operation runs; restore retry controls on failure. Dismissing a failed upload suppresses only Storage's object-not-found error; permission and other Storage failures remain visible. Existing database-first deletion is retained.
+- **N — HEIC:** the existing decoder now recognizes known HEIF/HEIC major brands in the first twelve bytes when filename/MIME metadata is missing or generic. Reuses heic2any; no new decoder dependency. Mocked conversion is tested, not physical-device codec support.
+- **O — featured selection:** use the existing business `featuredPhoto` field. Load it with the profile and restore the selected tile by URL after scope/grid reloads. Change the cache only after a successful database write; failed saves keep the previous selection. No second per-campaign selection field was introduced.
+- **P — status wording:** label the historical retry count “Legacy retry status.” Retain the existing historical query; no invented new retry state.
+- **Q — scope feedback:** keep references to unfinished uploads across scope changes and save uploads to their captured business/campaign. Clear registry entries on completion or dismissal. Correct the Pro global-cap wording. Report campaign image-read failures in the existing hint and retain the existing retry interaction.
+
+Blast radius read: image picker, cap/render paths, compression/byte checks, upload and database-image helpers, scope refresh/campaign selection, profile load, featured-photo selection and generation consumers, delete helpers, existing Storage rules, Failed Jobs query/render, and Claude's findings. Tests executed the actual changed functions with mocked Storage/Firestore/decoder dependencies: **27 assertions passed**, covering extensionless brands, ordinary images, decode failure, pending scope changes, wrong-campaign exclusion, stale reads, visible read errors, restored selection, selection failure/success/deselection, select/delete overlap, database deletion failure, repeated delete, missing-object versus permission errors, and upload completion after switching campaigns.
+
+### Pass 05 source documents and scope
+
+Original documents: `BB/bb_profile.docx`, `BB/bb_story.docx`, `BB/bb_form1_v2.docx`, `BB/Old/blasty_v1_arch.docx`, and `BB/BlastyBiz_V1_Implementation_Sequence.docx` (extracted text read). These fixes repair the existing canonical CreateBiz form and its existing GuidedSetup layer. They do not constitute completion of every phase in those documents.
+
+### Fix 41 — Saving a business created an unrelated campaign
+
+- **Evidence:** CreateBiz always allocated a new campaign, switched activeCampaign, rewrote createdAt, and redirected with autogenerate even when editing an established business.
+- **Change:** `public/BlastyBiz-CreateBiz.html` keeps an existing active campaign untouched, omits the first-campaign section for that edit, and saves only business changes. Business uid/createdAt are written only when creating a business. The legacy profile-to-CreateBiz route with no active campaign still creates its first campaign. Profile-only edits no longer request AI generation.
+- **Document basis:** architecture/Story require separate persistent business knowledge and campaign knowledge.
+- **Blast radius:** CreateBiz load/save, Profile and TestBlasty entry links, main app Add Business/campaign loader/URL generation, Choose Plan redirect, business and campaign rules.
+- **Test:** established business writes one document, no campaign or immutable identity fields, no activeCampaign overwrite, no autogenerate redirect; incomplete legacy business still gets a first campaign. Update payload keys match the actual rule allowlist statically.
+
+### Fix 42 — Account pointed to a business before its save succeeded
+
+- **Evidence:** user activeBusiness was written outside and before the business/campaign batch.
+- **Change:** add that existing account update to the same writeBatch as business/campaign creation.
+- **Document basis:** canonical persistence and coherent onboarding return.
+- **Blast radius:** CreateBiz batch, user/business/campaign rules, existing trial user creation and activeBusiness readers.
+- **Test:** all three writes occur in one batch; pointer matches business ID; simulated failed commit retains the form and permits retry. Real Firestore batch enforcement was not exercised.
+
+### Fix 43 — Edit could overwrite newer saved Story with stale legacy answers
+
+- **Evidence:** prefill read top-level story fields even though the current Story editor updates aiContext; business name ignored businessName.
+- **Change:** read canonical businessName and aiContext first, with legacy fallbacks. Preserve explicitly empty canonical answers instead of reviving stale values.
+- **Document basis:** persistent canonical business-context data.
+- **Blast radius:** prefill, business save, main app Story editor/profile loading, AI prompt's aiContext/globalMemory consumers.
+- **Test:** canonical name/Story win over conflicting legacy fields; empty canonical differentiation remains empty; saved data uses the same existing fields.
+
+### Fix 44 — Location choices and restored visibility disagreed with Profile
+
+- **Evidence:** Both was offered and restoring online location did not hide physical address fields.
+- **Change:** offer only Brick & Mortar and Online Only; reuse one visibility function for changes and prefill. Legacy Both maps to physical and retains physical details.
+- **Document basis:** bb_profile's explicit two-choice model.
+- **Blast radius:** select, prefill, Guided skipIf, address collection/save and main profile readers.
+- **Test:** online restore hides address, physical/legacy Both shows it, Both option absent. Website Yes/No branching remains separately outstanding; this fix does not claim that entire specification is complete.
+
+### Fix 45 — Guided and Direct validated different answers
+
+- **Evidence:** Guided required owner name and checked email while Direct did neither.
+- **Change:** actual input constraints and one cbFieldError function serve both modes. Guided required metadata reads the real field. Direct opens/focuses the offending section/field.
+- **Document basis:** one canonical form and validation, with Guided as an overlay.
+- **Blast radius:** markup constraints, guide metadata, Guided next, submit, collapsed-section opening.
+- **Test:** both modes reject missing owner and malformed email; no save occurs on invalid Direct submission. DOM validity behavior was mocked, not browser-engine tested.
+
+### Fix 46 — Initial Story was entirely skippable
+
+- **Evidence:** all five Story answers were optional and there were no explicit empty-state answers.
+- **Change:** initial setup requires answers; the existing awards/other fields accept explicit Nothing yet/Nothing else through buttons. Broaden awards wording to reviews/certifications/milestones. Established business edits do not force legacy owners to redo onboarding. Required guide steps cannot bypass validation through Skip.
+- **Document basis:** bb_story's five questions and two explicit alternate answers.
+- **Blast radius:** Story markup, canonical constraints, guide, aiContext/globalMemory save and existing consumers.
+- **Test:** missing initial Story prevents save; Nothing yet/Nothing else persist in the existing fields; established business edit remains available; required-step skip cannot advance.
+
+### Fix 47 — Guide started before saved answers arrived
+
+- **Evidence:** guide=1 started immediately; asynchronous prefill could arrive after questions started and edits could save before existing data loaded.
+- **Change:** start the requested guide after account/business, platform and page-config loading finishes. Restore known account name/email without copying another business. Skip valid answered first-five fields; retain unanswered fields. Failed reads show an error and leave save unavailable rather than overwriting unknown data. Auth refresh no longer re-applies prefill over typed edits.
+- **Document basis:** bb_profile/bb_form1_v2 restoration before continuing and no repeated known questions.
+- **Blast radius:** auth callback, trial account name/email, preview import, platform/config promises, guide entry and submit.
+- **Test:** deferred prefill starts no guide/save; after resolution identity is restored and guide begins at next unanswered field; failed read performs no writes. Full pre-email five-field collection/progress persistence remains outstanding.
+
+### Fix 48 — Direct users could not keyboard-reach future sections
+
+- **Evidence:** CreateBiz initialized FormGuide even in Direct mode, which set aria-hidden and tabindex=-1 on future sections and their heading buttons.
+- **Change:** remove that page's second section-locking overlay and its dependency. Keep the existing accordion controls and GuidedSetup. Shared FormGuide remains unchanged for other pages.
+- **Document basis:** Direct and Guided expose the same canonical form; no duplicate wizard.
+- **Blast radius:** FormGuide initialization/accessibility behavior, local accordion, Guided openSection and all GuidedSetup callers (CreateBiz is the sole active caller).
+- **Test:** source no longer initializes/imports FormGuide; ordinary section controls retain native attributes. No screen-reader or browser keyboard session was available.
+
+### Fix 49 — Setup falsely claimed a successful launch
+
+- **Evidence:** Guided finish fired confetti before saving; setup success said You're Live although it only saved records.
+- **Change:** remove finish-time confetti from GuidedSetup. Use Save wording and Business saved with destination-specific text only after commit. Wait for config before applying the runtime save label; custom section headings without a badge no longer throw during configuration.
+- **Document basis:** bb_story reserves confetti for first successful Blast; setup is not publishing.
+- **Blast radius:** Guided finish, canonical submit and success, editable ob2Steps config, Choose Plan/main redirects.
+- **Test:** Guided finish never invokes confetti; failed commit retains form; successful commit says Business saved. Existing admin customization definitions are historical and have not been redesigned.
+
+### Fix 50 — Repeated submission could create duplicate businesses/campaigns
+
+- **Evidence:** only the Direct button was disabled; the guide could invoke the same submit repeatedly, allocating new IDs each time or after a failed attempt.
+- **Change:** one in-flight flag for the existing save function; keep newly allocated IDs across retry within the page. Release the flag on failure and retain it after success while redirecting.
+- **Document basis:** canonical persistence and no duplicate records/flows.
+- **Blast radius:** both submit callers, batch construction, failed-save retry and successful redirect.
+- **Test:** overlapping calls produce one batch; failed attempt can retry using identical business/campaign IDs. This is page-session duplicate prevention, not cross-device exactly-once behavior.
+
+### Verification and remaining scope
+
+**38 setup assertions and 27 photo assertions passed.** These executed actual extracted/loaded source with mocked DOM/Firebase/Storage/decoder dependencies. Nine changed-page script/module bodies parsed with Node; git diff whitespace validation passed. No permanent test framework, release gate, new service or dependency was added. Temporary test harnesses were kept outside the repository and are not shipping code.
+
+Headless browser execution was unavailable because the browser executable was absent. No live Firebase writes/rule-emulator run, actual phone HEIC decode, paid generation, publishing, email, billing or deployment was performed. Do not infer those succeeded.
+
+Still outstanding from the original V1 documents: canonical hasWebsite branching, full pre-email five-answer/progress restoration, broader legacy onboarding consolidation, per-ad media/snapshot model, scheduling/occurrence/Activity phases and other prior audit limitations. Earlier legacy embedded-photo deletion and dangling stored featuredPhoto after deleting a selected photo remain open; financial calculations also remain open. Ten fixes does not mean every reported issue is resolved.
+
+---
+
+## Claude review — Batch 04: fixes 31–40 — 2026-09-28
+
+Responds to `BlastyBiz-Batch02-Review.zip` against the current thirty-fix source. David explicitly authorized the permission/check repairs during this pass: “What permission changes you have full permission to fix this.” The previously proposed admin business-read rule/index and owner-only photo deletion rules are now applied locally, along with the retry repair and Queue Manager index. Earlier audit entries describing them as awaiting approval are historical and superseded here. Nothing has been pushed or deployed.
+
+`CHANGES-BATCH-04.patch` isolates this pass against `BlastyBiz-30-fixes-Claude-review.zip`. Source includes all forty fixes. No new services, dependencies, permanent test files or release gates were added.
+
+### Disposition of Claude's Batch 02 review
+
+- **G:** Fixed the unsupported certainty in account counts (Fix 35). The “can never be above zero” conclusion was too strong: an existing empty `businessName` differs from an absent field, external/historical status records are unknown, and current Onboard2 redirects to CreateBiz, which writes the business `onboarded` flag. Trial users are represented by `users.plan`; that is not the same as business `subscriptionStatus`. We did not invent synchronization or migrate data.
+- **H/I:** Logs now display/search listing names and show platform; dropdowns immediately use the existing renderer (31–32).
+- **J:** Queue read errors clear stale data (33); index declared (40). Failed Jobs' error callback was already repaired in Batch 03 and was not duplicated.
+- **K:** A simple read/check would still race. The existing normal dispatcher transaction claims `processing`, not just `running`. The retry endpoint now coordinates through the same document/state with an atomic transaction (39). Queue renders `processing` correctly instead of offering Run Now for it.
+- **L:** Bulk results wait for all selected requests and distinguish manual outcomes from failures (34). Single-row manual outcomes receive the same treatment.
+- Batch 01's remaining rule/index proposals are implemented in 36–38. Earlier photo/placeholder repairs from Batch 03 are preserved.
+
+### Fix 31 — Logs omitted the writer's listing name and platform
+
+- **File/change:** `public/BlastyBiz-Admin-Logs.html`; business-name fallback includes `listingName`; search includes it; the related column displays platform when appropriate and is labeled Platform / Related Record. Existing ID fallbacks and escaping remain.
+- **Affected flow read:** entire page, shared escaping, actual `bb:addHistory` producer and existing backend reader.
+- **Verification:** actual extracted module displays an escaped listing name and platform; searching the listing name selects that row; older businessName/type fixtures still display.
+
+### Fix 32 — Log dropdowns appeared unresponsive on phones
+
+- **File/change:** same page; both existing selects call `renderLogs` on change. Search, Enter and Reset retain their behavior.
+- **Affected flow read:** input listeners, existing single cache/renderer, read-error state.
+- **Verification:** type and level changes immediately filter, combined filters give no-match results, Reset restores records, and filter changes cannot overwrite a current read error with old data.
+
+### Fix 33 — Queue Manager left stale or fictional displays after read failure
+
+- **File/change:** `public/BlastyBiz-Admin-Queue-Manager.html`; added a listener error callback clearing both maps and metrics, with an escaped error row. Uses the existing shared escape utility rather than a separate inline copy. Removed fictional initial rows/counts and fictional selected-job/payload content. Relabeled Completed Today as Completed in this list because the actual query has no today filter.
+- **Affected flow read:** complete page, all job actions, map lookup/update paths, latest-50 query, existing escape utility, admin guard and query indexes.
+- **Verification:** populated → escaped error → empty recovery; stale job actions make no database write after maps clear; initial sample businesses are absent. Existing details/receipt controls were not implemented as a new feature.
+
+### Fix 34 — Bulk outcomes were hidden by the first rejection
+
+- **File/change:** `public/BlastyBiz-Admin-Failed-Jobs.html`; Retry and Manual Follow-up use `Promise.allSettled` and one shared result-summary function. Existing API helper returns manual results separately from actual failures. A single-row retry displays the manual message without calling it a failed retry.
+- **Affected flow read:** full page, all API-helper callers, selection deduplication, backend retry/manual-follow-up response contracts and existing row/error handling.
+- **Verification:** duplicate selected checkbox IDs result in one request per job; a held successful request plus manual and failed requests produces no premature summary, then reports all three outcomes and first error; button labels restore. Manual follow-up reports all completed actions; single-row manual messaging passes.
+- **Limit:** this changes result reporting, not publication delivery guarantees. Close Selected still uses its existing separate flow.
+
+### Fix 35 — Account statistics asserted status coverage the writers do not provide
+
+- **Files/change:** `public/BlastyBiz-Admin-Users.html` and `public/BlastyBiz-Admin-Subscriptions.html`; absent recorded Trial/Past Due states display a dash/unavailable instead of a confident zero. Positive recorded statuses remain visible. Incomplete counts only explicit business `onboarded === false`; missing flags are unknown. Attention is labeled as recorded flags. Subscriptions shows Recorded Trials instead of Trials Ending in the next seven days, and its empty follow-up message describes recorded statuses, not a clean bill of health.
+- **Affected flow read:** both pages and their queries, payment/admin status writers, CreateBiz business write, Onboard2's active email-link/redirect path, business creation endpoint and user trial-plan representation.
+- **Verification:** missing statuses/flags show unknown; explicit trial, past-due and incomplete records show their actual counts, including an empty-name record; active count and loaded-business total still update. No new definition is inferred from a missing name or flag. Query coverage remains limited to existing named-business/latest-100 reads.
+- **Limit:** no trial/payment-state synchronization or seven-day expiry calculation was added. Existing MRR/gross-margin calculations still need separate correction as noted in Batch 03.
+
+### Fix 36 — Admin collection-group business reads lacked their matching rule
+
+- **File/change:** `firestore.rules`; one `/{path=**}/businesses/{bizId}` match grants read through the existing `isAdmin()` predicate. It adds no write grant and does not modify that predicate or owner rules.
+- **Affected flow read:** version-2 rule structure, isAdmin/config-admin lookup, existing nested business permissions, Users/Subscriptions group queries and Firebase deployment configuration.
+- **Verification:** static inspection confirms one read-only group match and unchanged surrounding access conditions. No Firebase emulator or live authorization execution was available; permission behavior is not claimed as live-tested.
+
+### Fix 37 — Business-name group sorting lacked its index declaration
+
+- **File/change:** `firestore.indexes.json`; one `businesses.businessName` override adds ascending collection-group indexing and explicitly retains the existing default collection ascending/descending/array modes.
+- **Affected flow read:** both admin queries, existing field overrides and deployment mapping.
+- **Verification:** JSON parses; the exact group/field/order exists once; collection modes remain declared. Index has not been deployed/built against the live project.
+
+### Fix 38 — Photo delete rules incorrectly depended on upload metadata
+
+- **File/change:** `storage.rules`; in both existing photo path matches, original owner/size/image-type conditions now apply to create/update; delete uses the same signed-in-owner condition without upload metadata. Read conditions remain unchanged.
+- **Affected flow read:** both current and legacy Storage paths, browser upload/delete helpers, Firestore image deletion, server-side photo paths and Firebase deployment configuration.
+- **Verification:** static comparison confirms both owner-only delete declarations and preservation of both upload-size/type conditions. Actual rule compilation/enforcement and end-to-end file deletion were not exercised against Firebase. Batch 03's independently tested database-first deletion remains intact.
+
+### Fix 39 — Retry could race another retry or the normal dispatcher
+
+- **Files/change:** `functions/modules/admin.js`; immediately before publishing, an atomic transaction reads current status and claims the existing `processing` state. Only existing pending/retry/failure/manual-action states are eligible; completed/busy/closed/paused/unknown states are rejected. Changed platform during preflight returns a refresh message. A failed claimed publish records `failed` instead of leaving the claim stuck. Queue Manager recognizes `processing` as Posting Now, offers no Run Now on it, and stops sending its unused `force` field. Force is not a bypass.
+- **Affected flow read:** retry preflight/publish/manual/success/failure branches, normal dispatcher's full transactional claim/retry flow, shared status constants, publisher contracts, both admin callers and existing status notification triggers.
+- **Verification:** ran actual extracted retry and normal-dispatcher functions with mocked serialized Firestore transactions/providers. Two simultaneous admin retries, admin-before-dispatcher and dispatcher-before-admin each call the provider once. Busy/completed/closed states reject even when request includes force. Manual fallback, provider failure, missing job and disconnected-account paths pass. Queue processing display/status count passes. All network/email/provider calls mocked.
+- **Limit:** these are application-level concurrency tests, not live Firestore transaction tests. A provider accepting a post followed by a timeout or database-write failure can still leave an ambiguous outcome; this is not an exactly-once provider-delivery guarantee. A recorded retry failure uses the existing failed-job notification path; no new notification system was added.
+
+### Fix 40 — Queue ordering lacked a single-field group index declaration
+
+- **File/change:** `firestore.indexes.json`; adds one descending collection-group `publishJobs.updatedAt` override, preserving default collection modes. Existing status/updatedAt composite indexes remain because filtered failed-job queries still use them.
+- **Affected flow read:** unfiltered Queue Manager query, filtered Failed Jobs query, all existing index declarations and deployment configuration.
+- **Verification:** JSON/field/mode uniqueness and exact query-order coverage verified statically. Live query/index-build status is unknown until deployment.
+
+### Verification and references
+
+Focused tests ran actual page/backend function source with external dependencies mocked, including the scenarios above. Changed page modules and backend JavaScript parsed successfully; whitespace diff validation passed. No paid service calls, real posting, billing actions, email sends, deployment or live database writes occurred. No permanent test/gate files were created.
+
+Firebase primary documentation was checked for the rule/index changes:
+- https://firebase.google.com/docs/firestore/security/rules-query (collection-group rule requirements)
+- https://firebase.google.com/docs/firestore/query-data/index-overview (ordered group-query indexes)
+- https://firebase.google.com/docs/storage/security/rules-conditions (write metadata/conditions)
+
+Remaining limitations from earlier audits, including legacy embedded-photo deletion, financial calculations and untested live deployment behavior, remain open. This checkpoint is not launch approval.
+
+## Claude review — Batch 03: fixes 21–30 — 2026-09-28
+
+This pass responds to `BlastyBiz-Batch01-Review.zip` and continues from the twenty-fix package. The new package contains current source for all thirty fixes. `CHANGES-BATCH-03.patch` isolates this pass against the twenty-fix ZIP. Nothing has been pushed or deployed. No new permanent test files, release gates, security mechanisms, dependencies or services were added. The existing campaign photo loader is reused by campaign selection; the duplicate loader was removed.
+
+### Response to Claude's Batch 01 findings
+
+- **A:** Batch 02 fixes 15–17 already handle the real writer's fields and `createdAt`. We retain business/draft IDs in the display instead of copying every suggested presentation choice. No duplicate implementation added.
+- **B:** Subscriptions error handling is fixed below. The repository lacks the proposed businesses collection-group read rule and businessName group index. Their live deployment state and live query failure are unverified. Rule/index proposals are recorded below for David's explicit approval.
+- **C:** Record deletion now precedes file deletion; failed record deletion keeps the photo visible. Storage rules remain unchanged pending approval. A denied file deletion can therefore still leave an orphaned file, with a visible explanation.
+- **D:** Batch 02 already fixed the stale failed-job render. This pass adds the missing error handling using the same state identity, with no second sequence counter.
+- **E:** Both pages' fictional initial figures/rows are removed. Failed-job summary values are connected to the existing snapshot.
+- **F:** A generic-MIME JPEG fixture reproduced the old rejection. The existing MIME condition now allows `application/octet-stream` through the existing byte check and decoder. Physical Galaxy/HEIC decoding has not been tested; no device-success claim is made.
+
+### Fix 21 — Subscriptions hid business-list read failures
+
+- **File/change:** `public/BlastyBiz-Admin-Subscriptions.html`; the existing business listener now clears the export cache, marks business-derived totals Unavailable, and puts an escaped error into both tables. An empty successful snapshot also clears the previous margin display.
+- **Affected flow read:** full page, both independent listeners, billing export and recovery actions, pricing editor, admin guard, Users query, business rules/indexes and deployment configuration.
+- **Verification:** populated → error → empty recovery; escaped error in both tables; stale export data cleared; independent AI spend still updates. External calls mocked.
+- **Limit:** existing MRR uses hardcoded plan prices and the existing margin calculation is an active-account percentage, not a financial gross-margin calculation. Those calculations are not certified by this presentation/error repair.
+
+### Fix 22 — Subscriptions displayed invented starting account/revenue rows
+
+- **File/change:** same page; initial MRR, past-due and trial values show Loading; Plan Mix and Billing Follow-up start with one loading row instead of sample businesses and account counts.
+- **Affected flow read:** page markup and the existing snapshot replacements/error callback from Fix 21.
+- **Verification:** fabricated businesses/counts absent; existing successful render replaces placeholders; error render replaces them with unavailable/error state.
+
+### Fix 23 — Failed Jobs could stay on Loading or stale data after a listener error
+
+- **File/change:** `public/BlastyBiz-Admin-Failed-Jobs.html`; added the existing listener's error callback. It clears loaded jobs/selection, replaces desktop/mobile content with the error, and marks summaries unavailable.
+- **Affected flow read:** complete page, desktop/mobile rows, row/bulk actions, name lookup, export, snapshot race handling and shared escaping.
+- **Verification:** a held name lookup cannot overwrite a newer escaped read error; mobile error is text content; Select All clears; a later empty/populated fixture restores the correct display.
+
+### Fix 24 — Failed-job summaries showed fictional or mislabeled counts
+
+- **File/change:** same page; initial statistics are dashes. The hardcoded four auto-retries is replaced by a count of `retry_pending`, labeled Retries pending. The statistic already counting `manual_required` is labeled Manual Required, not Validation. The loading subtitle now settles after success/empty/error.
+- **Affected flow read:** actual status predicates, query's latest-50 limit, summary and empty/error paths.
+- **Verification:** populated retry fixture shows one; empty shows zero; errors show dashes. Labels describe the data being counted, without claiming a scheduler dispatch happened.
+
+### Fix 25 — A failed Storage delete blocked photo-record removal
+
+- **File/change:** `public/BlastyBiz.html`, `_bbDeletePhoto`; calls the existing global/campaign record deletion helper before independently attempting Storage deletion. Storage failure is reported after the library record is removed.
+- **Affected flow read:** both delete helpers and their ID/URL paths, save/load helpers, grid remove buttons, global cache, image subcollection rules, both Storage paths and active campaign/scope state.
+- **Verification:** actual helper code with mocked Firestore/Storage performs record deletion first; denied file deletion does not restore the deleted subcollection record or global cache item. Legacy URL lookup in a subcollection still uses its existing batch deletion.
+- **Limit:** this does not remove older embedded `cam.photos` array entries or clear a stored `featuredPhoto` field. Those older representations need separate repair before claiming all legacy-photo deletion is solved.
+
+### Fix 26 — Failed photo-record deletion falsely removed the visible photo
+
+- **File/change:** same delete flow; remove the visible item only after successful record deletion. On database failure, retain it and show a retry message. After an await, remove by object identity and adjust selection only in the same current grid.
+- **Affected flow read:** visible array mutations, selected index, redraw, both asynchronous deletion helpers and campaign switching.
+- **Verification:** denied database deletion leaves the item and selection intact and makes no Storage call. Switching campaigns while deletion is pending cannot remove/select an unrelated item in the new grid. Failed unsaved upload items can still be dismissed.
+
+### Fix 27 — Generic-MIME photos were rejected before image decoding
+
+- **File/change:** the existing `_bbUploadPhoto` MIME condition admits `application/octet-stream`, alongside empty/image MIME types. It adds no validation mechanism.
+- **Affected flow read:** chooser, actual byte validator, HEIC detection/conversion, canvas compression, resumable upload, scope-specific record persistence and failure UI.
+- **Verification:** actual MIME gate/byte validator accepts generic and empty-MIME JPEG fixtures through mocked compression/upload/save; generic bytes that are not recognized as an image and explicit text MIME do not upload. Compression and remote services are mocked. Physical-device HEIC decode remains unverified.
+
+### Fix 28 — Global photo chooser incorrectly required an active campaign
+
+- **File/change:** `handleImages` and `updatePhotoCapLabel` now apply the campaign requirement only to campaign scope, matching the existing upload helper. Existing cap remains; feedback labels describe global storage when appropriate.
+- **Affected flow read:** Campaign/Global controls, picker, cap calculation/label, grid badge and the upload helper's existing scope destinations.
+- **Verification:** global scope with no active campaign reaches the existing upload helper and shows its cap; campaign scope with no campaign still does not upload. This is the photo control's behavior, not a redesign of initial page navigation.
+
+### Fix 29 — Old campaign loads could replace a newer campaign/global photo grid
+
+- **File/change:** consolidated campaign selection onto the existing `refreshPhotoGridForScope` function. It clears the previous grid and applies a result only to the same pending grid, campaign and scope. Success and fallback paths obey the same ownership. Loaded items carry their campaign ID; uploads started during the pending read are retained.
+- **Affected flow read:** both former load implementations, campaign selector/form state, scope controls, global cache, subcollection and legacy-array fallback, upload mutation and delete routing.
+- **Verification:** campaign A resolves after B without replacing B; an old failed campaign request cannot clear a global grid; legacy string-photo fallback is normalized; a pending upload survives a completed read. No parallel loader remains in `selectCampaign`.
+
+### Fix 30 — Photo selection followed an array position into another scope
+
+- **File/change:** the shared scope loader clears `_bbSelectedPhotoIndex` when replacing the photo collection and when applying a loaded collection.
+- **Affected flow read:** selected grid badge, featured-photo button, draft image selection readers and campaign/scope transitions. The persisted business `featuredPhoto` value is not rewritten by changing views.
+- **Verification:** switching grids clears the old selected index; asynchronous delete completion preserves the new grid's selection. It cannot silently feature the unrelated photo occupying the same array position after a scope change.
+
+### Batch 03 verification and limits
+
+- Parsed 134 nonempty executable inline scripts in current public HTML; import maps/external script tags/JSON data excluded.
+- Ran the real extracted admin modules and photo functions in isolated Node contexts with DOM/Firebase/Storage/compression mocks. Scenarios and limitations are listed above. These were temporary command-based checks; no repository test or gate was added.
+- No live Firebase writes, paid AI calls, email sends, Square actions, social posts, deployment or physical-device testing. No claim that the whole application is launch-ready.
+- Claude's Batch 02 review has not arrived yet. This pass does not claim to address it.
+
+### Specific remaining changes awaiting David's approval
+
+These are proposed edits, **not applied code**. David required explicit approval before security changes. Repository evidence supports reviewing them; deployed rules/index state remains unknown.
+
+1. In `firestore.rules`, add this read-only collection-group match using the existing admin predicate:
+
+```text
+match /{path=**}/businesses/{bizId} {
+  allow read: if isAdmin();
+}
+```
+
+2. In `firestore.indexes.json`, add a `businesses.businessName` field override with the existing default single-collection ascending/descending/array indexes retained, plus an ascending `COLLECTION_GROUP` index for the two admin-page queries. No write permission is involved in an index.
+
+3. In **both existing photo paths** in `storage.rules`, retain the existing owner, size and image-type conditions for `allow create, update`. Replace their combined `allow write` with those operations and a separate owner-only deletion:
+
+```text
+allow delete: if request.auth != null && request.auth.uid == uid;
+```
+
+These changes would be made locally and reviewed/tested; they would not automatically be deployed. Until approved/applied/deployed, the admin-query access and Storage cleanup problems remain open.
+
+## Claude review — Batch 02: fixes 11–20 — 2026-09-28
+
+This batch builds on `BlastyBiz-10-fixes-Claude-review.zip`. The updated package contains all twenty fixes; `CHANGES-BATCH-02.patch` isolates this batch, while `CHANGES.patch` shows cumulative edits against the original Git baseline. Nothing has been pushed or deployed. No new release gates, permanent test files, security mechanisms, services or dependencies were added in this batch.
+
+### Fix 11 — Bulk job selection could submit the same job twice
+
+- **File/change:** `public/BlastyBiz-Admin-Failed-Jobs.html`; the existing `getSelectedIds()` returns unique IDs. Desktop rows and mobile cards represent the same jobs and Select All can select both.
+- **Affected flow read:** desktop/mobile checkbox rendering, Select All, bulk Retry, Close and Manual Follow-up, existing request helper and admin handlers.
+- **Verification:** two selected checkboxes with one job ID produce one mocked retry request. All bulk callers share that same selection function. This does not add backend idempotency or prevent every repeated manual click.
+
+### Fix 12 — Single-row Retry did not retry publishing
+
+- **File/change:** `public/BlastyBiz-Admin-Failed-Jobs.html`; Retry now calls the existing `adminRetryJob` through the same helper as bulk Retry, instead of only writing `retry_pending`.
+- **Affected flow read:** row/mobile action buttons, reference-path UID/business extraction, bulk helper, Queue Manager's existing retry implementation, admin retry, publishers and job-status triggers. There is no update-trigger dispatcher for the old status-only path.
+- **Verification:** the row action sends the correct job/owner/business to the existing endpoint and makes no direct status write. Returned failures are surfaced. No real publisher was called.
+
+### Fix 13 — Manual fallback was reported as a successful publication
+
+- **Files/change:** `functions/modules/admin.js` now honors the existing publisher's `manualFallback` result and sets `manual_required` instead of `success`. Failed Jobs and Queue Manager now display the manual outcome returned in an HTTP-success response rather than treating it as a successful dispatch.
+- **Affected flow read:** Instagram publisher's no-image result, normal dispatcher handling, admin retry callers, job completion trigger and existing status displays.
+- **Verification:** no-image Instagram retry makes zero mocked provider calls, writes no `publishedAt`, and returns a manual result; the completion-email trigger does not run for that status. Image-present success and disconnected-account rejection preserve their behavior. Both affected admin callers display the manual message.
+
+### Fix 14 — Slow name lookup could restore a stale failed-job snapshot
+
+- **File/change:** `public/BlastyBiz-Admin-Failed-Jobs.html`; after awaiting business names, the callback renders only if its existing `loadedJobs` array is still the current snapshot.
+- **Affected flow read:** asynchronous name lookup/cache, populated and empty snapshots, mobile/desktop rendering and the Fix 08 state reset.
+- **Verification:** held an old name lookup, delivered a newer empty snapshot, then released the old lookup. The cleared table/cards stayed cleared. No new subscription or parallel job store was added.
+
+### Fix 15 — Real activity records displayed blank descriptions/type
+
+- **File/change:** `public/BlastyBiz-Admin-Logs.html`; its existing table now uses the writer's `note`, `action`, `businessId` and `draftId` fields when the older display fields are absent. `manual_copy_paste` is labeled Manual.
+- **Affected flow read:** main-app `bb:addHistory` write, activity rules, page render/escaping and existing reader. No source data is rewritten.
+- **Verification:** a real-shaped manual-copy fixture displays its escaped note, business and draft ID; older `message`/`type` fixtures still display correctly. This does not change what the producer considers a history event.
+
+### Fix 16 — Admin log endpoint sorted by an unwritten timestamp field
+
+- **Files/change:** `functions/modules/admin.js` now sorts by `createdAt`, matching the existing writer and page. `firestore.indexes.json` includes the UID/createdAt composite index for the endpoint's existing optional owner filter.
+- **Affected flow read:** actual activity writer, admin/page reads, endpoint callers, UID filter and index declarations.
+- **Verification:** mocked filtered/unfiltered queries use `createdAt`; filtered queries retain the UID condition; the matching index exists once. The index has not been deployed or tested against a live Firestore project. Historical records using only a different timestamp field have not been migrated.
+
+### Fix 17 — Existing log Search and Reset controls did nothing
+
+- **File/change:** `public/BlastyBiz-Admin-Logs.html`; wired its existing controls into one renderer over the existing latest-50-record subscription. Search, type, level, Enter and Reset now work; the search field describes that scope. No second query or log collection was introduced.
+- **Affected flow read:** existing filter markup, subscription, schema fallbacks, escaped table rendering and load/error state from Batch 01.
+- **Verification:** text/platform search, combined type/level filtering, Enter, Reset and no-match behavior passed. Reset cannot replace a current read-error message with stale cached records. This is filtering of the loaded records, not a new archive-wide search service.
+
+### Fix 18 — User statistics invented active accounts and kept stale totals
+
+- **File/change:** `public/BlastyBiz-Admin-Users.html`; removed the fallback that replaced zero active accounts with the entire list count. Counts now update before the empty-list branch, reset on errors, and feed the previously hardcoded summary. Initial placeholders are neutral; missing subscription status displays Unknown.
+- **Affected flow read:** collection-group query, status fields, page summaries/table, empty/error branches and existing plan/status writers.
+- **Verification:** a trial/canceled-only fixture shows zero Active, then an empty snapshot clears counts; an error displays unavailable dashes. Summary counts describe the displayed list, which remains limited to the existing query's 100 records. Broader query coverage/index/rule behavior is not certified.
+
+### Fix 19 — Queue Manager retained vanished jobs and old counts
+
+- **File/change:** `public/BlastyBiz-Admin-Queue-Manager.html`; each snapshot clears the existing job-reference/data maps before filling them, and an empty snapshot resets metrics.
+- **Affected flow read:** snapshot rendering, reference/data maps, direct row actions, dispatch request, status metrics and empty state.
+- **Verification:** populated-to-empty clears counters and removes actionable references; attempting a stale Close performs no write. No second queue implementation was built.
+
+### Fix 20 — Job emails could name the wrong business
+
+- **File/change:** `functions/modules/publishing.js`; both failure and completion email triggers read the business identified by `event.params.bizId` through the existing `userBizRef` helper, instead of taking the owner's first business.
+- **Affected flow read:** both complete trigger bodies, event paths, owner-email lookup, business helpers, custom/default templates and mail-sender contract.
+- **Verification:** both trigger types select the second-business fixture from the event path, even when job data contains a conflicting business ID. Default and custom templates use that business; the prior owner-name fallback still works when the business is missing. The mail sender was substituted, so no emails were sent. Template escaping and delivery/idempotency are separate unresolved subjects.
+
+### Batch 02 verification and remaining scope
+
+Focused executions used the actual modified frontend modules/backend functions with Firebase, providers and mail delivery replaced by local fixtures. They passed the scenarios above. No paid calls, database writes to the live project or customer communications occurred. Local Node is 24.19.0; the target remains Node 22. Full browser/device behavior and deployed service behavior still need verification.
+
+The fixes reuse existing queues, request helpers, publishers, data collections and UI controls. Business-switch URL handling, scheduling/schema changes, billing discrepancies and the broader V1 specification remain unfinished. Earlier Batch 01 notes describe the state at that checkpoint; Fixes 14–17 now address the asynchronous failed-queue and log-reader/filter gaps called out there.
+
+## Claude review — Batch 01: ten fixes — 2026-09-28
+
+**Purpose:** review each fix below against baseline commit `13d21e2144552181343ab9b6e04eed64575486b4`. This batch includes the first five page repairs already made. It is not launch approval or completion of the V1 redesign. Historical entries after the separator are older claims, not current verification.
+
+**David's instructions:** read the handoffs and the entire affected flow before editing; reuse existing implementations; do not duplicate systems; make necessary fixes and test affected behavior. Ask explicitly before adding checks, gates or security mechanisms. Prepare the source ZIP when requested. New check/gate/test files from the initial attempt have been removed; existing release infrastructure is unchanged.
+
+### Fix 01 — Failed Jobs page could not execute
+
+- **File/change:** `public/BlastyBiz-Admin-Failed-Jobs.html`; removed the orphan `}` following the existing shared `escHtml` reference.
+- **Affected flow read:** page module, `escape-utils.js`, Firebase initialization, admin guard, publish-job query/rules, row and bulk actions, related admin handlers. Existing job actions are preserved.
+- **Verification:** module parses; isolated signed-out startup makes no private subscription; signed-in startup subscribes and renders escaped fixture data. No real admin login or live job action was performed.
+
+### Fix 02 — Logs page could not execute
+
+- **File/change:** `public/BlastyBiz-Admin-Logs.html`; removed the same orphan brace, preserving shared escaping.
+- **Affected flow read:** page module, shared escaping/auth, `activityLogs` writer in the main app, rules and admin log reader.
+- **Verification:** module parses and executes with substituted Firebase; real-shaped fixture messages are escaped. Display-state repair is separately recorded as Fix 09.
+
+### Fix 03 — Subscriptions page could not execute
+
+- **File/change:** `public/BlastyBiz-Admin-Subscriptions.html`; removed the orphan brace.
+- **Affected flow read:** auth/escaping, business and AI-usage listeners, existing billing actions, related admin handlers, pricing/limits writes and rules.
+- **Verification:** isolated startup registers its existing listeners and renders escaped business data. This does not certify billing calculations, recovery-email actions or pricing controls; unrelated defects remain.
+
+### Fix 04 — Users page could not execute
+
+- **File/change:** `public/BlastyBiz-Admin-Users.html`; removed the orphan brace.
+- **Affected flow read:** auth/shared escaping, businesses collection-group query, table/stat rendering and matching rules.
+- **Verification:** parses; signed-out module creates no private listener; signed-in fixture renders escaped business names without database writes. Live query authorization/index behavior remains unverified.
+
+### Fix 05 — Businesses page had an illegal module-level return
+
+- **File/change:** `public/BlastyBiz-Businesses.html`; changed the single-business redirect branch to an `if/else`, keeping multi-business rendering in the alternate branch.
+- **Affected flow read:** auth readiness, plan/limit reads, business loading, redirect, card rendering, existing switch write, Add Business callers and main-page replacement.
+- **Verification:** isolated scenarios cover missing/unverified user to Login, Starter denial, Pro with one business redirect without rendering cards, and Pro with multiple businesses rendering escaped names and writing the selected `activeBusiness` before navigation.
+- **Limit:** this preserves an existing page. Handoff-directed retirement is deferred until its existing main-page replacement is fully verified. No duplicate switcher was built.
+
+### Fix 06 — Valid phone photos rejected when MIME type was empty
+
+- **File/change:** `public/BlastyBiz.html`, `_bbUploadPhoto`; allow an omitted MIME type through the existing byte-validation and image-decoding flow. Explicit non-image MIME types still take the existing rejection path.
+- **Affected flow read:** file picker, `handleImages`, photo scope/caps, byte validation, HEIC conversion, compression, Storage upload metadata/rules, campaign/global image savers/readers, thumbnail selection and Listing Preview's existing image consumer. Listing Preview has no second uploader to patch in this checkout.
+- **Verification:** empty and normal JPEG MIME values reach the existing campaign/global save paths; missing files, explicit non-image MIME, unsupported bytes, decoding failure and missing campaign do not upload. These tests use actual upload/helper code with browser decoding and Firebase substituted; a physical Android photo-picker test remains outstanding.
+
+### Fix 07 — Photo displayed as saved before its database record existed
+
+- **File/change:** `public/BlastyBiz.html`, existing upload completion callback; set `item.done` only after the existing image saver returns its record ID. Download-URL and record-save failures now use the existing photo error presentation. Global image lists update only after saving succeeds.
+- **Affected flow read:** same upload/persistence flow as Fix 06; thumbnail Saved badge, progress/count display, featured-photo selection and campaign/global image reloads.
+- **Verification:** delayed database saves keep `done=false`; successful saves preserve IDs, JPEG metadata and existing paths. Failed saves, missing record IDs and failed download-URL retrieval leave an error state and no false global-list entry. Fixes 06/07 together passed 17 focused scenarios; no Storage or Firestore service was contacted.
+- **Limit:** no retry system was introduced. A Storage object can remain after a record-save failure; the existing remove/retry behavior and Storage delete-rule limitation need separate review.
+
+### Fix 08 — Empty Failed Jobs queue retained old mobile cards and job data
+
+- **File/change:** `public/BlastyBiz-Admin-Failed-Jobs.html`; its existing empty-snapshot branch now clears `loadedJobs`, mobile cards and Select All alongside the existing table/stat reset.
+- **Affected flow read:** snapshot listener, mobile/desktop rendering, selection, export, row/bulk handlers and referenced backend actions.
+- **Verification:** populated-to-empty fixture clears cards, count and selection; Export reports no jobs; a stale row action finds no stored job and makes no write. Real-time overlapping snapshot/name-lookup timing has not been validated against Firebase.
+
+### Fix 09 — Logs page presented fictional activity when no real data was available
+
+- **File/change:** `public/BlastyBiz-Admin-Logs.html`; replaced five static sample records with a loading row. Empty snapshots clear old rows; listener errors show an escaped failure message.
+- **Affected flow read:** static table, existing listener/rendering, shared escaping, main-app `activityLogs` writer, rules and backend reader. The page keeps `createdAt`, which the actual current writer uses; the backend reader's different `timestamp` field is an unresolved inconsistency.
+- **Verification:** loading, populated, empty-after-populated and error states passed; sample business names are absent; fixture message/error markup is escaped. Search/filter buttons and cross-schema log compatibility are outside this fix.
+
+### Fix 10 — AI-spend read failure was displayed as zero dollars
+
+- **File/change:** `public/BlastyBiz-Admin-Subscriptions.html`; initial spend display says Loading; existing listener error branch says Unavailable instead of `$0.00`.
+- **Affected flow read:** `trackAiUsage` fields, `aiUsageLogs` rules, current-month query, cost aggregation and display callback.
+- **Verification:** an empty successful snapshot still gives `$0.00`; two fixture costs total `$0.35`; an error gives Unavailable; a subsequent successful snapshot restores `$0.50`. This display fix does not establish complete provider billing coverage or change usage limits.
+
+### Supporting change and verification limits
+
+`functions/package-lock.json` supports the already-existing CI `npm ci` step, which had no lockfile. Dependency declarations are unchanged; Functions is outside the root pnpm workspace. A clean install with scripts disabled passed before the removal/restoration round; the lockfile was then regenerated offline from the same installed dependencies. This supporting change is not counted among the ten fixes.
+
+The initial five repairs passed parsing across 160 scripts and eleven isolated page scenarios. Later focused executions covered the changed upload and admin display paths. Tests used Node 24.19.0; CI/runtime target Node 22. Temporary/mock tests do not establish real-browser layout, real login, deployed database rules, provider connectivity or live data persistence. No new permanent test files or release gates remain.
+
+The earlier full release audit reported seven pre-existing findings: five orphan-page reports and two inline-HTML reports. These are unresolved reports, not automatically confirmed defects. No deployment, push, paid AI call, customer message, billing action or social post was made.
+
+### Remaining work / instructions to Claude
+
+Review the ten fixes separately. Verify the diff stays within their stated behavior, shared implementations are reused, and no security/check/gate additions slipped in. Do not treat the fixes as certification of whole pages.
+
+- The main page already has `renderSwitcherBar`, `window.addBusiness` and `cb-choose-modal`; reuse them. Business switching with a stale URL `bizId` still needs correction across its callers.
+- Campaign records/subcollections already exist. Do not apply `bb_ho_16`'s migration as though they do not.
+- The public rate-limit, campaign-chat usage, client-writable free-regeneration state, duplicate publishers and old Graph API strings remain investigation items. Proposed security mechanisms require David's explicit approval. A `req.ip` substitution alone is not verified without establishing deployed proxy trust.
+- Other observed gaps include recovery-email request/response mismatch, inconsistent plan-limit settings, admin placeholder statistics, and scheduling/schema differences. No completion claim is made for these.
+- This batch is packaged as `BlastyBiz-10-fixes-Claude-review.zip` with repository paths preserved. It includes current source, public assets, the dependency lockfile and this audit. The legacy flattened ZIP builder was not used or changed. No deployment has occurred.
+
+---
 
 | Date | File(s) | What was wrong | How it was fixed |
 |------|---------|----------------|-----------------|

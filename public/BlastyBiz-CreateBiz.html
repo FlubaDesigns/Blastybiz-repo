@@ -204,6 +204,7 @@
     <button type="button" class="cb-guide-start-btn" onclick="window._cbStartGuide()">
       💬 Walk me through it
     </button>
+    <p id="cb-guide-status" role="status" aria-live="polite"></p>
   </div>
 
   <!-- Preview banner: shown when user arrives from BlastyBiz-Preview.html -->
@@ -226,7 +227,7 @@
         <div class="cb-row">
           <div class="cb-field">
             <label class="cb-label">Business name *</label>
-            <input class="cb-input" id="f-bizName" type="text" placeholder="e.g. Mike's Auto Repair" autocomplete="organization"/>
+            <input class="cb-input" id="f-bizName" required type="text" placeholder="e.g. Mike's Auto Repair" autocomplete="organization"/>
           </div>
           <div class="cb-field">
             <label class="cb-label">Website</label>
@@ -236,7 +237,7 @@
         <div class="cb-row">
           <div class="cb-field">
             <label class="cb-label">Your name *</label>
-            <input class="cb-input" id="f-ownerName" type="text" placeholder="First Last" autocomplete="name"/>
+            <input class="cb-input" id="f-ownerName" required type="text" placeholder="First Last" autocomplete="name"/>
           </div>
           <div class="cb-field">
             <label class="cb-label">Your title / role</label>
@@ -257,9 +258,8 @@
           <div class="cb-field">
             <label class="cb-label">Location type</label>
             <select class="cb-select" id="f-locationType">
-              <option value="physical">Physical location</option>
+              <option value="physical">Brick &amp; Mortar</option>
               <option value="online">Online only</option>
-              <option value="both">Both</option>
             </select>
           </div>
         </div>
@@ -312,31 +312,33 @@
     <!-- Section 2: Your Story -->
     <div class="cb-section" id="cbs-story" data-guide-step="2">
       <button type="button" class="cb-sec-head" onclick="cbToggle('story')" aria-expanded="false">
-        <span class="cb-sec-title" id="cb-sec2-title">📖 Your Story <span class="cb-sec-badge">Optional — makes AI smarter</span></span>
+        <span class="cb-sec-title" id="cb-sec2-title">📖 Your Story <span class="cb-sec-badge">Required for initial setup</span></span>
         <span class="cb-sec-ic">▾</span>
       </button>
       <div class="cb-sec-body">
         <div class="cb-field">
           <label class="cb-label">How did the business start?</label>
-          <textarea class="cb-ta" id="f-story" placeholder="Tell the origin story…" rows="3"></textarea>
+          <textarea class="cb-ta" id="f-story" required placeholder="Tell the origin story…" rows="3"></textarea>
         </div>
         <div class="cb-field">
           <label class="cb-label">What makes you different?</label>
-          <textarea class="cb-ta" id="f-different" placeholder="vs. the competition…" rows="2"></textarea>
+          <textarea class="cb-ta" id="f-different" required placeholder="vs. the competition…" rows="2"></textarea>
         </div>
         <div class="cb-row">
           <div class="cb-field">
-            <label class="cb-label">Awards / press / milestones</label>
-            <textarea class="cb-ta" id="f-awards" placeholder="Any recognition…" rows="2"></textarea>
+            <label class="cb-label">Awards / reviews / certifications / milestones</label>
+            <textarea class="cb-ta" id="f-awards" required placeholder="Recognition, great reviews, years in business…" rows="2"></textarea>
+            <button type="button" class="cb-guide-start-btn" onclick="document.getElementById('f-awards').value='Nothing yet'">Nothing yet</button>
           </div>
           <div class="cb-field">
             <label class="cb-label">Ideal customer</label>
-            <textarea class="cb-ta" id="f-customer" placeholder="Who do you serve best?" rows="2"></textarea>
+            <textarea class="cb-ta" id="f-customer" required placeholder="Who do you serve best?" rows="2"></textarea>
           </div>
         </div>
         <div class="cb-field">
           <label class="cb-label">Anything else I should always know?</label>
-          <textarea class="cb-ta" id="f-other" placeholder="Extra context for AI…" rows="2"></textarea>
+          <textarea class="cb-ta" id="f-other" required placeholder="Extra context for AI…" rows="2"></textarea>
+            <button type="button" class="cb-guide-start-btn" onclick="document.getElementById('f-other').value='Nothing else'">Nothing else</button>
         </div>
       </div>
     </div>
@@ -351,7 +353,7 @@
         <div class="cb-row">
           <div class="cb-field">
             <label class="cb-label">Campaign name *</label>
-            <input class="cb-input" id="f-campName" type="text" placeholder="e.g. Summer Sale"/>
+            <input class="cb-input" id="f-campName" required type="text" placeholder="e.g. Summer Sale"/>
           </div>
           <div class="cb-field">
             <label class="cb-label">Special offer / CTA</label>
@@ -360,7 +362,7 @@
         </div>
         <div class="cb-field">
           <label class="cb-label">What's this campaign about? *</label>
-          <textarea class="cb-ta" id="f-about" placeholder="What are you promoting?" rows="2"></textarea>
+          <textarea class="cb-ta" id="f-about" required placeholder="What are you promoting?" rows="2"></textarea>
         </div>
         <div class="cb-row">
           <div class="cb-field">
@@ -383,35 +385,57 @@
     </div>
 
     <div class="cb-submit-area">
-      <button class="cb-submit-btn" id="cb-submit" onclick="cbSubmit()">🚀 Create Business &amp; Launch</button>
+      <button class="cb-submit-btn" id="cb-submit" onclick="cbSubmit()">Save Business &amp; Campaign</button>
       <div class="cb-err" id="cb-err" aria-live="polite" aria-atomic="true"></div>
     </div>
   </div>
 
   <div class="cb-success" id="cb-success" style="display:none" role="status" aria-live="polite">
     <div id="cb-success-mascot" style="display:inline-block;margin-bottom:16px"></div>
-    <h2 id="cb-success-h">🎉 You're Live!</h2>
+    <h2 id="cb-success-h">Business saved</h2>
     <p id="cb-success-p">Your business is set up and your first campaign is ready. Redirecting to your dashboard…</p>
   </div>
 </div>
 
 <script src="mascot.js?v=5"></script>
-<script src="form-guide.js?v=2"></script>
-<script src="guided-setup.js?v=1"></script>
+<script src="guided-setup.js?v=2"></script>
 <script>
 function cbToggle(id) {
   const sec = document.getElementById('cbs-'+id);
   sec.classList.toggle('open');
   const btn = sec.querySelector('.cb-sec-head');
   if (btn) btn.setAttribute('aria-expanded', sec.classList.contains('open') ? 'true' : 'false');
-  // Advance form guide to this section when it's opened
-  if (window._cbGuide && sec.classList.contains('open')) {
-    window._cbGuide.setActiveEl(sec);
-  }
 }
-document.getElementById('f-locationType').addEventListener('change', function() {
-  document.getElementById('cb-address-fields').style.display = this.value === 'online' ? 'none' : '';
-});
+function cbSyncLocation() {
+  const online = document.getElementById('f-locationType').value === 'online';
+  document.getElementById('cb-address-fields').style.display = online ? 'none' : '';
+}
+document.getElementById('f-locationType').addEventListener('change', cbSyncLocation);
+window._cbReady = false;
+window._cbNeedsCampaign = true;
+function cbNormalizeWebsite(value) {
+  const trimmed = value.trim();
+  return !trimmed || /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed.replace(/^\/\//, '');
+}
+// The real input constraints are shared by Direct submit and Guided next.
+function cbFieldError(field) {
+  const el = document.getElementById(field);
+  if (!el || el.disabled) return '';
+  if (field === 'f-website') el.value = cbNormalizeWebsite(el.value);
+  if (el.required && !el.value.trim()) return 'Please answer this field.';
+  return el.checkValidity() ? '' : el.validationMessage;
+}
+function cbConfigureForm() {
+  const initial = window._cbNeedsCampaign;
+  document.getElementById('cbs-campaign').style.display = initial ? '' : 'none';
+  ['story','different','awards','customer','other','campName','about'].forEach(key => {
+    document.getElementById('f-' + key).required = initial;
+  });
+  document.getElementById('cb-submit').textContent = initial ? 'Save Business & Campaign' : 'Save Business';
+  const storyBadge = document.querySelector('#cb-sec2-title .cb-sec-badge');
+  if (storyBadge) storyBadge.textContent = initial ? 'Required for initial setup' : 'Business knowledge';
+  cbSyncLocation();
+}
 function cbSetMood(cls) {
   const el = document.getElementById('cb-mascot');
   el.className = 'cb-mascot-mini s-arrive ' + cls;
@@ -422,27 +446,6 @@ document.querySelectorAll('.cb-input,.cb-ta,.cb-select').forEach(el => {
   el.addEventListener('focus', () => cbSetMood((window._ob2Anim&&window._ob2Anim.focus)||'s-ask'));
   el.addEventListener('blur',  () => cbSetMood((window._ob2Anim&&window._ob2Anim.load)||'s-wave'));
 });
-// Minimal PBMascot-compatible shim — scrolls + spotlights the active section
-// and triggers a brief mascot gesture via cbSetMood.
-var _cbMascotShim = {
-  pointTo: function(el, opts) {
-    if (!el) return;
-    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' });
-    el.classList.add('pb-spotlight');
-    setTimeout(function() { el.classList.remove('pb-spotlight'); }, (opts && opts.duration) || 2400);
-    // Show a brief "pointing" gesture on the header mascot
-    cbSetMood('s-working s-flame-blue s-lights-pulse');
-    setTimeout(function() { cbSetMood('s-wave'); }, 1200);
-  }
-};
-// Initialise section guide — section 1 (Business Info) is active on load
-window._cbGuide = new FormGuide({
-  steps:  document.querySelectorAll('[data-guide-step]'),
-  mascot: _cbMascotShim
-});
-window._cbGuide.setActive(0);
-
 /* ── Blasty guide layer ──────────────────────────────────────────────
    This page is the ONLY setup page. The old conversational wizard used to be a
    separate page with its own inputs and its own save — this replaces it with a
@@ -454,20 +457,18 @@ function cbOpenSection(id) {
   sec.classList.add('open');
   var btn = sec.querySelector('.cb-sec-head');
   if (btn) btn.setAttribute('aria-expanded', 'true');
-  if (window._cbGuide) window._cbGuide.setActiveEl(sec);
 }
 function cbIsOnline(a) { return a['f-locationType'] === 'online'; }
 
 var CB_GUIDE_STEPS = [
-  { field:'f-ownerName', section:'cbs-info', required:true, mood:'s-wave',
+  { field:'f-ownerName', section:'cbs-info', mood:'s-wave',
     ask:"Hey! I'm Blasty — I'll write your ads. First up, what should I call you?",
     hint:'First name is fine.' },
-  { field:'f-bizName', section:'cbs-info', required:true, mood:'s-ask',
+  { field:'f-bizName', section:'cbs-info', mood:'s-ask',
     ask:function(a){ return (a['f-ownerName'] ? 'Good to meet you, ' + a['f-ownerName'].split(' ')[0] + '. ' : '') + "What's the business called?"; },
     hint:'Exactly how you want it to appear in your ads.' },
   { field:'f-role', section:'cbs-info', ask:"What's your title there?", hint:'Owner, Manager, Founder…' },
-  { field:'f-email', section:'cbs-info', ask:'What email should customers reach you at?',
-    validate:function(v){ return (v && v.indexOf('@') < 1) ? "That doesn't look like an email address." : ''; } },
+  { field:'f-email', section:'cbs-info', ask:'What email should customers reach you at?' },
   { field:'f-phone', section:'cbs-info', ask:'Best phone number for customers?' },
   { field:'f-locationType', section:'cbs-info', ask:'Do customers come to you, or are you online only?' },
   { field:'f-street', section:'cbs-info', skipIf:cbIsOnline, ask:"What's the street address?" },
@@ -479,12 +480,12 @@ var CB_GUIDE_STEPS = [
     ask:'Now the good stuff — how did the business get started?',
     hint:'The more you tell me, the less generic your ads sound.' },
   { field:'f-different', section:'cbs-story', ask:'What makes you different from the competition?' },
-  { field:'f-awards', section:'cbs-story', ask:'Any awards, press or milestones worth bragging about?' },
+  { field:'f-awards', section:'cbs-story', ask:'Any awards, reviews, certifications or milestones? You can choose Nothing yet.' },
   { field:'f-customer', section:'cbs-story', ask:'Who is your ideal customer?' },
-  { field:'f-other', section:'cbs-story', ask:'Anything else I should always keep in mind?' },
-  { field:'f-campName', section:'cbs-campaign', required:true, mood:'s-working',
+  { field:'f-other', section:'cbs-story', ask:'Anything else I should always keep in mind? You can choose Nothing else.' },
+  { field:'f-campName', section:'cbs-campaign', mood:'s-working',
     ask:"Last stretch. What do you want to call this first campaign?", hint:'e.g. Summer Sale, Grand Opening' },
-  { field:'f-about', section:'cbs-campaign', required:true,
+  { field:'f-about', section:'cbs-campaign',
     ask:"What's this campaign about?", hint:'What are you promoting right now?' },
   { field:'f-offer', section:'cbs-campaign', ask:'Any special offer or call to action?' },
   { field:'f-audience', section:'cbs-campaign', ask:'Who should see it?' },
@@ -492,7 +493,24 @@ var CB_GUIDE_STEPS = [
     ask:'Where do you want me to blast this?', hint:'Tick as many as you like — you can change these later.' }
 ];
 
+CB_GUIDE_STEPS.forEach(function(step) {
+  if (step.field) {
+    Object.defineProperty(step, 'required', { get: function() { return document.getElementById(step.field).required; } });
+    step.validate = function() { return cbFieldError(step.field); };
+  }
+  if (step.section === 'cbs-campaign') step.skipIf = function() { return !window._cbNeedsCampaign; };
+  if (['f-ownerName','f-bizName','f-role','f-email','f-phone'].includes(step.field)) {
+    step.skipIf = function(a) { return !!a[step.field] && !cbFieldError(step.field); };
+  }
+});
+
 window._cbStartGuide = function(at) {
+  if (!window._cbReady) {
+    window._cbGuideRequested = true;
+    document.getElementById('cb-guide-status').textContent = window._cbLoadError || 'Loading your saved details…';
+    return;
+  }
+  document.getElementById('cb-guide-status').textContent = '';
   if (window._cbBlasty) return;
   var start = document.getElementById('cb-guide-start');
   if (start) start.style.display = 'none';
@@ -500,7 +518,7 @@ window._cbStartGuide = function(at) {
     name: 'Blasty',
     steps: CB_GUIDE_STEPS,
     openSection: cbOpenSection,
-    finishLabel: '🚀 Launch it →',
+    finishLabel: 'Save →',
     onFinish: function() { window.cbSubmit(); },
     onStop: function() {
       window._cbBlasty = null;
@@ -508,7 +526,8 @@ window._cbStartGuide = function(at) {
     }
   });
   try {
-    window._cbBlasty.start(at || 0);
+    const first = window._cbBlasty._applicable(at || 0, 1);
+    window._cbBlasty.start(first);
   } catch (e) {
     console.error('[cb guide]', e);
     window._cbBlasty = null;
@@ -532,7 +551,7 @@ window._cbStartGuide = function(at) {
 import { auth } from './firebase-init-v2.js';
 import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
-  getFirestore, doc, collection, serverTimestamp, writeBatch, getDoc, setDoc
+  getFirestore, doc, collection, serverTimestamp, writeBatch, getDoc
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js';
@@ -540,6 +559,11 @@ import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js';
 const db = getFirestore(getApp());
 let currentUser = null;
 let editBizId   = null;
+let existingCampaignId = null;
+let saving = false;
+let setupLoaded = false;
+let newBizRef = null;
+let newCampId = null;
 
 const urlP = new URLSearchParams(window.location.search);
 editBizId = urlP.get('bizId') || null;
@@ -561,7 +585,7 @@ function renderPlatformGrid(platforms) {
 }
 
 // Load platforms immediately (config/platforms is public-read — no auth needed)
-loadPlatforms(db, getDoc, doc)
+const platformsReady = loadPlatforms(db, getDoc, doc)
   .then(platforms => renderPlatformGrid(platforms))
   .catch(() => {
     // Fallback: render built-in defaults
@@ -594,8 +618,10 @@ function applyOb2Config(c) {
 onAuthStateChanged(auth, async user => {
   if (!user) { window.location.href = 'BlastyBiz-Login.html?next=BlastyBiz-CreateBiz.html'; return; }
   currentUser = user;
+  if (setupLoaded) return;
+  setupLoaded = true;
 
-  getDoc(doc(db, 'config', 'ob2Steps')).then(snap => {
+  const configReady = getDoc(doc(db, 'config', 'ob2Steps')).then(snap => {
     if (snap.exists()) applyOb2Config(snap.data());
   }).catch(() => {});
 
@@ -610,34 +636,34 @@ onAuthStateChanged(auth, async user => {
     } catch(e) { console.warn('[cb] preview prefill failed', e); }
   }
 
-  if (editBizId) {
-    try {
+  try {
+    if (editBizId) {
       const bizSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', editBizId));
-      if (bizSnap.exists()) {
-        const bizData = bizSnap.data();
-        prefill(bizData);
-        // Load platform selection from the active campaign (that's where platformsEnabled lives)
-        const activeCampId = bizData.activeCampaign;
-        if (activeCampId) {
-          const campSnap = await getDoc(
-            doc(db, 'users', user.uid, 'businesses', editBizId, 'campaigns', activeCampId)
-          );
-          if (campSnap.exists()) {
-            // Onboard2 saves as onboardingPlatforms; CreateBiz saves as platformsEnabled — read both
-            const campPlats = campSnap.data().platformsEnabled || campSnap.data().onboardingPlatforms;
-            if (Array.isArray(campPlats) && campPlats.length) {
-              window._cbPrefillPlatforms = new Set(campPlats);
-              // Apply immediately if grid is already rendered; renderPlatformGrid picks it up otherwise
-              const grid = document.getElementById('plat-grid-wrap');
-              if (grid) grid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-                cb.checked = window._cbPrefillPlatforms.has(cb.value);
-              });
-            }
-          }
-        }
-      }
-    } catch(e) { console.warn('[cb prefill]', e); }
+      if (!bizSnap.exists()) throw new Error('Business not found');
+      const bizData = bizSnap.data();
+      existingCampaignId = bizData.activeCampaign || null;
+      window._cbNeedsCampaign = !existingCampaignId;
+      prefill(bizData);
+    } else {
+      const userSnap = await getDoc(doc(db, 'users', user.uid));
+      const saved = userSnap.exists() ? userSnap.data() : {};
+      // Only restore account identity here; don't copy another business's details.
+      const name = document.getElementById('f-ownerName');
+      const email = document.getElementById('f-email');
+      if (!name.value) name.value = saved.ownerName || saved.displayName || user.displayName || '';
+      if (!email.value) email.value = saved.email || user.email || '';
+    }
+    await Promise.all([platformsReady, configReady]);
+    cbConfigureForm();
+    window._cbReady = true;
+    if (window._cbGuideRequested) window._cbStartGuide();
+  } catch(e) {
+    console.warn('[cb prefill]', e);
+    window._cbLoadError = 'Could not load your saved details. Reload to try again.';
+    document.getElementById('cb-err').textContent = window._cbLoadError;
+    document.getElementById('cb-guide-status').textContent = window._cbLoadError;
   }
+
 });
 
 function applyPreviewPrefill(preview) {
@@ -672,7 +698,7 @@ function _cbShowPreviewBanner(preview) {
 
 function prefill(d) {
   const s = (id, v) => { const el=document.getElementById(id); if(el&&v!==undefined) el.value=v; };
-  s('f-bizName',   d.name||'');
+  s('f-bizName',   d.businessName ?? d.name ?? '');
   s('f-ownerName', d.ownerName||'');
   s('f-role',      d.ownerRole||'');
   s('f-phone',     d.phone||'');
@@ -698,14 +724,16 @@ function prefill(d) {
   pref('pref-phone',   'ynMentionPhone',   'ynMentionPhone',   true);
   pref('pref-address', 'ynMentionAddress', 'ynMentionAddress', true);
   pref('pref-email',   'ynMentionEmail',   'ynMentionEmail',   true);
-  if (d.locationType) s('f-locationType', d.locationType);
-  s('f-story',     d.story||'');
-  s('f-different', d.different||'');
-  s('f-awards',    d.awards||'');
-  s('f-customer',  d.customer||'');
-  s('f-other',     (d.aiContext && d.aiContext.other) || d.otherInfo || '');
+  s('f-locationType', d.locationType === 'online' ? 'online' : 'physical');
+  cbSyncLocation();
+  const ctx = d.aiContext || {};
+  s('f-story',     ctx.story ?? d.story ?? '');
+  s('f-different', ctx.different ?? d.different ?? '');
+  s('f-awards',    ctx.awards ?? d.awards ?? '');
+  s('f-customer',  ctx.customer ?? d.customer ?? '');
+  s('f-other',     ctx.other ?? d.otherInfo ?? '');
   // Restore saved platform selection for edit mode
-  if (Array.isArray(d.platformsEnabled) && d.platformsEnabled.length) {
+  if (Array.isArray(d.platformsEnabled)) {
     window._cbPrefillPlatforms = new Set(d.platformsEnabled);
     // Apply to grid immediately if already rendered; otherwise renderPlatformGrid picks it up
     const grid = document.getElementById('plat-grid-wrap');
@@ -723,10 +751,21 @@ window.cbSubmit = async function() {
   const bizName  = document.getElementById('f-bizName').value.trim();
   const campName = document.getElementById('f-campName').value.trim();
   const about    = document.getElementById('f-about').value.trim();
-  if (!bizName)  { err.textContent='Please enter a business name.'; return; }
-  if (!campName) { err.textContent='Please enter a campaign name.'; const _cs=document.getElementById('cbs-campaign'); _cs.classList.add('open'); if(window._cbGuide) window._cbGuide.setActiveEl(_cs); return; }
-  if (!about)    { err.textContent='Please describe what this campaign is about.'; return; }
+  if (saving) return;
+  if (!window._cbReady) { err.textContent='Your saved details are still loading. If loading failed, reload to try again.'; return; }
+  const answers = Object.fromEntries(CB_GUIDE_STEPS.filter(s => s.field).map(s => [s.field, document.getElementById(s.field).value]));
+  for (const step of CB_GUIDE_STEPS) {
+    if (!step.field || (step.skipIf && step.skipIf(answers))) continue;
+    const message = cbFieldError(step.field);
+    if (message) {
+      cbOpenSection(step.section);
+      err.textContent = message;
+      document.getElementById(step.field).focus();
+      return;
+    }
+  }
   if (!currentUser) { err.textContent='Not signed in. Please reload.'; return; }
+  saving = true;
 
   const btn = document.getElementById('cb-submit');
   btn.disabled=true; btn.textContent='Saving…';
@@ -747,10 +786,11 @@ window.cbSubmit = async function() {
     if (editBizId) {
       bizRef = doc(db, 'users', currentUser.uid, 'businesses', editBizId);
     } else {
-      bizRef = doc(collection(db, 'users', currentUser.uid, 'businesses'));
+      newBizRef = newBizRef || doc(collection(db, 'users', currentUser.uid, 'businesses'));
+      bizRef = newBizRef;
     }
     const bizId  = bizRef.id;
-    const campId = 'c_' + Date.now();
+    const campId = existingCampaignId || (newCampId = newCampId || 'c_' + Date.now());
 
     const locType = document.getElementById('f-locationType').value;
     const address = locType !== 'online' ? {
@@ -769,7 +809,7 @@ window.cbSubmit = async function() {
     const other     = document.getElementById('f-other').value.trim();
     const phone     = document.getElementById('f-phone').value.trim();
     const email     = document.getElementById('f-email').value.trim();
-    const website   = document.getElementById('f-website').value.trim();
+    const website   = cbNormalizeWebsite(document.getElementById('f-website').value);
     const category  = document.getElementById('f-category').value.trim();
     const audience  = document.getElementById('f-audience').value.trim();
     const offer     = document.getElementById('f-offer').value.trim();
@@ -809,9 +849,9 @@ window.cbSubmit = async function() {
       story, different, awards, customer, otherInfo: other,
       businessDescription: [story, different].filter(Boolean).join(' '),
       globalMemory, toggles,
-      uid: currentUser.uid, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
       onboarded: true, onboardingVersion: 'ob2',
-      activeCampaign: campId,
+      ...(existingCampaignId ? {} : { activeCampaign: campId }),
     };
 
     const campaignStory = [
@@ -836,13 +876,13 @@ window.cbSubmit = async function() {
     if (editBizId) {
       batch.set(bizRef, bizData, { merge: true });
     } else {
-      batch.set(bizRef, bizData);
-      await setDoc(doc(db, 'users', currentUser.uid), {
+      batch.set(bizRef, { ...bizData, uid: currentUser.uid, createdAt: serverTimestamp() });
+      batch.set(doc(db, 'users', currentUser.uid), {
         activeBusiness: bizId, onboarded: true, onboardingVersion: 'ob2',
         updatedAt: serverTimestamp()
       }, { merge: true });
     }
-    batch.set(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'campaigns', campId), campData);
+    if (!existingCampaignId) batch.set(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'campaigns', campId), campData);
 
     await batch.commit();
 
@@ -855,9 +895,11 @@ window.cbSubmit = async function() {
     // them anywhere — a new business goes to the plan step (which forwards
     // paid accounts straight through), editing an existing one does not.
     const nextUrl = editBizId
-      ? 'BlastyBiz.html?bizId=' + bizId + '&cid=' + campId + '&autogenerate=1'
+      ? 'BlastyBiz.html?bizId=' + encodeURIComponent(bizId) + '&cid=' + encodeURIComponent(campId) + (existingCampaignId ? '' : '&autogenerate=1')
       : 'BlastyBiz-Choose-Plan.html?bizId=' + bizId + '&cid=' + campId;
 
+    document.getElementById('cb-success-h').textContent = 'Business saved';
+    document.getElementById('cb-success-p').textContent = existingCampaignId ? 'Your business details are saved. Returning to your dashboard…' : 'Your business and first campaign are saved. Opening your campaign…';
     if (!editBizId) {
       const sp = document.getElementById('cb-success-p');
       if (sp) sp.textContent = 'Your business and first campaign are saved. One last thing — how you want to post.';
@@ -869,7 +911,8 @@ window.cbSubmit = async function() {
     console.error('[cb save]', e);
     cbSetMood('s-ask');
     err.textContent = 'Something went wrong. Please try again.';
-    btn.disabled=false; btn.textContent='🚀 Create Business & Launch';
+    saving = false;
+    btn.disabled=false; btn.textContent=window._cbNeedsCampaign ? 'Save Business & Campaign' : 'Save Business';
   }
 };
 

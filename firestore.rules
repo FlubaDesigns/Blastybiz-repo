@@ -215,6 +215,9 @@ service cloud.firestore {
     // collectionGroup queries for admin cross-user views
     // These allow admins to query publishJobs/platformConnections/pendingPosts/listingDrafts
     // across all businesses without needing a specific uid/bizId path.
+    match /{path=**}/businesses/{bizId} {
+      allow read: if isAdmin();
+    }
     match /{path=**}/publishJobs/{jobId} {
       allow read: if isAdmin();
       allow write: if isAdmin();

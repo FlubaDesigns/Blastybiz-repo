@@ -16,8 +16,8 @@
 </script>
   <script type="module" src="./admin-guard.js"></script><script src="blastybiz-menu.js?v=7"></script>
 </head><body class="admin-page"><header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Failed Jobs Queue</span></a><div class="top-actions"><a class="icon-btn hide-mobile " href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a><a class="icon-btn hide-mobile active" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Logs.html">Logs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Operate.html">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header><main><div class="main"><div class="main-inner">
-<section class="hero"><div class="card"><div class="eyebrow">Admin operating screen</div><h1 class="big-title">Failed Jobs <span>Queue</span></h1><p class="sub">This is where the admin fixes publishing, sync, AI, image, billing, and platform jobs that did not complete. Keep the language clear: what failed, why it failed, and what the admin should do next.</p><div class="btn-row"><button id="retry-selected-btn" class="btn btn-primary" onclick="retrySelected()">Retry Selected</button><button id="manual-followup-btn" class="btn" onclick="manualFollowupSelected()">Mark Manual Follow-up</button><button id="close-selected-btn" class="btn" onclick="closeSelected()">Close Selected</button><button id="export-errors-btn" class="btn" onclick="exportErrors()">Export Errors</button></div></div><div class="card"><div class="card-title">⚠️ Queue Summary</div><div class="list"><div class="list-item"><div class="icon" id="hero-open-count">—</div><div class="row-main"><div class="row-title">Open failed jobs</div><div class="row-sub" id="hero-open-sub">Loading…</div></div><span class="badge error">Open</span></div><div class="list-item"><div class="icon">4</div><div class="row-main"><div class="row-title">Auto retries scheduled</div><div class="row-sub">Retry only safe jobs. Never double-post without a dedupe key.</div></div><span class="badge info">Queued</span></div></div></div></section>
-<section class="grid"><div class="stat"><div class="stat-num">3</div><div class="stat-label">Retryable</div><div class="stat-note money">System can retry</div></div><div class="stat"><div class="stat-num">2</div><div class="stat-label">Reconnect Needed</div><div class="stat-note warn">OAuth/customer action</div></div><div class="stat"><div class="stat-num">1</div><div class="stat-label">Validation</div><div class="stat-note bad">Fix field/category</div></div><div class="stat"><div class="stat-num">1</div><div class="stat-label">AI/Image</div><div class="stat-note blue">Regenerate or resize</div></div></section>
+<section class="hero"><div class="card"><div class="eyebrow">Admin operating screen</div><h1 class="big-title">Failed Jobs <span>Queue</span></h1><p class="sub">This is where the admin fixes publishing, sync, AI, image, billing, and platform jobs that did not complete. Keep the language clear: what failed, why it failed, and what the admin should do next.</p><div class="btn-row"><button id="retry-selected-btn" class="btn btn-primary" onclick="retrySelected()">Retry Selected</button><button id="manual-followup-btn" class="btn" onclick="manualFollowupSelected()">Mark Manual Follow-up</button><button id="close-selected-btn" class="btn" onclick="closeSelected()">Close Selected</button><button id="export-errors-btn" class="btn" onclick="exportErrors()">Export Errors</button></div></div><div class="card"><div class="card-title">⚠️ Queue Summary</div><div class="list"><div class="list-item"><div class="icon" id="hero-open-count">—</div><div class="row-main"><div class="row-title">Open failed jobs</div><div class="row-sub" id="hero-open-sub">Loading…</div></div><span class="badge error">Open</span></div><div class="list-item"><div class="icon" id="hero-retry-count">—</div><div class="row-main"><div class="row-title">Legacy retry status</div><div class="row-sub">Retry only safe jobs. Never double-post without a dedupe key.</div></div><span class="badge info">Queued</span></div></div></div></section>
+<section class="grid"><div class="stat"><div class="stat-num">—</div><div class="stat-label">Retryable</div><div class="stat-note money">System can retry</div></div><div class="stat"><div class="stat-num">—</div><div class="stat-label">Reconnect Needed</div><div class="stat-note warn">OAuth/customer action</div></div><div class="stat"><div class="stat-num">—</div><div class="stat-label">Manual Required</div><div class="stat-note bad">Manual posting needed</div></div><div class="stat"><div class="stat-num">—</div><div class="stat-label">AI/Image</div><div class="stat-note blue">Regenerate or resize</div></div></section>
 <section class="card"><div class="card-title">⚠️ Failed Jobs</div><div class="jobs-table-wrap"><table><thead><tr><th class="th-cb"><input type="checkbox" id="select-all" onchange="toggleAll(this)" class="cb-styled"></th><th>Business</th><th>Job</th><th>Platform</th><th>Reason</th><th>Next Action</th><th>Status</th></tr></thead><tbody><tr id="jobs-loading-row"><td colspan="7" class="td-empty">Loading…</td></tr></tbody></table></div><div id="jobs-cards" class="jobs-cards"></div></section>
 <section class="two-col"><div class="card"><div class="card-title">🧠 Replit Logic</div><div class="list"><div class="list-item"><div class="icon">1</div><div class="row-main"><div class="row-title">Use job IDs and dedupe keys</div><div class="row-sub">Every publishing task needs a unique jobId and platformJobKey so retries do not duplicate posts.</div></div></div><div class="list-item"><div class="icon">2</div><div class="row-main"><div class="row-title">Store plain error summaries</div><div class="row-sub">Business owners should see simple messages. Admin can see raw details only when needed.</div></div></div></div></div><div class="card"><div class="card-title">✅ Admin Actions</div><div class="list"><div class="list-item"><div class="icon">↻</div><div class="row-main"><div class="row-title">Retry</div><div class="row-sub">Only for safe failures like timeout, rate limit, or temporary platform outage.</div></div></div><div class="list-item"><div class="icon">✎</div><div class="row-main"><div class="row-title">Fix and rerun</div><div class="row-sub">For validation, category, phone/address, or image errors.</div></div></div><div class="list-item"><div class="icon">👤</div><div class="row-main"><div class="row-title">Request customer action</div><div class="row-sub">For expired OAuth, missing permissions, or disconnected platform accounts.</div></div></div></div></div></section></div></div></main><nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Queue-Manager.html">📋<br>Queue</a><a class="active" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a><a class="" href="BlastyBiz-Admin-Operate.html">⚙️<br>Operate</a></nav><script type="module">
 import { auth, db } from './firebase-init-v2.js';
@@ -29,7 +29,6 @@ let loadedJobs = [];
 const bizNameCache = {};
 
 const escHtml = window.escHtml; // escape-utils.js
-}
 
 // Extract uid and businessId from a Firestore ref path:
 // users/{uid}/businesses/{bizId}/publishJobs/{jobId}
@@ -62,9 +61,17 @@ async function jobAction(jobId, action) {
   // Use the stored Firestore ref directly — no need to reconstruct from uid/businessId fields
   const ref = job._ref;
   if (!ref) { console.warn('jobAction: no ref for job', jobId); return; }
+  if (action === 'retry') {
+    const { uid, businessId } = uidBizForJob(job);
+    try {
+      const result = await callAdminCF('adminRetryJob', jobId, uid, businessId);
+      if (result.manual) alert(result.message || 'This job requires manual posting.');
+    }
+    catch(e) { alert('Retry failed: ' + e.message); }
+    return;
+  }
   const now = new Date();
   const updates = {
-    retry:    { status: 'retry_pending', attempts: 0, updatedAt: now },
     close:    { status: 'closed', updatedAt: now },
     complete: { status: 'manual_completed', updatedAt: now },
     notify:   { customerNotified: true, updatedAt: now },
@@ -75,7 +82,7 @@ window.jobAction = jobAction;
 
 // ── Bulk selection helpers ────────────────────────────────────────────────────
 function getSelectedIds() {
-  return [...document.querySelectorAll('.job-select:checked')].map(cb => cb.value);
+  return [...new Set([...document.querySelectorAll('.job-select:checked')].map(cb => cb.value))];
 }
 
 window.toggleAll = function(cb) {
@@ -92,16 +99,26 @@ async function callAdminCF(endpoint, jobId, uid, businessId) {
       body: JSON.stringify({ jobId, uid, businessId }),
     }
   );
-  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || String(r.status));
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || (data.ok === false && !data.manual)) throw new Error(data.error || data.message || (data.manual ? 'This job requires manual posting.' : String(r.status)));
+  return data;
 }
 
 function uidBizForJob(job) {
   // Prefer fields on the doc; fall back to extracting from the stored Firestore ref path
   const fromRef = uidBizFromRef(job._ref);
   return {
-    uid: job.uid || fromRef.uid,
-    businessId: job.businessId || fromRef.bizId,
+    uid: fromRef.uid || job.uid,
+    businessId: fromRef.bizId || job.businessId,
   };
+}
+
+function showBulkResults(results, successLabel) {
+  const failed = results.filter(r => r.status === 'rejected');
+  const manual = results.filter(r => r.status === 'fulfilled' && r.value?.manual).length;
+  const succeeded = results.length - failed.length - manual;
+  const detail = failed.length ? '\nFirst error: ' + (failed[0].reason?.message || 'Unknown error') : '';
+  alert(`${succeeded} ${successLabel}, ${manual} need manual posting, ${failed.length} failed.${detail}`);
 }
 
 window.retrySelected = async function() {
@@ -110,11 +127,12 @@ window.retrySelected = async function() {
   const btn = document.getElementById('retry-selected-btn');
   if (btn) btn.textContent = 'Retrying…';
   try {
-    await Promise.all(ids.map(id => {
+    const results = await Promise.allSettled(ids.map(id => {
       const job = loadedJobs.find(j => j._id === id) || {};
       const { uid, businessId } = uidBizForJob(job);
       return callAdminCF('adminRetryJob', id, uid, businessId);
     }));
+    showBulkResults(results, 'published');
     if (btn) btn.textContent = 'Retry Selected';
   } catch(e) {
     alert('Retry failed: ' + e.message);
@@ -142,11 +160,12 @@ window.manualFollowupSelected = async function() {
   const btn = document.getElementById('manual-followup-btn');
   if (btn) btn.textContent = 'Marking…';
   try {
-    await Promise.all(ids.map(id => {
+    const results = await Promise.allSettled(ids.map(id => {
       const job = loadedJobs.find(j => j._id === id) || {};
       const { uid, businessId } = uidBizForJob(job);
       return callAdminCF('adminMarkManualFollowup', id, uid, businessId);
     }));
+    showBulkResults(results, 'marked for follow-up');
     if (btn) btn.textContent = 'Mark Manual Follow-up';
   } catch(e) {
     alert('Action failed: ' + e.message);
@@ -183,10 +202,17 @@ onAuthStateChanged(auth, (user) => {
     const tbody = document.querySelector('table tbody');
     if (!tbody) return;
     if (snap.empty) {
+      loadedJobs = [];
+      const cardsEl = document.getElementById('jobs-cards');
+      if (cardsEl) cardsEl.innerHTML = '';
+      const selectAll = document.getElementById('select-all');
+      if (selectAll) selectAll.checked = false;
       tbody.innerHTML = '<tr><td colspan="7" class="td-empty">No failed jobs. All clear.</td></tr>';
       document.querySelectorAll('.stat-num').forEach(n => { n.textContent = '0'; });
       const heroOpen = document.getElementById('hero-open-count');
       if (heroOpen) heroOpen.textContent = '0';
+      document.getElementById('hero-retry-count').textContent = '0';
+      document.getElementById('hero-open-sub').textContent = 'No failed jobs in this list.';
       return;
     }
     const jobs = snap.docs.map(d => ({ ...d.data(), _id: d.id, _ref: d.ref }));
@@ -194,6 +220,7 @@ onAuthStateChanged(auth, (user) => {
 
     // Resolve business names in one batch before rendering
     await resolveBizNames(jobs);
+    if (loadedJobs !== jobs) return; // A newer snapshot arrived while names were loading.
 
     const tableRows = [];
     const cardItems = [];
@@ -263,6 +290,21 @@ onAuthStateChanged(auth, (user) => {
     }
     const heroOpen = document.getElementById('hero-open-count');
     if (heroOpen) heroOpen.textContent = jobs.length;
+    document.getElementById('hero-retry-count').textContent = jobs.filter(j => j.status === 'retry_pending').length;
+    document.getElementById('hero-open-sub').textContent = 'Counts reflect the latest 50 matching jobs.';
+  }, (err) => {
+    loadedJobs = [];
+    const message = 'Could not load failed jobs: ' + (err.message || 'Please try again.');
+    const tbody = document.querySelector('table tbody');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="td-empty">${escHtml(message)}</td></tr>`;
+    const cards = document.getElementById('jobs-cards');
+    if (cards) cards.textContent = message;
+    const selectAll = document.getElementById('select-all');
+    if (selectAll) selectAll.checked = false;
+    document.querySelectorAll('.stat-num').forEach(n => { n.textContent = '—'; });
+    document.getElementById('hero-open-count').textContent = '—';
+    document.getElementById('hero-retry-count').textContent = '—';
+    document.getElementById('hero-open-sub').textContent = 'Unavailable';
   });
 });
 </script>

@@ -381,10 +381,10 @@ exports.dispatchPublishJob = onDocumentCreated(
     try {
       await db.runTransaction(async (tx) => {
         const fresh = await tx.get(jobRef);
-        if (fresh.data().status !== 'pending') {
+        if (fresh.data().status !== 'pending' || fresh.data().planGated) {
           throw Object.assign(new Error('already-claimed'), { code: 'ALREADY_CLAIMED' });
         }
-        tx.update(jobRef, { status: 'processing', updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+        tx.update(jobRef, { status: 'processing', adminRetry: false, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
       });
     } catch(txErr) {
       if (txErr.code === 'ALREADY_CLAIMED') return;
@@ -474,6 +474,7 @@ exports.jobFailedTrigger = onDocumentUpdated(
     const before = event.data.before.data();
     const after  = event.data.after.data();
     if (before.status === after.status || after.status !== 'failed') return;
+    if (after.adminRetry === true) return; // Operator retries must not resend customer failure emails.
 
     const uid = event.params.userId;
     if (!uid) return;
@@ -488,8 +489,8 @@ exports.jobFailedTrigger = onDocumentUpdated(
     if (!toEmail) return;
 
     try {
-      const bizSnap = await userBizCol(uid).limit(1).get();
-      businessName = bizSnap.docs[0]?.data()?.businessName || '';
+      const bizSnap = await userBizRef(uid, event.params.bizId).get();
+      businessName = bizSnap.data()?.businessName || '';
     } catch(e) { /* non-fatal */ }
 
     const platformRaw = (after.platform || 'your platform').replace(/_/g, ' ');
@@ -564,8 +565,8 @@ exports.jobCompletedTrigger = onDocumentUpdated(
     if (!toEmail) return;
 
     try {
-      const bizSnap = await userBizCol(uid).limit(1).get();
-      businessName = bizSnap.docs[0]?.data()?.businessName || '';
+      const bizSnap = await userBizRef(uid, event.params.bizId).get();
+      businessName = bizSnap.data()?.businessName || '';
     } catch(e) { /* non-fatal */ }
 
     const platformRaw = (after.platform || 'your platform').replace(/_/g, ' ');

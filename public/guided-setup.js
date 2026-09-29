@@ -295,7 +295,10 @@
     this.advance(1);
   };
 
-  GuidedSetup.prototype.skip = function () { this.advance(1); };
+  GuidedSetup.prototype.skip = function () {
+    if (this.steps[this.idx] && this.steps[this.idx].required) return this.next();
+    this.advance(1);
+  };
 
   GuidedSetup.prototype.back = function () { this.advance(-1); };
 
@@ -310,7 +313,6 @@
   GuidedSetup.prototype.finish = function () {
     el('gs-fill').style.width = '100%';
     this._clearTarget();
-    if (this.mascot && this.mascot.confetti) this.mascot.confetti();
     this.onFinish(this.answers());
   };
 

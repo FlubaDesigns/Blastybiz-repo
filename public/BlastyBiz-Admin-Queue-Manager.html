@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="global-style.css?v=1786304797822">
 
 <style>body{visibility:hidden}</style>
+<script src="escape-utils.js?v=1"></script>
 <script type="importmap">
 {
   "integrity": {
@@ -31,10 +32,10 @@
 <main><div class="main"><div class="main-inner">
 
   <section class="grid">
-    <div class="card"><div class="muted">Queued</div><div class="metric">18</div><div class="muted">Waiting to run</div></div>
-    <div class="card"><div class="muted">Posting Now</div><div class="metric">6</div><div class="muted">Currently processing</div></div>
-    <div class="card"><div class="muted">Needs Attention</div><div class="metric">4</div><div class="muted">Failed or manual</div></div>
-    <div class="card"><div class="muted">Completed Today</div><div class="metric">127</div><div class="muted">Successful platform updates</div></div>
+    <div class="card"><div class="muted">Queued</div><div class="metric">—</div><div class="muted">Waiting to run</div></div>
+    <div class="card"><div class="muted">Posting Now</div><div class="metric">—</div><div class="muted">Currently processing</div></div>
+    <div class="card"><div class="muted">Needs Attention</div><div class="metric">—</div><div class="muted">Failed or manual</div></div>
+    <div class="card"><div class="muted">Completed in this list</div><div class="metric">—</div><div class="muted">Successful platform updates</div></div>
   </section>
 
   <section class="card">
@@ -56,82 +57,19 @@
           <th>Business</th><th>Platform</th><th>Status</th><th>Last Message</th><th>Attempts</th><th>Updated</th><th>Admin Actions</th>
         </tr>
       </thead>
-      <tbody>
-        <tr>
-          <td><strong>Joe's Plumbing</strong><br><span class="muted">Pro Plan · Sarasota, FL</span></td>
-          <td>Google Business</td>
-          <td><span class="badge posting">Posting</span></td>
-          <td>Sending approved listing update.</td>
-          <td>1</td>
-          <td>2 minutes ago</td>
-          <td class="actions"><button class="light">View</button><button class="warn-btn">Pause</button></td>
-        </tr>
-        <tr>
-          <td><strong>ABC Roofing</strong><br><span class="muted">Agency Plan · Tampa, FL</span></td>
-          <td>Facebook</td>
-          <td><span class="badge failed">Failed</span></td>
-          <td>Access token expired. Customer needs reconnect.</td>
-          <td>3</td>
-          <td>11 minutes ago</td>
-          <td class="actions"><button class="primary">Retry</button><button class="light">Notify</button><button class="btn-danger">Close</button></td>
-        </tr>
-        <tr>
-          <td><strong>Sunset Lawn Care</strong><br><span class="muted">Starter Plan · Venice, FL</span></td>
-          <td>Nextdoor</td>
-          <td><span class="badge manual">Manual</span></td>
-          <td>Manual copy/paste required. Instructions generated.</td>
-          <td>0</td>
-          <td>23 minutes ago</td>
-          <td class="actions"><button class="safe">Mark Complete</button><button class="light">View Instructions</button></td>
-        </tr>
-        <tr>
-          <td><strong>Pizza Palace</strong><br><span class="muted">Pro Plan · Englewood, FL</span></td>
-          <td>Yelp</td>
-          <td><span class="badge pending">Pending</span></td>
-          <td>Waiting behind platform rate limit window.</td>
-          <td>1</td>
-          <td>41 minutes ago</td>
-          <td class="actions"><button class="primary">Run Now</button><button class="light">View</button></td>
-        </tr>
-        <tr>
-          <td><strong>Harbor Dental</strong><br><span class="muted">Agency Plan · Port Charlotte, FL</span></td>
-          <td>Apple Maps</td>
-          <td><span class="badge success">Success</span></td>
-          <td>Listing update completed successfully.</td>
-          <td>1</td>
-          <td>1 hour ago</td>
-          <td class="actions"><button class="light">View Receipt</button></td>
-        </tr>
-      </tbody>
+      <tbody><tr><td colspan="7" class="empty-row">Loading jobs…</td></tr></tbody>
     </table>
   </section>
 
   <div class="split">
     <div class="card">
       <h3>Selected Job Details</h3>
-      <p class="job-field"><strong>Business:</strong> ABC Roofing</p>
-      <p class="job-field"><strong>Platform:</strong> Facebook</p>
-      <p class="job-field"><strong>Status:</strong> Failed</p>
-      <p class="job-field"><strong>Safe customer message:</strong> Facebook needs to be reconnected before BlastyBiz can publish your update.</p>
-      <p class="job-field"><strong>Internal error:</strong> OAuth token expired.</p>
-      <div class="actions actions-mt">
-        <button class="primary">Retry Job</button>
-        <button class="light">Send Reconnect Email</button>
-        <button class="btn-danger">Mark Resolved</button>
-      </div>
+      <p class="job-field">No job selected.</p>
     </div>
 
     <div class="card">
       <h3>Payload Preview</h3>
-      <pre>{
-  "businessId": "business_abc_roofing",
-  "platform": "facebook",
-  "jobType": "publishListing",
-  "status": "failed",
-  "attempts": 3,
-  "customerVisibleMessage": "Facebook needs to be reconnected.",
-  "adminError": "OAuth token expired"
-}</pre>
+      <pre>—</pre>
     </div>
   </div>
 
@@ -167,6 +105,7 @@ function showQueueMsg(msg, isError) {
   el._t = setTimeout(() => { el.style.opacity = '0'; }, 3500);
 }
 
+const _esc = window.escHtml;
 const jobRefMap  = {};
 const jobDataMap = {};
 
@@ -176,7 +115,9 @@ async function jobAction(jobId, action) {
   if (!ref) { console.warn('jobAction: no ref for', jobId); return; }
 
   // retry / run — must go through adminRetryJob CF so the job is actually dispatched
-  if (action === 'retry' || action === 'run') {
+  if (['retry', 'run', 'recover', 'resume'].includes(action)) {
+    if (jdat?.planGated) { showQueueMsg("This job is held by the customer's plan.", true); return; }
+    if (action === 'recover' && !confirm('Check the platform first. Continue only if this post is NOT already published. Retry now?')) return;
     if (!jdat?.uid || !jdat?.businessId) {
       showQueueMsg('Cannot dispatch — job is missing uid or businessId', true);
       return;
@@ -186,13 +127,13 @@ async function jobAction(jobId, action) {
       const r = await fetch(`${CF}/adminRetryJob`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-        body: JSON.stringify({ jobId, uid: jdat.uid, businessId: jdat.businessId, force: action === 'retry' }),
+        body: JSON.stringify({ jobId, uid: jdat.uid, businessId: jdat.businessId, recovery: action === 'recover' ? 'not_published' : undefined, resume: action === 'resume' }),
       });
       const data = await r.json();
-      if (r.ok) {
-        showQueueMsg(`Dispatched — ${jdat.platform || 'job'} is now processing`);
+      if (r.ok && data.ok) {
+        showQueueMsg(`Published to ${jdat.platform || 'platform'}`);
       } else {
-        showQueueMsg(data.error || 'Dispatch failed', true);
+        showQueueMsg(data.error || data.message || (data.manual ? 'This job requires manual posting.' : 'Dispatch failed'), !data.manual);
       }
     } catch(e) {
       showQueueMsg('Network error — check console', true);
@@ -217,29 +158,43 @@ onAuthStateChanged(auth, (user) => {
   if (!user) return;
   const q = query(collectionGroup(db, 'publishJobs'), orderBy('updatedAt', 'desc'), limit(50));
   onSnapshot(q, (snap) => {
+    Object.keys(jobRefMap).forEach(id => { delete jobRefMap[id]; });
+    Object.keys(jobDataMap).forEach(id => { delete jobDataMap[id]; });
     if (snap.empty) {
       document.querySelector('tbody').innerHTML = '<tr><td colspan="7" class="empty-row">No jobs yet.</td></tr>';
+      document.querySelectorAll('.metric').forEach(el => { el.textContent = '0'; });
       return;
     }
     let queued = 0, posting = 0, attention = 0, completed = 0;
-    snap.docs.forEach(d => { jobRefMap[d.id] = d.ref; jobDataMap[d.id] = d.data(); });
-    const _esc = window._esc || (s => String(s == null ? '' : s).replace(/[&<>"']/g, function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];})); // canonical — see escape-utils.js').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-    const VALID_STATUS = new Set(['pending','retry_pending','running','success','manual_completed','failed','manual_required','customer_reconnect_required','needs_connection','paused','closed']);
+    snap.docs.forEach(d => {
+      const parts = d.ref.path.split('/');
+      jobRefMap[d.id] = d.ref;
+      jobDataMap[d.id] = { ...d.data(), uid: parts[1], businessId: parts[3] };
+    });
+    const VALID_STATUS = new Set(['pending','retry_pending','running','processing','success','manual_completed','failed','manual_required','customer_reconnect_required','needs_connection','paused','closed']);
     const rows = snap.docs.map(d => {
       const j = d.data();
       const id = d.id; // Firestore auto-ID — alphanumeric, safe in onclick
       const status = VALID_STATUS.has(j.status) ? j.status : 'pending';
       if (status === 'pending' || status === 'retry_pending') queued++;
-      else if (status === 'running') posting++;
+      else if (status === 'running' || status === 'processing') posting++;
       else if (['failed','manual_required','customer_reconnect_required','needs_connection'].includes(status)) attention++;
       else if (status === 'success' || status === 'manual_completed') completed++;
       const sc = {
-        pending:'pending', retry_pending:'pending', running:'posting',
+        pending:'pending', retry_pending:'pending', running:'posting', processing:'posting',
         success:'success', manual_completed:'success',
         failed:'failed', manual_required:'manual',
         customer_reconnect_required:'manual', needs_connection:'manual', paused:'pending', closed:'success'
       }[status] || 'pending';
-      const acts = ['failed','customer_reconnect_required'].includes(status)
+      const updatedMs = j.updatedAt?.toMillis?.() || j.updatedAt?.toDate?.().getTime() || 0;
+      const stale = ['processing','running'].includes(status) && updatedMs > 0 && Date.now() - updatedMs >= 15 * 60 * 1000;
+      const acts = j.planGated
+        ? '<span>Held by plan</span>'
+        : stale || j.publicationUncertain
+        ? `<span>Check platform first.</span><button class="warn-btn" onclick="jobAction('${id}','recover')">Checked: not posted — retry</button><button class="safe" onclick="jobAction('${id}','complete')">Already posted — mark complete</button>`
+        : status === 'paused'
+        ? `<button class="primary" onclick="jobAction('${id}','resume')">Resume and publish</button>`
+        : ['failed','customer_reconnect_required','needs_connection','retry_pending'].includes(status)
         ? `<button class="primary" onclick="jobAction('${id}','retry')">Retry</button><button class="light" onclick="jobAction('${id}','notify')">Notify</button><button class="btn-danger" onclick="jobAction('${id}','close')">Close</button>`
         : status === 'manual_required'
         ? `<button class="safe" onclick="jobAction('${id}','complete')">Mark Complete</button><button class="light">View Instructions</button>`
@@ -249,7 +204,7 @@ onAuthStateChanged(auth, (user) => {
       return `<tr>
         <td><strong>${_esc(j.businessId) || '—'}</strong><br><span class="muted">${_esc(j.platform)}</span></td>
         <td>${_esc(j.platform) || '—'}</td>
-        <td><span class="badge ${sc}">${_esc(status)}</span></td>
+        <td><span class="badge ${sc}">${_esc(stale ? 'Stuck? Check platform' : status)}</span></td>
         <td>${_esc(j.customerVisibleMessage) || '—'}</td>
         <td>${j.attempts || 0}</td>
         <td>${timeAgo(j.updatedAt)}</td>
@@ -264,6 +219,11 @@ onAuthStateChanged(auth, (user) => {
       metrics[2].textContent = attention;
       metrics[3].textContent = completed;
     }
+  }, (err) => {
+    Object.keys(jobRefMap).forEach(id => { delete jobRefMap[id]; });
+    Object.keys(jobDataMap).forEach(id => { delete jobDataMap[id]; });
+    document.querySelectorAll('.metric').forEach(el => { el.textContent = '—'; });
+    document.querySelector('tbody').innerHTML = `<tr><td colspan="7" class="empty-row">Could not load jobs: ${_esc(err.message || 'Please try again.')}</td></tr>`;
   });
 });
 </script>

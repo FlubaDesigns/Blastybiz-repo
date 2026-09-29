@@ -668,7 +668,13 @@ window._loginAddStep = function(insertIdx) {
 
 window._loginCancelNewStep = function(insertIdx) {
   const row = document.getElementById('add-step-row-' + insertIdx);
-  if (row) row.innerHTML = `<button class="btn-add-step" onclick="window._loginAddStep(${insertIdx})">＋ Add Step Here</button>`;
+  if (row) {
+    const button = document.createElement('button');
+    button.className = 'btn-add-step';
+    button.textContent = '＋ Add Step Here';
+    button.addEventListener('click', () => window._loginAddStep(insertIdx));
+    row.replaceChildren(button);
+  }
 };
 
 window._loginConfirmNewStep = async function(insertIdx) {

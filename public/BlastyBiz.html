@@ -1222,6 +1222,8 @@ let platformReasons     = {};                 // AI-suggested reasons per platfo
 let profileLocationType = 'physical';         // 'physical' | 'online' — profile form
 window._bbPhotoItems = []; // [{url, path, localUrl, done, progress, error}]
 window._bbSelectedPhotoIndex = null; // index of featured/selected photo
+window._bbFeaturedPhotoUrl = ''; // cache of the existing business featuredPhoto field
+window._bbPhotoUploads = new Set(); // references to unfinished upload items, not a second image library
 window._globalImages = [];           // global business images [{url,path,id,scope:'global'}]
 let photoScope = 'campaign';        // 'campaign' | 'global'
 
@@ -1390,7 +1392,7 @@ function _renderDismissedFold(dismissed) {
   if (!foldEl) return;
   if (!dismissed.length) { foldEl.innerHTML = ''; return; }
   const wasOpen = foldEl.querySelector('.dismissed-fold-wrap.open');
-  foldEl.innerHTML = `<div class="dismissed-fold-wrap${wasOpen ? ' open' : ''}">
+  foldEl.innerHTML = `<div class="dismissed-fold-wrap${escHtml(wasOpen ? ' open' : '')}">
     <button type="button" class="dismissed-fold-toggle"
       onclick="this.closest('.dismissed-fold-wrap').classList.toggle('open')">
       <span>Not using (${dismissed.length})</span><span>▾</span>
@@ -2834,6 +2836,17 @@ async function completeBlast() {
 // ══════════════════════════════════════════
 // IMAGE HANDLING
 // ══════════════════════════════════════════
+function photoUploadMatchesView(item) {
+  return item.bizId === window.activeBizId && item.scope === photoScope
+    && (item.scope === 'global' || item.campaignId === activeCampaignId);
+}
+
+function restoreFeaturedPhotoSelection() {
+  const url = window._bbFeaturedPhotoUrl;
+  const index = url ? (window._bbPhotoItems || []).findIndex(item => item.done && item.url === url) : -1;
+  window._bbSelectedPhotoIndex = index >= 0 ? index : null;
+}
+
 function photoCap() {
   const plan = window._bbUserPlan || 'starter';
   if (plan === 'agency') return Infinity;
@@ -2849,7 +2862,7 @@ function updatePhotoCapLabel() {
   const saved = items.filter(i => i.done).length;
   const cap   = photoCap();
   const plan  = window._bbUserPlan || 'starter';
-  if (!activeCampaignId) {
+  if (photoScope !== 'global' && !activeCampaignId) {
     label.textContent = '';
     label.style.color = 'var(--muted)';
     if (area) area.style.opacity = '0.45';
@@ -2866,7 +2879,7 @@ function updatePhotoCapLabel() {
 }
 
 function handleImages(e) {
-  if (!activeCampaignId) {
+  if (photoScope !== 'global' && !activeCampaignId) {
     showToast('Pick a campaign first, then add photos');
     e.target.value = '';
     return;
@@ -2877,26 +2890,28 @@ function handleImages(e) {
   if (current >= cap) {
     const plan = window._bbUserPlan || 'starter';
     if (plan === 'starter') {
-      showToast('Starter plan: 2 photos per campaign. Upgrade to Pro for 20.');
+      showToast(photoScope === 'global' ? 'Starter plan: 2 global photos. Upgrade to Pro for 20.' : 'Starter plan: 2 photos per campaign. Upgrade to Pro for 20.');
     } else {
-      showToast('Pro plan: 20 photos per campaign. Remove one to add more.');
+      showToast(photoScope === 'global' ? 'Pro plan: 20 global photos. Remove one to add more.' : 'Pro plan: 20 photos per campaign. Remove one to add more.');
     }
     e.target.value = '';
     return;
   }
   const remaining = cap === Infinity ? 999 : cap - current;
   const files = Array.from(e.target.files).slice(0, remaining);
+  const uploadContext = { scope: photoScope, campaignId: activeCampaignId, bizId: window.activeBizId };
   e.target.value = '';
   checkAdaptBtn();
   // Sequential: compress one at a time to avoid concurrent canvas.toBlob() hangs on mobile.
   (async () => {
     for (const file of files) {
-      if (window._bbUploadPhoto) await window._bbUploadPhoto(file);
+      if (window._bbUploadPhoto) await window._bbUploadPhoto(file, uploadContext);
     }
   })();
 }
 
 window.renderAllPhotos = function() {
+  restoreFeaturedPhotoSelection();
   const grid = document.getElementById('thumb-grid');
   if (!grid) return;
   grid.innerHTML = '';
@@ -2932,6 +2947,11 @@ window.renderAllPhotos = function() {
           : `<div class="thumb-saved-badge">☁ Saved</div>`
         }`;
     }
+    if (item.deleting || item.selecting) {
+      wrap.style.opacity = '0.45';
+      wrap.setAttribute('aria-busy', 'true');
+      wrap.querySelectorAll('button').forEach(button => { button.disabled = true; });
+    }
     grid.appendChild(wrap);
   });
 
@@ -2953,7 +2973,7 @@ window.renderAllPhotos = function() {
     badge.style.color = uploading > 0 ? '#fff' : 'var(--green)';
     badge.innerHTML = uploading > 0
       ? `⬆️ Uploading ${uploading} photo${uploading > 1 ? 's' : ''}… (${saved} saved)`
-      : `✅ ${saved} photo${saved !== 1 ? 's' : ''} saved to this campaign`;
+      : `✅ ${saved} photo${saved !== 1 ? 's' : ''} saved ${photoScope === 'global' ? 'to the global library' : 'to this campaign'}`;
     let hint = document.getElementById('photo-select-hint');
     if (saved > 0 && !hint) {
       hint = document.createElement('div');
@@ -4335,11 +4355,17 @@ function setFactoidScope(scope) {
 }
 
 function refreshPhotoGridForScope() {
+  window._bbSelectedPhotoIndex = null;
+  const pendingItems = [...window._bbPhotoUploads].filter(photoUploadMatchesView);
+  window._bbPhotoItems = pendingItems;
+  if (window.renderAllPhotos) window.renderAllPhotos();
   if (photoScope === 'global') {
     window._bbPhotoItems = (window._globalImages || []).map(img => ({
       url: img.url, path: img.path || null, localUrl: img.url,
-      done: true, progress: 100, id: img.id, scope: 'global'
+      done: true, progress: 100, id: img.id, scope: 'global', bizId: window.activeBizId
     }));
+    window._bbPhotoItems.push(...pendingItems.filter(item => !window._bbPhotoItems.some(saved =>
+      (item.id && saved.id === item.id) || (item.url && saved.url === item.url))));
     if (window.renderAllPhotos) window.renderAllPhotos();
     updatePhotoCapLabel();
     const hint = document.getElementById('photo-scope-hint');
@@ -4347,22 +4373,31 @@ function refreshPhotoGridForScope() {
   } else {
     const hint = document.getElementById('photo-scope-hint');
     if (hint) hint.textContent = 'Campaign photos are linked to the active campaign. Select a campaign above first.';
-    if (activeCampaignId && window._bbLoadCampaignImages) {
-      window._bbLoadCampaignImages(activeCampaignId).then(images => {
-        window._bbPhotoItems = images.map(img => ({
-          url: img.url, path: img.path || null, localUrl: img.url,
-          done: true, progress: 100, id: img.id, scope: 'campaign'
-        }));
-        if (window.renderAllPhotos) window.renderAllPhotos();
-        updatePhotoCapLabel();
-      }).catch(() => {
-        window._bbPhotoItems = [];
-        if (window.renderAllPhotos) window.renderAllPhotos();
+    const cid = activeCampaignId;
+    const applyImages = images => {
+      if (window._bbPhotoItems !== pendingItems || photoScope !== 'campaign' || activeCampaignId !== cid) return;
+      const cam = campaigns.find(c => c.id === cid) || {};
+      const photos = images.length ? images : (cam.photos || []);
+      window._bbPhotoItems = photos.map(p => {
+        const img = typeof p === 'string' ? { url: p } : p;
+        return { ...img, localUrl: img.url, path: img.path || null,
+          done: true, progress: 100, scope: 'campaign', campaignId: cid, bizId: window.activeBizId };
       });
-    } else {
-      window._bbPhotoItems = [];
+      // Keep uploads started while this campaign read was pending.
+      window._bbPhotoItems.push(...pendingItems.filter(item => !window._bbPhotoItems.some(saved =>
+        (item.id && saved.id === item.id) || (item.url && saved.url === item.url))));
+      window._bbSelectedPhotoIndex = null;
       if (window.renderAllPhotos) window.renderAllPhotos();
       updatePhotoCapLabel();
+    };
+    if (cid && window._bbLoadCampaignImages) {
+      window._bbLoadCampaignImages(cid).then(applyImages).catch(() => {
+        if (window._bbPhotoItems !== pendingItems || photoScope !== 'campaign' || activeCampaignId !== cid) return;
+        applyImages([]);
+        if (hint) hint.textContent = 'Could not load campaign photos. Tap Campaign to retry; saved photos may be missing from this view.';
+      });
+    } else {
+      applyImages([]);
     }
   }
 }
@@ -4764,39 +4799,8 @@ function selectCampaign(id, name) {
     if (nEl) nEl.classList.toggle('yn-active',  val === 'no');
   });
 
-  // Load campaign images from subcollection (fall back to cam.photos for old data)
-  if (window._bbLoadCampaignImages) {
-    window._bbLoadCampaignImages(id).then(images => {
-      if (images.length > 0) {
-        window._bbPhotoItems = images.map(img => ({
-          url: img.url, path: img.path || null, localUrl: img.url,
-          done: true, progress: 100, id: img.id, scope: 'campaign'
-        }));
-      } else {
-        const cam = campaigns.find(c => c.id === id) || {};
-        window._bbPhotoItems = (cam.photos || []).map(p =>
-          typeof p === 'string'
-            ? { url: p, path: null, localUrl: p, done: true, progress: 100 }
-            : { ...p, localUrl: p.url, done: true, progress: 100 }
-        );
-      }
-      window._bbSelectedPhotoIndex = null;
-      if (window.renderAllPhotos) window.renderAllPhotos();
-      updatePhotoCapLabel();
-    }).catch(() => {
-      const cam = campaigns.find(c => c.id === id) || {};
-      window._bbPhotoItems = (cam.photos || []).map(p =>
-        ({ ...p, localUrl: p.url || p, done: true, progress: 100 })
-      );
-      if (window.renderAllPhotos) window.renderAllPhotos();
-      updatePhotoCapLabel();
-    });
-  } else {
-    window._bbPhotoItems = [];
-    window._bbSelectedPhotoIndex = null;
-    if (window.renderAllPhotos) window.renderAllPhotos();
-    updatePhotoCapLabel();
-  }
+  // Use the existing scope loader for campaign selection too.
+  refreshPhotoGridForScope();
 
   // Load campaign factoids from subcollection (keep existing if subcollection empty)
   if (window._bbLoadCampaignFactoids) {
@@ -5359,7 +5363,7 @@ import { onAuthStateChanged, signOut, isSignInWithEmailLink, signInWithEmailLink
 import {
   doc, getDoc, setDoc, addDoc, collection, serverTimestamp, writeBatch, deleteDoc,
   query, where, getDocs, orderBy, limit, updateDoc, arrayUnion, arrayRemove, increment,
-  onSnapshot
+  onSnapshot, runTransaction
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // ── awaitPaidPlan ────────────────────────────────────────────────────────────
@@ -5623,11 +5627,11 @@ window._bbLoadGlobalFacts = async function() {
 };
 
 // ── Global business images (images subcollection) ─────────────────────────────
-window._bbSaveGlobalImage = async function(imageData) {
-  if (!activeBizId || !currentUser) return null;
+window._bbSaveGlobalImage = async function(imageData, bizId = activeBizId) {
+  if (!bizId || !currentUser) return null;
   const ref = await addDoc(
-    collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'images'),
-    { ...imageData, uid: currentUser.uid, bizId: activeBizId, scope: 'global', createdAt: serverTimestamp() }
+    collection(db, 'users', currentUser.uid, 'businesses', bizId, 'images'),
+    { ...imageData, uid: currentUser.uid, bizId, scope: 'global', createdAt: serverTimestamp() }
   );
   return ref.id;
 };
@@ -5638,22 +5642,40 @@ window._bbLoadGlobalImages = async function() {
   return snap.docs.map(d => ({ ...d.data(), id: d.id }));
 };
 
-window._bbDeleteGlobalImage = async function(image) {
-  if (!activeBizId || !currentUser) return;
-  if (image.id) {
-    await deleteDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'images', image.id));
-  } else if (image.url) {
-    const q = query(
-      collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'images'),
-      where('url', '==', image.url)
-    );
-    const snap = await getDocs(q);
-    const batch = writeBatch(db);
-    snap.forEach(d => batch.delete(d.ref));
-    await batch.commit();
+// Delete every representation of the same image together, using the existing records.
+async function deletePhotoRecords(image, campId = null) {
+  const bizId = image.bizId || activeBizId;
+  if (!bizId || !currentUser) throw new Error('Business is not ready');
+  const uid = currentUser.uid;
+  const bizRef = doc(db, 'users', uid, 'businesses', bizId);
+  const campRef = campId ? doc(db, 'users', uid, 'businesses', bizId, 'campaigns', campId) : null;
+  const parts = ['users', uid, 'businesses', bizId, ...(campId ? ['campaigns', campId] : []), 'images'];
+  const refs = image.id ? [doc(db, ...parts, image.id)] : image.url
+    ? (await getDocs(query(collection(db, ...parts), where('url', '==', image.url)))).docs.map(d => d.ref) : [];
+  let remainingPhotos = null;
+  let clearedFeatured = false;
+  await runTransaction(db, async tx => {
+    const biz = await tx.get(bizRef);
+    const camp = campRef ? await tx.get(campRef) : null;
+    remainingPhotos = null;
+    clearedFeatured = !!image.url && biz.exists() && biz.data().featuredPhoto === image.url;
+    if (camp?.exists() && Array.isArray(camp.data().photos)) {
+      remainingPhotos = camp.data().photos.filter(p => (typeof p === 'string' ? p : p.url) !== image.url);
+      tx.update(campRef, {photos: remainingPhotos});
+    }
+    if (clearedFeatured) tx.update(bizRef, {featuredPhoto: ''});
+    refs.forEach(ref => tx.delete(ref));
+  });
+  if (activeBizId === bizId) {
+    if (clearedFeatured && window._bbFeaturedPhotoUrl === image.url) window._bbFeaturedPhotoUrl = '';
+    if (campId && remainingPhotos) {
+      const campaign = campaigns.find(c => c.id === campId);
+      if (campaign) campaign.photos = remainingPhotos;
+    }
+    if (!campId) window._globalImages = (window._globalImages || []).filter(i => i.url !== image.url);
   }
-  window._globalImages = (window._globalImages || []).filter(i => i.url !== image.url);
-};
+}
+window._bbDeleteGlobalImage = image => deletePhotoRecords(image);
 
 // ── Campaign facts subcollection ──────────────────────────────────────────────
 window._bbLoadCampaignFactoids = async function(campId) {
@@ -5682,30 +5704,16 @@ window._bbLoadCampaignImages = async function(campId) {
   return snap.docs.map(d => ({ ...d.data(), id: d.id }));
 };
 
-window._bbSaveCampaignImage = async function(campId, imageData) {
-  if (!activeBizId || !currentUser || !campId) return null;
+window._bbSaveCampaignImage = async function(campId, imageData, bizId = activeBizId) {
+  if (!bizId || !currentUser || !campId) return null;
   const ref = await addDoc(
-    collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', campId, 'images'),
-    { ...imageData, uid: currentUser.uid, bizId: activeBizId, campaignId: campId, scope: 'campaign', createdAt: serverTimestamp() }
+    collection(db, 'users', currentUser.uid, 'businesses', bizId, 'campaigns', campId, 'images'),
+    { ...imageData, uid: currentUser.uid, bizId, campaignId: campId, scope: 'campaign', createdAt: serverTimestamp() }
   );
   return ref.id;
 };
 
-window._bbDeleteCampaignImage = async function(campId, image) {
-  if (!activeBizId || !currentUser || !campId) return;
-  if (image.id) {
-    await deleteDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', campId, 'images', image.id));
-  } else if (image.url) {
-    const q = query(
-      collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', campId, 'images'),
-      where('url', '==', image.url)
-    );
-    const snap = await getDocs(q);
-    const batch = writeBatch(db);
-    snap.forEach(d => batch.delete(d.ref));
-    await batch.commit();
-  }
-};
+window._bbDeleteCampaignImage = (campId, image) => deletePhotoRecords(image, campId);
 
 // ── Insight + globalFactoids savers — must be module-scoped for activeBizId ──
 window._saveInsightToFirestore = async function(insights) {
@@ -5821,6 +5829,7 @@ onAuthStateChanged(auth, async (user) => {
     const bizSnap = await getDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId));
     if (bizSnap.exists()) {
       const biz = bizSnap.data();
+      window._bbFeaturedPhotoUrl = biz.featuredPhoto || '';
       const p = {
         name:         biz.businessName || biz.name || '',
         ownerName:    biz.ownerName  || '',
@@ -6003,8 +6012,16 @@ onAuthStateChanged(auth, async (user) => {
   // Returns the original file if not HEIC, a JPEG Blob if converted, or null on failure.
   async function maybeDecodeHeic(file) {
     const name = (file.name || '').toLowerCase();
-    const isHeic = file.type === 'image/heic' || file.type === 'image/heif'
+    let isHeic = file.type === 'image/heic' || file.type === 'image/heif'
       || name.endsWith('.heic') || name.endsWith('.heif');
+    if (!isHeic) {
+      try {
+        const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+        const box = String.fromCharCode(...bytes.slice(4, 8));
+        const brand = String.fromCharCode(...bytes.slice(8, 12));
+        isHeic = box === 'ftyp' && ['heic', 'heix', 'heim', 'heis', 'hevc', 'hevx', 'mif1', 'msf1'].includes(brand);
+      } catch (_) { /* The existing image decoder handles unreadable/other formats. */ }
+    }
     if (!isHeic) return file;
     // Lazy-load heic2any once
     if (!window._heic2any) {
@@ -6086,31 +6103,35 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   // ── Photo upload (scope-aware: campaign subcollection or global images) ───────
-  window._bbUploadPhoto = async function(file) {
-    // Guard: validate file type before touching canvas or storage
-    if (!file || !file.type.startsWith('image/')) {
+  window._bbUploadPhoto = async function(file, uploadContext = {}) {
+    // Photo pickers may omit MIME type or use a generic binary type; existing byte checks and decoding still apply.
+    if (!file || (file.type && file.type !== 'application/octet-stream' && !file.type.startsWith('image/'))) {
       if (window.showToast) window.showToast('Only image files can be uploaded here.');
       return;
     }
-    const scope = photoScope || 'campaign';
+    const scope = uploadContext.scope || photoScope || 'campaign';
+    const cid = uploadContext.campaignId !== undefined ? uploadContext.campaignId : activeCampaignId;
+    const bizId = uploadContext.bizId || activeBizId;
     // Guard: campaign upload requires an active campaign
-    if (scope === 'campaign' && !activeCampaignId) {
+    if (scope === 'campaign' && !cid) {
       if (window.showToast) window.showToast('Select a campaign first before uploading campaign photos.');
       return;
     }
     const localUrl = URL.createObjectURL(file);
     const uploadId = Date.now() + '_' + Math.random().toString(36).slice(2,8);
-    const cid = activeCampaignId; // capture before async
     const storagePath = scope === 'global'
       ? `photos/${currentUser.uid}/global/${uploadId}.jpg`
       : `photos/${currentUser.uid}/campaigns/${cid}/${uploadId}.jpg`;
-    const item = { url: null, path: storagePath, localUrl, done: false, progress: 0, uploadId, scope, compressing: true };
+    const item = { url: null, path: storagePath, localUrl, done: false, progress: 0, uploadId, scope, campaignId: cid, bizId, compressing: true };
     window._bbPhotoItems = window._bbPhotoItems || [];
-    window._bbPhotoItems.push(item);
+    window._bbPhotoUploads.add(item);
+    if (photoUploadMatchesView(item)) window._bbPhotoItems.push(item);
     if (window.renderAllPhotos) window.renderAllPhotos();
 
     // 3.5: validate magic bytes before wasting bandwidth on a non-image file
     if (!await _bbValidateImageBytes(file)) {
+      window._bbPhotoUploads.delete(item);
+      URL.revokeObjectURL(localUrl);
       window._bbPhotoItems = (window._bbPhotoItems || []).filter(x => x !== item);
       if (window.renderAllPhotos) window.renderAllPhotos();
       if (window.showToast) window.showToast('⚠️ Only JPEG, PNG, WebP, GIF, or HEIC images are supported.');
@@ -6152,66 +6173,104 @@ onAuthStateChanged(auth, async (user) => {
         if (window.showToast) window.showToast('⚠️ Upload failed: ' + (err.message || 'unknown error') + '. Tap the ✕ on the photo and try again.');
       },
       async () => {
-        const dlUrl = await getDownloadURL(task.snapshot.ref);
-        // Revoke the local blob URL now that we have the permanent download URL
-        if (localUrl && localUrl.startsWith('blob:')) URL.revokeObjectURL(localUrl);
-        item.url = dlUrl;
-        item.localUrl = dlUrl;
-        item.done = true;
-        item.progress = 100;
-        if (window.renderAllPhotos) window.renderAllPhotos();
         try {
+          const dlUrl = await getDownloadURL(task.snapshot.ref);
+          let id;
           if (scope === 'global') {
-            const id = await window._bbSaveGlobalImage({ url: dlUrl, path: storagePath });
-            item.id = id;
+            id = await window._bbSaveGlobalImage({ url: dlUrl, path: storagePath }, bizId);
+          } else if (cid) {
+            id = await window._bbSaveCampaignImage(cid, { url: dlUrl, path: storagePath }, bizId);
+          }
+          if (!id) throw new Error('Photo record was not saved');
+          item.id = id;
+          item.url = dlUrl;
+          item.localUrl = dlUrl;
+          item.done = true;
+          item.progress = 100;
+          window._bbPhotoUploads.delete(item);
+          if (photoUploadMatchesView(item) && !window._bbPhotoItems.some(photo => photo === item || photo.id === id)) {
+            window._bbPhotoItems.push(item);
+          }
+          if (localUrl && localUrl.startsWith('blob:')) URL.revokeObjectURL(localUrl);
+          if (scope === 'global' && bizId === activeBizId) {
             window._globalImages = window._globalImages || [];
             window._globalImages.push({ url: dlUrl, path: storagePath, id, scope: 'global' });
-          } else if (cid) {
-            const id = await window._bbSaveCampaignImage(cid, { url: dlUrl, path: storagePath });
-            item.id = id;
           }
-        } catch(e) { console.error('Photo save error:', e); }
+        } catch(e) {
+          console.error('Photo save error:', e);
+          item.error = true;
+          item.errorMsg = 'Could not save — remove and try again';
+          if (window.showToast) window.showToast('Photo could not be saved. Remove it and try again.');
+        }
+        if (window.renderAllPhotos) window.renderAllPhotos();
       }
     );
   };
 
   window._bbSelectPhoto = async function(index) {
-    const items = window._bbPhotoItems || [];
-    const item = items[index];
-    if (!item || !item.done) return;
-    const alreadySelected = window._bbSelectedPhotoIndex === index;
-    window._bbSelectedPhotoIndex = alreadySelected ? null : index;
+    const item = (window._bbPhotoItems || [])[index];
+    if (!item || !item.done || item.deleting || window._bbFeaturedPhotoSaving) return;
+    const featuredUrl = window._bbFeaturedPhotoUrl === item.url ? '' : item.url;
+    const bizId = activeBizId;
+    window._bbFeaturedPhotoSaving = true;
+    item.selecting = true;
     if (window.renderAllPhotos) window.renderAllPhotos();
     try {
-      const featuredUrl = alreadySelected ? null : (item.url || item.localUrl);
-      await updateDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), { featuredPhoto: featuredUrl || '' });
-      window.showToast && window.showToast(alreadySelected ? 'Photo deselected' : '⭐ Featured photo set');
-    } catch(e) { console.error('featuredPhoto save error:', e); }
+      await updateDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId), { featuredPhoto: featuredUrl });
+      if (activeBizId === bizId) window._bbFeaturedPhotoUrl = featuredUrl;
+      window.showToast && window.showToast(featuredUrl ? '⭐ Featured photo set' : 'Photo deselected');
+    } catch(e) {
+      console.error('featuredPhoto save error:', e);
+      window.showToast && window.showToast('Could not save your photo selection. Please try again.');
+    } finally {
+      window._bbFeaturedPhotoSaving = false;
+      item.selecting = false;
+      if (window.renderAllPhotos) window.renderAllPhotos();
+    }
   };
 
   window._bbDeletePhoto = async function(index) {
     const items = window._bbPhotoItems || [];
     const item = items[index];
-    if (!item) return;
-    if (window._bbSelectedPhotoIndex === index) {
-      window._bbSelectedPhotoIndex = null;
-    } else if (window._bbSelectedPhotoIndex > index) {
-      window._bbSelectedPhotoIndex--;
+    if (!item || item.deleting || item.selecting) return;
+    item.deleting = true;
+    if (window.renderAllPhotos) window.renderAllPhotos();
+    const itemScope = item.scope || photoScope || 'campaign';
+    const cid = item.campaignId || activeCampaignId;
+    try {
+      if (itemScope === 'global') {
+        await window._bbDeleteGlobalImage(item);
+      } else if (cid) {
+        await window._bbDeleteCampaignImage(cid, item);
+      }
+    } catch(e) {
+      item.deleting = false;
+      if (window.renderAllPhotos) window.renderAllPhotos();
+      console.error('Photo record delete error:', e);
+      if (window.showToast) window.showToast('Could not remove this photo. Please try again.');
+      return;
     }
-    items.splice(index, 1);
+    window._bbPhotoUploads.delete(item);
+    if (item.localUrl?.startsWith('blob:')) URL.revokeObjectURL(item.localUrl);
+    // Remove from the current grid only after the record deletion succeeds.
+    const currentIndex = items.indexOf(item);
+    if (currentIndex !== -1) {
+      if (window._bbPhotoItems === items) {
+        if (window._bbSelectedPhotoIndex === currentIndex) window._bbSelectedPhotoIndex = null;
+        else if (window._bbSelectedPhotoIndex > currentIndex) window._bbSelectedPhotoIndex--;
+      }
+      items.splice(currentIndex, 1);
+    }
     if (window.renderAllPhotos) window.renderAllPhotos();
     try {
       if (item.path) await deleteObject(storageRef(storage, item.path));
-      const itemScope = item.scope || photoScope || 'campaign';
-      if (itemScope === 'global') {
-        if (window._bbDeleteGlobalImage) await window._bbDeleteGlobalImage(item);
-      } else {
-        const cid = activeCampaignId;
-        if (cid && window._bbDeleteCampaignImage) {
-          await window._bbDeleteCampaignImage(cid, item);
-        }
-      }
-    } catch(e) { console.error('Photo delete error:', e); }
+    } catch(e) {
+      if (e.code === 'storage/object-not-found') return;
+      console.error('Photo file delete error:', e);
+      if (window.showToast) window.showToast('Photo removed from the library, but its stored file could not be deleted.');
+    } finally {
+      item.deleting = false;
+    }
   };
 
   // Live-listen for pending posts needing approval

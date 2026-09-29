@@ -255,8 +255,7 @@ if (!user || !user.emailVerified) {
     // If only 1 business, redirect back to dashboard (this page only makes sense with >1)
     if (bizzes.length <= 1) {
       window.location.href = 'BlastyBiz.html';
-      return;
-    }
+    } else {
 
     // Use the limit resolved from Firestore above (falls back to _defLimits)
     const limit = _bizLimit;
@@ -303,6 +302,7 @@ if (!user || !user.emailVerified) {
     document.getElementById('bb-loading').style.display  = 'none';
     document.getElementById('bb-content').style.display  = 'block';
     document.body.style.visibility = 'visible';
+    }
   }
 }
 </script>

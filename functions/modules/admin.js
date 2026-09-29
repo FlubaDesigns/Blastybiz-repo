@@ -59,13 +59,16 @@ exports.adminListFailedJobs = onRequest({ invoker: 'public' }, withAuth(async (r
 
 // ── adminRetryJob ─────────────────────────────────────────────────────────────
 exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, withAuth(async (req, res) => {
-  const { uid, businessId, jobId } = req.body;
+  const { uid, businessId, jobId, recovery, resume } = req.body || {};
   if (!uid || !businessId || !jobId) return res.status(400).json({ error: 'uid, businessId, jobId required' });
+  let jobRef;
+  let claimed = false;
+  let providerReturned = false;
   try {
-    const jobRef  = userBizJobsRef(uid, businessId).doc(jobId);
+    jobRef = userBizJobsRef(uid, businessId).doc(jobId);
     const jobSnap = await jobRef.get();
     if (!jobSnap.exists) return res.status(404).json({ error: 'Job not found' });
-    const job = jobSnap.data();
+    let job = jobSnap.data();
 
     const connSnap = await userBizConnsRef(uid, businessId).doc(job.platform).get();
     if (!connSnap.exists || connSnap.data().status !== 'connected') {
@@ -74,6 +77,34 @@ exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_
 
     const tokens = await _getConnTokens(connSnap.ref);
     const conn = { ...connSnap.data(), ...tokens };
+    // Share the dispatcher's processing state so only one publisher claims this job.
+    const retryable = new Set(['pending', 'failed', 'retry_pending', 'needs_connection',
+      'customer_reconnect_required', 'manual_required', 'manual_followup']);
+    job = await db.runTransaction(async tx => {
+      const fresh = await tx.get(jobRef);
+      if (!fresh.exists) throw Object.assign(new Error('Job not found'), { httpStatus: 404 });
+      const current = fresh.data();
+      if (current.planGated) {
+        throw Object.assign(new Error("This job is held by the customer's plan."), { httpStatus: 409 });
+      }
+      const updatedMs = current.updatedAt?.toMillis?.() || current.updatedAt?.toDate?.().getTime() || 0;
+      const staleProcessing = ['processing', 'running'].includes(current.status)
+        && updatedMs > 0 && Date.now() - updatedMs >= 15 * 60 * 1000;
+      const confirmedRecovery = recovery === 'not_published' && (staleProcessing || current.publicationUncertain === true);
+      if (current.publicationUncertain && !confirmedRecovery) {
+        throw Object.assign(new Error('Post may be live on the platform. Check before retrying.'), { httpStatus: 409 });
+      }
+      if (!retryable.has(current.status) && !confirmedRecovery && !(current.status === 'paused' && resume === true)) {
+        throw Object.assign(new Error(`Cannot retry a job with status ${current.status || 'unknown'}. Refresh the queue.`), { httpStatus: 409 });
+      }
+      if (current.platform !== job.platform) {
+        throw Object.assign(new Error('Job platform changed. Refresh the queue.'), { httpStatus: 409 });
+      }
+      tx.update(jobRef, { status: JOB_STATUS.PROCESSING, adminRetry: true, publicationUncertain: false,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+      return current;
+    });
+    claimed = true;
     let result;
     switch (job.platform) {
       // 2.8: pass explicit uid/businessId from the verified request body, never from job doc data
@@ -85,6 +116,18 @@ exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_
         return res.json({ ok: false, manual: true });
     }
 
+    if (result?.manualFallback) {
+      const message = result.message || 'Please post this manually.';
+      await jobRef.update({
+        status: 'manual_required',
+        customerLabel: 'Manual posting required',
+        customerVisibleMessage: message,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      return res.json({ ok: false, manual: true, message });
+    }
+
+    providerReturned = true;
     await jobRef.update({
       status: 'success', apiResponse: result,
       customerLabel: 'Published', customerVisibleMessage: `Your listing is live on ${job.platform}.`,
@@ -94,7 +137,16 @@ exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_
     res.json({ ok: true, result });
   } catch(e) {
     console.error('[adminRetryJob]', e.message);
-    res.status(500).json({ error: e.message });
+    if (claimed) {
+      await jobRef.update({ status: providerReturned ? JOB_STATUS.MANUAL_REQUIRED : JOB_STATUS.FAILED,
+        adminRetry: true, publicationUncertain: providerReturned, adminError: e.message,
+        ...(providerReturned ? { customerVisibleMessage: 'Post may be live on the platform. Check before retrying.' } : {}),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp() }).catch(writeError => {
+        console.error('[adminRetryJob] could not record failure:', writeError.message);
+      });
+    }
+    res.status(e.httpStatus || 500).json({ error: providerReturned
+      ? 'Post may be live on the platform. Check before retrying.' : e.message });
   }
 }, { admin: true }));
 
@@ -349,7 +401,7 @@ exports.adminListActivityLogs = onRequest({ invoker: 'public' }, withAuth(async 
   const { uid: filterUid, limit: rawLimit } = req.query;
   const limit = Math.min(parseInt(rawLimit || '100'), 1000);
   try {
-    let q = db.collection('activityLogs').orderBy('timestamp', 'desc').limit(limit);
+    let q = db.collection('activityLogs').orderBy('createdAt', 'desc').limit(limit);
     if (filterUid) q = q.where('uid', '==', filterUid);
     const snap = await q.get();
     res.json({ logs: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
@@ -621,4 +673,3 @@ exports.adminUpdatePlatformCategories = onRequest({ invoker: 'public' }, withAut
 
   res.json({ ok: true, platformId, count: normalized.length });
 }, { admin: true }));
-

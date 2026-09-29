@@ -34,8 +34,8 @@
   <section class="card">
     <h3>Find Logs</h3>
     <div class="filters">
-      <input type="text" placeholder="Search business, user, platform, message..." />
-      <select>
+      <input type="text" id="log-search" placeholder="Search the latest 50 logs..." />
+      <select id="log-type">
         <option>All Types</option>
         <option>Auth</option>
         <option>Business</option>
@@ -44,16 +44,17 @@
         <option>Billing</option>
         <option>Platform</option>
         <option>System</option>
+        <option>Manual</option>
       </select>
-      <select>
+      <select id="log-level">
         <option>All Levels</option>
         <option>Info</option>
         <option>Success</option>
         <option>Warning</option>
         <option>Error</option>
       </select>
-      <button class="primary">Search</button>
-      <button class="light">Reset</button>
+      <button class="primary" id="log-search-btn">Search</button>
+      <button class="light" id="log-reset-btn">Reset</button>
     </div>
   </section>
 
@@ -67,50 +68,11 @@
           <th>Type</th>
           <th>Business/User</th>
           <th>Message</th>
-          <th>Related Record</th>
+          <th>Platform / Related Record</th>
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>Today 12:18 AM</td>
-          <td><span class="badge success">Success</span></td>
-          <td>Publish Job</td>
-          <td>Harbor Dental</td>
-          <td>Apple Maps listing update completed.</td>
-          <td class="muted">publishJobs</td>
-        </tr>
-        <tr>
-          <td>Today 12:11 AM</td>
-          <td><span class="badge error">Error</span></td>
-          <td>Platform</td>
-          <td>ABC Roofing</td>
-          <td>Facebook token expired. Reconnect required.</td>
-          <td class="muted">platformConnections</td>
-        </tr>
-        <tr>
-          <td>Today 12:04 AM</td>
-          <td><span class="badge info">Info</span></td>
-          <td>Draft</td>
-          <td>Joe's Plumbing</td>
-          <td>Listing draft generated and saved for approval.</td>
-          <td class="muted">listingDrafts</td>
-        </tr>
-        <tr>
-          <td>Yesterday 11:52 PM</td>
-          <td><span class="badge warn">Warning</span></td>
-          <td>Manual</td>
-          <td>Sunset Lawn Care</td>
-          <td>Nextdoor requires manual posting instructions.</td>
-          <td class="muted">publishJobs</td>
-        </tr>
-        <tr>
-          <td>Yesterday 11:40 PM</td>
-          <td><span class="badge success">Success</span></td>
-          <td>Auth</td>
-          <td>newowner@example.com</td>
-          <td>User account created successfully.</td>
-          <td class="muted">users</td>
-        </tr>
+        <tr><td colspan="6">Loading activity logs…</td></tr>
       </tbody>
     </table>
   </section>
@@ -128,7 +90,6 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/f
 import { collection, query, orderBy, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const escHtml = window.escHtml; // escape-utils.js
-}
 
 function fmtTime(ts) {
   if (!ts) return '—';
@@ -136,24 +97,58 @@ function fmtTime(ts) {
   return d.toLocaleString();
 }
 
+let recentLogs = [];
+let logsLoaded = false;
+function renderLogs() {
+  if (!logsLoaded) return;
+  const search = document.getElementById('log-search').value.trim().toLowerCase();
+  const type = document.getElementById('log-type').value.toLowerCase();
+  const level = document.getElementById('log-level').value.toLowerCase();
+  const visible = recentLogs.filter(l => {
+    const logType = l.type || (l.action === 'manual_copy_paste' ? 'Manual' : l.action) || '—';
+    const text = [l.businessName, l.listingName, l.businessId, l.uid, l.platform, l.message, l.note, l.action, l.draftId].join(' ').toLowerCase();
+    return (!search || text.includes(search))
+      && (type === 'all types' || String(logType).toLowerCase() === type)
+      && (level === 'all levels' || String(l.level || 'info').toLowerCase() === level);
+  });
+  const tbody = document.querySelector('tbody');
+  if (!visible.length) {
+    tbody.innerHTML = `<tr><td colspan="6">${escHtml(recentLogs.length ? 'No matching activity logs.' : 'No activity logs yet.')}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = visible.map(l => {
+    const lc = escHtml({ info:'info', success:'success', warning:'warn', error:'error' }[String(l.level || 'info').toLowerCase()] || 'info');
+    return `<tr>
+      <td>${fmtTime(l.createdAt)}</td>
+      <td><span class="badge ${lc}">${escHtml(l.level || 'Info')}</span></td>
+      <td>${escHtml(l.type || (l.action === 'manual_copy_paste' ? 'Manual' : l.action) || '—')}</td>
+      <td>${escHtml(l.businessName || l.listingName || l.businessId || l.uid || '—')}</td>
+      <td>${escHtml(l.message || l.note || '—')}</td>
+      <td class="muted">${escHtml(l.relatedCollection || l.platform || l.draftId || '—')}</td>
+    </tr>`;
+  }).join('');
+}
+document.getElementById('log-search-btn').addEventListener('click', renderLogs);
+['log-type', 'log-level'].forEach(id => document.getElementById(id).addEventListener('change', renderLogs));
+document.getElementById('log-search').addEventListener('keydown', e => { if (e.key === 'Enter') renderLogs(); });
+document.getElementById('log-reset-btn').addEventListener('click', () => {
+  document.getElementById('log-search').value = '';
+  document.getElementById('log-type').selectedIndex = 0;
+  document.getElementById('log-level').selectedIndex = 0;
+  renderLogs();
+});
+
 onAuthStateChanged(auth, (user) => {
   if (!user) return;
   const q = query(collection(db, 'activityLogs'), orderBy('createdAt', 'desc'), limit(50));
   onSnapshot(q, (snap) => {
-    if (snap.empty) return;
-    const rows = snap.docs.map(d => {
-      const l = d.data();
-      const lc = escHtml({ info:'info', success:'success', warning:'warn', error:'error' }[l.level] || 'info');
-      return `<tr>
-        <td>${fmtTime(l.createdAt)}</td>
-        <td><span class="badge ${lc}">${escHtml(l.level || 'Info')}</span></td>
-        <td>${escHtml(l.type || '—')}</td>
-        <td>${escHtml(l.businessName || l.uid || '—')}</td>
-        <td>${escHtml(l.message || '—')}</td>
-        <td class="muted">${escHtml(l.relatedCollection || '—')}</td>
-      </tr>`;
-    }).join('');
-    document.querySelector('tbody').innerHTML = rows;
+    recentLogs = snap.docs.map(d => d.data());
+    logsLoaded = true;
+    renderLogs();
+  }, (err) => {
+    recentLogs = [];
+    logsLoaded = false;
+    document.querySelector('tbody').innerHTML = `<tr><td colspan="6">Could not load activity logs: ${escHtml(err.message || 'Please try again.')}</td></tr>`;
   });
 });
 </script>
