@@ -71,16 +71,32 @@ exports.deleteBusiness = onRequest({ invoker: 'public' }, withAuth(async (req, r
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
   const uid = decoded.uid;
   const { bizId } = req.body || {};
-  if (!bizId) return res.status(400).json({ error: 'Missing bizId' });
+  if (typeof bizId !== 'string' || !bizId.trim() || bizId.includes('/')) return res.status(400).json({ error: 'Invalid bizId' });
   try {
-    const bizRef = db.collection('users').doc(uid).collection('businesses').doc(bizId);
-    const bizSnap = await bizRef.get();
-    if (!bizSnap.exists) return res.status(404).json({ error: 'Business not found' });
+    const userRef = db.collection('users').doc(uid);
+    const businesses = userRef.collection('businesses');
+    const bizRef = businesses.doc(bizId);
+    // Remove the parent and repair account pointers together. A cleanup retry
+    // also works when the parent was already removed by an earlier request.
+    const activeBusiness = await db.runTransaction(async tx => {
+      const userSnap = await tx.get(userRef);
+      const owned = await tx.get(businesses);
+      if (!userSnap.exists) throw Object.assign(new Error('Account not found'), { httpStatus: 404 });
+      const remaining = owned.docs.filter(d => d.id !== bizId).map(d => d.id).sort();
+      if (owned.docs.some(d => d.id === bizId) && !remaining.length) {
+        throw Object.assign(new Error('You need at least one business.'), { httpStatus: 409 });
+      }
+      const current = userSnap.data().activeBusiness;
+      const next = remaining.includes(current) ? current : (remaining[0] || null);
+      tx.delete(bizRef);
+      tx.update(userRef, { activeBusiness: next, businessIds: remaining });
+      return next;
+    });
     await db.recursiveDelete(bizRef);
-    return res.json({ success: true });
+    return res.json({ success: true, activeBusiness });
   } catch(e) {
     console.error('[deleteBusiness]', e.message);
-    return res.status(500).json({ error: 'Server error' });
+    return res.status(e.httpStatus || 500).json({ error: e.httpStatus ? e.message : 'Deletion did not finish. Please retry to complete cleanup.' });
   }
 }));
 

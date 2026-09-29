@@ -563,22 +563,32 @@
 })();
 </script>
 
+<div id="profile-save-error" role="alert" hidden style="margin:24px;padding:16px;border:1px solid #c44;border-radius:8px;">Your profile could not be saved. Your answers are still here. <button type="button" onclick="window._bbRetryProfile()">Retry save</button></div>
+
 <!-- ── Firebase ─────────────────────────────────────────────────── -->
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
-import { doc, getDoc, setDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, getDoc, writeBatch, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+let profileSaving = false;
+let pendingProfileRef = null;
 window._bbSaveProfile = async function(answers, toggles, forkVal) {
+  if (profileSaving) return false;
+  profileSaving = true;
+  const errorBox = document.getElementById('profile-save-error');
+  errorBox.hidden = true;
+  window._bbRetryProfile = () => window._bbSaveProfile(answers, toggles, forkVal);
   try {
-    const uid    = window._bbUid;
+    const uid = window._bbUid;
+    if (!uid || auth.currentUser?.uid !== uid) throw new Error('Please sign in again before saving.');
     let   bizId  = sessionStorage.getItem('bb_bizId') || null;
-    const bizRef = bizId
-      ? doc(db, 'users', uid, 'businesses', bizId)
-      : doc(collection(db, 'users', uid, 'businesses'));
+    if (!pendingProfileRef || pendingProfileRef.uid !== uid) {
+      pendingProfileRef = { uid, ref: bizId ? doc(db, 'users', uid, 'businesses', bizId) : doc(collection(db, 'users', uid, 'businesses')) };
+    }
+    const bizRef = pendingProfileRef.ref;
     bizId = bizRef.id;
-    sessionStorage.setItem('bb_bizId', bizId);
-
-    await setDoc(bizRef, {
+    const batch = writeBatch(db);
+    batch.set(bizRef, {
       name:             answers.bizName      || '',
       businessName:     answers.bizName      || '',
       ownerName:        answers.ownerName    || '',
@@ -600,14 +610,20 @@ window._bbSaveProfile = async function(answers, toggles, forkVal) {
       updatedAt: serverTimestamp()
     }, { merge: true });
 
-    await setDoc(doc(db, 'users', uid), {
+    batch.set(doc(db, 'users', uid), {
       activeBusiness: bizId,
       onboarded:      true,
-      displayName:    answers.ownerName || '',
-      email:          answers.email     || ''
+      displayName:    answers.ownerName || ''
     }, { merge: true });
 
-  } catch(e) { console.error('[profile save]', e); }
+    await batch.commit();
+    sessionStorage.setItem('bb_bizId', bizId);
+  } catch(e) {
+    console.error('[profile save]', e);
+    errorBox.hidden = false;
+    errorBox.scrollIntoView({ block: 'center' });
+    return false;
+  } finally { profileSaving = false; }
 
   if (forkVal === 'story') {
     window.location.href = 'BlastyBiz-Story.html';

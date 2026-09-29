@@ -541,6 +541,10 @@
           <!-- All platform cards stacked — populated by renderStep5Review() -->
           <div id="step5-review-container"></div>
 
+          <div id="draft-save-error" role="alert" hidden style="padding:12px;border:1px solid #c44;border-radius:8px;">
+            Your generated copy is still here, but it could not be saved. Save it before continuing.
+            <button type="button" id="draft-save-retry" onclick="retryGeneratedDraftSave()">Retry save</button>
+          </div>
           <!-- Rewrite + Clear — visible after generation -->
           <div id="rewrite-row" class="hidden">
             <button type="button" class="btn btn-rewrite" onclick="runAdaptation()">
@@ -616,7 +620,7 @@
       <div class="platform-grid" id="manual-platforms"></div>
       <div id="dismissed-platforms-fold"></div>
 
-      <a id="review-listings-btn" href="BlastyBiz-Listing-Preview.html" class="review-btn">
+      <a onclick="if(window._bbDraftSavePending){event.preventDefault();showToast('Use Retry save before continuing.');}" id="review-listings-btn" href="BlastyBiz-Listing-Preview.html" class="review-btn">
         ✅ Review &amp; Approve All Listings →
       </a>
     </div>
@@ -1088,11 +1092,9 @@
   <div class="col-left">
 
     <div class="card">
-      <div class="card-title">💼 Plan &amp; Usage</div>
+      <div class="card-title">💼 Plan &amp; Billing</div>
       <div class="cost-line"><span>Email</span><strong id="acct-email">—</strong></div>
       <div class="cost-line"><span>Plan</span><strong id="acct-plan-label">—</strong></div>
-      <div class="cost-line"><span>AI requests used</span><strong id="acct-ai-usage">—</strong></div>
-      <div class="cost-line"><span>Resets on</span><strong id="acct-renewal">—</strong></div>
       <div class="btn-row" style="margin-top:12px;">
         <button type="button" class="btn btn-primary" id="acct-billing-btn" onclick="handleBilling()">View Billing</button>
       </div>
@@ -1875,6 +1877,7 @@ async function saveCopyToLibrary(pid) {
 }
 
 async function approvePlatformCopy(pid) {
+  if (window._bbDraftSavePending) { showToast('Save your generated copy with Retry save first.'); return; }
   const el = document.getElementById('qp-copy-text-' + pid);
   const copy = (el?.innerText || el?.textContent || '').replace(/[ \t]+/g, ' ').trim();
   if (!copy) { showToast('Copy cannot be blank — edit it first'); return; }
@@ -2262,7 +2265,7 @@ async function regeneratePlatformCopy(pid) {
     // Mark free regen as used (either it was just used, or it was already gone)
     window._bbDraftFreeRegenUsed = true;
     document.querySelectorAll('[id^="qp-regen-"]').forEach(btn => {
-      if (btn.id !== 'qp-regen-' + pid && !btn.disabled) btn.textContent = '🔄 Try again (1 credit)';
+      if (btn.id !== 'qp-regen-' + pid && !btn.disabled) btn.textContent = '🔄 Try again';
     });
     // #6 Show restore-previous button so user can revert without re-running AI
     if (previousContent) {
@@ -2293,7 +2296,7 @@ async function regeneratePlatformCopy(pid) {
   } finally {
     // Use fresh element refs — card may have been rebuilt
     const freshRegenBtn = document.getElementById('qp-regen-' + pid);
-    if (freshRegenBtn) { freshRegenBtn.disabled = false; freshRegenBtn.textContent = window._bbDraftFreeRegenUsed ? '🔄 Try again (1 credit)' : '🔄 Try again (free)'; }
+    if (freshRegenBtn) { freshRegenBtn.disabled = false; freshRegenBtn.textContent = '🔄 Try again'; }
     const freshCopyEl = document.getElementById('qp-copy-text-' + pid);
     if (freshCopyEl) freshCopyEl.style.opacity = '1';
     // A retry that produced nothing must fall back to the failure card, or the
@@ -2680,7 +2683,7 @@ function buildStep5Card(p) {
       // Left — copy
       + '<div class="col-left">'
       +   '<div class="step5-copy-actions">'
-      +     '<button type="button" class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">' + (window._bbDraftFreeRegenUsed ? '🔄 Try again (1 credit)' : '🔄 Try again (free)') + '</button>'
+      +     '<button type="button" class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">' + '🔄 Try again' + '</button>'
       +     (!isApi ? '<button type="button" class="step5-action-btn" onclick="copyQpText(\'' + escHtml(p.id) + '\')">📋 Copy</button>' : '')
       +   '</div>'
       +   '<div id="qp-copy-text-' + p.id + '" class="step5-copy-text" contenteditable="true">' + safeText + '</div>'
@@ -2780,6 +2783,7 @@ function updateStep5UI() {
 }
 
 async function completeBlast() {
+  if (window._bbDraftSavePending) { showToast('Save your generated copy with Retry save first.'); return; }
   const finalBtn = document.getElementById('step5-final-btn');
   const resetBtn = () => {
     if (finalBtn) { finalBtn.disabled = false; finalBtn.textContent = '🚀 Send It →'; }
@@ -3091,7 +3095,43 @@ function _completeAiProgress() {
 // ══════════════════════════════════════════
 // RUN ADAPTATION — Real AI Call
 // ══════════════════════════════════════════
+let generatedDraftSaving = false;
+async function retryGeneratedDraftSave() {
+  if (generatedDraftSaving) return false;
+  generatedDraftSaving = true;
+  window._bbDraftSavePending = true;
+  const bizId = window.activeBizId;
+  const errorBox = document.getElementById('draft-save-error');
+  const retry = document.getElementById('draft-save-retry');
+  const review = document.getElementById('review-listings-btn');
+  if (retry) retry.disabled = true;
+  if (review) review.classList.remove('visible');
+  try {
+    if (!window._afterAdaptation) throw new Error('Saving is not ready yet');
+    const draftId = await window._afterAdaptation(platforms);
+    if (!draftId) throw new Error('Draft was not saved');
+    if (window.activeBizId !== bizId) return false;
+    window._bbDraftSavePending = false;
+    if (errorBox) errorBox.hidden = true;
+    const output = document.getElementById('review-output-btn');
+    if (output) output.disabled = false;
+    if (review) { review.href = 'BlastyBiz-Listing-Preview.html?draftId=' + encodeURIComponent(draftId); review.classList.add('visible'); }
+    return true;
+  } catch(e) {
+    console.warn('Draft save failed:', e);
+    if (window.activeBizId === bizId) {
+      if (errorBox) errorBox.hidden = false;
+      showToast('Generated copy was not saved. Use Retry save; you do not need to generate it again.');
+    }
+    return false;
+  } finally {
+    generatedDraftSaving = false;
+    if (retry) retry.disabled = false;
+  }
+}
+
 async function runAdaptation() {
+  if (window._bbDraftSavePending) { showToast('Save your generated copy with Retry save first.'); return; }
   updateCampaignMemory(); // ensure campaign object reflects current DOM before prompt is built
   // Profile is the dossier — always primary source for business identity fields
   const name      = profile.name     || '';
@@ -3152,9 +3192,9 @@ async function runAdaptation() {
 
   // Each new generation run resets the free-regen entitlement for the new draft.
   window._bbDraftFreeRegenUsed = false;
-  // Update any visible regen buttons to show "free" label for the new draft
+  // Refresh the visible regeneration buttons.
   document.querySelectorAll('[id^="qp-regen-"]').forEach(btn => {
-    if (!btn.disabled) btn.textContent = '🔄 Try again (free)';
+    if (!btn.disabled) btn.textContent = '🔄 Try again';
   });
 
   try {
@@ -3226,26 +3266,7 @@ async function runAdaptation() {
     const _reviewOutputBtn = document.getElementById('review-output-btn');
     if (_reviewOutputBtn) { _reviewOutputBtn.style.display = 'flex'; _reviewOutputBtn.disabled = true; }
 
-    if (window._afterAdaptation) {
-      window._afterAdaptation(platforms)
-        .then(() => {
-          const draftId = window._currentDraftId;
-          // Re-enable review button only after draft is confirmed saved
-          if (_reviewOutputBtn) _reviewOutputBtn.disabled = false;
-          const _reviewListingsBtn = document.getElementById('review-listings-btn');
-          if (_reviewListingsBtn && draftId) {
-            _reviewListingsBtn.classList.add('visible');
-          }
-        })
-        .catch(err => {
-          console.warn('Draft save failed:', err);
-          // Still allow navigation — warn but don't hard-block
-          if (_reviewOutputBtn) _reviewOutputBtn.disabled = false;
-        });
-    } else {
-      // Firebase module not ready — don't leave button permanently disabled
-      if (_reviewOutputBtn) _reviewOutputBtn.disabled = false;
-    }
+    await retryGeneratedDraftSave();
 
     // Write platformHistory to active campaign
     if (activeCampaignId && window._bbSaveCampaigns) {
@@ -3302,6 +3323,7 @@ async function runAdaptation() {
 // CLEAR & START OVER
 // ══════════════════════════════════════════
 function clearAndStartOver() {
+  if (generatedDraftSaving) { showToast('Please wait for the draft save to finish.'); return; }
   // Clear all form fields
   ['biz-name','biz-offer','biz-price','biz-phone','biz-address','biz-region','biz-website','biz-hours']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
@@ -3332,6 +3354,10 @@ function clearAndStartOver() {
   // Reset draft state
   draft = {};
   window._currentDraftId = null;
+  window._bbPendingDraft = null;
+  window._bbDraftSavePending = false;
+  const saveError = document.getElementById('draft-save-error');
+  if (saveError) saveError.hidden = true;
 
   // Switch to create tab
   showTab('create');
@@ -3343,6 +3369,7 @@ function clearAndStartOver() {
 // DEPLOY / COPY
 // ══════════════════════════════════════════
 function deployPlatform(id) {
+  if (window._bbDraftSavePending) { showToast('Save your generated copy with Retry save first.'); return; }
   const p = platforms.find(x => x.id === id);
   if (!p) return;
   if (!p.adaptedContent) { showToast('Run adaptation first'); return; }
@@ -4024,27 +4051,30 @@ function _renderPendingPosts() {
   }).join('');
 }
 
-async function _approvePendingPost(id) {
-  const btn = event?.target;
-  if (btn) { btn.disabled = true; btn.textContent = 'Approving…'; }
+const pendingDecisions = new Set();
+async function _decidePendingPost(id, action) {
+  const bizId = window.activeBizId;
+  const key = bizId + '/' + id;
+  if (pendingDecisions.has(key)) return;
+  pendingDecisions.add(key);
   try {
-    const token = window._bbGetToken ? await window._bbGetToken() : null;
+    if (!bizId || !window._bbGetToken) throw new Error('Please sign in and select a business.');
+    const token = await window._bbGetToken();
+    if (!token) throw new Error('Please sign in again.');
     const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/approvePendingPost', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': 'Bearer ' + token } : {}) },
-      body: JSON.stringify({ pendingPostId: id, bizId: activeBizId }),
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ pendingPostId: id, bizId, action }),
     });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    showToast('✅ Approved — posts are going out now!');
+    const result = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(result.error || 'Could not save your decision.');
+    showToast(action === 'dismiss' ? 'Draft dismissed' : 'Approved — check Publishing Status for the next step.');
   } catch(e) {
-    showToast('Error approving: ' + e.message);
-    if (btn) { btn.disabled = false; btn.textContent = '✅ Approve & Post'; }
-  }
+    showToast(e.message + ' You can retry.');
+  } finally { pendingDecisions.delete(key); }
 }
-
-async function _dismissPendingPost(id) {
-  if (window._bbFirestoreDismissPending) window._bbFirestoreDismissPending(id);
-}
+async function _approvePendingPost(id) { return _decidePendingPost(id, 'approve'); }
+async function _dismissPendingPost(id) { return _decidePendingPost(id, 'dismiss'); }
 
 // ══════════════════════════════════════════
 // AI ENRICHMENT — bizInsights + factoids
@@ -4768,6 +4798,7 @@ function renderCampaignChips() {
 }
 
 function selectCampaign(id, name) {
+  if (window._bbDraftSavePending) { showToast('Use Retry save before switching campaigns.'); return; }
   activeCampaignId   = id;
   activeCampaignName = name;
   showTab('create');
@@ -4843,14 +4874,19 @@ function cancelNewCampaign() {
   }
 }
 
+let quickCampaignSaving = false;
+let quickCampaignPending = null;
 async function saveNewCampaign() {
+  if (quickCampaignSaving) return;
   const input = document.getElementById('new-campaign-input');
   if (!input) return;
   const name  = input.value.trim();
   if (!name) { input.focus(); return; }
   const story = (document.getElementById('new-campaign-story')?.value || '').trim();
 
-  const id = 'c_' + Date.now();
+  const businessId = window.activeBizId;
+  if (!quickCampaignPending || quickCampaignPending.businessId !== businessId) quickCampaignPending = { businessId, id: 'c_' + crypto.randomUUID() };
+  const id = quickCampaignPending.id;
   const now = new Date().toISOString();
   const newCampaign = {
     id,
@@ -4865,16 +4901,20 @@ async function saveNewCampaign() {
     factoids:        [],
     platformHistory: {},
   };
-  campaigns.push(newCampaign);
+  quickCampaignSaving = true;
+  try {
+    if (!window._bbSaveCampaigns) throw new Error('Saving is not ready yet');
+    await window._bbSaveCampaigns([newCampaign]);
+  } catch(e) {
+    showToast('Campaign was not saved. Your entries are still here — tap Quick Create to retry.');
+    return;
+  } finally { quickCampaignSaving = false; }
+  quickCampaignPending = null;
+  if (window.activeBizId !== businessId) return;
+  campaigns = campaigns.filter(c => c.id !== id).concat(newCampaign);
   _sortCampaigns();
-
-  activeCampaignId   = id;
+  activeCampaignId = id;
   activeCampaignName = name;
-
-  if (window._bbSaveCampaigns) {
-    try { await window._bbSaveCampaigns(campaigns); }
-    catch(e) { console.error('Campaign save error:', e); }
-  }
 
   document.getElementById('new-campaign-row').classList.add('hidden');
   document.getElementById('campaign-content')?.classList.remove('hidden');
@@ -5117,11 +5157,16 @@ function clearAllCancel() {
   document.getElementById('clear-all-btn').classList.remove('hidden');
 }
 function clearAllConfirmed() {
+  if (generatedDraftSaving) { showToast('Please wait for the draft save to finish.'); return; }
   platforms = PLATFORMS.map(p => ({...p}));
   history = [];
   profile = {};
   draft = {};
   window._currentDraftId = null;
+  window._bbPendingDraft = null;
+  window._bbDraftSavePending = false;
+  const saveError = document.getElementById('draft-save-error');
+  if (saveError) saveError.hidden = true;
   try { localStorage.removeItem('bb_profile'); } catch(e) {}
   init();
   clearAllCancel();
@@ -5217,15 +5262,6 @@ window._bbSetProfile = function(p) {
   } catch(e) {}
   loadProfile();
   // ynMention* is now per-campaign (restored in selectCampaign), not per-business profile
-};
-
-window._bbFirestoreDismissPending = async function(id) {
-  const uid = window._bbCurrentUid;
-  if (!uid || !activeBizId) return;
-  try {
-    await setDoc(doc(db, 'users', uid, 'businesses', activeBizId, 'pendingPosts', id), { status: 'dismissed' }, { merge: true });
-    showToast('Draft dismissed');
-  } catch(e) { console.error('dismissPending:', e); }
 };
 
 // _saveInsightToFirestore and _saveGlobalFactoidsToFirestore are defined in the
@@ -5767,6 +5803,7 @@ onAuthStateChanged(auth, async (user) => {
 
   // Allow switching business from the bar
   window.switchBusiness = async function(bizId) {
+    if (window._bbDraftSavePending) { showToast('Use Retry save before switching businesses.'); return; }
     activeBizId = bizId;
     window.activeBizId = bizId;
     await setDoc(doc(db, 'users', user.uid), { activeBusiness: bizId }, { merge: true });
@@ -5809,21 +5846,21 @@ onAuthStateChanged(auth, async (user) => {
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok },
         body: JSON.stringify({ bizId })
       });
-      if (!resp.ok) throw new Error('CF returned ' + resp.status);
+      const result = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(result.error || 'Could not delete business.');
       window.BUSINESSES = list.filter(b => b.id !== bizId);
-      if (window.activeBizId === bizId) {
-        const next = window.BUSINESSES[0];
-        activeBizId = next.id;
-        window.activeBizId = next.id;
-        await setDoc(doc(db, 'users', currentUser.uid), { activeBusiness: next.id }, { merge: true });
-        window.switchBusiness(next.id);
+      if (window.activeBizId !== result.activeBusiness) {
+        activeBizId = result.activeBusiness;
+        window.activeBizId = result.activeBusiness;
+        window.location.reload();
       } else {
         if (typeof renderSwitcherBar === 'function') { renderSwitcherBar(); renderAgencyBar(); }
       }
       if (window.showToast) window.showToast(`"${bizName}" deleted.`);
+      if (delBtn) delBtn.disabled = false;
     } catch (e) {
       console.error('[deleteBusiness]', e);
-      const msg = 'Could not delete business. Please try again.';
+      const msg = e.message || 'Could not delete business. Please try again.';
       if (window.showToast) window.showToast(msg); else alert(msg);
       if (delBtn) { delBtn.disabled = false; }
     }
@@ -6437,7 +6474,9 @@ window._bbUpdateDraft = async function(draftId, updates) {
 };
 
 window._afterAdaptation = async function(adaptedPlatforms) {
-  if (!currentUser) return;
+  if (!currentUser || !activeBizId) throw new Error('No signed-in business');
+  const businessId = activeBizId;
+  const uid = currentUser.uid;
   try {
     const adaptations = {};
     adaptedPlatforms.filter(p => p.enabled && p.adaptedContent).forEach(p => {
@@ -6482,12 +6521,21 @@ window._afterAdaptation = async function(adaptedPlatforms) {
       updatedAt:    serverTimestamp(),
     };
 
-    const ref = await addDoc(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'listingDrafts'), draftData);
-    window._currentDraftId = ref.id;
+    const key = JSON.stringify([uid, businessId, activeCampaignId || '']);
+    if (!window._bbPendingDraft || window._bbPendingDraft.key !== key) {
+      window._bbPendingDraft = { key, ref: doc(collection(db, 'users', uid, 'businesses', businessId, 'listingDrafts')) };
+    }
+    const ref = window._bbPendingDraft.ref;
+    await setDoc(ref, draftData);
+    if (activeBizId !== businessId || currentUser?.uid !== uid || window._bbPendingDraft?.ref !== ref) return null;
+    if (activeBizId === businessId && currentUser?.uid === uid) {
+      window._currentDraftId = ref.id;
+      window._bbPendingDraft = null;
+    }
     return ref.id;
   } catch(e) {
     console.error('Save draft error:', e);
-    return null;
+    throw e;
   }
 };
 
@@ -6957,7 +7005,10 @@ async function ccCallCF() {
       })
     });
     ccHideTyping();
-    if (!resp.ok) throw new Error('AI error ' + resp.status);
+    if (!resp.ok) {
+      const failure = await resp.json().catch(() => ({}));
+      throw new Error(failure.error || 'Campaign AI could not respond. Please try again.');
+    }
     const data = await resp.json();
 
     ccAddMsg('ai', data.message);
@@ -6975,14 +7026,23 @@ async function ccCallCF() {
     }
   } catch(e) {
     ccHideTyping();
-    ccAddMsg('ai', "Sorry, hit a snag — try your message again?");
+    ccAddMsg('ai', e.message || 'Campaign AI could not respond. Your answers are still here.');
     ccSetWaiting(false);
   }
 }
 
+let ccCampaignSaving = false;
+let ccPendingCampaign = null;
 async function ccCreateCampaign(aiData) {
+  if (ccCampaignSaving) return;
+  const businessId = window.activeBizId;
+  if (ccPendingCampaign && ccPendingCampaign.businessId !== businessId) {
+    ccAddMsg('ai', 'Select the original business before retrying this campaign save.');
+    return;
+  }
   const name = ccCol.campaignName || ('Campaign ' + new Date().toLocaleDateString());
-  const id   = 'c_' + Date.now();
+  if (!ccPendingCampaign || ccPendingCampaign.businessId !== businessId) ccPendingCampaign = { businessId, id: 'c_' + crypto.randomUUID() };
+  const id = ccPendingCampaign.id;
   const now  = new Date().toISOString();
   const newCampaign = {
     id, name,
@@ -6998,14 +7058,26 @@ async function ccCreateCampaign(aiData) {
     platformHistory: {},
   };
 
-  if (typeof campaigns !== 'undefined') campaigns.push(newCampaign);
-  if (typeof _sortCampaigns === 'function') _sortCampaigns();
-  window.activeCampaignId   = id;
-  window.activeCampaignName = name;
-
-  if (window._bbSaveCampaigns) {
-    try { await window._bbSaveCampaigns(campaigns); } catch(e) { console.error('Campaign save error', e); }
-  }
+  ccCampaignSaving = true;
+  $cc('cc-options').innerHTML = '';
+  try {
+    if (!window._bbSaveCampaigns) throw new Error('Saving is not ready yet');
+    await window._bbSaveCampaigns([newCampaign]);
+  } catch(e) {
+    ccSetLabel('Campaign not saved');
+    ccAddMsg('ai', 'Your campaign brief is still here. Retry saving it below.');
+    const retry = document.createElement('button');
+    retry.type = 'button'; retry.className = 'cc-opt-btn'; retry.textContent = 'Retry save';
+    retry.onclick = () => ccCreateCampaign(aiData);
+    $cc('cc-options').appendChild(retry);
+    return;
+  } finally { ccCampaignSaving = false; }
+  ccPendingCampaign = null;
+  if (window.activeBizId !== businessId) return;
+  campaigns = campaigns.filter(c => c.id !== id).concat(newCampaign);
+  _sortCampaigns();
+  activeCampaignId = id;
+  activeCampaignName = name;
 
   ccSetProgress(100);
   ccSetLabel('Campaign Created! 🎉');
@@ -7024,6 +7096,11 @@ async function ccCreateCampaign(aiData) {
 
 // ── Public API ────────────────────────────────────────────
 window.openCampaignChat = function() {
+  if (ccPendingCampaign || ccCampaignSaving) {
+    $cc('camp-chat-modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    return;
+  }
   const nameInput = document.getElementById('new-campaign-input');
   const prefilledName = nameInput?.value?.trim() || '';
   ccCol.campaignName = prefilledName;
@@ -7318,13 +7395,6 @@ window._bbLoadAccount = async function() {
     const billingBtn = document.getElementById('acct-billing-btn');
     if (billingBtn) billingBtn.textContent = plan === 'starter' ? 'Upgrade Plan' : 'View Billing';
 
-    const aiUsed = userData.aiActionsUsed || 0;
-    const aiCap  = { starter: 10, pro: 100, agency: 500 }[plan] || 10;
-    const usageEl = document.getElementById('acct-ai-usage'); if (usageEl) usageEl.textContent = `${aiUsed} / ${aiCap}`;
-
-    const resetAt = userData.aiActionsResetAt?.toDate?.();
-    const renewEl = document.getElementById('acct-renewal');
-    if (renewEl) renewEl.textContent = resetAt ? resetAt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
     _acctLoaded = true;
   } catch(e) {
     console.error('loadAccount:', e);

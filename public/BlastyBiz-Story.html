@@ -281,15 +281,26 @@
 })();
 </script>
 
+<div id="story-save-error" role="alert" hidden style="margin:24px;padding:16px;border:1px solid #c44;border-radius:8px;">Your story could not be saved. Your answers are still here. Check your connection and signed-in business, then <button type="button" onclick="window._bbRetryStory()">Retry save</button></div>
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+let storySaving = false;
 window._bbSaveStory = async function(storyAnswers) {
+  if (storySaving) return false;
+  storySaving = true;
+  const errorBox = document.getElementById('story-save-error');
+  errorBox.hidden = true;
+  window._bbRetryStory = () => window._bbSaveStory(storyAnswers);
   try {
-    const uid   = window._bbUid;
+    const uid = window._bbUid;
     const bizId = sessionStorage.getItem('bb_bizId');
-    if (!uid || !bizId) { window.location.href = 'BlastyBiz-CreateBiz.html'; return; }
+    if (!uid || !bizId) {
+      window.location.href = 'BlastyBiz-CreateBiz.html';
+      return false;
+    }
+    if (auth.currentUser?.uid !== uid) throw new Error('Missing signed-in business context');
     await setDoc(doc(db, 'users', uid, 'businesses', bizId), {
       aiContext: {
         story:     storyAnswers.story     || '',
@@ -300,7 +311,12 @@ window._bbSaveStory = async function(storyAnswers) {
       },
       updatedAt: serverTimestamp()
     }, { merge: true });
-  } catch(e) { console.error('[story save]', e); }
+  } catch(e) {
+    console.error('[story save]', e);
+    errorBox.hidden = false;
+    errorBox.scrollIntoView({ block: 'center' });
+    return false;
+  } finally { storySaving = false; }
   window.location.href = 'BlastyBiz-CreateBiz.html?bizId=' + (sessionStorage.getItem('bb_bizId')||'');
 };
 

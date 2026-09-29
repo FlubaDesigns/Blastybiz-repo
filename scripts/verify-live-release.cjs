@@ -9,6 +9,11 @@ const assert = require('node:assert/strict');
     assert.equal((await response.json()).commit, process.env.GITHUB_SHA, `${host}: wrong deployed commit`);
     for (const [page, text] of [
       ['BlastyBiz', 'async function deletePhotoRecords'],
+      ['BlastyBiz', 'async function retryGeneratedDraftSave'],
+      ['BlastyBiz-Profile', 'profile-save-error'],
+      ['BlastyBiz-Story', 'story-save-error'],
+      ['BlastyBiz-Publishing-Status', 'manual_followup'],
+      ['BlastyBiz-Account', 'Plan &amp; Billing'],
       ['BlastyBiz-CreateBiz', 'cbNormalizeWebsite'],
       ['BlastyBiz-Admin-Queue-Manager', 'publicationUncertain'],
       ['BlastyBiz-Admin-Subscriptions', 'function renderRevenue'],
@@ -18,6 +23,6 @@ const assert = require('node:assert/strict');
       assert(result.ok, `${host}/${page}: HTTP ${result.status}`);
       assert((await result.text()).includes(text), `${host}/${page}: reviewed change missing`);
     }
-    console.log(`PASS: ${host} serves ${process.env.GITHUB_SHA} and all five reviewed page markers.`);
+    console.log(`PASS: ${host} serves ${process.env.GITHUB_SHA} and all reviewed page markers.`);
   }
 })().catch(error => { console.error(error.message); process.exitCode = 1; });

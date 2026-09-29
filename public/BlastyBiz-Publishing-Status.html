@@ -93,6 +93,8 @@ const STATUS_CONFIG = {
   success:          { label: 'Live',        cls: 'pill-live',    rowCls: 'status-live' },
   manual_required:  { label: 'Action Needed', cls: 'pill-manual', rowCls: 'status-manual' },
   manual_completed: { label: 'Posted',      cls: 'pill-live',    rowCls: 'status-live' },
+  processing:       { label: 'Publishing', cls: 'pill-running', rowCls: 'status-running' },
+  manual_followup:  { label: 'Action Needed', cls: 'pill-manual', rowCls: 'status-manual' },
   running:          { label: 'Publishing',  cls: 'pill-running', rowCls: 'status-running' },
   pending:          { label: 'Waiting',     cls: 'pill-pending', rowCls: '' },
   failed:           { label: 'Failed',      cls: 'pill-failed',  rowCls: 'status-failed' },
@@ -139,7 +141,7 @@ function renderJobs(jobs) {
     }
     list.appendChild(row)});
 
-  const manualJobs = jobs.filter(j => j.status === 'manual_required');
+  const manualJobs = jobs.filter(j => ['manual_required', 'manual_followup'].includes(j.status));
   const actionCard = document.getElementById('action-card');
   const actionItems = document.getElementById('action-items');
   if (manualJobs.length) {

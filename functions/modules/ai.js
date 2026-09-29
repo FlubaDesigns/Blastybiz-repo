@@ -920,9 +920,21 @@ Return ONLY valid JSON, no markdown, no explanation:
 }));
 
 exports.chatCampaign = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
-
-  const { conversationHistory, businessProfile, collectedData } = req.body;
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+  const { conversationHistory, businessProfile, collectedData } = req.body || {};
   if (!Array.isArray(conversationHistory)) return res.status(400).json({ error: 'conversationHistory array required' });
+  if (conversationHistory.length > 50 || conversationHistory.some(m => !m || !['user', 'assistant'].includes(m.role) || typeof m.content !== 'string' || m.content.length > 20000)) {
+    return res.status(400).json({ error: 'Invalid conversation history' });
+  }
+  try {
+    if (conversationHistory.filter(m => m.role === 'user').length === 1) {
+      await reserveAiAction(decoded.uid);
+    }
+  } catch(e) {
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Campaign AI is temporarily unavailable for this account. Your answers are still here. Please try again later.' });
+    console.error('[chatCampaign] allowance check:', e.message);
+    return res.status(503).json({ error: 'Could not check AI availability. Please try again.' });
+  }
 
   const bp = businessProfile || {};
   const cd = collectedData  || {};
@@ -965,7 +977,7 @@ If finished: {"done":true,"message":"brief warm wrap-up line","campaignMemory":"
     const raw = aiText.replace(/```json|```/g, '').trim();
     let parsed;
     try { parsed = JSON.parse(raw); } catch(e) { parsed = { done: false, message: raw.slice(0, 300) }; }
-    trackAiUsage(decoded.uid, 'chatCampaign', aiModel, aiUsage, {});
+    await trackAiUsage(decoded.uid, 'chatCampaign', aiModel, aiUsage, {});
     return res.json(parsed);
   } catch(e) {
     console.error('[chatCampaign] error:', e.message);

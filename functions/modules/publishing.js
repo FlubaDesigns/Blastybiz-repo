@@ -141,38 +141,51 @@ exports.uploadImage = onRequest({ invoker: 'public' }, withAuth(async (req, res,
 }));
 
 exports.approvePendingPost = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
-
-  const { pendingPostId, bizId: pendingBizId } = req.body;
-  if (!pendingPostId) return res.status(400).json({ error: 'pendingPostId required' });
-  if (!pendingBizId) return res.status(400).json({ error: 'bizId required' });
-
-  const postRef = userBizPostsRef(decoded.uid, pendingBizId).doc(pendingPostId);
-  const postSnap = await postRef.get();
-  if (!postSnap.exists) return res.status(404).json({ error: 'Not found' });
-
-  const post = postSnap.data();
-  if (post.uid !== decoded.uid) return res.status(403).json({ error: 'Forbidden' });
-  if (post.status !== 'pending') return res.status(409).json({ error: 'Already processed' });
-
-  const { adaptations, platforms, tone, bizId } = post;
-
-  let plan = 'starter';
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+  const { pendingPostId, bizId: pendingBizId, action = 'approve' } = req.body || {};
+  const validId = value => typeof value === 'string' && value.trim() && !value.includes('/');
+  if (!validId(pendingPostId) || !validId(pendingBizId)) return res.status(400).json({ error: 'Valid pendingPostId and bizId required' });
+  if (!['approve', 'dismiss'].includes(action)) return res.status(400).json({ error: 'Invalid action' });
+  const fail = (status, message) => { throw Object.assign(new Error(message), { httpStatus: status }); };
   try {
-    const userSnap = await db.collection('users').doc(decoded.uid).get();
-    if (userSnap.exists) plan = userSnap.data().plan || 'starter';
-  } catch(e) {}
-  const isStarter = plan === 'starter';
-
-  const batch = db.batch();
-  for (const p of (platforms || [])) {
-    const content = (adaptations || {})[p.id];
-    if (!content) continue;
-    const isManual = p.type === 'manual' || isStarter;
-    const jobRef = userBizJobsRef(decoded.uid, bizId).doc();
-    batch.set(jobRef, {
-      jobId: jobRef.id, businessId: bizId, uid: decoded.uid,
+    const postRef = userBizPostsRef(decoded.uid, pendingBizId).doc(pendingPostId);
+    const result = await db.runTransaction(async tx => {
+      const postSnap = await tx.get(postRef);
+      if (!postSnap.exists) fail(404, 'Post not found');
+      const post = postSnap.data();
+      if (post.uid !== decoded.uid || (post.bizId && post.bizId !== pendingBizId)) fail(403, 'Forbidden');
+      const targetStatus = action === 'dismiss' ? 'dismissed' : 'approved';
+      if (post.status === targetStatus) return { ok: true, alreadyProcessed: true };
+      if (post.status !== 'pending') fail(409, 'This post has already been processed');
+      if (action === 'dismiss') {
+        tx.update(postRef, { status: 'dismissed', dismissedAt: admin.firestore.FieldValue.serverTimestamp() });
+        return { ok: true };
+      }
+      const userSnap = await tx.get(db.collection('users').doc(decoded.uid));
+      if (!userSnap.exists) fail(404, 'Account not found');
+      const isStarter = (userSnap.data().plan || 'starter') === 'starter';
+      const { adaptations, platforms } = post;
+      const imageUrls = post.imageUrls || [];
+      if (!Array.isArray(imageUrls) || imageUrls.some(url => typeof url !== 'string' || !/^https:\/\//i.test(url))) fail(400, 'Post contains invalid image URLs');
+      if (!Array.isArray(platforms) || platforms.length > 100) fail(400, 'Invalid platforms');
+      const seen = new Set();
+      const jobs = [];
+      for (const p of platforms) {
+        if (!p || !validId(p.id)) fail(400, 'Invalid platform');
+        const type = p.type === 'api' ? 'api' : 'manual';
+        if (seen.has(p.id)) continue;
+        seen.add(p.id);
+        const content = (adaptations || {})[p.id];
+        if (!content) continue;
+        if (typeof content !== 'string') fail(400, 'Invalid post content');
+        const isManual = type === 'manual' || isStarter;
+        // Stable per post/platform; repeated HTTP requests cannot create another job.
+        const jobId = 'pending_' + crypto.createHash('sha256').update(JSON.stringify([pendingPostId, p.id])).digest('hex');
+        const jobRef = userBizJobsRef(decoded.uid, pendingBizId).doc(jobId);
+        jobs.push({ ref: jobRef, data: {
+      jobId: jobRef.id, businessId: pendingBizId, uid: decoded.uid,
       platform: p.id, platformName: p.name || p.id,
-      capabilityLevel: p.type === 'api' ? 'full_api' : 'manual_assisted',
+      capabilityLevel: type === 'api' ? 'full_api' : 'manual_assisted',
       jobType: 'scheduled_approved',
       status: isManual ? 'manual_required' : 'pending',
       attempts: 0, maxAttempts: 3,
@@ -180,17 +193,23 @@ exports.approvePendingPost = onRequest({ invoker: 'public' }, withAuth(async (re
       customerVisibleMessage: isManual
         ? `Your approved ${p.name || p.id} post is ready — copy it below.`
         : `Your approved ${p.name || p.id} post is waiting to publish.`,
-      planGated: isStarter && p.type === 'api',
-      payload: { adaptedContent: content },
+      planGated: isStarter && type === 'api',
+      payload: { adaptedContent: content, imageUrls: [...imageUrls] },
       apiResponse: {}, customerNotified: false,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        } });
+      }
+      if (!jobs.length) fail(400, 'There is no generated content to approve');
+      for (const job of jobs) tx.create(job.ref, job.data);
+      tx.update(postRef, { status: 'approved', approvedAt: admin.firestore.FieldValue.serverTimestamp() });
+      return { ok: true };
     });
+    return res.json(result);
+  } catch(e) {
+    console.error('[approvePendingPost]', e.message);
+    return res.status(e.httpStatus || 500).json({ error: e.httpStatus ? e.message : 'Could not save your decision. Please retry.' });
   }
-  batch.update(postRef, { status: 'approved', approvedAt: admin.firestore.FieldValue.serverTimestamp() });
-  await batch.commit();
-
-  res.json({ ok: true });
 }));
 
 exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, withAuth(async (req, res, decoded) => {

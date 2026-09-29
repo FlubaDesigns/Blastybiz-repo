@@ -40,13 +40,11 @@ body{visibility:hidden}
   <h1 class="page-title" style="margin-bottom:4px;">Account <span>Settings</span></h1>
   <p class="page-sub" style="margin-bottom:24px;">Manage your plan, billing, and account.</p>
 
-  <!-- ── Plan & Usage ── -->
+  <!-- ── Plan & Billing ── -->
   <div class="card">
-    <div class="card-title">💼 Plan &amp; Usage</div>
+    <div class="card-title">💼 Plan &amp; Billing</div>
     <div class="cost-line"><span>Email</span><strong id="acct-email">—</strong></div>
     <div class="cost-line"><span>Plan</span><strong id="acct-plan-label">—</strong></div>
-    <div class="cost-line"><span>AI requests used</span><strong id="acct-ai-usage">—</strong></div>
-    <div class="cost-line"><span>Resets on</span><strong id="acct-renewal">—</strong></div>
     <div class="cost-line hidden" id="acct-retention-row"><span>Data kept until</span><strong id="acct-retention-val">—</strong></div>
     <p class="helper acct-retention-note hidden" id="acct-retention-note"></p>
     <div class="btn-row" style="margin-top:12px;">
@@ -165,15 +163,6 @@ auth.authStateReady().then(() => {
 
       const billingBtn = document.getElementById('acct-billing-btn');
       billingBtn.textContent = userPlan === 'starter' ? 'Upgrade Plan' : 'View Billing';
-
-      const aiUsed = userData.aiActionsUsed || 0;
-      const aiCap  = { starter: 10, pro: 100, agency: 500 }[userPlan] || 10;
-      document.getElementById('acct-ai-usage').textContent = `${aiUsed} / ${aiCap}`;
-
-      const resetAt = userData.aiActionsResetAt?.toDate?.();
-      document.getElementById('acct-renewal').textContent = resetAt
-        ? resetAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-        : '—';
 
       // ── Data retention (free plans only) ──────────────────────────────────
       // Free accounts are deleted after a long dormancy. Owners should be able
