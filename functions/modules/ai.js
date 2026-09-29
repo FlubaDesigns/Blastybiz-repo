@@ -15,6 +15,7 @@ const {
 } = require('../lib/shared');
 
 const crypto = require('crypto');
+const platformAuthority = require('../lib/platforms');
 
 function aiRequestContext(body = {}) {
   body = body || {};
@@ -591,7 +592,8 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
   // Admin values win; missing fields fall back to PLATFORM_DOCS.
   const adminPlatformDocs = await _getAdminPlatformDocs();
   const platformList = (platforms || []).map(p => ({
-    id: p.id, name: p.name, type: p.type,
+    id: p.id, name: PLATFORM_DOCS[p.id]?.name || p.name,
+    type: platformAuthority.byId[p.id]?.deliveryMode === 'auto' ? 'api' : 'manual',
     doc: _mergeAdminPlatformDoc(PLATFORM_DOCS[p.id] || {}, adminPlatformDocs[p.id] || {}),
     cat: (platformCats || {})[p.id] ? ` (category: ${platformCats[p.id]})` : ''
   }));
@@ -866,6 +868,14 @@ exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_A
   }
   const fnStartMs = Date.now();
 
+  const adminDocs = await _getAdminPlatformDocs();
+  const platformFacts = Object.entries(PLATFORM_DOCS).map(([id, base]) => {
+    const doc = _mergeAdminPlatformDoc(base, adminDocs[id]);
+    const capability = platformAuthority.PLATFORM_CAPABILITY_MAP[id];
+    const label = platformAuthority.labels[capability.deliveryMode];
+    return '- ' + id + ': ' + doc.name + ' — ' + label + '. Purpose: ' + doc.purpose + '. Suitability: ' + platformAuthority.byId[id].suitability;
+  }).join('\n');
+
   const prompt = `You are a local business marketing expert. Based on the business info below, decide which platforms this business should target.
 
 BUSINESS:
@@ -875,57 +885,13 @@ BUSINESS:
 - Location type: ${locationType || 'physical'} (physical = fixed storefront or office, service_area = goes to customer, online = digital/remote only)
 - Website: ${website || 'none'}
 
-PLATFORMS TO EVALUATE:
-- google: Google Business Profile (auto-post API available)
-- facebook: Facebook Business Page (auto-post API available)
-- instagram: Instagram Business (auto-post API available)
-- bing: Bing Places (auto-post API available)
-- nextdoor: Nextdoor (copy-paste only — blocks all third-party apps)
-- fbmarket: Facebook Marketplace (copy-paste only — Meta closed API in 2018)
-- craigslist: Craigslist (copy-paste only — no API ever)
-- yelp: Yelp (copy-paste only)
-- alignable: Alignable B2B local network (copy-paste only)
-- thumbtack: Thumbtack service marketplace (copy-paste only)
-- angi: Angi home services marketplace (copy-paste only)
-- applemaps: Apple Maps Connect (copy-paste submission only)
-- linkedin: LinkedIn (copy-paste only)
-- x: X / Twitter (copy-paste only)
+PLATFORMS TO EVALUATE (BlastyBiz delivery, not claims about other apps):
+${platformFacts}
 
-DECISION RULES:
-- google: almost always yes; no only for purely online businesses with zero local presence
-- facebook: yes for B2C; optional for pure B2B
-- instagram: yes for visual businesses (food, beauty, home services, events, fitness, retail, landscaping); no for unsexy services like accounting
-- bing: yes when extra search coverage matters; skip for hyper-local informal or very small budget businesses
-- nextdoor: yes for local service businesses that serve homeowners (cleaning, lawn care, plumbing, painting, etc.); no for B2B, restaurants, retail, or online-only
-- fbmarket: yes for local goods and consumer services people shop for (furniture, appliances, handyman, moving, cleaning); no for professional services, B2B, or restaurants
-- craigslist: yes for tradespeople, local services, rentals, items for sale; no for upscale/professional services or pure B2B
-- yelp: yes for restaurants, cafes, salons, spas, auto repair, home services, gyms, and any consumer-facing local service; no for B2B
-- alignable: yes for B2B or service businesses seeking local referral networks; no for pure B2C consumer retail
-- thumbtack: yes for services where customers search and compare (cleaners, tutors, photographers, handyman, movers, DJ, etc.); no for retail or restaurants
-- angi: yes ONLY for home services (plumbers, electricians, HVAC, roofers, painters, landscapers, handyman, pest control); no for everything else
-- applemaps: yes for any physical location or service-area business; no for online-only
-- linkedin: yes for B2B services, professional services (legal, accounting, consulting, marketing, SaaS, agencies), and businesses targeting other business owners; no for purely hyperlocal consumer services (plumbers, restaurants, nail salons) where no professional audience exists
-- x: yes for businesses with timely content, promotions, events, or a strong brand voice; yes for B2C brands, tech, SaaS, food, entertainment, retail; optional for local services; no for very small hyperlocal-only businesses with no social content strategy
-
-Return ONLY valid JSON, no markdown, no explanation:
-{
-  "suggestions": {
-    "google":     { "enabled": true,  "reason": "max 7 words why" },
-    "facebook":   { "enabled": true,  "reason": "max 7 words why" },
-    "instagram":  { "enabled": false, "reason": "max 7 words why" },
-    "bing":       { "enabled": true,  "reason": "max 7 words why" },
-    "nextdoor":   { "enabled": false, "reason": "max 7 words why" },
-    "fbmarket":   { "enabled": false, "reason": "max 7 words why" },
-    "craigslist": { "enabled": false, "reason": "max 7 words why" },
-    "yelp":       { "enabled": false, "reason": "max 7 words why" },
-    "alignable":  { "enabled": false, "reason": "max 7 words why" },
-    "thumbtack":  { "enabled": false, "reason": "max 7 words why" },
-    "angi":       { "enabled": false, "reason": "max 7 words why" },
-    "applemaps":  { "enabled": true,  "reason": "max 7 words why" },
-    "linkedin":   { "enabled": false, "reason": "max 7 words why" },
-    "x":          { "enabled": false, "reason": "max 7 words why" }
-  }
-}`;
+Use these platform purposes, suitability rules and the business facts to suggest relevant destinations. Follow the supplied suitability rules; do not invent APIs or additional categorical exclusions. Delivery mode does not determine suitability. The owner decides which platforms to use.
+Return ONLY valid JSON, no markdown. Include every platform key, with enabled true or false and a reason of at most 7 words:
+${JSON.stringify({suggestions:Object.fromEntries(Object.keys(PLATFORM_DOCS).map(id => [id,{enabled:false,reason:'max 7 words why'}]))})}
+`;
 
   let _spModel;
   const aiStartMs = Date.now();

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generate BlastyBiz platform landing pages from structured copy data."""
-import os, html, textwrap
+import os, html, textwrap, json, subprocess
+from pathlib import Path
 
 OUT = 'artifacts/api-server/public'
 CSS_V   = '1785802864721'
@@ -10,9 +11,6 @@ MENU_V  = '5'
 PLATFORMS = [
   {
     'slug': 'google',
-    'name': 'Google Business Profile',
-    'icon': '🔍',
-    'is_auto': True,
     'meta': 'BlastyBiz writes and auto-posts to your Google Business Profile. AI-written, local-search-optimized updates in minutes.',
     'h1': 'Post to Google Business Profile Automatically — AI-Written for Local Search',
     'kw': 'Automatic Google Business Profile posts for local businesses',
@@ -29,16 +27,12 @@ PLATFORMS = [
     ],
     'sample': '&ldquo;Now booking fall tune-ups at Mike&rsquo;s Auto Repair in Naples. Same-day appointments available this week &mdash; call or book online.&rdquo;',
     'workflow': 'Create one campaign. BlastyBiz writes the Google-optimized version. Review it, schedule it, and it posts automatically — no copy-paste required.',
-    'plan_close': 'Available on Pro and Agency. Free lets you preview what Google-optimized copy looks like before you commit.',
     'cta_href': 'BlastyBiz-Plan-Pro.html',
     'cta_text': 'Start Free Trial &mdash; Pro &rarr;',
     'manual_steps': '',
   },
   {
     'slug': 'facebook',
-    'name': 'Facebook Page',
-    'icon': '📘',
-    'is_auto': True,
     'note': 'Confirmed auto: BlastyBiz connects via the Facebook Pages API (pages_manage_posts scope) and publishes to your business Page feed.',
     'meta': 'BlastyBiz writes Facebook Page posts in the warm, conversational tone that earns real engagement — and auto-publishes them for you.',
     'h1': 'Facebook Posts, Written the Way Facebook Actually Works',
@@ -56,16 +50,12 @@ PLATFORMS = [
     ],
     'sample': '&ldquo;Big shoutout to everyone who came out for our weekend sale &mdash; you kept us hopping! Same deal continues through Sunday if you missed it.&rdquo;',
     'workflow': 'Create one campaign. BlastyBiz writes the Facebook-optimized version. Review it, schedule it, and it posts automatically to your Page.',
-    'plan_close': "Available on Pro and Agency as one of BlastyBiz's three fully automatic platforms.",
     'cta_href': 'BlastyBiz-Plan-Pro.html',
     'cta_text': 'Start Free Trial &mdash; Pro &rarr;',
     'manual_steps': '',
   },
   {
     'slug': 'fbmarket',
-    'name': 'Facebook Marketplace',
-    'icon': '🛒',
-    'is_auto': False,
     'meta': 'BlastyBiz writes your Facebook Marketplace listings in the direct, buyer-ready language that gets results — copy-ready in seconds.',
     'h1': 'Facebook Marketplace Listings — AI-Written, Copy-Ready in Seconds',
     'kw': 'AI-written Facebook Marketplace listings for local businesses',
@@ -82,16 +72,12 @@ PLATFORMS = [
     ],
     'sample': '&ldquo;Fresh-baked sourdough loaves, $8 each. Available for pickup Thursday&ndash;Saturday at our Naples bakery &mdash; message to reserve yours.&rdquo;',
     'workflow': 'Create one campaign. BlastyBiz writes the Marketplace-optimized listing. Copy the text, switch to Facebook Marketplace, create a new listing, paste, publish.',
-    'plan_close': 'Available on Pro and Agency, ready the moment you need a new listing up.',
     'cta_href': 'BlastyBiz-Plan-Pro.html',
     'cta_text': 'Start Free Trial &mdash; Pro &rarr;',
     'manual_steps': 'Go to facebook.com/marketplace &rarr; Create listing &rarr; paste your text.',
   },
   {
     'slug': 'instagram',
-    'name': 'Instagram',
-    'icon': '📸',
-    'is_auto': True,
     'meta': 'BlastyBiz writes Instagram captions built to earn the tap — first 125 characters first — and auto-posts them for you.',
     'h1': 'Instagram Captions That Actually Get Read — Written and Posted Automatically',
     'kw': 'AI-written Instagram posts for local businesses, automatically published',
@@ -108,16 +94,12 @@ PLATFORMS = [
     ],
     'sample': '&ldquo;Fresh flowers just dropped 🌸 Come grab your Friday bouquet before we sell out &mdash; link in bio for same-day delivery.&rdquo;',
     'workflow': 'Create one campaign. BlastyBiz writes the Instagram-optimized caption and prepares the image. Review, schedule, and it posts automatically.',
-    'plan_close': "Available on Pro and Agency as one of BlastyBiz's three fully automatic platforms.",
     'cta_href': 'BlastyBiz-Plan-Pro.html',
     'cta_text': 'Start Free Trial &mdash; Pro &rarr;',
     'manual_steps': '',
   },
   {
     'slug': 'yelp',
-    'name': 'Yelp',
-    'icon': '⭐',
-    'is_auto': False,
     'meta': 'BlastyBiz writes Yelp updates in the authentic, owner-forward voice Yelp rewards — copy-ready to paste in seconds.',
     'h1': 'Keep Your Yelp Presence Fresh — AI-Written, Copy-Ready in Seconds',
     'kw': 'AI-written Yelp business updates for local businesses',
@@ -134,16 +116,12 @@ PLATFORMS = [
     ],
     'sample': '&ldquo;We just added three new gluten-free options to the menu &mdash; swing by and let us know what you think!&rdquo;',
     'workflow': 'Create one campaign. BlastyBiz writes the Yelp-optimized version and prepares an image. Copy the text, switch to Yelp, paste, upload the image, publish.',
-    'plan_close': 'Available on Pro and Agency, ready the moment you have a minute to paste it in.',
     'cta_href': 'BlastyBiz-Plan-Pro.html',
     'cta_text': 'Start Free Trial &mdash; Pro &rarr;',
     'manual_steps': 'Go to biz.yelp.com &rarr; sign in &rarr; edit your business info or post an update &rarr; paste your text.',
   },
   {
     'slug': 'craigslist',
-    'name': 'Craigslist',
-    'icon': '📌',
-    'is_auto': False,
     'meta': 'BlastyBiz writes Craigslist listings in the direct, classified-style language that drives local leads — copy-ready in seconds.',
     'h1': 'Craigslist Listings Written Like Craigslist — Copy, Paste, Done',
     'kw': 'AI-written Craigslist business listings for local services',
@@ -160,16 +138,12 @@ PLATFORMS = [
     ],
     'sample': '&ldquo;Reliable lawn care, Naples &amp; surrounding areas. Weekly or bi-weekly service, free estimates. Call or text to schedule.&rdquo;',
     'workflow': "Create one campaign. BlastyBiz writes the Craigslist-optimized version. Copy the text, switch to Craigslist, paste into your city's Services section, publish.",
-    'plan_close': 'Available on Pro and Agency, ready to paste whenever you need a new listing.',
     'cta_href': 'BlastyBiz-Plan-Pro.html',
     'cta_text': 'Start Free Trial &mdash; Pro &rarr;',
     'manual_steps': 'Go to craigslist.org &rarr; your city &rarr; Services &rarr; paste your listing.',
   },
   {
     'slug': 'nextdoor',
-    'name': 'Nextdoor',
-    'icon': '🏘️',
-    'is_auto': False,
     'meta': "BlastyBiz writes Nextdoor posts that sound like a real neighbor, not an ad — copy-ready to build local trust in seconds.",
     'h1': 'Build Neighborhood Trust on Nextdoor — AI-Written, Copy-Ready',
     'kw': 'AI-written Nextdoor posts for local businesses',
@@ -186,16 +160,12 @@ PLATFORMS = [
     ],
     'sample': '&ldquo;Hi neighbors! We&rsquo;ve been serving the area for 8 years and wanted to let you know about our new weekend hours &mdash; stop in and say hi.&rdquo;',
     'workflow': 'Create one campaign. BlastyBiz writes the Nextdoor-optimized version. Copy the text, switch to Nextdoor, paste, publish.',
-    'plan_close': 'Available on Pro and Agency, ready the moment you want to reach your neighborhood.',
     'cta_href': 'BlastyBiz-Plan-Pro.html',
     'cta_text': 'Start Free Trial &mdash; Pro &rarr;',
     'manual_steps': 'Go to nextdoor.com &rarr; Post &rarr; For Sale &amp; Free &rarr; paste your listing.',
   },
   {
     'slug': 'linkedin',
-    'name': 'LinkedIn',
-    'icon': '💼',
-    'is_auto': False,
     'meta': 'BlastyBiz writes LinkedIn posts with the professional, authority-building tone this platform rewards — copy-ready to paste in seconds.',
     'h1': 'LinkedIn Copy That Builds Authority — AI-Written, Copy-Ready',
     'kw': 'AI-written LinkedIn posts for local and B2B businesses',
@@ -212,16 +182,12 @@ PLATFORMS = [
     ],
     'sample': '&ldquo;Proud to have helped 40+ local businesses streamline their books this tax season. If your small business needs a hand next year, we&rsquo;d love to talk.&rdquo;',
     'workflow': 'Create one campaign. BlastyBiz writes the LinkedIn-optimized version. Copy the text, switch to LinkedIn, paste, publish.',
-    'plan_close': 'Available on Pro and Agency, ready when you need to post to your professional network.',
     'cta_href': 'BlastyBiz-Plan-Pro.html',
     'cta_text': 'Start Free Trial &mdash; Pro &rarr;',
     'manual_steps': 'Go to linkedin.com &rarr; sign in &rarr; create a post from your business page &rarr; paste your text.',
   },
   {
     'slug': 'pinterest',
-    'name': 'Pinterest',
-    'icon': '📌',
-    'is_auto': False,
     'meta': 'BlastyBiz writes Pinterest descriptions built for discovery — evergreen, visual, search-friendly — copy-ready in seconds.',
     'h1': 'Pinterest Descriptions Built for Discovery — AI-Written, Copy-Ready',
     'kw': 'AI-written Pinterest pin descriptions for local businesses',
@@ -238,16 +204,12 @@ PLATFORMS = [
     ],
     'sample': '&ldquo;Cozy fall wreaths handmade with dried florals &mdash; perfect for a front porch that welcomes the season.&rdquo;',
     'workflow': 'Create one campaign. BlastyBiz writes the Pinterest-optimized description and prepares the image. Copy the text, switch to Pinterest, paste, upload the image, publish.',
-    'plan_close': 'Available on Pro and Agency, ready whenever you have a new pin to share.',
     'cta_href': 'BlastyBiz-Plan-Pro.html',
     'cta_text': 'Start Free Trial &mdash; Pro &rarr;',
     'manual_steps': 'Go to pinterest.com &rarr; sign in &rarr; create a pin &rarr; paste your text.',
   },
   {
     'slug': 'x',
-    'name': 'X (Twitter)',
-    'icon': '𝕏',
-    'is_auto': False,
     'meta': 'BlastyBiz writes tight, quotable X (Twitter) posts that fit the platform\'s pace — copy-ready in seconds.',
     'h1': 'Short, Sharp Posts for X — AI-Written, Copy-Ready',
     'kw': 'AI-written X Twitter posts for local businesses',
@@ -264,16 +226,12 @@ PLATFORMS = [
     ],
     'sample': '&ldquo;Monday deserves donuts. $1 off a dozen today only. See you at the counter.&rdquo;',
     'workflow': 'Create one campaign. BlastyBiz writes the X-optimized version. Copy the text, switch to X, paste, publish.',
-    'plan_close': 'Available on Pro and Agency, ready whenever you need something quick and sharp.',
     'cta_href': 'BlastyBiz-Plan-Pro.html',
     'cta_text': 'Start Free Trial &mdash; Pro &rarr;',
     'manual_steps': 'Go to x.com &rarr; sign in &rarr; compose a new post &rarr; paste your text.',
   },
   {
     'slug': 'bing',
-    'name': 'Bing Places',
-    'icon': '🔵',
-    'is_auto': False,
     'meta': 'BlastyBiz writes Bing Places updates in the clear, local language that drives search traffic — copy-ready to paste in seconds.',
     'h1': 'Keep Bing Places Updated Too — AI-Written, Copy-Ready',
     'kw': 'AI-written Bing Places business listing updates',
@@ -288,16 +246,12 @@ PLATFORMS = [
     ],
     'sample': '&ldquo;Now offering extended weekend hours at our Naples location &mdash; stop by Saturday or Sunday!&rdquo;',
     'workflow': 'Create one campaign. BlastyBiz writes the Bing-optimized version. Copy the text, go to bingplaces.com, sign in, edit your listing, and paste.',
-    'plan_close': 'Available on Pro and Agency, ready to keep every local listing consistent.',
     'cta_href': 'BlastyBiz-Plan-Pro.html',
     'cta_text': 'Start Free Trial &mdash; Pro &rarr;',
     'manual_steps': 'Go to bingplaces.com &rarr; sign in &rarr; add or edit listing &rarr; paste your text.',
   },
   {
     'slug': 'applemaps',
-    'name': 'Apple Maps',
-    'icon': '🍎',
-    'is_auto': False,
     'meta': 'BlastyBiz writes concise, factual Apple Maps business descriptions that keep your listing accurate and current — copy-ready in seconds.',
     'h1': 'Show Up Accurately on Apple Maps — AI-Written, Copy-Ready',
     'kw': 'AI-written Apple Maps business listing updates',
@@ -312,16 +266,12 @@ PLATFORMS = [
     ],
     'sample': '&ldquo;Family-owned hardware store serving Naples since 2009 &mdash; open 7 days a week.&rdquo;',
     'workflow': 'Create one campaign. BlastyBiz writes the Apple Maps-optimized version. Copy the text and update your Apple Business Connect listing.',
-    'plan_close': 'Available on Pro and Agency, ready to keep your map presence current.',
     'cta_href': 'BlastyBiz-Plan-Pro.html',
     'cta_text': 'Start Free Trial &mdash; Pro &rarr;',
     'manual_steps': 'Go to mapsconnect.apple.com &rarr; sign in &rarr; add or edit your business &rarr; paste your text.',
   },
   {
     'slug': 'alignable',
-    'name': 'Alignable',
-    'icon': '🤝',
-    'is_auto': False,
     'meta': 'BlastyBiz writes Alignable updates that read like a trustworthy local business neighbor, not an ad — copy-ready in seconds.',
     'h1': 'Build B2B Referrals on Alignable — AI-Written, Copy-Ready',
     'kw': 'AI-written Alignable updates for local business networking',
@@ -336,16 +286,12 @@ PLATFORMS = [
     ],
     'sample': '&ldquo;Always happy to send referrals to other local businesses in the Naples network &mdash; let&rsquo;s support each other this season.&rdquo;',
     'workflow': 'Create one campaign. BlastyBiz writes the Alignable-optimized version. Copy the text, switch to Alignable, paste, publish.',
-    'plan_close': 'Available on Pro and Agency, ready to keep your local business network active.',
     'cta_href': 'BlastyBiz-Plan-Pro.html',
     'cta_text': 'Start Free Trial &mdash; Pro &rarr;',
     'manual_steps': 'Go to alignable.com &rarr; sign in &rarr; Post an Update &rarr; paste your text.',
   },
   {
     'slug': 'thumbtack',
-    'name': 'Thumbtack',
-    'icon': '📋',
-    'is_auto': False,
     'meta': 'BlastyBiz writes Thumbtack profile copy built to win the lead comparison — direct, credible, specific — copy-ready in seconds.',
     'h1': 'Win More Leads on Thumbtack — AI-Written, Copy-Ready',
     'kw': 'AI-written Thumbtack profile copy for local service businesses',
@@ -360,16 +306,12 @@ PLATFORMS = [
     ],
     'sample': '&ldquo;Same-week appointments available for plumbing repairs &mdash; licensed, insured, and rated 5 stars by 120+ local customers.&rdquo;',
     'workflow': 'Create one campaign. BlastyBiz writes the Thumbtack-optimized version. Copy the text into your profile or a new response template.',
-    'plan_close': 'Available on Pro and Agency, ready to help you win the next lead comparison.',
     'cta_href': 'BlastyBiz-Plan-Pro.html',
     'cta_text': 'Start Free Trial &mdash; Pro &rarr;',
     'manual_steps': 'Go to thumbtack.com/pro &rarr; sign in &rarr; edit your profile or services &rarr; paste your text.',
   },
   {
     'slug': 'angi',
-    'name': 'Angi',
-    'icon': '🔧',
-    'is_auto': False,
     'meta': 'BlastyBiz writes Angi profile copy that builds customer confidence fast — trust-forward, credential-clear — copy-ready in seconds.',
     'h1': 'Stand Out on Angi — AI-Written, Copy-Ready',
     'kw': 'AI-written Angi profile copy for home service businesses',
@@ -384,7 +326,6 @@ PLATFORMS = [
     ],
     'sample': '&ldquo;Licensed HVAC technicians serving the Naples area for over 15 years &mdash; free estimates on new installs.&rdquo;',
     'workflow': 'Create one campaign. BlastyBiz writes the Angi-optimized version. Copy the text into your profile or listing update.',
-    'plan_close': 'Available on Pro and Agency, ready whenever your Angi profile needs a refresh.',
     'cta_href': 'BlastyBiz-Plan-Pro.html',
     'cta_text': 'Start Free Trial &mdash; Pro &rarr;',
     'manual_steps': 'Go to pro.angi.com &rarr; sign in &rarr; edit your business profile &rarr; paste your text.',
@@ -508,7 +449,7 @@ def render_page(p):
     name     = p['name']
     is_auto  = p['is_auto']
     badge_cls  = 'auto' if is_auto else 'manual'
-    badge_txt  = '⚡ Automatic Publishing' if is_auto else '📋 Copy-Ready'
+    badge_txt  = 'Blasty Posts It' if is_auto else 'Ready for You to Post'
     note_html  = f'<p style="font-size:13px;background:rgba(57,255,20,.06);border:1px solid rgba(57,255,20,.2);border-radius:8px;padding:10px 14px;color:#aaa;margin-bottom:20px">{p["note"]}</p>\n    ' if p.get('note') else ''
 
     snapshot_items = ''.join(f'<li>{s}</li>\n        ' for s in p['snapshot'])
@@ -693,6 +634,18 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 </body>
 </html>"""
 
+
+# Delivery facts are shared with the live server and browser, never editorial overrides.
+_ROOT = Path(__file__).resolve().parents[1]
+_CANONICAL = json.loads(subprocess.check_output([
+    'node', '-e', 'process.stdout.write(JSON.stringify(require("./functions/lib/platforms").records))'
+], cwd=_ROOT, text=True))
+_BY_ID = {p['id']: p for p in _CANONICAL}
+for p in PLATFORMS:
+    facts = _BY_ID[p['slug']]
+    p.update(name=facts['name'], icon=facts['icon'], is_auto=facts['deliveryMode'] == 'auto')
+    p['plan_close'] = ('Available on every plan after you connect your account.'
+                       if p['is_auto'] else 'Available on every plan, ready for you to post.')
 
 # ── Write files ────────────────────────────────────────────────────────────────
 generated = []

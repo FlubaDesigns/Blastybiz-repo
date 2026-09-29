@@ -145,24 +145,13 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="platforms-authority.js"></script>
 <script>
-var PLATFORM_META = {
-  google:     { icon:'G',  name:'Google Business Profile', capabilityLevel:'full_auto',       badge:'Auto',       badgeClass:'badge auto',   hint:'Keep it clear and local. Google posts should be direct, service-based, and not overstuffed with keywords.' },
-  facebook:   { icon:'f',  name:'Facebook Page',           capabilityLevel:'partial_auto',    badge:'Auto',       badgeClass:'badge auto',   hint:'Facebook can be warmer and more conversational than Google.' },
-  instagram:  { icon:'◎', name:'Instagram',               capabilityLevel:'partial_auto',    badge:'Auto',       badgeClass:'badge auto',   hint:'Instagram should stay shorter and image-friendly. Hashtags are okay, but keep them local.' },
-  bing:       { icon:'B',  name:'Bing Places',             capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to bingplaces.com → sign in → add or edit listing → paste your text.' },
-  applemaps:  { icon:'🍎', name:'Apple Maps',              capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to mapsconnect.apple.com → sign in → add or edit your business → paste your text.' },
-  yelp:       { icon:'Y',  name:'Yelp',                   capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to biz.yelp.com → sign in → edit your business info or post an update → paste your text.' },
-  nextdoor:   { icon:'N',  name:'Nextdoor',               capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to nextdoor.com → Post → For Sale & Free → paste your listing.' },
-  craigslist: { icon:'C',  name:'Craigslist',             capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to craigslist.org → your city → Services → paste your listing.' },
-  fbmarket:   { icon:'M',  name:'FB Marketplace',         capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to facebook.com/marketplace → Create listing → paste your text.' },
-  alignable:  { icon:'A',  name:'Alignable',              capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to alignable.com → sign in → Post an Update → paste your text.' },
-  thumbtack:  { icon:'T',  name:'Thumbtack',              capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to thumbtack.com/pro → sign in → edit your profile or services → paste your text.' },
-  angi:       { icon:'🔧', name:'Angi',                   capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to pro.angi.com → sign in → edit your business profile → paste your text.' },
-  linkedin:   { icon:'in', name:'LinkedIn',               capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to linkedin.com → sign in → create a post from your business page → paste your text.' },
-  x:          { icon:'𝕏',  name:'X (Twitter)',            capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to x.com → sign in → compose a new post → paste your text.' },
-  pinterest:  { icon:'P',  name:'Pinterest',              capabilityLevel:'manual_assisted', badge:'Copy-Ready', badgeClass:'badge manual', manualInstructions:'Go to pinterest.com → sign in → create a pin → paste your text.' },
-};
+var PLATFORM_META = Object.fromEntries(BBPlatforms.records.map(p => [p.id, {
+  ...BBPlatforms.PLATFORM_CAPABILITY_MAP[p.id], icon:p.icon, name:p.name,
+  badge:BBPlatforms.labels[p.deliveryMode], badgeClass:'badge ' + p.deliveryMode,
+  hint:p.doc.tone
+}]));
 
 var drafts         = {};
 var draftDocId     = null;
@@ -170,12 +159,7 @@ var currentUser    = null;
 var businessId     = null;
 var currentDraftData = {};
 
-// ── Plan gating ─────────────────────────────────────────────────────────────
-// approveDraft and the scheduled publish path both force every platform to
-// manual copy-paste when the owner is on the free plan, whatever the platform
-// is capable of. This page used to ignore that and promise auto-posting the
-// server was never going to do, so capability is read through these two
-// helpers: what the platform *could* do, and what it will actually do today.
+// Delivery depends on the available publisher, equally on every plan.
 var pubPlan = 'starter';
 window.setPubPlan = function (p) { pubPlan = p || 'starter'; };
 
@@ -184,7 +168,7 @@ function isAutoCapable(pid) {
   return !!m && m.capabilityLevel !== 'manual_assisted';
 }
 function willAutoPost(pid) {
-  return isAutoCapable(pid) && (pubPlan === 'pro' || pubPlan === 'agency');
+  return isAutoCapable(pid);
 }
 
 function showToast(msg) {
@@ -332,7 +316,7 @@ function renderPreviewRail() {
     +   '<div class="pub-post-avatar">' + escHtml(meta.icon) + '</div>'
     +   '<div class="pub-post-hdr-body">'
     +     '<div class="pub-post-biz">' + escHtml(bizName) + '</div>'
-    +     '<div class="pub-post-meta">' + escHtml(meta.name) + ' · ' + (isAuto ? 'Auto-post' : 'Copy &amp; paste') + '</div>'
+    +     '<div class="pub-post-meta">' + escHtml(meta.name) + ' · ' + (isAuto ? 'Blasty Posts It' : 'Ready for You to Post') + '</div>'
     +   '</div>'
     + '</div>'
     + media
@@ -423,12 +407,10 @@ function populateFromDraftData(draftData) {
       listEl.innerHTML = platformIds.map(function(pid){
         var meta    = PLATFORM_META[pid] || { icon: pid[0].toUpperCase(), name: pid, capabilityLevel: 'manual_assisted' };
         var isAuto  = willAutoPost(pid);
-        // Auto-capable but the owner is on the free plan: say so plainly rather
-        // than either promising auto-posting or pretending it isn't possible.
-        var locked  = !isAuto && isAutoCapable(pid);
-        var typeStr = isAuto ? '⚡ Auto-post' : (locked ? '🔒 Auto-post is a paid feature — copy &amp; paste for now' : '✋ Copy &amp; paste');
-        var badgeCls = isAuto ? 'badge auto' : (locked ? 'badge locked' : 'badge manual');
-        var badgeTxt = isAuto ? 'Auto' : (locked ? 'Locked' : 'Copy-Ready');
+        var locked = false;
+        var typeStr = isAuto ? 'Blasty Posts It' : 'Ready for You to Post';
+        var badgeCls = isAuto ? 'badge auto' : 'badge manual';
+        var badgeTxt = typeStr;
         return '<div class="pub-plat-row' + (locked ? ' is-locked' : '') + '">'
           + '<div class="pub-plat-icon">' + escHtml(meta.icon) + '</div>'
           + '<div class="pub-plat-info"><div class="pub-plat-name">' + escHtml(meta.name) + '</div><div class="pub-plat-type">' + typeStr + '</div></div>'
@@ -465,33 +447,10 @@ function populateFromDraftData(draftData) {
   renderManualPanel();
 }
 
-// Second, softer upgrade ask. Only appears once the owner can see their
-// finished ads AND at least one platform in this blast is being pasted by hand
-// purely because of the plan. Nothing to sell otherwise, so nothing is shown.
-function renderUpsell(platformIds) {
+// Publishing features are shared; this obsolete plan upsell stays hidden.
+function renderUpsell() {
   var section = document.getElementById('pub-upsell');
-  var body    = document.getElementById('pub-upsell-body');
-  if (!section || !body) return;
-
-  var lockedIds = (platformIds || Object.keys(drafts)).filter(function (pid) {
-    return isAutoCapable(pid) && !willAutoPost(pid);
-  });
-  if (!lockedIds.length) { section.classList.add('hidden'); return; }
-
-  var names = lockedIds.map(function (pid) {
-    return (PLATFORM_META[pid] || {}).name || pid;
-  });
-  var nameStr = names.length > 1
-    ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1]
-    : names[0];
-  var total = Object.keys(drafts).length;
-
-  body.innerHTML = '<strong>' + escHtml(nameStr) + '</strong> '
-    + (names.length > 1 ? 'accept posts from BlastyBiz directly' : 'accepts posts from BlastyBiz directly')
-    + ' — on Pro ' + (names.length > 1 ? 'they publish' : 'it publishes') + ' the moment you hit Publish. '
-    + 'On your current plan you\u2019ll be pasting all ' + total + ' post'
-    + (total > 1 ? 's' : '') + ' by hand, every blast.';
-  section.classList.remove('hidden');
+  if (section) section.classList.add('hidden');
 }
 
 function upsellCheckout() {

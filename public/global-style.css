@@ -3754,7 +3754,7 @@ body.choose-plan-page .cp-hero          { text-align: center; }
 body.choose-plan-page .cp-hero .sub     { max-width: 640px; margin-left: auto; margin-right: auto; }
 
 /* ── Personalised platform breakdown ───────────────────────── */
-.cp-plat-row      { display: grid; grid-template-columns: 28px minmax(0,1fr) 130px 130px; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.cp-plat-row      { display: grid; grid-template-columns: 28px minmax(0,1fr) 150px; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .cp-plat-row:last-child { border-bottom: none; }
 .cp-plat-head     { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); padding-bottom: 6px; }
 .cp-plat-icon     { font-size: 18px; text-align: center; }
@@ -3782,7 +3782,7 @@ body.choose-plan-page .cp-hero .sub     { max-width: 640px; margin-left: auto; m
 
 @media (max-width: 899px) {
   .cp-plans      { grid-template-columns: 1fr; }
-  .cp-plat-row   { grid-template-columns: 24px minmax(0,1fr) 96px 96px; gap: 8px; }
+  .cp-plat-row   { grid-template-columns: 24px minmax(0,1fr) 115px; gap: 8px; }
   .cp-plat-col   { font-size: 12px; }
   .cp-billing    { flex-wrap: wrap; }
 }

@@ -10,7 +10,7 @@ function context(seed={}){
  const c={db,admin,console:quiet,crypto,Date,exports:{},onRequest:(_,f)=>f,withAuth:f=>f,onSchedule:(_,f)=>f,onDocumentCreated:(_,f)=>f,onDocumentUpdated:(_,f)=>f,
  userBizRef:(u,b)=>db.doc(`users/${u}/businesses/${b}`),userBizCol:u=>db.collection(`users/${u}/businesses`),userBizJobsRef:(u,b)=>db.collection(`users/${u}/businesses/${b}/publishJobs`),
  getPlanConfig:async()=>({bizLimits:{starter:1,pro:3,agency:10}}),...require('../functions/lib/schedule'),
- PLATFORM_CAPABILITY_MAP:{facebook:{name:'Facebook',capabilityLevel:'partial_auto'},google:{name:'Google',capabilityLevel:'full_auto'}},sendResendEmail:async()=>{},APP_BASE_URL:'https://example.com'};
+ PLATFORM_CAPABILITY_MAP:require('../functions/lib/platforms').PLATFORM_CAPABILITY_MAP,sendResendEmail:async()=>{},APP_BASE_URL:'https://example.com'};
  return {state,c};
 }
 async function businessTests(){

@@ -48,7 +48,7 @@
     <div class="plat-how-box">
       <div class="plat-how-item"><span>⚡</span><strong style="color:var(--green)">Automatic</strong><p id="plat-auto-desc">Post automatically when you connect the account.</p></div>
       <div class="plat-how-divider"></div>
-      <div class="plat-how-item"><span>📋</span><strong style="color:#ccc">Copy-Ready</strong><p id="plat-copy-desc">BlastyBiz writes it perfectly; you paste it in seconds.</p></div>
+      <div class="plat-how-item"><span>📋</span><strong style="color:#ccc">Ready for You to Post</strong><p id="plat-copy-desc">BlastyBiz writes it perfectly; you paste it in seconds.</p></div>
     </div>
   </div></div>
 </section>
@@ -66,14 +66,14 @@ import { loadPlatformsREST } from './platforms-config.js';
   const autoDesc = document.getElementById('plat-auto-desc');
   const copyDesc = document.getElementById('plat-copy-desc');
   if (autoDesc) autoDesc.textContent = `${auto.map(p=>p.name).join(', ')} post automatically when you connect the account.`;
-  if (copyDesc) copyDesc.textContent = `${copy.length} platforms don\u2019t allow third-party automation \u2014 BlastyBiz writes it perfectly; you paste it in seconds.`;
+  if (copyDesc) copyDesc.textContent = `BlastyBiz prepares copy for ${copy.length} platforms for you to post.`;
 
   // Render cards
   grid.innerHTML = platforms.map(p => {
     const isAuto = p.capabilityLevel !== 'manual_assisted';
     const badge  = isAuto
-      ? `<span class="plat-hub-badge--auto">⚡ Auto</span>`
-      : `<span class="plat-hub-badge--copy">📋 Copy-Ready</span>`;
+      ? `<span class="plat-hub-badge--auto">Blasty Posts It</span>`
+      : `<span class="plat-hub-badge--copy">Ready for You to Post</span>`;
     return `<a href="BlastyBiz-Platform-${p.slug}.html" class="plat-hub-card">
       <div class="plat-hub-card__icon">${p.icon}</div>
       <div class="plat-hub-card__name">${p.name}</div>

@@ -11,7 +11,7 @@
 
 const {
   onRequest, onDocumentUpdated, onDocumentCreated, admin, db, axios,
-  APP_BASE_URL, sendResendEmail,
+  APP_BASE_URL, sendResendEmail, getPlanConfig,
   userBizRef, userBizCol, userBizDraftsRef, userBizJobsRef, userBizPostsRef, userBizConnsRef,
   _getConnTokens, _setConnTokens,
   withAuth,
@@ -187,7 +187,6 @@ exports.approvePendingPost = onRequest({ invoker: 'public' }, withAuth(async (re
       }
       const userSnap = await tx.get(db.collection('users').doc(decoded.uid));
       if (!userSnap.exists) fail(404, 'Account not found');
-      const isStarter = (userSnap.data().plan || 'starter') === 'starter';
       const { adaptations, platforms } = post;
       const imageUrls = post.imageUrls || [];
       if (!Array.isArray(imageUrls) || imageUrls.some(url => typeof url !== 'string' || !/^https:\/\//i.test(url))) fail(400, 'Post contains invalid image URLs');
@@ -196,20 +195,20 @@ exports.approvePendingPost = onRequest({ invoker: 'public' }, withAuth(async (re
       const jobs = [];
       for (const p of platforms) {
         if (!p || !validId(p.id)) fail(400, 'Invalid platform');
-        const type = p.type === 'api' ? 'api' : 'manual';
+        const type = p.type === 'api' && PLATFORM_CAPABILITY_MAP[p.id]?.capabilityLevel === 'full_auto' ? 'api' : 'manual';
         if (seen.has(p.id)) continue;
         seen.add(p.id);
         const content = (adaptations || {})[p.id];
         if (!content) continue;
         if (typeof content !== 'string') fail(400, 'Invalid post content');
-        const isManual = type === 'manual' || isStarter;
+        const isManual = type === 'manual';
         // Stable per post/platform; repeated HTTP requests cannot create another job.
         const jobId = 'pending_' + crypto.createHash('sha256').update(JSON.stringify([pendingPostId, p.id])).digest('hex');
         const jobRef = userBizJobsRef(decoded.uid, pendingBizId).doc(jobId);
         jobs.push({ ref: jobRef, data: {
       jobId: jobRef.id, businessId: pendingBizId, uid: decoded.uid,
       platform: p.id, platformName: p.name || p.id,
-      capabilityLevel: type === 'api' ? 'full_api' : 'manual_assisted',
+      capabilityLevel: type === 'api' ? 'full_auto' : 'manual_assisted',
       jobType: 'scheduled_approved',
       status: isManual ? 'manual_required' : 'pending',
       attempts: 0, maxAttempts: 3,
@@ -217,7 +216,7 @@ exports.approvePendingPost = onRequest({ invoker: 'public' }, withAuth(async (re
       customerVisibleMessage: isManual
         ? `Your approved ${p.name || p.id} post is ready — copy it below.`
         : `Your approved ${p.name || p.id} post is waiting to publish.`,
-      planGated: isStarter && type === 'api',
+      planGated: false,
       payload: { adaptedContent: content, imageUrls: [...imageUrls] },
       apiResponse: {}, customerNotified: false,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -278,7 +277,6 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
     const userSnap = await db.collection('users').doc(uid).get();
     if (userSnap.exists) userPlan = userSnap.data().plan || 'starter';
   } catch(e) { console.warn('approveDraft: users read failed, defaulting to starter:', e.message); }
-  const isStarter = userPlan === 'starter';
 
   const draftRef = userBizDraftsRef(uid, businessId).doc(draftId);
 
@@ -356,9 +354,7 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
     const cap = PLATFORM_CAPABILITY_MAP[pid] || { name: pid, capabilityLevel: 'manual_assisted', manualInstructions: '' };
     const adaptedContent = draftAdaptations[pid] || '';
     const jobRef = userBizJobsRef(uid, businessId).doc();
-    const isNativelyManual = ['manual_assisted', 'unsupported'].includes(cap.capabilityLevel);
-    const isManual = isNativelyManual || isStarter;
-    const starterBlocked = isStarter && !isNativelyManual;
+    const isManual = cap.capabilityLevel !== 'full_auto';
     tx.set(jobRef, {
       jobId: jobRef.id, businessId, uid, draftId, campaignId,
       platform: pid,
@@ -367,12 +363,10 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
       status: isManual ? 'manual_required' : 'pending',
       attempts: 0, maxAttempts: 3,
       customerLabel: isManual ? 'Action needed' : 'Waiting to publish',
-      customerVisibleMessage: starterBlocked
-        ? `Upgrade to Pro to auto-post to ${cap.name}. Your content is ready — copy it below.`
-        : isManual
+      customerVisibleMessage: isManual
           ? `Your ${cap.name} listing is ready — you need to post it manually.`
           : `Your ${cap.name} listing is waiting to publish.`,
-      planGated: starterBlocked,
+      planGated: false,
       manualInstructions: cap.manualInstructions,
       adminError: '', payload: { adaptedContent, imageUrls: imagesFor(pid) },
       apiResponse: {}, customerNotified: false,
@@ -1012,6 +1006,7 @@ exports.businessCreatedTrigger = onDocumentCreated(
     const businessName = biz.businessName || (ownerName ? ownerName + '\'s Business' : 'your business');
     const isPro    = plan === 'pro';
     const isAgency = plan === 'agency';
+    const {bizLimits} = await getPlanConfig();
 
     const mergeData = {
       name: ownerName || 'there',
@@ -1036,7 +1031,7 @@ exports.businessCreatedTrigger = onDocumentCreated(
   </div>
   <div style="padding:32px">
     <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re Agency, ${mergeData.name}. Full power unlocked.</h1>
-    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> is live on BlastyBiz Agency. You can manage unlimited client businesses, blast to every platform, and schedule posts automatically.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> is live on BlastyBiz Agency. You can manage up to ${bizLimits.agency} businesses with a larger AI budget and shared publishing tools.</p>
     <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">Add your first client from the dashboard and start blasting.</p>
     <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Open Dashboard &#8594;</a>
   </div>
@@ -1054,8 +1049,8 @@ exports.businessCreatedTrigger = onDocumentCreated(
     <div style="font-size:11px;color:#4caf50;letter-spacing:3px;margin-top:8px;font-weight:700">LOCK. LOAD. BLAST.</div>
   </div>
   <div style="padding:32px">
-    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re Pro, ${mergeData.name}. Everything&#39;s unlocked.</h1>
-    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> is set up on BlastyBiz Pro. You have full API publishing, auto-scheduled posts, and unlimited blasts.</p>
+    <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re Pro, ${mergeData.name}. Room to grow.</h1>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> is set up on BlastyBiz Pro. You have capacity for up to ${bizLimits.pro} businesses, a larger AI budget, and shared publishing tools.</p>
     <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">Head to your dashboard and fire off your first blast — it takes about 5 minutes.</p>
     <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Go to Dashboard &#8594;</a>
   </div>
@@ -1075,7 +1070,7 @@ exports.businessCreatedTrigger = onDocumentCreated(
   <div style="padding:32px">
     <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re in, ${mergeData.name}. Let&#39;s blast.</h1>
     <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> is set up and ready. Fill out your profile once — BlastyBiz writes the copy for every platform automatically.</p>
-    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">You&#39;re on the free Starter plan. Upgrade to Pro anytime to unlock auto-publishing and scheduled posts.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">You&#39;re on the free Starter plan. Connect Google, Facebook or Instagram to publish after approval. Pro adds business capacity and a larger AI budget.</p>
     <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px">Go to Dashboard &#8594;</a>
     <div style="margin-top:20px">
       <a href="${mergeData.upgradeUrl}" style="font-size:13px;color:#00873a;font-weight:700;text-decoration:none">Upgrade to Pro &#8594;</a>

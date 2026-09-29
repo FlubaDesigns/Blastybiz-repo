@@ -107,9 +107,7 @@ function money(n) {
 }
 
 // ── Personalised platform breakdown ─────────────────────────────────────────
-// "auto" here means the platform is technically capable of being posted to by
-// an app. On the free plan the server forces every platform to copy-paste
-// regardless, which is exactly the difference this page is selling.
+// Delivery is shared across plans; business capacity and AI budget differ.
 function renderPlatforms() {
   const card = document.getElementById('cp-plat-card');
   const list = document.getElementById('cp-plat-list');
@@ -117,7 +115,7 @@ function renderPlatforms() {
   const sub  = document.getElementById('cp-sub');
   if (!picked.length) {
     card.classList.add('hidden');
-    sub.textContent = 'Auto-posting is the difference between the free plan and a paid one.';
+    sub.textContent = 'Choose the business capacity and AI budget that fit your work.';
     return;
   }
   card.classList.remove('hidden');
@@ -129,16 +127,14 @@ function renderPlatforms() {
     '<div class="cp-plat-row cp-plat-head">'
     + '<span class="cp-plat-icon"></span>'
     + '<span class="cp-plat-name">Platform</span>'
-    + '<span class="cp-plat-col">On Free</span>'
-    + '<span class="cp-plat-col">On Pro</span>'
+    + '<span class="cp-plat-col">On every plan</span>'
     + '</div>'
     + picked.map(p =>
       '<div class="cp-plat-row' + (p.auto ? ' is-auto' : '') + '">'
       + '<span class="cp-plat-icon">' + escHtml(p.icon) + '</span>'
       + '<span class="cp-plat-name">' + escHtml(p.name) + '</span>'
-      + '<span class="cp-plat-col cp-plat-free">✋ You paste it</span>'
       + '<span class="cp-plat-col' + (p.auto ? ' cp-plat-win' : '') + '">'
-      +   (p.auto ? '⚡ Posts itself' : '✋ You paste it') + '</span>'
+      +   (p.auto ? 'Blasty Posts It' : 'Ready for You to Post') + '</span>'
       + '</div>'
     ).join('');
 
@@ -148,20 +144,12 @@ function renderPlatforms() {
     titleEl.textContent = autos.length === 1
       ? 'BlastyBiz can post to ' + autos[0].name + ' for you'
       : 'BlastyBiz can post to ' + autos.length + ' of these for you';
-    sub.textContent = names + ' can publish automatically on a paid plan. '
-      + 'On the free plan you copy and paste all ' + picked.length
-      + ' post' + (picked.length > 1 ? 's' : '') + ' by hand, every time.';
-    note.textContent = manuals.length
-      ? (manuals.length === 1
-          ? manuals[0].name + ' doesn\u2019t let any app post on your behalf — that\u2019s their policy, so it stays copy-paste on every plan.'
-          : manuals.length + ' of your platforms (' + manuals.map(p => p.name).join(', ')
-            + ') don\u2019t let any app post on your behalf — that\u2019s their policy, so those stay copy-paste on every plan.')
-      : '';
+    sub.textContent = names + ' can publish automatically on every plan after you connect the accounts.';
+    note.textContent = manuals.length ? 'BlastyBiz prepares the other platforms for you to post.' : '';
   } else {
-    titleEl.textContent = 'Your platforms are all copy-paste';
-    sub.textContent = 'None of the platforms you picked let an app post on your behalf — that\u2019s their policy, not ours. '
-      + 'Paid plans still get you more AI writes a month and more businesses.';
-    note.textContent = 'Add Google, Facebook or Instagram later and a paid plan will publish to those automatically.';
+    titleEl.textContent = 'Ready for You to Post';
+    sub.textContent = 'BlastyBiz prepares these platforms for you to post, on every plan.';
+    note.textContent = 'Google, Facebook and Instagram support automatic publishing after connection.';
   }
 }
 
@@ -206,33 +194,31 @@ function renderPlans() {
   }
 
   const freeAutoLine = autoCount
-    ? 'You paste all ' + picked.length + ' by hand'
+    ? 'Blasty Posts It on ' + autoCount + ' selected platforms'
     : 'Copy-paste posting';
 
   wrap.innerHTML =
     planCard('free', {
       tier: 'Free', price: '$0', per: '/mo',
-      line: 'Keep everything you just set up. Post it yourself.',
+      line: 'All shared features for one business.',
       cta: 'Continue free →',
       features: [
         { text: freeAutoLine },
         { text: (ai.starter ?? 10) + ' AI writes a month' },
         { text: (biz.starter ?? 1) + ' business' },
-        { text: 'Auto-posting to Google, Facebook & Instagram', off: true },
-        { text: 'Copy Library & AI business memory', off: true },
+        { text: 'Auto-posting to Google, Facebook & Instagram' },
+        { text: 'Copy Library & AI business memory' },
       ],
     })
     + planCard('pro', {
       tier: 'Pro', featured: true, badge: 'Most popular',
       price: money(billingPeriod === 'annual' ? pr.proAnnual : pr.proMonthly), per,
-      line: autoCount
-        ? 'BlastyBiz posts to ' + autoCount + ' of your platform' + (autoCount > 1 ? 's' : '') + ' without you.'
-        : 'More AI writes, more businesses, auto-posting when you add it.',
+      line: 'More business capacity and a larger AI budget.',
       cta: 'Go Pro →',
       features: [
-        { text: autoCount ? autoCount + ' of your platforms post automatically' : 'Auto-posting to Google, Facebook & Instagram' },
         { text: (ai.pro ?? 100) + ' AI writes a month' },
         { text: (biz.pro ?? 3) + ' businesses' },
+        { text: 'Auto-posting to Google, Facebook & Instagram on every plan' },
         { text: 'Copy Library & AI business memory' },
         { text: 'Scheduling and posting history' },
       ],
@@ -246,7 +232,7 @@ function renderPlans() {
         { text: 'Everything in Pro' },
         { text: (ai.agency ?? 500) + ' AI writes a month' },
         { text: (biz.agency ?? 10) + ' businesses' },
-        { text: 'Priority publishing queue' },
+        { text: 'Shared publishing, library and history features' },
       ],
     });
 

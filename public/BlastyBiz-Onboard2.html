@@ -567,7 +567,7 @@
       }
       html += '<div class="ob2-multiselect" id="ob2-multiselect">';
       platformList.forEach(c => {
-        const locked = c.proOnly && !isPro;
+        const locked = false; // Shared platform access on every plan.
         // Unlocked: factoid fires from onchange (guaranteed after checkbox toggle, no interference)
         // Locked: factoid fires from onclick on the label (disabled checkbox never fires onchange)
         html += '<label class="ob2-ms-label' + (locked ? ' ob2-ms-locked' : '') + '"'

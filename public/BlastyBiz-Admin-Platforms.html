@@ -51,7 +51,6 @@
     .disp-card-slug { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #aaa; margin-bottom: 12px; }
     .disp-cap-label { font-size: 11px; font-weight: 700; letter-spacing: .04em; }
     .disp-cap-label.full_auto      { color: #2e7d32; }
-    .disp-cap-label.partial_auto   { color: #1565c0; }
     .disp-cap-label.manual_assisted{ color: #777; }
     .disp-save-bar { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
     .disp-status { font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 6px; display: none; }
@@ -132,7 +131,7 @@
 </div></div></main>
 
 <script type="module">
-import { PLATFORM_DEFAULTS, loadPlatforms } from './platforms-config.js';
+import { PLATFORM_DEFAULTS, mergeDisplay, loadPlatforms } from './platforms-config.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -305,9 +304,8 @@ function showWritingStatus(msg, type) {
 let displayFirestoreData = {};
 
 const CAP_LABELS = {
-  full_auto:       '⚡ Full Auto (posts itself)',
-  partial_auto:    '⚡ Partial Auto (API-assisted)',
-  manual_assisted: '📋 Copy-Ready (manual paste)',
+  full_auto:       'Blasty Posts It',
+  manual_assisted: 'Ready for You to Post',
 };
 
 async function loadDisplayData() {
@@ -326,7 +324,7 @@ async function loadDisplayData() {
 function renderDisplayGrid(platforms) {
   const grid = document.getElementById('dispGrid');
   grid.innerHTML = PLATFORM_DEFAULTS.map(def => {
-    const merged = Object.assign({}, def, displayFirestoreData[def.slug] || {});
+    const merged = mergeDisplay(def, displayFirestoreData[def.slug]);
     return `
       <div class="disp-card" id="disp-card-${def.slug}">
         <div class="disp-card-slug">${def.slug}</div>
@@ -343,7 +341,7 @@ function renderDisplayGrid(platforms) {
         <div class="two-col">
           <div class="field-group">
             <label>Capability</label>
-            <select id="disp_cap_${def.slug}">
+            <select id="disp_cap_${def.slug}" disabled title="Determined by the implemented publisher">
               ${Object.entries(CAP_LABELS).map(([v,l]) =>
                 `<option value="${v}"${(merged.capabilityLevel||def.capabilityLevel)===v?' selected':''}>${l}</option>`
               ).join('')}
@@ -363,12 +361,8 @@ function renderDisplayGrid(platforms) {
             </select>
           </div>
           <div class="field-group">
-            <label>Pro Plan required?</label>
-            <select id="disp_proOnly_${def.slug}">
-              <option value="false"${!merged.proOnly?' selected':''}>No — all plans</option>
-              <option value="true"${merged.proOnly?' selected':''}>Yes — Pro/Agency only</option>
-            </select>
-            <div class="field-hint">Gates this platform in the signup wizard for non-Pro users.</div>
+            <label>Plan access</label>
+            <div class="field-hint">All plans</div>
           </div>
         </div>
       </div>
@@ -382,10 +376,11 @@ window.saveDisplayAll = async function() {
     payload[def.slug] = {
       name:             document.getElementById(`disp_name_${def.slug}`).value.trim() || def.name,
       icon:             document.getElementById(`disp_icon_${def.slug}`).value.trim() || def.icon,
-      capabilityLevel:  document.getElementById(`disp_cap_${def.slug}`).value,
+      capabilityLevel:  def.capabilityLevel,
+      deliveryMode:     def.deliveryMode,
       order:            parseInt(document.getElementById(`disp_order_${def.slug}`).value) || def.order,
       enabled:          document.getElementById(`disp_enabled_${def.slug}`).value === 'true',
-      proOnly:          document.getElementById(`disp_proOnly_${def.slug}`).value === 'true',
+      proOnly:          false,
     };
   }
   try {

@@ -79,8 +79,7 @@ for (const f of htmlFiles) {
   // The platform hub links every configured slug through this existing template.
   const platformPage = /^BlastyBiz-Platform-([a-z0-9-]+)\.html$/.exec(f);
   if (platformPage && fileContents['BlastyBiz-Platforms.html']?.includes('BlastyBiz-Platform-${p.slug}.html')) {
-    const config = fs.readFileSync(path.join(PUBLIC, 'platforms-config.js'), 'utf8');
-    if (new RegExp("slug:\\s*['\"]" + platformPage[1] + "['\"]").test(config)) refCount++;
+    if (require('../functions/lib/platforms').byId[platformPage[1]]) refCount++;
   }
   // Also check JS files
   const jsFiles = fs.readdirSync(PUBLIC).filter(j => j.endsWith('.js'));

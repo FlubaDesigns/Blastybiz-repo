@@ -44,13 +44,12 @@ function _revealAdminNav() {
         if (ma) ma.style.display = '';
       }
 
-      // ── Business tab strip (pro/agency, 2+ businesses) ─
+      // ── Business tab strip (all plans, 2+ existing businesses) ─
       try {
         const ud = await getDoc(doc(db, 'users', user.uid));
         if (!ud.exists()) return;
         const plan = ud.data().plan || 'starter';
         const activeBizId = ud.data().activeBusiness || null;
-        if (plan !== 'pro' && plan !== 'agency') return;
 
         const bizSnap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
         const bizzes = [];

@@ -240,12 +240,7 @@ if (!user || !user.emailVerified) {
     if (limData[plan + 'Max'] != null) _bizLimit = Number(limData[plan + 'Max']);
   } catch (_) {}
 
-  // Require pro or agency
-  if (plan !== 'pro' && plan !== 'agency') {
-    document.getElementById('bb-loading').style.display = 'none';
-    document.getElementById('bb-denied').style.display  = 'block';
-    document.body.style.visibility = 'visible';
-  } else {
+  { // Existing businesses remain accessible on every plan; creation enforces capacity.
     // Load businesses
     const snap = await getDocs(collection(db, 'users', user.uid, 'businesses')).catch(() => null);
     const bizzes = [];
@@ -267,7 +262,7 @@ if (!user || !user.emailVerified) {
     _bbRenderPips(bizzes.length, limit, activeIdx);
     document.getElementById('bb-sub').textContent = plan === 'agency'
       ? `Agency — ${bizzes.length} of ${limit} businesses`
-      : `Pro — ${bizzes.length} of ${limit} businesses`;
+      : `${plan === 'pro' ? 'Pro' : 'Starter'} — ${bizzes.length} of ${limit} businesses`;
 
     // Add button state
     const addBtn = document.getElementById('bb-add-btn');

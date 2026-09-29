@@ -1,26 +1,5 @@
-// platforms-config.js — canonical platform display defaults + Firestore loader
-// Imported by: BlastyBiz-Admin-Platforms.html, BlastyBiz-Onboard2.html, BlastyBiz-CreateBiz.html
-// Public page (BlastyBiz-Platforms.html) uses the REST API helper below instead.
-
-export const PLATFORM_DEFAULTS = [
-  // Pro = automated posting (requires connected OAuth accounts)
-  // Free = manual/copy-paste (works for anyone)
-  { slug: 'google',     name: 'Google Business Profile', icon: '🔍', capabilityLevel: 'full_auto',       order: 1,  enabled: true, proOnly: true  },
-  { slug: 'facebook',   name: 'Facebook Page',           icon: '📘', capabilityLevel: 'partial_auto',    order: 2,  enabled: true, proOnly: true  },
-  { slug: 'instagram',  name: 'Instagram',               icon: '📸', capabilityLevel: 'partial_auto',    order: 3,  enabled: true, proOnly: true  },
-  { slug: 'fbmarket',   name: 'Facebook Marketplace',    icon: '🛒', capabilityLevel: 'manual_assisted', order: 4,  enabled: true, proOnly: false },
-  { slug: 'yelp',       name: 'Yelp',                    icon: '⭐', capabilityLevel: 'manual_assisted', order: 5,  enabled: true, proOnly: false },
-  { slug: 'craigslist', name: 'Craigslist',              icon: '📋', capabilityLevel: 'manual_assisted', order: 6,  enabled: true, proOnly: false },
-  { slug: 'nextdoor',   name: 'Nextdoor',                icon: '🏘️',  capabilityLevel: 'manual_assisted', order: 7,  enabled: true, proOnly: false },
-  { slug: 'linkedin',   name: 'LinkedIn',                icon: '💼', capabilityLevel: 'manual_assisted', order: 8,  enabled: true, proOnly: false },
-  { slug: 'pinterest',  name: 'Pinterest',               icon: '📌', capabilityLevel: 'manual_assisted', order: 9,  enabled: true, proOnly: false },
-  { slug: 'x',          name: 'X (Twitter)',             icon: '𝕏',  capabilityLevel: 'manual_assisted', order: 10, enabled: true, proOnly: false },
-  { slug: 'bing',       name: 'Bing Places',             icon: '🔵', capabilityLevel: 'manual_assisted', order: 11, enabled: true, proOnly: false },
-  { slug: 'applemaps',  name: 'Apple Maps',              icon: '🍎', capabilityLevel: 'manual_assisted', order: 12, enabled: true, proOnly: false },
-  { slug: 'alignable',  name: 'Alignable',               icon: '🤝', capabilityLevel: 'manual_assisted', order: 13, enabled: true, proOnly: false },
-  { slug: 'thumbtack',  name: 'Thumbtack',               icon: '📌', capabilityLevel: 'manual_assisted', order: 14, enabled: true, proOnly: false },
-  { slug: 'angi',       name: 'Angi',                    icon: '🔧', capabilityLevel: 'manual_assisted', order: 15, enabled: true, proOnly: false },
-];
+import './platforms-authority.js';
+export const { PLATFORM_DEFAULTS, mergeDisplay } = globalThis.BBPlatforms;
 
 /**
  * Load platforms from Firestore config/platforms, merged with PLATFORM_DEFAULTS.
@@ -45,7 +24,7 @@ export async function loadPlatforms(db, getDocFn, docFn) {
 /** Merge Firestore overrides with PLATFORM_DEFAULTS (shared util). */
 export function _merge(overrides) {
   return PLATFORM_DEFAULTS
-    .map(d => Object.assign({}, d, overrides[d.slug] || {}))
+    .map(d => mergeDisplay(d, overrides[d.slug]))
     .filter(p => p.enabled !== false)
     .sort((a, b) => (a.order || 99) - (b.order || 99));
 }

@@ -1101,18 +1101,6 @@
       </div>
     </div>
 
-    <!-- Agency white-label promo — shown for trial/starter/pro, hidden for agency -->
-    <div class="card pro-locked" id="agency-promo-card">
-      <div class="pro-overlay visible" data-plan="trial starter pro" style="position:relative;inset:unset;border-radius:12px;padding:28px 20px;">
-        <div class="pro-overlay-content">
-          <div class="pro-overlay-badge">🏢 Agency</div>
-          <div class="pro-overlay-title">Your brand. Your clients.</div>
-          <p class="pro-overlay-msg">Display your agency logo, name, address, and contact info. Manage unlimited client businesses from one dashboard. BlastyBiz becomes your tool — with your name on it.</p>
-          <a href="BlastyBiz-Plan-Agency.html" class="pro-overlay-btn">See Agency Plan →</a>
-        </div>
-      </div>
-    </div>
-
     <div class="card" id="acct-admin-card" style="display:none;">
       <div class="card-title">🛡 Admin</div>
       <p class="helper mb-12">You have admin access to this BlastyBiz installation.</p>
@@ -1163,50 +1151,17 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" integrity="sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e" crossorigin="anonymous"></script>
 <script src="platform-categories.js"></script>
+<script src="platforms-authority.js"></script>
 <script>
 // ══════════════════════════════════════════
 // PLATFORM REGISTRY — add new platforms here
 // ══════════════════════════════════════════
-const PLATFORMS = [
-  // API-driven
-  { id: 'google',     name: 'Google Business',      icon: '🔍', color: '#4285F4', type: 'api',    enabled: true,  status: 'idle', note: 'Auto-posts to your Google Business Profile' },
-  { id: 'facebook',   name: 'Facebook Business',    icon: '📘', color: '#1877F2', type: 'api',    enabled: true,  status: 'idle', note: 'Posts to your Facebook Business Page' },
-  { id: 'instagram',  name: 'Instagram Business',   icon: '📸', color: '#E1306C', type: 'api',    enabled: false, status: 'idle', note: 'Posts to your Instagram Business account' },
-  { id: 'bing',       name: 'Bing Places',           icon: '🔎', color: '#008373', type: 'manual', enabled: false, status: 'idle', note: 'AI formats your Bing listing — you paste it at bingplaces.com' },
-  { id: 'nextdoor',   name: 'Nextdoor',             icon: '🏘️', color: '#00B246', type: 'manual', enabled: false, status: 'idle', note: 'AI formats your post — you copy & paste into Nextdoor' },
-  // Manual-assist
-  { id: 'fbmarket',   name: 'Facebook Marketplace', icon: '🛒', color: '#1877F2', type: 'manual', enabled: true,  status: 'idle', note: 'AI formats your post — you paste & submit' },
-  { id: 'craigslist', name: 'Craigslist',           icon: '📌', color: '#CC0000', type: 'manual', enabled: true,  status: 'idle', note: 'AI formats for Craigslist — you paste & submit' },
-  { id: 'yelp',       name: 'Yelp',                 icon: '⭐', color: '#D32323', type: 'manual', enabled: false, status: 'idle', note: 'AI formats your Yelp business description' },
-  { id: 'alignable',  name: 'Alignable',            icon: '🤝', color: '#2196F3', type: 'manual', enabled: false, status: 'idle', note: 'B2B local network — AI formats your profile post' },
-  { id: 'thumbtack',  name: 'Thumbtack',            icon: '📍', color: '#009FD4', type: 'manual', enabled: false, status: 'idle', note: 'AI formats your service listing' },
-  { id: 'angi',       name: 'Angi',                 icon: '🔧', color: '#FF6D00', type: 'manual', enabled: false, status: 'idle', note: 'AI formats your Angi pro listing' },
-  { id: 'applemaps',  name: 'Apple Maps Connect',   icon: '🗺️', color: '#555555', type: 'manual', enabled: false, status: 'idle', note: 'AI formats your Apple Maps business info' },
-  { id: 'linkedin',   name: 'LinkedIn',             icon: '💼', color: '#0A66C2', type: 'manual', enabled: false, status: 'idle', note: 'AI writes your LinkedIn post — you copy & paste it in' },
-  { id: 'x',          name: 'X (Twitter)',           icon: '✖️', color: '#000000', type: 'manual', enabled: false, status: 'idle', note: 'AI writes your X post — you copy & paste it in' },
-  { id: 'pinterest',  name: 'Pinterest',             icon: '🖼️', color: '#E60023', type: 'manual', enabled: false, status: 'idle', note: 'AI writes your pin description — you create the pin on Pinterest' },
-];
-
-// ══════════════════════════════════════════
-// PLATFORM RULES — guides AI per platform
-// ══════════════════════════════════════════
-const PLATFORM_RULES = {
-  google:     { maxChars: 1500, notes: 'Professional, keyword-rich, include all contact info' },
-  bing:       { maxChars: 1500, notes: 'Professional, complete business info, include hours and location' },
-  facebook:   { maxChars: 2000, notes: 'Engaging, emoji welcome, strong call to action' },
-  instagram:  { maxChars: 2200, notes: 'Caption style, 3-5 hashtags at end' },
-  nextdoor:   { maxChars: 1000, notes: 'Warm, community-focused, mention neighborhood' },
-  fbmarket:   { maxChars: 1000, notes: 'Clear title, price prominent, location, contact' },
-  craigslist: { maxChars: 1500, notes: 'Structured sections, plain text friendly, no emoji' },
-  yelp:       { maxChars: 1500, notes: 'Descriptive, highlight uniqueness and atmosphere' },
-  alignable:  { maxChars: 800,  notes: 'B2B professional, what you offer other businesses' },
-  thumbtack:  { maxChars: 800,  notes: 'Service-focused, expertise, reliability, response time' },
-  angi:       { maxChars: 800,  notes: 'Trade-specific, licensed/insured mention if applicable' },
-  applemaps:  { maxChars: 500,  notes: 'Factual, complete, hours and category accurate' },
-  linkedin:   { maxChars: 3000, notes: 'Professional, insight-driven, personal voice, 1-3 hashtags max' },
-  x:          { maxChars: 280,  notes: 'Short, punchy, hook first, 1-2 hashtags max' },
-  pinterest:  { maxChars: 500,  notes: 'Keyword-rich, inspiring tone, vertical image required, 2-3 hashtags max' },
-};
+const PLATFORMS = BBPlatforms.records.map(p => ({id:p.id, name:p.name, icon:p.icon, color:p.color,
+  type:p.deliveryMode === 'auto' ? 'api' : 'manual', enabled:p.selected, status:'idle', proOnly:false,
+  note:BBPlatforms.labels[p.deliveryMode]}));
+const PLATFORM_RULES = Object.fromEntries(BBPlatforms.records.map(p => [p.id, {
+  maxChars:p.doc.maxChars, notes:p.doc.format + ' ' + p.doc.tone
+}]));
 window.PLATFORMS = PLATFORMS; // expose for module script
 let platforms = PLATFORMS.map(p => ({...p})); // populated from Firestore after auth
 let history   = [];                           // populated from Firestore after auth
@@ -1419,12 +1374,8 @@ function buildPlatformCard(p) {
        </div>`
     : `<div class="copy-box" id="copy-${p.id}"></div>`;
 
-  // Use admin-controlled proOnly flag when available; fall back to capability-based rule
-  const proOnly = p.proOnly != null ? p.proOnly : (p.type === 'api');
-  const starterLocked = proOnly && !['pro', 'agency'].includes(window._bbUserPlan || 'starter');
-  const actionBtn = starterLocked
-    ? `<a href="BlastyBiz-Dashboard.html?checkout=pro" class="btn btn-outline btn-sm btn-upgrade-inline">⚡ Upgrade to Auto-Post</a>`
-    : p.type === 'api'
+
+  const actionBtn = p.type === 'api'
       ? `<button type="button" class="btn btn-primary btn-sm" onclick="deployPlatform('${p.id}')" ${!p.enabled ? 'disabled' : ''}>🚀 Post</button>`
       : `<button type="button" class="btn btn-outline btn-sm" onclick="copyText('${p.id}')" ${!p.enabled || !p.adaptedContent ? 'disabled' : ''}>📋 Copy</button>`;
 
@@ -1434,7 +1385,7 @@ function buildPlatformCard(p) {
         <div class="platform-icon" style="background:${p.color}22;">${p.icon}</div>
         <div>
           <div class="platform-name">${escHtml(p.name)}</div>
-          <div class="platform-type ${p.type}">${p.type === 'api' ? (starterLocked ? '🔒 Pro only' : '⚡ Auto-Post') : '✋ Copy & Paste'}</div>
+          <div class="platform-type ${p.type}">${p.type === 'api' ? 'Blasty Posts It' : 'Ready for You to Post'}</div>
         </div>
       </div>
       <label class="toggle">
@@ -1832,11 +1783,6 @@ function copyQpText(pid) {
 }
 
 async function saveCopyToLibrary(pid) {
-  const plan = window._bbUserPlan || 'starter';
-  if (plan === 'starter') {
-    showToast('💾 Copy Library is a Pro & Agency feature — tap Upgrade');
-    return;
-  }
   if (!activeCampaignId) {
     showToast('Select a campaign first');
     return;
@@ -1911,9 +1857,9 @@ async function approvePlatformCopy(pid) {
     }
   }
 
-  // 3. Archive to Copy Library for Pro/Agency — non-blocking, failure warns but doesn't block approval
+  // 3. Archive to Copy Library on every plan — non-blocking, failure warns but doesn't block approval
   const plan = window._bbUserPlan || 'starter';
-  if ((plan === 'pro' || plan === 'agency') && window._bbSaveLibraryItem) {
+  if (window._bbSaveLibraryItem) {
     const platform = platforms.find(p => p.id === pid);
     const offer  = document.getElementById('biz-offer')?.value?.trim() || '';
     const adName = document.getElementById('biz-ad-name')?.value?.trim() || '';
@@ -1981,11 +1927,6 @@ async function excludePlatform(pid) {
 }
 
 async function openLibraryModal() {
-  const plan = window._bbUserPlan || 'starter';
-  if (plan === 'starter') {
-    showToast('💾 Copy Library is a Pro & Agency feature — tap Upgrade');
-    return;
-  }
   if (!activeCampaignId) { showToast('Select a campaign first'); return; }
 
   const modal = document.getElementById('library-modal');
@@ -2561,9 +2502,7 @@ function renderStep3Platforms() {
   el.innerHTML = '';
   platforms.forEach(p => {
     const isApi = p.type === 'api';
-    // Use admin-controlled proOnly flag when available; fall back to capability-based rule
-    const proOnly = p.proOnly != null ? p.proOnly : isApi;
-    const starterLocked = proOnly && !['pro', 'agency'].includes(window._bbUserPlan || 'starter');
+
     const row = document.createElement('div');
     row.className = 's3-plat-row';
     row.id = 's3-row-' + p.id;
@@ -2572,7 +2511,7 @@ function renderStep3Platforms() {
       + '<div class="s3-plat-meta">'
       +   '<div class="s3-plat-name">' + escHtml(p.name) + '</div>'
       +   '<div class="s3-plat-badge' + (isApi ? ' api' : '') + '">'
-      +     (starterLocked ? '🔒 Pro only' : isApi ? '⚡ Auto-Post' : '✋ Copy &amp; Paste')
+      +     (isApi ? 'Blasty Posts It' : 'Ready for You to Post')
       +   '</div>'
       + '</div>'
       + '<label class="toggle" onclick="event.stopPropagation()">'
@@ -2672,7 +2611,7 @@ function buildStep5Card(p) {
     + '<div class="step5-plat-icon" style="background:' + escHtml(p.color || '#222') + '22;">' + p.icon + '</div>'
     + '<div class="step5-plat-info">'
     +   '<div class="step5-plat-name">' + escHtml(p.name) + '</div>'
-    +   '<div class="step5-plat-type">' + (isApi ? '⚡ Auto-Post' : '✋ Copy &amp; Paste') + '</div>'
+    +   '<div class="step5-plat-type">' + (isApi ? 'Blasty Posts It' : 'Ready for You to Post') + '</div>'
     + '</div>'
     + '<span class="step5-status-pill ' + statusClass + '" id="step5-pill-' + p.id + '">' + statusLabel + '</span>'
     + '</div>';
@@ -2853,12 +2792,7 @@ function restoreFeaturedPhotoSelection() {
   window._bbSelectedPhotoIndex = index >= 0 ? index : null;
 }
 
-function photoCap() {
-  const plan = window._bbUserPlan || 'starter';
-  if (plan === 'agency') return Infinity;
-  if (plan === 'pro')    return 20;
-  return 2; // starter
-}
+function photoCap() { return 20; } // Shared capacity for each campaign and global library.
 
 function updatePhotoCapLabel() {
   const label = document.getElementById('photo-cap-label');
@@ -2876,14 +2810,15 @@ function updatePhotoCapLabel() {
   }
   if (area) area.style.opacity = cap === Infinity || saved < cap ? '1' : '0.45';
   if (cap === Infinity) {
-    label.textContent = saved + ' photos · Agency';
+    label.textContent = saved + ' photos';
     label.style.color = 'var(--muted)';
   } else {
-    label.textContent = saved + ' / ' + cap + (plan === 'starter' ? ' · Starter' : ' · Pro');
+    label.textContent = saved + ' / ' + cap + ' photos';
     label.style.color = saved >= cap ? '#ff6b35' : 'var(--muted)';
   }
 }
 
+var _photoReservations = new Map();
 function handleImages(e) {
   if (photoScope !== 'global' && !activeCampaignId) {
     showToast('Pick a campaign first, then add photos');
@@ -2892,26 +2827,22 @@ function handleImages(e) {
   }
   const items = window._bbPhotoItems || [];
   const cap   = photoCap();
-  const current = items.length;
-  if (current >= cap) {
-    const plan = window._bbUserPlan || 'starter';
-    if (plan === 'starter') {
-      showToast(photoScope === 'global' ? 'Starter plan: 2 global photos. Upgrade to Pro for 20.' : 'Starter plan: 2 photos per campaign. Upgrade to Pro for 20.');
-    } else {
-      showToast(photoScope === 'global' ? 'Pro plan: 20 global photos. Remove one to add more.' : 'Pro plan: 20 photos per campaign. Remove one to add more.');
-    }
-    e.target.value = '';
-    return;
-  }
-  const remaining = cap === Infinity ? 999 : cap - current;
-  const files = Array.from(e.target.files).slice(0, remaining);
+  const key = [window.activeBizId,photoScope,photoScope==='global'?'':activeCampaignId].join('/');
+  const reserved = _photoReservations.get(key)||0;
+  const current = Math.max(items.filter(i=>!i.error).length,items.filter(i=>i.done).length+reserved);
+  const selected = Array.from(e.target.files);
+  const files = selected.slice(0,Math.max(0,cap-current));
+  if(files.length<selected.length)showToast('You have reached the 20 photo limit. Remove one to add more.');
+  _photoReservations.set(key,reserved+files.length);
   const uploadContext = { scope: photoScope, campaignId: activeCampaignId, bizId: window.activeBizId };
   e.target.value = '';
   checkAdaptBtn();
   // Sequential: compress one at a time to avoid concurrent canvas.toBlob() hangs on mobile.
-  (async () => {
+  return (async () => {
     for (const file of files) {
-      if (window._bbUploadPhoto) await window._bbUploadPhoto(file, uploadContext);
+      try { if (window._bbUploadPhoto) await window._bbUploadPhoto(file, uploadContext); }
+      catch(error){showToast('Photo upload failed. Please retry.');}
+      finally {_photoReservations.set(key,Math.max(0,(_photoReservations.get(key)||0)-1));}
     }
   })();
 }
@@ -5122,6 +5053,7 @@ init();
 
 // Window setters — module script calls these to push Firestore data into UI
 window._bbSetPlatforms = function(updatedPlatforms) {
+  updatedPlatforms = updatedPlatforms.map(BBPlatforms.normalizeSelection);
   // Always apply the admin display overlay (name, icon, type, order, proOnly, globally-disabled).
   // window._bbAdminPlatformConfig is populated by _applyAdminPlatformConfig() / module script.
   const adminMap = window._bbAdminPlatformConfig;
@@ -5136,8 +5068,8 @@ window._bbSetPlatforms = function(updatedPlatforms) {
           name:    a.name    || p.name,
           icon:    a.icon    || p.icon,
           type:    isManual ? 'manual' : 'api',
-          // proOnly from admin config; fall back to capability-based rule
-          proOnly: a.proOnly != null ? a.proOnly : !isManual,
+          // Display overrides cannot gate shared platform access.
+          proOnly: false,
         });
       })
       .sort((a, b) => ((adminMap[a.id]?.order || 99) - (adminMap[b.id]?.order || 99)));
@@ -5266,7 +5198,9 @@ window._applyPlanOverlays = function() {
   // Activate overlays whose data-plan list includes the current plan
   document.querySelectorAll('.pro-overlay[data-plan]').forEach(el => {
     const plans = (el.getAttribute('data-plan') || '').split(' ');
-    if (plans.includes(plan)) el.classList.add('visible');
+    // Free-tier recurring Refire policy remains unresolved; preserve that existing gate only.
+    el.classList.toggle('visible', el.id === 'schedule-pro-overlay' && plans.includes(plan));
+    el._pendingVisible = false;
   });
 
   // Hide Agency promo card entirely for Agency users (they already have the feature)
@@ -7187,12 +7121,9 @@ window._bbLoadStory = async function() {
       if (btn) btn.disabled = false;
     }
     const plan = userPlan || 'starter';
-    if (plan === 'pro' || plan === 'agency') {
-      document.getElementById('doc-library-section').style.display = 'block';
-      _bbLoadLibraryDocs();
-    } else {
-      document.getElementById('doc-library-locked').style.display = 'block';
-    }
+    document.getElementById('doc-library-section').style.display = 'block';
+    document.getElementById('doc-library-locked').style.display = 'none';
+    _bbLoadLibraryDocs();
     _storyLoaded = true;
   } catch(e) {
     console.error('loadStory:', e);

@@ -520,7 +520,7 @@ exports.adminSendOnboardingNudge = onRequest({ invoker: 'public', secrets: ['RES
       'setup-reminder':         { subject: `${mergeData.name}, your BlastyBiz setup is waiting`, body: 'You started setting up BlastyBiz but didn\'t finish. Pick up where you left off.', cta: 'Finish Setup', ctaUrl: mergeData.dashboardUrl },
       'first-blast-nudge':      { subject: `Time to blast, ${mergeData.name} 🔥`, body: 'Your business profile is ready — generate your first AI-written posts and push them live.', cta: 'Generate First Blast', ctaUrl: mergeData.dashboardUrl },
       'connect-platform-nudge': { subject: `Connect your first platform, ${mergeData.name} ⚡`, body: 'Connecting your Google Business Profile or Facebook Page lets BlastyBiz publish automatically.', cta: 'Connect Platforms', ctaUrl: mergeData.connectUrl },
-      'upgrade-nudge':          { subject: `Unlock auto-publishing, ${mergeData.name} 🚀`, body: 'Upgrade to BlastyBiz Pro to publish to all platforms automatically — no copy-paste required.', cta: 'Upgrade to Pro', ctaUrl: mergeData.upgradeUrl },
+      'upgrade-nudge':          { subject: `Add room to grow, ${mergeData.name} 🚀`, body: 'Upgrade to BlastyBiz Pro for more business capacity and a larger AI budget. Publishing tools are shared across plans.', cta: 'Upgrade to Pro', ctaUrl: mergeData.upgradeUrl },
     };
     const fb = FALLBACKS[templateType];
     let subject = fb.subject;

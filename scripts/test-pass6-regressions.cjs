@@ -10,7 +10,7 @@ const response = () => ({code:200, status(n){this.code=n;return this},json(body)
 function pendingEnv(overrides = {}) {
   let post = {uid:'u',bizId:'b',status:'pending',platforms:[{id:'facebook',type:'api'}],adaptations:{facebook:'Approved copy'},imageUrls:['https://example.com/floor.jpg'],...overrides};
   const jobs = new Map(); let lock=Promise.resolve(),fail=false;
-  const c = {exports:{},console:quiet,crypto:require('node:crypto'),onRequest:(_,f)=>f,withAuth:f=>f,
+  const c = {PLATFORM_CAPABILITY_MAP:require('../functions/lib/platforms').PLATFORM_CAPABILITY_MAP,exports:{},console:quiet,crypto:require('node:crypto'),onRequest:(_,f)=>f,withAuth:f=>f,
     admin:{firestore:{FieldValue:{serverTimestamp:()=>1}}},
     userBizPostsRef:(uid,biz)=>({doc:id=>({kind:'post',uid,biz,id})}),
     userBizJobsRef:(uid,biz)=>({doc:id=>({kind:'job',uid,biz,id})}),
