@@ -28,6 +28,7 @@ function env({biz,edit=false,slow=false,failedRead=false,guide=false}={}){
  e=env({edit:true,failedRead:true});await e.start();await e.c.cbSubmit();ok(e.commits.length===0,'failed load cannot blank saved data');
  e.c._cbStartGuide();ok(e.nodes['cb-guide-status'].textContent.includes('Could not load'),'failed guide load visible beside start');
  e=env();await e.start();e.fill();e.nodes['f-website'].value='example.com';ok(!e.c.cbFieldError('f-website')&&e.nodes['f-website'].value==='https://example.com','bare domain normalized before validity');await e.c.cbSubmit();ok(e.commits[0][0].data.website==='https://example.com','normalized website persisted');
+ e=env();await e.start();e.nodes['f-bizName'].value='Typed now';const nav=new e.c.GuidedSetup({steps:e.c.CB_GUIDE_STEPS});ok(nav._applicable(1,-1)===1,'Back can revisit business name entered in this session');
  e=env();await e.start();const g=new e.c.GuidedSetup({steps:[{field:'f-ownerName',required:true}],onFinish:()=>{checks++}});g.mascot={confetti:()=>{throw Error('premature confetti')}};g.finish();e.nodes['f-ownerName'].value='';let advanced=false;g.advance=()=>advanced=true;g.skip();ok(!advanced,'required story cannot skip programmatically');
  ok(!html.includes('new FormGuide')&&!html.includes('form-guide.js'),'Direct no future-section tab lock');ok(!html.includes('value="both"'),'only two location choices');
  // Static check against the actual business update allowlist, not a copied schema.

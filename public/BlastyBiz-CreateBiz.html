@@ -413,6 +413,7 @@ function cbSyncLocation() {
 document.getElementById('f-locationType').addEventListener('change', cbSyncLocation);
 window._cbReady = false;
 window._cbNeedsCampaign = true;
+window._cbRestoredFields = new Set();
 function cbNormalizeWebsite(value) {
   const trimmed = value.trim();
   return !trimmed || /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed.replace(/^\/\//, '');
@@ -500,7 +501,7 @@ CB_GUIDE_STEPS.forEach(function(step) {
   }
   if (step.section === 'cbs-campaign') step.skipIf = function() { return !window._cbNeedsCampaign; };
   if (['f-ownerName','f-bizName','f-role','f-email','f-phone'].includes(step.field)) {
-    step.skipIf = function(a) { return !!a[step.field] && !cbFieldError(step.field); };
+    step.skipIf = function(a) { return window._cbRestoredFields.has(step.field) && !!a[step.field] && !cbFieldError(step.field); };
   }
 });
 
@@ -655,6 +656,8 @@ onAuthStateChanged(auth, async user => {
     }
     await Promise.all([platformsReady, configReady]);
     cbConfigureForm();
+    window._cbRestoredFields = new Set(['f-ownerName','f-bizName','f-role','f-email','f-phone'].filter(id =>
+      document.getElementById(id).value.trim() && !cbFieldError(id)));
     window._cbReady = true;
     if (window._cbGuideRequested) window._cbStartGuide();
   } catch(e) {

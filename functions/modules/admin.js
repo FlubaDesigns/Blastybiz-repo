@@ -90,7 +90,9 @@ exports.adminRetryJob = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_
       const updatedMs = current.updatedAt?.toMillis?.() || current.updatedAt?.toDate?.().getTime() || 0;
       const staleProcessing = ['processing', 'running'].includes(current.status)
         && updatedMs > 0 && Date.now() - updatedMs >= 15 * 60 * 1000;
-      const confirmedRecovery = recovery === 'not_published' && (staleProcessing || current.publicationUncertain === true);
+      const uncertainManual = ['manual_required', 'manual_followup'].includes(current.status)
+        && current.publicationUncertain === true;
+      const confirmedRecovery = recovery === 'not_published' && (staleProcessing || uncertainManual);
       if (current.publicationUncertain && !confirmedRecovery) {
         throw Object.assign(new Error('Post may be live on the platform. Check before retrying.'), { httpStatus: 409 });
       }
@@ -155,14 +157,19 @@ exports.adminMarkManualFollowup = onRequest({ invoker: 'public' }, withAuth(asyn
   const { uid, businessId, jobId, note } = req.body;
   if (!uid || !businessId || !jobId) return res.status(400).json({ error: 'uid, businessId, jobId required' });
   try {
-    await userBizJobsRef(uid, businessId).doc(jobId).update({
-      status: JOB_STATUS.MANUAL_FOLLOWUP,
-      adminNote: note || '',
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    const ref = userBizJobsRef(uid, businessId).doc(jobId);
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) throw Object.assign(new Error('Job not found'), { httpStatus: 404 });
+      if (!['failed','manual_required','manual_followup','needs_connection','customer_reconnect_required','retry_pending'].includes(snap.data().status)) {
+        throw Object.assign(new Error('Job is no longer awaiting follow-up. Refresh the queue.'), { httpStatus: 409 });
+      }
+      tx.update(ref, { status: JOB_STATUS.MANUAL_FOLLOWUP, adminNote: note || '',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp() });
     });
     res.json({ ok: true });
   } catch(e) {
-    res.status(500).json({ error: e.message });
+    res.status(e.httpStatus || 500).json({ error: e.message });
   }
 }, { admin: true }));
 

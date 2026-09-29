@@ -1,3 +1,9 @@
+# Reasoned re-review — September 28, 2026
+
+See `BlastyBiz-Passes-1-5-Reasoned-Review.md` for a decision on every fix 1–50, source-based rationale, eight corrected interactions and remaining limits. This re-review supersedes older claims about unconditional saved-photo file deletion and incomplete publishing recovery. It is a correction pass, not numbered Pass 6. 123 current-source assertions pass; production deployment remains blocked by missing Firebase credentials.
+
+---
+
 # Main release reconciliation — 2026-09-29
 
 ## What was actually delivered before this reconciliation

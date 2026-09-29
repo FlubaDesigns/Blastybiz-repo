@@ -196,7 +196,7 @@ window.exportErrors = function() {
 onAuthStateChanged(auth, (user) => {
   if (!user) return;
   currentUser = user;
-  const statuses = ['failed', 'manual_required', 'customer_reconnect_required', 'retry_pending', 'needs_connection'];
+  const statuses = ['failed', 'manual_required', 'manual_followup', 'customer_reconnect_required', 'retry_pending', 'needs_connection'];
   const q = query(collectionGroup(db, 'publishJobs'), where('status', 'in', statuses), orderBy('updatedAt', 'desc'), limit(50));
   onSnapshot(q, async (snap) => {
     const tbody = document.querySelector('table tbody');
@@ -229,7 +229,7 @@ onAuthStateChanged(auth, (user) => {
       const bizName = bizNameCache[j.businessId] || j.businessId || '—';
       const isRetryable = ['failed','retry_pending'].includes(j.status);
       const isReconnect = j.status === 'customer_reconnect_required';
-      const isManual    = j.status === 'manual_required';
+      const isManual    = ['manual_required','manual_followup'].includes(j.status);
       const isNoConn    = j.status === 'needs_connection';
       const statusLabel = isManual ? 'Manual' : isReconnect ? 'Reconnect' : isNoConn ? 'Not connected' : 'Failed';
       const reason      = j.adminError || j.customerVisibleMessage || '';
@@ -279,7 +279,7 @@ onAuthStateChanged(auth, (user) => {
 
     const retryable = jobs.filter(j => ['failed','retry_pending'].includes(j.status)).length;
     const reconnect = jobs.filter(j => j.status === 'customer_reconnect_required').length;
-    const manual    = jobs.filter(j => j.status === 'manual_required').length;
+    const manual    = jobs.filter(j => ['manual_required','manual_followup'].includes(j.status)).length;
     const aiImage   = jobs.filter(j => j.jobType === 'ai' || j.jobType === 'image').length;
     const nums = document.querySelectorAll('.stat-num');
     if (nums.length >= 4) {

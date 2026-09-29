@@ -78,7 +78,7 @@
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { collection, collectionGroup, query, orderBy, limit, onSnapshot, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { collection, collectionGroup, query, orderBy, limit, onSnapshot, doc, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
 
@@ -142,15 +142,34 @@ async function jobAction(jobId, action) {
     return;
   }
 
-  // All other actions are status labels only — direct Firestore write is correct
-  const now = new Date();
+  // Status actions share the publisher's transaction boundary; an old row cannot pause an active claim.
+  const now = serverTimestamp();
   const updates = {
     close:    { status: 'closed',           updatedAt: now },
-    complete: { status: 'manual_completed', updatedAt: now },
+    complete: { status: 'manual_completed', publicationUncertain: false, updatedAt: now },
     notify:   { customerNotified: true,     updatedAt: now },
     pause:    { status: 'paused',           updatedAt: now },
   }[action];
-  if (updates) await updateDoc(ref, updates);
+  if (!updates) return;
+  try {
+    await runTransaction(db, async tx => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) throw new Error('Job no longer exists. Refresh the queue.');
+      const current = snap.data();
+      const updatedMs = current.updatedAt?.toMillis?.() || current.updatedAt?.toDate?.().getTime() || 0;
+      const stale = ['processing','running'].includes(current.status) && updatedMs > 0 && Date.now() - updatedMs >= 15 * 60 * 1000;
+      if (action === 'pause' && (current.status !== 'pending' || current.publicationUncertain)) {
+        throw new Error('This job has already changed or started posting. Refresh the queue.');
+      }
+      if (action === 'complete' && !(['manual_required','manual_followup'].includes(current.status) || stale)) {
+        throw new Error('This job is no longer awaiting manual completion. Refresh the queue.');
+      }
+      if (action === 'close' && !['failed','retry_pending','needs_connection','customer_reconnect_required'].includes(current.status)) {
+        throw new Error('This job has already changed or started posting. Refresh the queue.');
+      }
+      tx.update(ref, updates);
+    });
+  } catch(e) { showQueueMsg(e.message || 'Could not update job. Please try again.', true); }
 }
 window.jobAction = jobAction;
 
@@ -171,32 +190,32 @@ onAuthStateChanged(auth, (user) => {
       jobRefMap[d.id] = d.ref;
       jobDataMap[d.id] = { ...d.data(), uid: parts[1], businessId: parts[3] };
     });
-    const VALID_STATUS = new Set(['pending','retry_pending','running','processing','success','manual_completed','failed','manual_required','customer_reconnect_required','needs_connection','paused','closed']);
+    const VALID_STATUS = new Set(['pending','retry_pending','running','processing','success','manual_completed','failed','manual_required','manual_followup','customer_reconnect_required','needs_connection','paused','closed']);
     const rows = snap.docs.map(d => {
       const j = d.data();
       const id = d.id; // Firestore auto-ID — alphanumeric, safe in onclick
       const status = VALID_STATUS.has(j.status) ? j.status : 'pending';
       if (status === 'pending' || status === 'retry_pending') queued++;
       else if (status === 'running' || status === 'processing') posting++;
-      else if (['failed','manual_required','customer_reconnect_required','needs_connection'].includes(status)) attention++;
+      else if (['failed','manual_required','manual_followup','customer_reconnect_required','needs_connection'].includes(status)) attention++;
       else if (status === 'success' || status === 'manual_completed') completed++;
       const sc = {
         pending:'pending', retry_pending:'pending', running:'posting', processing:'posting',
         success:'success', manual_completed:'success',
-        failed:'failed', manual_required:'manual',
+        failed:'failed', manual_required:'manual', manual_followup:'manual',
         customer_reconnect_required:'manual', needs_connection:'manual', paused:'pending', closed:'success'
       }[status] || 'pending';
       const updatedMs = j.updatedAt?.toMillis?.() || j.updatedAt?.toDate?.().getTime() || 0;
       const stale = ['processing','running'].includes(status) && updatedMs > 0 && Date.now() - updatedMs >= 15 * 60 * 1000;
       const acts = j.planGated
         ? '<span>Held by plan</span>'
-        : stale || j.publicationUncertain
+        : stale || (['manual_required','manual_followup'].includes(status) && j.publicationUncertain)
         ? `<span>Check platform first.</span><button class="warn-btn" onclick="jobAction('${id}','recover')">Checked: not posted — retry</button><button class="safe" onclick="jobAction('${id}','complete')">Already posted — mark complete</button>`
         : status === 'paused'
         ? `<button class="primary" onclick="jobAction('${id}','resume')">Resume and publish</button>`
         : ['failed','customer_reconnect_required','needs_connection','retry_pending'].includes(status)
         ? `<button class="primary" onclick="jobAction('${id}','retry')">Retry</button><button class="light" onclick="jobAction('${id}','notify')">Notify</button><button class="btn-danger" onclick="jobAction('${id}','close')">Close</button>`
-        : status === 'manual_required'
+        : ['manual_required','manual_followup'].includes(status)
         ? `<button class="safe" onclick="jobAction('${id}','complete')">Mark Complete</button><button class="light">View Instructions</button>`
         : status === 'pending'
         ? `<button class="primary" onclick="jobAction('${id}','run')">Run Now</button><button class="warn-btn" onclick="jobAction('${id}','pause')">Pause</button>`

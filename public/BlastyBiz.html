@@ -4377,12 +4377,16 @@ function refreshPhotoGridForScope() {
     const applyImages = images => {
       if (window._bbPhotoItems !== pendingItems || photoScope !== 'campaign' || activeCampaignId !== cid) return;
       const cam = campaigns.find(c => c.id === cid) || {};
-      const photos = images.length ? images : (cam.photos || []);
+      // New subcollection records must not hide older campaign-array photos.
+      const photos = [...images, ...(cam.photos || [])];
+      const seenUrls = new Set();
       window._bbPhotoItems = photos.map(p => {
         const img = typeof p === 'string' ? { url: p } : p;
+        if (!img?.url || seenUrls.has(img.url)) return null;
+        seenUrls.add(img.url);
         return { ...img, localUrl: img.url, path: img.path || null,
           done: true, progress: 100, scope: 'campaign', campaignId: cid, bizId: window.activeBizId };
-      });
+      }).filter(Boolean);
       // Keep uploads started while this campaign read was pending.
       window._bbPhotoItems.push(...pendingItems.filter(item => !window._bbPhotoItems.some(saved =>
         (item.id && saved.id === item.id) || (item.url && saved.url === item.url))));
@@ -6263,7 +6267,10 @@ onAuthStateChanged(auth, async (user) => {
     }
     if (window.renderAllPhotos) window.renderAllPhotos();
     try {
-      if (item.path) await deleteObject(storageRef(storage, item.path));
+      // Persisted URLs are also used by saved drafts/publish jobs and historical posts.
+      // Retire the library entry without breaking those references; only failed,
+      // unsaved uploads are safe to clean up here without reference accounting.
+      if (item.path && !item.done) await deleteObject(storageRef(storage, item.path));
     } catch(e) {
       if (e.code === 'storage/object-not-found') return;
       console.error('Photo file delete error:', e);

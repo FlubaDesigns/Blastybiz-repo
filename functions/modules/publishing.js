@@ -371,7 +371,7 @@ exports.postToAppleMaps = onRequest({ invoker: 'public' }, withAuth(async (req, 
 exports.dispatchPublishJob = onDocumentCreated(
   { document: 'users/{userId}/businesses/{bizId}/publishJobs/{jobId}', region: 'us-central1', retry: true, secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
   async (event) => {
-    const job    = event.data.data();
+    let job      = event.data.data();
     const jobRef = event.data.ref;
     const { userId: _pathUserId, bizId: _pathBizId } = event.params;
 
@@ -379,18 +379,20 @@ exports.dispatchPublishJob = onDocumentCreated(
     if (job.planGated) return;
 
     try {
-      await db.runTransaction(async (tx) => {
+      job = await db.runTransaction(async (tx) => {
         const fresh = await tx.get(jobRef);
-        if (fresh.data().status !== 'pending' || fresh.data().planGated) {
+        if (!fresh.exists || fresh.data().status !== 'pending' || fresh.data().planGated) {
           throw Object.assign(new Error('already-claimed'), { code: 'ALREADY_CLAIMED' });
         }
         tx.update(jobRef, { status: 'processing', adminRetry: false, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+        return fresh.data();
       });
     } catch(txErr) {
       if (txErr.code === 'ALREADY_CLAIMED') return;
       throw txErr;
     }
 
+    let providerReturned = false;
     try {
       const connSnap = await userBizConnsRef(_pathUserId, _pathBizId).doc(job.platform).get();
 
@@ -432,6 +434,7 @@ exports.dispatchPublishJob = onDocumentCreated(
         return;
       }
 
+      providerReturned = true;
       await jobRef.update({
         status: 'success',
         apiResponse: result,
@@ -442,6 +445,16 @@ exports.dispatchPublishJob = onDocumentCreated(
       });
 
     } catch(e) {
+      if (providerReturned) {
+        // The provider accepted the post. Retrying the create event must not post it again.
+        await jobRef.update({
+          status: 'manual_required', publicationUncertain: true,
+          adminError: e.message,
+          customerVisibleMessage: 'Post may be live on the platform. Check before retrying.',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        }).catch(writeError => console.error('[dispatchPublishJob] could not record publication uncertainty:', writeError.message));
+        return;
+      }
       const MAX_RETRIES = 5;
       const freshSnap = await jobRef.get().catch(() => null);
       const retryCount = ((freshSnap?.data()?.retryCount) || 0) + 1;

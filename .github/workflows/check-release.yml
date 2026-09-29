@@ -56,7 +56,7 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools@15.29.0
       - name: Deploy reviewed backend, rules, and indexes
-        run: firebase deploy --project blastybiz-9523e --non-interactive --only firestore:rules,firestore:indexes,storage,functions:adminRetryJob,functions:adminListActivityLogs,functions:dispatchPublishJob,functions:jobFailedTrigger,functions:jobCompletedTrigger
+        run: firebase deploy --project blastybiz-9523e --non-interactive --only firestore:rules,firestore:indexes,storage,functions:adminRetryJob,functions:adminMarkManualFollowup,functions:adminListActivityLogs,functions:dispatchPublishJob,functions:jobFailedTrigger,functions:jobCompletedTrigger
       - name: Identify deployed source
         run: node -e 'require("fs").writeFileSync("public/release.json", JSON.stringify({commit:process.env.GITHUB_SHA, deployedAt:new Date().toISOString()}))'
       - name: Deploy website
