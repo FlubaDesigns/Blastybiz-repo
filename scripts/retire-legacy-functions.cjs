@@ -19,7 +19,11 @@ function validatePreflight({functions,jobs,data,traffic},expected=manifest.funct
   const name=job.name.split('/').at(-1),candidate=expected.find(f=>name===`firebase-schedule-${f.name}-${REGION}`);
   if(!candidate)throw Error('Unexpected scheduler selected for retirement');
   const fn=functions.find(f=>f.name.endsWith('/'+candidate.name));
-  if(fn&&job.httpTarget?.uri?.replace(/\/$/,'')!==fn.serviceConfig?.uri?.replace(/\/$/,''))throw Error('Scheduler target does not match candidate: '+name);
+  // Firebase may target either the Cloud Run URI or this function's canonical
+  // cloudfunctions.net URI. Match exact resource URLs; no hostname-only checks.
+  const target=job.httpTarget?.uri?.replace(/\/$/,'');
+  const allowed=[fn?.serviceConfig?.uri,`https://${REGION}-${PROJECT}.cloudfunctions.net/${candidate.name}`].filter(Boolean).map(uri=>uri.replace(/\/$/,''));
+  if(!target||!allowed.includes(target))throw Error('Scheduler target does not match candidate: '+name+' ('+(target||'missing')+')');
  }
  return {retired:[...retired],jobs:jobs.map(j=>j.name)};
 }
