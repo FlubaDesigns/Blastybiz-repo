@@ -26,7 +26,11 @@ jobs:
         run: npm ci
         working-directory: functions
       - name: Run release checks
-        run: node scripts/check-release.cjs
+        # Newly added endpoints cannot be live before their first deployment.
+        # The Authorization Engine verifies live endpoints after backend deploy.
+        run: |
+          SKIP_CF_ENDPOINT_CHECK=1 node scripts/check-release.cjs
+          node scripts/check-cf-endpoints.cjs --self-test
       - name: Review regression checks
         run: |
           node scripts/test-review-regressions.cjs
