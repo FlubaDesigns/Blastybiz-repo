@@ -59,7 +59,7 @@ async function publisherTests(){
   reject=Object.assign(Error('server error'),{response:{status:503,data:{}}});await assert.rejects(c._publicationPost('url',{}),e=>e.publicationUncertain===true);checks++;
   let state={status:'pending',platform:'facebook'},calls=0;
   const ref={get:async()=>({data:()=>state}),update:async patch=>Object.assign(state,patch)};
-  const d={exports:{},console:quiet,onDocumentCreated:(_,f)=>f,admin:{firestore:{FieldValue:{serverTimestamp:()=>1}}},db:{runTransaction:async fn=>fn({get:async()=>({exists:true,data:()=>state}),update:(_,p)=>Object.assign(state,p)})},userBizConnsRef:()=>({doc:()=>({get:async()=>({exists:true,data:()=>({status:'connected'}),ref:{}})})}),_getConnTokens:async()=>({}),_publishFacebookJob:async()=>{calls++;throw Object.assign(Error('timeout'),{publicationUncertain:true})}};
+  const d={exports:{},console:quiet,onDocumentCreated:(_,f)=>f,onDocumentUpdated:(_,f)=>f,admin:{firestore:{FieldValue:{serverTimestamp:()=>1}}},db:{runTransaction:async fn=>fn({get:async()=>({exists:true,data:()=>state}),update:(_,p)=>Object.assign(state,p)})},userBizConnsRef:()=>({doc:()=>({get:async()=>({exists:true,data:()=>({status:'connected'}),ref:{}})})}),_getConnTokens:async()=>({}),_publishFacebookJob:async()=>{calls++;throw Object.assign(Error('timeout'),{publicationUncertain:true})}};
   vm.runInNewContext(cut(source,'exports.dispatchPublishJob =','exports.jobFailedTrigger ='),d);
   const event={data:{data:()=>({status:'pending'}),ref},params:{userId:'u',bizId:'b',jobId:'j'}};
   await d.exports.dispatchPublishJob(event);await d.exports.dispatchPublishJob(event);ok(state.status==='manual_required'&&state.publicationUncertain&&calls===1,'ambiguous timeout blocks automatic repost on event redelivery');
@@ -74,7 +74,7 @@ async function allowanceTests(){
   e=env({uid:'other',freeRegenUsed:false});ok(!(await e.run()).freeRegen&&e.used===1,'grant must belong to requesting user');
   e=env({uid:'u',freeRegenUsed:false});const results=await Promise.all([e.run(),e.run()]);ok(results.filter(x=>x.freeRegen).length===1&&e.used===1,'one server grant supports only one concurrent free regeneration');
   ok(!(await e.run()).freeRegen&&e.used===2,'resetting public marker cannot reset consumed private grant');
-  const rules=cut(read('firestore.rules'),'match /listingDrafts/{draftId}','// Publish jobs');ok(rules.includes("hasAny(['uid', 'freeRegenUsed', 'freeRegenEligible', 'packet', 'packetFrozenAt'])")&&rules.includes('match /private/{document} { allow read, write: if false; }'),'draft rules protect markers and private grant');
+  const rules=cut(read('firestore.rules'),'match /listingDrafts/{draftId}','// Publish jobs');ok(rules.includes("hasAny(['uid', 'freeRegenUsed', 'freeRegenEligible', 'packet', 'packetFrozenAt',")&&rules.includes('match /private/{document} { allow read, write: if false; }'),'draft rules protect markers and private grant');
 }
 async function logTests(){
   const source=read('functions/modules/ai.js'),events=[];let done,fail=false;

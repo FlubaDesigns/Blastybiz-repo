@@ -132,10 +132,13 @@ async function queueScheduledDraft(draftRef, now) {
 }
 
 exports.scheduledPostingCheck = onSchedule(
-  { schedule: 'every 1 hours', region: 'us-central1' },
+  { schedule: 'every 5 minutes', region: 'us-central1', timeoutSeconds:540, secrets:['RESEND_API_KEY','ANTHROPIC_API_KEY','GEMINI_API_KEY'] },
   async () => {
     const now = new Date();
     try {
+      const worker=require('./lifecycle')._worker;
+      await worker.runSchedules(true);
+      await worker.runManualReminders();
       for await (const page of scheduledDraftPages('scheduledPostingCursor', now)) {
         for (const draftSnap of page) {
           try { await queueScheduledDraft(draftSnap.ref,now); }
@@ -154,12 +157,13 @@ const CF_BASE = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
 
 exports.scheduledDraftPreview = onSchedule(
   { schedule: 'every 24 hours', region: 'us-central1',
-    secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY', 'ACTION_SIGNING_KEY'] },
+    secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY', 'ACTION_SIGNING_KEY','ANTHROPIC_API_KEY','GEMINI_API_KEY'] },
   async () => {
     const now  = new Date();
     const h48  = new Date(now.getTime() + 48 * 60 * 60 * 1000);
 
     try {
+      await require('./lifecycle')._worker.runSchedules(false);
       for await (const page of scheduledDraftPages('scheduledPreviewCursor', h48, now)) {
       for (const draftSnap of page) {
         let scheduleValidated = false;
@@ -211,7 +215,7 @@ exports.scheduledDraftPreview = onSchedule(
             plan      = u.plan || 'starter';
           } catch(_) { continue; }
 
-          if (!email || !['pro', 'agency'].includes(plan)) continue;
+          if (!email) continue;
 
           // Check business not paused
           try {

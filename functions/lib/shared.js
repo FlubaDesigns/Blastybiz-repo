@@ -17,21 +17,23 @@ const axios     = require('axios');
 const crypto    = require('crypto');
 
 // ── Resend email helper (uses native fetch — Node 22) ─────────────────────────
-async function sendResendEmail({ to, subject, html }) {
+async function sendResendEmail({ to, subject, html, strict=false, idempotencyKey }) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey || apiKey === 'placeholder') {
+    if(strict)throw Error('Email service is not configured.');
     console.log('[email] RESEND_API_KEY not configured — skipping email to', to);
     return;
   }
   try {
     const resp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json',...(idempotencyKey?{'Idempotency-Key':idempotencyKey}:{}) },
       body: JSON.stringify({ from: 'BlastyBiz <info@blastybiz.com>', to: [to], subject, html }),
     });
-    if (!resp.ok) console.error('[email] Resend error:', await resp.text());
+    if (!resp.ok) {if(strict)throw Error('Email provider rejected the send ('+resp.status+').');console.error('[email] Resend error:', await resp.text());}
   } catch (e) {
     console.error('[email] sendResendEmail failed:', e.message);
+    if(strict)throw e;
   }
 }
 
@@ -92,6 +94,7 @@ async function trackAiUsage(uid, fnName, model, usage, opts = {}) {
     const costUsd = usage
       ? ((usage.input_tokens || 0) * rates.input + (usage.output_tokens || 0) * rates.output) / 1_000_000
       : 0;
+    const account=uid?(await db.collection('users').doc(uid).get()).data():null;
     await db.collection('aiUsageLogs').add({
       uid:          uid || 'system',
       fn:           fnName,
@@ -105,6 +108,10 @@ async function trackAiUsage(uid, fnName, model, usage, opts = {}) {
       businessId:   context?.businessId  || null,
       campaignId:   context?.campaignId  || null,
       scheduleId:   context?.scheduleId  || null,
+      adId: context?.adId || null, occurrenceId: context?.occurrenceId || null,
+      purpose: context?.purpose || ({adaptListing:'first_generation',scheduledRefresh:'scheduled_refresh',suggestCategory:'category_suggest',resolveCategories:'category_suggest',extractBizContext:'story_extract',suggestPlatforms:'suggest_platforms',generateEnrichmentQuestions:'story_extract',chatCampaign:'campaign_chat',previewAds:'ad_preview',scoreFact:'fact_score'}[fnName] || 'other'),
+      wasFreeToUser: true, copyBehavior: context?.copyBehavior || 'reuse',
+      tier: account?.plan || (uid?'starter':'unknown'),
       ts: admin.firestore.FieldValue.serverTimestamp(),
     });
   } catch (e) {
@@ -264,7 +271,7 @@ async function reserveAiAction(uid, opts = {}) {
       tx.set(userRef, {
         aiActionsUsed: 1,
         aiActionsResetAt: admin.firestore.Timestamp.fromDate(
-          new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+          new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()+1,1))
         ),
       }, { merge: true });
     } else {
@@ -273,6 +280,8 @@ async function reserveAiAction(uid, opts = {}) {
       }, { merge: true });
     }
 
+    if(used+1>=Math.ceil(cap*.8))tx.set(userRef,{aiAllowanceNotice:'Fresh wording is nearly at this month’s allowance. Saved copy and Run As-Is stay available.'},{merge:true});
+    else if(needsReset)tx.set(userRef,{aiAllowanceNotice:null},{merge:true});
     return { plan, used: used + 1, cap, freeRegen: false };
   });
 }
@@ -562,7 +571,7 @@ const { computeNextRunAt, normalizeSchedule } = require('./schedule');
 
 // ── getPlanConfig — single source of truth for all plan entitlements (4.4) ────
 const _PLAN_CONFIG_DEFAULTS = {
-  aiLimits:  { trial: 10, starter: 10, pro: 100, agency: 500 },
+  aiLimits:  require('./lifecycle-policy').aiLimits,
   bizLimits: { trial: 1,  starter: 1,  pro: 3,   agency: 10  },
   prices:    { proMonthly: null, agencyMonthly: null, proAnnual: null, agencyAnnual: null },
   // Free-account data retention. Editable in config/plans — never hardcode these

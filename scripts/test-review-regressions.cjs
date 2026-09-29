@@ -66,7 +66,7 @@ async function dispatcherAndQueue() {
     const snapshot=()=>({exists:true,data:()=>({...state})});
     const ref={get:async()=>snapshot(),update:async patch=>{if(patch.status==='success'||failWrites)throw Error('database write');Object.assign(state,patch)}};
     const publish=async job=>{calls++;seen=job.payload.adaptedContent;if(providerFails)throw Error('provider rejected');return {postId:'posted'}};
-    const c={exports:{},console:{error(){}},onDocumentCreated:(_,fn)=>fn,admin:{firestore:{FieldValue:{serverTimestamp:()=>({toMillis:()=>Date.now()})}}},db:{runTransaction:async fn=>fn({get:async()=>snapshot(),update:(_,patch)=>Object.assign(state,patch)})},userBizConnsRef:()=>({doc:()=>({get:async()=>({exists:true,ref:{},data:()=>({status:'connected'})})})}),_getConnTokens:async()=>({}),_publishGoogleJob:publish,_publishFacebookJob:publish,_publishInstagramJob:publish};
+    const c={exports:{},console:{error(){}},onDocumentCreated:(_,fn)=>fn,onDocumentUpdated:(_,fn)=>fn,admin:{firestore:{FieldValue:{serverTimestamp:()=>({toMillis:()=>Date.now()})}}},db:{runTransaction:async fn=>fn({get:async()=>snapshot(),update:(_,patch)=>Object.assign(state,patch)})},userBizConnsRef:()=>({doc:()=>({get:async()=>({exists:true,ref:{},data:()=>({status:'connected'})})})}),_getConnTokens:async()=>({}),_publishGoogleJob:publish,_publishFacebookJob:publish,_publishInstagramJob:publish};
     vm.runInNewContext(dispatch,c);
     return {get state(){return state},get calls(){return calls},get seen(){return seen},run:()=>c.exports.dispatchPublishJob({data:{data:()=>original,ref},params:{userId:'u',bizId:'b',jobId:'j'}})};
   }

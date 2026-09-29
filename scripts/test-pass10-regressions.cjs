@@ -73,7 +73,7 @@ async function main(){
  ok(JSON.stringify(setup.collect('signup',dom('signup')))===JSON.stringify(setup.collect('setup',dom('setup'))),'pre-email and setup collect identical canonical values');
  const c={window:{},module:{},console,document:{},};c.window=c;vm.createContext(c);
  for(const file of ['blasty-registry.js','blasty-events.js'])vm.runInContext(fs.readFileSync('public/'+file,'utf8'),c);
- ok(Object.keys(c.BBBlasty.events).length===77&&Object.keys(c.BBBlasty.fields).length===27,'reconciled 72 events plus 4 image events and recoverable-error event; 27 fields');
+ ok(Object.keys(c.BBBlasty.events).length===78&&Object.keys(c.BBBlasty.fields).length===27,'reconciled 72 events plus 4 image events, recoverable-error, and allowance guidance; 27 fields');
  ok(!c.BBBlasty.events['activity.context_summary']&&!!c.BBBlasty.events['activity.historical_override_choice'],'latest Activity replacement applied');
  c.BBBlasty.configure({events:{'ad.run_again_scope':{message:'Run {{adName}}?',enabled:false}}});
  ok(c.BBBlasty.message('ad.run_again_scope',{adName:'July'})==='Run July?','admin override uses same semantic ID and substitutions');

@@ -8,6 +8,10 @@ const assert = require('node:assert/strict');
     assert(response.ok, `${host}: release marker HTTP ${response.status}`);
     assert.equal((await response.json()).commit, process.env.GITHUB_SHA, `${host}: wrong deployed commit`);
     for (const [page, text] of [
+      ['BlastyBiz', 'lifecycle-ui.js'],
+      ['BlastyBiz-Listing-Preview', 'v1-publish-schedule'],
+      ['BlastyBiz-Publishing-Status', 'lifecycle-status.js'],
+      ['BlastyBiz-Admin', 'ai-cost-rollups.js'],
       ['BlastyBiz', 'async function deletePhotoRecords'],
       ['BlastyBiz', 'async function retryGeneratedDraftSave'],
       ['BlastyBiz', '_bbUpdateDraftSchedule'],

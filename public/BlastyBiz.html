@@ -891,8 +891,9 @@
   <div class="row">
     <div class="col-2">
 
-      <!-- LEFT: Schedule -->
-      <div class="card card-flush">
+      <!-- Retired quick controls retained hidden for old DOM hooks. Ad schedules live in Schedule. -->
+      <div class="card"><h3>Schedule</h3><button type="button" onclick="showTab('schedule')">Manage Ad schedules</button></div>
+      <div class="card card-flush" hidden style="display:none">
           <button type="button" class="teach-btn" onclick="toggleRightAccordion('right-schedule-body','right-schedule-chevron')">
             <div class="row gap-10">
               <span class="teach-icon">📅</span>
@@ -2110,6 +2111,7 @@ async function regeneratePlatformCopy(pid) {
           ...(_getAIMemory()),
           libraryDocs: window._libraryDocs || [],
           businessId: window.activeBizId || '',  // required for server free-regen draftRef
+          campaignId:activeCampaignId||null,adId:window.BBAds?.active?.id||null,
           requestId: crypto.randomUUID(),  // fresh ID per regen — ensures new AI output, not cached
         },
         platforms: [{ id: platform.id, name: platform.name, type: platform.type, enabled: true }],
@@ -2308,7 +2310,7 @@ async function suggestPlatformsAI() {
     const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/suggestPlatforms', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ name, category, description, locationType, website }),
+      body: JSON.stringify({ name, category, description, locationType, website,businessId:window.activeBizId,campaignId:activeCampaignId||null,adId:window.BBAds?.active?.id||null }),
     });
 
     if (!resp.ok) {
@@ -3728,6 +3730,7 @@ function _schedNextLine(s) {
 }
 
 function renderScheduleTab() {
+  if(window.BBLifecycle && window._bbGetToken && window.activeBizId){BBLifecycle.configure({businessId:window.activeBizId,token:window._bbGetToken});return BBLifecycle.dashboard();}
   if (window._bbLoadDraftSchedules) {
     window._bbLoadDraftSchedules().then(_renderSchedTabFromData).catch(() => _renderSchedTabFromData({}));
   } else {
@@ -5828,7 +5831,6 @@ onAuthStateChanged(auth, async (user) => {
       // ?tab=X — nav links from the site header route here so onboarded users skip the mascot wizard
       const _tabParam = new URLSearchParams(window.location.search).get('tab');
       if (_tabParam && ['profile','story','create','platforms','schedule','history','account'].includes(_tabParam)) {
-        window.history.replaceState({}, '', window.location.pathname);
         showTab(_tabParam);
       }
 
@@ -7348,6 +7350,7 @@ window.confirmDeleteAccount = async function() {
 .cbm-opt-title{font-size:15px;font-weight:700;color:#e0f0e3}
 .cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
 </style>
+<script src="lifecycle-ui.js"></script>
 <script src="ad-workspace.js"></script>
 <script>
 document.addEventListener('click',function(e){

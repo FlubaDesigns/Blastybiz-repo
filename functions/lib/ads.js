@@ -187,7 +187,7 @@ function createAdService(db,admin) {
         }
         if(body.expectedRevision!==ad.revision)fail(409,'This Ad changed elsewhere. Reload before saving.');
         if(action==='updatePrepared'&&(!old.exists||old.data().adId!==adId||old.data().campaignId!==campaignId))fail(404,'Prepared Blast not found.');
-        if(old.exists&&old.data().status==='approved')fail(409,'This Blast has been sent; its packet is frozen.');
+        if(old.exists&&['approved','canceled'].includes(old.data().status))fail(409,'This Blast has been sent; its packet is frozen.');
         let effective=ad;
         if(body.scope==='this_run') {
           effective=cleanCreative(body.creative||{},ad);
@@ -202,6 +202,7 @@ function createAdService(db,admin) {
           packet,adaptations:packet.adaptations,imagesByPlatform:packet.imagesByPlatform,enabledPlatforms:packet.enabledPlatforms,
           platformStatus:status,status:'prepared',revision:(old.data()?.revision||0)+1,
           ...(old.exists?{}:{createdAt:stamp()}),updatedAt:stamp()};
+        if(old.data()?.scheduleAdPath){data.status='scheduled';data.approvalStatus='required';data.approvedPacketRevision=null;}
         tx.set(dr,data,{merge:true});
         return {blastId,packet,requiresExplicitSend:true};
       }

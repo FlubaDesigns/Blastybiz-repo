@@ -391,6 +391,7 @@ window.BBBlastySeed = {
       "purpose": "Later Campaign Publish Shorthand",
       "note": "Use after first-use teaching is complete."
     },
+    "ai.allowance_near": {"eventId":"ai.allowance_near","message":"Fresh wording is nearly at this month’s allowance. Saved copy and Run As-Is stay available.","behavior":"WHEN NEEDED","animation":[],"enabled":true,"source":"11C.4"},
     "schedule.intent_choice": {
       "eventId": "schedule.intent_choice",
       "message": "Everything looks good. Want me to send it now, or should we schedule it?",
@@ -463,7 +464,7 @@ window.BBBlastySeed = {
     },
     "schedule.next_up_summary": {
       "eventId": "schedule.next_up_summary",
-      "message": "Here’s what I have coming up next.",
+      "message": "{{summary}}",
       "behavior": "WHEN NEEDED",
       "animation": [],
       "enabled": true,
@@ -483,7 +484,7 @@ window.BBBlastySeed = {
     },
     "schedule.context_summary": {
       "eventId": "schedule.context_summary",
-      "message": "You have three active campaigns. Summer Special goes tomorrow at 9. Roof Inspections is waiting for approval, and one Marketplace post from today’s Blast still needs you.",
+      "message": "{{summary}}",
       "behavior": "WHEN NEEDED",
       "animation": [],
       "enabled": true,
@@ -583,7 +584,7 @@ window.BBBlastySeed = {
     },
     "onboard.first_blast_complete": {
       "eventId": "onboard.first_blast_complete",
-      "message": "You did it, {{ownerName}}. Your first campaign is underway. I handled what I could automatically, and I’ve got the remaining platforms ready for you.",
+      "message": "You did it, {{ownerName}}. Your first campaign is underway. {{handoff}}",
       "behavior": "ONCE",
       "animation": [],
       "enabled": true,
@@ -605,7 +606,7 @@ window.BBBlastySeed = {
       "eventId": "onboard.ready_to_blast",
       "message": "That’s it. You’re officially ready to Blast.",
       "behavior": "ONCE",
-      "animation": [],
+      "animation": ["eyePop","thumbUpBoth","flameBoost","coneSpin","confetti"],
       "enabled": true,
       "source": "10",
       "purpose": "Final Completion Statement",

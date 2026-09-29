@@ -1,0 +1,26 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict'),{JSDOM}=require(process.env.JSDOM_PATH||'jsdom');
+const {database,admin}=require('./lib/test-firestore.cjs'),{createLifecycle}=require('../functions/lib/lifecycle');
+const html=fs.readFileSync('public/BlastyBiz-Publishing-Status.html','utf8'),dom=new JSDOM(html,{url:'https://blastybiz.com/BlastyBiz-Publishing-Status.html?bizId=b&draftId=d',runScripts:'outside-only'}),w=dom.window;
+const B='users/u/businesses/b',D=B+'/listingDrafts/d',J=B+'/publishJobs/';let checks=0,confirmed=true;
+const ok=(v,m)=>{assert(v,m);checks++;};const store=database({'users/u':{email:'u@example.com',activeBusiness:'other'},[B]:{},[D]:{uid:'u',businessId:'b',campaignId:'c',adId:'a',status:'approved'},[J+'auto']:{jobId:'auto',draftId:'d',platform:'google',status:'success'},[J+'manual']:{jobId:'manual',draftId:'d',platform:'craigslist',status:'manual_required',manualInstructions:'Go to craigslist.org → your city.',payload:{adaptedContent:'Copy for owner',imageUrls:['https://example.com/photo.jpg']}}});
+const service=createLifecycle({db:store.db,admin,refreshCopy:async()=>{throw Error('unexpected AI');},sendEmail:async()=>{}});w.confirm=()=>confirmed;
+w.eval(fs.readFileSync('public/escape-utils.js','utf8'));
+const script=[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].find(m=>m[2].includes('const PLATFORM_META'))[2];w.eval(script);
+w.fetch=async(url,options)=>{try{const result=await service.manage('u',JSON.parse(options.body));return {ok:true,json:async()=>result};}catch(e){return {ok:false,json:async()=>({error:e.message})};}};
+w.eval(fs.readFileSync('public/lifecycle-ui.js','utf8'));w.eval(fs.readFileSync('public/lifecycle-status.js','utf8'));w.BBLifecycleStatus.initialize({businessId:'b',blastId:'d',token:async()=>''},{ownerName:'Owner',activeBusiness:'other'});
+const settle=async()=>{for(let i=0;i<25;i++)await new Promise(r=>setImmediate(r));};
+const jobs=()=>Object.entries(store.all()).filter(([p])=>p.startsWith(J)).map(([,d])=>d);
+(async()=>{
+ w.renderJobs(jobs());await settle();ok(w.document.getElementById('progress-count').textContent.includes('1 posted'),'manual ready does not inflate delivered');
+ const buttons=()=>[...w.document.querySelectorAll('#action-items button')];ok(buttons().some(b=>b.textContent==='Mark as Posted')&&buttons().some(b=>b.textContent==='Skip This One'),'large manual completion actions exist');
+ ok([...w.document.querySelectorAll('#action-items a')].some(a=>a.textContent==='View Image'),'frozen media remains available');ok([...w.document.querySelectorAll('#action-items a')].some(a=>a.href==='https://craigslist.org/'),'valid canonical destination link available');
+ ok(w.document.getElementById('first-blast-completion'),'first mixed launch has a durable completion panel');
+ confirmed=false;buttons().find(b=>b.textContent==='Mark as Posted').click();await settle();ok(store.get(J+'manual').status==='manual_required','canceling owner confirmation leaves result unchanged');
+ confirmed=true;buttons().find(b=>b.textContent==='Mark as Posted').click();await settle();ok(store.get(J+'manual').status==='manual_posted','Mark Posted reaches authenticated lifecycle');
+ w.renderJobs(jobs());await settle();ok(w.document.getElementById('progress-count').textContent.includes('2 posted'),'confirmed manual work counts delivered');ok(w.document.getElementById('action-card').classList.contains('hidden'),'completed manual work disappears from Your Turn');
+ ok(w.document.querySelectorAll('#first-blast-completion').length===1,'rerender does not replay first-use panel');
+ const checkbox=w.document.querySelector('#content-state > label input');checkbox.checked=false;await checkbox.onchange();ok(store.get('users/u').manualRemindersEnabled===false,'reminder preference uses server operation');
+ await store.db.doc(J+'manual').update({status:'manual_lapsed'});w.renderJobs(jobs());await settle();ok(w.document.getElementById('progress-count').textContent.includes('2 of 2 complete · 1 posted'),'lapse is complete but never posted');
+ console.log(checks+' Pass 11 publishing status DOM assertions passed.');dom.window.close();
+})().catch(e=>{console.error(e);dom.window.close();process.exitCode=1;});

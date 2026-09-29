@@ -159,10 +159,11 @@ service cloud.firestore {
             (request.auth.uid == userId || isAdmin());
           allow create: if request.auth != null &&
             request.auth.uid == userId &&
-            !request.resource.data.keys().hasAny(['freeRegenUsed', 'freeRegenEligible', 'packet', 'packetFrozenAt']);
+            !request.resource.data.keys().hasAny(['freeRegenUsed', 'freeRegenEligible', 'packet', 'packetFrozenAt', 'scheduleAdPath', 'scheduledForUtc', 'approvalStatus', 'completion', 'completedAt', 'readyAt', 'reminders', 'preparationState']);
           allow update: if request.auth != null &&
             request.auth.uid == userId &&
-            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid', 'freeRegenUsed', 'freeRegenEligible', 'packet', 'packetFrozenAt']) &&
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid', 'freeRegenUsed', 'freeRegenEligible', 'packet', 'packetFrozenAt', 'scheduleAdPath', 'scheduledForUtc', 'approvalStatus', 'completion', 'completedAt', 'readyAt', 'reminders', 'preparationState']) &&
+            (!resource.data.keys().hasAny(['scheduleAdPath'])) &&
             (!resource.data.keys().hasAny(['packet']) ||
               request.resource.data.diff(resource.data).affectedKeys().hasOnly(['schedule','updatedAt']));
           allow delete: if request.auth != null && request.auth.uid == userId &&

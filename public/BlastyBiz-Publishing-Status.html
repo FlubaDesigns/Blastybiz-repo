@@ -26,6 +26,7 @@
 <script src="blastybiz-menu.js?v=7"></script>
 <script src="escape-utils.js"></script>
 <script src="blasty-registry.js"></script>
+<script src="mascot.js"></script>
 <script src="blasty-events.js"></script>
 <script src="blasty-guidance.js"></script>
 <script src="business-form.js"></script>
@@ -59,7 +60,7 @@
     </div>
 
     <div class="action-card hidden" id="action-card">
-      <div class="action-card-title">⚠️ Action Needed</div>
+      <div class="action-card-title">Your Turn</div>
       <div id="action-items"></div>
     </div>
 
@@ -98,6 +99,10 @@ const STATUS_CONFIG = {
   canceled:         { label: 'Canceled', cls: 'pill-pending', rowCls: '' },
   success:          { label: 'Live',        cls: 'pill-live',    rowCls: 'status-live' },
   manual_required:  { label: 'Action Needed', cls: 'pill-manual', rowCls: 'status-manual' },
+  manual_posted: {label:'Posted by you',cls:'pill-live',rowCls:'status-live'},
+  manual_skipped: {label:'Skipped',cls:'pill-pending',rowCls:''},
+  manual_lapsed: {label:'Not posted',cls:'pill-pending',rowCls:''},
+  skipped: {label:'Skipped',cls:'pill-pending',rowCls:''},
   manual_completed: { label: 'Posted',      cls: 'pill-live',    rowCls: 'status-live' },
   processing:       { label: 'Publishing', cls: 'pill-running', rowCls: 'status-running' },
   manual_followup:  { label: 'Action Needed', cls: 'pill-manual', rowCls: 'status-manual' },
@@ -139,7 +144,7 @@ function renderJobs(jobs) {
     `;
     if (job.status === 'needs_connection') {
       const btn = document.createElement('a');
-      btn.href = 'BlastyBiz-Connect.html';
+      btn.href = 'BlastyBiz.html?'+new URLSearchParams({bizId:new URLSearchParams(location.search).get('bizId')||'',tab:'platforms'});
       btn.className = 'btn-copy';
       btn.style.cssText = 'text-decoration:none;white-space:nowrap;margin-left:8px;';
       btn.textContent = '🔗 Connect';
@@ -208,6 +213,8 @@ function showEmptyState(msg) {
   if (hoursSaved) hoursSaved.textContent = '0'}
 </script>
 
+<script src="lifecycle-ui.js"></script>
+<script src="lifecycle-status.js"></script>
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -220,15 +227,16 @@ onAuthStateChanged(auth, async (user) => {
   try {
     const userSnap = await getDoc(doc(db, 'users', user.uid));
     const userData = userSnap.exists() ? userSnap.data() : {};
-    const bizId    = userData.activeBusiness || user.uid;
+    const bizId    = new URLSearchParams(location.search).get('bizId') || userData.activeBusiness || user.uid;
 
     const params  = new URLSearchParams(window.location.search);
     const draftId = params.get('draftId');
+    BBLifecycleStatus.initialize({businessId:bizId,blastId:draftId,token:()=>user.getIdToken()},userData);
 
     // Wire "Schedule Refire" link back to the draft's review page
     if (draftId) {
       const schedLink = document.getElementById('sched-refire-link');
-      if (schedLink) { schedLink.href = `BlastyBiz-Listing-Preview.html?draftId=${draftId}`; schedLink.classList.remove('hidden')}
+      if (schedLink) { schedLink.href = 'BlastyBiz.html?'+new URLSearchParams({bizId,tab:'schedule'}); schedLink.classList.remove('hidden')}
     }
 
     let q;

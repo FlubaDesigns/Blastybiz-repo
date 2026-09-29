@@ -60,3 +60,5 @@ Object.assign(exports, require('./modules/scheduled'));
 Object.assign(exports, require('./modules/business'));
 Object.assign(exports, require('./modules/misc'));
 Object.assign(exports, require('./modules/retention'));
+
+Object.assign(exports, require('./modules/lifecycle'));

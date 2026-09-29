@@ -303,6 +303,7 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
         const campaign=await tx.get(userBizRef(uid,businessId).collection('campaigns').doc(draftData.campaignId));
         if(!campaign.exists || campaign.data().status==='archived')throw new Error('campaign_archived');
       }
+      if (draftData.status === 'scheduled' || draftData.scheduleAdPath) throw new Error('scheduled_occurrence');
       if (draftData.status === 'approved') throw new Error(ALREADY);
 
       const draftAdaptations = draftData.adaptations || {};
@@ -341,6 +342,7 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
       return publishIds.length;
     });
   } catch (e) {
+    if (e.message === 'scheduled_occurrence') return res.status(409).json({error:'Review this occurrence in Schedule. It will send at its scheduled time.'});
     if (e.message === 'campaign_archived') return res.status(409).json({error:'Campaign removed. This draft cannot be sent.'});
     if (e.message === ALREADY) return res.status(409).json({ error: 'This blast has already been sent.' });
     if (e.message === NOTHING) {
@@ -417,9 +419,10 @@ exports.postToAppleMaps = onRequest({ invoker: 'public' }, withAuth(async (req, 
   res.json({ status: 'manual_required', manualUrl: 'https://mapsconnect.apple.com' });
 }));
 
+let dispatchHandler;
 exports.dispatchPublishJob = onDocumentCreated(
   { document: 'users/{userId}/businesses/{bizId}/publishJobs/{jobId}', region: 'us-central1', retry: true, secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
-  async (event) => {
+  (dispatchHandler = async (event) => {
     let job      = event.data.data();
     const jobRef = event.data.ref;
     const { userId: _pathUserId, bizId: _pathBizId } = event.params;
@@ -536,6 +539,15 @@ exports.dispatchPublishJob = onDocumentCreated(
       }).catch(() => {});
       throw e;
     }
+  })
+);
+
+exports.resumePublishJob = onDocumentUpdated(
+  { document:'users/{userId}/businesses/{bizId}/publishJobs/{jobId}',region:'us-central1',retry:true,secrets:['GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET'] },
+  async event=>{
+    const before=event.data.before.data(),after=event.data.after.data();
+    if(!after.ownerRetryRequest||before.ownerRetryRequest===after.ownerRetryRequest)return;
+    return dispatchHandler({...event,data:event.data.after});
   }
 );
 

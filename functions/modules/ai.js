@@ -22,7 +22,9 @@ function aiRequestContext(body = {}) {
   const input = body?.listing || body || {};
   const id = value => typeof value === 'string' && value.length <= 128 ? value : null;
   return { businessId: id(input.businessId || input.bizId || body.businessId || body.bizId),
-    campaignId: id(input.campaignId || body.campaignId), scheduleId: id(input.scheduleId || body.scheduleId) };
+    campaignId: id(input.campaignId || body.campaignId), scheduleId: id(input.scheduleId || body.scheduleId),
+    adId:id(input.adId||body.adId),occurrenceId:id(body.draftId||input.draftId||body.occurrenceId),
+    purpose:body.isRegeneration===true?'owner_regeneration':undefined,copyBehavior:'reuse',wasFreeToUser:true };
 }
 async function loggedAI(uid, fn, body, prompt, options) {
   const started = Date.now(), context = aiRequestContext(body);
@@ -43,7 +45,7 @@ exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['
   try {
     await reserveAiAction(decoded.uid);
   } catch(e) {
-    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: `AI limit reached (${e.used}/${e.cap} this month). Upgrade your plan for more.` });
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is unavailable for the rest of this month. Your saved copy and Run As-Is are still available.' });
     console.error('[reserveAiAction] generateEnrichmentQuestions transaction failed:', e.message);
     return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
   }
@@ -418,7 +420,7 @@ exports.extractBizContext = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_
   try {
     await reserveAiAction(decoded.uid);
   } catch(e) {
-    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: `AI limit reached (${e.used}/${e.cap} this month). Upgrade your plan for more.` });
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is unavailable for the rest of this month. Your saved copy and Run As-Is are still available.' });
     console.error('[reserveAiAction] extractBizContext failed:', e.message);
     return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
   }
@@ -584,7 +586,7 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
   try {
     _reserveResult = await reserveAiAction(decoded.uid, { draftRef, isRegeneration });
   } catch(e) {
-    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: `AI limit reached (${e.used}/${e.cap} this month). Upgrade your plan for more.` });
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is unavailable for the rest of this month. Your saved copy and Run As-Is are still available.' });
     console.error('[reserveAiAction] adaptListing transaction failed:', e.message);
     return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
   }
@@ -742,7 +744,7 @@ exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_
   try {
     await reserveAiAction(decoded.uid);
   } catch(e) {
-    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: `AI limit reached (${e.used}/${e.cap} this month). Upgrade your plan for more.` });
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is unavailable for the rest of this month. Your saved copy and Run As-Is are still available.' });
     console.error('[reserveAiAction] resolveCategories transaction failed:', e.message);
     return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
   }
@@ -864,7 +866,7 @@ exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_A
   try {
     await reserveAiAction(decoded.uid);
   } catch(e) {
-    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: `AI limit reached (${e.used}/${e.cap} this month). Upgrade your plan for more.` });
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is unavailable for the rest of this month. Your saved copy and Run As-Is are still available.' });
     console.error('[reserveAiAction] suggestPlatforms transaction failed:', e.message);
     return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
   }
@@ -1067,3 +1069,5 @@ exports.adminSetAiSettings = onRequest({ invoker: 'public' }, withAuth(async (re
     return res.status(500).json({ error: e.message });
   }
 }, { admin: true }));
+
+Object.defineProperty(exports,'_writingGuides',{value:{get:_getAdminPlatformDocs,merge:_mergeAdminPlatformDoc}});

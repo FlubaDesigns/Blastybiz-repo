@@ -69,45 +69,7 @@
     </div>
   </section>
 
-  <!-- ── SCHEDULE THIS BLAST ─────────────────────── -->
-  <section class="card section-mt">
-    <div class="card-title">🗓 Schedule this blast</div>
-    <p class="helper mb-14" style="font-size:13px;color:var(--muted,#888);">Optional — set a future send time for this blast only. Your account-level auto-post schedule is a separate setting.</p>
-    <div class="pub-sched-grid">
-      <div>
-        <label class="field-label mb-6" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted,#888);">Send Date</label>
-        <input type="datetime-local" id="sched-date" class="sched-input"/>
-      </div>
-      <div>
-        <label class="field-label mb-6" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted,#888);">Refire Every</label>
-        <select id="sched-recur" class="sched-input">
-          <option value="">None (one-time)</option>
-          <option value="weekly">Weekly</option>
-          <option value="biweekly">Every 2 weeks</option>
-          <option value="monthly">Monthly</option>
-          <option value="quarterly">Quarterly</option>
-        </select>
-      </div>
-      <div>
-        <label class="field-label mb-6" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted,#888);">Stop After</label>
-        <select id="sched-stop" class="sched-input">
-          <option value="">Never</option>
-          <option value="4">4 posts</option>
-          <option value="8">8 posts</option>
-          <option value="12">12 posts</option>
-          <option value="26">26 posts</option>
-        </select>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;margin-top:14px;gap:10px;flex-wrap:wrap;">
-      <button class="btn btn-primary" onclick="saveSchedule()" id="sched-btn" style="padding:10px 20px;">💾 Save Schedule</button>
-      <span id="sched-status" class="sched-status-text"></span>
-    </div>
-    <div id="sched-saved" class="sched-saved mt-14 hidden">
-      <strong class="text-green">⏱ Schedule saved</strong> — <span id="sched-summary"></span>
-      <button onclick="clearSchedule()" class="clear-btn">Clear</button>
-    </div>
-  </section>
+  <section class="card section-mt" id="v1-publish-schedule"></section>
 
   <!-- ── PUBLISH ACTION ──────────────────────────── -->
   <section class="card section-mt pub-action-card">
@@ -183,67 +145,8 @@ function showToast(msg) {
   setTimeout(function(){ t.classList.remove('show'); }, 2500);
 }
 
-function saveSchedule() {
-  var dateVal = document.getElementById('sched-date').value;
-  var recur   = document.getElementById('sched-recur').value;
-  var stop    = document.getElementById('sched-stop').value;
-  if (!dateVal) { showToast('Pick a send date first'); return; }
 
-  var selectedMs = new Date(dateVal).getTime();
 
-  // Reject past dates
-  if (selectedMs <= Date.now()) {
-    showToast('Schedule must be in the future'); return;
-  }
-  // Reject dates more than 1 year out
-  if (selectedMs > Date.now() + 365 * 24 * 60 * 60 * 1000) {
-    showToast('Schedule must be within the next year'); return;
-  }
-
-  // Store an unambiguous UTC timestamp and the browser timezone alongside
-  // the raw local string — the backend should use sendAtUtc, never sendAt,
-  // to avoid timezone guessing (Finding 1, Production Pass 3).
-  var tz        = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  var sendAtUtc = new Date(dateVal).toISOString();
-  var sched = {
-    sendAt:    dateVal,      // local string kept for display purposes only
-    sendAtUtc: sendAtUtc,    // canonical: use this to schedule the actual send
-    timezone:  tz,           // browser tz, e.g. "America/Los_Angeles"
-    recur:     recur || null,
-    stopAfter: stop ? parseInt(stop) : null
-  };
-  window._saveSchedule && window._saveSchedule(sched);
-
-  var saved   = document.getElementById('sched-saved');
-  var summary = document.getElementById('sched-summary');
-  var dt  = new Date(dateVal).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
-  var txt = 'First post: ' + dt + ' (' + tz + ')';
-  if (recur)  txt += ' · repeats ' + recur;
-  if (stop)   txt += ' · stops after ' + stop + ' posts';
-  summary.textContent = txt;
-  saved.classList.remove('hidden');
-  showToast('⏱ Schedule saved');
-}
-
-function clearSchedule() {
-  document.getElementById('sched-date').value  = '';
-  document.getElementById('sched-recur').value = '';
-  document.getElementById('sched-stop').value  = '';
-  document.getElementById('sched-saved').classList.add('hidden');
-  window._saveSchedule && window._saveSchedule(null);
-  showToast('Schedule cleared');
-}
-
-// ── Sticky preview rail ────────────────────────────────────────────────────
-// Shows the approved post the way it will actually appear, one platform at a
-// time. This replaces the old stacked "your AI-written copy" accordions: the
-// owner already approved this copy on the previous screen, so it belongs beside
-// the scheduling controls as a reference, not below them as another step.
-var _railPids = [];
-var _railPid  = null;
-
-// escHtml prevents attribute breakout but does NOT reject a javascript: URL, so
-// anything heading for src/href is scheme-checked first.
 function safePhotoUrl(u) {
   return /^https?:\/\//i.test(String(u || '')) ? String(u) : '';
 }
@@ -537,6 +440,8 @@ function publishBlast() {
 }
 </script>
 
+<script src="schedule-utils.js"></script>
+<script src="lifecycle-ui.js"></script>
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -577,31 +482,6 @@ onAuthStateChanged(auth, async (user) => {
     const publishBtn = document.getElementById('publish-btn');
     if (publishBtn) { publishBtn.disabled = true; }
   }
-
-  // Restore saved schedule
-  if (draftData?.schedule) {
-    const s = draftData.schedule;
-    if (s.sendAt) document.getElementById('sched-date').value = s.sendAt;
-    if (s.recur)  document.getElementById('sched-recur').value = s.recur;
-    if (s.stopAfter) document.getElementById('sched-stop').value = String(s.stopAfter);
-    const saved   = document.getElementById('sched-saved');
-    const summary = document.getElementById('sched-summary');
-    const dt = new Date(s.sendAt).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
-    let txt = 'First post: ' + dt;
-    if (s.recur)     txt += ' · repeats ' + s.recur;
-    if (s.stopAfter) txt += ' · stops after ' + s.stopAfter + ' posts';
-    summary.textContent = txt;
-    saved.classList.remove('hidden');
-  }
-
-  window._saveSchedule = async function(sched) {
-    const draftId = window.draftDocId;
-    if (!draftId) return;
-    await updateDoc(doc(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts', draftId), {
-      schedule:  sched,
-      updatedAt: serverTimestamp(),
-    });
-  };
 
   window._firestoreApprove = async function(platformKeys) {
     BBBlasty.fire('publish.working');
@@ -652,7 +532,7 @@ onAuthStateChanged(auth, async (user) => {
         throw new Error(err.error || 'Approval failed (' + resp.status + ')');
       }
       if (btn) btn.textContent = '✅ Published!';
-      window.location.href = `BlastyBiz-Publishing-Status.html?draftId=${draftId}`;
+      window.location.href = `BlastyBiz-Publishing-Status.html?draftId=${draftId}&bizId=${encodeURIComponent(window.businessId)}`;
     } catch(e) {
       console.error('publishBlast error:', e);
       if (btn) { btn.disabled = false; btn.textContent = '🚀 Publish Blast'; }
@@ -660,6 +540,8 @@ onAuthStateChanged(auth, async (user) => {
       if (warn) { warn.textContent = '⚠️ Error publishing: ' + e.message; warn.classList.remove('hidden'); }
     }
   };
+  BBLifecycle.configure({businessId:window.businessId,token:()=>user.getIdToken()});
+  await BBLifecycle.preview(draftData,window.draftDocId);
 });
 });
 </script>

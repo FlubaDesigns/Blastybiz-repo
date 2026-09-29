@@ -33,7 +33,7 @@ async function schedules(worker,invalid,failPause=false) {
     [path(0)]:{schedule:{...schedule,...invalid},enabledPlatforms:['facebook'],adaptations:{facebook:'Copy'}},
     [path(1)]:{schedule,enabledPlatforms:['facebook'],adaptations:{facebook:'Copy'}}});
   if(failPause)store.beforeCommit(async ops=>{if(ops.some(([,ref])=>ref.path===path(0)))throw Error('write offline');});
-  const c={exports:{},console:quiet,onSchedule:(_,f)=>f,...calendar,admin,crypto:require('node:crypto'),db:store.db,
+  const c={require:name=>{if(name==='./lifecycle')return {_worker:{runSchedules:async()=>{},runManualReminders:async()=>{}}};throw Error(name);},exports:{},console:quiet,onSchedule:(_,f)=>f,...calendar,admin,crypto:require('node:crypto'),db:store.db,
     userBizRef:(u,b)=>store.db.doc('users/'+u+'/businesses/'+b),userBizJobsRef:(u,b)=>store.db.collection('users/'+u+'/businesses/'+b+'/publishJobs'),PLATFORM_CAPABILITY_MAP:{facebook:{name:'Facebook',capabilityLevel:'partial_auto'}},
     sendResendEmail:async()=>sent.push('email'),makeActionSig:()=> 'signature',_actionSecret:()=> 'key',makeUnsubSig:()=> 'unsub',_unsubSecret:()=> 'key',APP_BASE_URL:'https://example.com'};
   vm.runInNewContext(cut(read('functions/modules/scheduled.js'),'async function* scheduledDraftPages','// ── scheduledUpgradeNudge'),c);

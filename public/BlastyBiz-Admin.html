@@ -161,6 +161,9 @@
     </div>
   </section>
 
+  <section class="card mb-16" id="ai-cost-rollups"><h2>Monthly AI cost rollups</h2></section>
+  <script src="ai-cost-rollups.js"></script>
+
   <!-- ── AI SETTINGS ── -->
   <section class="card mb-16" id="ai-settings-card" style="border-left:4px solid #6200EA;">
     <div class="card-title">🤖 AI Provider &amp; Models</div>
@@ -556,7 +559,7 @@ onAuthStateChanged(auth, async (user) => {
         ).join('');
         const note = el('admin-ai-note');
         if (note) note.textContent = logs.length
-          ? 'Live data · tracking started when calls were instrumented'
+          ? 'Recent call sample (up to 1,000). Use monthly rollups below for complete totals.'
           : 'No AI calls logged yet this month — data accumulates as users run the tool';
       }
     },

@@ -36,7 +36,7 @@
     mount();if(!el('ad-workspace'))return;
     const seq=++epoch;campaign=activeCampaignId;business=window.activeBizId;ad=null;dirty=false;pending=null;window._bbActiveAd=null;
     el('ad-current').hidden=true;tell('Loading Ads…');
-    try{const rows=await list();if(seq!==epoch)return;if(rows.length===1&&rows[0].id==='first')await fill(rows[0]);tell(rows.length?'Choose an Ad or make a new one.':'Open Legacy preview to preserve existing creative, or make a New Ad.');}
+    try{const rows=await list();if(seq!==epoch)return;const wanted=new URLSearchParams(location.search).get('adId');if(wanted&&rows.some(a=>a.id===wanted))await fill(rows.find(a=>a.id===wanted));else if(rows.length===1&&rows[0].id==='first')await fill(rows[0]);tell(rows.length?'Choose an Ad or make a new one.':'Open Legacy preview to preserve existing creative, or make a New Ad.');}
     catch(e){if(seq===epoch)tell(e.message);}
   }
   function fill(next){
