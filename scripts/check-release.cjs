@@ -184,15 +184,15 @@ if (sessionFailures === 0) console.log('  ✅ All doSignOut-defining pages inclu
 // Catches MODULE_NOT_FOUND in the barrel (missing ./modules/ prefix, dropped
 // module, etc.) that would abort the entire deploy silently in production.
 console.log('\n── 6. Cloud Functions barrel export count ─────────────────────────');
-const EXPECTED_EXPORTS = 63;
 try {
-  const barrelPath = path.resolve(__dirname, '../functions/index.js');
-  const exported = Object.keys(require(barrelPath)).length;
-  if (exported < EXPECTED_EXPORTS) {
-    console.log(`  ❌ Barrel exports ${exported} functions — expected ≥${EXPECTED_EXPORTS}. A module is missing or a require path is wrong.`);
+  const expected = require('./check-backend-ownership.cjs').inventory().functions.map(f => f.name).sort();
+  const runtime = require(path.resolve(__dirname, '../functions/index.js'));
+  const actual = Object.entries(runtime).filter(([, fn]) => fn && fn.__endpoint).map(([name]) => name).sort();
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    console.log('  ❌ Backend runtime exports differ from the source inventory.');
     failures++;
   } else {
-    console.log(`  ✅ Barrel exports ${exported} functions (≥${EXPECTED_EXPORTS})`);
+    console.log(`  ✅ All ${actual.length} runtime exports match the single source inventory; no retired endpoints remain.`);
   }
 } catch (e) {
   console.log(`  ❌ Barrel failed to load: ${e.message}`);

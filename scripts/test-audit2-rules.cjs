@@ -47,6 +47,7 @@ const {doc,getDoc,setDoc}=firestore;
    await testing.assertFails(setDoc(doc(owner,'users/owner/businesses/creation-test/platformConnections/google'),forged));checks++;
   }
   await testing.assertFails(setDoc(doc(owner,'users/owner/businesses/new/platformConnections/google'),{profileUrl:'https://example.com'}));checks++;
-  assert(checks===50);console.log(checks+' actual Firestore emulator authorization assertions passed.');
+  await testing.assertFails(setDoc(doc(owner,'users/owner/businesses/business/campaigns/c/advertising/old'),{approval:{state:'approved'},schedule:{enabled:true}}));checks++;
+  assert(checks===51);console.log(checks+' actual Firestore emulator authorization assertions passed.');
  } finally {await env.cleanup();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -12,7 +12,7 @@ function env(plan){
  userBizRef:(u,b)=>db.doc(`users/${u}/businesses/${b}`),userBizDraftsRef:(u,b)=>db.collection(`users/${u}/businesses/${b}/listingDrafts`),userBizJobsRef:(u,b)=>db.collection(`users/${u}/businesses/${b}/publishJobs`),userBizPostsRef:(u,b)=>db.collection(`users/${u}/businesses/${b}/posts`)};
  // The reusable fixture does not allocate auto IDs; production Firestore does.
  let n=0;c.userBizJobsRef=(u,b)=>({doc:id=>db.doc(`users/${u}/businesses/${b}/publishJobs/${id || 'job'+ ++n}`)});
- vm.runInNewContext(cut(read('functions/modules/publishing.js'),'exports.approvePendingPost =','exports.postToBing ='),c);
+ vm.runInNewContext(cut(read('functions/modules/publishing.js'),'exports.approvePendingPost =','let dispatchHandler;'),c);
  return {c,state};
 }
 async function publishing(){

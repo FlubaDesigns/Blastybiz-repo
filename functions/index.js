@@ -1,47 +1,11 @@
 /**
- * BlastyBiz — Firebase Cloud Functions v2
- * Deploy with: firebase deploy --only functions
- * Requires Blaze (pay-as-you-go) plan
- *
- * This file is the re-export barrel only.
- * All function implementations live under:
- *
- *   lib/              — shared helpers
- *     shared.js       — db init, auth, rate-limit, cors, email, AI helpers, re-exports
- *     ai.js           — Claude/AI utilities
- *     auth.js         — verifyBearer, withAuth
- *     config.js       — app constants
- *     db.js           — Firestore ref helpers
- *     email.js        — Resend email helpers
- *     logging.js      — bbLog structured logger
- *     plans.js        — getPlanConfig(), Firestore-backed plan limits
- *     platforms.js    — PLATFORM_CAPABILITY_MAP and platform metadata
- *     publishers.js   — per-platform publish helpers
- *     rateLimit.js    — checkUidRateLimit (transactional)
- *     square.js       — Square SDK helpers
- *     unsub.js        — unsubscribe HMAC helpers
- *     yelp.js         — Yelp category cache helpers
- *
- *   modules/          — Cloud Function exports, one file per domain
- *     ai.js           — adaptListing, suggestPlatforms, suggestCategory, previewAds, scoreFact, summarizeReviews
- *     payments.js     — squareCheckout, squareWebhook, getPricingPlans
- *     oauth.js        — googleOAuthStart/Callback, facebookOAuthStart/Callback, disconnectPlatform, checkPlatformTokenExpiry
- *     publishing.js   — approveDraft, dispatchPublishJob, onPublishJobCreated, onPublishJobUpdated,
- *                       importGooglePhotos, onGoogleImportQueued, draftAction
- *     admin.js        — all admin* endpoints, refreshYelpCategories, fetchAndCacheYelpCategories
- *     scheduled.js    — scheduledPostingCheck, scheduledDraftPreview, scheduledUpgradeNudge,
- *                       scheduledWeeklyDigest, cleanupAbandonedSignups, scheduledTokenRefresh,
- *                       scheduledFirestoreExport
- *     business.js     — createBusiness, deleteBusiness, deleteAccount, sendVerificationEmail
- *     misc.js         — sendTestEmail, contactForm, unsubscribeEmail
- *     retention.js    — scheduledRetentionSweep, adminRetentionReport, adminBackfillLastActive
- *
- * To deploy a single group:
- *   firebase deploy --only functions:adaptListing,functions:suggestPlatforms
- *   firebase deploy --only functions:squareWebhook
- *
- * dispatchPublishJob has retry:true — use --force when deploying it:
- *   firebase deploy --only functions:dispatchPublishJob --force
+ * BlastyBiz Firebase Cloud Functions v2.
+ * This barrel is the deployed entry point; implementation lives in modules/.
+ * Shared authentication, provider clients, and path helpers live in lib/shared.js.
+ * Ads are owned by lib/ads.js; occurrences, delivery state, and reminders by
+ * lib/lifecycle.js; recurrence by lib/schedule.js; platform capability by
+ * lib/platforms.js. Keep each feature in its existing owner.
+ * Production releases run through the Fluba Authorization Engine.
  */
 
 const { setGlobalOptions } = require('firebase-functions/v2');

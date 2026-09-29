@@ -1,7 +1,7 @@
 /**
  * BlastyBiz — Publishing endpoints and Firestore triggers
  * uploadImage, approvePendingPost, approveDraft,
- * postToBing, postToAppleMaps, dispatchPublishJob,
+ * dispatchPublishJob,
  * jobFailedTrigger, jobCompletedTrigger,
  * userCreatedTrigger, businessCreatedTrigger,
  * importGooglePhotos, onGoogleImportQueued,
@@ -404,40 +404,6 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
   }
-}));
-
-exports.postToBing = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
-  const { jobId, businessId: bingBizId } = req.body;
-  if (jobId && bingBizId) {
-    const jobSnap = await userBizJobsRef(decoded.uid, bingBizId).doc(jobId).get();
-    if (!jobSnap.exists || jobSnap.data().uid !== decoded.uid) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-    await userBizJobsRef(decoded.uid, bingBizId).doc(jobId).update({
-      status: 'manual_required',
-      customerVisibleMessage: 'Your Bing Places listing is ready — paste it at bingplaces.com.',
-      manualUrl: 'https://www.bingplaces.com',
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-  }
-  res.json({ status: 'manual_required', manualUrl: 'https://www.bingplaces.com' });
-}));
-
-exports.postToAppleMaps = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
-  const { jobId, businessId: appleBizId } = req.body;
-  if (jobId && appleBizId) {
-    const jobSnap = await userBizJobsRef(decoded.uid, appleBizId).doc(jobId).get();
-    if (!jobSnap.exists || jobSnap.data().uid !== decoded.uid) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-    await userBizJobsRef(decoded.uid, appleBizId).doc(jobId).update({
-      status: 'manual_required',
-      customerVisibleMessage: 'Your Apple Maps listing is ready — submit it at mapsconnect.apple.com.',
-      manualUrl: 'https://mapsconnect.apple.com',
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-  }
-  res.json({ status: 'manual_required', manualUrl: 'https://mapsconnect.apple.com' });
 }));
 
 let dispatchHandler;

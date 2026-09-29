@@ -113,8 +113,6 @@ const FUNCTIONS = [
   { name: 'draftAction',                 type: 'http', method: 'POST' },
   { name: 'approvePendingPost',          type: 'http', method: 'POST' },
   { name: 'approveDraft',                type: 'http', method: 'POST' },
-  { name: 'postToBing',                  type: 'http', method: 'POST' },
-  { name: 'postToAppleMaps',             type: 'http', method: 'POST' },
 
   // ── Publishing — Firestore triggers (modules/publishing.js) ─────────────
   { name: 'dispatchPublishJob',          type: 'trigger' },
