@@ -42,17 +42,6 @@ async function run(args){
    const op=await request(api+'(default)?updateMask=pointInTimeRecoveryEnablement','PATCH',{name:database.name,pointInTimeRecoveryEnablement:'POINT_IN_TIME_RECOVERY_ENABLED'});
    await waitOperation(request,op);report.steps.push('Enabled default database PITR');save();
   }
-  // Standard Firebase service-agent access required by Storage rules that
-  // consult the server-only Firestore deletion journal. No end-user IAM grant.
-  const projectIam='https://cloudresourcemanager.googleapis.com/v1/projects/'+PROJECT;
-  const policy=await request(projectIam+':getIamPolicy','POST',{options:{requestedPolicyVersion:3}});
-  const storageAgent='serviceAccount:service-'+projectNumber+'@gcp-sa-firebasestorage.iam.gserviceaccount.com';
-  const rulesRole='roles/firebaserules.firestoreServiceAgent';
-  if(!(policy.bindings||[]).some(b=>b.role===rulesRole&&!b.condition&&(b.members||[]).includes(storageAgent))){
-   policy.bindings=policy.bindings||[];policy.bindings.push({role:rulesRole,members:[storageAgent]});
-   await request(projectIam+':setIamPolicy','POST',{policy});
-   report.steps.push('Enabled standard Storage-rules Firestore access for the Firebase Storage service agent');save();
-  }
   // Export all collections. Data stays in the private project bucket.
   const output=`gs://${BUCKET}/recovery-${process.env.GITHUB_RUN_ID}-${Date.now()}`;
   const exported=await waitOperation(request,await request(api+'(default):exportDocuments','POST',{outputUriPrefix:output}));
@@ -74,6 +63,18 @@ async function run(args){
   const live=await request(api+'(default)');
   if(live.pointInTimeRecoveryEnablement!=='POINT_IN_TIME_RECOVERY_ENABLED')throw Error('PITR not enabled');
   report.pitr={enabled:true,earliestVersionTime:live.earliestVersionTime,versionRetentionPeriod:live.versionRetentionPeriod};
+  // Recovery does not need this cross-service rule permission. Verify it only
+  // after proving restore, but still before any rules/backend deployment.
+  // The existing Main identity cannot administer this project's IAM; never
+  // retry the denied grant or substitute another identity.
+  const projectIam='https://cloudresourcemanager.googleapis.com/v1/projects/'+PROJECT;
+  const policy=await request(projectIam+':getIamPolicy','POST',{options:{requestedPolicyVersion:3}});
+  const storageAgent='serviceAccount:service-'+projectNumber+'@gcp-sa-firebasestorage.iam.gserviceaccount.com';
+  const rulesRole='roles/firebaserules.firestoreServiceAgent';
+  const ready=(policy.bindings||[]).some(b=>b.role===rulesRole&&!b.condition&&(b.members||[]).includes(storageAgent));
+  report.storageRules={ready,requiredMember:storageAgent,requiredRole:rulesRole};save();
+  if(!ready)throw Error('Storage rules require a project IAM administrator to grant '+rulesRole+' to '+storageAgent+'; deployment remains blocked');
+
  }catch(e){report.error=e.message;throw e;}
  finally{
   // Delete only the disposable database created by this exact run, after a
