@@ -1,10 +1,13 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    function accountOpen(uid) {
+      return !firestore.exists(/databases/(default)/documents/accountDeletions/$(uid));
+    }
     // Active upload path: photos/{uid}/global/ and photos/{uid}/campaigns/{cid}/
     match /photos/{uid}/{allPaths=**} {
       allow read:  if request.auth != null && request.auth.uid == uid;
-      allow create: if request.auth != null && request.auth.uid == uid
+      allow create: if request.auth != null && request.auth.uid == uid && accountOpen(uid)
         && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
       // Published image bytes are immutable. Library removal retires references.
@@ -13,7 +16,7 @@ service firebase.storage {
     // Legacy path kept for backward compatibility
     match /users/{uid}/images/{allPaths=**} {
       allow read:  if request.auth != null && request.auth.uid == uid;
-      allow create: if request.auth != null && request.auth.uid == uid
+      allow create: if request.auth != null && request.auth.uid == uid && accountOpen(uid)
         && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
       // Published image bytes are immutable. Library removal retires references.

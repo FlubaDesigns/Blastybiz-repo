@@ -88,7 +88,7 @@ exports.deleteBusiness = onRequest({ invoker: 'public' }, withAuth(async (req, r
   }
 }));
 
-exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN'] }, async (req, res) => {
+exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', timeoutSeconds: 540, secrets: ['SQUARE_ACCESS_TOKEN'] }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
 
@@ -107,11 +107,11 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', se
     // Same walker the dormancy sweep uses, so an owner-initiated delete and an
     // automatic purge can never clean up different amounts of data.
     const result = await purgeUserData(uid);
-    if (result.errors.length) console.warn('[deleteAccount] non-fatal:', result.errors.join('; '));
+    if (result.errors.length) throw Error('Account deletion incomplete');
     res.json({ success: true });
   } catch (e) {
     console.error('deleteAccount error:', e);
-    res.status(500).json({ error: 'Delete failed: ' + e.message });
+    res.status(e.httpStatus || 500).json({ error: e.message, retryable: true });
   }
 });
 

@@ -512,23 +512,24 @@ exports.scheduledSetupNudge = onSchedule(
       for (const docSnap of snap.docs) {
         const { uid, email } = docSnap.data();
         if (!email) {
-          await docSnap.ref.update({ sent: true });
+          await docSnap.ref.update({ sent: true, deliveryStatus: 'skipped' });
           continue;
         }
 
         let userEmail = email, ownerName = '', onboarded = false;
         try {
           const userSnap = await db.collection('users').doc(uid).get();
+          if(!userSnap.exists||userSnap.data().deletionRequestedAt){await docSnap.ref.update({sent:true,deliveryStatus:'skipped'});continue;}
           if (userSnap.exists) {
             const d = userSnap.data();
             onboarded = d.onboarded === true;
             ownerName = d.ownerName || d.displayName || '';
             userEmail = d.email || email;
-            if (d.emailUnsubscribed) { await docSnap.ref.update({ sent: true }); continue; }
+            if (d.emailUnsubscribed) { await docSnap.ref.update({ sent: true, deliveryStatus: 'skipped' }); continue; }
           }
-        } catch(e) { /* non-fatal */ }
+        } catch(e) { console.warn('[scheduledSetupNudge] account unavailable:',e.message);continue; }
 
-        if (onboarded) { await docSnap.ref.update({ sent: true }); continue; }
+        if (onboarded) { await docSnap.ref.update({ sent: true, deliveryStatus: 'skipped' }); continue; }
 
         const unsubUrl = `https://us-central1-blastybiz-9523e.cloudfunctions.net/unsubscribeEmail?uid=${encodeURIComponent(uid)}&sig=${makeUnsubSig(uid, _unsubSecret())}`;
         const mergeData = {
@@ -567,8 +568,24 @@ exports.scheduledSetupNudge = onSchedule(
   </div>
 </div>`;
         }
-        await sendResendEmail({ to: userEmail, subject, html });
-        await docSnap.ref.update({ sent: true, sentAt: admin.firestore.FieldValue.serverTimestamp() });
+        try {
+          const delivery=await db.runTransaction(async tx=>{
+            const current=(await tx.get(docSnap.ref)).data();
+            if(!current||current.sent||current.needsReview||current.leaseUntil>Date.now())return null;
+            const prior=current.delivery;
+            if(prior&&Date.now()-prior.createdAt>23*60*60*1000&&current.deliveryStatus!=='rejected'){
+              tx.update(docSnap.ref,{needsReview:true,deliveryStatus:'uncertain'});return null;
+            }
+            const next=prior&&Date.now()-prior.createdAt<=23*60*60*1000?prior:{key:'setup-'+require('node:crypto').randomUUID(),createdAt:Date.now(),to:userEmail,subject,html};
+            tx.update(docSnap.ref,{delivery:next,deliveryStatus:'sending',leaseUntil:Date.now()+120000});return next;
+          });
+          if(!delivery)continue;
+          await sendResendEmail({to:delivery.to,subject:delivery.subject,html:delivery.html,strict:true,idempotencyKey:delivery.key});
+          await docSnap.ref.update({sent:true,deliveryStatus:'sent',leaseUntil:0,sentAt:admin.firestore.FieldValue.serverTimestamp()});
+        }catch(e){
+          await docSnap.ref.update({deliveryStatus:e.providerRejected?'rejected':'uncertain',leaseUntil:0,lastError:String(e.message).slice(0,200)});
+          console.warn('[scheduledSetupNudge] delivery deferred:',e.message);
+        }
       }
     } catch(e) {
       console.error('[scheduledSetupNudge] error:', e.message);
@@ -577,51 +594,22 @@ exports.scheduledSetupNudge = onSchedule(
 );
 
 // ── scheduledFirestoreExport ──────────────────────────────────────────────────
-/**
- * 4.9 — Weekly Firestore managed export to GCS for disaster recovery.
- *
- * One-time ops steps (run once before this function is useful):
- *   1. Create a GCS bucket:
- *      gsutil mb -l us-central1 gs://blastybiz-firestore-backups
- *   2. Grant the Firebase service account write access:
- *      gsutil iam ch serviceAccount:firebase-adminsdk-XXXXX@blastybiz-9523e.iam.gserviceaccount.com:objectAdmin gs://blastybiz-firestore-backups
- *      (find the SA email in GCP Console → IAM → filter "firebase-adminsdk")
- *   3. Enable Firestore PITR:
- *      gcloud firestore databases update --database='(default)' --enable-pitr
- *   This function will fail silently if the bucket or IAM role hasn't been set up yet.
- */
+// Private export bucket and PITR are established by the reviewed Engine recovery
+// script. A recorded operation is resumed; only completed exports count as success.
 exports.scheduledFirestoreExport = onSchedule(
-  { schedule: '0 2 * * 0', timeZone: 'America/Los_Angeles', region: 'us-central1' },
+  { schedule: '0 2 * * 0', timeZone: 'America/Los_Angeles', region: 'us-central1', timeoutSeconds: 540 },
   async () => {
-    const projectId = process.env.GCLOUD_PROJECT || 'blastybiz-9523e';
-    const bucket    = `gs://blastybiz-firestore-backups`;
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const outputUri = `${bucket}/${timestamp}`;
-
-    try {
-      const { GoogleAuth } = require('google-auth-library');
-      const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/datastore'] });
-      const client = await auth.getClient();
-      const token  = await client.getAccessToken();
-
-      const resp = await fetch(
-        `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default):exportDocuments`,
-        {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token.token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ outputUriPrefix: outputUri }),
-        }
-      );
-      if (!resp.ok) {
-        const err = await resp.text();
-        console.error('[scheduledFirestoreExport] Export API error:', err);
-        return;
-      }
-      const op = await resp.json();
-      console.log(`[scheduledFirestoreExport] Export started: ${op.name || '(unknown op)'} → ${outputUri}`);
-    } catch(e) {
-      console.error('[scheduledFirestoreExport] error:', e.message);
-    }
+    const {GoogleAuth}=require('google-auth-library');
+    const auth=new GoogleAuth({scopes:['https://www.googleapis.com/auth/cloud-platform']});
+    const client=await auth.getClient();
+    const request=async(url,method='GET',body)=>{
+      const token=await client.getAccessToken();
+      const r=await fetch(url,{method,headers:{Authorization:'Bearer '+token.token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(30000)});
+      if(!r.ok)throw Error('Backup API returned HTTP '+r.status);
+      return r.json();
+    };
+    const result=await require('../lib/firestore-backup').runBackup({db,admin,request});
+    console.log('[scheduledFirestoreExport] completed',result.operation);
   }
 );
 

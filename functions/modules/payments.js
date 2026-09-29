@@ -104,6 +104,9 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
 
   if (!['pro', 'agency'].includes(plan)) return res.status(400).json({ error: 'Invalid plan' });
 
+  const existingSubscription=(await db.collection('subscriptions').doc(uid).get()).data();
+  if(existingSubscription?.squareSubscriptionId && !['CANCELED','DEACTIVATED'].includes(String(existingSubscription.status||'').toUpperCase()))return res.status(409).json({error:'Manage your existing subscription before starting another checkout.',code:'EXISTING_SUBSCRIPTION'});
+
   const pricing = await loadPricing();
   const subscriptionPlanId = pricing.planIds[plan][billingPeriod];
   if (!subscriptionPlanId) {
@@ -519,7 +522,7 @@ exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_AC
   const agency       = parseFloat(agencyMonthly);
   const proAnn       = proAnnual    ? parseFloat(proAnnual)    : 199;
   const agencyAnn    = agencyAnnual ? parseFloat(agencyAnnual) : 999;
-  if ([pro, agency, proAnn, agencyAnn].some(v => isNaN(v) || v < 0)) return res.status(400).json({ error: 'Invalid prices' });
+  if ([pro, agency, proAnn, agencyAnn].some(v => !Number.isFinite(v) || v <= 0)) return res.status(400).json({ error: 'Invalid prices' });
 
   const catalog = getSquare().catalog;
   const ts = Date.now();
@@ -594,9 +597,11 @@ exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_AC
     squareProAnnualPlanId     = proAnnResult.catalogObject?.id;
     squareAgencyMonthlyPlanId = agencyMonResult.catalogObject?.id;
     squareAgencyAnnualPlanId  = agencyAnnResult.catalogObject?.id;
+    if([proMonResult,proAnnResult,agencyMonResult,agencyAnnResult].some(r=>r.errors?.length||!r.catalogObject?.id))throw Error('Square did not return all four valid plan IDs');
   } catch (e) {
     squareError = e.message || String(e);
     console.error('[adminUpdatePricing] Square plan creation failed:', squareError);
+    return res.status(502).json({ok:false,error:'Square pricing update failed. Existing prices and checkout plans were preserved.'});
   }
 
   const update = {
