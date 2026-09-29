@@ -1,4 +1,4 @@
-name: Release checks and deploy
+name: Release checks
 
 on:
   push:
@@ -52,40 +52,6 @@ jobs:
           npm install --prefix "$RUNNER_TEMP/blasty-dom" --no-audit --no-fund jsdom@26.1.0
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-pass10-ui.cjs
 
-  deploy:
-    needs: check-release
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    env:
-      FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Require deployment credential
-        run: |
-          if [ -z "$FIREBASE_TOKEN" ]; then
-            echo '::error::FIREBASE_TOKEN repository secret is missing. Main is updated but production deployment is blocked.'
-            exit 1
-          fi
-      - name: Install functions dependencies
-        run: npm ci
-        working-directory: functions
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools@15.29.0
-      - name: Deploy rules and indexes
-        run: firebase deploy --project blastybiz-9523e --non-interactive --only firestore:rules,firestore:indexes,storage
-      - name: Deploy reviewed backend
-        run: firebase deploy --project blastybiz-9523e --non-interactive --only functions:adminRetryJob,functions:adminMarkManualFollowup,functions:adminListActivityLogs,functions:dispatchPublishJob,functions:jobFailedTrigger,functions:jobCompletedTrigger,functions:approvePendingPost,functions:chatCampaign,functions:deleteBusiness,functions:deleteAccount,functions:scheduledRetentionSweep,functions:adminRetentionReport,functions:manageAd,functions:approveDraft,functions:businessCreatedTrigger,functions:createBusiness,functions:deleteCampaign,functions:createCheckoutSession,functions:squareWebhook,functions:scheduledPostingCheck,functions:scheduledDraftPreview,functions:draftAction,functions:adaptListing,functions:generateEnrichmentQuestions,functions:suggestCategory,functions:previewAds,functions:extractBizContext,functions:resolveCategories,functions:suggestPlatforms,functions:scoreFact
-      - name: Review and apply non-publishing platform migration
-        run: |
-          export NODE_PATH="$(npm root -g)"
-          node scripts/migrate-platform-config.cjs --project=blastybiz-9523e
-          node scripts/migrate-platform-config.cjs --project=blastybiz-9523e --apply
-      - name: Identify deployed source
-        run: node -e 'require("fs").writeFileSync("public/release.json", JSON.stringify({commit:process.env.GITHUB_SHA, deployedAt:new Date().toISOString()}))'
-      - name: Deploy website
-        run: firebase deploy --project blastybiz-9523e --non-interactive --only hosting
-      - name: Verify public release
-        run: node scripts/verify-live-release.cjs
+# Production deployment uses Fluba's existing Authorization Engine workflow:
+# FlubaDesigns/fluba-designs/.github/workflows/blastybiz-release.yml.
+# Keep this workflow as the exact-source check gate; no second credential path.
