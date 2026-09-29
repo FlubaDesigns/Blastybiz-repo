@@ -281,7 +281,8 @@ async function runRetentionSweep({ trigger = 'schedule', forceMode = null } = {}
     if (mode !== 'purge') { run.wouldPurge++; continue; }
 
     try {
-      const res = await purgeUserData(uid);
+      const res = await purgeUserData(uid,{retention:{cutoff:dormantCutoff.toMillis(),lastActiveAt:toMillis(d.lastActiveAt),purgeAt:purgeAtMs}});
+      if(res.skipped){run.skippedReactivated++;continue;}
       run.purged++;
       if (res.errors.length) run.errors.push(`purge-partial:${uid}:${res.errors.join(',')}`);
       console.log(`[retention] purged ${uid} — ${res.docsDeleted} docs, ${res.businesses} businesses`);

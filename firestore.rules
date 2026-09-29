@@ -13,6 +13,11 @@ service cloud.firestore {
       );
     }
 
+    // Deletion journal is server-only and survives partial cleanup.
+    function accountOpen(uid) {
+      return !exists(/databases/$(database)/documents/accountDeletions/$(uid));
+    }
+
     // Users can only read/write their own user doc; admin can read any.
     // plan, planActive, and aiUsage are server-only — blocked from client writes.
     //
@@ -20,10 +25,10 @@ service cloud.firestore {
     //    field to user docs, you MUST add it to BOTH hasOnly() lists below.
     //    Server-only fields (plan, planActive, aiUsage*, etc.) must NOT be added.
     match /users/{userId} {
-      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow read: if request.auth != null && (request.auth.uid == userId && accountOpen(userId) || isAdmin());
       // Admin can write any field (plan override tool, support, etc.)
       allow write: if isAdmin();
-      allow create: if request.auth != null && request.auth.uid == userId
+      allow create: if request.auth != null && request.auth.uid == userId && accountOpen(userId)
         && request.resource.data.plan in ['starter', 'trial']
         && request.resource.data.keys().hasOnly([
             'ownerName', 'email', 'displayName', 'plan', 'onboarded', 'createdAt',
@@ -35,7 +40,7 @@ service cloud.firestore {
       //    'lastActiveAt' is the dormancy signal for free-account retention; it
       //    is client-writable on purpose (activity-ping.js). Worst case an owner
       //    keeps their own account alive, which is the safe direction.
-      allow update: if request.auth != null && request.auth.uid == userId
+      allow update: if request.auth != null && request.auth.uid == userId && accountOpen(userId)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'ownerName', 'email', 'displayName', 'onboarded', 'activeBusiness',
             'updatedAt', 'onboardingProgress', 'onboardingVersion',
@@ -51,11 +56,11 @@ service cloud.firestore {
       //    squareSubscriptionId) must NOT be added.
       match /businesses/{bizId} {
         allow read: if request.auth != null &&
-          (request.auth.uid == userId || isAdmin());
+          (request.auth.uid == userId && accountOpen(userId) || isAdmin());
         // Creation and capacity enforcement are owned by createBusiness.
         allow create: if isAdmin();
         allow update: if request.auth != null &&
-          request.auth.uid == userId &&
+          request.auth.uid == userId && accountOpen(userId) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly([
               'businessName', 'name', 'ownerName', 'ownerRole', 'category',
               'phone', 'email', 'street', 'city', 'state', 'zip', 'address',
@@ -69,81 +74,80 @@ service cloud.firestore {
               'platformCats', 'postingSchedule', 'platformPrefs',
               'schedulingPaused', 'updatedAt'
             ]);
-        allow delete: if request.auth != null &&
-          (request.auth.uid == userId || isAdmin());
+        allow delete: if false; // deleteBusiness/adminDeleteBusiness own pointer repair and recursive cleanup.
 
         // Business Library documents subcollection — owner only
         match /documents/{docId} {
           allow read, write, delete: if request.auth != null &&
-            request.auth.uid == userId;
+            request.auth.uid == userId && accountOpen(userId);
         }
 
         // Global business facts subcollection — owner only
         // bizId field must match the path segment on create.
         match /facts/{factId} {
-          allow read: if request.auth != null && request.auth.uid == userId;
+          allow read: if request.auth != null && request.auth.uid == userId && accountOpen(userId);
           allow create: if request.auth != null &&
-            request.auth.uid == userId &&
+            request.auth.uid == userId && accountOpen(userId) &&
             request.resource.data.bizId == bizId;
-          allow update, delete: if request.auth != null && request.auth.uid == userId;
+          allow update, delete: if request.auth != null && request.auth.uid == userId && accountOpen(userId);
         }
 
         // Global business images subcollection — owner only
         // bizId field must match the path segment on create.
         match /images/{imageId} {
-          allow read: if request.auth != null && request.auth.uid == userId;
+          allow read: if request.auth != null && request.auth.uid == userId && accountOpen(userId);
           allow create: if request.auth != null &&
-            request.auth.uid == userId &&
+            request.auth.uid == userId && accountOpen(userId) &&
             request.resource.data.bizId == bizId;
-          allow update, delete: if request.auth != null && request.auth.uid == userId;
+          allow update, delete: if request.auth != null && request.auth.uid == userId && accountOpen(userId);
         }
 
         // Campaigns subcollection — owner read/write (uid field on each doc), admin full access
         match /campaigns/{campId} {
           allow read: if request.auth != null &&
-            (request.auth.uid == userId || isAdmin());
+            (request.auth.uid == userId && accountOpen(userId) || isAdmin());
           allow create: if request.auth != null &&
-            request.auth.uid == userId;
-          allow update: if isAdmin() || (request.auth != null && request.auth.uid == userId &&
+            request.auth.uid == userId && accountOpen(userId);
+          allow update: if isAdmin() || (request.auth != null && request.auth.uid == userId && accountOpen(userId) &&
             resource.data.get('status','active') != 'archived' &&
             !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'archivedAt']));
         allow delete: if isAdmin();
 
           // Reusable Ads and their event history are written by manageAd.
           match /ads/{adId} {
-            allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+            allow read: if request.auth != null && (request.auth.uid == userId && accountOpen(userId) || isAdmin());
             allow write: if false;
           }
 
           // Campaign facts subcollection
           // bizId and campaignId fields must match path segments on create.
           match /facts/{factId} {
-            allow read: if request.auth != null && request.auth.uid == userId;
+            allow read: if request.auth != null && request.auth.uid == userId && accountOpen(userId);
             allow create: if request.auth != null &&
-              request.auth.uid == userId &&
+              request.auth.uid == userId && accountOpen(userId) &&
               request.resource.data.bizId == bizId &&
               request.resource.data.campaignId == campId;
-            allow update, delete: if request.auth != null && request.auth.uid == userId;
+            allow update, delete: if request.auth != null && request.auth.uid == userId && accountOpen(userId);
           }
 
           // Campaign images subcollection
           match /images/{imageId} {
-            allow read: if request.auth != null && request.auth.uid == userId;
+            allow read: if request.auth != null && request.auth.uid == userId && accountOpen(userId);
             allow create: if request.auth != null &&
-              request.auth.uid == userId &&
+              request.auth.uid == userId && accountOpen(userId) &&
               request.resource.data.bizId == bizId &&
               request.resource.data.campaignId == campId;
-            allow update, delete: if request.auth != null && request.auth.uid == userId;
+            allow update, delete: if request.auth != null && request.auth.uid == userId && accountOpen(userId);
           }
 
           // Campaign documents (flyers, menus, etc.)
           match /documents/{docId} {
-            allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+            allow read, write, delete: if request.auth != null && request.auth.uid == userId && accountOpen(userId);
           }
 
           // Campaign copy (generated copy library per campaign)
           match /copy/{copyId} {
-            allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+            allow read, write, delete: if request.auth != null && request.auth.uid == userId && accountOpen(userId);
           }
         }
 
@@ -151,17 +155,17 @@ service cloud.firestore {
         // uid field is immutable after create — can't be reassigned to another user
         match /listingDrafts/{draftId} {
           allow read: if request.auth != null &&
-            (request.auth.uid == userId || isAdmin());
+            (request.auth.uid == userId && accountOpen(userId) || isAdmin());
           allow create: if request.auth != null &&
-            request.auth.uid == userId &&
+            request.auth.uid == userId && accountOpen(userId) &&
             !request.resource.data.keys().hasAny(['freeRegenUsed', 'freeRegenEligible', 'packet', 'packetFrozenAt', 'scheduleAdPath', 'scheduledForUtc', 'approvalStatus', 'completion', 'completedAt', 'readyAt', 'reminders', 'preparationState']);
           allow update: if request.auth != null &&
-            request.auth.uid == userId &&
+            request.auth.uid == userId && accountOpen(userId) &&
             !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid', 'freeRegenUsed', 'freeRegenEligible', 'packet', 'packetFrozenAt', 'scheduleAdPath', 'scheduledForUtc', 'approvalStatus', 'completion', 'completedAt', 'readyAt', 'reminders', 'preparationState']) &&
             (!resource.data.keys().hasAny(['scheduleAdPath'])) &&
             (!resource.data.keys().hasAny(['packet']) ||
               request.resource.data.diff(resource.data).affectedKeys().hasOnly(['schedule','updatedAt']));
-          allow delete: if request.auth != null && request.auth.uid == userId &&
+          allow delete: if request.auth != null && request.auth.uid == userId && accountOpen(userId) &&
             !resource.data.keys().hasAny(['packet']);
           match /private/{document} { allow read, write: if false; }
         }
@@ -170,7 +174,7 @@ service cloud.firestore {
         // Regular users must NOT update job status — that would let them falsify publish results.
         match /publishJobs/{jobId} {
           allow read: if request.auth != null &&
-            (request.auth.uid == userId || isAdmin());
+            (request.auth.uid == userId && accountOpen(userId) || isAdmin());
           allow write: if isAdmin();
           allow create, update, delete: if isAdmin();
         }
@@ -180,13 +184,13 @@ service cloud.firestore {
         // Sensitive OAuth tokens are stored in the private/tokens subcollection below — never on this doc.
         match /platformConnections/{connId} {
           allow read: if request.auth != null &&
-            (request.auth.uid == userId || isAdmin());
+            (request.auth.uid == userId && accountOpen(userId) || isAdmin());
           allow write: if isAdmin();
           allow create: if request.auth != null &&
-            request.auth.uid == userId &&
+            request.auth.uid == userId && accountOpen(userId) &&
             (!(connId in ['google','facebook','instagram']) || (request.resource.data.keys().hasOnly(['uid','businessId','platform','platformName','profileUrl','updatedAt']) && request.resource.data.uid == userId && request.resource.data.businessId == bizId && request.resource.data.platform == connId));
           allow update: if request.auth != null &&
-            request.auth.uid == userId &&
+            request.auth.uid == userId && accountOpen(userId) &&
             !request.resource.data.diff(resource.data).affectedKeys()
               .hasAny(['accessToken', 'refreshToken', 'locationId', 'pageId', 'pageToken', 'code', 'tokenExpiry']) &&
             (!(connId in ['google','facebook','instagram']) || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid','businessId','platform','status','instagramAuthorized','accountId','igUserId','expiresAt','connectedAt','disconnectedAt','locationName','pageName']));
@@ -203,7 +207,7 @@ service cloud.firestore {
         // approvePendingPost CF handles approve/skip state transitions.
         match /pendingPosts/{postId} {
           allow read: if request.auth != null &&
-            (request.auth.uid == userId || isAdmin());
+            (request.auth.uid == userId && accountOpen(userId) || isAdmin());
           allow write, create, update, delete: if isAdmin();
         }
       }
@@ -243,7 +247,7 @@ service cloud.firestore {
       allow read: if request.auth != null &&
         (request.auth.uid == resource.data.uid || isAdmin());
       allow create: if request.auth != null &&
-        request.auth.uid == request.resource.data.uid;
+        request.auth.uid == request.resource.data.uid && accountOpen(request.auth.uid);
       allow write: if false;
     }
 
@@ -272,12 +276,12 @@ service cloud.firestore {
       allow read: if request.auth != null &&
         (request.auth.uid == resource.data.uid || isAdmin());
       allow create: if request.auth != null &&
-        request.auth.uid == request.resource.data.uid;
+        request.auth.uid == request.resource.data.uid && accountOpen(request.auth.uid);
       allow update: if request.auth != null &&
-        request.auth.uid == resource.data.uid &&
+        request.auth.uid == resource.data.uid && accountOpen(request.auth.uid) &&
         !('uid' in request.resource.data.diff(resource.data).affectedKeys());
       allow delete: if request.auth != null &&
-        request.auth.uid == resource.data.uid;
+        request.auth.uid == resource.data.uid && accountOpen(request.auth.uid);
     }
 
     // AI usage logs — written by backend only; admin can read

@@ -32,7 +32,7 @@ async function sendResendEmail({ to, subject, html, strict=false, idempotencyKey
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json',...(idempotencyKey?{'Idempotency-Key':idempotencyKey}:{}) },
       body: JSON.stringify({ from: 'BlastyBiz <info@blastybiz.com>', to: [to], subject, html }),
     });
-    if (!resp.ok) {if(strict)throw Error('Email provider rejected the send ('+resp.status+').');console.error('[email] Resend error:', await resp.text());}
+    if (!resp.ok) {if(strict)throw Object.assign(Error('Email provider rejected the send ('+resp.status+').'),{providerRejected:true});console.error('[email] Resend error:', await resp.text());}
   } catch (e) {
     console.error('[email] sendResendEmail failed:', e.message);
     if(strict)throw e;
@@ -239,6 +239,8 @@ async function reserveAiAction(uid, opts = {}) {
     const userRef = db.collection('users').doc(uid);
 
     // Read user doc + draft doc (if free-regen path) in one round-trip
+    const deletion=await tx.get(db.collection('accountDeletions').doc(uid));
+    if(deletion.exists)throw Error('ACCOUNT_DELETING');
     const reads = [tx.get(userRef)];
     const grantRef = isRegeneration && draftRef ? draftRef.collection('private').doc('aiAllowance') : null;
     if (grantRef) reads.push(tx.get(draftRef), tx.get(grantRef));
@@ -451,7 +453,7 @@ async function checkUidRateLimit(collectionName, uid, maxCount, windowMs) {
       return true;
     });
     return allowed;
-  } catch(e) { return true; }
+  } catch(e) { console.warn("[rate-limit] control unavailable:",e.message);return false; }
 }
 
 function setCors(req, res) {
@@ -487,7 +489,9 @@ function withAuth(fn, opts = {}) {
     }
     // Any authenticated call is proof the account is in use. Fire and forget,
     // throttled per instance, so it costs nothing on the hot path.
-    if (decoded && decoded.uid) touchLastActive(decoded.uid);
+    if (decoded && decoded.uid) {
+      try {await touchLastActive(decoded.uid);}catch(e){return res.status(e.httpStatus||503).json({error:e.message});}
+    }
     return fn(req, res, decoded);
   };
 }
@@ -661,31 +665,18 @@ function buildPlatformBlock(p) {
 // range queries skip documents without the field, so accounts that predate this
 // or somehow lose it can never be swept. Backfill sets it from real evidence.
 const _LAST_ACTIVE_THROTTLE_MS = 6 * 60 * 60 * 1000;
-const _lastActiveTouched = new Map();
 
-function touchLastActive(uid) {
-  if (!uid) return;
-  const now = Date.now();
-  const prev = _lastActiveTouched.get(uid);
-  if (prev && now - prev < _LAST_ACTIVE_THROTTLE_MS) return;
-  _lastActiveTouched.set(uid, now);
-  // Instances are ephemeral and this map is per-instance, so the throttle is
-  // best-effort — worst case is a few redundant writes, never a missed one.
-  if (_lastActiveTouched.size > 5000) _lastActiveTouched.clear();
-
-  // Fire and forget: activity tracking must never fail or slow a real request.
-  // Coming back also cancels any pending purge — clearing the warning markers in
-  // the same write costs nothing and means an owner who returns after a warning
-  // email is safe immediately, not merely at the next sweep.
-  db.collection('users').doc(uid)
-    .set({
-      lastActiveAt:        admin.firestore.FieldValue.serverTimestamp(),
-      dormancyWarnedAt:    admin.firestore.FieldValue.delete(),
-      dormancyWarningPending: admin.firestore.FieldValue.delete(),
-      dormancyPurgeAt:     admin.firestore.FieldValue.delete(),
-      dormancyReminderAt:  admin.firestore.FieldValue.delete(),
-    }, { merge: true })
-    .catch(e => console.warn('[touchLastActive]', uid, e.message));
+async function touchLastActive(uid) {
+  if(!uid)return;
+  // Claiming deletion and accepting activity serialize on the same user document.
+  await db.runTransaction(async tx=>{
+    const ref=db.collection('users').doc(uid),journal=db.collection('accountDeletions').doc(uid);
+    const [user,deletion]=await Promise.all([tx.get(ref),tx.get(journal)]);
+    if(deletion.exists)throw Object.assign(Error('Account deletion is pending. Retry Delete Account to finish.'),{httpStatus:409});
+    if(!user.exists)return; // Never recreate an account from an activity ping.
+    if(Date.now()-(user.data().lastActiveAt?.toMillis?.()||0)<_LAST_ACTIVE_THROTTLE_MS&&!user.data().dormancyPurgeAt)return;
+    tx.update(ref,{lastActiveAt:admin.firestore.FieldValue.serverTimestamp(),dormancyWarnedAt:admin.firestore.FieldValue.delete(),dormancyWarningPending:admin.firestore.FieldValue.delete(),dormancyPurgeAt:admin.firestore.FieldValue.delete(),dormancyReminderAt:admin.firestore.FieldValue.delete()});
+  });
 }
 
 // Best available evidence that an account was genuinely used, for backfilling
@@ -738,131 +729,24 @@ async function resolveLastActive(uid, userData = null) {
 // orphans every business, campaign, draft and job underneath it.
 //
 // Pass dryRun to get the exact same counts without deleting anything.
-async function purgeUserData(uid, opts = {}) {
-  const {
-    dryRun = false,
-    cancelSubscription = true,
-    revokeOAuth = true,
-    deleteAuthUser = true,
-  } = opts;
-
-  const result = {
-    uid, dryRun,
-    businesses: 0, docsDeleted: 0, storagePrefixes: [],
-    subscriptionCancelled: false, authUserDeleted: false, errors: [],
-  };
-
-  if (cancelSubscription && !dryRun) {
-    try {
-      const subSnap = await db.collection('subscriptions').doc(uid).get();
-      const squareSubscriptionId = subSnap.exists ? subSnap.data().squareSubscriptionId : null;
-      if (squareSubscriptionId) {
-        try {
-          await getSquare().subscriptions.cancel({ subscriptionId: squareSubscriptionId });
-          result.subscriptionCancelled = true;
-        } catch (e) { result.errors.push('square:' + e.message); }
-      }
-    } catch (e) { result.errors.push('subscription-read:' + e.message); }
-  }
-
-  const [bizSnap, activitySnap] = await Promise.all([
-    userBizCol(uid).get(),
-    db.collection('activityLogs').where('uid', '==', uid).get(),
-  ]);
-  result.businesses = bizSnap.size;
-
-  const bizSubRefs = [];
-  for (const bizDoc of bizSnap.docs) {
-    const bizId = bizDoc.id;
-    const [draftsSnap, jobsSnap, connsSnap, pendingSnap, libSnap,
-           bizFactsSnap, bizImagesSnap] = await Promise.all([
-      userBizDraftsRef(uid, bizId).get(),
-      userBizJobsRef(uid, bizId).get(),
-      userBizConnsRef(uid, bizId).get(),
-      userBizPostsRef(uid, bizId).get(),
-      userBizRef(uid, bizId).collection('documents').get(),
-      userBizRef(uid, bizId).collection('facts').get(),
-      userBizRef(uid, bizId).collection('images').get(),
-    ]);
-    [draftsSnap, jobsSnap, connsSnap, pendingSnap, libSnap, bizFactsSnap, bizImagesSnap]
-      .forEach(snap => snap.docs.forEach(d => bizSubRefs.push(d.ref)));
-
-    // Revoke OAuth at the provider BEFORE deleting the tokens — once the docs are
-    // gone the tokens are unreadable here but still valid at Google/Facebook.
-    for (const connDoc of connsSnap.docs) {
-      const platformId = connDoc.id;
-      const privSnap = await connDoc.ref.collection('private').get();
-      privSnap.docs.forEach(d => bizSubRefs.push(d.ref));
-      if (!revokeOAuth || dryRun) continue;
-
-      const tokens=privSnap.docs.find(d=>d.id==='tokens')?.data()||{};
-      const { accessToken, refreshToken } = tokens;
-      if (platformId === 'google') {
-        for (const tok of [accessToken, refreshToken].filter(Boolean)) {
-          try {
-            await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(tok)}`, { method: 'POST' });
-          } catch (e) { console.warn('[purgeUserData] Google revoke failed:', e.message); }
+async function revokeUserConnections(uid,businesses) {
+    for(const business of businesses.docs){
+      const connections=await userBizConnsRef(uid,business.id).get();
+      for(const conn of connections.docs){
+        const tokens=await _getConnTokens(conn.ref);
+        if(conn.id==='google'){
+          for(const token of [tokens?.accessToken,tokens?.refreshToken].filter(Boolean)){
+            const r=await fetch('https://oauth2.googleapis.com/revoke?token='+encodeURIComponent(token),{method:'POST'});
+            if(!r.ok&&r.status!==400)throw Error('Google token revocation failed');
+          }
+        }else if(conn.id==='facebook'||conn.id==='instagram'){
+          const token=await metaRevokeToken(conn.ref,conn.id,tokens||{},_getConnTokens);
+          await revokeMeta(token,fetch,console.warn);
         }
       }
-      if (platformId === 'facebook' || platformId === 'instagram') {
-        const token=await metaRevokeToken(connDoc.ref,platformId,tokens,_getConnTokens);
-        await revokeMeta(token,fetch,console.warn);
-      }
     }
-
-    const campSnap = await userBizRef(uid, bizId).collection('campaigns').get();
-    for (const campDoc of campSnap.docs) {
-      const campRef = userBizRef(uid, bizId).collection('campaigns').doc(campDoc.id);
-      const subs = await Promise.all(
-        ['facts', 'images', 'documents', 'copy', 'advertising', 'ads'].map(c => campRef.collection(c).get())
-      );
-      subs.forEach(snap => snap.docs.forEach(d => bizSubRefs.push(d.ref)));
-      bizSubRefs.push(campDoc.ref);
-    }
-  }
-
-  const allRefs = [
-    db.collection('users').doc(uid),
-    db.collection('subscriptions').doc(uid),
-    ...bizSnap.docs.map(d => d.ref),
-    ...bizSubRefs,
-    ...activitySnap.docs.map(d => d.ref),
-  ];
-  result.docsDeleted = allRefs.length;
-
-  const storagePrefixes = [`users/${uid}/images/`, `photos/${uid}/`,
-    ...bizSnap.docs.map(d => `businesses/${d.id}/`)];
-  result.storagePrefixes = storagePrefixes;
-
-  if (dryRun) return result;
-
-  const CHUNK = 450;
-  for (let i = 0; i < allRefs.length; i += CHUNK) {
-    const batch = db.batch();
-    allRefs.slice(i, i + CHUNK).forEach(ref => batch.delete(ref));
-    await batch.commit();
-  }
-
-  try {
-    const bucket = admin.storage().bucket();
-    await Promise.allSettled(storagePrefixes.map(prefix => bucket.deleteFiles({ prefix })));
-  } catch (e) {
-    result.errors.push('storage:' + e.message);
-    console.error('[purgeUserData] Storage cleanup failed:', e.message);
-  }
-
-  if (deleteAuthUser) {
-    try {
-      await admin.auth().deleteUser(uid);
-      result.authUserDeleted = true;
-    } catch (e) {
-      // A already-missing auth user is not a failure.
-      if (e.code !== 'auth/user-not-found') result.errors.push('auth:' + e.message);
-    }
-  }
-
-  return result;
 }
+const purgeUserData = require('./account-deletion').createAccountDeletion({db,admin,getSquare,revokeConnections:revokeUserConnections});
 
 module.exports = {
   // firebase-functions v2

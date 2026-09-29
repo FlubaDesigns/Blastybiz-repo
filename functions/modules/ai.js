@@ -266,6 +266,7 @@ exports.previewAds = onRequest(
       });
     } catch(e) {
       console.warn('[previewAds] budget transaction failed:', e.message);
+      overBudget = true;
     }
     if (overBudget) {
       return res.json({ ..._previewFallback(bizName, city, null), sample: true });
@@ -1004,6 +1005,7 @@ exports.scoreFact = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY'
   if (!text || typeof text !== 'string') return res.status(400).json({ error: 'text required' });
 
   try {
+    await reserveAiAction(decoded.uid);
     const { text: aiText } = await loggedAI(decoded.uid, 'scoreFact', req.body,
       `You are a marketing intelligence assistant. A local business owner added this fact to their AI memory bank.\n\nScore it 1–10 for marketing importance:\n10 = foundational brand identity that should appear in most marketing copy (e.g. "family-owned since 1905", "fastest response in the city")\n5 = useful context used when relevant\n1 = very temporary or highly specific detail rarely relevant to copy\n\nFact: "${text.slice(0, 500)}"\n\nReturn ONLY valid JSON with no explanation: {"score": N}`,
       { tier: 'fast', maxTokens: 20, timeoutMs: 10000 }
@@ -1047,13 +1049,21 @@ exports.adminGetAiSettings = onRequest({ invoker: 'public' }, withAuth(async (re
   }
 }, { admin: true }));
 
-exports.adminSetAiSettings = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
-  const VALID_PROVIDERS = ['anthropic', 'openai', 'gemini', 'grok'];
+exports.adminSetAiSettings = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY','GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
+  const VALID_PROVIDERS = ['anthropic', 'gemini']; // Only providers bound on every deployed AI entrypoint.
   const { provider, fastModel, smartModel } = req.body;
   if (!provider || !fastModel || !smartModel) return res.status(400).json({ error: 'provider, fastModel, and smartModel are required' });
   if (!VALID_PROVIDERS.includes(provider)) return res.status(400).json({ error: `provider must be one of: ${VALID_PROVIDERS.join(', ')}` });
 
   try {
+    const key=provider==='gemini'?process.env.GEMINI_API_KEY:process.env.ANTHROPIC_API_KEY;
+    if(!key||key==='placeholder')return res.status(409).json({error:'This provider is not configured on the backend.'});
+    for(const model of new Set([fastModel,smartModel])){
+      if(typeof model!=='string'||!/^[-A-Za-z0-9_.]+$/.test(model))return res.status(400).json({error:'Invalid model ID'});
+      const url=provider==='gemini'?'https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model):'https://api.anthropic.com/v1/models/'+encodeURIComponent(model);
+      const r=await fetch(url,{headers:provider==='gemini'?{'x-goog-api-key':key}:{'x-api-key':key,'anthropic-version':'2023-06-01'},signal:AbortSignal.timeout(10000)});
+      if(!r.ok)return res.status(409).json({error:'Provider/model readiness check failed. Existing settings were preserved.'});
+    }
     await db.collection('config').doc('aiSettings').set({
       provider, fastModel, smartModel,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),

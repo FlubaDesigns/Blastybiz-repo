@@ -113,11 +113,9 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
           tx.delete(ir.collection('private').doc('tokens'));
         }
       } else fail(400,'Unsupported provider.');
+      if(p.platform==='google')tx.create(db.collection('importJobs').doc('google-'+id),{status:'queued',uid,bizId:p.businessId,queuedAt:admin.firestore.FieldValue.serverTimestamp()});
       tx.delete(ref); // Choice and credentials are consumed atomically.
     });
-    if(p.platform==='google') {
-      await db.collection('importJobs').doc(uid+'_google').set({status:'queued',uid,bizId:p.businessId,queuedAt:admin.firestore.FieldValue.serverTimestamp()}).catch(()=>{});
-    }
     return {businessId:p.businessId,platform:p.platform,returnTo:p.returnTo||''};
   }
   return {googleChoices,facebookChoices,prepare,inspect,confirm,cancel};

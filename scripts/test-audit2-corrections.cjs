@@ -87,8 +87,8 @@ async function revocationTests(){
  const code=fs.readFileSync('functions/lib/shared.js','utf8');
  const c={...f.shared,metaRevokeToken,revokeMeta,console:{...quiet,warn:m=>warnings.push(m)},fetch:async url=>{calls.push(url);return {ok:false,status:403};},admin:{storage:()=>({bucket:()=>({deleteFiles:async()=>{}})})}};
  c.userBizCol=u=>f.db.collection('users/'+u+'/businesses');for(const [name,collection]of [['userBizDraftsRef','listingDrafts'],['userBizJobsRef','publishJobs'],['userBizPostsRef','pendingPosts']])c[name]=(u,b)=>f.db.collection(`users/${u}/businesses/${b}/${collection}`);
- vm.runInNewContext(code.slice(code.indexOf('async function purgeUserData'),code.indexOf('\nmodule.exports =')),c);
- await c.purgeUserData('u',{cancelSubscription:false,deleteAuthUser:false});
+ vm.runInNewContext(code.slice(code.indexOf('async function revokeUserConnections'),code.indexOf('const purgeUserData =')),c);
+ await c.revokeUserConnections('u',await c.userBizCol('u').get());
  ok(calls.length===2&&calls.every(url=>new URL(url).searchParams.get('access_token')==='user-grant'),'purge uses user grant for Facebook and paired Instagram');
  ok(warnings.length===2,'purge also exposes non-2xx revoke failures');
 }

@@ -723,10 +723,9 @@ exports.userCreatedTrigger = onDocumentCreated(
  *
  * Fetches up to 20 photos from the GBP media API, validates magic bytes,
  * deduplicates by SHA-256 content hash, uploads to Storage, writes to the
- * business images subcollection, and tracks progress in importJobs/{uid}_google.
+ * business images subcollection, and tracks progress in its unique importJobs document.
  */
-async function _runGooglePhotoImport(uid, bizId) {
-  const jobRef = db.collection('importJobs').doc(uid + '_google');
+async function _runGooglePhotoImport(uid, bizId, jobRef) {
 
   try {
     const connRef = userBizConnsRef(uid, bizId).doc('google');
@@ -799,11 +798,11 @@ async function _runGooglePhotoImport(uid, bizId) {
 
     const bucket = admin.storage().bucket();
     const MAX_BYTES = 5 * 1024 * 1024;
-    let done = 0;
+    let done = 0, imported = 0, skipped = 0, failed = 0;
 
     for (const item of toImport) {
       const googleUrl = item.googleUrl || item.sourceUrl;
-      if (!googleUrl) { done++; await jobRef.update({ done }); continue; }
+      if (!googleUrl) { done++; skipped++; await jobRef.update({ done, imported, skipped, failed }); continue; }
 
       try {
         const photoResp = await axios.get(googleUrl, {
@@ -814,53 +813,55 @@ async function _runGooglePhotoImport(uid, bizId) {
         const raw = Buffer.from(photoResp.data);
 
         // 5 MB cap
-        if (raw.length > MAX_BYTES) { done++; await jobRef.update({ done }); continue; }
+        if (raw.length > MAX_BYTES) { done++; skipped++; await jobRef.update({ done, imported, skipped, failed }); continue; }
 
         // Magic-byte validation (JPEG / PNG / WEBP)
         const isJpeg = raw[0] === 0xFF && raw[1] === 0xD8;
         const isPng  = raw[0] === 0x89 && raw[1] === 0x50 && raw[2] === 0x4E && raw[3] === 0x47;
         const isWebp = raw.slice(0,4).toString('binary') === 'RIFF' &&
                        raw.slice(8,12).toString('binary') === 'WEBP';
-        if (!isJpeg && !isPng && !isWebp) { done++; await jobRef.update({ done }); continue; }
+        if (!isJpeg && !isPng && !isWebp) { done++; skipped++; await jobRef.update({ done, imported, skipped, failed }); continue; }
 
         // SHA-256 content-hash dedup
         const contentHash = crypto.createHash('sha256').update(raw).digest('hex');
-        if (existingHashes.has(contentHash)) { done++; await jobRef.update({ done }); continue; }
-        existingHashes.add(contentHash);
+        if (existingHashes.has(contentHash)) { done++; skipped++; await jobRef.update({ done, imported, skipped, failed }); continue; }
+
 
         const mimeType  = isJpeg ? 'image/jpeg' : isPng ? 'image/png' : 'image/webp';
         const ext       = isJpeg ? 'jpg' : isPng ? 'png' : 'webp';
-        const storePath = `photos/${uid}/global/${Date.now()}_gbp_${done}.${ext}`;
+        const storePath = `photos/${uid}/global/gbp_${bizId}_${contentHash}.${ext}`;
 
         const file = bucket.file(storePath);
         await file.save(raw, { contentType: mimeType });
         await file.makePublic();
         const url = `https://storage.googleapis.com/${bucket.name}/${storePath}`;
 
-        await userBizRef(uid, bizId).collection('images').add({
+        await userBizRef(uid, bizId).collection('images').doc('google-'+contentHash).set({
           uid, bizId, url, contentHash, source: 'google_import', mimeType,
           originalGoogleUrl: googleUrl,
           mediaFormat:  item.mediaFormat || 'PHOTO',
           createTime:   item.createTime  || null,
           createdAt:    admin.firestore.FieldValue.serverTimestamp(),
         });
+        existingHashes.add(contentHash); imported++;
 
       } catch(e) {
         if (e.response?.status === 429) {
-          await jobRef.update({ status: 'partial', done,
+          await jobRef.update({ status: 'partial', done, imported, skipped, failed: failed + 1,
             error: 'GBP quota limit hit during download',
             updatedAt: admin.firestore.FieldValue.serverTimestamp() });
           return;
         }
-        console.warn(`[importGooglePhotos] item ${done} skipped:`, e.message);
+        failed++;
+        console.warn(`[importGooglePhotos] item ${done} failed:`, e.message);
       }
 
       done++;
-      await jobRef.update({ done, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+      await jobRef.update({ done, imported, skipped, failed, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
     }
 
     await jobRef.update({
-      status: 'done', done, total: toImport.length,
+      status: failed ? 'partial' : 'done', done, imported, skipped, failed, total: toImport.length,
       completedAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt:   admin.firestore.FieldValue.serverTimestamp(),
     });
@@ -874,7 +875,7 @@ async function _runGooglePhotoImport(uid, bizId) {
 
 /**
  * onRequest — authenticated manual re-import (e.g. from a "Re-import Photos" button).
- * Responds immediately; import runs in background.
+ * Responds after the durable per-request queue record commits.
  */
 exports.importGooglePhotos = onRequest(
   { invoker: 'public', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'], timeoutSeconds: 120, region: 'us-central1' },
@@ -884,26 +885,32 @@ exports.importGooglePhotos = onRequest(
     if (!bizId) return res.status(400).json({ error: 'bizId required' });
     const bizSnap = await userBizRef(uid, bizId).get();
     if (!bizSnap.exists) return res.status(403).json({ error: 'Business not found' });
-    // Fire-and-forget — respond immediately so the client isn't blocked
-    _runGooglePhotoImport(uid, bizId).catch(e =>
-      console.error('[importGooglePhotos] bg error:', e.message)
-    );
-    res.json({ ok: true, queued: true });
+    const job=await db.collection('importJobs').add({uid,bizId,status:'queued',queuedAt:admin.firestore.FieldValue.serverTimestamp()});
+    res.json({ ok: true, queued: true, jobId: job.id });
   })
 );
 
 /**
- * Firestore trigger — runs when googleOAuthCallback writes importJobs/{uid}_google
+ * Firestore trigger — runs when Google destination confirmation creates an importJobs document
  * with status 'queued'. Calls the shared import helper.
  */
 exports.onGoogleImportQueued = onDocumentCreated(
-  { document: 'importJobs/{docId}', region: 'us-central1' },
+  { document: 'importJobs/{docId}', region: 'us-central1', timeoutSeconds: 540, retry: true, secrets: ['GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET'] },
   async (event) => {
     const data = event.data?.data?.();
     if (!data || data.status !== 'queued') return;
     const { uid, bizId } = data;
     if (!uid || !bizId) return;
-    await _runGooglePhotoImport(uid, bizId);
+    const ref=event.data.ref;
+    const claimed=await db.runTransaction(async tx=>{
+      const [snapshot,user,biz]=await Promise.all([tx.get(ref),tx.get(db.collection('users').doc(uid)),tx.get(userBizRef(uid,bizId))]);
+      const current=snapshot.data();
+      if(!current||!['queued','running'].includes(current.status))return false;
+      if(!user.exists||user.data().deletionRequestedAt||!biz.exists){tx.update(ref,{status:'skipped',reason:'account_or_business_removed'});return false;}
+      if(current.status==='running'&&current.leaseUntil>Date.now())throw Error('Photo import already running');
+      tx.update(ref,{status:'running',leaseUntil:Date.now()+10*60*1000});return true;
+    });
+    if(claimed)await _runGooglePhotoImport(uid, bizId, ref);
   }
 );
 

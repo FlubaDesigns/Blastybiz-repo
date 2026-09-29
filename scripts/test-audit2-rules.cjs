@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs');
 const testing=require(process.env.RULES_TEST_PATH||'@firebase/rules-unit-testing');
 const firestore=require(process.env.FIREBASE_CLIENT_PATH||'firebase/firestore');
-const {doc,getDoc,setDoc}=firestore;
+const {doc,getDoc,setDoc,deleteDoc}=firestore;
 (async()=>{
  const env=await testing.initializeTestEnvironment({projectId:'demo-blastybiz-audit2',firestore:{host:'127.0.0.1',port:8089,rules:fs.readFileSync('firestore.rules','utf8')}});
  let checks=0;
@@ -48,6 +48,16 @@ const {doc,getDoc,setDoc}=firestore;
   }
   await testing.assertFails(setDoc(doc(owner,'users/owner/businesses/new/platformConnections/google'),{profileUrl:'https://example.com'}));checks++;
   await testing.assertFails(setDoc(doc(owner,'users/owner/businesses/business/campaigns/c/advertising/old'),{approval:{state:'approved'},schedule:{enabled:true}}));checks++;
-  assert(checks===51);console.log(checks+' actual Firestore emulator authorization assertions passed.');
+  await testing.assertFails(deleteDoc(doc(owner,'users/owner/businesses/business')));checks++;
+  await testing.assertSucceeds(setDoc(doc(owner,'users/owner'),{lastActiveAt:new Date()},{merge:true}));checks++;
+  await env.withSecurityRulesDisabled(c=>setDoc(doc(c.firestore(),'accountDeletions/owner'),{status:'running'}));
+  await testing.assertFails(setDoc(doc(owner,'users/owner'),{lastActiveAt:new Date()},{merge:true}));checks++;
+  await testing.assertFails(setDoc(doc(owner,'users/owner/businesses/business/facts/new'),{bizId:'business'}));checks++;
+  await testing.assertFails(setDoc(doc(owner,'copyLibrary/new'),{uid:'owner',text:'late write'}));checks++;
+  await testing.assertFails(deleteDoc(doc(owner,'accountDeletions/owner')));checks++;
+  await testing.assertFails(getDoc(doc(owner,'accountDeletions/owner')));checks++;
+  await env.withSecurityRulesDisabled(c=>deleteDoc(doc(c.firestore(),'users/owner')));
+  await testing.assertFails(setDoc(doc(owner,'users/owner'),{plan:'starter'}));checks++;
+  assert(checks===59);console.log(checks+' actual Firestore emulator authorization assertions passed.');
  } finally {await env.cleanup();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
