@@ -467,14 +467,14 @@ function cbConfigureForm() {
   document.getElementById('cb-sec1-title').textContent=personal?'Seller details':'Business Info';
   document.getElementById('cb-header-msg').textContent=personal?'Let’s set up your seller profile and item listing.':'Let’s set up your business.';
   document.querySelector('.cb-page-title').textContent=personal?'Seller setup':'Business setup';
-  const labels={'f-email':['Email','Business email'],'f-campName':['What are you selling? *','Campaign name *'],'f-about':['Item details and condition *','Campaign details *'],'f-offer':['Asking price and pickup or delivery','Special offer or call to action']};
+  const labels={'f-email':['Email','Business email'],'f-campName':['What are you selling? *','Campaign name *'],'f-about':['Item details and condition (optional)','Campaign details *'],'f-offer':['Asking price and pickup or delivery (optional)','Special offer or call to action']};
   Object.entries(labels).forEach(([id,labels])=>{document.getElementById(id).closest('.cb-field').querySelector('label').textContent=labels[personal?0:1];});
   document.getElementById('f-campName').placeholder=personal?'e.g. GEM electric vehicle':'e.g. Summer Sale';
   document.getElementById('f-about').placeholder=personal?'Describe the item, condition, specifications and any known defects.':'What are you promoting?';
   document.getElementById('f-offer').placeholder=personal?'e.g. $4,500, local pickup; delivery available by arrangement':'Any special offer?';
   document.getElementById('cbs-campaign').style.display = initial ? '' : 'none';
   ['story','different','awards','customer','other','campName','about'].forEach(key => {
-    document.getElementById('f-' + key).required = initial && (!personal || ['campName','about'].includes(key));
+    document.getElementById('f-' + key).required = initial && (!personal || key==='campName');
   });
   document.getElementById('cb-submit').textContent = personal ? (initial?'Save Seller & Listing':'Save Seller') : (initial ? 'Save Business & Campaign' : 'Save Business');
   const storyBadge = document.querySelector('#cb-sec2-title .cb-sec-badge');
@@ -522,7 +522,7 @@ CB_GUIDE_STEPS.forEach(step=>{
  step.skipIf=a=>(cbPersonal()&&(step.section==='cbs-story'||['f-bizName','f-role','f-locationType','f-street','f-hasWebsite','f-website'].includes(step.field)))||!!(priorSkip&&priorSkip(a));
  const asks={'f-ownerName':'What name should buyers know you by?','f-email':'What email can buyers use to reach you?','f-phone':'What phone number can buyers use?','f-city':'In which city is the item available?','f-campName':'What are you selling?','f-about':'Tell me about the item: its condition, useful specifications, and any known defects.','f-offer':'What is your asking price, and will buyers pick it up or can you deliver or ship it?','f-audience':'Who would this item suit?'};
  step.ask=a=>cbPersonal()&&asks[step.field]?asks[step.field]:(typeof priorAsk==='function'?priorAsk(a):priorAsk);
- if(['f-campName','f-about'].includes(step.field))step.hint='Use the facts you want included in the ad.';
+ if(['f-about','f-offer'].includes(step.field))step.hint='Use the facts you want included in the ad. You can leave this blank or skip it.';
 });
 
 window._cbStartGuide = function(at) {
