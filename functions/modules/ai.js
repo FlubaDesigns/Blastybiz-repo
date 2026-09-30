@@ -50,10 +50,10 @@ exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['
     return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
   }
 
-  const { businessName, category, address, locationType, region, existingInsights } = req.body;
+  const { businessName, category, address, locationType, region, existingInsights, sellerType, itemDetails } = req.body;
   const answered = (existingInsights || []).filter(i => i.answer);
 
-  const prompt = `You are a local business marketing AI. Help me write more personal, specific posts for this business.
+  const prompt = sellerType==='personal' ? `Help a private individual sell an item. Ask up to three short relevant questions about condition, specifications, known defects, price, pickup, delivery or shipping. Never ask about company names, roles, business history, hours, customers or store atmosphere. Do not request a home street address. Do not repeat answered questions. Known item details: ${itemDetails || 'not supplied'}. Answered: ${answered.map(i=>i.question+': '+i.answer).join('; ')}. Return ONLY JSON: {"questions":["..."]}.` : `You are a local business marketing AI. Help me write more personal, specific posts for this business.
 
 WHAT I KNOW:
 - Business: ${businessName}
@@ -563,12 +563,14 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
   // Build draftRef for the free-regen transaction check.
   // Both draftId and businessId are required for regeneration; without them we
   // cannot scope the doc to this user's tree and cannot grant free regen safely.
+  let personalSeller=listing?.sellerType==='personal';
   const regenBizId = listing?.businessId || null;
   if (regenDraftId || regenBizId) {
     const validId = x => typeof x === 'string' && x.length > 0 && x.length <= 128 && !x.includes('/');
     if (!validId(regenBizId) || (regenDraftId && !validId(regenDraftId))) return res.status(400).json({error:'Invalid business or draft'});
     const owned = await db.collection('users').doc(decoded.uid).collection('businesses').doc(regenBizId).get();
     if (!owned.exists) return res.status(404).json({error:'Business not found'});
+    personalSeller=owned.data().sellerType==='personal';
   }
   let draftRef = null;
   if (isRegeneration) {
@@ -644,10 +646,10 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
       trimmedLibraryDocs.map(d => `[${d.name}]:\n${d.extractedText}`).join('\n\n')
     : '';
 
-  const prompt = `You are a local business marketing expert. Adapt the following business listing for each platform listed. Return ONLY a valid JSON object — no markdown, no explanation, no backticks.
+  const prompt = `${personalSeller?'You write item listings for a private individual. This is a personal sale, not a company or dealership. Focus on the specific item, condition, supplied specifications, asking price and pickup/delivery. Never invent condition, mileage, battery health, warranty, financing or seller services. Do not add business history or opening hours.':'You are a local business marketing expert.'} Adapt the following listing for each platform listed. Return ONLY a valid JSON object — no markdown, no explanation, no backticks.
 
-BUSINESS INFO:
-- Business name: ${listing.name || 'not provided'}
+${personalSeller?'PERSONAL SELLER AND ITEM':'BUSINESS INFO'}:
+- ${personalSeller?'Seller name':'Business name'}: ${listing.name || 'not provided'}
 - Owner name: ${listing.ownerName || 'not provided'}
 - Category: ${listing.category || 'General'}
 - Campaign: ${listing.campaignName || 'General'}
@@ -660,10 +662,10 @@ ${listing.adDetails ? `- Additional ad details: ${listing.adDetails}\n` : ''}- P
 - Location type: ${listing.locationType === 'online' ? 'Online only' : 'Physical location'}
 - Address/Area: ${listing.locationType === 'online' ? (listing.region ? 'Serves: ' + listing.region : 'Online — no physical address') : (listing.address || 'not provided')}
 - Website: ${listing.website || 'none'}
-- Hours: ${listing.hours || 'not provided'}
+${personalSeller?'':'- Hours: '+(listing.hours || 'not provided')}
 - Images attached: ${listing.imageCount > 0 ? listing.imageCount + ' photo(s)' : 'none'}
 - Preferred tone: ${tone}
-${globalMemoryBlock}${campaignMemoryBlock}${aiContextBlock}${libraryDocsBlock}${campaignContextBlock}${(listing.bizInsights||[]).length ? '\n⚠️ CAMPAIGN-SPECIFIC AI FACTS — MANDATORY. These answers are specific to this campaign. Reference them directly — do NOT write generic filler:\n' + listing.bizInsights.map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(listing.globalFactoids||[]).length ? '\n📌 BUSINESS FACTS — Use selectively. Include a fact only when it genuinely strengthens this specific post. Do NOT force every fact into every piece. Higher score = stronger brand signal:\n' + [...listing.globalFactoids].sort((a,b)=>(b.importance!=null?b.importance:5)-(a.importance!=null?a.importance:5)).map(f=>`- [${f.importance!=null?f.importance:5}/10] ${f.text}`).join('\n') : ''}${(listing.campaignFactoids||[]).length ? '\n📌 CAMPAIGN FACTS — Use selectively. Include only when it fits naturally for this campaign. Higher score = more likely to strengthen this copy:\n' + [...listing.campaignFactoids].sort((a,b)=>(b.importance!=null?b.importance:5)-(a.importance!=null?a.importance:5)).map(f=>`- [${f.importance!=null?f.importance:5}/10] ${f.text}`).join('\n') : ''}
+${personalSeller?(globalMemory?'\nSELLER DETAILS (use only facts relevant to this item):\n'+globalMemory+'\n':''):globalMemoryBlock}${campaignMemoryBlock}${personalSeller?'':aiContextBlock}${libraryDocsBlock}${campaignContextBlock}${(listing.bizInsights||[]).length ? '\n⚠️ CAMPAIGN-SPECIFIC AI FACTS — MANDATORY. These answers are specific to this campaign. Reference them directly — do NOT write generic filler:\n' + listing.bizInsights.map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(listing.globalFactoids||[]).length ? '\n📌 BUSINESS FACTS — Use selectively. Include a fact only when it genuinely strengthens this specific post. Do NOT force every fact into every piece. Higher score = stronger brand signal:\n' + [...listing.globalFactoids].sort((a,b)=>(b.importance!=null?b.importance:5)-(a.importance!=null?a.importance:5)).map(f=>`- [${f.importance!=null?f.importance:5}/10] ${f.text}`).join('\n') : ''}${(listing.campaignFactoids||[]).length ? '\n📌 CAMPAIGN FACTS — Use selectively. Include only when it fits naturally for this campaign. Higher score = more likely to strengthen this copy:\n' + [...listing.campaignFactoids].sort((a,b)=>(b.importance!=null?b.importance:5)-(a.importance!=null?a.importance:5)).map(f=>`- [${f.importance!=null?f.importance:5}/10] ${f.text}`).join('\n') : ''}
 PLATFORMS TO ADAPT FOR:
 ${platformList.map(buildPlatformBlock).join('\n')}
 
@@ -953,7 +955,10 @@ exports.chatCampaign = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
     cd.dates        ? `Dates: ${cd.dates}`                : null,
   ].filter(Boolean).join('\n');
 
-  const systemPrompt = `You are a campaign briefing assistant for BlastyBiz. You already know this business well. Your job is to gather campaign-specific details that make this campaign's marketing copy feel fresh, specific, and compelling — never generic.
+  const systemPrompt = bp.sellerType==='personal' ? `You are Blasty, helping a private individual sell an item. Ask one short question at a time. Use the answers already collected and do not repeat answered questions. Ask what the item is, its condition and relevant specifications or known defects, asking price, and pickup, delivery or shipping arrangements. Ask only details relevant to this item. Do not ask for company name, job title, business history, opening hours, store atmosphere or business promotions. Never invent facts. Do not ask for a home street address. Stop once there is enough factual information for an item listing, allowing the seller to skip unknown or optional details.
+SELLER: ${bp.name || 'Personal seller'}
+KNOWN DETAILS: ${campaignBasics}
+Return ONLY JSON: {"done":false,"message":"one next question"}, or when finished {"done":true,"message":"brief wrap-up","campaignMemory":"factual item brief including only supplied details"}.` : `You are a campaign briefing assistant for BlastyBiz. You already know this business well. Your job is to gather campaign-specific details that make this campaign's marketing copy feel fresh, specific, and compelling — never generic.
 
 BUSINESS PROFILE (you know this business):
 ${bp.globalMemory || bp.description || bp.name || 'Business profile not provided'}

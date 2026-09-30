@@ -20,7 +20,8 @@ exports.createBusiness = onRequest({ invoker: 'public' }, withAuth(async (req, r
   const validId = x=>typeof x==='string'&&x.length>0&&x.length<=128&&!x.includes('/');
   if (!profileData || typeof profileData!=='object' || Array.isArray(profileData) || !validId(bizId)) return res.status(400).json({error:'Business details and a stable bizId are required.'});
   if (campaignData && (!validId(campaignData.id) || typeof campaignData!=='object')) return res.status(400).json({error:'Invalid campaign.'});
-  const fields = ['businessName','name','ownerName','ownerRole','category','phone','email','street','city','state','zip','address','website','hours','locationType','region','tone','ynMentionName','ynMentionRole','ynMentionAddress','ynMentionPhone','ynMentionWebsite','ynMentionEmail','story','different','awards','customer','otherInfo','businessDescription','toggles','onboarded','onboardingVersion','activeCampaign','enabledPlatforms','globalMemory','featuredPhoto','aiContext','bizInsights','platformCats','postingSchedule','platformPrefs'];
+  if(profileData.sellerType!==undefined&&!['business','personal'].includes(profileData.sellerType))return res.status(400).json({error:'Choose Business or Personal seller.'});
+  const fields = ['sellerType','businessName','name','ownerName','ownerRole','category','phone','email','street','city','state','zip','address','website','hours','locationType','region','tone','ynMentionName','ynMentionRole','ynMentionAddress','ynMentionPhone','ynMentionWebsite','ynMentionEmail','story','different','awards','customer','otherInfo','businessDescription','toggles','onboarded','onboardingVersion','activeCampaign','enabledPlatforms','globalMemory','featuredPhoto','aiContext','bizInsights','platformCats','postingSchedule','platformPrefs'];
   const clean = Object.fromEntries(fields.filter(k=>profileData[k]!==undefined).map(k=>[k,profileData[k]]));
   const uid=decoded.uid,userRef=db.collection('users').doc(uid),bizRef=userBizRef(uid,bizId);
   try {
@@ -34,6 +35,12 @@ exports.createBusiness = onRequest({ invoker: 'public' }, withAuth(async (req, r
       const plan=user.data().plan || 'starter',cap=cfg.bizLimits[plan] ?? 1;
       if(!existing.exists && !isNew)throw Object.assign(Error('Business not found'),{httpStatus:404});
       if(!existing.exists && owned.docs.length>=cap)throw Object.assign(Error('Business limit reached for your plan.'),{httpStatus:403});
+      clean.sellerType=clean.sellerType||existing.data()?.sellerType||'business';
+      if(clean.sellerType==='personal'){
+        const name=String(clean.ownerName??existing.data()?.ownerName??'').trim();
+        if(!name||name.length>300)throw Object.assign(Error('Please enter your seller name.'),{httpStatus:400});
+        Object.assign(clean,{ownerName:name,businessName:name,name,ownerRole:'',hours:'',ynMentionRole:'no'});
+      }
       const stamp=admin.firestore.FieldValue.serverTimestamp();
       tx.set(bizRef,{...clean,uid,...(!existing.exists?{createdAt:stamp,currentPlan:plan}:{}),updatedAt:stamp},{merge:true});
       tx.set(userRef,{onboarded:true,activeBusiness:bizId,businessIds:[...new Set([...owned.docs.map(d=>d.id),bizId])],...(clean.ownerName?{displayName:clean.ownerName}:{}),updatedAt:stamp},{merge:true});
