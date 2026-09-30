@@ -1,4 +1,5 @@
 BBBlasty.loginDefaults = {
+    sellerType:      { text: "First, are you using BlastyBiz for Business or Personal?", mood: 's-ask' },
     pickTab:         { text: "👆 Pick Sign In or Create Account — or use Google / Facebook below!",  mood: 's-wave'      },
     signinWelcome:   { text: "Welcome back! Sign in to keep blasting. 🚀",                          mood: 's-wave'      },
     signinEmail:     { text: "Enter the email you signed up with — or sign in with Google or Facebook below!",  mood: 's-ask' },

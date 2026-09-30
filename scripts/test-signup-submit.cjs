@@ -27,11 +27,32 @@ const tick=()=>new Promise(r=>setImmediate(r));
   const e=env({blockedStorage});assert(e.form.noValidate);e.click();await tick();
   assert.equal(e.calls.filter(c=>c==='auth').length,1);assert.equal(e.calls.find(c=>c.setupHandoff)?.setupHandoff.sellerType,'personal');assert(e.calls.includes('verify:seller@example.invalid'));e.dom.window.close();
  }
- let e=env();e.w.document.getElementById('su-password2').value='different';e.click();await tick();assert.equal(e.calls.length,0);assert.match(e.status().textContent,/match/);assert.equal(e.w.document.activeElement.id,'su-password2');e.dom.window.close();
+ let e=env();e.w.document.getElementById('su-sellerType').value='';e.click();await tick();assert.equal(e.calls.length,0);assert.match(e.status().textContent,/Business or Personal/);assert.equal(e.w.document.activeElement.id,'su-sellerType');e.dom.window.close();
+ e=env();e.w.document.getElementById('su-password2').value='different';e.click();await tick();assert.equal(e.calls.length,0);assert.match(e.status().textContent,/match/);assert.equal(e.w.document.activeElement.id,'su-password2');e.dom.window.close();
  e=env();e.w.document.getElementById('su-phone').value='';e.click();await tick();assert.equal(e.calls.length,0);assert.match(e.status().textContent,/phone/);assert.equal(e.w.document.activeElement.id,'su-phone');e.dom.window.close();
  e=env({error:{code:'auth/email-already-in-use'}});e.click();await tick();assert.match(e.status().textContent,/already has an account/);const link=e.status().querySelector('button');assert(link);link.click();assert(e.w.document.getElementById('form-signin').classList.contains('active'));assert.equal(e.w.document.getElementById('si-email').value,'seller@example.invalid');e.dom.window.close();
  e=env({error:{code:'auth/network-request-failed'}});e.click();await tick();assert.match(e.status().textContent,/Connection failed/);assert(!e.w.document.getElementById('btn-signup').disabled);assert.equal(e.w.document.getElementById('su-name').value,'Fixture Seller');e.dom.window.close();
  let release;const wait=new Promise(r=>release=r);e=env({wait});e.click();await e.w.handleSignUp();assert.equal(e.calls.filter(c=>c==='auth').length,1);release();await tick();e.dom.window.close();
  e=env();const style=e.w.document.createElement('style');style.textContent=fs.readFileSync('public/global-style.css','utf8');e.w.document.head.appendChild(style);const css=e.w.getComputedStyle(e.w.document.getElementById('su-terms'));assert.equal(css.width,'22px');assert.equal(css.minWidth,'22px');assert.equal(css.padding,'0px');e.dom.window.close();
+ for(const start of ['', 'guided', 'forms']){
+  const dom=new JSDOM(html,{url:'https://example.invalid'+(start?'?start='+start:''),runScripts:'outside-only',virtualConsole:new VirtualConsole()}),w=dom.window,timers=[];
+  await tick();
+  w.fetch=async()=>({ok:false});w.setTimeout=(fn,ms)=>{timers.push({fn,ms});return timers.length;};w.clearTimeout=()=>{};
+  for(const file of ['blasty-registry.js','blasty-events.js','blasty-guidance.js'])w.eval(fs.readFileSync('public/'+file,'utf8'));
+  const tab=w.document.getElementById('tab-signup');tab.onclick=w.Function(tab.getAttribute('onclick'));
+  w.eval(helpers);w.eval(scripts.find(m=>m[2].includes('function bbSignupSellerType'))[2]);
+  const seller=w.document.getElementById('su-sellerType'),field=seller.closest('.field'),picker=w.document.getElementById('plan-picker');
+  assert.equal(w.document.querySelector('#form-signup form > .field'),field);assert.equal(seller.value,'');
+  if(start){w.document.getElementById('auth-card-wrap').classList.add('ready');await tick();timers.filter(t=>t.ms===120).forEach(t=>t.fn());}
+  else tab.click();
+  assert(!field.classList.contains('bb-field-blur'), 'Seller choice must be first for '+(start||'tab')+'; '+w.document.getElementById('login-bubble').textContent);assert(picker.classList.contains('bb-field-blur'));
+  timers.filter(t=>t.ms===100).forEach(t=>t.fn());assert.match(w.document.getElementById('login-bubble').textContent,/Business or Personal/);
+  for(const type of ['personal','business']){
+   seller.value=type;w.bbSignupSellerType();seller.dispatchEvent(new w.Event('change'));seller.dispatchEvent(new w.Event('blur'));
+   assert(!picker.classList.contains('bb-field-blur'));assert.equal(w.document.getElementById('su-business').closest('.field').hidden,type==='personal');
+   w.selectPlan('starter');timers.filter(t=>t.ms===3000).forEach(t=>t.fn());assert(!w.document.getElementById('su-name').closest('.field').classList.contains('bb-field-blur'));
+  }
+  dom.window.close();
+ }
  console.log('PASS signup submission: Personal native button click, verification transition, blocked browser storage, visible validation, existing-account sign-in, network failure, double-submit guard and checkbox styles. No real accounts or emails.');
 })().catch(e=>{console.error(e);process.exitCode=1});
