@@ -379,6 +379,9 @@ function upsellCheckout() {
   }).then(function (r) {
     return r.json().catch(function () { return {}; });
   }).then(function (data) {
+    if (data && data.code === 'EXISTING_SUBSCRIPTION') {
+      showToast(data.error); btn.disabled = false; btn.textContent = original; return;
+    }
     if (data && data.url) { window.location.href = data.url; return; }
     showToast(data && data.error ? data.error : 'Checkout is unavailable right now');
     btn.disabled = false; btn.textContent = original;

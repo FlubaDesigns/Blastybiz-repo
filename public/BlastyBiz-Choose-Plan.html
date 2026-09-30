@@ -254,6 +254,9 @@ async function startCheckout(plan, btn) {
       body: JSON.stringify({ plan, billingPeriod, returnPath: '/' + generateUrl(true) }),
     });
     const data = await r.json().catch(() => ({}));
+    if (data.code === 'EXISTING_SUBSCRIPTION') {
+      showToast(data.error); btn.disabled = false; btn.textContent = original; return;
+    }
     if (r.ok && data.url) { window.location.href = data.url; return; }
     showToast(data.error || 'Checkout is unavailable right now.');
   } catch (e) {

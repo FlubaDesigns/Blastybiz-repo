@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs');
 const testing=require(process.env.RULES_TEST_PATH||'@firebase/rules-unit-testing');
 const firestore=require(process.env.FIREBASE_CLIENT_PATH||'firebase/firestore');
-const {doc,getDoc,setDoc,deleteDoc}=firestore;
+const {doc,getDoc,setDoc,deleteDoc,writeBatch}=firestore;
 (async()=>{
  const env=await testing.initializeTestEnvironment({projectId:'demo-blastybiz-audit2',firestore:{host:'127.0.0.1',port:8089,rules:fs.readFileSync('firestore.rules','utf8')}});
  let checks=0;
@@ -50,7 +50,13 @@ const {doc,getDoc,setDoc,deleteDoc}=firestore;
   await testing.assertFails(setDoc(doc(owner,'users/owner/businesses/business/campaigns/c/advertising/old'),{approval:{state:'approved'},schedule:{enabled:true}}));checks++;
   await testing.assertFails(deleteDoc(doc(owner,'users/owner/businesses/business')));checks++;
   await testing.assertSucceeds(setDoc(doc(owner,'users/owner'),{lastActiveAt:new Date()},{merge:true}));checks++;
+  const batch = writeBatch(owner);
+  for(let i=0;i<50;i++)batch.set(doc(owner,'users/owner/businesses/business/facts/batch-'+i),{bizId:'business',text:'fixture'});
+  await testing.assertSucceeds(batch.commit());checks++;
   await env.withSecurityRulesDisabled(c=>setDoc(doc(c.firestore(),'accountDeletions/owner'),{status:'running'}));
+  const blockedBatch = writeBatch(owner);
+  for(let i=0;i<50;i++)blockedBatch.set(doc(owner,'users/owner/businesses/business/facts/batch-'+i),{bizId:'business',text:'changed'});
+  await testing.assertFails(blockedBatch.commit());checks++;
   await testing.assertFails(setDoc(doc(owner,'users/owner'),{lastActiveAt:new Date()},{merge:true}));checks++;
   await testing.assertFails(setDoc(doc(owner,'users/owner/businesses/business/facts/new'),{bizId:'business'}));checks++;
   await testing.assertFails(setDoc(doc(owner,'copyLibrary/new'),{uid:'owner',text:'late write'}));checks++;
@@ -58,6 +64,6 @@ const {doc,getDoc,setDoc,deleteDoc}=firestore;
   await testing.assertFails(getDoc(doc(owner,'accountDeletions/owner')));checks++;
   await env.withSecurityRulesDisabled(c=>deleteDoc(doc(c.firestore(),'users/owner')));
   await testing.assertFails(setDoc(doc(owner,'users/owner'),{plan:'starter'}));checks++;
-  assert(checks===59);console.log(checks+' actual Firestore emulator authorization assertions passed.');
+  assert(checks===61);console.log(checks+' actual Firestore emulator authorization assertions passed.');
  } finally {await env.cleanup();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

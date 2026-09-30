@@ -16,7 +16,7 @@ const {
   APP_BASE_URL, sendResendEmail, getPlanConfig,
   userBizRef, userBizCol, userBizDraftsRef, userBizJobsRef, userBizPostsRef, userBizConnsRef,
   _getConnTokens, _setConnTokens,
-  withAuth,
+  withAuth, checkUidRateLimit,
   makeActionSig, _actionSecret, computeNextRunAt,
   PLATFORM_CAPABILITY_MAP,
 } = require('../lib/shared');
@@ -887,11 +887,22 @@ exports.importGooglePhotos = onRequest(
   withAuth(async (req, res, decoded) => {
     const uid   = decoded.uid;
     const bizId = req.body?.bizId;
-    if (!bizId) return res.status(400).json({ error: 'bizId required' });
-    const bizSnap = await userBizRef(uid, bizId).get();
-    if (!bizSnap.exists) return res.status(403).json({ error: 'Business not found' });
-    const job=await db.collection('importJobs').add({uid,bizId,status:'queued',queuedAt:admin.firestore.FieldValue.serverTimestamp()});
-    res.json({ ok: true, queued: true, jobId: job.id });
+    if (typeof bizId!=='string'||!bizId||bizId.includes('/')) return res.status(400).json({ error: 'bizId required' });
+    if(!(await checkUidRateLimit('photoImportRateLimit',uid,5,60*60*1000)))return res.status(429).json({error:'Too many photo import requests. Please try again in an hour.'});
+    const jobId=await db.runTransaction(async tx=>{
+      const bizRef=userBizRef(uid,bizId),userRef=db.collection('users').doc(uid),journal=db.collection('accountDeletions').doc(uid);
+      const [biz,user,deletion]=await Promise.all([tx.get(bizRef),tx.get(userRef),tx.get(journal)]);
+      if(!biz.exists||!user.exists||deletion.exists||user.data().deletionRequestedAt)throw Object.assign(Error('Account or business unavailable'),{httpStatus:409});
+      const recent=await tx.get(db.collection('importJobs').where('uid','==',uid).where('bizId','==',bizId).where('queuedAt','>=',admin.firestore.Timestamp.fromMillis(Date.now()-15*60*1000)));
+      const active=recent.docs.find(d=>['queued','running'].includes(d.data().status));
+      if(active)return active.id;
+      const job=db.collection('importJobs').doc('manual-'+crypto.randomUUID());
+      tx.create(job,{uid,bizId,status:'queued',queuedAt:admin.firestore.FieldValue.serverTimestamp()});
+      // Serialize concurrent manual requests on the same business document.
+      tx.update(bizRef,{photoImportQueuedAt:admin.firestore.FieldValue.serverTimestamp()});
+      return job.id;
+    });
+    res.json({ ok: true, queued: true, jobId });
   })
 );
 

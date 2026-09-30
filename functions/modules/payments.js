@@ -92,6 +92,19 @@ exports.getPlanOptions = onRequest({ invoker: 'public', region: 'us-central1' },
   });
 }));
 
+function paidPeriodEnded(subscription,now=new Date()) {
+  if(!['CANCELED','DEACTIVATED'].includes(String(subscription?.status||'').toUpperCase()))return false;
+  const end=subscription.chargedThroughDate||subscription.charged_through_date;
+  if(typeof end!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(end)||!Number.isFinite(Date.parse(end))||new Date(end).toISOString().slice(0,10)!==end)return false;
+  // charged_through_date is a calendar date in the subscription's timezone.
+  // Permit checkout only on a later day; never overlap an invoiced period.
+  try {
+    const parts=new Intl.DateTimeFormat('en-US',{timeZone:subscription.timezone||'UTC',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);
+    const value=k=>parts.find(p=>p.type===k).value;
+    return end<`${value('year')}-${value('month')}-${value('day')}`;
+  }catch(_){return false;}
+}
+
 exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN', 'SQUARE_LOCATION_ID'] }, withAuth(async (req, res, decoded) => {
   const uid   = decoded.uid;
   const email = decoded.email || req.body.email || '';
@@ -105,7 +118,16 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
   if (!['pro', 'agency'].includes(plan)) return res.status(400).json({ error: 'Invalid plan' });
 
   const existingSubscription=(await db.collection('subscriptions').doc(uid).get()).data();
-  if(existingSubscription?.squareSubscriptionId && !['CANCELED','DEACTIVATED'].includes(String(existingSubscription.status||'').toUpperCase()))return res.status(409).json({error:'Manage your existing subscription before starting another checkout.',code:'EXISTING_SUBSCRIPTION'});
+  if(existingSubscription?.squareSubscriptionId){
+    let mayRestart=false;
+    if(['CANCELED','DEACTIVATED'].includes(String(existingSubscription.status||'').toUpperCase())){
+      try {
+        const current=await getSquare().subscriptions.get({subscriptionId:existingSubscription.squareSubscriptionId});
+        mayRestart=!current.errors?.length&&current.subscription?.id===existingSubscription.squareSubscriptionId&&paidPeriodEnded(current.subscription);
+      }catch(_){return res.status(503).json({error:'We could not confirm your subscription status. Please try again or contact support@blastybiz.com.'});}
+    }
+    if(!mayRestart)return res.status(409).json({error:'To change your plan or billing period, contact support@blastybiz.com.',code:'EXISTING_SUBSCRIPTION'});
+  }
 
   const pricing = await loadPricing();
   const subscriptionPlanId = pricing.planIds[plan][billingPeriod];

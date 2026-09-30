@@ -1,5 +1,6 @@
 'use strict';
 const PROJECT='blastybiz-9523e',BUCKET='blastybiz-firestore-backups';
+const BACKUP_SERVICE_ACCOUNT=`firestore-backup@${PROJECT}.iam.gserviceaccount.com`;
 async function waitOperation(request,operation,{sleep=ms=>new Promise(r=>setTimeout(r,ms)),clock=Date.now,timeoutMs=8*60000}={}) {
  if(!operation?.name?.startsWith(`projects/${PROJECT}/databases/`))throw Error('Unexpected backup operation target');
  const deadline=clock()+timeoutMs;let current=operation;
@@ -13,17 +14,20 @@ async function waitOperation(request,operation,{sleep=ms=>new Promise(r=>setTime
 async function runBackup({db,admin,request,clock=()=>new Date(),wait=waitOperation}) {
  const day=clock().toISOString().slice(0,10),ref=db.collection('backupRuns').doc(day);
  const prior=(await ref.get()).data();
- if(prior?.status==='completed')return prior;
- let operation=prior?.operation&&!prior.operationFailed?{name:prior.operation}:null;
+ const sameIdentity=prior?.serviceAccount===BACKUP_SERVICE_ACCOUNT;
+ if(prior?.status==='completed'&&sameIdentity)return prior;
+ // After identity isolation, perform one export under the dedicated identity;
+ // an old default-runtime completion is not evidence of its export permission.
+ let operation=sameIdentity&&prior?.operation&&!prior.operationFailed?{name:prior.operation}:null;
  try{
   if(!operation){
    const output=`gs://${BUCKET}/${day}-${require('node:crypto').randomUUID()}`;
    operation=await request(`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default):exportDocuments`,'POST',{outputUriPrefix:output});
    if(!operation.name)throw Error('Export did not return an operation');
-   await ref.set({status:'running',operation:operation.name,outputUriPrefix:output,startedAt:admin.firestore.FieldValue.serverTimestamp()});
+   await ref.set({status:'running',serviceAccount:BACKUP_SERVICE_ACCOUNT,operation:operation.name,outputUriPrefix:output,startedAt:admin.firestore.FieldValue.serverTimestamp()});
   }
   const completed=await wait(request,operation);
-  const result={status:'completed',operation:operation.name,outputUriPrefix:completed.response?.outputUriPrefix||prior?.outputUriPrefix,completedAt:admin.firestore.FieldValue.serverTimestamp()};
+  const result={status:'completed',serviceAccount:BACKUP_SERVICE_ACCOUNT,operation:operation.name,outputUriPrefix:completed.response?.outputUriPrefix||prior?.outputUriPrefix,completedAt:admin.firestore.FieldValue.serverTimestamp()};
   if(!result.outputUriPrefix?.startsWith(`gs://${BUCKET}/`))throw Error('Unexpected export destination');
   await ref.set(result,{merge:true});return result;
  }catch(e){
@@ -31,4 +35,4 @@ async function runBackup({db,admin,request,clock=()=>new Date(),wait=waitOperati
   throw e; // Scheduler must see failure; API acceptance alone is not completion.
  }
 }
-module.exports={PROJECT,BUCKET,waitOperation,runBackup};
+module.exports={PROJECT,BUCKET,BACKUP_SERVICE_ACCOUNT,waitOperation,runBackup};

@@ -463,8 +463,15 @@ if (!user || !user.emailVerified) {
       btn.disabled = true;
       btn.textContent = '…';
       try {
-        await deleteDoc(doc(db, 'users', user.uid, 'businesses', bizId));
-        btn.closest('[data-biz-id]').remove();
+        const token = await user.getIdToken();
+        const response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/deleteBusiness', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ bizId })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || 'Could not delete business.');
+        activeBizId = result.activeBusiness;
+        await window._tcLoadBizList();
       } catch(e) {
         btn.disabled = false;
         btn.textContent = 'Delete';

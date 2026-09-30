@@ -55,7 +55,7 @@ function createAccountDeletion({db,admin,getSquare,revokeConnections,clock=Date.
     result.authUserDeleted=true;
    }
    await subRef.delete();
-   await journal.update({status:'completed',leaseUntil:0,completedAt:stamp(),updatedAt:stamp(),lastError:admin.firestore.FieldValue.delete()});
+   await journal.update({status:'completed',leaseUntil:0,completedAt:stamp(),updatedAt:stamp(),lastError:admin.firestore.FieldValue.delete(),storagePrefixes:admin.firestore.FieldValue.delete(),squareSubscriptionId:admin.firestore.FieldValue.delete()});
    return result;
   } catch(e) {
    await journal.update({status:'retry_required',leaseUntil:0,lastError:String(e.message).slice(0,300),updatedAt:stamp()}).catch(()=>{});

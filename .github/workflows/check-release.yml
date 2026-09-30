@@ -54,6 +54,8 @@ jobs:
           node scripts/test-audit2-corrections.cjs
           node scripts/test-retirement-guards.cjs
           node scripts/test-backend-audit.cjs
+          node scripts/test-backend-review.cjs
+          python3 scripts/test-backup-identity.py
           node scripts/test-backup-verification.cjs
       - name: Ad controls and gesture DOM checks
         run: |
@@ -62,6 +64,7 @@ jobs:
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-pass11-ui.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-pass11-status.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-audit2-ui.cjs
+          JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-backend-review-ui.cjs
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -69,7 +72,7 @@ jobs:
       - name: Actual Firestore authorization boundary tests
         run: |
           npm install --prefix "$RUNNER_TEMP/blasty-rules" --no-audit --no-fund @firebase/rules-unit-testing@4.0.1 firebase@11.10.0 firebase-tools@14.17.0
-          RULES_TEST_PATH="$RUNNER_TEMP/blasty-rules/node_modules/@firebase/rules-unit-testing" FIREBASE_CLIENT_PATH="$RUNNER_TEMP/blasty-rules/node_modules/firebase/firestore" "$RUNNER_TEMP/blasty-rules/node_modules/.bin/firebase" emulators:exec --only firestore,storage --project demo-blastybiz-audit2 --config firebase.audit2.json 'node scripts/test-audit2-rules.cjs && node scripts/test-backend-storage.cjs && node scripts/test-backend-deletion-emulator.cjs'
+          RULES_TEST_PATH="$RUNNER_TEMP/blasty-rules/node_modules/@firebase/rules-unit-testing" FIREBASE_CLIENT_PATH="$RUNNER_TEMP/blasty-rules/node_modules/firebase/firestore" "$RUNNER_TEMP/blasty-rules/node_modules/.bin/firebase" emulators:exec --only firestore,storage --project demo-blastybiz-audit2 --config firebase.audit2.json 'node scripts/test-audit2-rules.cjs && node scripts/test-backend-storage.cjs && node scripts/test-backend-deletion-emulator.cjs && node scripts/test-backend-review-emulator.cjs'
 
 # Production deployment uses Fluba's existing Authorization Engine workflow:
 # FlubaDesigns/fluba-designs/.github/workflows/blastybiz-release.yml.
