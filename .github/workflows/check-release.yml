@@ -65,6 +65,7 @@ jobs:
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-pass11-status.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-audit2-ui.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-backend-review-ui.cjs
+          JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-personal-seller.cjs
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

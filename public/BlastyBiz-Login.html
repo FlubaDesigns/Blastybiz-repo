@@ -126,6 +126,8 @@
                 </div>
 
                 <div class="field">
+                  <label for="su-sellerType">How will you use BlastyBiz?</label>
+                  <select id="su-sellerType" onchange="bbSignupSellerType()" style="width:100%;padding:12px;margin-bottom:14px"><option value="business">Business</option><option value="personal">Personal seller</option></select>
                   <label for="su-name">Full Name</label>
                   <input type="text" id="su-name" placeholder="Your name" oninput="clearErr('su-name')" />
                   <div class="field-error" id="su-name-err">Name is required</div>
@@ -497,7 +499,9 @@ function handleSetPassword() {}
   function showGuide(key, anchorEl) {
     var bubble = document.getElementById('login-bubble');
     if (!bubble) return;
+    if(anchorEl?.hidden)return;
     var step = getStep(key);
+    if(key==='email'&&document.getElementById('su-sellerType').value==='personal')step={...step,text:'What email should we use for your account?'};
     if (!step.text) return;
 
     // Fade bubble text
@@ -569,7 +573,8 @@ function handleSetPassword() {}
       if (!el.value.trim()) return;
       var idx = _fieldEls.indexOf(fieldEl);
       if (idx >= 0 && idx < _fieldEls.length - 1) {
-        var nextEl  = _fieldEls[idx + 1];
+        var nextEl = _fieldEls.slice(idx + 1).find(el=>!el.hidden);
+        if(!nextEl)return;
         var nextKey = _fieldKeys.get(nextEl) || '';
         showGuide(nextKey, nextEl);
       }
@@ -1296,5 +1301,12 @@ window.handleReset = async function() {
 
 <script src="header-loader.js?v=1"></script>
 
+<script>
+function bbSignupSellerType(){
+ const personal=document.getElementById('su-sellerType').value==='personal';
+ ['su-business','su-role'].forEach(id=>{const el=document.getElementById(id);el.required=!personal;el.disabled=personal;el.closest('.field').hidden=personal;clearErr(id);});
+}
+bbSignupSellerType();
+</script>
 </body>
 </html>

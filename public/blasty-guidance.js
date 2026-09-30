@@ -11,7 +11,7 @@ BBBlasty.loginDefaults = {
     planPro:         { text: "Smart choice! 🔥 Pro gives you room for more businesses and a larger AI budget!",  mood: 's-happy' },
     planAgency:      { text: "Agency lets you manage multiple businesses from one dashboard. Built for franchises and multi-location brands. 💼", mood: 's-happy' },
     name:            { text: "What's your name? We'll personalize your experience.",               mood: 's-ask'       },
-    email:           { text: "Use your business email — we'll send your login link here.",         mood: 's-ask'       },
+    email:           { text: "What email should we use for your account?",         mood: 's-ask'       },
     password:        { text: "8+ characters with letters and numbers.",                            mood: 's-ask'       },
     confirmPassword: { text: "Type it one more time — almost there!",                              mood: 's-happy'     },
     reset:           { text: "We'll send a reset link right away.",                                mood: 's-tilt-left' },
@@ -19,6 +19,7 @@ BBBlasty.loginDefaults = {
   };
 BBBlasty.setupSteps = function(){
 return [
+  {field:'f-sellerType',section:'cbs-info',ask:'Are you promoting a business or selling something personally?'},
   { field:'f-ownerName', section:'cbs-info', mood:'s-wave',
     ask:"Hey! I'm Blasty — I'll write your ads. First up, what should I call you?",
     hint:'First name is fine.' },
@@ -63,6 +64,11 @@ BBBlasty.setupSteps=function(){
 };
 
 BBBlasty.campaignSteps=function(){
+if((window._bbProfileGlobal||{}).sellerType==='personal')return [
+ {msg:()=>{const n=$cc('new-campaign-input')?.value?.trim();if(n){ccCol.campaignName=n;return 'Tell me about '+n+': its condition, useful specifications and any known defects.';}return 'What are you selling?';},field:()=>ccCol.campaignName?'offer':'campaignName',label:'Item details',validate:v=>v.trim().length>1,placeholder:()=>ccCol.campaignName?'Condition, specifications and known defects':'e.g. GEM electric vehicle',optional:()=>false},
+ {msg:()=>ccCol.offer?'What is your asking price?':'Tell me about its condition, specifications and any known defects.',field:()=>ccCol.offer?'price':'offer',label:'Item details',optional:true,placeholder:()=>ccCol.offer?'e.g. $4,500 or best offer':'What should buyers know?'},
+ {msg:()=> 'Is there a deadline or availability date buyers should know?',field:()=> 'dates',label:'Availability',optional:true,placeholder:()=> 'Optional availability or deadline'}
+];
 return [
   {
     msg: () => {
