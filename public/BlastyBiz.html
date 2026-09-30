@@ -6716,7 +6716,7 @@ const CC_CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/chatCampai
 let ccPhase = 'scripted'; // 'scripted'|'ai'|'done'
 let ccIdx = 0;
 let ccWaiting = false;
-const ccCol = { campaignName:'', offer:'', price:'', dates:'' };
+const ccCol = { campaignName:'', offer:'', price:'', pickup:'', dates:'' };
 let ccHistory = [];
 
 const $cc = id => document.getElementById(id);
@@ -6759,10 +6759,10 @@ function ccSetWaiting(w) {
 }
 
 // ── Scripted Steps ────────────────────────────────────────
-let CC_STEPS = BBBlasty.campaignSteps();
+let CC_STEPS = BBBlasty.campaignSteps(ccCol);
 
 function ccAdvance() {
-  if(ccIdx===0)CC_STEPS=BBBlasty.campaignSteps();
+  if(ccIdx===0)CC_STEPS=BBBlasty.campaignSteps(ccCol);
   if (ccIdx >= CC_STEPS.length) { ccStartAI(); return; }
   const step = CC_STEPS[ccIdx];
   const msg  = typeof step.msg === 'function' ? step.msg() : step.msg;
@@ -6799,13 +6799,22 @@ function ccPickOpt(value, label) {
 }
 
 function campSkip() {
+  if (ccWaiting) return;
+  if (ccPhase === 'ai' && (window._bbProfileGlobal||{}).sellerType==='personal') {
+    ccPhase='done';
+    ccSetSkip(false);
+    ccCreateCampaign({campaignMemory:[ccCol.campaignName,ccCol.offer,ccCol.price,ccCol.pickup,ccCol.dates,...ccHistory.filter(m=>m.role==='user').map(m=>m.content)].filter(Boolean).join('\n')});
+    return;
+  }
   const step = CC_STEPS[ccIdx];
-  if (!step) return;
+  if (!step || !(typeof step.optional==='function'?step.optional():step.optional)) return;
   ccAddMsg('user', '(skipped)');
   ccSetSkip(false);
   ccIdx++;
   ccAdvance();
 }
+
+window.campSkip = campSkip;
 
 window.campSend = function() {
   if (ccWaiting) return;
@@ -6834,18 +6843,19 @@ window.campSend = function() {
 // ── AI Phase ──────────────────────────────────────────────
 function ccStartAI() {
   ccPhase = 'ai';
-  ccSetLabel('Tell AI About This Campaign');
+  const personal=(window._bbProfileGlobal||{}).sellerType==='personal';
+  ccSetLabel(personal?'Anything else? (optional)':'Tell AI About This Campaign');
   ccSetProgress(65);
 
-  const opening = `Great${ccCol.campaignName ? ' — "' + ccCol.campaignName + '"' : ''}! Now tell me more. What should customers get excited about? What makes this campaign special or different from your usual marketing?`;
+  const opening = personal ? 'Anything else you want buyers to know? You can skip this and save with the details you have already provided.' : `Great${ccCol.campaignName ? ' — "' + ccCol.campaignName + '"' : ''}! Now tell me more. What should customers get excited about? What makes this campaign special or different from your usual marketing?`;
   ccShowTyping();
   setTimeout(() => {
     ccHideTyping();
     ccAddMsg('ai', opening);
     ccHistory.push({ role: 'assistant', content: opening });
     ccClearOpts();
-    $cc('camp-chat-input').placeholder = 'Tell me about this campaign…';
-    ccSetSkip(false);
+    $cc('camp-chat-input').placeholder = personal?'Optional extra item details…':'Tell me about this campaign…';
+    ccSetSkip(personal);
     $cc('camp-chat-input').focus();
   }, 800);
 }
@@ -6875,6 +6885,7 @@ async function ccCallCF() {
           offer:        ccCol.offer,
           price:        ccCol.price,
           dates:        ccCol.dates,
+          pickup:       ccCol.pickup,
         }
       })
     });
@@ -6980,7 +6991,7 @@ window.openCampaignChat = function() {
   const nameInput = document.getElementById('new-campaign-input');
   const prefilledName = nameInput?.value?.trim() || '';
   ccCol.campaignName = prefilledName;
-  ccCol.offer = ''; ccCol.price = ''; ccCol.dates = '';
+  ccCol.offer = ''; ccCol.price = ''; ccCol.pickup = ''; ccCol.dates = '';
   ccPhase = 'scripted'; ccIdx = 0; ccWaiting = false; ccHistory = [];
   $cc('cc-messages').innerHTML = '';
   $cc('cc-options').innerHTML = '';

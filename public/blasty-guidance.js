@@ -63,12 +63,20 @@ BBBlasty.setupSteps=function(){
  return defaultSetupSteps().map(step=>{const key=map[step.field];if(key&&BBBlasty.fields[key]){const old=step.ask;step.ask=a=>BBBlasty.message(key,a,true)||(typeof old==='function'?old(a):old);}return step;});
 };
 
-BBBlasty.campaignSteps=function(){
-if((window._bbProfileGlobal||{}).sellerType==='personal')return [
- {msg:()=>{const n=$cc('new-campaign-input')?.value?.trim();if(n){ccCol.campaignName=n;return 'Tell me about '+n+': its condition, useful specifications and any known defects.';}return 'What are you selling?';},field:()=>ccCol.campaignName?'offer':'campaignName',label:'Item details',validate:v=>v.trim().length>1,placeholder:()=>ccCol.campaignName?'Condition, specifications and known defects':'e.g. GEM electric vehicle',optional:()=>false},
- {msg:()=>ccCol.offer?'What is your asking price?':'Tell me about its condition, specifications and any known defects.',field:()=>ccCol.offer?'price':'offer',label:'Item details',optional:true,placeholder:()=>ccCol.offer?'e.g. $4,500 or best offer':'What should buyers know?'},
+BBBlasty.campaignSteps=function(collected={}){
+const ccCol=collected;
+const $cc=id=>document.getElementById(id);
+if((window._bbProfileGlobal||{}).sellerType==='personal'){
+ const itemName=$cc('new-campaign-input')?.value?.trim();
+ if(itemName)ccCol.campaignName=itemName;
+ return [
+ ...(!ccCol.campaignName?[{msg:()=> 'What are you selling?',field:()=> 'campaignName',label:'Item name',validate:v=>v.trim().length>1,placeholder:()=> 'e.g. GEM electric vehicle',optional:false}]:[]),
+ {msg:()=> 'Tell me about its condition, specifications and any known defects. You can skip this.',field:()=> 'offer',label:'Item condition (optional)',optional:true,placeholder:()=> 'Optional item condition and details'},
+ {msg:()=> 'What is your asking price? You can skip this.',field:()=> 'price',label:'Price (optional)',optional:true,placeholder:()=> 'Optional asking price'},
+ {msg:()=> 'Will buyers pick it up, or can you deliver or ship it? You can skip this.',field:()=> 'pickup',label:'Pickup or delivery (optional)',optional:true,placeholder:()=> 'Optional pickup, delivery or shipping details'},
  {msg:()=> 'Is there a deadline or availability date buyers should know?',field:()=> 'dates',label:'Availability',optional:true,placeholder:()=> 'Optional availability or deadline'}
-];
+ ];
+}
 return [
   {
     msg: () => {

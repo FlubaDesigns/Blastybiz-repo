@@ -53,7 +53,7 @@ exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['
   const { businessName, category, address, locationType, region, existingInsights, sellerType, itemDetails } = req.body;
   const answered = (existingInsights || []).filter(i => i.answer);
 
-  const prompt = sellerType==='personal' ? `Help a private individual sell an item. Ask up to three short relevant questions about condition, specifications, known defects, price, pickup, delivery or shipping. Never ask about company names, roles, business history, hours, customers or store atmosphere. Do not request a home street address. Do not repeat answered questions. Known item details: ${itemDetails || 'not supplied'}. Answered: ${answered.map(i=>i.question+': '+i.answer).join('; ')}. Return ONLY JSON: {"questions":["..."]}.` : `You are a local business marketing AI. Help me write more personal, specific posts for this business.
+  const prompt = sellerType==='personal' ? `Help a private individual sell an item. Ask up to three short relevant questions about condition, specifications, known defects, price, pickup, delivery or shipping. Condition, price and pickup/delivery details are optional: allow blank or skipped answers, never insist, and do not repeat skipped questions. Never ask about company names, roles, business history, hours, customers or store atmosphere. Do not request a home street address. Do not repeat answered questions. Known item details: ${itemDetails || 'not supplied'}. Answered: ${answered.map(i=>i.question+': '+i.answer).join('; ')}. Return ONLY JSON: {"questions":["..."]}.` : `You are a local business marketing AI. Help me write more personal, specific posts for this business.
 
 WHAT I KNOW:
 - Business: ${businessName}
@@ -646,7 +646,7 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
       trimmedLibraryDocs.map(d => `[${d.name}]:\n${d.extractedText}`).join('\n\n')
     : '';
 
-  const prompt = `${personalSeller?'You write item listings for a private individual. This is a personal sale, not a company or dealership. Focus on the specific item, condition, supplied specifications, asking price and pickup/delivery. Never invent condition, mileage, battery health, warranty, financing or seller services. Do not add business history or opening hours.':'You are a local business marketing expert.'} Adapt the following listing for each platform listed. Return ONLY a valid JSON object — no markdown, no explanation, no backticks.
+  const prompt = `${personalSeller?'You write item listings for a private individual. This is a personal sale, not a company or dealership. Focus on the specific item and supplied details. Condition, asking price and pickup/delivery are optional: omit them when blank, without placeholders or requests to complete them. Never invent condition, mileage, battery health, warranty, financing or seller services. Do not add business history or opening hours.':'You are a local business marketing expert.'} Adapt the following listing for each platform listed. Return ONLY a valid JSON object — no markdown, no explanation, no backticks.
 
 ${personalSeller?'PERSONAL SELLER AND ITEM':'BUSINESS INFO'}:
 - ${personalSeller?'Seller name':'Business name'}: ${listing.name || 'not provided'}
@@ -953,9 +953,10 @@ exports.chatCampaign = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
     cd.offer        ? `Offer/Message: ${cd.offer}`        : null,
     cd.price        ? `Price/Range: ${cd.price}`          : null,
     cd.dates        ? `Dates: ${cd.dates}`                : null,
+    bp.sellerType==='personal' && cd.pickup ? `Pickup/delivery: ${cd.pickup}` : null,
   ].filter(Boolean).join('\n');
 
-  const systemPrompt = bp.sellerType==='personal' ? `You are Blasty, helping a private individual sell an item. Ask one short question at a time. Use the answers already collected and do not repeat answered questions. Ask what the item is, its condition and relevant specifications or known defects, asking price, and pickup, delivery or shipping arrangements. Ask only details relevant to this item. Do not ask for company name, job title, business history, opening hours, store atmosphere or business promotions. Never invent facts. Do not ask for a home street address. Stop once there is enough factual information for an item listing, allowing the seller to skip unknown or optional details.
+  const systemPrompt = bp.sellerType==='personal' ? `You are Blasty, helping a private individual sell an item. Ask one short question at a time. Use the answers already collected and do not repeat answered questions. Use the item name and any supplied condition, specifications, price, and pickup, delivery or shipping arrangements. Condition, price and pickup/delivery are optional. The form has already offered these questions; blank values mean the seller left them blank. Do not ask for these missing details again or block completion. If the seller says skip, leave blank or finish, return done:true using only supplied facts. Ask only optional extra details relevant to this item. Do not ask for company name, job title, business history, opening hours, store atmosphere or business promotions. Never invent facts. Do not ask for a home street address. Stop once there is enough factual information for an item listing, allowing the seller to skip unknown or optional details.
 SELLER: ${bp.name || 'Personal seller'}
 KNOWN DETAILS: ${campaignBasics}
 Return ONLY JSON: {"done":false,"message":"one next question"}, or when finished {"done":true,"message":"brief wrap-up","campaignMemory":"factual item brief including only supplied details"}.` : `You are a campaign briefing assistant for BlastyBiz. You already know this business well. Your job is to gather campaign-specific details that make this campaign's marketing copy feel fresh, specific, and compelling — never generic.

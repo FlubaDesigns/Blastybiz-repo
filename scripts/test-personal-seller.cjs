@@ -26,9 +26,12 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  assert(w.document.getElementById('cbs-story').hidden);
  assert.match(w.document.getElementById('f-about').closest('.cb-field').textContent,/condition/);
  assert(!w.document.getElementById('f-city').disabled);
- w._bbProfileGlobal={sellerType:'personal'};w.$cc=()=>({value:'GEM electric vehicle'});w.ccCol={};
- let steps=w.BBBlasty.campaignSteps();assert.match(steps[0].msg(),/condition/);assert.equal(steps[0].field(),'offer');
- w._bbProfileGlobal={sellerType:'business'};steps=w.BBBlasty.campaignSteps();assert.match(steps[0].msg(),/offer or message/);
+ assert(!w.document.getElementById('f-about').required);assert(!w.document.getElementById('f-offer').required);
+ assert(w.document.getElementById('f-campName').required);
+ assert.match(w.document.getElementById('f-about').closest('.cb-field').textContent,/optional/);
+ w._bbProfileGlobal={sellerType:'personal'};const itemInput=w.document.createElement('input');itemInput.id='new-campaign-input';itemInput.value='GEM electric vehicle';w.document.body.appendChild(itemInput);w.ccCol={};
+ let steps=w.BBBlasty.campaignSteps(w.ccCol);assert.match(steps[0].msg(),/condition/);assert.equal(steps[0].field(),'offer');
+ w._bbProfileGlobal={sellerType:'business'};steps=w.BBBlasty.campaignSteps(w.ccCol);assert.match(steps[0].msg(),/offer or message/);
  dom.window.close();
  // Execute the real dashboard profile functions: a later edit must retain type.
  const app=read('public/BlastyBiz.html');dom=new JSDOM(app,{runScripts:'outside-only',virtualConsole:new VirtualConsole()});w=dom.window;
@@ -37,6 +40,23 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  w.loadProfile();assert.equal(w.document.querySelector('label[for="profile-name"]').textContent,'Seller name');assert(w.document.getElementById('profile-hours').hidden);
  w.document.getElementById('profile-phone').value='9413751504';w.saveProfile();assert.equal(w.profile.sellerType,'personal');assert.equal(w._bbProfileGlobal.sellerType,'personal');assert.equal(w.profile.ownerRole,'');assert.equal(w.profile.hours,'');
  w.profile={sellerType:'business',name:'Company'};w.loadProfile();assert(!w.document.getElementById('profile-hours').hidden);assert.equal(w.document.querySelector('label[for="profile-name"]').textContent,'Business Name');dom.window.close();
+ // Exercise the actual chat closure and public Skip button through a saved listing.
+ for(const prefilled of [true,false]){
+  dom=new JSDOM(app,{url:'https://example.invalid',runScripts:'outside-only',virtualConsole:new VirtualConsole()});w=dom.window;
+  const pending=[],saved=[];w.setTimeout=f=>{pending.push(f);return 1;};
+  const flush=()=>{while(pending.length)pending.shift()();};
+  Object.assign(w,{_bbProfileGlobal:{sellerType:'personal'},activeBizId:'b',campaigns:[],platforms:[],activeCampaignId:null,activeCampaignName:'',_sortCampaigns(){},_bbSaveCampaigns:async c=>saved.push(...c),fetch:()=>{throw Error('Optional skip must not require an AI call');}});
+  for(const f of ['blasty-registry.js','blasty-events.js','blasty-guidance.js'])w.eval(read('public/'+f));
+  const chat=scripts(app).find(m=>m[2].includes("const CC_CF ="))[2];
+  w.eval(chat.slice(0,chat.indexOf('// STORY TAB'))+'\n})();');
+  w.document.getElementById('new-campaign-input').value=prefilled?'GEM electric vehicle':'';
+  w.openCampaignChat();flush();
+  if(!prefilled){assert.equal(w.document.getElementById('camp-skip-btn').style.display,'none');w.campSkip();assert.equal(saved.length,0);w.document.getElementById('camp-chat-input').value='GEM electric vehicle';w.campSend();flush();}
+  for(let i=0;i<4;i++){assert.equal(w.document.getElementById('camp-skip-btn').style.display,'inline');w.campSkip();flush();}
+  assert.match(w.document.getElementById('cc-messages').textContent,/Anything else/);
+  w.campSkip();await new Promise(r=>setImmediate(r));
+  assert.equal(saved.length,1);assert.equal(saved[0].name,'GEM electric vehicle');assert.equal(saved[0].offer,'');assert.equal(saved[0].price,'');assert.equal(saved[0].campaignMemory,'GEM electric vehicle');dom.window.close();
+ }
  // Call real AI handlers with a captured model boundary. No model or live writes.
  const file=path.resolve('functions/modules/ai.js'),req=createRequire(file);let captured=[];
  let storedType='personal';
@@ -47,6 +67,7 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  for(const type of ['personal','business']){
   await c.exports.chatCampaign({method:'POST',body:{conversationHistory:[],businessProfile:{sellerType:type,name:'David'},collectedData:{campaignName:'GEM vehicle'}}},res(),{uid:'u'});
   assert.match(captured.at(-1).options.system,type==='personal'?/pickup, delivery or shipping/:/in-store experience/);
+  if(type==='personal')assert.match(captured.at(-1).options.system,/Do not ask for these missing details again or block completion/);
   await c.exports.generateEnrichmentQuestions({body:{sellerType:type,businessName:'David',itemDetails:'GEM vehicle',existingInsights:[]}},res(),{uid:'u'});
   assert.match(captured.at(-1).prompt,type==='personal'?/private individual/:/local business marketing AI/);
  }

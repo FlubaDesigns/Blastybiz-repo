@@ -53,6 +53,11 @@ function env({biz,edit=false,slow=false,failedRead=false,guide=false}={}){
  ok(e.commits[0][2].data.name==='GEM electric vehicle','item title stays with listing');
  ok(e.commits[0][3].data.context.includes('batteries'),'item facts reach first ad');
  e=env({edit:true,biz:{...personal,activeCampaign:'keep'}});await e.start();ok(e.nodes['f-sellerType'].value==='personal'&&e.nodes['cbs-story'].hidden,'reload preserves personal branch');await e.c.cbSubmit();ok(e.commits[0].length===2,'personal edit creates no extra campaign');
+ e=env();await e.start();e.fill();e.nodes['f-sellerType'].value='personal';e.c.cbConfigureForm();
+ e.nodes['f-campName'].value='GEM electric vehicle';e.nodes['f-about'].value='';e.nodes['f-offer'].value='';
+ for(const field of ['f-about','f-offer']){const step=e.c.CB_GUIDE_STEPS.find(s=>s.field===field);ok(!step.required&&!step.validate(),'personal optional field can be blank: '+field);const guide=new e.c.GuidedSetup({steps:[step]});let moved=false;guide.advance=()=>moved=true;guide.skip();ok(moved,'guide skips blank '+field);}
+ await e.c.cbSubmit();ok(e.commits.length===1,'personal listing saves with blank condition price and pickup');
+ ok(e.commits[0][3].data.context===''&&e.commits[0][3].data.offer===''&&e.commits[0][3].data.price==='','blank optional details stay blank in saved ad');
  e=env();await e.start();e.nodes['f-sellerType'].value='personal';e.c.cbConfigureForm();e.nodes['f-sellerType'].value='business';e.c.cbConfigureForm();ok(e.nodes['f-bizName'].required&&e.nodes['f-story'].required&&!e.nodes['f-role'].disabled,'switch back restores business validation');
  console.log(`PASS: ${checks} setup assertions (actual scripts, mocked DOM/Firebase; no live writes).`);
 })().catch(e=>{console.error(e);process.exitCode=1});
