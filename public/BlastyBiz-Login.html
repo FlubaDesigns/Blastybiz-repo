@@ -97,7 +97,7 @@
 
               <!-- SIGN UP FORM -->
               <div class="auth-form" id="form-signup">
-              <form autocomplete="on" onsubmit="handleSignUp(); return false;">
+              <form autocomplete="on" novalidate onsubmit="handleSignUp(); return false;">
 
                 <div class="field">
                   <label class="section-label">Choose your plan</label>
@@ -171,6 +171,7 @@
                   <label for="su-terms">I agree to the <a href="BlastyBiz-Terms.html" target="_blank">Terms of Service</a> and <a href="BlastyBiz-Privacy.html" target="_blank">Privacy Policy</a></label>
                 </div>
 
+                <div id="su-submit-status" class="signup-submit-status" role="status" aria-live="polite" hidden></div>
                 <button type="submit" class="btn-submit" id="btn-signup" disabled>
                   <div class="spinner"></div>
                   <span class="btn-text">Create Account →</span>
@@ -395,7 +396,24 @@ function showToast(msg, isError = false) {
 }
 
 function handleSignIn() {}
-function handleSignUp() {}
+function setSignupStatus(message, isError = false) {
+  const status = document.getElementById('su-submit-status');
+  if (!status) return;
+  status.textContent = message || '';
+  status.hidden = !message;
+  status.classList.toggle('signup-submit-error', isError);
+  status.setAttribute('role', isError ? 'alert' : 'status');
+}
+function focusSignupError() {
+  const input = document.querySelector('#form-signup input.error:not(:disabled)');
+  if (!input) return;
+  input.closest('.field')?.classList.remove('bb-field-blur', 'bb-field-done');
+  input.scrollIntoView({block:'center',behavior:'smooth'});
+  input.focus({preventScroll:true});
+}
+function handleSignUp() {
+  setSignupStatus('Sign-in is still loading. Please wait a moment and try again.', true);
+}
 function handleGoogle() {}
 function handleReset() {}
 function handleSetPassword() {}
@@ -555,7 +573,7 @@ function handleSetPassword() {}
       if (!isReady(el)) return;
       timer = setTimeout(function() {
         var nextEl = typeof getNextEl === 'function' ? getNextEl() : getNextEl;
-        if (nextEl && _fieldEls.indexOf(nextEl) >= 0) showGuide(nextKey, nextEl);
+        if (nextEl && _fieldEls.indexOf(nextEl) >= 0) showGuide(_fieldKeys.get(nextEl) || nextKey, nextEl);
       }, ms != null ? ms : 1000);
     });
     return { cancel: function() { clearTimeout(timer); } };
@@ -604,20 +622,20 @@ function handleSetPassword() {}
       function() { return _siFields[1]; }
     );
 
-    // Auto-advance: sign-up name → email
+    // Follow the visible signup fields; Personal skips business name and role.
     autoAdvance(
       document.getElementById('su-name'),
       function(el) { return el.value.trim().length >= 2; },
       'email',
-      function() { return _suFields[3]; } // billing(0), picker(1), name(2), email(3)
+      function() { return document.getElementById(document.getElementById('su-sellerType').value==='personal'?'su-email':'su-business').closest('.field'); }
     );
 
-    // Auto-advance: sign-up email → password
+    // Auto-advance: sign-up email → phone
     autoAdvance(
       document.getElementById('su-email'),
       function(el) { return isValidEmail(el.value.trim()); },
       'password',
-      function() { return _suFields[4]; } // billing(0), picker(1), name(2), email(3), password(4)
+      function() { return document.getElementById('su-phone').closest('.field'); }
     );
 
     // Create Account fields — billing toggle first, then plan picker, then form fields
@@ -1166,24 +1184,36 @@ window.handleSignIn = async function() {
   }
 };
 
+let signupInProgress = false;
 window.handleSignUp = async function() {
+  if (signupInProgress) return;
+  setSignupStatus('');
+  document.querySelectorAll('#form-signup input').forEach(input => clearErr(input.id));
   const name  = document.getElementById('su-name').value.trim();
   const email = document.getElementById('su-email').value.trim();
   const pass  = document.getElementById('su-password').value;
   const pass2 = document.getElementById('su-password2').value;
   const terms = document.getElementById('su-terms')?.checked;
   let valid = true;
-  if (!terms)              { showToast('Please agree to the Terms of Service and Privacy Policy.', true); return; }
+  if (!terms) { setSignupStatus('Please agree to the Terms of Service and Privacy Policy.', true); return; }
   if (!name)               valid = showErr('su-name', 'Name is required');
   if (!isValidEmail(email))valid = showErr('su-email', 'Please enter a valid email');
   if (pass.length < 8)     valid = showErr('su-password', 'Password must be at least 8 characters');
   if (pass !== pass2)      valid = showErr('su-password2', "Passwords don't match");
   const setupHandoff=BBSetup.collect('signup');
   for(const problem of BBSetup.validate(setupHandoff)){showErr(problem.field.signup,problem.error);valid=false;}
-  if (!valid) return;
-  sessionStorage.setItem('bb_setup_handoff',JSON.stringify(setupHandoff));
+  if (!valid) {
+    const firstError = document.querySelector('#form-signup .field-error.visible');
+    setSignupStatus(firstError?.textContent || 'Please check the highlighted field.', true);
+    focusSignupError();
+    return;
+  }
+  signupInProgress = true;
   setLoading('btn-signup', true);
+  setSignupStatus('Creating your account…');
   try {
+    // Firestore below is authoritative; unavailable browser storage must not stop signup.
+    try { sessionStorage.setItem('bb_setup_handoff',JSON.stringify(setupHandoff)); } catch (_) {}
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     // Always start as starter — the Square webhook upgrades the plan after payment
     await setDoc(doc(db, 'users', cred.user.uid), {
@@ -1200,6 +1230,7 @@ window.handleSignUp = async function() {
       emailSent = false;
     }
     setLoading('btn-signup', false);
+    setSignupStatus('');
     showLoginForm();
     showVerifyView(cred.user.email);
     if (!emailSent) {
@@ -1212,6 +1243,7 @@ window.handleSignUp = async function() {
       // to sign-in with the email already filled in. Also clear the encouraging
       // guide bubble so Blasty isn't cheering and blocking at the same time.
       const emailVal = (document.getElementById('su-email') || {}).value || '';
+      setSignupStatus('This email already has an account. ', true);
       showErr('su-email', 'This email already has an account —\u00a0');
       const errEl = document.getElementById('su-email-err');
       if (errEl) {
@@ -1230,6 +1262,9 @@ window.handleSignUp = async function() {
         };
         errEl.appendChild(link);
         errEl.appendChild(document.createTextNode('\u00a0→'));
+        const statusLink = link.cloneNode(true);
+        statusLink.onclick = link.onclick;
+        document.getElementById('su-submit-status').appendChild(statusLink);
       }
       // Silence the mascot guide — it was in "almost there!" mode which now
       // contradicts the error.
@@ -1237,8 +1272,12 @@ window.handleSignUp = async function() {
       if (bubble) bubble.textContent = 'Already have an account? Just sign in!';
       if (window.PBMascot) window.PBMascot.setMood({ mood: 's-tilt-left' });
     } else {
-      showToast(e.message, true);
+      setSignupStatus(e.code === 'auth/network-request-failed' ? 'Connection failed. Your entries are still here. Please try again.' : (e.message || 'Account creation failed. Please try again.'), true);
     }
+  } finally {
+    signupInProgress = false;
+    setLoading('btn-signup', false);
+    document.getElementById('btn-signup').disabled = !document.getElementById('su-terms').checked;
   }
 };
 

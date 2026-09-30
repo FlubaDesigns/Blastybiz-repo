@@ -3295,38 +3295,28 @@ button, a, [role="button"], input[type="submit"], input[type="reset"], input[typ
 .mta.ob2-showing-default { color:#94a3b8 !important; }
 
 /* Terms & Privacy checkbox row */
-.terms-check-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; font-size: 13px; color: #94a3b8; line-height: 1.5; }
-.terms-check-row input[type="checkbox"] {
-  appearance: none;
-  -webkit-appearance: none;
-  margin-top: 3px;
-  flex-shrink: 0;
-  width: 17px;
-  height: 17px;
+.terms-check-row { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-bottom: 14px; font-size: 13px; color: #94a3b8; line-height: 1.5; }
+.login-page .auth-card .terms-check-row input[type="checkbox"] {
+  appearance: auto;
+  -webkit-appearance: checkbox;
+  accent-color: #00C853;
+  box-sizing: border-box;
+  flex: 0 0 22px;
+  width: 22px;
+  min-width: 22px;
+  max-width: 22px;
+  height: 22px;
+  min-height: 22px;
+  max-height: 22px;
+  padding: 0;
+  margin: 0;
   cursor: pointer;
-  border: 2px solid #555e6e;
-  border-radius: 4px;
-  background: #1a1f2e;
-  position: relative;
-  transition: background .15s, border-color .15s;
 }
-.terms-check-row input[type="checkbox"]:checked {
-  background: #00C853;
-  border-color: #00C853;
-}
-.terms-check-row input[type="checkbox"]:checked::after {
-  content: '';
-  position: absolute;
-  left: 3px;
-  top: 0px;
-  width: 5px;
-  height: 9px;
-  border: 2px solid #fff;
-  border-top: none;
-  border-left: none;
-  transform: rotate(45deg);
-}
+.login-page .auth-card .terms-check-row input[type="checkbox"]::after { content: none; }
+.terms-check-row label { margin: 0; cursor: pointer; }
 .terms-check-row input[type="checkbox"]:focus-visible { outline: 2px solid #00C853; outline-offset: 2px; }
+.signup-submit-status { margin: 0 0 12px; color: #94a3b8; font-size: 14px; line-height: 1.5; }
+.signup-submit-status.signup-submit-error { color: #ff8a80; }
 .terms-check-row a { color: #00C853; text-decoration: none; }
 .terms-check-row a:hover { text-decoration: underline; }
 
