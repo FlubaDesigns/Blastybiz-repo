@@ -100,6 +100,16 @@
               <form autocomplete="on" novalidate onsubmit="handleSignUp(); return false;">
 
                 <div class="field">
+                  <label for="su-sellerType">Step 1: Business or Personal?</label>
+                  <select id="su-sellerType" onchange="bbSignupSellerType()" style="width:100%;padding:12px;margin-bottom:14px">
+                    <option value="" disabled selected>Choose Business or Personal</option>
+                    <option value="business">Business</option>
+                    <option value="personal">Personal</option>
+                  </select>
+                  <div class="field-error" id="su-sellerType-err"></div>
+                </div>
+
+                <div class="field">
                   <label class="section-label">Choose your plan</label>
 
                   <!-- Billing period toggle -->
@@ -126,8 +136,6 @@
                 </div>
 
                 <div class="field">
-                  <label for="su-sellerType">How will you use BlastyBiz?</label>
-                  <select id="su-sellerType" onchange="bbSignupSellerType()" style="width:100%;padding:12px;margin-bottom:14px"><option value="business">Business</option><option value="personal">Personal seller</option></select>
                   <label for="su-name">Full Name</label>
                   <input type="text" id="su-name" placeholder="Your name" oninput="clearErr('su-name')" />
                   <div class="field-error" id="su-name-err">Name is required</div>
@@ -405,7 +413,7 @@ function setSignupStatus(message, isError = false) {
   status.setAttribute('role', isError ? 'alert' : 'status');
 }
 function focusSignupError() {
-  const input = document.querySelector('#form-signup input.error:not(:disabled)');
+  const input = document.querySelector('#form-signup input.error:not(:disabled), #form-signup select.error:not(:disabled)');
   if (!input) return;
   input.closest('.field')?.classList.remove('bb-field-blur', 'bb-field-done');
   input.scrollIntoView({block:'center',behavior:'smooth'});
@@ -586,6 +594,8 @@ function handleSetPassword() {}
     arr.push(fieldEl);
     _fieldKeys.set(fieldEl, key);
     el.addEventListener('focus', function() { showGuide(key, fieldEl); });
+    // The seller choice advances on change, keeping billing and plans revealed together.
+    if (id === 'su-sellerType') return fieldEl;
     // Auto-advance to the next field when this one has a value and loses focus
     el.addEventListener('blur', function() {
       if (!el.value.trim()) return;
@@ -638,7 +648,8 @@ function handleSetPassword() {}
       function() { return document.getElementById('su-phone').closest('.field'); }
     );
 
-    // Create Account fields — billing toggle first, then plan picker, then form fields
+    // Create Account starts with Business or Personal, then plans and account details.
+    var sellerField = wire('su-sellerType', 'sellerType', _suFields);
     var billingRow = document.getElementById('toggle-monthly') &&
                      document.getElementById('toggle-monthly').parentElement;
     if (billingRow) {
@@ -650,6 +661,9 @@ function handleSetPassword() {}
       _suFields.push(picker);
       _fieldKeys.set(picker, 'planStarter'); // default; overridden per click below
     }
+    document.getElementById('su-sellerType').addEventListener('change', function() {
+      if (this.value && _fieldEls === _suFields && picker) showGuide('billing', picker);
+    });
     wire('su-name',      'name',           _suFields);
     wire('su-business', 'businessName', _suFields);
     wire('su-role', 'ownerRole', _suFields);
@@ -690,9 +704,7 @@ function handleSetPassword() {}
     });
     if (tabSU) tabSU.addEventListener('click', function() {
       unpick();
-      // Anchor at plan picker so billing toggle AND plan buttons are both interactive from the start
-      var anchor = (picker && _fieldEls.indexOf(picker) >= 0) ? picker : _suFields[0];
-      if (anchor) showGuide('billing', anchor);
+      if (sellerField) showGuide('sellerType', sellerField);
     });
 
     // Patch selectBilling — show savings message when toggling monthly/annual
@@ -717,7 +729,7 @@ function handleSetPassword() {}
       // After 3s, auto-advance to the Name field
       clearTimeout(_planPickTimer);
       _planPickTimer = setTimeout(function() {
-        var nameEl = _suFields[2]; // billing(0), picker(1), name(2)
+        var nameEl = document.getElementById('su-name').closest('.field');
         if (nameEl && _fieldEls.indexOf(nameEl) >= 0) {
           showGuide('name', nameEl);
         }
@@ -769,13 +781,9 @@ function handleSetPassword() {}
           if (tabsRow) tabsRow.style.display = ''; // Keep returning sign-in accessible.
           if (typeof window.switchTab === 'function') window.switchTab('signup');
           _fieldEls = _suFields;
-          var welcomeKey = startChoice === 'guided' ? 'signupWelcomeGuided'
-                         : startChoice === 'forms'  ? 'signupWelcomeForms'
-                         : 'signupWelcome';
           // Defer so the card has painted before measuring field positions
           setTimeout(function() {
-            var anchorEl = _suFields[1] || _suFields[0] || document.querySelector('.auth-card') || tabsRow;
-            showGuide(welcomeKey, anchorEl);
+            if (sellerField) showGuide('sellerType', sellerField);
           }, 120);
         } else {
           // First-time visitor — guided gate
@@ -1188,7 +1196,7 @@ let signupInProgress = false;
 window.handleSignUp = async function() {
   if (signupInProgress) return;
   setSignupStatus('');
-  document.querySelectorAll('#form-signup input').forEach(input => clearErr(input.id));
+  document.querySelectorAll('#form-signup input, #form-signup select').forEach(input => clearErr(input.id));
   const name  = document.getElementById('su-name').value.trim();
   const email = document.getElementById('su-email').value.trim();
   const pass  = document.getElementById('su-password').value;
@@ -1196,6 +1204,7 @@ window.handleSignUp = async function() {
   const terms = document.getElementById('su-terms')?.checked;
   let valid = true;
   if (!terms) { setSignupStatus('Please agree to the Terms of Service and Privacy Policy.', true); return; }
+  if (!['business', 'personal'].includes(document.getElementById('su-sellerType').value)) valid = showErr('su-sellerType', 'Please choose Business or Personal.');
   if (!name)               valid = showErr('su-name', 'Name is required');
   if (!isValidEmail(email))valid = showErr('su-email', 'Please enter a valid email');
   if (pass.length < 8)     valid = showErr('su-password', 'Password must be at least 8 characters');
@@ -1342,8 +1351,9 @@ window.handleReset = async function() {
 
 <script>
 function bbSignupSellerType(){
- const personal=document.getElementById('su-sellerType').value==='personal';
- ['su-business','su-role'].forEach(id=>{const el=document.getElementById(id);el.required=!personal;el.disabled=personal;el.closest('.field').hidden=personal;clearErr(id);});
+ const business=document.getElementById('su-sellerType').value==='business';
+ clearErr('su-sellerType');
+ ['su-business','su-role'].forEach(id=>{const el=document.getElementById(id);el.required=business;el.disabled=!business;el.closest('.field').hidden=!business;clearErr(id);});
 }
 bbSignupSellerType();
 </script>
