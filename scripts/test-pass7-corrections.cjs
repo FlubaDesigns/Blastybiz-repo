@@ -23,6 +23,22 @@ async function generation() {
   ok(requests[0].draftId==='draft1'&&writes[0].ref.id==='draft1'&&writes[0].data.adaptations.facebook==='Generated copy','request and saved draft share identity and generated copy');
   await c.runAdaptation();
   ok(requests[1].draftId==='draft1'&&next===1,'existing draft generation reuses its identity');
+  c.window.BBAds.active=null;c.window._bbGeneratingPlatforms=new Set(['facebook']);
+  await c.runAdaptation();
+  ok(requests.length===2&&!c.window._bbGeneratingPlatforms.size&&!c.window._bbAdaptationBusy,'missing Ad clears loading without making an AI request');
+  ok(nodes['generation-error'].hidden===false&&nodes['generation-error-message'].textContent.includes('not ready'),'missing Ad has a persistent recovery message');
+  c.window.BBAds.active={id:'ad'};c.updateCampaignMemory=()=>{throw Error('Details could not load');};
+  await c.runAdaptation();
+  ok(nodes['generation-error-message'].textContent==='Details could not load'&&!c.window._bbAdaptationBusy,'pre-request failures are caught and retry is available');
+  c.updateCampaignMemory=()=>{};
+  const generate=c._bbFetchWithTimeout;
+  c._bbFetchWithTimeout=async()=>({ok:false,status:503,json:async()=>({error:'AI provider unavailable. Try again shortly.'})});
+  await c.runAdaptation();
+  ok(nodes['generation-error-message'].textContent.includes('AI provider unavailable')&&!c.window._bbGeneratingPlatforms.size,'server error is shown and spinner clears');
+  c._bbFetchWithTimeout=generate;c.profile.sellerType='personal';nodes['biz-offer'].value='';
+  await c.runAdaptation();
+  ok(requests.at(-1).listing.offer==='Campaign'&&nodes['generation-error'].hidden,'personal item name supports blank optional description and successful retry');
+
 }
 async function schedules(worker,invalid,failPause=false) {
   const {database,admin}=require('./lib/test-firestore.cjs'),sent=[];

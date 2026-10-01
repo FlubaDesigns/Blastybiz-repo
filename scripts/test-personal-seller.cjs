@@ -69,6 +69,16 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  assert(!w.document.getElementById('profile-name').hidden);
  assert(!w.document.getElementById('biz-name-missing-banner').classList.contains('hidden'));
  dom.window.close();
+ // Review reuses the existing campaign upload screen, including mobile navigation.
+ dom=new JSDOM(app,{runScripts:'outside-only',virtualConsole:new VirtualConsole()});w=dom.window;
+ let slide,scope,scrolled=false;
+ w.createWizGoTo=n=>slide=n;w.setPhotoScope=v=>scope=v;
+ w.document.getElementById('campaign-photos').scrollIntoView=()=>{scrolled=true;};
+ w.eval(app.slice(app.indexOf('function openCampaignPhotos() {'),app.indexOf('function createWizNext(')));
+ w.openCampaignPhotos();assert.equal(slide,1);assert.equal(scope,'campaign');assert(scrolled);
+ assert(w.document.querySelector('#create-slide-5 button[onclick="openCampaignPhotos()"]'));
+ assert(w.document.querySelector('#campaign-photos input[type="file"]').multiple);
+ dom.window.close();
  // Run the production selection resolver against owned-profile reads and writes.
  const selectSource=app.slice(app.indexOf('async function loadWorkspaceSelection('),app.indexOf('auth.authStateReady().then(() => {'));
  const writes=[];let records=[];let readFailure=false;

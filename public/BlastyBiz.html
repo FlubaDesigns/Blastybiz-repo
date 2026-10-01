@@ -370,7 +370,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 
           <!-- LEFT: image upload -->
           <div class="col-left">
-            <div class="card pro-locked">
+            <div class="card pro-locked" id="campaign-photos">
               <div class="pro-overlay" data-plan="trial">
                 <div class="pro-overlay-content">
                   <div class="pro-overlay-badge">⚡ Pro</div>
@@ -552,6 +552,12 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 
       <div class="row">
         <div class="col-full">
+          <button type="button" class="btn" onclick="openCampaignPhotos()">📷 Add or change photos</button>
+          <div id="generation-error" role="alert" hidden style="padding:12px;border:1px solid #c44;border-radius:8px;margin:12px 0;">
+            <p id="generation-error-message"></p>
+            <button type="button" class="btn" onclick="runAdaptation()">Retry generation</button>
+            <button type="button" class="btn" onclick="createWizGoTo(1)">Back to details</button>
+          </div>
           <!-- All platform cards stacked — populated by renderStep5Review() -->
           <div id="step5-review-container"></div>
 
@@ -2476,19 +2482,24 @@ function createWizGoTo(step) {
     _step5PlatIdx = _s5firstUnresolved >= 0 ? _s5firstUnresolved : 0;
     // Auto-generate only if platforms don't already have copy — guards against re-firing on back/forward nav
     const hasContent = platforms.some(p => p.enabled && p.adaptedContent);
-    // Mark BEFORE the first render, or the cards paint as "No copy" for a frame
-    // before generation starts.
-    if (!hasContent) _bbSetGenerating(_s5enabled.map(p => p.id));
+    // runAdaptation owns loading state after validating the selected Ad.
     renderStep5Review();
     if (!hasContent) runAdaptation();
   }
 }
 
+function openCampaignPhotos() {
+  createWizGoTo(1);
+  setPhotoScope('campaign');
+  document.getElementById('campaign-photos')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
 function createWizNext(fromStep) {
   if (fromStep === 1) {
     const offer = document.getElementById('biz-offer')?.value?.trim();
-    if (!offer) { showToast('Add your offer description first'); return; }
+    if (!offer && profile.sellerType !== 'personal') { showToast('Add your offer description first'); return; }
     if (!platforms.some(p => p.enabled)) { showToast('Select at least one platform first'); return; }
+    if ([...window._bbPhotoUploads].some(i => i.bizId === window.activeBizId && i.campaignId === activeCampaignId && !i.error)) { showToast('Your photos are still uploading. Continue when they finish.'); return; }
     saveDraft();
   }
   // Page 2 starts at step 5
@@ -3081,7 +3092,14 @@ async function retryGeneratedDraftSave() {
 }
 
 async function runAdaptation() {
-  if(!window.BBAds?.active){showToast('Choose or create an Ad in this campaign first.');return;}
+  if (window._bbAdaptationBusy) return;
+  window._bbAdaptationBusy = true;
+  const btn = document.getElementById('adapt-btn');
+  const loader = document.getElementById('ai-loading');
+  const errorBox = document.getElementById('generation-error');
+  if (errorBox) errorBox.hidden = true;
+  try {
+  if(!window.BBAds?.active) throw new Error('Your Ad is not ready. Go back to details and choose or create an Ad, then retry.');
   if (window._bbDraftSavePending) { showToast('Save your generated copy with Retry save first.'); return; }
   updateCampaignMemory(); // ensure campaign object reflects current DOM before prompt is built
   // Profile is the dossier — always primary source for business identity fields
@@ -3094,19 +3112,18 @@ async function runAdaptation() {
   const effLocType = profile.locationType || 'physical';
   const address   = (effLocType === 'physical' || effLocType === 'both') && ynState.address !== 'no' ? (profile.address || '') : '';
   const region    = effLocType === 'both' ? (profile.region || '') : '';
-  const offer     = document.getElementById('biz-offer').value.trim();
+  const offer     = document.getElementById('biz-offer').value.trim() || (profile.sellerType === 'personal' ? activeCampaignName : '');
   const price     = document.getElementById('biz-price').value.trim();
   const tone      = profile.tone || 'friendly';
   const adName      = document.getElementById('biz-ad-name')?.value?.trim() || '';
   const includeName = ynState.name === 'yes' && profile.ownerName;
   const includeRole = ynState.role === 'yes' && profile.ownerRole;
 
-  // Both guards can fire after createWizGoTo(5) has already marked platforms as
-  // generating — clear it or the cards stay stuck on "Writing…" forever.
-  if (!offer) { _bbSetGenerating([]); renderStep5Review(); showToast('Add your offer description first'); return; }
+  // Validate before marking any platform as generating.
+  if (!offer) throw new Error('Add your offer description in Details, then retry.');
 
   const enabledPlatforms = platforms.filter(p => p.enabled);
-  if (!enabledPlatforms.length) { _bbSetGenerating([]); renderStep5Review(); showToast('Select at least one platform'); return; }
+  if (!enabledPlatforms.length) throw new Error('Select at least one platform in Details, then retry.');
 
   // Reset per-platform review status for this fresh generation and mark enabled
   // platforms as generating so Step 5 shows a pending state instead of "No Copy"
@@ -3120,8 +3137,6 @@ async function runAdaptation() {
   renderStep5Review();
 
   // Show loading, hide button (adapt-btn no longer in DOM — guard is safe)
-  const btn = document.getElementById('adapt-btn');
-  const loader = document.getElementById('ai-loading');
   if (btn) btn.style.display = 'none';
   loader.classList.add('visible');
   _startAiProgress(enabledPlatforms);
@@ -3148,7 +3163,6 @@ async function runAdaptation() {
     if (!btn.disabled) btn.textContent = '🔄 Try again';
   });
 
-  try {
     document.getElementById('ai-loading-sub').textContent = `Adapting for ${enabledPlatforms.length} platform${enabledPlatforms.length > 1 ? 's' : ''}...`;
 
     const idToken = window._bbGetToken ? await window._bbGetToken() : null;
@@ -3189,7 +3203,10 @@ async function runAdaptation() {
       })
     });
 
-    if (!response.ok) throw new Error('API error ' + response.status);
+    if (!response.ok) {
+      const failure = await response.json().catch(() => ({}));
+      throw new Error(failure.error || 'Generation failed (' + response.status + '). Please retry.');
+    }
 
     const parsed = await response.json();
     const adaptations = parsed.adaptations || {};
@@ -3260,15 +3277,16 @@ async function runAdaptation() {
   } catch (err) {
     _completeAiProgress();
     console.error(err);
-    showToast(err && err._isTimeout
-      ? '⏱️ Generation took too long — tap Retry Generation to try again'
-      : '❌ AI error — check connection');
+    const message = err && err._isTimeout ? 'Generation took too long. Your details are still here; retry when ready.' : (err.message || 'Generation failed. Please retry.');
+    if (errorBox) { errorBox.hidden = false; document.getElementById('generation-error-message').textContent = message; }
+    showToast(message);
     // Generation settled (failed) — clear pending state so cards show the failure/retry UI
     platforms = platforms.map(p => p.status === 'generating' ? { ...p, status: 'idle' } : p);
     renderStep5Review();
   } finally {
     if (btn) btn.style.display = 'flex';
-    loader.classList.remove('visible');
+    loader?.classList.remove('visible');
+    window._bbAdaptationBusy = false;
     // Belt and braces: never leave a card spinning if an unexpected throw skipped
     // the success path.
     if (window._bbGeneratingPlatforms.size) { _bbSetGenerating([]); renderStep5Review(); }
@@ -5920,35 +5938,13 @@ onAuthStateChanged(auth, async (user) => {
         const _qpCamp = campaigns.find(c => c.id === _qpCid);
         if (_qpCamp) {
           selectCampaign(_qpCamp.id, _qpCamp.name);
-          /* ── Auto-generate first blast from onboarding ──────── */
+          // Onboarding always offers photos and platform review before generation.
           if (_qp.get('autogenerate') === '1') {
             window._bbFromOnboarding = true;
-            /* Square sent them back here after paying — the webhook that flips
-               their plan is server-to-server and may not have landed yet. Read
-               the flag before replaceState strips it. */
-            const _cameFromCheckout = _qp.get('checkout') === '1';
-            window.history.replaceState({}, '', window.location.pathname + '?bizId=' + activeBizId);
-
-            const _startGeneration = () => {
-              /* Enable platforms from onboarding selection, fallback to first available */
-              const onboardingPlats = _qpCamp.onboardingPlatforms || [];
-              if (onboardingPlats.length) {
-                platforms.forEach(p => {
-                  p.enabled = onboardingPlats.includes(p.id);
-                });
-              } else {
-                /* enable first platform if none specified */
-                if (platforms.length) { platforms[0].enabled = true; }
-              }
-              /* Kick off wizard at generation step */
-              createWizGoTo(5);
-            };
-
-            if (_cameFromCheckout) {
-              awaitPaidPlan(user.uid).then(_startGeneration);
-            } else {
-              setTimeout(_startGeneration, 800);
-            }
+            const cameFromCheckout = _qp.get('checkout') === '1';
+            window.history.replaceState({}, '', window.location.pathname + '?bizId=' + activeBizId + '&cid=' + encodeURIComponent(_qpCamp.id));
+            openCampaignPhotos();
+            if (cameFromCheckout) awaitPaidPlan(user.uid);
           }
         }
       } else if (campaigns.length && !_qp.get('newcampaign')) {
@@ -6270,7 +6266,9 @@ onAuthStateChanged(auth, async (user) => {
         const conn = connMap[p.id];
         // _enabledPlatformIds (from biz doc) is authoritative.
         // Fallback chain: localStorage-restored in-memory state → conn.enabled → false
-        const isEnabled = _enabledPlatformIds !== null
+        const isEnabled = window.BBAds?.active
+          ? (window.BBAds.active.platforms || []).includes(p.id)
+          : _enabledPlatformIds !== null
           ? _enabledPlatformIds.includes(p.id)
           : (platforms.find(pp => pp.id === p.id)?.enabled ?? (conn ? !!conn.enabled : false));
         return { ...p, enabled: isEnabled, status: (conn ? conn.status || 'idle' : p.status) };
@@ -7020,6 +7018,7 @@ async function ccCreateCampaign(aiData) {
     const ctxEl = document.getElementById('campaign-context');
     if (ctxEl) ctxEl.value = ccCol.offer || '';
     window.BBAds?.open();
+    openCampaignPhotos();
     if (typeof showToast === 'function') showToast('Campaign "' + name + '" created');
   }, 1500);
 }
@@ -7425,7 +7424,7 @@ window.confirmDeleteAccount = async function() {
 .cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
 </style>
 <script src="lifecycle-ui.js"></script>
-<script src="ad-workspace.js"></script>
+<script src="ad-workspace.js?v=20261001-photos"></script>
 <script>
 document.addEventListener('click',function(e){
  const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');

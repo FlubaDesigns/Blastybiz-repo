@@ -16,7 +16,11 @@ const run=file=>w.eval(fs.readFileSync('public/'+file,'utf8'));
 async function settled(){for(let i=0;i<50;i++){await new Promise(r=>setImmediate(r));if(!w.BBAds.busy)return;}throw Error('UI remained busy');}
 async function click(action,id){const node=w.document.querySelector(`[data-action="${action}"]${id?'[data-id="'+id+'"]':''}`);assert(node,'Button '+action);node.click();await settled();}
 (async()=>{
+const html=fs.readFileSync('public/BlastyBiz.html','utf8');
+w.eval(html.slice(html.indexOf('const AI_REQUEST_TIMEOUT_MS ='),html.indexOf('function _bbSetGenerating(')));
+const picker=w.document.createElement('input');picker.id='img-input';picker.type='file';w.document.body.appendChild(picker);let picked=false,scope;picker.click=()=>{picked=true;};w.setPhotoScope=v=>{scope=v;};
 run('ad-workspace.js');await w.BBAds.open();await click('new');ok(w.BBAds.active.name==='New Ad','New Ad selects created record');
+await click('upload');ok(picked&&scope==='campaign','Upload opens the existing campaign image picker');
 w.document.getElementById('biz-ad-name').value='July';w.document.getElementById('biz-offer').value='Summer offer';await click('select-image','photo');ok(w.document.querySelectorAll('#ad-selected-images .ad-image').length===1,'tap moves image into selected area');
 w.platforms[0].adaptedContent='Approved copy';w.platforms[0]._reviewStatus='approved';loseNext=true;await click('save');ok(w.document.getElementById('ad-message').textContent==='Lost response','failed save leaves retry feedback');await click('save');
 let ad=w.BBAds.active;ok(ad.revision===2&&ad.imageRefs[0].id==='photo'&&ad.name==='July','retry saves exactly one revision with copy and image');

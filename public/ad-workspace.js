@@ -9,10 +9,10 @@
   async function api(action,body={}) {
     const ctx=context();
     if(!ctx.businessId||!ctx.campaignId||!window._bbGetToken)throw Error('Select a business and campaign first.');
-    const response=await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/manageAd',{
+    const response=await _bbFetchWithTimeout('https://us-central1-blastybiz-9523e.cloudfunctions.net/manageAd',{
       method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+await window._bbGetToken()},
       body:JSON.stringify({...ctx,action,...body})
-    });
+    },60000);
     const data=await response.json();if(!response.ok)throw Error(data.error||'Could not save the Ad.');return data;
   }
   function tell(message){el('ad-message').textContent=message;}
@@ -50,6 +50,7 @@
     for(const [field,value] of Object.entries(ynState)){for(const choice of ['yes','no'])el('yn-'+field+'-'+choice)?.classList.toggle('yn-active',value===choice);}
     el('ad-current').hidden=false;window.BBBlasty?.fire('images.campaign_repository_intro');window.BBBlasty?.fire('images.ad_selection_intro');el('ad-title').textContent=activeCampaignName+' / '+ad.name;
     el('ad-run-choice').hidden=true;el('ad-run-edit').hidden=true;el('ad-prepared').replaceChildren();
+    if(typeof renderStep3Platforms==='function')renderStep3Platforms();
     if(typeof checkAdaptBtn==='function')checkAdaptBtn();
     return images();
   }
@@ -122,7 +123,7 @@
       tell('Prepared Blast updated. Open its preview and explicitly send or schedule it.');el('ad-prepared').replaceChildren();return;
     }
     if(action==='leave-prepared'){el('ad-prepared').replaceChildren();tell('Prepared Blasts retain their existing packets.');return;}
-    if(action==='upload'){const input=document.querySelector('#photo-upload,input[type="file"][accept*="image"]');if(input)input.click();else throw Error('Use Upload in the Campaign photo area below.');return;}
+    if(action==='upload'){setPhotoScope('campaign');const input=el('img-input');if(input)input.click();else throw Error('Use Upload in the Campaign photo area below.');return;}
     if(action==='import-image'){
       const global=await window._bbLoadGlobalImages(),image=global.find(i=>i.id===id&&!i.retired);if(!image)throw Error('Image no longer available.');
       const pool=await window._bbLoadCampaignImages(campaign);
