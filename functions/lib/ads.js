@@ -13,7 +13,7 @@ const text = (v, limit=12000) => {
   if(typeof v!=='string'||v.length>limit) fail(400,'Invalid or overlong creative text.');
   return v.trim();
 };
-const allowed = ['name','offer','price','cta','context','mentions','platforms','imageRefs','adaptations','platformStatus'];
+const allowed = ['name','offer','price','cta','context','pickupArea','pickupZip','mentions','platforms','imageRefs','adaptations','platformStatus'];
 function cleanCreative(input, previous={}) {
   if(!input||typeof input!=='object'||Array.isArray(input)) fail(400,'Creative is required.');
   const result={...previous};
@@ -21,6 +21,7 @@ function cleanCreative(input, previous={}) {
     if(!allowed.includes(key)) continue;
     const v=input[key];
     if(['name','offer','price','cta','context'].includes(key)) result[key]=text(v,key==='name'?200:12000);
+    if(key==='pickupArea'||key==='pickupZip')result[key]=text(v,key==='pickupZip'?10:300);
     if(key==='mentions') {
       if(!v||typeof v!=='object'||Array.isArray(v)) fail(400,'Invalid mention settings.');
       result.mentions=require('./business-form').mentions(v);
@@ -51,6 +52,7 @@ function freezePacket(ad, campaign, overrides) {
   const images=(data.imageRefs||[]).map(i=>i.url).filter(Boolean);
   const packet={version:1,adId:ad.id,campaignId:ad.campaignId,campaignName:campaign.name||'',adName:data.name||'Ad',adRevision:ad.revision,
     offer:data.offer||'',price:data.price||'',cta:data.cta||'',context:data.context||'',mentions:data.mentions||{},
+    ...(Object.hasOwn(data,'pickupArea')||Object.hasOwn(data,'pickupZip')?{pickupArea:data.pickupArea||'',pickupZip:data.pickupZip||''}:{}),
     adaptations:{},imageRefs:clone(data.imageRefs||[]),imagesByPlatform:{},enabledPlatforms:[...platforms],
     copyBehavior:'reuse',override:!!overrides};
   for(const p of platforms) {
@@ -67,7 +69,7 @@ function event(eventId,type,fields,sourceAdId) {
   return {eventId,type,fields,at:new Date().toISOString(),...(sourceAdId?{sourceAdId}:{})};
 }
 function invalidateStaleApprovals(before,next) {
-  const inputs=['offer','price','cta','context','mentions','platforms','imageRefs'];
+  const inputs=['offer','price','cta','context','pickupArea','pickupZip','mentions','platforms','imageRefs'];
   if(!inputs.some(k=>JSON.stringify(before[k])!==JSON.stringify(next[k])))return;
   next.platformStatus={...(next.platformStatus||{})};
   for(const p of next.platforms||[]) {

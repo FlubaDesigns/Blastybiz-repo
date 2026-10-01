@@ -665,7 +665,7 @@ ${personalSeller?'PERSONAL SELLER AND ITEM':'BUSINESS INFO'}:
 ${listing.adDetails ? `- Additional ad details: ${listing.adDetails}\n` : ''}- Price/Range: ${listing.price || 'not specified'}
 - Phone: ${listing.phone || 'not provided'}
 - Location type: ${listing.locationType === 'online' ? 'Online only' : 'Physical location'}
-- Address/Area: ${listing.locationType === 'online' ? (listing.region ? 'Serves: ' + listing.region : 'Online — no physical address') : (listing.address || 'not provided')}
+- Address/Area: ${personalSeller ? (nameRules.locationText(listing.region) || 'not provided — omit pickup area') : (listing.locationType === 'online' ? (listing.region ? 'Serves: ' + nameRules.locationText(listing.region) : 'Online — no physical address') : (nameRules.locationText(listing.address) || 'not provided'))}
 - Website: ${listing.website || 'none'}
 ${personalSeller?'':'- Hours: '+(listing.hours || 'not provided')}
 - Images attached: ${listing.imageCount > 0 ? listing.imageCount + ' photo(s)' : 'none'}

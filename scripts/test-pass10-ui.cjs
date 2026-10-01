@@ -47,6 +47,22 @@ ok(state.get(camp+'/ads/'+ad.id).cta==='Text David','leaving CTA flushes the deb
 await w.BBAds.open();ok(w.document.getElementById('ad-cta').value==='Text David','typed CTA reopens from canonical Ad');
 const emptyCta=w.document.getElementById('ad-cta');emptyCta.value='';emptyCta.dispatchEvent(new w.Event('change',{bubbles:true}));await settled();await w.BBAds.open();
 ok(w.document.getElementById('ad-cta').value===''&&state.get(camp+'/ads/'+ad.id).cta==='','optional CTA can be cleared and remains blank');
+// Personal pickup facts use the same Ad persistence and prepared packet.
+ok(w.document.getElementById('ad-location-fields').hidden,'business keeps its existing location controls');
+w._bbProfileGlobal={sellerType:'personal'};await w.BBAds.open();
+ok(!w.document.getElementById('ad-location-fields').hidden,'personal ZIP and area are visible');
+for(const [id,value] of [['ad-zip','01234'],['ad-area','Downtown pickup']]){
+ const input=w.document.getElementById(id);ok(!input.required,'pickup field is optional');input.value=value;input.dispatchEvent(new w.Event('change',{bubbles:true}));await settled();
+}
+await w.BBAds.open();
+ok(w.document.getElementById('ad-zip').value==='01234'&&w.document.getElementById('ad-area').value==='Downtown pickup','ZIP leading zero and area survive reopening');
+w.platforms[0].adaptedContent='Pickup Downtown, 01234';w.platforms[0]._reviewStatus='approved';await w.BBAds.save();
+const ready=await w.BBAds.api('prepare',{adId:ad.id,blastId:'pickup-test',expectedRevision:w.BBAds.active.revision});
+ok(ready.packet.pickupZip==='01234'&&ready.packet.pickupArea==='Downtown pickup','prepared Blast preserves the saved pickup facts');
+for(const id of ['ad-zip','ad-area']){const input=w.document.getElementById(id);input.value='';input.dispatchEvent(new w.Event('change',{bubbles:true}));await settled();}
+await w.BBAds.open();
+ok(w.BBAds.active.pickupZip===''&&w.BBAds.active.pickupArea==='','cleared pickup fields remain blank');
+ok(w.BBAds.active.platformStatus.facebook==='needs-review','changing pickup facts requires copy review');
 w.history.replaceState({},'','?adId='+ad.id);await w.BBAds.open();ok(w.BBAds.active.id===ad.id,'existing direct links still open the specified Ad');
 // Business photos import through the same campaign repository and Ad save path.
 w._bbLoadGlobalImages=async()=>[{id:'business-photo',url:'https://example.com/business.jpg'}];

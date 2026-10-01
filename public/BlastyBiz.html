@@ -159,7 +159,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 <script src="blasty-registry.js?v=20261001-drafts"></script>
 <script src="blasty-events.js"></script>
 <script src="blasty-guidance.js?v=20261001-names"></script>
-<script src="business-form.js?v=20261001-names"></script>
+<script src="business-form.js?v=20261001-area"></script>
 <script type="module" src="blasty-runtime.js"></script>
 </head>
 <body class="has-site-header create-page workspace-loading">
@@ -2111,8 +2111,8 @@ async function regeneratePlatformCopy(pid) {
   const website     = ynState.website !== 'no' ? (profile.website || '') : '';
   const hours       = profile.hours    || '';
   const effLocType  = profile.locationType || 'physical';
-  const address     = (effLocType === 'physical' || effLocType === 'both') && ynState.address !== 'no' ? (profile.address || '') : '';
-  const region      = effLocType === 'both' ? (profile.region || '') : '';
+  const address = profile.sellerType==='personal' ? '' : ((effLocType === 'physical' || effLocType === 'both') && ynState.address !== 'no' ? BBSetup.locationText(profile.address) : '');
+  const region = profile.sellerType==='personal' ? BBSetup.formatArea(window.BBAds?.active||{}) : (effLocType === 'both' ? BBSetup.locationText(profile.region) : '');
   const offer       = document.getElementById('biz-offer')?.value?.trim() || document.getElementById('ad-context')?.value?.trim() || document.getElementById('campaign-context')?.value?.trim() || activeCampaignName || '';
   const price       = document.getElementById('biz-price')?.value?.trim() || '';
   const tone        = profile.tone || 'friendly';
@@ -3149,8 +3149,8 @@ async function runAdaptation() {
   const website   = ynState.website !== 'no' ? (profile.website || '') : '';
   const hours     = profile.hours    || '';
   const effLocType = profile.locationType || 'physical';
-  const address   = (effLocType === 'physical' || effLocType === 'both') && ynState.address !== 'no' ? (profile.address || '') : '';
-  const region    = effLocType === 'both' ? (profile.region || '') : '';
+  const address = profile.sellerType==='personal' ? '' : ((effLocType === 'physical' || effLocType === 'both') && ynState.address !== 'no' ? BBSetup.locationText(profile.address) : '');
+  const region = profile.sellerType==='personal' ? BBSetup.formatArea(window.BBAds?.active||{}) : (effLocType === 'both' ? BBSetup.locationText(profile.region) : '');
   const offer     = document.getElementById('biz-offer').value.trim() || document.getElementById('ad-context')?.value.trim() || document.getElementById('campaign-context')?.value.trim() || activeCampaignName;
   const price     = document.getElementById('biz-price').value.trim();
   const tone      = profile.tone || 'friendly';
@@ -5823,10 +5823,10 @@ onAuthStateChanged(auth, async (user) => {
         category:     biz.category   || '',
         phone:        biz.phone || '',
         email:        biz.email || '',
-        street:       biz.street || biz.address || '',
-        city:         biz.city   || '',
-        state:        biz.state  || '',
-        zip:          biz.zip    || '',
+        street:       biz.street || (typeof biz.address==='string'?biz.address:biz.address?.street) || '',
+        city:         biz.city   || biz.address?.city || '',
+        state:        biz.state  || biz.address?.state || '',
+        zip:          biz.zip    || biz.address?.zip || '',
         get address() { return [this.street, this.city, this.state, this.zip].filter(Boolean).join(', '); },
         region:       biz.region || '',
         locationType: biz.locationType || 'physical',
@@ -6461,11 +6461,14 @@ window._afterAdaptation = async function(adaptedPlatforms) {
     });
     const platformStatus = Object.fromEntries(adaptedPlatforms.filter(p=>p.enabled).map(p=>[p.id,p._reviewStatus==='approved'?'approved':p._reviewStatus==='skipped'?'excluded':'needs-review']));
 
+    const pickupLocation=profile.sellerType==='personal'?{pickupArea:window.BBAds?.active?.pickupArea||'',pickupZip:window.BBAds?.active?.pickupZip||''}:{};
+
     // F1: If a draft already exists for this blast, update it — never create a duplicate
     const existingDraftId = window._currentDraftId;
     if (existingDraftId) {
       const ref = doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'listingDrafts', existingDraftId);
       await updateDoc(ref, {
+        ...pickupLocation,
         adaptations,
         platformStatus,
         enabledPlatforms: adaptedPlatforms.filter(p=>p.enabled).map(p=>p.id),
@@ -6478,6 +6481,7 @@ window._afterAdaptation = async function(adaptedPlatforms) {
 
     // First generation — create a new draft
     const draftData = {
+      ...pickupLocation,
       uid:          currentUser.uid,
       businessId:   activeBizId,
       adaptations,
@@ -7466,7 +7470,7 @@ window.confirmDeleteAccount = async function() {
 .cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
 </style>
 <script src="lifecycle-ui.js?v=20261001-remove-legacy"></script>
-<script src="ad-workspace.js?v=20261001-cta-save"></script>
+<script src="ad-workspace.js?v=20261001-area"></script>
 <script>
 document.addEventListener('click',function(e){
  const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');

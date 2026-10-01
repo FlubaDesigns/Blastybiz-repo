@@ -5,7 +5,7 @@
   const uuid=()=>crypto.randomUUID();
   const el=id=>document.getElementById(id);
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const editFields=['biz-ad-name','biz-offer','biz-price','ad-context','ad-cta'];
+  const editFields=['biz-ad-name','biz-offer','biz-price','ad-context','ad-cta','ad-area','ad-zip'];
   const context=()=>({businessId:window.activeBizId,campaignId:activeCampaignId});
   async function api(action,body={}) {
     const ctx={...context(),...body};
@@ -22,7 +22,7 @@
     if(el('ad-workspace'))return;
     const host=el('campaign-content');if(!host)return;
     const box=document.createElement('section');box.id='ad-workspace';
-    box.innerHTML='<p id="ad-message" role="status" aria-live="polite"></p><button type="button" id="ad-save-retry" data-action="save" hidden>Retry save</button><div id="ad-current" hidden><label>Call to action (optional)<input id="ad-cta" type="text" maxlength="12000"></label><label>Extra details (optional)<textarea id="ad-context" rows="3"></textarea></label><div id="ad-prepared"></div></div>';
+    box.innerHTML='<p id="ad-message" role="status" aria-live="polite"></p><button type="button" id="ad-save-retry" data-action="save" hidden>Retry save</button><div id="ad-current" hidden><div id="ad-location-fields" hidden><label>ZIP code (optional)<input id="ad-zip" type="text" inputmode="numeric" maxlength="10" placeholder="ZIP code"></label><label>Area / pickup location (optional)<input id="ad-area" type="text" maxlength="300" placeholder="City, neighborhood, or pickup area"></label></div><label>Call to action (optional)<input id="ad-cta" type="text" maxlength="12000"></label><label>Extra details (optional)<textarea id="ad-context" rows="3"></textarea></label><div id="ad-prepared"></div></div>';
     const anchor=el('ad-form-anchor');
     if(anchor)anchor.parentNode.appendChild(box);else host.prepend(box);
     const style=document.createElement('style');style.textContent='#ad-workspace{padding:18px;margin-bottom:16px}#ad-workspace button{min-height:44px;margin:4px;padding:8px 12px}#ad-workspace label{display:block;margin:12px 0}#ad-workspace input,#ad-workspace textarea,#ad-workspace select{display:block;width:100%;box-sizing:border-box}.ad-copy{width:100%;min-height:100px}';document.head.appendChild(style);
@@ -50,7 +50,7 @@
     const seq=++epoch;campaign=activeCampaignId;business=window.activeBizId;ad=null;dirty=false;pending=null;loadError=null;window._bbActiveAd=null;
     const host=el('campaign-content');host.inert=true;
     el('ad-current').hidden=true;tell('Loading saved details…');
-    for(const field of ['biz-ad-name','biz-offer','biz-price','ad-context','ad-cta'])if(el(field))el(field).value='';
+    for(const field of ['biz-ad-name','biz-offer','biz-price','ad-context','ad-cta','ad-area','ad-zip'])if(el(field))el(field).value='';
     platforms=platforms.map(p=>({...p,enabled:false,adaptedContent:'',_reviewStatus:undefined}));
     window._currentDraftId=null;window._bbPendingDraft=null;window._bbPlatformPhotoSel={};
     loading=(async()=>{
@@ -68,7 +68,7 @@
   async function ready(){await loading;if(loadError)throw loadError;if(!ad)throw Error('Open a saved campaign before continuing.');return ad;}
   function fill(next){
     ad=next;window._bbActiveAd=ad;dirty=false;pending=null;window._currentDraftId=null;window._bbPendingDraft=null;
-    for(const [field,key] of Object.entries({'biz-ad-name':'name','biz-offer':'offer','biz-price':'price','ad-cta':'cta','ad-context':'context'})){if(el(field))el(field).value=ad[key]||'';}
+    for(const [field,key] of Object.entries({'biz-ad-name':'name','biz-offer':'offer','biz-price':'price','ad-cta':'cta','ad-context':'context','ad-area':'pickupArea','ad-zip':'pickupZip'})){if(el(field))el(field).value=ad[key]||'';}
     if(typeof platforms!=='undefined'){
       platforms=platforms.map(p=>({...p,enabled:(ad.platforms||[]).includes(p.id),adaptedContent:(ad.adaptations?.[p.id]||'').replace(/\n/g,'<br/>'),_reviewStatus:ad.platformStatus?.[p.id]==='excluded'?'skipped':ad.platformStatus?.[p.id]||'needs-review'}));
       if(typeof renderStep5Review==='function')renderStep5Review();
@@ -76,6 +76,7 @@
     for(const key of Object.keys(ynState))delete ynState[key];
     Object.assign(ynState,BBSetup.mentions(ad.mentions||BBSetup.profileMentions(window._bbProfileGlobal||{})));
     for(const [field,value] of Object.entries(ynState)){for(const choice of ['yes','no'])el('yn-'+field+'-'+choice)?.classList.toggle('yn-active',value===choice);}
+    el('ad-location-fields').hidden=window._bbProfileGlobal?.sellerType!=='personal';
     el('ad-current').hidden=false;window.BBBlasty?.fire('images.campaign_repository_intro');window.BBBlasty?.fire('images.ad_selection_intro');
     el('ad-prepared').replaceChildren();
     if(typeof renderStep3Platforms==='function')renderStep3Platforms();
@@ -86,6 +87,7 @@
   function creative(){
     if(!ad)throw Error('Choose or create an Ad first.');
     return {name:el('biz-ad-name').value.trim()||'Untitled Ad',offer:el('biz-offer').value,price:el('biz-price').value,cta:el('ad-cta').value,context:el('ad-context').value,
+      ...(window._bbProfileGlobal?.sellerType==='personal'?{pickupArea:el('ad-area').value,pickupZip:el('ad-zip').value}:{}),
       mentions:{...ynState},platforms:platforms.filter(p=>p.enabled).map(p=>p.id),imageRefs:(ad.imageRefs||[]).map(i=>({id:i.id})),
       adaptations:Object.fromEntries(platforms.filter(p=>p.enabled&&p.adaptedContent).map(p=>[p.id,p.adaptedContent.replace(/<br\s*\/?\s*>/gi,'\n')])),
       platformStatus:Object.fromEntries(platforms.filter(p=>p.enabled).map(p=>[p.id,p._reviewStatus==='approved'?'approved':p._reviewStatus==='skipped'?'excluded':'needs-review']))};

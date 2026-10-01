@@ -113,6 +113,21 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
   w.campSkip();await new Promise(r=>setImmediate(r));
   assert.equal(saved.length,1);assert.equal(saved[0].name,'GEM electric vehicle');assert.equal(saved[0].offer,'');assert.equal(saved[0].price,'');assert.equal(saved[0].campaignMemory,'GEM electric vehicle');dom.window.close();
  }
+ // Real summary rendering formats legacy objects and current optional pickup fields.
+ const preview=read('public/BlastyBiz-Listing-Preview.html');
+ dom=new JSDOM(preview,{runScripts:'outside-only',virtualConsole:new VirtualConsole()});w=dom.window;
+ w.eval(read('public/business-form.js'));
+ Object.assign(w,{renderPreviewRail(){},renderUpsell(){},renderManualPanel(){},willAutoPost:()=>false});
+ w.eval(preview.slice(preview.indexOf('function populateFromDraftData('),preview.indexOf('// Publishing features are shared;')));
+ for(const [data,expected] of [
+  [{address:{street:'Main St',city:'Sarasota',state:'FL',zip:'34236'}},'Main St, Sarasota, FL, 34236'],
+  [{region:'Sarasota area'},'Sarasota area'],
+  [{pickupArea:'Downtown',pickupZip:'01234'},'Downtown, 01234'],
+  [{pickupZip:'01234'},'01234'],[{pickupArea:'Downtown'},'Downtown'],
+  [{pickupArea:'',pickupZip:'',address:'Old address'},'—'],
+  [{address:{unknown:'ignored'}},'—'],[{address:'[object Object]'},'—']
+ ]){w.populateFromDraftData(data);assert.equal(w.document.getElementById('sb-area').textContent,expected);}
+ dom.window.close();
  // Call real AI handlers with a captured model boundary. No model or live writes.
  const file=path.resolve('functions/modules/ai.js'),req=createRequire(file);let captured=[];
  let storedType='personal';
@@ -133,6 +148,12 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
   await c.exports.adaptListing({body:{listing:{businessId:'b',sellerType:type==='personal'?'business':'personal',name:'David',adContext:'Used GEM vehicle; needs batteries',hours:'9 to 5',aiContext:{story:'Old business story'}},platforms:[],tone:'friendly'}},result,{uid:'u'});
   assert.match(captured.at(-1).prompt,type==='personal'?/private individual/:/local business marketing expert/);
   if(type==='personal'){assert(!captured.at(-1).prompt.includes('Old business story'));assert(!captured.at(-1).prompt.includes('9 to 5'));assert.match(captured.at(-1).prompt,/needs batteries/);}
+ }
+ for(const region of ['Downtown, 01234','']){
+  storedType='personal';
+  await c.exports.adaptListing({body:{listing:{businessId:'b',region,address:'Old profile street',locationType:'physical'},platforms:[],tone:'friendly'}},res(),{uid:'u'});
+  assert(captured.at(-1).prompt.includes('- Address/Area: '+(region||'not provided — omit pickup area')));
+  assert(!captured.at(-1).prompt.includes('Old profile street'));
  }
  for(const firstName of ['yes','no'])for(const lastName of ['yes','no'])for(const isRegeneration of [false,true]){
   storedType='personal';

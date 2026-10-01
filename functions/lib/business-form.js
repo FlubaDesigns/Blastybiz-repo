@@ -32,6 +32,15 @@
     const parts=nameParts(profile),allowed=mentions(prefs);
     return [allowed.firstName==='yes'?parts.ownerFirstName:'',allowed.lastName==='yes'?parts.ownerLastName:''].filter(Boolean).join(' ');
   }
+  function locationText(value) {
+    if(typeof value==='string')return value.split(',').map(p=>p.trim()).filter(p=>p&&p!=='[object Object]').join(', ');
+    if(!value||typeof value!=='object'||Array.isArray(value))return '';
+    return ['street','city','state','zip'].map(k=>typeof value[k]==='string'?locationText(value[k]):'').filter(Boolean).join(', ');
+  }
+  function formatArea(value={}) {
+    if(Object.hasOwn(value,'pickupArea')||Object.hasOwn(value,'pickupZip'))return [locationText(value.pickupArea),locationText(value.pickupZip)].filter(Boolean).join(', ');
+    return locationText(value.region)||locationText(value.address);
+  }
   function sellerType(value){return value==='personal'?'personal':'business';}
   function error(key,value,type){if(type==='personal'&&['businessName','ownerRole'].includes(key))return '';const v=String(value||'').trim();if(!v&&key==='ownerLastName')return '';if(!v)return 'Please enter '+(fields.find(f=>f.key===key)?.label||key).toLowerCase()+'.';if(v.length>300)return 'Please shorten this answer.';if(key==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))return 'Enter a valid email.';if(key==='phone'&&v.replace(/\D/g,'').length<7)return 'Enter a complete phone number.';return '';}
   function formatPhone(value){
@@ -63,6 +72,6 @@
     if(event?.type==='input'&&start!==null&&end!==null)input.setSelectionRange(caret(start),caret(end));
   }
   function collect(mode,doc=document){const values={sellerType:sellerType(doc.getElementById(mode==='signup'?'su-sellerType':'f-sellerType')?.value),...Object.fromEntries(fields.map(f=>[f.key,doc.getElementById(f[mode])?.value.trim()||'']))};return {...values,...nameParts(values)};}
-  root.BBSetup={fields,error,collect,sellerType,formatPhone,formatPhoneInput,nameParts,mentions,profileMentions,mentionedName,validate(values){values={...values,...nameParts(values)};return fields.map(f=>({field:f,error:error(f.key,values[f.key],values.sellerType)})).filter(x=>x.error);}};
+  root.BBSetup={fields,error,collect,sellerType,formatPhone,formatPhoneInput,nameParts,mentions,profileMentions,mentionedName,locationText,formatArea,validate(values){values={...values,...nameParts(values)};return fields.map(f=>({field:f,error:error(f.key,values[f.key],values.sellerType)})).filter(x=>x.error);}};
   if(typeof module!=='undefined')module.exports=root.BBSetup;
 })(typeof window==='undefined'?globalThis:window);

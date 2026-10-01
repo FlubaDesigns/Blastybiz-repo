@@ -28,7 +28,7 @@
 <script src="blasty-registry.js"></script>
 <script src="blasty-events.js"></script>
 <script src="blasty-guidance.js"></script>
-<script src="business-form.js"></script>
+<script src="business-form.js?v=20261001-area"></script>
 <script type="module" src="blasty-runtime.js"></script>
 </head>
 <body class="app-page listing-preview-page has-site-header">
@@ -293,7 +293,7 @@ function populateFromDraftData(draftData) {
   if (sbName)     sbName.textContent     = draftData.name     || '—';
   if (sbCategory) sbCategory.textContent = draftData.category || '—';
   if (sbPhone)    sbPhone.textContent    = draftData.phone    || '—';
-  if (sbArea)     sbArea.textContent     = draftData.region   || draftData.address || '—';
+  if (sbArea)     sbArea.textContent     = BBSetup.formatArea(draftData) || '—';
   if (sbOffer)    sbOffer.textContent    = draftData.offer    || '—';
 
   var platformIds   = Object.keys(drafts);
