@@ -57,6 +57,10 @@ jobs:
           node scripts/test-backend-review.cjs
           python3 scripts/test-backup-identity.py
           node scripts/test-backup-verification.cjs
+      - name: Real photo decoding and encoding
+        run: |
+          npm install --prefix "$RUNNER_TEMP/blasty-photos" --no-audit --no-fund @napi-rs/canvas@0.1.80
+          CANVAS_PATH="$RUNNER_TEMP/blasty-photos/node_modules/@napi-rs/canvas" node scripts/test-image-preparation.cjs
       - name: Ad controls and gesture DOM checks
         run: |
           npm install --prefix "$RUNNER_TEMP/blasty-dom" --no-audit --no-fund jsdom@26.1.0

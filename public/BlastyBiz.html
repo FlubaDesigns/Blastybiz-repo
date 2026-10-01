@@ -15,6 +15,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
 [hidden]{display:none!important;}
+#campaign-photos .thumb-wrap.has-error{aspect-ratio:auto;min-height:150px;background:#1a0a0a;}
+#campaign-photos .has-error .thumb-error-overlay{height:48px;justify-content:flex-start;padding-left:8px;}
+#campaign-photos .thumb-error-msg{padding:4px 8px 12px;font-size:12px;line-height:1.4;color:#ffd08a;overflow-wrap:anywhere;}
+#campaign-photos .thumb-remove{width:44px;height:44px;font-size:18px;}
 body.workspace-loading .tabs-row,body.workspace-loading .section,body.workspace-loading #workspace-info-bar{display:none!important;}
 body.personal-seller #tab-profile,body.personal-seller #tab-story,
 body.personal-seller #section-profile,body.personal-seller #section-story,
@@ -2874,23 +2878,32 @@ window.renderAllPhotos = function() {
     const wrap = document.createElement('div');
     wrap.className = 'thumb-wrap';
     if (item.error) {
+      wrap.classList.add('has-error');
       wrap.innerHTML = `
         <div class="thumb-error-overlay">⚠️</div>
-        <div class="thumb-error-msg">${item.errorMsg || 'Upload failed'}</div>
+        <div class="thumb-error-msg">${escHtml(item.errorMsg || 'Upload failed')}</div>
         <button type="button" class="thumb-remove" onclick="window._bbDeletePhoto&&window._bbDeletePhoto(${i})">✕</button>`;
     } else if (!item.done) {
       const label = item.compressing
         ? `<div class="thumb-progress-pct" style="font-size:10px">⚙️</div><div style="font-size:9px;color:#ccc;margin-top:2px">Compressing…</div>`
         : `<div class="thumb-progress-pct">${item.progress}%</div><div class="thumb-progress-bar"><div style="width:${item.progress}%;height:100%;background:var(--green);border-radius:2px;transition:width .2s;"></div></div>`;
       wrap.innerHTML = `
-        <img src="${item.localUrl}" class="thumb-uploading-img" alt="Uploading photo…" />
+        ${item.localUrl ? `<img src="${item.localUrl}" class="thumb-uploading-img" alt="Uploading photo…" />` : ''}
         <div class="thumb-progress-overlay">${label}</div>`;
     } else {
-      const isSelected = window._bbSelectedPhotoIndex === i;
+      const isSelected = window.BBAds?.active
+        ? (window.BBAds.active.imageRefs || []).some(image => (photoScope === 'campaign' && image.id === item.id) || image.url === item.url)
+        : window._bbSelectedPhotoIndex === i;
       wrap.className = 'thumb-wrap selectable' + (isSelected ? ' selected' : '');
+      wrap.setAttribute('role', 'button');
+      wrap.tabIndex = 0;
+      wrap.setAttribute('aria-pressed', String(isSelected));
+      wrap.setAttribute('aria-label', isSelected ? 'Deselect photo for this ad' : 'Select photo for this ad');
+      wrap.onkeydown = event => { if (event.target === wrap && ['Enter', ' '].includes(event.key)) { event.preventDefault(); wrap.click(); } };
       wrap.onclick = (e) => {
-        if (e.target.classList.contains('thumb-remove')) return;
-        if (window._bbSelectPhoto) window._bbSelectPhoto(i);
+        if (e.target.classList.contains('thumb-remove') || item.deleting || item.selecting) return;
+        if (window.BBAds?.active) window.BBAds.choosePhoto(item);
+        else if (window._bbSelectPhoto) window._bbSelectPhoto(i);
       };
       wrap.innerHTML = `
         <img src="${item.localUrl}" alt="Uploaded photo" />
@@ -2910,7 +2923,7 @@ window.renderAllPhotos = function() {
 
   const cap = photoCap();
   const uploadArea = document.getElementById('photo-upload-area');
-  if (uploadArea) uploadArea.style.display = (cap !== Infinity && items.length >= cap) ? 'none' : 'flex';
+  if (uploadArea) uploadArea.style.display = (cap !== Infinity && items.filter(item => !item.error).length >= cap) ? 'none' : 'flex';
   updatePhotoCapLabel();
 
   let badge = document.getElementById('photo-count-badge');
@@ -2923,18 +2936,26 @@ window.renderAllPhotos = function() {
       badge.style.cssText = 'font-size:12px;font-weight:600;margin-bottom:10px;';
       grid.parentNode.insertBefore(badge, grid);
     }
-    badge.style.color = uploading > 0 ? '#fff' : 'var(--green)';
-    badge.innerHTML = uploading > 0
+    const failed = items.filter(i => i.error).length;
+    badge.setAttribute('role', 'status');
+    badge.setAttribute('aria-live', 'polite');
+    badge.style.color = failed ? '#ffb400' : uploading > 0 ? '#fff' : 'var(--green)';
+    badge.textContent = uploading > 0
       ? `⬆️ Uploading ${uploading} photo${uploading > 1 ? 's' : ''}… (${saved} saved)`
+      : failed ? `⚠️ ${failed} photo${failed !== 1 ? 's' : ''} failed to upload · ${saved} saved. Remove the failed tiles and retry.`
       : `✅ ${saved} photo${saved !== 1 ? 's' : ''} saved ${photoScope === 'global' ? 'to the global library' : 'to this campaign'}`;
     let hint = document.getElementById('photo-select-hint');
     if (saved > 0 && !hint) {
       hint = document.createElement('div');
       hint.id = 'photo-select-hint';
       hint.className = 'thumb-hint';
-      hint.textContent = 'Tap a photo to feature it in your ad';
+      hint.textContent = '';
       grid.parentNode.insertBefore(hint, grid);
-    } else if (saved === 0 && hint) {
+    }
+    if (hint) hint.textContent = window.BBAds?.active
+      ? (photoScope === 'global' ? 'Tap a business photo to use it in this ad.' : 'Tap photos to select or deselect them for this ad. Selections save automatically.')
+      : 'Tap a photo to feature it in your ad';
+    if (saved === 0 && hint) {
       hint.remove();
     }
   } else {
@@ -4266,7 +4287,9 @@ function refreshPhotoGridForScope() {
     if (hint) hint.textContent = 'Global photos are shared across all campaigns (logo, storefront, team photos, etc.).';
   } else {
     const hint = document.getElementById('photo-scope-hint');
-    if (hint) hint.textContent = 'Campaign photos are linked to the active campaign. Select a campaign above first.';
+    if (hint) hint.textContent = activeCampaignId
+      ? 'Photos saved to this campaign. Tap a photo to use it in this ad.'
+      : 'Select a campaign above before adding campaign photos.';
     const cid = activeCampaignId;
     const applyImages = images => {
       if (window._bbPhotoItems !== pendingItems || photoScope !== 'campaign' || activeCampaignId !== cid) return;
@@ -5922,109 +5945,147 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  // ── Image compression (max 1200px, JPEG 85%) ─────────────
-  // Silently decode HEIC/HEIF → JPEG blob using heic2any (lazy-loaded from CDN).
-  // Returns the original file if not HEIC, a JPEG Blob if converted, or null on failure.
+  // One preparation path for every photo: identify bytes, decode, resize, encode JPEG.
+  async function _bbImageType(file) {
+    const b = new Uint8Array(await file.slice(0, 64).arrayBuffer());
+    const word = n => String.fromCharCode(...b.slice(n, n + 4));
+    if (b[0] === 255 && b[1] === 216 && b[2] === 255) return 'image/jpeg';
+    if (word(0) === '\x89PNG') return 'image/png';
+    if (word(0) === 'RIFF' && word(8) === 'WEBP') return 'image/webp';
+    if (word(0) === 'GIF8') return 'image/gif';
+    if (b[0] === 66 && b[1] === 77) return 'image/bmp';
+    if (word(4) === 'ftyp') {
+      const brands = [word(8)];
+      const size = new DataView(b.buffer).getUint32(0);
+      for (let i = 16; i + 4 <= Math.min(size, b.length); i += 4) brands.push(word(i));
+      if (brands.some(v => ['avif', 'avis'].includes(v))) return 'image/avif';
+      if (brands.some(v => ['heic','heix','heim','heis','hevc','hevx','mif1','msf1'].includes(v))) return 'image/heic';
+    }
+    return '';
+  }
+
   async function maybeDecodeHeic(file) {
-    const name = (file.name || '').toLowerCase();
-    let isHeic = file.type === 'image/heic' || file.type === 'image/heif'
-      || name.endsWith('.heic') || name.endsWith('.heif');
-    if (!isHeic) {
-      try {
-        const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
-        const box = String.fromCharCode(...bytes.slice(4, 8));
-        const brand = String.fromCharCode(...bytes.slice(8, 12));
-        isHeic = box === 'ftyp' && ['heic', 'heix', 'heim', 'heis', 'hevc', 'hevx', 'mif1', 'msf1'].includes(brand);
-      } catch (_) { /* The existing image decoder handles unreadable/other formats. */ }
-    }
-    if (!isHeic) return file;
-    // Lazy-load heic2any once
+    // This is only called after the browser decoder fails; names and MIME labels
+    // from phone pickers cannot force a readable JPEG through the HEIC converter.
+    if (await _bbImageType(file) !== 'image/heic') return file;
     if (!window._heic2any) {
-      await new Promise((res, rej) => {
-        if (window.heic2any) { res(); return; }
-        const s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
-        s.integrity = 'sha384-OTofQ0MEeiSgh62havBcemCIK0gqj809wX6UA0uPISNMRnR6NZyCdGzX3SbLrgwL';
-        s.crossOrigin = 'anonymous';
-        s.onload = res; s.onerror = rej;
-        document.head.appendChild(s);
-      }).catch(() => null);
-      window._heic2any = window.heic2any || null;
+      if (!window._bbHeicLoading) {
+        window._bbHeicLoading = new Promise((resolve, reject) => {
+          if (window.heic2any) { resolve(); return; }
+          const script = document.createElement('script');
+          const timer = setTimeout(() => { script.remove(); reject(Error('Photo converter could not load. Check your connection and retry.')); }, 30000);
+          script.src = 'vendor/heic2any-0.0.4.min.js';
+          script.integrity = 'sha384-OTofQ0MEeiSgh62havBcemCIK0gqj809wX6UA0uPISNMRnR6NZyCdGzX3SbLrgwL';
+          script.onload = () => { clearTimeout(timer); resolve(); };
+          script.onerror = () => { clearTimeout(timer); script.remove(); reject(Error('Photo converter could not load. Check your connection and retry.')); };
+          document.head.appendChild(script);
+        }).catch(error => { window._bbHeicLoading = null; throw error; });
+      }
+      await window._bbHeicLoading;
+      window._heic2any = window.heic2any;
     }
-    if (!window._heic2any) return null; // CDN unavailable
+    if (!window._heic2any) throw Error('Photo converter did not start. Reload and retry.');
+    let timer;
     try {
-      const result = await window._heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+      const result = await Promise.race([
+        window._heic2any({blob:file,toType:'image/jpeg',quality:0.9}),
+        new Promise((_, reject) => { timer = setTimeout(() => reject(Error('HEIC conversion took too long. Try this photo again on its own.')), 90000); })
+      ]);
       return Array.isArray(result) ? result[0] : result;
-    } catch(e) {
-      console.warn('heic2any failed:', e);
-      return null;
-    }
+    } catch(error) {
+      throw Error(error.message?.includes('too long') ? error.message : 'This HEIC photo could not be decoded. Please try another copy of the photo.');
+    } finally { clearTimeout(timer); }
   }
 
-  // 3.5: magic-byte check — reject non-image files before they reach Storage.
-  // Reads only the first 12 bytes so it's essentially free.
   async function _bbValidateImageBytes(file) {
-    try {
-      const buf = await file.slice(0, 12).arrayBuffer();
-      const b = new Uint8Array(buf);
-      const isJpeg = b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF;
-      const isPng  = b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47;
-      const isWebp = b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 &&
-                     b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50;
-      const isGif  = b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46;
-      const isHeic = b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70; // ftyp box — HEIF/HEIC
-      return isJpeg || isPng || isWebp || isGif || isHeic;
-    } catch(e) { return true; } // fail-open: let the upload proceed and let Storage rules catch it
+    try { return !!await _bbImageType(file); }
+    catch (_) { return false; }
   }
 
-  async function compressImage(file) {
-    // Transparently convert HEIC/HEIF → JPEG before canvas touches it (Android Chrome can't decode HEIC natively)
-    const source = await maybeDecodeHeic(file);
-    if (!source) return null;
-
-    return new Promise(resolve => {
-      const MAX = 1200;
-      const img = new Image();
-      const objUrl = URL.createObjectURL(source);
-      let settled = false;
-      const done = (result) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(giveUp);
-        URL.revokeObjectURL(objUrl);
-        resolve(result);
-      };
-      // Safety net: if the whole process hangs, fail clearly — never fall back to raw file
-      const giveUp = setTimeout(() => done(null), 25000);
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > MAX || height > MAX) {
-          if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
-          else                { width  = Math.round(width  * MAX / height); height = MAX; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width; canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'medium';
-        ctx.drawImage(img, 0, 0, width, height);
-        // If toBlob stalls (known mobile bug), fail clearly rather than uploading the raw original
-        const blobTimeout = setTimeout(() => done(null), 15000);
-        canvas.toBlob(blob => { clearTimeout(blobTimeout); done(blob || null); }, 'image/jpeg', 0.82);
-      };
-      img.onerror = () => done(null);
-      img.src = objUrl;
+  async function _bbDecodePhoto(file) {
+    if (typeof createImageBitmap === 'function') {
+      let timer, expired = false;
+      try {
+        const bitmap = await Promise.race([
+          createImageBitmap(file, {imageOrientation:'from-image'}).then(value => { if (expired) { value.close(); throw Error('Decode timed out'); } return value; }),
+          new Promise((_, reject) => { timer = setTimeout(() => { expired = true; reject(Error('Decode timed out')); }, 30000); })
+        ]);
+        return {image:bitmap, release:() => bitmap.close()};
+      } catch (_) { /* Use the browser's ordinary image decoder next. */ }
+      finally { clearTimeout(timer); }
+    }
+    return new Promise((resolve, reject) => {
+      const img = new Image(), url = URL.createObjectURL(file);
+      const release = () => { img.onload = img.onerror = null; img.src = ''; URL.revokeObjectURL(url); };
+      const timer = setTimeout(() => { release(); reject(Error('This photo took too long to open. Try it again on its own.')); }, 30000);
+      img.onload = () => { clearTimeout(timer); resolve({image:img, release}); };
+      img.onerror = () => { clearTimeout(timer); release(); reject(Error('The browser could not open this photo.')); };
+      img.src = url;
     });
   }
 
+  async function _bbCanvasJpeg(canvas, quality) {
+    const fallback = () => {
+      const data = canvas.toDataURL('image/jpeg', quality);
+      if (!data.startsWith('data:image/jpeg;base64,')) throw Error('Your browser could not create a JPEG. Reload and retry.');
+      const bytes = atob(data.split(',')[1]);
+      return new Blob([Uint8Array.from(bytes, c => c.charCodeAt(0))], {type:'image/jpeg'});
+    };
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = blob => {
+        if (settled) return;
+        settled = true; clearTimeout(timer);
+        try { resolve(blob?.size && blob.type === 'image/jpeg' ? blob : fallback()); }
+        catch (error) { reject(error); }
+      };
+      // Some mobile browsers return null or never call toBlob's callback.
+      // Encode the already-resized canvas instead of rejecting a valid photo.
+      const timer = setTimeout(() => finish(null), 5000);
+      try { canvas.toBlob(finish, 'image/jpeg', quality); }
+      catch (_) { finish(null); }
+    });
+  }
+
+  async function compressImage(file) {
+    const type = await _bbImageType(file);
+    if (!type) throw Error('Choose a JPEG, PNG, WebP, GIF, BMP, AVIF or HEIC photo.');
+    // Correct absent or misleading Android picker MIME labels using the bytes.
+    const source = file.type === type ? file : file.slice(0, file.size, type);
+    let decoded;
+    try { decoded = await _bbDecodePhoto(source); }
+    catch (error) {
+      if (type !== 'image/heic') throw error;
+      const converted = await maybeDecodeHeic(source);
+      if (!converted) throw Error('This HEIC photo could not be decoded.');
+      decoded = await _bbDecodePhoto(converted);
+    }
+    const canvas = document.createElement('canvas');
+    try {
+      const image = decoded.image;
+      const width = image.naturalWidth || image.width, height = image.naturalHeight || image.height;
+      if (!width || !height) throw Error('This photo has no readable image data.');
+      for (const [max, quality] of [[1200,0.82],[1000,0.65],[800,0.45]]) {
+        const scale = Math.min(1, max / Math.max(width, height));
+        canvas.width = Math.max(1, Math.round(width * scale));
+        canvas.height = Math.max(1, Math.round(height * scale));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw Error('Your browser could not prepare the photo. Reload and retry.');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const blob = await _bbCanvasJpeg(canvas, quality);
+        if (blob.size > 0 && blob.size < 4.9 * 1024 * 1024) return blob;
+      }
+      throw Error('This photo could not be reduced to the upload limit. Try another copy.');
+    } finally { decoded.release(); canvas.width = canvas.height = 0; }
+  }
+
+
   // ── Photo upload (scope-aware: campaign subcollection or global images) ───────
   window._bbUploadPhoto = async function(file, uploadContext = {}) {
-    // Photo pickers may omit MIME type or use a generic binary type; existing byte checks and decoding still apply.
-    if (!file || (file.type && file.type !== 'application/octet-stream' && !file.type.startsWith('image/'))) {
-      if (window.showToast) window.showToast('Only image files can be uploaded here.');
-      return;
-    }
-    const scope = activeCampaignId ? 'campaign' : (uploadContext.scope || photoScope || 'global');
+    if (!file) return;
+    const scope = uploadContext.scope || (activeCampaignId ? 'campaign' : (photoScope || 'global'));
     const cid = uploadContext.campaignId !== undefined ? uploadContext.campaignId : activeCampaignId;
     const bizId = uploadContext.bizId || activeBizId;
     // Guard: campaign upload requires an active campaign
@@ -6032,7 +6093,7 @@ onAuthStateChanged(auth, async (user) => {
       if (window.showToast) window.showToast('Select a campaign first before uploading campaign photos.');
       return;
     }
-    const localUrl = URL.createObjectURL(file);
+    let localUrl = null;
     const uploadId = Date.now() + '_' + Math.random().toString(36).slice(2,8);
     const storagePath = scope === 'global'
       ? `photos/${currentUser.uid}/global/${uploadId}.jpg`
@@ -6043,50 +6104,29 @@ onAuthStateChanged(auth, async (user) => {
     if (photoUploadMatchesView(item)) window._bbPhotoItems.push(item);
     if (window.renderAllPhotos) window.renderAllPhotos();
 
-    // 3.5: validate magic bytes before wasting bandwidth on a non-image file
-    if (!await _bbValidateImageBytes(file)) {
+    const fail = message => {
+      item.compressing = false; item.error = true; item.errorMsg = message;
       window._bbPhotoUploads.delete(item);
-      URL.revokeObjectURL(localUrl);
-      window._bbPhotoItems = (window._bbPhotoItems || []).filter(x => x !== item);
+      if (localUrl) { URL.revokeObjectURL(localUrl); localUrl = null; item.localUrl = null; }
       if (window.renderAllPhotos) window.renderAllPhotos();
-      if (window.showToast) window.showToast('⚠️ Only JPEG, PNG, WebP, GIF, or HEIC images are supported.');
-      return;
-    }
-
-    const compressed = await compressImage(file);
-    item.compressing = false;
-
-    // Compression failed or timed out (e.g. large HEIC on Android) — never attempt raw upload
-    if (!compressed) {
-      item.error = true;
-      item.errorMsg = 'Could not compress — try a different photo';
-      if (window.renderAllPhotos) window.renderAllPhotos();
-      if (window.showToast) window.showToast('⚠️ This photo couldn\'t be compressed. It may be an unsupported format or too large. Try saving it as a JPEG from your gallery first.');
-      return;
-    }
-
-    // Sanity check: compressed result should always be well under 4.9 MB at 1200px/JPEG 0.82
-    if (compressed.size > 4.9 * 1024 * 1024) {
-      item.error = true;
-      item.errorMsg = 'Still too large after compression — try a smaller photo';
-      if (window.renderAllPhotos) window.renderAllPhotos();
-      if (window.showToast) window.showToast('⚠️ This photo is still too large after compression. Try exporting it as a JPEG from your gallery.');
-      return;
-    }
-
-    const fileRef = storageRef(storage, storagePath);
-    const task = uploadBytesResumable(fileRef, compressed, { contentType: 'image/jpeg' });
+      if (window.showToast) window.showToast(message);
+    };
+    let task;
+    try {
+      const compressed = await compressImage(file);
+      if (!compressed?.size || compressed.size >= 4.9 * 1024 * 1024) throw Error('Photo preparation failed. Please retry this photo.');
+      item.compressing = false;
+      // Preview only the small prepared JPEG, avoiding a second full-size decode.
+      localUrl = URL.createObjectURL(compressed); item.localUrl = localUrl;
+      const fileRef = storageRef(storage, storagePath);
+      task = uploadBytesResumable(fileRef, compressed, { contentType: 'image/jpeg' });
+    } catch(error) { fail(error.message || 'The photo could not be prepared. Please retry.'); return; }
     task.on('state_changed',
       snapshot => {
         item.progress = Math.round(snapshot.bytesTransferred / snapshot.totalBytes * 100);
         if (window.renderAllPhotos) window.renderAllPhotos();
       },
-      err => {
-        item.error = true;
-        item.errorMsg = 'Upload failed — tap ✕ and try again';
-        if (window.renderAllPhotos) window.renderAllPhotos();
-        if (window.showToast) window.showToast('⚠️ Upload failed: ' + (err.message || 'unknown error') + '. Tap the ✕ on the photo and try again.');
-      },
+      err => fail('Upload failed. Check your connection and retry. ' + (err.message || '')),
       async () => {
         try {
           const dlUrl = await getDownloadURL(task.snapshot.ref);
@@ -6101,7 +6141,7 @@ onAuthStateChanged(auth, async (user) => {
           item.url = dlUrl;
           item.localUrl = dlUrl;
           item.done = true;
-          window.BBAds?.refreshImages();
+          window.BBAds?.refreshImages().catch(error => window.showToast?.('Photo saved, but the photo list could not refresh. Reload to see it.'));
           item.progress = 100;
           window._bbPhotoUploads.delete(item);
           if (photoUploadMatchesView(item) && !window._bbPhotoItems.some(photo => photo === item || photo.id === id)) {
@@ -6114,9 +6154,7 @@ onAuthStateChanged(auth, async (user) => {
           }
         } catch(e) {
           console.error('Photo save error:', e);
-          item.error = true;
-          item.errorMsg = 'Could not save — remove and try again';
-          if (window.showToast) window.showToast('Photo could not be saved. Remove it and try again.');
+          fail('Photo uploaded but could not be saved. Remove it and try again.');
         }
         if (window.renderAllPhotos) window.renderAllPhotos();
       }
@@ -7374,7 +7412,7 @@ window.confirmDeleteAccount = async function() {
 .cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
 </style>
 <script src="lifecycle-ui.js?v=20261001-remove-legacy"></script>
-<script src="ad-workspace.js?v=20261001-flow"></script>
+<script src="ad-workspace.js?v=20261001-photos"></script>
 <script>
 document.addEventListener('click',function(e){
  const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');
