@@ -1028,6 +1028,36 @@ window.selectBilling = function(period) {
   selectBilling(billing);
 })();
 
+// Reuse the existing server-owned profile creation with the saved signup answers.
+// A stable ID makes verification retries safe without creating duplicate profiles.
+async function resumePersonalSignup(user, userData) {
+  const handoff = userData.setupHandoff;
+  if (handoff?.sellerType !== 'personal') return null;
+  const owned = await getDocs(collection(db, 'users', user.uid, 'businesses'));
+  const profiles = owned.docs.map(d => ({ ...d.data(), id: d.id }));
+  const existing = profiles.find(p => p.id === userData.activeBusiness) || profiles[0];
+  if (existing) {
+    if (existing.sellerType !== 'personal') return null;
+    if (existing.id !== userData.activeBusiness) await setDoc(doc(db, 'users', user.uid), { activeBusiness: existing.id }, { merge: true });
+    return 'BlastyBiz.html?tab=create&bizId=' + encodeURIComponent(existing.id);
+  }
+  const ownerName = handoff.ownerName || userData.ownerName || user.displayName || '';
+  if (!ownerName) return null;
+  const token = await user.getIdToken(true);
+  const response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/createBusiness', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify({ bizId: user.uid, isNew: true, profileData: {
+      sellerType: 'personal', ownerName, phone: handoff.phone || '',
+      email: handoff.email || user.email || '', ownerRole: '', hours: '',
+      onboarded: true, locationType: 'physical', tone: 'friendly'
+    } })
+  });
+  const result = await response.json();
+  if (!response.ok || !result.success) throw new Error(result.error || 'Could not finish saving your profile. Please try again.');
+  return 'BlastyBiz.html?tab=create&newcampaign=1&bizId=' + encodeURIComponent(result.bizId);
+}
+
 async function afterAuth(user) {
   try {
     const savedDraft = sessionStorage.getItem('bb_draft_return');
@@ -1052,12 +1082,6 @@ async function afterAuth(user) {
     const picked  = localStorage.getItem('bb_selected_plan');
     const billing = localStorage.getItem('bb_billing_period') || 'monthly';
 
-    // Paid plan selected → go to checkout first; Dashboard sends to onboarding after payment
-    if (picked && ['pro', 'agency'].includes(picked)) {
-      window.location.href = `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(picked)}&billing=${encodeURIComponent(billing)}`;
-      return;
-    }
-
     const snap     = await getDoc(doc(db, 'users', user.uid));
     const userData = snap.exists() ? snap.data() : {};
 
@@ -1067,6 +1091,19 @@ async function afterAuth(user) {
       setDoc(doc(db, 'users', user.uid), { loginGuideDone: true }, { merge: true }).catch(() => {});
     }
     localStorage.setItem('bb_guide_done', '1');
+    const personalDestination = await resumePersonalSignup(user, userData);
+    // Save Personal identity before checkout so returning users can create a listing.
+    if (picked && ['pro', 'agency'].includes(picked)) {
+      window.location.href = `BlastyBiz-Dashboard.html?checkout=${encodeURIComponent(picked)}&billing=${encodeURIComponent(billing)}`;
+      return;
+    }
+
+
+    if (personalDestination) {
+      localStorage.removeItem('bb_start_choice');
+      window.location.href = personalDestination;
+      return;
+    }
     if (userData.onboarded) {
       // Carry guided flag to dashboard so Blasty can greet them there too
       localStorage.removeItem('bb_start_choice');

@@ -15,6 +15,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
 [hidden]{display:none!important;}
+body.workspace-loading .tabs-row,body.workspace-loading .section,body.workspace-loading #workspace-info-bar{display:none!important;}
+body.personal-seller #tab-profile,body.personal-seller #tab-story,
+body.personal-seller #section-profile,body.personal-seller #section-story,
+body.personal-seller #workspace-info-bar,
+body.personal-seller a[href*="BlastyBiz-Profile"],body.personal-seller a[href*="tab=profile"],
+body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href*="tab=story"]{display:none!important;}
 @media (max-width:768px){.dash-img-col{display:none}}
 .scope-btn{background:var(--dark,#1a1a1a);border:1px solid var(--border,#333);border-radius:8px;padding:6px 14px;color:var(--muted,#888);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;}
 .scope-btn.active{background:var(--green,#39ff14);border-color:var(--green,#39ff14);color:#000;}
@@ -152,10 +158,11 @@
 <script src="business-form.js"></script>
 <script type="module" src="blasty-runtime.js"></script>
 </head>
-<body class="has-site-header create-page">
+<body class="has-site-header create-page workspace-loading">
 <div id="header__inject"></div>
 <div class="stage">
 <div class="main">
+<p id="workspace-loading-status" role="status">Loading your saved details…</p>
 
 <div class="tabs-row">
   <button class="tabs-arrow tabs-arrow--left" id="tabs-arrow-left" aria-label="Scroll tabs left" onclick="_tabsScroll(-1)">&#8249;</button>
@@ -1290,6 +1297,7 @@ function _tabsScroll(dir) {
 })();
 
 function showTab(name) {
+  if (profile.sellerType === 'personal' && (name === 'profile' || name === 'story')) name = 'create';
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   // aria-selected must move with the highlight, or screen readers keep announcing
   // whichever tab was marked selected in the markup (Profile) on every screen.
@@ -3531,6 +3539,7 @@ function saveProfile() {
 function loadProfile() {
   window._bbProfileGlobal=profile;
   const personal=profile.sellerType==='personal';
+  document.body.classList.toggle('personal-seller', personal);
   if (personal) {
     profile.ownerName = profile.ownerName || profile.name || '';
     profile.name = profile.ownerName;
@@ -5138,6 +5147,9 @@ window._bbSetProfile = function(p) {
     }));
   } catch(e) {}
   loadProfile();
+  if (p.sellerType === 'personal' && document.querySelector('#tab-profile.active, #tab-story.active')) showTab('create');
+  document.body.classList.remove('workspace-loading');
+  document.getElementById('workspace-loading-status').hidden = true;
   // ynMention* is now per-campaign (restored in selectCampaign), not per-business profile
 };
 
@@ -5686,8 +5698,8 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
   if (!selection.active) {
-    // Signup identity and seller choice are restored by the existing setup form.
-    window.location.replace('BlastyBiz-CreateBiz.html');
+    // Resume saved Personal signup without the business setup screen.
+    window.location.replace(userData.setupHandoff?.sellerType === 'personal' ? 'BlastyBiz-Login.html?intent=signin' : 'BlastyBiz-CreateBiz.html');
     return;
   }
   window.BUSINESSES = selection.businesses;

@@ -42,12 +42,15 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  w.profile={sellerType:'business',name:'Company'};w.loadProfile();assert(!w.document.getElementById('profile-hours').hidden);assert.equal(w.document.querySelector('label[for="profile-name"]').textContent,'Business Name');dom.window.close();
  // Personal identity uses Your Name only, including cache reload and blank company names.
  dom=new JSDOM(app,{url:'https://example.invalid',runScripts:'outside-only',virtualConsole:new VirtualConsole()});w=dom.window;
- Object.assign(w,{profile:{},profileLocationType:'physical',locationType:'physical',renderPlatformCats(){},updateCopyPreview(){},setProfileLocationType(){}});
+ Object.assign(w,{showTab(){},profile:{},profileLocationType:'physical',locationType:'physical',renderPlatformCats(){},updateCopyPreview(){},setProfileLocationType(){}});
  w.eval(app.slice(app.indexOf('function saveProfile() {'),app.indexOf('function setYN(field, val)')));
  w.eval(app.slice(app.indexOf('window._bbSetProfile = function(p) {'),app.indexOf('// _saveInsightToFirestore and _saveGlobalFactoidsToFirestore')));
  w._bbSetProfile({sellerType:'personal',ownerName:'Fixture Seller',name:'',locationType:'physical'});
  assert.equal(w.document.getElementById('profile-owner-name').value,'Fixture Seller');
  assert(w.document.getElementById('profile-name').hidden);
+ assert(w.document.body.classList.contains('personal-seller'));
+ assert.equal(w.getComputedStyle(w.document.getElementById('tab-profile')).display,'none');
+ assert.equal(w.getComputedStyle(w.document.getElementById('tab-story')).display,'none');
  assert(w.document.querySelector('label[for="profile-name"]').hidden);
  assert(w.document.getElementById('biz-name-missing-banner').classList.contains('hidden'));
  assert.equal(JSON.parse(w.localStorage.getItem('bb_profile')).sellerType,'personal');

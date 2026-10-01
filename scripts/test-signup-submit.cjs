@@ -68,6 +68,23 @@ const tick=()=>new Promise(r=>setImmediate(r));
   }
   dom.window.close();
  }
+ // Personal signup goes directly to Create using the already-saved identity.
+ {
+  const dom=new JSDOM(html,{url:'https://example.invalid',runScripts:'outside-only',virtualConsole:new VirtualConsole()}),w=dom.window;
+  let savedProfiles=[],requests=[],fail=false;const writes=[];
+  const user={uid:'fixture',email:'seller@example.invalid',getIdToken:async()=> 'fixture-token'};
+  const data={setupHandoff:{sellerType:'personal',ownerName:'Fixture Seller',phone:'555-123-4567',email:user.email}};
+  Object.assign(w,{db:{},collection:()=>({}),doc:()=>({}),getDocs:async()=>({docs:savedProfiles.map(p=>({id:p.id,data:()=>p}))}),setDoc:async(_,d)=>writes.push(d),fetch:async(_,options)=>{requests.push(JSON.parse(options.body));return {ok:!fail,json:async()=>fail?{error:'Please retry'}:{success:true,bizId:'fixture'}};}});
+  w.eval(authCode.slice(authCode.indexOf('async function resumePersonalSignup('),authCode.indexOf('async function afterAuth(user)')));
+  const target=await w.resumePersonalSignup(user,data);
+  assert.match(target,/tab=create&newcampaign=1/);assert(!target.includes('CreateBiz'));
+  assert.equal(requests[0].profileData.ownerName,'Fixture Seller');assert.equal(requests[0].profileData.sellerType,'personal');assert.equal(requests[0].profileData.phone,'555-123-4567');assert.equal(requests[0].bizId,'fixture');assert(!requests[0].campaignData);
+  await w.resumePersonalSignup(user,data);assert.equal(requests[1].bizId,requests[0].bizId);
+  savedProfiles=[{id:'existing',sellerType:'personal'}];let existing=await w.resumePersonalSignup(user,data);assert.match(existing,/bizId=existing/);assert.equal(requests.length,2);assert.equal(writes[0].activeBusiness,'existing');
+  assert.equal(await w.resumePersonalSignup(user,{setupHandoff:{sellerType:'business'}}),null);
+  savedProfiles=[];fail=true;await assert.rejects(w.resumePersonalSignup(user,data),/Please retry/);
+  dom.window.close();
+ }
  // Verify in a separate email browser, then resume the existing browser session.
  for(const event of ['focus','visibilitychange','manual']) {
   const dom=new JSDOM(html,{url:'https://example.invalid',runScripts:'outside-only',virtualConsole:new VirtualConsole()}),w=dom.window;
