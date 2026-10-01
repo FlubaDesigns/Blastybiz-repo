@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="global-style.css?v=1786304797822" />
-  <title>BlastyBiz — Publish Your Blast</title>
+  <title>BlastyBiz — Blast It!</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
@@ -42,8 +42,8 @@
   <!-- ── HERO ─────────────────────────────────────── -->
   <section class="card pub-hero">
     <div class="pub-page-eyebrow">Step 6 of 6</div>
-    <h1 class="big-title">Publish your blast</h1>
-    <p class="sub" id="pub-sub">Review your copy below, set a send time if needed, then tap Publish.</p>
+    <h1 class="big-title">Blast it!</h1>
+    <p class="sub" id="pub-sub">Review your copy below, set a send time if needed, then tap Blast It!</p>
   </section>
 
   <div class="pub-layout">
@@ -75,7 +75,7 @@
   <section class="card section-mt pub-action-card">
     <div class="card-title">🚀 Ready to go</div>
     <p id="pub-action-sub" class="helper mb-16" style="font-size:14px;color:var(--muted,#888);">Tap to publish your blast to all selected platforms.</p>
-    <button class="pub-publish-btn" id="publish-btn" onclick="publishBlast()">🚀 Publish Blast</button>
+    <button type="button" class="pub-publish-btn" id="publish-btn" onclick="publishBlast()" disabled>Loading blast…</button>
     <div id="pub-warn" class="pub-warn hidden"></div>
   </section>
 
@@ -125,6 +125,9 @@ var draftDocId     = null;
 var currentUser    = null;
 var businessId     = null;
 var currentDraftData = {};
+var _railPid = null;
+var _railPids = [];
+var _blastSubmitting = false;
 
 // Delivery depends on the available publisher, equally on every plan.
 var pubPlan = 'starter';
@@ -436,15 +439,28 @@ function copyPlatformText(key) {
   });
 }
 
-function publishBlast() {
+function showBlastError(message) {
+  var warn = document.getElementById('pub-warn');
+  if (warn) { warn.textContent = message; warn.classList.remove('hidden'); warn.setAttribute('role', 'alert'); warn.scrollIntoView?.({block:'nearest'}); }
+}
+
+async function publishBlast() {
+  if (_blastSubmitting) return;
   var keys = Object.keys(drafts);
   if (!keys.length) { showToast('No platforms to publish'); return; }
-  window._firestoreApprove && window._firestoreApprove(keys);
+  if (typeof window._firestoreApprove !== 'function') { showBlastError('This blast has not finished loading. Refresh the page and try again.'); return; }
+  _blastSubmitting = true;
+  try { await window._firestoreApprove(keys); }
+  catch (error) {
+    showBlastError('Could not start this blast: ' + error.message);
+    var btn = document.getElementById('publish-btn');
+    if (btn) { btn.disabled = false; btn.textContent = '🚀 Blast It!'; }
+  } finally { _blastSubmitting = false; }
 }
 </script>
 
 <script src="schedule-utils.js"></script>
-<script src="lifecycle-ui.js?v=20261001-remove-legacy"></script>
+<script src="lifecycle-ui.js?v=20261001-blast-button"></script>
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -453,6 +469,7 @@ import { doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp } f
 auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
   if (!user) return;
+  try {
   window.currentUser = user;
 
   const userSnap = await getDoc(doc(db, 'users', user.uid));
@@ -487,7 +504,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   window._firestoreApprove = async function(platformKeys) {
-    BBBlasty.fire('publish.working');
+    window.BBBlasty?.fire('publish.working');
     const btn = document.getElementById('publish-btn');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Publishing…'; }
     try {
@@ -513,7 +530,7 @@ onAuthStateChanged(auth, async (user) => {
       if (freshSnap.exists()) {
         const freshRev = freshSnap.data().revision || 0;
         if (freshRev !== (window._draftRevision || 0)) {
-          if (btn) { btn.disabled = false; btn.textContent = '🚀 Publish Blast'; }
+          if (btn) { btn.disabled = false; btn.textContent = '🚀 Blast It!'; }
           const warn = document.getElementById('pub-warn');
           if (warn) { warn.textContent = '⚠️ This blast was updated after you opened this page — the copy may have changed. Please go back and re-review before publishing.'; warn.classList.remove('hidden'); }
           return;
@@ -538,15 +555,24 @@ onAuthStateChanged(auth, async (user) => {
       window.location.href = `BlastyBiz-Publishing-Status.html?draftId=${draftId}&bizId=${encodeURIComponent(window.businessId)}`;
     } catch(e) {
       console.error('publishBlast error:', e);
-      if (btn) { btn.disabled = false; btn.textContent = '🚀 Publish Blast'; }
+      if (btn) { btn.disabled = false; btn.textContent = '🚀 Blast It!'; }
       const warn = document.getElementById('pub-warn');
       if (warn) { warn.textContent = '⚠️ Error publishing: ' + e.message; warn.classList.remove('hidden'); }
     }
   };
   BBLifecycle.configure({businessId:window.businessId,token:()=>user.getIdToken()});
   await BBLifecycle.preview(draftData,window.draftDocId);
+  if (draftData) {
+    const btn = document.getElementById('publish-btn');
+    if (btn) { btn.disabled = false; btn.textContent = '🚀 Blast It!'; }
+  }
+  } catch (error) {
+    showBlastError('Could not load this blast: ' + error.message + '. Tap Reload blast to try again.');
+    const btn = document.getElementById('publish-btn');
+    if (btn) { btn.disabled = false; btn.textContent = 'Reload blast'; btn.onclick = () => location.reload(); }
+  }
 });
-});
+}).catch(error => showBlastError('Could not load your sign-in: ' + error.message + '. Refresh to try again.'));
 </script>
 
 <div id="site-footer-inject"></div>
