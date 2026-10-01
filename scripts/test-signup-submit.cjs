@@ -68,5 +68,34 @@ const tick=()=>new Promise(r=>setImmediate(r));
   }
   dom.window.close();
  }
+ // Verify in a separate email browser, then resume the existing browser session.
+ for(const event of ['focus','visibilitychange','manual']) {
+  const dom=new JSDOM(html,{url:'https://example.invalid',runScripts:'outside-only',virtualConsole:new VirtualConsole()}),w=dom.window;
+  const calls=[];let remoteVerified=false,offline=false;
+  Object.defineProperty(w.document,'visibilityState',{value:'visible'});
+  w.setInterval=()=>17;w.clearInterval=()=>calls.push('stop');
+  const user={uid:'seller',emailVerified:false,reload:async()=>{calls.push('reload');if(offline)throw Error('offline');user.emailVerified=remoteVerified;},getIdToken:async force=>{assert.equal(force,true);calls.push('token');}};
+  Object.assign(w,{auth:{currentUser:user},afterAuth:async current=>{assert.equal(current,user);calls.push('continue');}});
+  w.eval(authCode.slice(authCode.indexOf('let verificationTimer'),authCode.indexOf('function showVerifyView(email)')));
+  w.document.getElementById('auth-card-wrap').classList.add('verify-mode');
+  await w.checkEmailVerification(true);assert(!calls.includes('continue'));assert.match(w.document.getElementById('verify-status').textContent,/Not verified yet/);
+  offline=true;await w.checkEmailVerification(true);assert.match(w.document.getElementById('verify-status').textContent,/Could not check/);offline=false;
+  remoteVerified=true;
+  if(event==='manual')await w.checkEmailVerification(true);
+  else { (event==='focus'?w:w.document).dispatchEvent(new w.Event(event));await tick(); }
+  assert.equal(calls.filter(x=>x==='continue').length,1);assert(calls.indexOf('token')<calls.indexOf('continue'));assert(calls.includes('stop'));
+  w.document.getElementById('auth-card-wrap').classList.remove('verify-mode');await w.checkEmailVerification();assert.equal(calls.filter(x=>x==='continue').length,1);
+  dom.window.close();
+ }
+ // Opening verification in the same browser must use afterAuth, preserving the
+ // Personal handoff instead of forcing the old new=1 onboarding destination.
+ for(const signedIn of [false,true]) {
+  const dom=new JSDOM(html,{url:'https://example.invalid/?mode=verifyEmail&oobCode=fixture',runScripts:'outside-only',virtualConsole:new VirtualConsole()}),w=dom.window,calls=[];
+  const user={emailVerified:true,reload:async()=>calls.push('reload'),getIdToken:async()=>calls.push('token')};
+  Object.assign(w,{auth:{currentUser:signedIn?user:null,authStateReady:async()=>calls.push('ready')},applyActionCode:async()=>calls.push('verify'),afterAuth:async()=>calls.push('continue')});
+  w.eval(authCode.slice(authCode.indexOf('(async function checkVerifyEmailLink()'),authCode.indexOf('window.showNormalLogin')));
+  await tick();assert(calls.includes('verify'));assert.equal(calls.includes('continue'),signedIn);
+  assert(!w.location.search.includes('new=1'));dom.window.close();
+ }
  console.log('PASS signup submission: Personal native button click, verification transition, blocked browser storage, visible validation, existing-account sign-in, network failure, double-submit guard and checkbox styles. No real accounts or emails.');
 })().catch(e=>{console.error(e);process.exitCode=1});

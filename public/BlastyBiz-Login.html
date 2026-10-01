@@ -259,9 +259,9 @@
                 <div id="ecv-success">
                   <span class="confirmed-icon">✅</span>
                   <h2>Your email is verified!</h2>
-                  <p>You're all set — sign in to get started.</p>
+                  <p>Your account is verified. Return to the browser where you started (such as Chrome); your setup will continue there automatically. You can close this email window.</p>
                   <button class="btn-submit" type="button" onclick="showNormalLogin()">
-                    <span class="btn-text">Sign In to Get Started →</span>
+                    <span class="btn-text">Or Sign In Here →</span>
                   </button>
                 </div>
                 <!-- error state -->
@@ -279,8 +279,10 @@
               <div class="verify-view" id="verify-view">
                 <div class="verify-emoji">📧</div>
                 <h2>Check your inbox</h2>
-                <p>We sent a verification link to <strong id="verify-email"></strong>. Click it to activate your account, then come back here to sign in.</p>
-                <button class="btn-submit" onclick="resendVerification()" type="button">
+                <p>We sent a verification link to <strong id="verify-email"></strong>. Tap it to activate your account, then return to this browser. We will continue your saved setup automatically.</p>
+                <p id="verify-status" role="status" aria-live="polite">Waiting for email verification…</p>
+                <button class="btn-submit" onclick="checkEmailVerification(true)" type="button">I've verified my email — Continue</button>
+                <button class="reset-back" onclick="resendVerification()" type="button">
                   <div class="spinner"></div>
                   <span class="btn-text">Resend Verification Email</span>
                 </button>
@@ -954,14 +956,14 @@ window.handleSetPassword = async function() {
   }
   try {
     await applyActionCode(auth, oobCode);
-    // Success — if a session already exists, go straight to onboarding (not the dashboard —
-    // new users haven't filled in their profile yet).
+    await auth.authStateReady();
+    // Wait for the existing browser session and retain the signup handoff.
     if (auth.currentUser) {
       try {
         await auth.currentUser.reload();
         if (auth.currentUser.emailVerified) {
-          if (sessionStorage.getItem('bb_draft_return')) await afterAuth(auth.currentUser);
-          else window.location.href = 'BlastyBiz-Onboard2.html?new=1';
+          await auth.currentUser.getIdToken(true);
+          await afterAuth(auth.currentUser);
           return;
         }
       } catch (_) {
@@ -1093,10 +1095,65 @@ function showLoginForm() {
   document.getElementById('auth-card-wrap').classList.add('ready');
 }
 
+// The email app may verify in a separate browser. Recheck the original session
+// on return, without moving credentials or making the user sign in a second time.
+let verificationTimer = null;
+let verificationChecking = false;
+let verificationContinuing = false;
+function stopVerificationWatch() {
+  clearInterval(verificationTimer);
+  verificationTimer = null;
+}
+window.checkEmailVerification = async function(manual = false) {
+  const view = document.getElementById('auth-card-wrap');
+  if (!view.classList.contains('verify-mode') || verificationChecking || verificationContinuing) return;
+  const user = auth.currentUser;
+  if (!user) { stopVerificationWatch(); return; }
+  const status = document.getElementById('verify-status');
+  verificationChecking = true;
+  if (manual) status.textContent = 'Checking verification…';
+  try {
+    await user.reload();
+    if (auth.currentUser?.uid !== user.uid) return;
+    if (!auth.currentUser.emailVerified) {
+      if (manual) status.textContent = 'Not verified yet. Tap the link in your email, then return here.';
+      return;
+    }
+    await auth.currentUser.getIdToken(true);
+    verificationContinuing = true;
+    stopVerificationWatch();
+    status.textContent = 'Email verified. Continuing your saved setup…';
+    await afterAuth(auth.currentUser);
+  } catch (_) {
+    if (manual) status.textContent = 'Could not check right now. Tap Continue to try again.';
+  } finally {
+    verificationChecking = false;
+    verificationContinuing = false;
+  }
+};
+function startVerificationWatch() {
+  stopVerificationWatch();
+  verificationTimer = setInterval(() => {
+    if (document.visibilityState === 'visible') window.checkEmailVerification();
+  }, 5000);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') window.checkEmailVerification();
+});
+window.addEventListener('focus', () => window.checkEmailVerification());
+window.addEventListener('pagehide', stopVerificationWatch);
+window.addEventListener('pageshow', () => {
+  if (document.getElementById('auth-card-wrap').classList.contains('verify-mode')) {
+    startVerificationWatch();
+    window.checkEmailVerification();
+  }
+});
+
 function showVerifyView(email) {
   document.getElementById('verify-email').textContent = email || '';
   // Wizard-style: replace entire card with just the verify screen
   document.getElementById('auth-card-wrap').classList.add('verify-mode');
+  startVerificationWatch();
   window.scrollTo({ top: 0, behavior: 'smooth' });
   // Carry guided flag so the next page knows Blasty was active
   if (localStorage.getItem('bb_start_choice') === 'guided') {
@@ -1123,7 +1180,7 @@ async function sendVerificationViaResend(user) {
 
 window.resendVerification = async function() {
   const user = auth.currentUser;
-  const btn  = document.querySelector('#verify-view .btn-submit');
+  const btn  = document.querySelector('#verify-view button[onclick="resendVerification()"]');
   if (!user) { showToast('Please go back and sign in again.', true); return; }
   if (btn) { btn.disabled = true; btn.classList.add('loading'); }
   try {
@@ -1138,6 +1195,7 @@ window.resendVerification = async function() {
 };
 
 window.backFromVerify = async function() {
+  stopVerificationWatch();
   document.getElementById('auth-card-wrap').classList.remove('verify-mode');
   try { await auth.signOut(); } catch (_) {}
 };
