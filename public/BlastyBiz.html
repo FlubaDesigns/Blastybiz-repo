@@ -119,6 +119,15 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 .s5-card-body{margin-top:12px;}
 .s5-card-body .qp-photos-section{display:block;}
 .s5-card-body .qp-thumb{width:112px;height:112px;}
+.qp-photo-item{width:116px;flex-shrink:0;}
+.qp-photo-item .qp-thumb{display:block;padding:0;box-sizing:content-box;background:transparent;}
+.qp-photo-tools{display:flex;flex-direction:column;gap:4px;margin-top:4px;}
+.qp-photo-tools button{min-height:44px;padding:6px;font:inherit;font-size:12px;color:var(--light);background:transparent;border:1px solid var(--border);border-radius:8px;cursor:pointer;}
+.qp-photo-open{display:flex;align-items:center;justify-content:center;min-height:44px;font-size:12px;color:var(--muted);}
+.qp-photo-share{margin:10px 0;}
+.qp-photo-share button{width:100%;min-height:44px;padding:10px;font:inherit;font-size:14px;font-weight:700;background:var(--green);color:#000;border:0;border-radius:10px;cursor:pointer;}
+.qp-photo-share button:disabled{opacity:.65;cursor:default;}
+.qp-photo-share-status{margin-top:6px;font-size:12px;line-height:1.5;color:var(--muted);}
 .s5-photo-note{font-size:12px;color:var(--muted,#888);line-height:1.5;margin-bottom:10px;}
 .s5-card-location{margin-top:14px;padding-top:14px;border-top:1px solid var(--border,#333);}
 .s5-card-location .step5-setup-title{margin-bottom:8px;}
@@ -1197,6 +1206,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" integrity="sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e" crossorigin="anonymous"></script>
 <script src="platform-categories.js"></script>
 <script src="platforms-authority.js?v=20261001-photo-limits"></script>
+<script src="photo-handoff.js?v=20261001-share"></script>
 <script>
 // ══════════════════════════════════════════
 // PLATFORM REGISTRY — add new platforms here
@@ -1423,7 +1433,7 @@ function buildPlatformCard(p) {
 
   const actionBtn = p.type === 'api'
       ? `<button type="button" class="btn btn-primary btn-sm" onclick="deployPlatform('${p.id}')" ${!p.enabled ? 'disabled' : ''}>🚀 Post</button>`
-      : `<button type="button" class="btn btn-outline btn-sm" onclick="copyText('${p.id}')" ${!p.enabled || !p.adaptedContent ? 'disabled' : ''}>📋 Copy</button>`;
+      : `<button type="button" class="btn btn-outline btn-sm" onclick="copyText('${p.id}')" ${!p.enabled || !p.adaptedContent ? 'disabled' : ''}>📋 Copy text</button>`;
 
   div.innerHTML = `
     <div class="platform-header">
@@ -1588,16 +1598,35 @@ function renderPlatformPhotoStrip(pid, photos, maxPhotos, displayOnly = false) {
   if (label) label.textContent = '📷 Photos for this post: ' + photos.length + ' / ' + maxPhotos;
 
   strip.innerHTML = '';
-  photos.forEach(photo => {
-    const thumb = document.createElement('div');
+  photos.forEach((photo, index) => {
+    const thumb = document.createElement(displayOnly ? 'div' : 'button');
     thumb.className = 'qp-thumb' + (displayOnly ? ' qp-thumb-display' : '');
     if (!displayOnly) {
-      thumb.title = 'Tap to copy this photo';
+      thumb.type = 'button';
+      thumb.title = 'Copy photo ' + (index + 1);
+      thumb.setAttribute('aria-label', thumb.title);
       thumb.onclick = () => copyImageToClipboard(photo.url, thumb);
     }
     thumb.innerHTML = `<img src="${escHtml(photo.url)}" class="thumb-cover" alt="${escHtml(photo.alt || 'Selected photo')}" />`
       + (!displayOnly ? `<div class="thumb-copy-badge">✓ Copied!</div>` : '');
-    strip.appendChild(thumb);
+    if (displayOnly) strip.appendChild(thumb);
+    else {
+      const item = document.createElement('div'); item.className = 'qp-photo-item';
+      item.appendChild(thumb);
+      const controls = document.createElement('div'); controls.className = 'qp-photo-tools';
+      const copy = document.createElement('button'); copy.type = 'button'; copy.textContent = 'Copy photo';
+      copy.onclick = () => copyImageToClipboard(photo.url, thumb);
+      const save = document.createElement('button'); save.type = 'button'; save.textContent = 'Save photo';
+      save.onclick = async () => {
+        save.disabled = true;
+        try { await BBPhotoHandoff.save(photo.url, pid, index); showToast('Download started — choose the photo from Recent when attaching.'); }
+        catch (error) { showToast('Could not save this photo. Tap Open photo, then hold the image to save it.'); }
+        finally { save.disabled = false; }
+      };
+      const open = document.createElement('a'); open.href = photo.url; open.target = '_blank'; open.rel = 'noopener'; open.textContent = 'Open photo';
+      open.className = 'qp-photo-open';
+      controls.append(copy, save, open); item.appendChild(controls); strip.appendChild(item);
+    }
   });
 
   container.style.display = 'block';
@@ -1615,70 +1644,62 @@ function renderAdPostPhotos(p) {
     ? 'No photos selected. Use Add or change photos to choose them.'
     : (p.type === 'api' ? 'These photos will be posted with this copy.' : 'These photos are ready to copy or upload with your post.')
       + (included.length < selected.length ? ' Uses the first ' + included.length + ' of your ' + selected.length + ' selected photos.' : ''));
+  if (p.type !== 'api') renderPhotoHandoff(p.id, included);
+}
+
+function renderPhotoHandoff(pid, photos) {
+  const host = document.getElementById('qp-share-' + pid);
+  if (!host) return;
+  host.innerHTML = ''; host.style.display = photos.length ? 'block' : 'none';
+  if (!photos.length) return;
+  const button = document.createElement('button'); button.type = 'button';
+  const status = document.createElement('div'); status.className = 'qp-photo-share-status'; status.setAttribute('role', 'status');
+  host.append(button, status);
+  let readyFiles = [], busy = false;
+  const prepare = async () => {
+    button.disabled = true; button.textContent = 'Preparing photos…';
+    status.textContent = 'Getting these photos ready for your phone.';
+    try {
+      const files = await BBPhotoHandoff.prepare(photos.map(photo => photo.url), pid);
+      if (!host.isConnected || button.parentNode !== host) return;
+      readyFiles = files;
+      if (BBPhotoHandoff.canShare(files)) {
+        button.textContent = 'Share ' + files.length + (files.length === 1 ? ' photo' : ' photos'); button.disabled = false;
+        status.textContent = 'Choose the app in your phone’s share menu. If the caption does not carry over, use Copy text above.';
+      } else {
+        button.hidden = true;
+        status.textContent = 'Use Copy photo below and paste into your post. If the app does not accept pasted images, use Save photo, then choose it from Recent.';
+      }
+    } catch (error) {
+      if (!host.isConnected || button.parentNode !== host) return;
+      button.disabled = false; button.textContent = 'Retry preparing photos';
+      status.textContent = 'Could not load the photos for sharing. Retry, or use Open photo below.';
+    }
+  };
+  button.onclick = () => {
+    if (busy) return;
+    if (!readyFiles.length) { prepare(); return; }
+    busy = true; button.disabled = true;
+    const text = document.getElementById('qp-copy-text-' + pid)?.textContent?.trim() || '';
+    BBPhotoHandoff.share(readyFiles, text).then(() => {
+      status.textContent = 'Handed to your phone. Finish posting in the selected app.';
+    }).catch(error => {
+      if (error.name !== 'AbortError') status.textContent = 'The phone could not share these photos. Use Copy photo or Save photo below.';
+    }).finally(() => { busy = false; button.disabled = false; });
+  };
+  prepare();
 }
 
 async function copyImageToClipboard(url, thumbEl) {
   try {
-    const resp = await fetch(url);
-    const blob = await resp.blob();
-    // Normalise to image/png which Clipboard API requires on most browsers
-    let copyBlob = blob;
-    if (blob.type !== 'image/png') {
-      const bmp = await createImageBitmap(blob);
-      const canvas = document.createElement('canvas');
-      canvas.width = bmp.width; canvas.height = bmp.height;
-      canvas.getContext('2d').drawImage(bmp, 0, 0);
-      copyBlob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-    }
-    await navigator.clipboard.write([new ClipboardItem({ 'image/png': copyBlob })]);
+    await BBPhotoHandoff.copy(url);
     if (thumbEl) {
       thumbEl.classList.add('qp-thumb-copied');
       setTimeout(() => thumbEl.classList.remove('qp-thumb-copied'), 1800);
     }
-    showToast('📋 Photo copied — paste it into your post');
-  } catch (err) {
-    console.warn('copyImageToClipboard failed:', err);
-    showToast('⚠️ Could not copy — try long-pressing the image instead');
-  }
-}
-
-async function sharePlatformContent(pid) {
-  const plat = platforms.find(p => p.id === pid);
-  const platformName = plat ? plat.name : pid;
-  const copyText = document.getElementById('qp-copy-text-' + pid)?.textContent?.trim() || '';
-  const sel = window._bbPlatformPhotoSel[pid] || new Set();
-  const selectedUrls = [...sel]; // preserves tap order
-
-  if (!navigator.share) {
-    showToast('Native sharing not available on this browser — use Copy instead');
-    return;
-  }
-
-  const shareData = { text: copyText };
-
-  if (selectedUrls.length > 0) {
-    showToast('Preparing ' + selectedUrls.length + ' photo' + (selectedUrls.length > 1 ? 's' : '') + '…');
-    try {
-      const files = await Promise.all(
-        selectedUrls.map(async (url, i) => {
-          const resp = await fetch(url);
-          const blob = await resp.blob();
-          const ext = (blob.type.split('/')[1] || 'jpg').split('+')[0];
-          return new File([blob], 'photo_' + (i + 1) + '.' + ext, { type: blob.type });
-        })
-      );
-      const withFiles = { ...shareData, files };
-      if (navigator.canShare && navigator.canShare(withFiles)) {
-        await navigator.share(withFiles);
-        return;
-      }
-    } catch(e) { /* fall through to text-only */ }
-  }
-
-  try {
-    await navigator.share(shareData);
-  } catch(e) {
-    if (e.name !== 'AbortError') showToast('Share failed — use Copy and attach photos manually');
+    showToast('Photo copied — paste it into your post');
+  } catch (error) {
+    showToast('Photo copy is unavailable here. Use Share photos or Save photo.');
   }
 }
 
@@ -2062,7 +2083,7 @@ function renderLibraryItems(items, filterPlatformId) {
             <div class="lib-item-actions">
               <button type="button" onclick="copyLibItem(this)"
                 data-copy="${escHtml(item.copy)}"
-                class="lib-action-btn">📋 Copy</button>
+                class="lib-action-btn">📋 Copy text</button>
               <button type="button" onclick="deleteLibraryItem('${escHtml(item.docId)}')"
                 class="lib-delete-btn">🗑</button>
             </div>
@@ -2650,17 +2671,17 @@ function buildStep5Card(p) {
       + '<div class="col-left">'
       +   '<div class="step5-copy-actions">'
       +     '<button type="button" class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">' + '🔄 Try again' + '</button>'
-      +     (!isApi ? '<button type="button" class="step5-action-btn" onclick="copyQpText(\'' + escHtml(p.id) + '\')">📋 Copy</button>' : '')
+      +     (!isApi ? '<button type="button" class="step5-action-btn" onclick="copyQpText(\'' + escHtml(p.id) + '\')">📋 Copy text</button>' : '')
       +   '</div>'
       +   '<div id="qp-copy-text-' + p.id + '" class="step5-copy-text" contenteditable="true">' + safeText + '</div>'
-      +   '<div id="qp-share-' + p.id + '" class="qp-share-section" style="display:none;"></div>'
-      + '</div>'
+            + '</div>'
       // Right — photos (shown for all platforms; tappable only for copy-paste)
       + '<div class="col-right">'
       +   '<div id="qp-copy-img-' + p.id + '" class="qp-copy-img-note"></div>'
       +   '<div id="qp-photos-' + p.id + '" class="qp-photos-section">'
       +     '<div class="qp-photos-label">📷 Photos for this post</div>'
       +     '<div class="s5-photo-note">' + photoNote + '</div>'
+      +     (!isApi ? '<div id="qp-share-' + p.id + '" class="qp-photo-share"></div>' : '')
       +     '<div id="qp-photo-strip-' + p.id + '" class="qp-photo-strip"></div>'
       +   '</div>'
       + '</div>'
