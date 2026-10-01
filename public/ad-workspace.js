@@ -2,6 +2,7 @@
 (function(){
   'use strict';
   let ad=null, campaign='', business='', epoch=0, busy=false, dirty=false, pending=null, loading=null, saving=null, loadError=null, editVersion=0, autoSaveTimer=null;
+  let photoQueue=Promise.resolve(), pendingPhotoCount=0;
   const uuid=()=>crypto.randomUUID();
   const el=id=>document.getElementById(id);
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -57,8 +58,24 @@
       try{
         const rows=await list();if(seq!==epoch)return;
         const wanted=new URLSearchParams(location.search).get('adId');
-        const selected=rows.find(a=>a.id===wanted)||rows.find(a=>a.id==='first')||rows[0];
+        let selected=rows.find(a=>a.id===wanted)||rows.find(a=>a.id==='first')||rows[0];
         if(!selected)throw Error('This campaign has no saved ad. Your campaign details are preserved.');
+        const pool=await window._bbLoadCampaignImages(campaign);if(seq!==epoch)return;
+        // Bring existing campaign-array photos through the same image repository.
+        const legacy=typeof campaigns!=='undefined'?(campaigns.find(c=>c.id===campaign)?.photos||[]):[];
+        for(const entry of legacy){
+          const image=typeof entry==='string'?{url:entry}:entry;
+          if(!image?.url||pool.some(p=>p.url===image.url))continue;
+          const imageId=await window._bbSaveCampaignImage(campaign,{url:image.url,path:image.path||'',alt:image.alt||''},business);
+          if(seq!==epoch)return;pool.push({...image,id:imageId});
+        }
+        const known=new Set(selected.knownImageIds||[]);
+        const added=pool.filter(image=>!image.retired&&image.url&&!known.has(image.id));
+        if(added.length){
+          const selectedIds=[...new Set([...(selected.imageRefs||[]).map(image=>image.id),...added.map(image=>image.id)])];
+          const result=await api('save',{adId:selected.id,expectedRevision:selected.revision,requestId:uuid(),creative:{imageRefs:selectedIds.map(id=>({id})),knownImageIds:[...new Set([...known,...pool.map(image=>image.id)])]}});
+          if(seq!==epoch)return;selected=result.ad;
+        }
         await fill(selected);if(seq!==epoch)return;tell('');
       }catch(e){if(seq===epoch){loadError=e;ad=null;window._bbActiveAd=null;tell(e.message);}}
       finally{if(seq===epoch)host.inert=false;}
@@ -88,7 +105,7 @@
     if(!ad)throw Error('Choose or create an Ad first.');
     return {name:el('biz-ad-name').value.trim()||'Untitled Ad',offer:el('biz-offer').value,price:el('biz-price').value,cta:el('ad-cta').value,context:el('ad-context').value,
       ...(window._bbProfileGlobal?.sellerType==='personal'?{pickupArea:el('ad-area').value,pickupZip:el('ad-zip').value}:{}),
-      mentions:{...ynState},platforms:platforms.filter(p=>p.enabled).map(p=>p.id),imageRefs:(ad.imageRefs||[]).map(i=>({id:i.id})),
+      mentions:{...ynState},platforms:platforms.filter(p=>p.enabled).map(p=>p.id),imageRefs:(ad.imageRefs||[]).map(i=>({id:i.id})),knownImageIds:ad.knownImageIds||[],
       adaptations:Object.fromEntries(platforms.filter(p=>p.enabled&&p.adaptedContent).map(p=>[p.id,p.adaptedContent.replace(/<br\s*\/?\s*>/gi,'\n')])),
       platformStatus:Object.fromEntries(platforms.filter(p=>p.enabled).map(p=>[p.id,p._reviewStatus==='approved'?'approved':p._reviewStatus==='skipped'?'excluded':'needs-review']))};
   }
@@ -130,8 +147,13 @@
     window._globalImages=global.filter(image=>!image.retired);
     if(typeof refreshPhotoGridForScope==='function')refreshPhotoGridForScope();
   }
-  async function choosePhoto(item){
-    return task(async()=>{
+  function choosePhoto(item, includeOnly=false){
+    const requestedEpoch=epoch;
+    pendingPhotoCount++;item.selecting=true;
+    window.renderAllPhotos?.();
+    const operation=photoQueue.then(()=>task(async()=>{
+      if(requestedEpoch!==epoch)return;
+      window.renderAllPhotos?.();
       await ready();
       const seq=epoch;
       let id=item.id;
@@ -147,10 +169,11 @@
         if(typeof setPhotoScope==='function')setPhotoScope('campaign');
       }
       if(seq!==epoch)throw Error('The campaign changed. Choose the photo again.');
-      await act(item.scope!=='global' && (ad.imageRefs||[]).some(image=>image.id===id)?'remove-image':'select-image',id);
+      await act(!includeOnly && item.scope!=='global' && (ad.imageRefs||[]).some(image=>image.id===id)?'remove-image':'select-image',id);
       await save();
-      if(typeof window.renderAllPhotos==='function')window.renderAllPhotos();
-    });
+    })).finally(()=>{pendingPhotoCount--;item.selecting=false;window.renderAllPhotos?.();});
+    photoQueue=operation.catch(()=>{});
+    return operation;
   }
 
   async function act(action,id){
@@ -169,9 +192,10 @@
     if(action==='select-image'){
       const pool=await window._bbLoadCampaignImages(campaign),image=pool.find(i=>i.id===id&&!i.retired);if(!image)throw Error('Image no longer available.');
       if(!(ad.imageRefs||[]).some(i=>i.id===id))ad.imageRefs=[...(ad.imageRefs||[]),image];
+      ad.knownImageIds=[...new Set([...(ad.knownImageIds||[]),id])];
       markDirty();await images();tell('Saving…');window.BBBlasty?.fire('images.first_ad_image_selected');return;
     }
-    if(action==='remove-image'){ad.imageRefs=(ad.imageRefs||[]).filter(i=>i.id!==id);markDirty();await images();tell('Selection removed; the campaign image is preserved.');}
+    if(action==='remove-image'){ad.knownImageIds=[...new Set([...(ad.knownImageIds||[]),id])];ad.imageRefs=(ad.imageRefs||[]).filter(i=>i.id!==id);markDirty();await images();tell('Selection removed; the campaign image is preserved.');}
   }
   document.addEventListener('input',e=>{
     if(editFields.includes(e.target.id))markDirty();
@@ -197,5 +221,5 @@
     if(!dirty)return;
     flushSave();e.preventDefault();e.returnValue='';
   });
-  window.BBAds={choosePhoto,markDirty,open,ready,refreshImages:images,save,creative,prepareCurrent:()=>task(()=>prepare('this_run')),get active(){return ad;},get dirty(){return dirty;},get busy(){return busy||!!saving;},api};
+  window.BBAds={choosePhoto,markDirty,open,ready,refreshImages:images,save,creative,prepareCurrent:()=>task(()=>prepare('this_run')),get active(){return ad;},get dirty(){return dirty;},get busy(){return busy||!!saving||pendingPhotoCount>0;},api};
 })();

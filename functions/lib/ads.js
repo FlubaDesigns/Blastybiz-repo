@@ -13,7 +13,7 @@ const text = (v, limit=12000) => {
   if(typeof v!=='string'||v.length>limit) fail(400,'Invalid or overlong creative text.');
   return v.trim();
 };
-const allowed = ['name','offer','price','cta','context','pickupArea','pickupZip','mentions','platforms','imageRefs','adaptations','platformStatus'];
+const allowed = ['name','offer','price','cta','context','pickupArea','pickupZip','mentions','platforms','imageRefs','knownImageIds','adaptations','platformStatus'];
 function cleanCreative(input, previous={}) {
   if(!input||typeof input!=='object'||Array.isArray(input)) fail(400,'Creative is required.');
   const result={...previous};
@@ -29,6 +29,10 @@ function cleanCreative(input, previous={}) {
     if(key==='platforms') {
       if(!Array.isArray(v)||v.length>30||v.some(p=>!Object.hasOwn(PLATFORM_CAPABILITY_MAP,p))) fail(400,'Choose supported destinations.');
       result.platforms=[...new Set(v)];
+    }
+    if(key==='knownImageIds') {
+      if(!Array.isArray(v)||v.length>1000)fail(400,'Invalid known photo selection.');
+      result[key]=[...new Set(v.map(id))];
     }
     if(key==='imageRefs') {
       if(!Array.isArray(v)||v.length>30) fail(400,'Choose up to 30 images.');

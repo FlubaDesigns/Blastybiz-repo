@@ -18,7 +18,14 @@
 #campaign-photos .thumb-wrap.has-error{aspect-ratio:auto;min-height:150px;background:#1a0a0a;}
 #campaign-photos .has-error .thumb-error-overlay{height:48px;justify-content:flex-start;padding-left:8px;}
 #campaign-photos .thumb-error-msg{padding:4px 8px 12px;font-size:12px;line-height:1.4;color:#ffd08a;overflow-wrap:anywhere;}
-#campaign-photos .thumb-remove{width:44px;height:44px;font-size:18px;}
+#campaign-photos #thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(130px,100%),1fr));gap:12px;}
+#campaign-photos .thumb-wrap.selectable{aspect-ratio:auto;display:flex;flex-direction:column;}
+#campaign-photos .thumb-select{display:block;width:100%;padding:0;margin:0;border:0;border-radius:0;background:transparent;color:var(--light);font:inherit;cursor:pointer;}
+#campaign-photos .thumb-select img{display:block;width:100%;height:auto;aspect-ratio:1;object-fit:cover;}
+#campaign-photos .thumb-select-label{display:flex;align-items:center;justify-content:center;min-height:44px;font-size:14px;font-weight:700;}
+#campaign-photos .selected .thumb-select-label{background:var(--green);color:#000;}
+#campaign-photos .thumb-wrap.selectable .thumb-remove{position:static;width:100%;height:auto;min-height:44px;margin:0;padding:8px;border-radius:0;border-top:1px solid var(--border);background:transparent;color:#e4aaaa;font-size:12px;}
+#campaign-photos .thumb-wrap.has-error .thumb-remove{width:44px;height:44px;padding:0;font-size:16px;}
 body.workspace-loading .tabs-row,body.workspace-loading .section,body.workspace-loading #workspace-info-bar{display:none!important;}
 body.personal-seller #tab-profile,body.personal-seller #tab-story,
 body.personal-seller #section-profile,body.personal-seller #section-story,
@@ -2907,25 +2914,20 @@ window.renderAllPhotos = function() {
         ? (window.BBAds.active.imageRefs || []).some(image => (photoScope === 'campaign' && image.id === item.id) || image.url === item.url)
         : window._bbSelectedPhotoIndex === i;
       wrap.className = 'thumb-wrap selectable' + (isSelected ? ' selected' : '');
-      wrap.setAttribute('role', 'button');
-      wrap.tabIndex = 0;
-      wrap.setAttribute('aria-pressed', String(isSelected));
-      wrap.setAttribute('aria-label', isSelected ? 'Deselect photo for this ad' : 'Select photo for this ad');
-      wrap.onkeydown = event => { if (event.target === wrap && ['Enter', ' '].includes(event.key)) { event.preventDefault(); wrap.click(); } };
-      wrap.onclick = (e) => {
-        if (e.target.classList.contains('thumb-remove') || item.deleting || item.selecting) return;
-        if (window.BBAds?.active) window.BBAds.choosePhoto(item);
-        else if (window._bbSelectPhoto) window._bbSelectPhoto(i);
-      };
       wrap.innerHTML = `
-        <img src="${item.localUrl}" alt="Uploaded photo" />
-        <button type="button" class="thumb-remove" onclick="event.stopPropagation();window._bbDeletePhoto&&window._bbDeletePhoto(${i})">✕</button>
-        ${isSelected
-          ? `<div class="thumb-selected-badge">✓</div>`
-          : `<div class="thumb-saved-badge">☁ Saved</div>`
-        }`;
+        <button type="button" class="thumb-select" aria-pressed="${isSelected}" aria-label="${isSelected ? 'Exclude photo from this blast' : 'Use photo in this blast'}">
+          <img src="${escHtml(item.localUrl || item.url)}" alt="Uploaded photo" />
+          <span class="thumb-select-label${isSelected ? ' thumb-selected-badge-label' : ''}">${isSelected ? '✓ Selected' : 'Use photo'}</span>
+        </button>
+        <button type="button" class="thumb-remove" aria-label="Delete uploaded photo">Delete</button>`;
+      wrap.querySelector('.thumb-select').onclick = () => {
+        if(item.deleting || item.selecting)return;
+        if(window.BBAds?.active)window.BBAds.choosePhoto(item);
+        else if(window._bbSelectPhoto)window._bbSelectPhoto(i);
+      };
+      wrap.querySelector('.thumb-remove').onclick = () => window._bbDeletePhoto?.(i);
     }
-    if (item.deleting || item.selecting) {
+    if (item.deleting || item.selecting || window.BBAds?.busy) {
       wrap.style.opacity = '0.45';
       wrap.setAttribute('aria-busy', 'true');
       wrap.querySelectorAll('button').forEach(button => { button.disabled = true; });
@@ -2958,7 +2960,7 @@ window.renderAllPhotos = function() {
     badge.setAttribute('role', 'status');
     badge.setAttribute('aria-live', 'polite');
     badge.style.color = failed ? '#ffb400' : uploading > 0 ? '#fff' : 'var(--green)';
-    badge.textContent = uploading > 0
+    badge.textContent = items.some(item=>item.selecting) || window.BBAds?.busy ? 'Saving photo selection…' : uploading > 0
       ? `⬆️ Uploading ${uploading} photo${uploading > 1 ? 's' : ''}… (${saved} saved)`
       : failed ? `⚠️ ${failed} photo${failed !== 1 ? 's' : ''} failed to upload · ${saved} saved. Remove the failed tiles and retry.`
       : `✅ ${saved} photo${saved !== 1 ? 's' : ''} saved ${photoScope === 'global' ? 'to the global library' : 'to this campaign'}`;
@@ -2971,7 +2973,7 @@ window.renderAllPhotos = function() {
       grid.parentNode.insertBefore(hint, grid);
     }
     if (hint) hint.textContent = window.BBAds?.active
-      ? (photoScope === 'global' ? 'Tap a business photo to use it in this ad.' : 'Tap photos to select or deselect them for this ad. Selections save automatically.')
+      ? (photoScope === 'global' ? 'Tap a business photo to use it in this ad.' : 'Campaign photos are included automatically. Tap Selected to leave a photo out of this blast. Your choices save automatically.')
       : 'Tap a photo to feature it in your ad';
     if (saved === 0 && hint) {
       hint.remove();
@@ -4308,7 +4310,7 @@ function refreshPhotoGridForScope() {
   } else {
     const hint = document.getElementById('photo-scope-hint');
     if (hint) hint.textContent = activeCampaignId
-      ? 'Photos saved to this campaign. Tap a photo to use it in this ad.'
+      ? 'Photos are included automatically. Tap Selected to leave one out of this blast.'
       : 'Select a campaign above before adding campaign photos.';
     const cid = activeCampaignId;
     const applyImages = images => {
@@ -6135,6 +6137,7 @@ onAuthStateChanged(auth, async (user) => {
       if (window.showToast) window.showToast('Select a campaign first before uploading campaign photos.');
       return;
     }
+    const uploadAdId=window.BBAds?.active?.id;
     let localUrl = null;
     const uploadId = Date.now() + '_' + Math.random().toString(36).slice(2,8);
     const storagePath = scope === 'global'
@@ -6186,6 +6189,9 @@ onAuthStateChanged(auth, async (user) => {
           item.url = dlUrl;
           item.localUrl = dlUrl;
           item.done = true;
+          if(uploadAdId && scope==='campaign' && bizId===activeBizId && cid===activeCampaignId && uploadAdId===window.BBAds?.active?.id){
+            await window.BBAds.choosePhoto(item, true);
+          }
           window.BBAds?.refreshImages().catch(error => window.showToast?.('Photo saved, but the photo list could not refresh. Reload to see it.'));
           item.progress = 100;
           window._bbPhotoUploads.delete(item);
@@ -6232,6 +6238,11 @@ onAuthStateChanged(auth, async (user) => {
     const items = window._bbPhotoItems || [];
     const item = items[index];
     if (!item || item.deleting || item.selecting) return;
+    // Excluding from this Ad and deleting an upload are separate actions.
+    if(item.scope==='campaign' && item.campaignId===activeCampaignId && window.BBAds?.active?.imageRefs?.some(image=>image.id===item.id)){
+      await window.BBAds.choosePhoto(item);
+      if(window.BBAds.active.imageRefs.some(image=>image.id===item.id))return;
+    }
     item.deleting = true;
     if (window.renderAllPhotos) window.renderAllPhotos();
     const itemScope = item.scope || photoScope || 'campaign';
@@ -7462,7 +7473,7 @@ window.confirmDeleteAccount = async function() {
 .cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
 </style>
 <script src="lifecycle-ui.js?v=20261001-remove-legacy"></script>
-<script src="ad-workspace.js?v=20261001-area"></script>
+<script src="ad-workspace.js?v=20261001-photo-picker"></script>
 <script>
 document.addEventListener('click',function(e){
  const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');

@@ -26,9 +26,15 @@ w.refreshPhotoGridForScope=()=>w.renderAllPhotos();
 run('business-form.js');run('ad-workspace.js');await w.BBAds.open();ok(!w.document.querySelector('[data-action=migration]')&&!w.document.querySelector('[data-action=view]')&&!w.document.querySelector('[data-action=new]')&&!w.document.getElementById('ad-list')&&!w.document.querySelector('#ad-workspace select'),'entire record-list section is absent with no replacement panel');ok(!w.BBAds.active&&state.writes.length===0,'opening an empty campaign creates no Ad');
 await w.BBAds.api('create',{adId:'first',requestId:'first',creative:{name:'July',offer:'Summer offer'}});await w.BBAds.open();ok(w.BBAds.active.name==='July'&&w.BBAds.active.offer==='Summer offer','original save/load path retains entered answers');
 ok(!w.document.querySelector('.ad-images')&&!w.document.querySelector('[data-action=upload]'),'duplicate image panel and uploader are absent');
-w.document.getElementById('biz-ad-name').value='July';w.document.getElementById('biz-offer').value='Summer offer';w.document.querySelector('#thumb-grid .thumb-wrap').click();await settled();ok(w.document.querySelector('#thumb-grid .thumb-selected-badge'),'one Photos grid displays selected state');ok(w.BBAds.active.imageRefs[0].id==='photo','photo tap selects and saves canonical Ad image');
+ok(w.BBAds.active.imageRefs[0]?.id==='photo','existing campaign photos start selected automatically');
+w.document.getElementById('biz-ad-name').value='July';w.document.getElementById('biz-offer').value='Summer offer';
+w.document.querySelector('#thumb-grid .thumb-select').click();await settled();
+ok(w.BBAds.active.imageRefs.length===0&&!!state.get(camp+'/images/photo'),'tap excludes the photo without deleting the upload');
+await w.BBAds.open();ok(w.BBAds.active.imageRefs.length===0,'reopening retains an explicitly empty photo selection');
+w.document.querySelector('#thumb-grid .thumb-select').click();await settled();
+ok(w.document.querySelector('#thumb-grid .thumb-select[aria-pressed="true"]'),'one Photos grid displays selected state');ok(w.BBAds.active.imageRefs[0].id==='photo','photo tap selects and saves canonical Ad image');
 w.platforms[0].adaptedContent='Approved copy';w.platforms[0]._reviewStatus='approved';loseNext=true;w.BBAds.markDirty();await new Promise(r=>setTimeout(r,750));await settled();ok(!w.document.getElementById('ad-save-retry').hidden&&w.document.getElementById('ad-message').textContent.includes('Lost response'),'failed save leaves retry feedback');await click('save');
-let ad=w.BBAds.active;ok(ad.revision===3&&ad.imageRefs[0].id==='photo'&&ad.name==='July','retry saves exactly one revision with copy and image');
+let ad=w.BBAds.active;ok(ad.revision===5&&ad.imageRefs[0].id==='photo'&&ad.name==='July','retry saves exactly one revision with copy and image');
 await w.BBAds.open();ok(w.BBAds.active.id===ad.id&&w.document.getElementById('biz-ad-name').value==='July','reopening selects the saved Ad without a View button');ok(!w.document.getElementById('ad-picker'),'one saved Ad needs no picker');
 ok(!w.document.querySelector('[data-action=run]')&&!w.document.querySelector('[data-action=derive]')&&w.document.getElementById('ad-save-retry').hidden,'three unnecessary buttons removed; retry appears only on failure');
 await w.BBAds.choosePhoto({id:'photo',scope:'campaign'});ok(w.BBAds.active.imageRefs.length===0&&!!state.get(camp+'/images/photo'),'remove is scoped to Ad');
@@ -70,6 +76,20 @@ w._bbLoadCampaignImages=async()=>Object.entries(state.all()).filter(([p])=>p.sta
 let imports=0;w._bbSaveCampaignImage=async(cid,data)=>{imports++;await state.db.doc(camp+'/images/imported').set(data);return 'imported';};
 await w.BBAds.choosePhoto({id:'business-photo',scope:'global'});ok(w.BBAds.active.imageRefs.some(i=>i.id==='imported')&&scope==='campaign','business photo imports and selects in the same Photos workflow');
 await w.BBAds.choosePhoto({id:'business-photo',scope:'global'});ok(imports===1&&w.BBAds.active.imageRefs.some(i=>i.id==='imported'),'reusing business photo does not duplicate or deselect it');
+// New uploads join this Ad automatically; previously excluded photos stay excluded.
+await state.db.doc(camp+'/images/new-photo').set({url:'https://example.com/new.jpg'});
+await w.BBAds.open();ok(w.BBAds.active.imageRefs.some(i=>i.id==='new-photo')&&!w.BBAds.active.imageRefs.some(i=>i.id==='photo'),'new campaign photos join without reselecting excluded ones');
+await w.BBAds.choosePhoto({id:'new-photo',scope:'campaign'},true);
+ok(w.BBAds.active.imageRefs.some(i=>i.id==='new-photo'),'upload completion is idempotent and never toggles a selected photo off');
+await w.BBAds.api('create',{adId:'second',requestId:'second',creative:{name:'Second blast',platforms:['facebook']}});
+w.history.replaceState({},'','?adId=second');await w.BBAds.open();
+ok(w.BBAds.active.imageRefs.some(i=>i.id==='photo'),'another blast starts with all campaign images');
+w.history.replaceState({},'','?adId='+ad.id);await w.BBAds.open();
+ok(!w.BBAds.active.imageRefs.some(i=>i.id==='photo'),'returning to the first blast keeps its separate exclusion');
+w.campaigns=[{id:'c',photos:['https://example.com/older.jpg']}];let legacyImports=0;
+w._bbSaveCampaignImage=async(cid,data)=>{legacyImports++;await state.db.doc(camp+'/images/legacy').set(data);return 'legacy';};
+await w.BBAds.open();await w.BBAds.open();
+ok(legacyImports===1&&w.BBAds.active.imageRefs.some(i=>i.id==='legacy'),'older uploaded campaign photos are included once through the same image repository');
 // Changed form values after a failed override must get a fresh request identity.
 const prepared=[];w.fetch=async(url,options)=>{const body=JSON.parse(options.body);prepared.push(body);return {ok:false,json:async()=>({error:'Simulated offline'})};};
 w.platforms[0].adaptedContent='First override';await w.BBAds.prepareCurrent();await w.BBAds.prepareCurrent();
