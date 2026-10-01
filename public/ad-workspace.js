@@ -5,6 +5,7 @@
   const uuid=()=>crypto.randomUUID();
   const el=id=>document.getElementById(id);
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const editFields=['biz-ad-name','biz-offer','biz-price','ad-context','ad-cta'];
   const context=()=>({businessId:window.activeBizId,campaignId:activeCampaignId});
   async function api(action,body={}) {
     const ctx={...context(),...body};
@@ -34,12 +35,14 @@
   }
   function markDirty(){
     if(!ad)return;
-    dirty=true;editVersion++;clearTimeout(autoSaveTimer);
+    dirty=true;editVersion++;clearTimeout(autoSaveTimer);tell('Saving…');
     const seq=epoch;
-    autoSaveTimer=setTimeout(async()=>{
-      if(seq!==epoch||!dirty)return;
-      try{await save();}catch(e){if(seq===epoch){tell('Not saved. '+e.message);el('ad-save-retry').hidden=false;}}
-    },650);
+    autoSaveTimer=setTimeout(()=>{if(seq===epoch)flushSave();},650);
+  }
+  async function flushSave(){
+    if(!ad||!dirty||saving)return;
+    const seq=epoch;
+    try{await save();}catch(e){if(seq===epoch){tell('Not saved. '+e.message);el('ad-save-retry').hidden=false;}}
   }
   function open(){
     mount();if(!el('ad-workspace'))return Promise.resolve();
@@ -169,7 +172,7 @@
     if(action==='remove-image'){ad.imageRefs=(ad.imageRefs||[]).filter(i=>i.id!==id);markDirty();await images();tell('Selection removed; the campaign image is preserved.');}
   }
   document.addEventListener('input',e=>{
-    if(['biz-ad-name','biz-offer','biz-price','ad-context','ad-cta'].includes(e.target.id))markDirty();
+    if(editFields.includes(e.target.id))markDirty();
     const copy=e.target.closest('[contenteditable][id^="qp-copy-text-"]');
     if(copy){
       const id=copy.id.slice('qp-copy-text-'.length);
@@ -177,6 +180,20 @@
       markDirty();
       if(typeof updateStep5UI==='function')updateStep5UI();
     }
+  });
+  // Commit mobile/autofill changes and flush when the user leaves the field.
+  document.addEventListener('change',e=>{
+    if(!editFields.includes(e.target.id)||!ad)return;
+    if(!dirty)markDirty();
+    flushSave();
+  });
+  document.addEventListener('focusout',e=>{
+    if(editFields.includes(e.target.id)||e.target.closest('[contenteditable][id^="qp-copy-text-"]'))flushSave();
+  });
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushSave();});
+  window.addEventListener('beforeunload',e=>{
+    if(!dirty)return;
+    flushSave();e.preventDefault();e.returnValue='';
   });
   window.BBAds={choosePhoto,markDirty,open,ready,refreshImages:images,save,creative,prepareCurrent:()=>task(()=>prepare('this_run')),get active(){return ad;},get dirty(){return dirty;},get busy(){return busy||!!saving;},api};
 })();

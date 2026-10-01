@@ -34,6 +34,19 @@ ok(!w.document.querySelector('[data-action=run]')&&!w.document.querySelector('[d
 await w.BBAds.choosePhoto({id:'photo',scope:'campaign'});ok(w.BBAds.active.imageRefs.length===0&&!!state.get(camp+'/images/photo'),'remove is scoped to Ad');
 w.document.getElementById('ad-context').value='Saved automatically';w.document.getElementById('ad-context').dispatchEvent(new w.Event('input',{bubbles:true}));await new Promise(r=>setTimeout(r,750));await settled();
 await w.BBAds.open();ok(w.document.getElementById('ad-context').value==='Saved automatically','typing persists without a Save details button');
+// Committed field edits must save even when mobile input supplies change only.
+const cta=w.document.getElementById('ad-cta');
+cta.value='Call David at 941-375-1504';cta.dispatchEvent(new w.Event('change',{bubbles:true}));
+await settled();await w.BBAds.open();
+ok(w.document.getElementById('ad-cta').value==='Call David at 941-375-1504','committed CTA survives reopening without another edit');
+const typedCta=w.document.getElementById('ad-cta');
+typedCta.value='Text David';typedCta.dispatchEvent(new w.Event('input',{bubbles:true}));
+ok(w.document.getElementById('ad-message').textContent==='Saving…','typing replaces stale Saved status immediately');
+typedCta.dispatchEvent(new w.FocusEvent('focusout',{bubbles:true}));await settled();
+ok(state.get(camp+'/ads/'+ad.id).cta==='Text David','leaving CTA flushes the debounce before navigation');
+await w.BBAds.open();ok(w.document.getElementById('ad-cta').value==='Text David','typed CTA reopens from canonical Ad');
+const emptyCta=w.document.getElementById('ad-cta');emptyCta.value='';emptyCta.dispatchEvent(new w.Event('change',{bubbles:true}));await settled();await w.BBAds.open();
+ok(w.document.getElementById('ad-cta').value===''&&state.get(camp+'/ads/'+ad.id).cta==='','optional CTA can be cleared and remains blank');
 w.history.replaceState({},'','?adId='+ad.id);await w.BBAds.open();ok(w.BBAds.active.id===ad.id,'existing direct links still open the specified Ad');
 // Business photos import through the same campaign repository and Ad save path.
 w._bbLoadGlobalImages=async()=>[{id:'business-photo',url:'https://example.com/business.jpg'}];
