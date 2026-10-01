@@ -331,7 +331,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
           <div class="col-2-1">
             <div class="col-left">
               <div class="card">
-                <div class="card-title">🚀 Your Blast</div>
+                <div class="card-title">🚀 Your Blast</div><div id="ad-form-anchor"></div>
 
                 <label for="biz-ad-name">Blast name</label>
                 <input type="text" id="biz-ad-name" placeholder="e.g. 50% off chocolate · Free consultation · Holiday special"
@@ -1867,7 +1867,8 @@ async function approvePlatformCopy(pid) {
   if (draftId && window._bbUpdateDraft) {
     try {
       const adaptKey = 'adaptations.' + pid;
-      await window._bbUpdateDraft(draftId, { [adaptKey]: copy });
+      if (window.BBAds?.active) await window.BBAds.save();
+      await window._bbUpdateDraft(draftId, { [adaptKey]: copy, ['platformStatus.' + pid]: 'approved' });
     } catch(e) {
       showToast('⚠️ Could not save draft — try again');
       platforms = platforms.map(p => p.id === pid
@@ -2067,8 +2068,12 @@ async function deleteLibraryItem(docId) {
 }
 
 async function regeneratePlatformCopy(pid) {
+  if(window._bbAdaptationBusy)return;
+  window._bbAdaptationBusy=true;
+  try { await window.BBAds.ready(); await window.BBAds.save(); }
+  catch(e){window._bbAdaptationBusy=false;showToast(e.message || 'Save your Ad before trying again.');return;}
   const platform = platforms.find(p => p.id === pid);
-  if (!platform) return;
+  if (!platform) {window._bbAdaptationBusy=false;return;}
   const previousContent = platform.adaptedContent || '';
   const startedEmpty = !previousContent;
 
@@ -2078,7 +2083,7 @@ async function regeneratePlatformCopy(pid) {
 
   const regenBtn  = document.getElementById('qp-regen-' + pid);
   const copyTextEl = document.getElementById('qp-copy-text-' + pid);
-  if (!copyTextEl) return;
+  if (!copyTextEl) {window._bbAdaptationBusy=false;return;}
 
   // Loading state
   if (regenBtn) { regenBtn.disabled = true; regenBtn.textContent = '⏳ Regenerating…'; }
@@ -2094,7 +2099,7 @@ async function regeneratePlatformCopy(pid) {
   const effLocType  = profile.locationType || 'physical';
   const address     = (effLocType === 'physical' || effLocType === 'both') && ynState.address !== 'no' ? (profile.address || '') : '';
   const region      = effLocType === 'both' ? (profile.region || '') : '';
-  const offer       = document.getElementById('biz-offer')?.value?.trim() || '';
+  const offer       = document.getElementById('biz-offer')?.value?.trim() || document.getElementById('ad-context')?.value?.trim() || document.getElementById('campaign-context')?.value?.trim() || activeCampaignName || '';
   const price       = document.getElementById('biz-price')?.value?.trim() || '';
   const tone        = profile.tone || 'friendly';
   const adName      = document.getElementById('biz-ad-name')?.value?.trim() || '';
@@ -2116,6 +2121,8 @@ async function regeneratePlatformCopy(pid) {
         listing: { sellerType:profile.sellerType || 'business', name, category, offer, price, phone, email, address, region, locationType: effLocType,
           website, hours, ownerName: profile.ownerName || '', adName,
           campaignName: activeCampaignName || '',
+          adContext: document.getElementById('ad-context')?.value || '',
+          cta: document.getElementById('ad-cta')?.value || '',
           imageCount: (window._bbPhotoItems||[]).filter(p=>p.done).length,
           featuredPhotoUrl,
           campaignContext: document.getElementById('campaign-context')?.value?.trim() || '',
@@ -2169,16 +2176,13 @@ async function regeneratePlatformCopy(pid) {
         if (!wasVisible) newCard.style.display = 'none';
         oldCard.parentNode.replaceChild(newCard, oldCard);
         // Repopulate photo strip for the rebuilt card (renderStep5Review doesn't re-run for inline rebuilds)
-        const _rebuildPhotos = (window._bbPhotoItems || []).filter(i => i.done && i.url);
+        const _rebuildPhotos = (window.BBAds?.active?.imageRefs || []);
         const _rebuildImgSupport = PLATFORM_IMAGE_SUPPORT[pid];
         if (_rebuildImgSupport && _rebuildPhotos.length > 0) {
           if (!window._bbPlatformPhotoSel) window._bbPlatformPhotoSel = {};
-          if (!window._bbPlatformPhotoSel[pid]) {
-            const _featuredUrl = (window._bbSelectedPhotoIndex !== null && window._bbPhotoItems)
-              ? (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || '') : '';
-            window._bbPlatformPhotoSel[pid] = new Set(_featuredUrl ? [_featuredUrl] : []);
-          }
-          renderPlatformPhotoStrip(pid, _rebuildPhotos, _rebuildImgSupport.max);
+          const included = _rebuildPhotos.slice(0, _rebuildImgSupport.max);
+          window._bbPlatformPhotoSel[pid] = new Set(included.map(image => image.url));
+          renderPlatformPhotoStrip(pid, included, _rebuildImgSupport.max, updatedPlatform.type === 'api');
         }
       }
     } else {
@@ -2195,30 +2199,9 @@ async function regeneratePlatformCopy(pid) {
     }
     updateStep5UI();
 
-    // Await Firestore draft write — do not announce success until confirmed saved
-    const draftId = window._currentDraftId;
-    if (draftId && window._bbUpdateDraft) {
-      const regenSaving = document.getElementById('qp-regen-' + pid);
-      if (regenSaving) { regenSaving.textContent = '⏳ Saving…'; }
-      const adaptKey = 'adaptations.' + pid;
-      try {
-        await window._bbUpdateDraft(draftId, { [adaptKey]: newText });
-      } catch (e) {
-        // Rollback: restore previous copy and needs-review state
-        platforms = platforms.map(p => p.id === pid
-          ? { ...p, adaptedContent: previousContent, status: 'ready', _reviewStatus: undefined }
-          : p);
-        savePlatforms();
-        const rollbackEl = document.getElementById('qp-copy-text-' + pid);
-        if (rollbackEl) rollbackEl.textContent = previousContent;
-        const lgtmRb = document.getElementById('step5-lgtm-' + pid);
-        if (lgtmRb) { lgtmRb.textContent = '✓ Looks Good'; lgtmRb.classList.remove('approved'); lgtmRb.disabled = false; delete lgtmRb.dataset.saving; }
-        const pillRb = document.getElementById('step5-pill-' + pid);
-        if (pillRb) { pillRb.textContent = 'Needs Review'; pillRb.className = 'step5-status-pill needs-review'; }
-        showToast('❌ Save failed — check connection and try again');
-        return;
-      }
-    }
+    // Keep paid-for copy on screen if persistence fails; Retry save does not call AI.
+    window.BBAds.markDirty();
+    if (!await retryGeneratedDraftSave()) return;
 
     // Use server signal to determine whether the free regen was actually applied.
     // This ensures labels and toasts reflect real billing outcome, not a local assumption.
@@ -2241,13 +2224,14 @@ async function regeneratePlatformCopy(pid) {
         restoreBtn.className = 'qp-restore-btn';
         restoreBtn.textContent = '↩ Restore previous';
         restoreBtn.style.cssText = 'background:none;border:1px solid var(--border,#333);color:var(--muted,#888);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;margin-left:6px;';
-        restoreBtn.addEventListener('click', () => {
+        restoreBtn.addEventListener('click', async () => {
           const textEl = document.getElementById('qp-copy-text-' + pid);
           if (textEl) textEl.textContent = previousContent;
           platforms = platforms.map(p => p.id === pid ? { ...p, adaptedContent: previousContent, _reviewStatus: undefined } : p);
           savePlatforms();
+          window.BBAds.markDirty();
           restoreBtn.remove();
-          showToast('↩ Restored previous copy');
+          if (await retryGeneratedDraftSave()) showToast('↩ Restored previous copy');
         });
         freshRegen.parentNode.insertBefore(restoreBtn, freshRegen.nextSibling);
       }
@@ -2258,6 +2242,7 @@ async function regeneratePlatformCopy(pid) {
       ? '⏱️ That took too long — try again'
       : '❌ Regenerate failed — try again');
   } finally {
+    window._bbAdaptationBusy=false;
     // Use fresh element refs — card may have been rebuilt
     const freshRegenBtn = document.getElementById('qp-regen-' + pid);
     if (freshRegenBtn) { freshRegenBtn.disabled = false; freshRegenBtn.textContent = '🔄 Try again'; }
@@ -2485,6 +2470,7 @@ function createWizGoTo(step) {
     // runAdaptation owns loading state after validating the selected Ad.
     renderStep5Review();
     if (!hasContent) runAdaptation();
+    else if (!window._currentDraftId) retryGeneratedDraftSave();
   }
 }
 
@@ -2494,13 +2480,16 @@ function openCampaignPhotos() {
   document.getElementById('campaign-photos')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-function createWizNext(fromStep) {
+async function createWizNext(fromStep) {
   if (fromStep === 1) {
+    try { await window.BBAds?.ready(); } catch(e) { showToast(e.message); return; }
     const offer = document.getElementById('biz-offer')?.value?.trim();
-    if (!offer && profile.sellerType !== 'personal') { showToast('Add your offer description first'); return; }
+    if (!offer && !document.getElementById('ad-context')?.value.trim() && !document.getElementById('campaign-context')?.value.trim() && !activeCampaignName) { showToast('Tell Blasty what you are promoting first'); return; }
     if (!platforms.some(p => p.enabled)) { showToast('Select at least one platform first'); return; }
     if ([...window._bbPhotoUploads].some(i => i.bizId === window.activeBizId && i.campaignId === activeCampaignId && !i.error)) { showToast('Your photos are still uploading. Continue when they finish.'); return; }
     saveDraft();
+    clearTimeout(_campaignSaveTimer);
+    try { await window.BBAds.save(); } catch(e) { showToast('Your changes were not saved: ' + e.message); return; }
   }
   // Page 2 starts at step 5
   const nextStep = fromStep === 1 ? 5 : fromStep + 1;
@@ -2596,20 +2585,16 @@ function renderStep5Review() {
     const card = buildStep5Card(p);
     container.appendChild(card);
   });
-  // Populate photo strips now that elements are in DOM
-  const campaignPhotos = (window._bbPhotoItems || []).filter(i => i.done && i.url);
-  const featuredUrl = (window._bbSelectedPhotoIndex !== null && window._bbPhotoItems)
-    ? (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || '') : '';
+  // Preview precisely the images saved on this Ad, not the whole photo library.
+  const selectedPhotos = window.BBAds?.active?.imageRefs || [];
   enabled.forEach(p => {
     if (!p.adaptedContent) return;
     const imgSupport = PLATFORM_IMAGE_SUPPORT[p.id];
-    if (imgSupport && campaignPhotos.length > 0) {
-      if (!window._bbPlatformPhotoSel) window._bbPlatformPhotoSel = {};
-      if (!window._bbPlatformPhotoSel[p.id]) {
-        window._bbPlatformPhotoSel[p.id] = new Set(featuredUrl ? [featuredUrl] : []);
-      }
-      renderPlatformPhotoStrip(p.id, campaignPhotos, imgSupport.max, p.type === 'api');
-    }
+    if (!imgSupport) return;
+    const included = selectedPhotos.slice(0, imgSupport.max);
+    window._bbPlatformPhotoSel = window._bbPlatformPhotoSel || {};
+    window._bbPlatformPhotoSel[p.id] = new Set(included.map(image => image.url));
+    if (included.length) renderPlatformPhotoStrip(p.id, included, imgSupport.max, p.type === 'api');
   });
   updateStep5UI();
 }
@@ -2758,6 +2743,8 @@ async function completeBlast() {
   };
   if (finalBtn) { finalBtn.disabled = true; finalBtn.textContent = '⏳ Getting it ready…'; }
 
+  try { await window.BBAds.save(); }
+  catch(e) { showToast('Your changes were not saved: ' + e.message); resetBtn(); return; }
   const approved = getStep5Platforms().filter(p => p._reviewStatus === 'approved');
   if (!approved.length) { showToast('Approve at least one platform first'); resetBtn(); return; }
 
@@ -2803,7 +2790,7 @@ async function completeBlast() {
 
   // Hand off to the send page: it fires the auto-post platforms and holds the
   // copy-and-paste ones with their text and photos ready to grab.
-  window.location.href = 'BlastyBiz-Listing-Preview.html?draftId=' + encodeURIComponent(draftId);
+  window.location.href = 'BlastyBiz-Listing-Preview.html?bizId=' + encodeURIComponent(window.activeBizId) + '&draftId=' + encodeURIComponent(draftId);
 }
 
 // ══════════════════════════════════════════
@@ -3069,6 +3056,7 @@ async function retryGeneratedDraftSave() {
   if (review) review.classList.remove('visible');
   try {
     if (!window._afterAdaptation) throw new Error('Saving is not ready yet');
+    if (window.BBAds?.active) await window.BBAds.save();
     const draftId = await window._afterAdaptation(platforms);
     if (!draftId) throw new Error('Draft was not saved');
     if (window.activeBizId !== bizId) return false;
@@ -3099,7 +3087,9 @@ async function runAdaptation() {
   const errorBox = document.getElementById('generation-error');
   if (errorBox) errorBox.hidden = true;
   try {
-  if(!window.BBAds?.active) throw new Error('Your Ad is not ready. Go back to details and choose or create an Ad, then retry.');
+  await window.BBAds.ready();
+  clearTimeout(_campaignSaveTimer);
+  await window.BBAds.save();
   if (window._bbDraftSavePending) { showToast('Save your generated copy with Retry save first.'); return; }
   updateCampaignMemory(); // ensure campaign object reflects current DOM before prompt is built
   // Profile is the dossier — always primary source for business identity fields
@@ -3112,7 +3102,7 @@ async function runAdaptation() {
   const effLocType = profile.locationType || 'physical';
   const address   = (effLocType === 'physical' || effLocType === 'both') && ynState.address !== 'no' ? (profile.address || '') : '';
   const region    = effLocType === 'both' ? (profile.region || '') : '';
-  const offer     = document.getElementById('biz-offer').value.trim() || (profile.sellerType === 'personal' ? activeCampaignName : '');
+  const offer     = document.getElementById('biz-offer').value.trim() || document.getElementById('ad-context')?.value.trim() || document.getElementById('campaign-context')?.value.trim() || activeCampaignName;
   const price     = document.getElementById('biz-price').value.trim();
   const tone      = profile.tone || 'friendly';
   const adName      = document.getElementById('biz-ad-name')?.value?.trim() || '';
@@ -3440,31 +3430,8 @@ async function loadHistoryDraft(draftId) {
     const draft = await window._bbLoadDraft(draftId);
     if (!draft) { showToast('⚠️ Blast not found'); return; }
 
-    if (draft.campaignId) {
-      const savedCampaign = campaigns.find(c => c.id === draft.campaignId);
-      if (savedCampaign) selectCampaign(savedCampaign.id, savedCampaign.name);
-      else { activeCampaignId = draft.campaignId; activeCampaignName = draft.campaignName || ''; }
-    }
-    window._currentDraftId = draftId;
-    loadQuickSchedFromDraft(draft.schedule);
-    const adaptations  = draft.adaptations  || {};
-    const platStatus   = draft.platformStatus || {};
-
-    // Merge adaptations + status back into live platforms[]
-    platforms = platforms.map(p => {
-      const content = adaptations[p.id] || null;
-      const excluded = platStatus[p.id] === 'excluded';
-      return {
-        ...p,
-        enabled: Array.isArray(draft.enabledPlatforms) ? draft.enabledPlatforms.includes(p.id) : !!content,
-        adaptedContent: content,
-        _reviewStatus:  excluded ? 'skipped' : (content ? 'approved' : undefined),
-      };
-    });
-
-    showTab('create');
-    createWizGoTo(5);
-    showToast('✅ Blast loaded — review your copy below');
+    // Review the saved Blast itself. Loading history must not replace the reusable Ad.
+    window.location.href = 'BlastyBiz-Listing-Preview.html?bizId=' + encodeURIComponent(window.activeBizId) + '&draftId=' + encodeURIComponent(draftId);
   } catch(e) {
     console.error('loadHistoryDraft:', e);
     showToast('⚠️ Could not load blast');
@@ -4695,45 +4662,26 @@ function renderCampaignChips() {
   if (typeof renderRecentActivity === 'function') renderRecentActivity();
 }
 
-function selectCampaign(id, name) {
-  if(window.BBAds?.busy){showToast('Wait for the current Ad action to finish.');return;}
+async function selectCampaign(id, name) {
+  if(window._bbAdaptationBusy || window.BBAds?.busy){showToast('Wait for the current save or generation to finish.');return;}
   if(window.BBAds?.dirty && !confirm('Discard unsaved Ad changes before switching campaigns?'))return;
   if (window._bbDraftSavePending) { showToast('Use Retry save before switching campaigns.'); return; }
+  clearTimeout(_campaignSaveTimer);
   activeCampaignId   = id;
   activeCampaignName = name;
-  window.BBAds?.open();
+  const adReady = window.BBAds?.open();
+  createWizGoTo(1);
   showTab('create');
   document.getElementById('campaign-content')?.classList.remove('hidden');
 
   const cam = campaigns.find(c => c.id === id) || {};
 
-  // Populate campaign form fields — empty string for missing fields
-  const offerEl = document.getElementById('biz-offer');
-  if (offerEl) { offerEl.value = cam.offer || ''; }
-  const offerCount = document.getElementById('offer-count');
-  if (offerCount) offerCount.textContent = (cam.offer || '').length + ' / 500';
-  const adNameEl = document.getElementById('biz-ad-name');
-  if (adNameEl) adNameEl.value = cam.adName || '';
-  const priceEl = document.getElementById('biz-price');
-  if (priceEl) priceEl.value = cam.price || '';
   const ctxEl = document.getElementById('campaign-context');
   if (ctxEl) ctxEl.value = cam.campaignStory || '';
 
   // Populate create-tab Teach AI card
   const campMemEl = document.getElementById('create-camp-memory-text');
   if (campMemEl) campMemEl.value = cam.campaignMemory || '';
-
-  // Restore Mentions (About You in Copy) toggles from this campaign — no save triggered
-  const _YN_DEFAULTS = { name:'no', role:'no', address:'yes', phone:'yes', email:'yes', website:'yes' };
-  Object.keys(_YN_DEFAULTS).forEach(f => {
-    const key = 'ynMention' + f.charAt(0).toUpperCase() + f.slice(1);
-    const val = cam[key] !== undefined ? cam[key] : _YN_DEFAULTS[f];
-    ynState[f] = val;
-    const yEl = document.getElementById('yn-' + f + '-yes');
-    const nEl = document.getElementById('yn-' + f + '-no');
-    if (yEl) yEl.classList.toggle('yn-active', val === 'yes');
-    if (nEl) nEl.classList.toggle('yn-active',  val === 'no');
-  });
 
   // Use the existing scope loader for campaign selection too.
   refreshPhotoGridForScope();
@@ -4754,6 +4702,8 @@ function selectCampaign(id, name) {
 
   renderCampaignChips();
   renderPlatformHistory();
+  await adReady;
+  if (activeCampaignId !== id) return;
   _updateAdDiscardBtn();
   checkAdaptBtn();
 }
@@ -4806,7 +4756,7 @@ async function saveNewCampaign() {
   try {
     if (!window._bbSaveCampaigns) throw new Error('Saving is not ready yet');
     await window._bbSaveCampaigns([newCampaign]);
-    if(window.BBAds)await window.BBAds.api('create',{businessId,campaignId:id,adId:'first',requestId:'first',creative:{name:name+' — First Ad',offer:ccCol.offer||'',price:ccCol.price||'',context:'',platforms:platforms.filter(p=>p.enabled).map(p=>p.id)}});
+    if(window.BBAds)await window.BBAds.api('create',{businessId,campaignId:id,adId:'first',requestId:'first',creative:{name:name+' — First Ad',offer:'',price:'',context:'',platforms:platforms.filter(p=>p.enabled).map(p=>p.id)}});
   } catch(e) {
     showToast('Campaign was not saved. Your entries are still here — tap Quick Create to retry.');
     return;
@@ -4824,7 +4774,7 @@ async function saveNewCampaign() {
   const ctxEl = document.getElementById('campaign-context');
   if (ctxEl) ctxEl.value = story;
 
-  renderCampaignChips();
+  await selectCampaign(id, name);
   showToast('Campaign "' + name + '" created');
 
   if (window._bbFirstRun) {
@@ -4891,7 +4841,7 @@ function _showAdDraftStatus(msg) {
 
 function _updateAdDiscardBtn() {
   const cam = campaigns.find(c => c.id === activeCampaignId);
-  const hasContent = cam && (cam.offer || cam.adName || cam.price);
+  const hasContent = window.BBAds?.active && ['biz-offer','biz-ad-name','biz-price'].some(id => document.getElementById(id)?.value.trim());
   const btn = document.getElementById('btn-discard-ad');
   if (btn) btn.style.display = hasContent ? 'inline' : 'none';
 }
@@ -4907,10 +4857,12 @@ function debounceCampaignSave() {
     if (!cam) return;
     cam.lastUsedAt = new Date().toISOString();
     try {
-      await window._bbSaveCampaigns(campaigns);
-      _showAdDraftStatus(window.BBAds?.active?'Campaign context saved; choose Update the Ad for creative.':'Draft saved ✓');
+      await window._bbSaveCampaigns([cam]);
+      if (window.BBAds?.active) await window.BBAds.save();
+      _showAdDraftStatus('Saved ✓');
     } catch(e) {
       console.warn('Campaign auto-save failed:', e);
+      _showAdDraftStatus('Not saved — tap Save details to retry');
     }
   }, 1500);
 }
@@ -4926,7 +4878,9 @@ async function discardAdDraft() {
   _updateAdDiscardBtn();
   if (activeCampaignId && window._bbSaveCampaigns) {
     try {
-      await window._bbSaveCampaigns(campaigns);
+      if (!window.BBAds?.active) throw new Error('Your saved ad is still loading.');
+      window.BBAds.markDirty();
+      await window.BBAds.save();
       _showAdDraftStatus('Ad cleared');
     } catch(e) { console.warn('Discard save failed:', e); }
   }
@@ -5011,8 +4965,6 @@ function loadDraft() {
   }
   document.getElementById('biz-name').value     = draft.name     || '';
   document.getElementById('biz-category').value = draft.category || '';
-  document.getElementById('biz-offer').value    = draft.offer    || '';
-  document.getElementById('biz-price').value    = draft.price    || '';
   document.getElementById('biz-phone').value    = draft.phone    || '';
   document.getElementById('biz-address').value  = draft.address  || '';
   const regionEl = document.getElementById('biz-region');
@@ -5020,12 +4972,7 @@ function loadDraft() {
   document.getElementById('biz-website').value  = draft.website  || '';
   document.getElementById('biz-hours').value    = draft.hours    || '';
   if (draft.locationType) setLocationType(draft.locationType);
-  if (draft.adName)    document.getElementById('biz-ad-name').value    = draft.adName;
   if (draft.campaignId) { activeCampaignId = draft.campaignId; activeCampaignName = draft.campaignName || ''; renderCampaignChips(); }
-  if (draft.offer) {
-    const span = document.getElementById('offer-count');
-    if (span) span.textContent = draft.offer.length + ' / 500';
-  }
   checkAdaptBtn();
 }
 
@@ -5937,14 +5884,14 @@ onAuthStateChanged(auth, async (user) => {
       } else if (_qpCid) {
         const _qpCamp = campaigns.find(c => c.id === _qpCid);
         if (_qpCamp) {
-          selectCampaign(_qpCamp.id, _qpCamp.name);
-          // Onboarding always offers photos and platform review before generation.
+          await selectCampaign(_qpCamp.id, _qpCamp.name);
+          // The original handoff resumes only after the same saved Ad is loaded.
           if (_qp.get('autogenerate') === '1') {
             window._bbFromOnboarding = true;
             const cameFromCheckout = _qp.get('checkout') === '1';
             window.history.replaceState({}, '', window.location.pathname + '?bizId=' + activeBizId + '&cid=' + encodeURIComponent(_qpCamp.id));
-            openCampaignPhotos();
-            if (cameFromCheckout) awaitPaidPlan(user.uid);
+            if (cameFromCheckout) await awaitPaidPlan(user.uid);
+            if (window.BBAds?.active) createWizGoTo(5);
           }
         }
       } else if (campaigns.length && !_qp.get('newcampaign')) {
@@ -6419,6 +6366,7 @@ window._afterAdaptation = async function(adaptedPlatforms) {
     adaptedPlatforms.filter(p => p.enabled && p.adaptedContent).forEach(p => {
       adaptations[p.id] = p.adaptedContent.replace(/<br\/?>/gi, '\n');
     });
+    const platformStatus = Object.fromEntries(adaptedPlatforms.filter(p=>p.enabled).map(p=>[p.id,p._reviewStatus==='approved'?'approved':'needs-review']));
 
     // F1: If a draft already exists for this blast, update it — never create a duplicate
     const existingDraftId = window._currentDraftId;
@@ -6426,6 +6374,7 @@ window._afterAdaptation = async function(adaptedPlatforms) {
       const ref = doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'listingDrafts', existingDraftId);
       await updateDoc(ref, {
         adaptations,
+        platformStatus,
         enabledPlatforms: adaptedPlatforms.filter(p=>p.enabled).map(p=>p.id),
         lastGeneratedAt: serverTimestamp(),
         updatedAt:       serverTimestamp(),
@@ -6439,6 +6388,7 @@ window._afterAdaptation = async function(adaptedPlatforms) {
       uid:          currentUser.uid,
       businessId:   activeBizId,
       adaptations,
+      platformStatus,
       enabledPlatforms: adaptedPlatforms.filter(p=>p.enabled).map(p=>p.id),
       name:         document.getElementById('biz-name')?.value || '',
       category:     document.getElementById('biz-category')?.value || '',
@@ -7010,14 +6960,13 @@ async function ccCreateCampaign(aiData) {
   ccSetLabel('Campaign Created! 🎉');
   ccAddMsg('ai', `"${name}" is ready to blast! 🚀`);
 
-  setTimeout(() => {
+  setTimeout(async () => {
     closeCampaignChat();
     if (typeof renderCampaignChips === 'function') renderCampaignChips();
     if (typeof document.getElementById('new-campaign-row')?.classList?.add === 'function') document.getElementById('new-campaign-row').classList.add('hidden');
     document.getElementById('campaign-content')?.classList.remove('hidden');
     const ctxEl = document.getElementById('campaign-context');
-    if (ctxEl) ctxEl.value = ccCol.offer || '';
-    window.BBAds?.open();
+    await selectCampaign(id, name);
     openCampaignPhotos();
     if (typeof showToast === 'function') showToast('Campaign "' + name + '" created');
   }, 1500);
@@ -7424,7 +7373,7 @@ window.confirmDeleteAccount = async function() {
 .cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
 </style>
 <script src="lifecycle-ui.js?v=20261001-remove-legacy"></script>
-<script src="ad-workspace.js?v=20261001-remove-legacy"></script>
+<script src="ad-workspace.js?v=20261001-flow"></script>
 <script>
 document.addEventListener('click',function(e){
  const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');
@@ -7433,4 +7382,3 @@ document.addEventListener('click',function(e){
 </script>
 </body>
 </html>
-

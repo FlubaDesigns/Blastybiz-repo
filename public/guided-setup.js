@@ -1,9 +1,8 @@
 /* guided-setup.js — Conversational guide layer for an ordinary HTML form. v1.0
 
    The point of this file: a form and a guided wizard should not be two separate
-   pages. This renders a mascot + speech bubble as a LAYER ON TOP of a form that
-   already exists, walking the user through the real inputs one question at a
-   time. The form underneath stays the single source of truth — there is no
+   pages. This presents the existing form inputs beside the mascot and question,
+   walking the user through them one question at a time. The form stays the single source of truth — there is no
    second set of inputs, no second answers object, and no second save path.
 
    Zero product-specific dependencies. Field ids, questions and section ids are
@@ -34,13 +33,23 @@
   'use strict';
 
   var CSS = [
-    '.gs-layer{position:fixed;left:0;right:0;bottom:0;z-index:800;',
+    '.gs-layer{position:relative;width:100%;z-index:1;',
     '  background:linear-gradient(180deg,rgba(8,16,8,.92),rgba(8,16,8,.99));',
     '  border-top:1px solid rgba(57,255,20,.35);',
     '  box-shadow:0 -8px 40px rgba(0,0,0,.55);',
     '  padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));',
-    '  transform:translateY(110%);transition:transform .35s cubic-bezier(.2,.9,.3,1);}',
-    '.gs-layer.gs-open{transform:translateY(0);}',
+    '  border-radius:16px;}',
+    '.gs-layer.gs-open{display:block;}',
+    '.gs-history{display:grid;gap:12px;margin-bottom:20px;}',
+    '.gs-answer{display:block;text-align:left;width:100%;padding:14px;border:1px solid #29492e;border-radius:14px;background:#0d1a0d;color:#e0f0e3;font:inherit;cursor:pointer;overflow-wrap:anywhere;}',
+    '.gs-answer small{display:block;color:#7aab82;margin-bottom:6px;}',
+    '.gs-answer span{white-space:pre-wrap;}',
+    '.gs-input{margin-top:16px;background:#0d1a0d;border:1px solid #29492e;border-radius:14px;padding:14px;}',
+    '.gs-input input,.gs-input select,.gs-input textarea{font-size:16px;min-height:46px;}',
+    '.gs-input .cb-field{margin:0;}',
+    '.gs-btn{min-height:46px;}',
+    'body.gs-guiding #cb-form{display:none!important;}',
+    'body.gs-guiding .cb-page-sub,body.gs-guiding .cb-guide-start{display:none;}',
     '.gs-inner{max-width:900px;margin:0 auto;display:flex;gap:14px;align-items:flex-start;}',
     '.gs-char{flex-shrink:0;width:64px;}',
     '.gs-char svg{width:64px;height:auto;overflow:visible;display:block;}',
@@ -108,6 +117,10 @@
 
   function GuidedSetup(opts) {
     opts = opts || {};
+    this.formId      = opts.formId || 'cb-form';
+    this._visited    = new Set();
+    this._resume     = null;
+    this._moved      = null;
     this.name        = opts.name || 'Assistant';
     this.steps       = (opts.steps || []).slice();
     this.openSection = opts.openSection || function () {};
@@ -139,12 +152,13 @@
     layer.setAttribute('role', 'region');
     layer.setAttribute('aria-label', this.name + ' setup guide');
     layer.innerHTML =
-        '<div class="gs-inner">'
+        '<div class="gs-history" id="gs-history"></div><div class="gs-inner">'
       +   '<div class="gs-char" id="gs-char"></div>'
       +   '<div class="gs-col">'
       +     '<div class="gs-track"><div class="gs-fill" id="gs-fill"></div></div>'
       +     '<div class="gs-bubble" id="gs-bubble" aria-live="polite"></div>'
       +     '<div class="gs-hint" id="gs-hint"></div>'
+      +     '<div class="gs-input" id="gs-input"></div>'
       +     '<div class="gs-err" id="gs-err" aria-live="assertive"></div>'
       +     '<div class="gs-btns">'
       +       '<button type="button" class="gs-btn" id="gs-back">← Back</button>'
@@ -156,7 +170,9 @@
       +     '</div>'
       +   '</div>'
       + '</div>';
-    document.body.appendChild(layer);
+    var form=el(this.formId);
+    if(form)form.parentNode.insertBefore(layer,form);else document.body.appendChild(layer);
+    document.body.classList.add('gs-guiding');
     this.layer = layer;
 
     var self = this;
@@ -189,6 +205,7 @@
     var self = this;
     this.idx = Math.max(0, Math.min(at || 0, this.steps.length - 1));
     requestAnimationFrame(function () {
+      if(!self.layer)return;
       self.layer.classList.add('gs-open');
       self._pad();
       self.render();
@@ -197,15 +214,38 @@
   };
 
   /* Keep the docked layer from covering the bottom of the form. */
-  GuidedSetup.prototype._pad = function () {
-    if (!this.layer) return;
-    document.body.style.paddingBottom = (this.layer.offsetHeight + 24) + 'px';
+  GuidedSetup.prototype._pad = function () {};
+
+  // Move the actual form control into the conversation, then restore it before
+  // navigating. Every answer still comes from that one control and save path.
+  GuidedSetup.prototype._restoreInput = function () {
+    if(this._moved){this._moved.marker.replaceWith(this._moved.box);this._moved=null;}
+  };
+  GuidedSetup.prototype._showHistory = function () {
+    var self=this,history=el('gs-history'),answers=this.answers();
+    if(!history)return;
+    history.replaceChildren();
+    this._visited.forEach(function(i){
+      var step=self.steps[i];
+      if(i===self.idx || (step.skipIf&&step.skipIf(answers)))return;
+      var button=document.createElement('button');button.type='button';button.className='gs-answer';
+      var label=document.createElement('small');label.textContent=typeof step.ask==='function'?step.ask(answers):step.ask;
+      var answer=document.createElement('span'),v=valueOf(step);
+      var field=el(step.field);
+      if(field&&field.tagName==='SELECT')v=field.options[field.selectedIndex]?.textContent||v;
+      answer.textContent=step.summary?step.summary():Array.isArray(v)?v.join(', '):(v||'Skipped');
+      button.append(label,answer);button.setAttribute('aria-label','Edit: '+label.textContent);
+      button.addEventListener('click',function(){self._resume=self.idx;self.idx=i;self.render();});
+      history.appendChild(button);
+    });
   };
 
   GuidedSetup.prototype.stop = function () {
     /* Tear the visible layer down FIRST. Mascot teardown reaches into a third-party
        component; if it throws, the user must not be left staring at a guide bar that
        refuses to close. */
+    this._restoreInput();
+    document.body.classList.remove('gs-guiding');
     if (this.layer && this.layer.parentNode) this.layer.parentNode.removeChild(this.layer);
     this.layer = null;
     document.body.style.paddingBottom = '';
@@ -236,8 +276,10 @@
   };
 
   GuidedSetup.prototype.render = function () {
+    this._restoreInput();
     var step = this.steps[this.idx];
     if (!step) return this.finish();
+    this._showHistory();
 
     var a       = this.answers();
     var bubble  = el('gs-bubble');
@@ -250,11 +292,12 @@
     hintEl.textContent = step.hint || '';
     hintEl.style.display = step.hint ? '' : 'none';
 
-    el('gs-count').textContent = (this.idx + 1) + ' of ' + this.steps.length;
-    el('gs-fill').style.width  = Math.round((this.idx / this.steps.length) * 100) + '%';
+    var applicable=this.steps.filter(function(s){return !s.skipIf||!s.skipIf(a);});
+    el('gs-count').textContent = (applicable.indexOf(step) + 1) + ' of ' + applicable.length;
+    el('gs-fill').style.width  = Math.round((applicable.indexOf(step) / applicable.length) * 100) + '%';
     el('gs-back').style.visibility = this.idx === 0 ? 'hidden' : '';
     el('gs-skip').style.display    = step.required ? 'none' : '';
-    el('gs-next').textContent      = this.idx === this.steps.length - 1 ? this.finishLabel : 'Next →';
+    el('gs-next').textContent = this._applicable(this.idx+1,1) >= this.steps.length ? this.finishLabel : 'Next →';
 
     if (step.mood && this.mascot && this.mascot.setMood) this.mascot.setMood(step.mood);
 
@@ -266,6 +309,10 @@
         ? target.querySelector('input[type=checkbox]')
         : target;
       var box = step.group ? target : (target.closest('.cb-field') || target);
+      var marker=document.createComment('guided field location');
+      box.parentNode.insertBefore(marker,box);
+      el('gs-input').appendChild(box);
+      this._moved={marker:marker,box:box};
       box.classList.add('gs-target');
       this._lastTarget = box;
       var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -292,11 +339,14 @@
       var msg = step.validate(v, this.answers());
       if (msg) { el('gs-err').textContent = msg; return; }
     }
+    this._visited.add(this.idx);
+    if(this._resume!==null){this.idx=this._applicable(this._resume,1);this._resume=null;return this.render();}
     this.advance(1);
   };
 
   GuidedSetup.prototype.skip = function () {
     if (this.steps[this.idx] && this.steps[this.idx].required) return this.next();
+    this._visited.add(this.idx);
     this.advance(1);
   };
 
@@ -310,10 +360,15 @@
     this.render();
   };
 
-  GuidedSetup.prototype.finish = function () {
-    el('gs-fill').style.width = '100%';
+  GuidedSetup.prototype.finish = async function () {
+    if(this._finishing)return;
+    this._finishing=true;
+    el('gs-fill').style.width='100%';
     this._clearTarget();
-    this.onFinish(this.answers());
+    var button=el('gs-next');if(button)button.disabled=true;
+    try{await this.onFinish(this.answers());}
+    catch(e){if(el('gs-err'))el('gs-err').textContent=e.message||'Could not save. Please retry.';}
+    finally{this._finishing=false;if(button)button.disabled=false;}
   };
 
   window.GuidedSetup = GuidedSetup;

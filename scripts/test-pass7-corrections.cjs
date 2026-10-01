@@ -8,8 +8,8 @@ let checks=0,failures=0;
 const ok=(v,m)=>{assert(v,m);checks++;};
 async function generation() {
   const html=read('public/BlastyBiz.html'),requests=[],writes=[],errors=[],nodes={};let next=0;
-  const c={console:{...quiet,error:e=>errors.push(e.message)},crypto:require('node:crypto'),profile:{name:'Business'},ynState:{},platforms:[{id:'facebook',enabled:true}],PLATFORM_RULES:{},bizInsights:[],campaigns:[],activeCampaignId:'c',activeCampaignName:'Campaign',activeBizId:'b',currentUser:{uid:'u'},db:{},
-    window:{BBAds:{active:{id:'ad'}},activeBizId:'b',_bbGetToken:async()=>'token',_bbSelectedPhotoIndex:null,_bbGeneratingPlatforms:new Set()},
+  const c={clearTimeout(){},_campaignSaveTimer:null,console:{...quiet,error:e=>errors.push(e.message)},crypto:require('node:crypto'),profile:{name:'Business'},ynState:{},platforms:[{id:'facebook',enabled:true}],PLATFORM_RULES:{},bizInsights:[],campaigns:[],activeCampaignId:'c',activeCampaignName:'Campaign',activeBizId:'b',currentUser:{uid:'u'},db:{},
+    window:{BBAds:{active:{id:'ad'},ready:async function(){if(!this.active)throw Error('Your Ad is not ready.');},save:async()=>{}},activeBizId:'b',_bbGetToken:async()=>'token',_bbSelectedPhotoIndex:null,_bbGeneratingPlatforms:new Set()},
     document:{getElementById:id=>nodes[id]||(nodes[id]={value:id==='biz-offer'?'Spring sale':'',style:{},classList:{add(){},remove(){}}}),querySelectorAll:()=>[]},
     updateCampaignMemory(){},renderStep5Review(){},_bbSetGenerating(ids){c.window._bbGeneratingPlatforms=new Set(ids);},_startAiProgress(){},_completeAiProgress(){},savePlatforms(){},showToast(){},_getAIMemory:()=>({}),
     serverTimestamp:()=>1,increment:n=>n,collection:()=>({}),doc:(_, ...p)=>({id:p.length?p.at(-1):'draft'+(++next)}),setDoc:async(ref,data)=>writes.push({ref,data}),updateDoc:async(ref,data)=>writes.push({ref,data}),
