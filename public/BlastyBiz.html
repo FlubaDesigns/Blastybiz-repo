@@ -536,8 +536,11 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
       <div class="row" id="slide1-nav-row">
         <div class="col-full">
           <div class="create-wiz-nav">
-            <button type="button" class="btn btn-primary btn--adaptive" id="s3-continue-btn" onclick="createWizNext(1)" disabled>
-              Generate / Saved Copy →
+            <button type="button" class="btn btn-primary btn--adaptive" id="s3-continue-btn" onclick="createWizNext(1, true)" disabled>
+              Generate New Copy →
+            </button>
+            <button type="button" class="btn btn-outline btn--adaptive" id="s3-saved-copy-btn" onclick="createWizNext(1)" disabled>
+              View Saved Copy →
             </button>
           </div>
           <div class="bottom-safe"></div>
@@ -2428,7 +2431,7 @@ const SLIDE_TITLES = {
   5: 'Review & Approve'
 };
 
-function createWizGoTo(step) {
+function createWizGoTo(step, generate = false) {
   // Some callers jump straight into a wizard step without going through
   // showTab(), which showed the Create screen while another tab stayed
   // highlighted. Entering the wizard owns the tab strip too.
@@ -2479,12 +2482,12 @@ function createWizGoTo(step) {
     const _s5enabled = platforms.filter(p => p.enabled);
     const _s5firstUnresolved = _s5enabled.findIndex(p => p._reviewStatus !== 'approved' && p._reviewStatus !== 'skipped');
     _step5PlatIdx = _s5firstUnresolved >= 0 ? _s5firstUnresolved : 0;
-    // Auto-generate only if platforms don't already have copy — guards against re-firing on back/forward nav
+    // Viewing and navigation never generate; only an explicit generation action does.
     const hasContent = platforms.some(p => p.enabled && p.adaptedContent);
     // runAdaptation owns loading state after validating the selected Ad.
     renderStep5Review();
-    if (!hasContent) runAdaptation();
-    else if (!window._currentDraftId) retryGeneratedDraftSave();
+    if (generate) runAdaptation();
+    else if (hasContent && !window._currentDraftId) retryGeneratedDraftSave();
   }
 }
 
@@ -2494,9 +2497,10 @@ function openCampaignPhotos() {
   document.getElementById('campaign-photos')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-async function createWizNext(fromStep) {
+async function createWizNext(fromStep, generate = false) {
   if (fromStep === 1) {
     try { await window.BBAds?.ready(); } catch(e) { showToast(e.message); return; }
+    if (!generate && !platforms.some(p => p.enabled && p.adaptedContent)) { showToast('No saved copy is available for these platforms yet. Use Generate New Copy.'); return; }
     const offer = document.getElementById('biz-offer')?.value?.trim();
     if (!offer && !document.getElementById('ad-context')?.value.trim() && !document.getElementById('campaign-context')?.value.trim() && !activeCampaignName) { showToast('Tell Blasty what you are promoting first'); return; }
     if (!platforms.some(p => p.enabled)) { showToast('Select at least one platform first'); return; }
@@ -2507,7 +2511,7 @@ async function createWizNext(fromStep) {
   }
   // Page 2 starts at step 5
   const nextStep = fromStep === 1 ? 5 : fromStep + 1;
-  createWizGoTo(nextStep);
+  createWizGoTo(nextStep, generate);
 }
 
 function createWizPrev(fromStep) {
@@ -2558,6 +2562,8 @@ function renderStep3Platforms() {
 function checkS3ContinueBtn() {
   const btn = document.getElementById('s3-continue-btn');
   if (btn) btn.disabled = !platforms.some(p => p.enabled);
+  const saved = document.getElementById('s3-saved-copy-btn');
+  if (saved) saved.disabled = !platforms.some(p => p.enabled && p.adaptedContent);
 }
 
 // ══════════════════════════════════════════
@@ -5944,7 +5950,7 @@ onAuthStateChanged(auth, async (user) => {
             const cameFromCheckout = _qp.get('checkout') === '1';
             window.history.replaceState({}, '', window.location.pathname + '?bizId=' + activeBizId + '&cid=' + encodeURIComponent(_qpCamp.id));
             if (cameFromCheckout) await awaitPaidPlan(user.uid);
-            if (window.BBAds?.active) createWizGoTo(5);
+            if (window.BBAds?.active) await createWizNext(1, !platforms.some(p => p.enabled && p.adaptedContent));
           }
         }
       } else if (campaigns.length && !_qp.get('newcampaign')) {
@@ -6311,7 +6317,8 @@ onAuthStateChanged(auth, async (user) => {
           : _enabledPlatformIds !== null
           ? _enabledPlatformIds.includes(p.id)
           : (platforms.find(pp => pp.id === p.id)?.enabled ?? (conn ? !!conn.enabled : false));
-        return { ...p, enabled: isEnabled, status: (conn ? conn.status || 'idle' : p.status) };
+        // Connections supply connection metadata; the loaded Ad owns copy and review state.
+        return { ...p, ...platforms.find(current => current.id === p.id), enabled: isEnabled, status: (conn ? conn.status || 'idle' : p.status) };
       });
       if (window._bbSetPlatforms) window._bbSetPlatforms(updatedPlatforms);
     }
