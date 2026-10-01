@@ -46,7 +46,7 @@ function cleanCreative(input, previous={}) {
 }
 function freezePacket(ad, campaign, overrides) {
   const data=overrides?cleanCreative(overrides,ad):clone(ad);
-  const platforms=data.platforms||[];
+  const platforms=(data.platforms||[]).filter(p=>data.platformStatus?.[p]!=='excluded');
   if(!platforms.length) fail(400,'Select a destination before preparing a Blast.');
   const images=(data.imageRefs||[]).map(i=>i.url).filter(Boolean);
   const packet={version:1,adId:ad.id,campaignId:ad.campaignId,campaignName:campaign.name||'',adName:data.name||'Ad',adRevision:ad.revision,
@@ -132,7 +132,8 @@ function createAdService(db,admin) {
         const stale=prepared.docs.filter(d=>d.data().packet&&d.data().status!=='approved').map(d=>({id:d.id,adRevision:d.data().packet.adRevision}));
         const requestId=id(body.requestId);
         invalidateStaleApprovals(ad,creative);
-        const ready=(creative.platforms||[]).length>0&&(creative.platforms||[]).every(p=>creative.adaptations?.[p]?.trim()&&creative.platformStatus?.[p]==='approved');
+        const included=(creative.platforms||[]).filter(p=>creative.platformStatus?.[p]!=='excluded');
+        const ready=included.length>0&&included.every(p=>creative.adaptations?.[p]?.trim()&&creative.platformStatus?.[p]==='approved');
         const updated={...creative,status:ready?'ready':'draft',revision:ad.revision+1,events:[...(ad.events||[]),event(requestId,fields.includes('imageRefs')?'images_edited':fields.includes('platforms')?'platforms_changed':'copy_edited',fields)].slice(-200)};
         tx.set(ref,{...updated,updatedAt:stamp()});
         return {ad:updated,prepared:stale};
@@ -180,4 +181,3 @@ async function resolveImages(tx,campaign,creative,changed) {
   creative.imageRefs=resolved;
 }
 module.exports={createAdService,cleanCreative,freezePacket};
-

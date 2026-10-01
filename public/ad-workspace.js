@@ -59,7 +59,7 @@
     ad=next;window._bbActiveAd=ad;dirty=false;pending=null;window._currentDraftId=null;window._bbPendingDraft=null;
     for(const [field,key] of Object.entries({'biz-ad-name':'name','biz-offer':'offer','biz-price':'price','ad-cta':'cta','ad-context':'context'})){if(el(field))el(field).value=ad[key]||'';}
     if(typeof platforms!=='undefined'){
-      platforms=platforms.map(p=>({...p,enabled:(ad.platforms||[]).includes(p.id),adaptedContent:(ad.adaptations?.[p.id]||'').replace(/\n/g,'<br/>'),_reviewStatus:ad.platformStatus?.[p.id]||'needs-review'}));
+      platforms=platforms.map(p=>({...p,enabled:(ad.platforms||[]).includes(p.id),adaptedContent:(ad.adaptations?.[p.id]||'').replace(/\n/g,'<br/>'),_reviewStatus:ad.platformStatus?.[p.id]==='excluded'?'skipped':ad.platformStatus?.[p.id]||'needs-review'}));
       if(typeof renderStep5Review==='function')renderStep5Review();
     }
     Object.assign(ynState,Object.fromEntries(['name','role','address','phone','email','website'].map(k=>[k,'no'])),ad.mentions||{});
@@ -76,7 +76,7 @@
     return {name:el('biz-ad-name').value.trim()||'Untitled Ad',offer:el('biz-offer').value,price:el('biz-price').value,cta:el('ad-cta').value,context:el('ad-context').value,
       mentions:{...ynState},platforms:platforms.filter(p=>p.enabled).map(p=>p.id),imageRefs:(ad.imageRefs||[]).map(i=>({id:i.id})),
       adaptations:Object.fromEntries(platforms.filter(p=>p.enabled&&p.adaptedContent).map(p=>[p.id,p.adaptedContent.replace(/<br\s*\/?\s*>/gi,'\n')])),
-      platformStatus:Object.fromEntries(platforms.filter(p=>p.enabled).map(p=>[p.id,p._reviewStatus==='approved'?'approved':'needs-review']))};
+      platformStatus:Object.fromEntries(platforms.filter(p=>p.enabled).map(p=>[p.id,p._reviewStatus==='approved'?'approved':p._reviewStatus==='skipped'?'excluded':'needs-review']))};
   }
   async function persist(){
     await ready();
@@ -84,13 +84,13 @@
     const values=creative();if(pending?.action!=='save'||JSON.stringify(pending.values)!==JSON.stringify(values))pending={action:'save',requestId:uuid(),values};
     const data=await api('save',{adId:ad.id,expectedRevision:ad.revision,requestId:pending.requestId,creative:pending.values});
     if(seq!==epoch)throw Error('The active campaign changed during save.');
-    const editedDuringSave=version!==editVersion;
+    const editedDuringSave=version!==editVersion||JSON.stringify(creative())!==JSON.stringify(values);
     ad=editedDuringSave?{...data.ad,imageRefs:ad.imageRefs}:data.ad;window._bbActiveAd=ad;
     if(!editedDuringSave){
-      platforms=platforms.map(p=>({...p,_reviewStatus:ad.platformStatus?.[p.id]||'needs-review'}));
+      platforms=platforms.map(p=>({...p,_reviewStatus:ad.platformStatus?.[p.id]==='excluded'?'skipped':ad.platformStatus?.[p.id]||'needs-review'}));
       if(typeof renderStep5Review==='function')renderStep5Review();
     }
-    dirty=version!==editVersion;pending=null;tell(dirty?'Saving your latest edits…':'Saved.');
+    dirty=editedDuringSave;pending=null;tell(dirty?'Saving your latest edits…':'Saved.');
     el('ad-prepared').innerHTML=(data.prepared||[]).map(b=>'<p>Prepared Blast '+esc(b.id)+' still contains the older Ad. <button type="button" data-action="update-prepared" data-id="'+esc(b.id)+'">Update It Too</button> <button type="button" data-action="leave-prepared">Leave It</button></p>').join('');
     return data;
   }

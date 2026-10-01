@@ -1925,6 +1925,7 @@ async function excludePlatform(pid) {
   const draftId = window._currentDraftId;
   if (draftId && window._bbUpdateDraft) {
     try {
+      if (window.BBAds?.active) await window.BBAds.save();
       await window._bbUpdateDraft(draftId, { ['platformStatus.' + pid]: 'excluded' });
     } catch (e) {
       // Rollback: restore prior status and show error — do not advance
@@ -6366,7 +6367,7 @@ window._afterAdaptation = async function(adaptedPlatforms) {
     adaptedPlatforms.filter(p => p.enabled && p.adaptedContent).forEach(p => {
       adaptations[p.id] = p.adaptedContent.replace(/<br\/?>/gi, '\n');
     });
-    const platformStatus = Object.fromEntries(adaptedPlatforms.filter(p=>p.enabled).map(p=>[p.id,p._reviewStatus==='approved'?'approved':'needs-review']));
+    const platformStatus = Object.fromEntries(adaptedPlatforms.filter(p=>p.enabled).map(p=>[p.id,p._reviewStatus==='approved'?'approved':p._reviewStatus==='skipped'?'excluded':'needs-review']));
 
     // F1: If a draft already exists for this blast, update it — never create a duplicate
     const existingDraftId = window._currentDraftId;
