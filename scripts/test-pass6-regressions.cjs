@@ -112,7 +112,7 @@ async function deletionTests() {
 async function campaignTests() {
   const html=read('public/BlastyBiz.html'),nodes={},messages=[],writes=[];let fail=true;
   const node=id=>nodes[id]||(nodes[id]={value:id==='new-campaign-input'?'Spring Floors':'Brief',focus(){},classList:{add(){},remove(){}}});
-  const c={profile:{sellerType:'business'},createWizGoTo(){},setPhotoScope(){},window:{activeBizId:'b',_bbSaveCampaigns:async data=>{writes.push(data);if(fail)throw Error('offline')}},document:{getElementById:node},crypto:require('node:crypto'),campaigns:[],activeCampaignId:null,activeCampaignName:null,showToast:m=>messages.push(m),_sortCampaigns(){},renderCampaignChips(){}};
+  const c={window:{activeBizId:'b',_bbSaveCampaigns:async data=>{writes.push(data);if(fail)throw Error('offline')}},document:{getElementById:node},crypto:require('node:crypto'),campaigns:[],activeCampaignId:null,activeCampaignName:null,showToast:m=>messages.push(m),_sortCampaigns(){},renderCampaignChips(){}};
   vm.runInNewContext(section(html,'let quickCampaignSaving =','async function deleteCampaign('),c);
   await c.saveNewCampaign();ok(c.campaigns.length===0&&!c.activeCampaignId&&node('new-campaign-input').value==='Spring Floors','failed Quick Create retains answers without reporting creation');
   fail=false;await c.saveNewCampaign();ok(c.campaigns.length===1&&writes[0][0].id===writes[1][0].id&&c.activeCampaignId===writes[1][0].id,'Quick Create retry preserves one identity and selects only after saving');

@@ -14,6 +14,7 @@ w.eval(fs.readFileSync('public/schedule-utils.js','utf8'));
 w.eval(fs.readFileSync('public/lifecycle-ui.js','utf8'));w.BBLifecycle.configure({businessId:'b',token:async()=>''});
 const settle=async()=>{for(let i=0;i<20;i++)await new Promise(r=>setImmediate(r));};
 (async()=>{
+ await w.BBLifecycle.preview({},'unlinked');ok(!w.document.getElementById('v1-publish-schedule').textContent.includes('Legacy')&&w.document.getElementById('v1-publish-schedule').textContent.includes('create an Ad'),'unlinked preview has no dead conversion instruction');
  await w.BBLifecycle.preview(m.get(D),'first');let host=w.document.getElementById('v1-publish-schedule');
  ok(host.querySelector('[data-form]').hidden,'Send Now hides schedule controls');await w._firestoreApprove(['craigslist']);ok(published===1,'Send Now retains existing approval path');
  const radio=host.querySelector('[value=schedule]');radio.checked=true;radio.dispatchEvent(new w.Event('change',{bubbles:true}));ok(!host.querySelector('[data-form]').hidden&&w.document.getElementById('publish-btn').textContent==='Schedule Blast','Schedule choice reveals form and truthful final label');

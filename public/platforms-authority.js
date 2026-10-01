@@ -565,8 +565,6 @@
     const canonical = byId[p.id];
     return {...p, type:canonical && canonical.deliveryMode === 'auto' ? 'api' : 'manual', proOnly:false};
   }
-  const personalPlatforms = new Set(['fbmarket','craigslist','nextdoor']);
-  const supportsSeller = (id,sellerType) => sellerType !== 'personal' || personalPlatforms.has(id);
-  return {supportsSeller, records, byId, labels, PLATFORM_CAPABILITY_MAP, PLATFORM_DOCS, AUTO_POST_PLATFORMS,
+  return {records, byId, labels, PLATFORM_CAPABILITY_MAP, PLATFORM_DOCS, AUTO_POST_PLATFORMS,
     PLATFORM_DEFAULTS, mergeDisplay, normalizeSelection};
 });

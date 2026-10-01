@@ -67,17 +67,6 @@ jobs:
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-backend-review-ui.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-personal-seller.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-signup-submit.cjs
-      - name: Personal phone layout and real image conversion
-        run: |
-          npm install --prefix "$RUNNER_TEMP/blasty-browser" --no-audit --no-fund playwright@1.56.1
-          node "$RUNNER_TEMP/blasty-browser/node_modules/playwright/cli.js" install --with-deps chromium
-          PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-personal-mobile.cjs
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: personal-mobile-preview
-          path: test-results/personal-mobile.png
-          if-no-files-found: ignore
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

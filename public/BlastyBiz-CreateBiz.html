@@ -479,7 +479,6 @@ function cbConfigureForm() {
   document.getElementById('cb-submit').textContent = personal ? (initial?'Save Seller & Listing':'Save Seller') : (initial ? 'Save Business & Campaign' : 'Save Business');
   const storyBadge = document.querySelector('#cb-sec2-title .cb-sec-badge');
   if (storyBadge) storyBadge.textContent = initial ? 'Required for initial setup' : 'Business knowledge';
-  if(window._cbPlatformOptions)window._cbRenderPlatforms(window._cbPlatformOptions);
   cbSyncLocation();
 }
 function cbSetMood(cls) {
@@ -576,7 +575,7 @@ import {
   getFirestore, doc, collection, serverTimestamp, writeBatch, getDoc
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js?v=20261001-personal';
+import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js';
 
 const db = getFirestore(getApp());
 let currentUser = null;
@@ -595,14 +594,11 @@ editBizId = urlP.get('bizId') || null;
 const _DEFAULT_CHECKED = new Set(['google', 'facebook']);
 let _platLabels = {}; // populated after platform load
 
-window._cbRenderPlatforms = function renderPlatformGrid(platforms) {
+function renderPlatformGrid(platforms) {
   const grid = document.getElementById('plat-grid-wrap');
   if (!grid) return;
   // Use edit-mode pre-selection if set, otherwise default google + facebook
-  window._cbPlatformOptions=platforms;
-  const personal=cbPersonal();
-  const checked = (window._cbPrefillPlatforms instanceof Set) ? window._cbPrefillPlatforms : (personal?new Set(['fbmarket']):_DEFAULT_CHECKED);
-  platforms=platforms.filter(p=>BBPlatforms.supportsSeller(p.slug,personal?'personal':'business'));
+  const checked = (window._cbPrefillPlatforms instanceof Set) ? window._cbPrefillPlatforms : _DEFAULT_CHECKED;
   _platLabels = Object.fromEntries(platforms.map(p => [p.slug, p.icon + ' ' + p.name]));
   grid.innerHTML = platforms.map(p =>
     `<label class="plat-chk"><input type="checkbox" value="${_cbEsc(p.slug)}"${checked.has(p.slug) ? ' checked' : ''}> <span>${_cbEsc(p.icon)} ${_cbEsc(p.name)}</span></label>`
@@ -611,10 +607,10 @@ window._cbRenderPlatforms = function renderPlatformGrid(platforms) {
 
 // Load platforms immediately (config/platforms is public-read — no auth needed)
 const platformsReady = loadPlatforms(db, getDoc, doc)
-  .then(platforms => window._cbRenderPlatforms(platforms))
+  .then(platforms => renderPlatformGrid(platforms))
   .catch(() => {
     // Fallback: render built-in defaults
-    window._cbRenderPlatforms(PLATFORM_DEFAULTS);
+    renderPlatformGrid(PLATFORM_DEFAULTS);
   });
 
 function applyOb2Config(c) {

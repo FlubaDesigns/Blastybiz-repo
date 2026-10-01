@@ -15,30 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
 [hidden]{display:none!important;}
-body.workspace-loading .tabs-row,body.personal-seller #create-biz-card .agency-bar,
-body.personal-seller #create-biz-card .biz-tab-actions,
-body.personal-seller #recent-activity-bar,
-body.personal-seller #create-teach-ai-card,
-body.personal-seller #scope-photo-campaign,
-body.personal-seller #scope-photo-global,
-body.personal-seller #about-you-card .yn-row:has(#yn-role-yes),
-body.personal-seller #btn-discard-ad,
-body.personal-seller #ad-workspace h2,
-body.personal-seller #ad-workspace #ad-list,
-body.personal-seller #ad-workspace > button,
-body.personal-seller #ad-current,
-body.personal-seller .s5-card-location{display:none!important;}
-body.personal-seller #ad-workspace{padding:0!important;margin:0!important;border:0;background:none;}
-body.personal-seller #ad-message:empty{display:none;}
-body.personal-seller #create-biz-card{padding:12px 18px;}
-body.personal-seller .card{padding:20px;}
-body.personal-seller .create-step-dots #cwiz-dot-4{display:none;}
-body.personal-seller #campaign-photos .upload-text,
-body.personal-seller #photo-scope-hint{color:#cbd8cd;}
-body.personal-seller #biz-price{max-width:none;}
-body.personal-seller #create-camp-list-card .card-title{margin-bottom:12px;}
-body.personal-seller #create-wiz-label{color:#cbd8cd;}
-body.workspace-loading .section,body.workspace-loading #workspace-info-bar{display:none!important;}
+body.workspace-loading .tabs-row,body.workspace-loading .section,body.workspace-loading #workspace-info-bar{display:none!important;}
 body.personal-seller #tab-profile,body.personal-seller #tab-story,
 body.personal-seller #section-profile,body.personal-seller #section-story,
 body.personal-seller #workspace-info-bar,
@@ -175,7 +152,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 <script src="blastybiz-menu.js?v=7"></script>
 <script src="escape-utils.js?v=1"></script>
 <script src="mascot.js?v=5"></script>
-<script src="blasty-registry.js"></script>
+<script src="blasty-registry.js?v=20261001-drafts"></script>
 <script src="blasty-events.js"></script>
 <script src="blasty-guidance.js"></script>
 <script src="business-form.js"></script>
@@ -354,7 +331,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
           <div class="col-2-1">
             <div class="col-left">
               <div class="card">
-                <div class="card-title" id="item-form-title">🚀 Your Blast</div>
+                <div class="card-title">🚀 Your Blast</div>
 
                 <label for="biz-ad-name">Blast name</label>
                 <input type="text" id="biz-ad-name" placeholder="e.g. 50% off chocolate · Free consultation · Holiday special"
@@ -439,7 +416,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 
           <!-- RIGHT: Teach AI card -->
           <div class="col-right">
-            <div id="create-teach-ai-card" class="card card-fill card-tap pro-locked" onclick="toggleRightAccordion('create-teach-ai-body','create-teach-ai-chevron')">
+            <div class="card card-fill card-tap pro-locked" onclick="toggleRightAccordion('create-teach-ai-body','create-teach-ai-chevron')">
               <div class="pro-overlay" data-plan="trial">
                 <div class="pro-overlay-content">
                   <div class="pro-overlay-badge">⚡ Pro</div>
@@ -530,7 +507,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
               <span>📡 Send To</span>
               <span id="send-to-chevron" class="chevron">›</span>
             </button>
-            <p id="send-to-hint" class="helper-sm" style="margin-top:0;margin-bottom:0;">AI adapts your copy for every platform you pick — each one gets its own version. Your connected accounts are set up in your Profile; the platforms you select here apply to this campaign only.</p>
+            <p class="helper-sm" style="margin-top:0;margin-bottom:0;">AI adapts your copy for every platform you pick — each one gets its own version. Your connected accounts are set up in your Profile; the platforms you select here apply to this campaign only.</p>
             <div id="send-to-body" class="hidden" onclick="event.stopPropagation()">
               <div class="row-base-sb" style="margin-top:16px;margin-bottom:12px;">
                 <span></span>
@@ -1194,7 +1171,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" integrity="sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e" crossorigin="anonymous"></script>
 <script src="platform-categories.js"></script>
-<script src="platforms-authority.js?v=20261001-personal"></script>
+<script src="platforms-authority.js"></script>
 <script>
 // ══════════════════════════════════════════
 // PLATFORM REGISTRY — add new platforms here
@@ -2487,7 +2464,7 @@ function createWizGoTo(step) {
   const target = document.getElementById('create-slide-' + step);
   if (target) target.classList.add('cwiz-active');
   const labelEl = document.getElementById('create-wiz-label');
-  if (labelEl) labelEl.textContent = stepNum > 0 ? 'Step ' + stepNum + ' of ' + total + ' — ' + (profile.sellerType === 'personal' && step === 1 ? 'Your item' : (SLIDE_TITLES[step] || '')) : '';
+  if (labelEl) labelEl.textContent = stepNum > 0 ? 'Step ' + stepNum + ' of ' + total + ' — ' + (SLIDE_TITLES[step] || '') : '';
   const fillEl = document.getElementById('create-progress-fill');
   if (fillEl) fillEl.style.width = Math.round((stepNum / total) * 100) + '%';
   createWizStep = step;
@@ -2517,16 +2494,12 @@ function openCampaignPhotos() {
   document.getElementById('campaign-photos')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-async function createWizNext(fromStep) {
+function createWizNext(fromStep) {
   if (fromStep === 1) {
     const offer = document.getElementById('biz-offer')?.value?.trim();
     if (!offer && profile.sellerType !== 'personal') { showToast('Add your offer description first'); return; }
     if (!platforms.some(p => p.enabled)) { showToast('Select at least one platform first'); return; }
     if ([...window._bbPhotoUploads].some(i => i.bizId === window.activeBizId && i.campaignId === activeCampaignId && !i.error)) { showToast('Your photos are still uploading. Continue when they finish.'); return; }
-    if (profile.sellerType === 'personal') {
-      if (!window.BBAds?.active) { showToast('Your item is still loading. Please try again in a moment.'); return; }
-      try { await window.BBAds.save(); } catch(e) { showToast(e.message || 'Your item could not be saved. Please retry.'); return; }
-    }
     saveDraft();
   }
   // Page 2 starts at step 5
@@ -2624,7 +2597,7 @@ function renderStep5Review() {
     container.appendChild(card);
   });
   // Populate photo strips now that elements are in DOM
-  const campaignPhotos = (window._bbPhotoItems || []).filter(i => i.done && i.url && (profile.sellerType !== 'personal' || window.BBAds?.active?.imageRefs?.some(p => p.id === i.id)));
+  const campaignPhotos = (window._bbPhotoItems || []).filter(i => i.done && i.url);
   const featuredUrl = (window._bbSelectedPhotoIndex !== null && window._bbPhotoItems)
     ? (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || '') : '';
   enabled.forEach(p => {
@@ -2889,7 +2862,7 @@ function handleImages(e) {
   const files = selected.slice(0,Math.max(0,cap-current));
   if(files.length<selected.length)showToast('You have reached the 20 photo limit. Remove one to add more.');
   _photoReservations.set(key,reserved+files.length);
-  const uploadContext = { scope: photoScope, campaignId: activeCampaignId, bizId: window.activeBizId, adId: window.BBAds?.active?.id || null };
+  const uploadContext = { scope: photoScope, campaignId: activeCampaignId, bizId: window.activeBizId };
   e.target.value = '';
   checkAdaptBtn();
   // Sequential: compress one at a time to avoid concurrent canvas.toBlob() hangs on mobile.
@@ -2925,13 +2898,11 @@ window.renderAllPhotos = function() {
         <img src="${item.localUrl}" class="thumb-uploading-img" alt="Uploading photo…" />
         <div class="thumb-progress-overlay">${label}</div>`;
     } else {
-      const personal = profile.sellerType === 'personal';
-      const isSelected = personal ? !!window.BBAds?.active?.imageRefs?.some(p => p.id === item.id) : window._bbSelectedPhotoIndex === i;
+      const isSelected = window._bbSelectedPhotoIndex === i;
       wrap.className = 'thumb-wrap selectable' + (isSelected ? ' selected' : '');
       wrap.onclick = (e) => {
         if (e.target.classList.contains('thumb-remove')) return;
-        if (personal) window.BBAds?.toggleImage(item.id);
-        else if (window._bbSelectPhoto) window._bbSelectPhoto(i);
+        if (window._bbSelectPhoto) window._bbSelectPhoto(i);
       };
       wrap.innerHTML = `
         <img src="${item.localUrl}" alt="Uploaded photo" />
@@ -2973,7 +2944,7 @@ window.renderAllPhotos = function() {
       hint = document.createElement('div');
       hint.id = 'photo-select-hint';
       hint.className = 'thumb-hint';
-      hint.textContent = profile.sellerType === 'personal' ? '✓ photos are included in this listing. Tap to change.' : 'Tap a photo to feature it in your ad';
+      hint.textContent = 'Tap a photo to feature it in your ad';
       grid.parentNode.insertBefore(hint, grid);
     } else if (saved === 0 && hint) {
       hint.remove();
@@ -3583,30 +3554,10 @@ function saveProfile() {
   if (!document.getElementById('biz-region')?.value && profile.region)  document.getElementById('biz-region').value   = profile.region;
 }
 
-function configureSellerForm(personal) {
-  const text=(selector,value)=>{const el=document.querySelector(selector);if(el)el.textContent=value;};
-  text('#create-biz-card > .card-title',personal?'Seller':'🏢 Business');
-  text('#create-camp-list-card > .card-title',personal?'Your items':'📁 Campaigns');
-  text('#create-camp-list-card > button',personal?'＋ Sell another item':'＋ New Campaign');
-  text('#item-form-title',personal?'Item details':'🚀 Your Blast');
-  text('label[for="biz-ad-name"]',personal?'Item name':'Blast name');
-  text('label[for="biz-offer"]',personal?'Description & condition (optional)':"What's the offer?");
-  const offer=document.getElementById('biz-offer');if(offer)offer.placeholder=personal?'Describe the item, its condition, and anything buyers should know.':'What are you offering?';
-  const price=document.getElementById('biz-price');if(price)price.placeholder=personal?'e.g. $3,500 OBO':'e.g. $25 · Free · Starting at $99';
-  text('#s3-continue-btn',personal?'Save & preview listing →':'Continue: Generate Copy →');
-  text('#send-to-toggle-btn span',personal?'Where to sell':'📡 Send To');
-  if(personal){
-    text('#send-to-hint','Choose where you want to list your item. Nothing is posted until you choose to share it.');
-    document.getElementById('send-to-body')?.classList.remove('hidden');
-    const title=document.getElementById('new-campaign-input');if(title)title.placeholder='What are you selling?';
-  }
-}
-
 function loadProfile() {
   window._bbProfileGlobal=profile;
   const personal=profile.sellerType==='personal';
   document.body.classList.toggle('personal-seller', personal);
-  configureSellerForm(personal);
   if (personal) {
     profile.ownerName = profile.ownerName || profile.name || '';
     profile.name = profile.ownerName;
@@ -4347,7 +4298,7 @@ function refreshPhotoGridForScope() {
     if (hint) hint.textContent = 'Global photos are shared across all campaigns (logo, storefront, team photos, etc.).';
   } else {
     const hint = document.getElementById('photo-scope-hint');
-    if (hint) hint.textContent = profile.sellerType === 'personal' ? 'Add photos of this item. Tap a saved photo to include or exclude it from your listing.' : (activeCampaignId ? 'Photos for the selected campaign.' : 'Select a campaign above to add photos.');
+    if (hint) hint.textContent = 'Campaign photos are linked to the active campaign. Select a campaign above first.';
     const cid = activeCampaignId;
     const applyImages = images => {
       if (window._bbPhotoItems !== pendingItems || photoScope !== 'campaign' || activeCampaignId !== cid) return;
@@ -4855,7 +4806,7 @@ async function saveNewCampaign() {
   try {
     if (!window._bbSaveCampaigns) throw new Error('Saving is not ready yet');
     await window._bbSaveCampaigns([newCampaign]);
-    if(window.BBAds)await window.BBAds.api('create',{businessId,campaignId:id,adId:'first',requestId:'first',creative:{name:profile.sellerType==='personal'?name:name+' — First Ad',offer:'',price:'',context:story,platforms:platforms.filter(p=>p.enabled).map(p=>p.id)}});
+    if(window.BBAds)await window.BBAds.api('create',{businessId,campaignId:id,adId:'first',requestId:'first',creative:{name:name+' — First Ad',offer:ccCol.offer||'',price:ccCol.price||'',context:'',platforms:platforms.filter(p=>p.enabled).map(p=>p.id)}});
   } catch(e) {
     showToast('Campaign was not saved. Your entries are still here — tap Quick Create to retry.');
     return;
@@ -4874,10 +4825,7 @@ async function saveNewCampaign() {
   if (ctxEl) ctxEl.value = story;
 
   renderCampaignChips();
-  window.BBAds?.open();
-  createWizGoTo(1);
-  setPhotoScope('campaign');
-  showToast(profile.sellerType==='personal'?'Item created':'Campaign "' + name + '" created');
+  showToast('Campaign "' + name + '" created');
 
   if (window._bbFirstRun) {
     window._bbFirstRun = false;
@@ -5150,7 +5098,7 @@ init();
 // Falls back silently if config/platforms doesn't exist yet.
 (async function _applyAdminPlatformConfig() {
   try {
-    const { PLATFORM_DEFAULTS, loadPlatformsREST } = await import('./platforms-config.js?v=20261001-personal');
+    const { PLATFORM_DEFAULTS, loadPlatformsREST } = await import('./platforms-config.js');
     const activePlatforms = await loadPlatformsREST();
     // Build a complete adminMap: mark all defaults disabled first, then enable the active ones.
     // This ensures admin-disabled platforms are properly excluded by _bbSetPlatforms.
@@ -5168,7 +5116,7 @@ init();
 
 // Window setters — module script calls these to push Firestore data into UI
 window._bbSetPlatforms = function(updatedPlatforms) {
-  updatedPlatforms = updatedPlatforms.filter(p => BBPlatforms.supportsSeller(p.id, profile.sellerType)).map(BBPlatforms.normalizeSelection);
+  updatedPlatforms = updatedPlatforms.map(BBPlatforms.normalizeSelection);
   // Always apply the admin display overlay (name, icon, type, order, proOnly, globally-disabled).
   // window._bbAdminPlatformConfig is populated by _applyAdminPlatformConfig() / module script.
   const adminMap = window._bbAdminPlatformConfig;
@@ -5435,7 +5383,7 @@ function awaitPaidPlan(uid) {
     }, PAY_CONFIRM_TIMEOUT_MS);
   });
 }
-import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js?v=20261001-personal';
+import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js';
 import {
   ref as storageRef, uploadBytesResumable, getDownloadURL
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
@@ -5929,7 +5877,7 @@ onAuthStateChanged(auth, async (user) => {
         const seeded = window.PLATFORMS.map(p => {
           const adminEntry = adminMap && adminMap[p.id];
           const adminEnabled = adminEntry ? adminEntry.enabled : p.enabled;
-          return { ...p, enabled: profile.sellerType === 'personal' ? p.id === 'fbmarket' : (adminEnabled !== false && adminEnabled !== undefined ? !!adminEnabled : false) };
+          return { ...p, enabled: adminEnabled !== false && adminEnabled !== undefined ? !!adminEnabled : false };
         });
         if (window._bbSetPlatforms) window._bbSetPlatforms(seeded);
       }
@@ -6082,49 +6030,42 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   async function compressImage(file) {
+    // Transparently convert HEIC/HEIF → JPEG before canvas touches it (Android Chrome can't decode HEIC natively)
     const source = await maybeDecodeHeic(file);
     if (!source) return null;
-    // Materialize cloud/gallery files before decoding. Preserve the original
-    // only as input: uploads always use the resized JPEG with metadata removed.
-    const blob = new Blob([await source.arrayBuffer()], {type: source.type || file.type || 'image/jpeg'});
-    let bitmap;
-    if (typeof createImageBitmap === 'function') {
-      try { bitmap = await createImageBitmap(blob, {resizeWidth:1200,resizeQuality:'high'}); } catch(_) {}
-    }
+
     return new Promise(resolve => {
-      let settled=false, img, objUrl, blobTimer;
-      const done=result=>{
-        if(settled)return;settled=true;clearTimeout(giveUp);clearTimeout(blobTimer);
-        if(objUrl)URL.revokeObjectURL(objUrl);bitmap?.close();resolve(result);
+      const MAX = 1200;
+      const img = new Image();
+      const objUrl = URL.createObjectURL(source);
+      let settled = false;
+      const done = (result) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(giveUp);
+        URL.revokeObjectURL(objUrl);
+        resolve(result);
       };
-      const giveUp=setTimeout(()=>done(null),25000);
-      const draw=image=>{
-        try {
-          let width=image.width,height=image.height;
-          if(!width||!height){done(null);return;}
-          const ratio=Math.min(1,1200/width,1200/height);
-          const canvas=document.createElement('canvas');
-          canvas.width=Math.max(1,Math.round(width*ratio));canvas.height=Math.max(1,Math.round(height*ratio));
-          const ctx=canvas.getContext('2d');if(!ctx){done(null);return;}
-          ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
-          ctx.drawImage(image,0,0,canvas.width,canvas.height);
-          const fallback=()=>{
-            try {
-              const bytes=atob(canvas.toDataURL('image/jpeg',0.82).split(',')[1]);
-              done(new Blob([Uint8Array.from(bytes,c=>c.charCodeAt(0))],{type:'image/jpeg'}));
-            }catch(_){done(null);}
-          };
-          blobTimer=setTimeout(fallback,5000);
-          try {canvas.toBlob(result=>result?done(result):fallback(),'image/jpeg',0.82);}catch(_){fallback();}
-        } catch(_) {done(null);}
+      // Safety net: if the whole process hangs, fail clearly — never fall back to raw file
+      const giveUp = setTimeout(() => done(null), 25000);
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+          else                { width  = Math.round(width  * MAX / height); height = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'medium';
+        ctx.drawImage(img, 0, 0, width, height);
+        // If toBlob stalls (known mobile bug), fail clearly rather than uploading the raw original
+        const blobTimeout = setTimeout(() => done(null), 15000);
+        canvas.toBlob(blob => { clearTimeout(blobTimeout); done(blob || null); }, 'image/jpeg', 0.82);
       };
-      if(bitmap){draw(bitmap);return;}
-      img=new Image();objUrl=URL.createObjectURL(blob);
-      img.onload=()=>draw(img);img.onerror=()=>{
-        // Some Android gallery providers cannot decode an object URL directly.
-        const reader=new FileReader();reader.onerror=()=>done(null);
-        reader.onload=()=>{img.onerror=()=>done(null);img.src=reader.result;};reader.readAsDataURL(blob);
-      };img.src=objUrl;
+      img.onerror = () => done(null);
+      img.src = objUrl;
     });
   }
 
@@ -6164,16 +6105,15 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
 
-    let compressed;
-    try { compressed = await compressImage(file); } catch(e) { console.warn('Photo conversion failed:',e); }
+    const compressed = await compressImage(file);
     item.compressing = false;
 
     // Compression failed or timed out (e.g. large HEIC on Android) — never attempt raw upload
     if (!compressed) {
       item.error = true;
-      item.errorMsg = 'Photo could not be read. Remove it and select it again from Gallery.';
+      item.errorMsg = 'Could not compress — try a different photo';
       if (window.renderAllPhotos) window.renderAllPhotos();
-      if (window.showToast) window.showToast('Photo could not be read. Remove it and select it again from Gallery.');
+      if (window.showToast) window.showToast('⚠️ This photo couldn\'t be compressed. It may be an unsupported format or too large. Try saving it as a JPEG from your gallery first.');
       return;
     }
 
@@ -6213,7 +6153,6 @@ onAuthStateChanged(auth, async (user) => {
           item.url = dlUrl;
           item.localUrl = dlUrl;
           item.done = true;
-          window.BBAds?.attachUploadedImage?.(item, uploadContext);
           window.BBAds?.refreshImages();
           item.progress = 100;
           window._bbPhotoUploads.delete(item);
@@ -6280,7 +6219,6 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
     window._bbPhotoUploads.delete(item);
-    window.BBAds?.forgetImage?.(item.id,item.bizId || activeBizId,item.campaignId || activeCampaignId);
     if (item.localUrl?.startsWith('blob:')) URL.revokeObjectURL(item.localUrl);
     // Remove from the current grid only after the record deletion succeeds.
     const currentIndex = items.indexOf(item);
@@ -7485,8 +7423,8 @@ window.confirmDeleteAccount = async function() {
 .cbm-opt-title{font-size:15px;font-weight:700;color:#e0f0e3}
 .cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
 </style>
-<script src="lifecycle-ui.js"></script>
-<script src="ad-workspace.js?v=20261001-personal"></script>
+<script src="lifecycle-ui.js?v=20261001-remove-legacy"></script>
+<script src="ad-workspace.js?v=20261001-remove-legacy"></script>
 <script>
 document.addEventListener('click',function(e){
  const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');
@@ -7495,3 +7433,4 @@ document.addEventListener('click',function(e){
 </script>
 </body>
 </html>
+

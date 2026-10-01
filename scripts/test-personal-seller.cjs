@@ -74,7 +74,7 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  let slide,scope,scrolled=false;
  w.createWizGoTo=n=>slide=n;w.setPhotoScope=v=>scope=v;
  w.document.getElementById('campaign-photos').scrollIntoView=()=>{scrolled=true;};
- w.eval(app.slice(app.indexOf('function openCampaignPhotos() {'),app.indexOf('async function createWizNext(')));
+ w.eval(app.slice(app.indexOf('function openCampaignPhotos() {'),app.indexOf('function createWizNext(')));
  w.openCampaignPhotos();assert.equal(slide,1);assert.equal(scope,'campaign');assert(scrolled);
  assert(w.document.querySelector('#create-slide-5 button[onclick="openCampaignPhotos()"]'));
  assert(w.document.querySelector('#campaign-photos input[type="file"]').multiple);

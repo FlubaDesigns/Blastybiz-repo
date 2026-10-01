@@ -121,12 +121,10 @@ function createLifecycle({db,admin,refreshCopy,sendEmail,appUrl='https://blastyb
      if(action==='save') {
        let initial=null;
        if(body.blastId){initial=await tx.get(draft(uid,b,body.blastId));if(!initial.exists||initial.data().adId!==ar.id||initial.data().campaignId!==body.campaignId)fail(409,'Prepared Blast does not belong to this Ad.');}
-       const legacy=ad.legacySource?await tx.get(br.collection('listingDrafts').where('campaignId','==',body.campaignId)):null;
        next=validateSchedule(body.schedule,clock(),s);
        if(body.requestId)next.requestId=id(body.requestId);
        freezePacket(ad,cs.data());
        if(pending?.exists&&pending.data().status!=='approved'&&body.replacePrepared!==true)fail(409,'A Blast is already prepared. Confirm replacing its schedule before saving.');
-       if(legacy)for(const row of legacy.docs)if(row.data().schedule?.enabled&&!row.data().scheduleAdPath&&(!row.data().adId||row.data().adId===ar.id))tx.update(row.ref,{'schedule.enabled':false,'schedule.pauseReason':'Schedule moved to reusable Ad.','schedule.replacementAdId':ar.id});
        if(initial?.exists&&initial.data().status!=='approved') {
          next.preparedBlastId=initial.id;
          tx.update(initial.ref,{scheduleAdPath:ar.path,scheduledForUtc:next.nextRunAt,scheduleRevision:next.revision,approvalStatus:'required',status:'scheduled',updatedAt:stamp()});
@@ -328,3 +326,4 @@ function createLifecycle({db,admin,refreshCopy,sendEmail,appUrl='https://blastyb
  return {manage,list,prepare,queue,reconcile,notify,statusUrl};
 }
 module.exports={createLifecycle,summarize,terminal,manual,delivered,remindersEligible};
+

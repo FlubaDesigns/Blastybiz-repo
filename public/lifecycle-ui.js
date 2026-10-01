@@ -30,7 +30,7 @@
  async function preview(data,blastId) {
    style();const host=document.getElementById('v1-publish-schedule');if(!host)return;
    host.classList.add('bb-life');
-   if(!data?.adId){host.innerHTML='<h2>Scheduling</h2><p>Open this campaign and use Legacy preview to create its reusable Ad before setting a new schedule.</p>';return;}
+   if(!data?.adId){host.innerHTML='<h2>Scheduling</h2><p>Open the campaign and create an Ad before setting a schedule.</p>';return;}
    if(data.scheduleAdPath){host.innerHTML='<h2>'+esc(data.campaignName)+' / '+esc(data.adName)+'</h2><p>This is a scheduled Blast. Review or change it in Schedule.</p><a class="bb-button" href="BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,tab:'schedule'})+'">Open Schedule</a>';document.getElementById('publish-btn').hidden=true;return;}
    host.innerHTML='<h2>When should I send this?</h2><label><input type="radio" name="bb-send" value="now" checked> Send Now</label><label><input type="radio" name="bb-send" value="schedule"> Schedule It</label><div data-form hidden></div><p role="status"></p>';
    const scheduleForm=form(host.querySelector('[data-form]')),btn=document.getElementById('publish-btn'),original=window._firestoreApprove;
@@ -83,7 +83,7 @@
        wrap.querySelector(s.enabled?'[data-active]':'[data-others]').append(card);
      }
      for(const old of result.legacy||[]) {
-       const legacy=document.createElement('article');legacy.innerHTML='<h3>'+esc(old.campaignName)+' — Legacy schedule</h3><p>Next: '+esc(date(old.nextRunAt))+'</p><p>Open this campaign, use Legacy preview, then schedule its reusable Ad. Saving the Ad schedule retires the old rule.</p><a class="bb-button" href="BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,cid:old.campaignId})+'">Review legacy campaign</a><button>Pause legacy schedule</button>';
+       const legacy=document.createElement('article');legacy.innerHTML='<h3>'+esc(old.campaignName)+' — Earlier schedule</h3><p>Next: '+esc(date(old.nextRunAt))+'</p><p>This earlier schedule can be paused here. Open the campaign to create and schedule an Ad.</p><a class="bb-button" href="BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,cid:old.campaignId})+'">Open campaign</a><button>Pause schedule</button>';
        legacy.querySelector('button').onclick=async()=>{try{await api('pauseLegacy',{blastId:old.id});await dashboard();}catch(e){message(e.message);}};wrap.append(legacy);
      }
      fire('schedule.next_up_summary',{summary:next?next.campaignName+' / '+next.adName+' — '+date(next.schedule.nextRunAt):'Nothing scheduled right now.'});
@@ -92,3 +92,4 @@
  function statusLink(b,d){return 'BlastyBiz-Publishing-Status.html?'+new URLSearchParams({bizId:b,draftId:d});}
  window.BBLifecycle={configure,api,preview,dashboard,statusLink,form};
 })();
+

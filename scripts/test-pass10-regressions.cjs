@@ -9,19 +9,18 @@ async function main(){
  const state=database({'users/u':{plan:'starter'},[root]:{name:'Business'},[campaign]:{name:'Summer',offer:'Legacy offer',adName:'Summer kickoff',platformsEnabled:['facebook'],platformHistory:{facebook:['old']}},[drafts+'old']:{uid:'u',campaignId:'c',adName:'Kickoff',adaptations:{facebook:'Original approved copy'},platformStatus:{facebook:'approved'},enabledPlatforms:['facebook'],imagesByPlatform:{facebook:['https://example.com/old.jpg']},updatedAt:{stamp:123}},[campaign+'/images/photo']:{url:'https://example.com/photo.jpg',path:'photos/u/campaigns/c/photo.jpg',alt:'Floor'}});
  const call=createAdService(state.db,admin),req=(action,extra={})=>call('u',{businessId:'b',campaignId:'c',action,...extra});
  const oldHistory=JSON.stringify(state.get(campaign).platformHistory),oldDraft=JSON.stringify(state.get(drafts+'old'));
- const before=state.writes.length,preview=await req('previewLegacy');
- ok(preview.dryRun&&preview.wouldCreate&&preview.proposal.legacySource.draftId==='old','migration lists actual source');
- ok(state.writes.length===before,'migration preview performs zero writes');
- await assert.rejects(req('materializeLegacy',{sourceHash:'bad'}),/changed/);checks++;
- const legacy=(await req('materializeLegacy',{sourceHash:preview.sourceHash})).ad;
- ok(legacy.id==='legacy'&&legacy.adaptations.facebook==='Original approved copy','materializes stable legacy Ad from saved copy');
- await req('materializeLegacy',{sourceHash:preview.sourceHash});ok((await req('list')).ads.length===1,'legacy open is idempotent');
- ok(JSON.stringify(state.get(campaign).platformHistory)===oldHistory&&JSON.stringify(state.get(drafts+'old'))===oldDraft,'legacy history remains byte-equivalent');
- const legacyBefore=JSON.stringify(state.get(ads+'legacy'));
- const copy=(await req('derive',{adId:'copy',requestId:'derive1',sourceAdId:'legacy',creative:{name:'Next summer'}})).ad;
- ok(copy.sourceAdId==='legacy'&&copy.name==='Next summer','starting point has new identity and source relationship');
+ const before=state.writes.length;
+ for(const action of ['previewLegacy','materializeLegacy']){await assert.rejects(req(action),e=>e.httpStatus===400&&/Unknown Ad action/.test(e.message));checks++;}
+ ok(state.writes.length===before,'removed conversion actions cannot write records');
+ ok((await req('list')).ads.length===0,'removed conversion cannot create an extra Ad');
+ ok(JSON.stringify(state.get(campaign).platformHistory)===oldHistory&&JSON.stringify(state.get(drafts+'old'))===oldDraft,'existing saved campaign and draft remain byte-equivalent');
+ await assert.rejects(req('get'),/Invalid record identifier/);checks++;
+ const originalAd=(await req('create',{adId:'original',requestId:'original1',creative:{name:'Original Ad',adaptations:{facebook:'Original approved copy'}}})).ad;
+ const originalBefore=JSON.stringify(state.get(ads+'original'));
+ const copy=(await req('derive',{adId:'copy',requestId:'derive1',sourceAdId:originalAd.id,creative:{name:'Next summer'}})).ad;
+ ok(copy.sourceAdId==='original'&&copy.name==='Next summer','starting point has new identity and source relationship');
  ok(!copy.blastCount&&copy.platformStatus.facebook==='needs-review','derive excludes delivery history and requires review');
- ok(JSON.stringify(state.get(ads+'legacy'))===legacyBefore,'derivation does not mutate original Ad');
+ ok(JSON.stringify(state.get(ads+'original'))===originalBefore,'derivation does not mutate original Ad');
  let ad=(await req('create',{adId:'new',requestId:'create1',creative:{name:'July'}})).ad;
  ok(ad.offer===''&&!ad.adaptations.facebook,'New Ad inherits defaults without stale creative');
  const same=await req('create',{adId:'new',requestId:'create1'});ok(same.ad.id==='new','create retry has one identity');
@@ -73,7 +72,8 @@ async function main(){
  ok(JSON.stringify(setup.collect('signup',dom('signup')))===JSON.stringify(setup.collect('setup',dom('setup'))),'pre-email and setup collect identical canonical values');
  const c={window:{},module:{},console,document:{},};c.window=c;vm.createContext(c);
  for(const file of ['blasty-registry.js','blasty-events.js'])vm.runInContext(fs.readFileSync('public/'+file,'utf8'),c);
- ok(Object.keys(c.BBBlasty.events).length===78&&Object.keys(c.BBBlasty.fields).length===27,'reconciled 72 events plus 4 image events, recoverable-error, and allowance guidance; 27 fields');
+ ok(Object.keys(c.BBBlasty.events).length===77&&Object.keys(c.BBBlasty.fields).length===27,'77 guidance events after removing premature existing-Ad prompt; 27 fields');
+ ok(!c.BBBlasty.events['ad.existing_campaign_open'],'premature existing-Ad prompt is removed');
  ok(!c.BBBlasty.events['activity.context_summary']&&!!c.BBBlasty.events['activity.historical_override_choice'],'latest Activity replacement applied');
  c.BBBlasty.configure({events:{'ad.run_again_scope':{message:'Run {{adName}}?',enabled:false}}});
  ok(c.BBBlasty.message('ad.run_again_scope',{adName:'July'})==='Run July?','admin override uses same semantic ID and substitutions');
@@ -81,3 +81,4 @@ async function main(){
  console.log('PASS: '+checks+' Pass 10 behavior assertions.');
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});
+

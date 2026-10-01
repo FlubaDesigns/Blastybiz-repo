@@ -111,16 +111,7 @@ window.BBBlastySeed = {
       "purpose": "First Ad inside Campaign",
       "note": "Short returning/transition frame; campaign-to-ad distinction."
     },
-    "ad.existing_campaign_open": {
-      "eventId": "ad.existing_campaign_open",
-      "message": "{{campaignName}} already has {{adCount}} ad{{plural}}. Want to make another?",
-      "behavior": "WHEN NEEDED",
-      "animation": [],
-      "enabled": true,
-      "source": "6A",
-      "purpose": "Returning Campaign with Ads",
-      "note": "Brief; no first-time Campaign teaching."
-    },
+
     "platform.selection_explain": {
       "eventId": "platform.selection_explain",
       "message": "Choose where this campaign should go. If a platform needs to be connected, I’ll help you do it here.",
