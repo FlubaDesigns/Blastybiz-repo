@@ -110,6 +110,8 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 .step5-setup-link{display:block;padding:11px 14px;border-radius:10px;font-size:13px;font-weight:700;text-align:center;text-decoration:none;}
 .step5-setup-link.signup{background:var(--green,#39ff14);color:#000;}
 .s5-card-body{margin-top:12px;}
+.s5-card-body .qp-photos-section{display:block;}
+.s5-card-body .qp-thumb{width:112px;height:112px;}
 .s5-photo-note{font-size:12px;color:var(--muted,#888);line-height:1.5;margin-bottom:10px;}
 .s5-card-location{margin-top:14px;padding-top:14px;border-top:1px solid var(--border,#333);}
 .s5-card-location .step5-setup-title{margin-bottom:8px;}
@@ -1187,7 +1189,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" integrity="sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e" crossorigin="anonymous"></script>
 <script src="platform-categories.js"></script>
-<script src="platforms-authority.js"></script>
+<script src="platforms-authority.js?v=20261001-photos"></script>
 <script>
 // ══════════════════════════════════════════
 // PLATFORM REGISTRY — add new platforms here
@@ -1453,20 +1455,6 @@ function renderQuickSelect() {
   renderStep3Platforms();
 }
 
-// Platforms that support images in posts (not text-only)
-const PLATFORM_IMAGE_SUPPORT = {
-  google:    { max: 1  },
-  facebook:  { max: 10 },
-  instagram: { max: 10 },
-  nextdoor:  { max: 10 },
-  craigslist:{ max: 24 },
-  fbmarket:  { max: 24 },
-  linkedin:  { max: 9  },
-  x:         { max: 4  },
-  pinterest: { max: 1  },
-  // yelp, alignable, thumbtack, angi, applemaps, bing — no per-post image upload
-};
-
 // Default URLs to open for each platform (fallback when user hasn't saved their own)
 const PLATFORM_DEFAULT_URLS = {
   google:     'https://business.google.com/',
@@ -1590,7 +1578,7 @@ function renderPlatformPhotoStrip(pid, photos, maxPhotos, displayOnly = false) {
   if (!container || !strip) return;
 
   const label = container.querySelector('.qp-photos-label');
-  if (label) label.textContent = displayOnly ? '📷 Photos included' : '📷 Tap a photo to copy it';
+  if (label) label.textContent = '📷 Photos for this post (' + photos.length + ')';
 
   strip.innerHTML = '';
   photos.forEach(photo => {
@@ -1600,12 +1588,25 @@ function renderPlatformPhotoStrip(pid, photos, maxPhotos, displayOnly = false) {
       thumb.title = 'Tap to copy this photo';
       thumb.onclick = () => copyImageToClipboard(photo.url, thumb);
     }
-    thumb.innerHTML = `<img src="${escHtml(photo.url)}" class="thumb-cover" alt="Uploaded photo" />`
+    thumb.innerHTML = `<img src="${escHtml(photo.url)}" class="thumb-cover" alt="${escHtml(photo.alt || 'Selected photo')}" />`
       + (!displayOnly ? `<div class="thumb-copy-badge">✓ Copied!</div>` : '');
     strip.appendChild(thumb);
   });
 
   container.style.display = 'block';
+}
+
+function renderAdPostPhotos(p) {
+  const selected = window.BBAds?.active?.imageRefs || [];
+  const included = BBPlatforms.postImages(p.id, selected);
+  window._bbPlatformPhotoSel = window._bbPlatformPhotoSel || {};
+  window._bbPlatformPhotoSel[p.id] = new Set(included.map(image => image.url));
+  renderPlatformPhotoStrip(p.id, included, included.length, p.type === 'api');
+  const note = document.querySelector('#qp-photos-' + p.id + ' .s5-photo-note');
+  if (note) note.textContent = !included.length
+    ? 'No photos selected. Use Add or change photos to choose them.'
+    : (p.type === 'api' ? 'These photos will be posted with this copy.' : 'These photos are ready to copy or upload with your post.')
+      + (included.length < selected.length ? ' Uses the first ' + included.length + ' of your ' + selected.length + ' selected photos.' : '');
 }
 
 async function copyImageToClipboard(url, thumbEl) {
@@ -2193,14 +2194,7 @@ async function regeneratePlatformCopy(pid) {
         if (!wasVisible) newCard.style.display = 'none';
         oldCard.parentNode.replaceChild(newCard, oldCard);
         // Repopulate photo strip for the rebuilt card (renderStep5Review doesn't re-run for inline rebuilds)
-        const _rebuildPhotos = (window.BBAds?.active?.imageRefs || []);
-        const _rebuildImgSupport = PLATFORM_IMAGE_SUPPORT[pid];
-        if (_rebuildImgSupport && _rebuildPhotos.length > 0) {
-          if (!window._bbPlatformPhotoSel) window._bbPlatformPhotoSel = {};
-          const included = _rebuildPhotos.slice(0, _rebuildImgSupport.max);
-          window._bbPlatformPhotoSel[pid] = new Set(included.map(image => image.url));
-          renderPlatformPhotoStrip(pid, included, _rebuildImgSupport.max, updatedPlatform.type === 'api');
-        }
+        renderAdPostPhotos(updatedPlatform);
       }
     } else {
       // Already had copy — just reset the Looks Good button + pill
@@ -2605,17 +2599,8 @@ function renderStep5Review() {
     const card = buildStep5Card(p);
     container.appendChild(card);
   });
-  // Preview precisely the images saved on this Ad, not the whole photo library.
-  const selectedPhotos = window.BBAds?.active?.imageRefs || [];
-  enabled.forEach(p => {
-    if (!p.adaptedContent) return;
-    const imgSupport = PLATFORM_IMAGE_SUPPORT[p.id];
-    if (!imgSupport) return;
-    const included = selectedPhotos.slice(0, imgSupport.max);
-    window._bbPlatformPhotoSel = window._bbPlatformPhotoSel || {};
-    window._bbPlatformPhotoSel[p.id] = new Set(included.map(image => image.url));
-    if (included.length) renderPlatformPhotoStrip(p.id, included, imgSupport.max, p.type === 'api');
-  });
+  // Use the same photo selection as the prepared publishing packet.
+  enabled.filter(p => p.adaptedContent).forEach(renderAdPostPhotos);
   updateStep5UI();
 }
 
@@ -2661,9 +2646,6 @@ function buildStep5Card(p) {
       +   '</div>'
       +   '<div id="qp-copy-text-' + p.id + '" class="step5-copy-text" contenteditable="true">' + safeText + '</div>'
       +   '<div id="qp-share-' + p.id + '" class="qp-share-section" style="display:none;"></div>'
-      +   '<button type="button" class="step5-looks-good-btn' + (p._reviewStatus === 'approved' ? ' approved' : '') + '" id="step5-lgtm-' + p.id + '" onclick="approvePlatformCopy(\'' + escHtml(p.id) + '\')">'
-      +     (p._reviewStatus === 'approved' ? '✓ Approved' : '✓ Looks Good')
-      +   '</button>'
       + '</div>'
       // Right — photos (shown for all platforms; tappable only for copy-paste)
       + '<div class="col-right">'
@@ -2674,7 +2656,10 @@ function buildStep5Card(p) {
       +     '<div id="qp-photo-strip-' + p.id + '" class="qp-photo-strip"></div>'
       +   '</div>'
       + '</div>'
-      + '</div>';
+      + '</div>'
+      +   '<button type="button" class="step5-looks-good-btn' + (p._reviewStatus === 'approved' ? ' approved' : '') + '" id="step5-lgtm-' + p.id + '" onclick="approvePlatformCopy(\'' + escHtml(p.id) + '\')">'
+      +     (p._reviewStatus === 'approved' ? '✓ Approved' : '✓ Looks Good')
+      +   '</button>';
   } else if (isWriting) {
     // Still writing — no retry/exclude yet, those would only invite the owner to
     // interrupt a generation that is about to succeed.
@@ -5104,7 +5089,7 @@ init();
 // Falls back silently if config/platforms doesn't exist yet.
 (async function _applyAdminPlatformConfig() {
   try {
-    const { PLATFORM_DEFAULTS, loadPlatformsREST } = await import('./platforms-config.js');
+    const { PLATFORM_DEFAULTS, loadPlatformsREST } = await import('./platforms-config.js?v=20261001-photos');
     const activePlatforms = await loadPlatformsREST();
     // Build a complete adminMap: mark all defaults disabled first, then enable the active ones.
     // This ensures admin-disabled platforms are properly excluded by _bbSetPlatforms.
@@ -5389,7 +5374,7 @@ function awaitPaidPlan(uid) {
     }, PAY_CONFIRM_TIMEOUT_MS);
   });
 }
-import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js';
+import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js?v=20261001-photos';
 import {
   ref as storageRef, uploadBytesResumable, getDownloadURL
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';

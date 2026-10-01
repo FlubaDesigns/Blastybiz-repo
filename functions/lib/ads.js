@@ -2,7 +2,7 @@
 
 // Reusable creative lives below the existing Campaign. listingDrafts remains
 // the working/prepared Blast store; publishJobs remains the only delivery queue.
-const { PLATFORM_CAPABILITY_MAP } = require('./platforms');
+const { PLATFORM_CAPABILITY_MAP, postImages } = require('./platforms');
 const fail = (status, message) => { throw Object.assign(new Error(message), {httpStatus:status}); };
 const id = value => {
   if(typeof value!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(value)) fail(400,'Invalid record identifier.');
@@ -60,7 +60,7 @@ function freezePacket(ad, campaign, overrides) {
     if(typeof copy!=='string'||!copy.trim()) fail(409,'Review required: missing copy for '+p+'.');
     if(data.platformStatus?.[p]!=='approved') fail(409,'Review and approve '+p+' before running this Ad.');
     packet.adaptations[p]=copy;
-    packet.imagesByPlatform[p]=clone(images.slice(0,10));
+    packet.imagesByPlatform[p]=clone(postImages(p,images));
     if(p==='instagram'&&!packet.imagesByPlatform[p].length) fail(409,'Review required: Instagram needs a selected image.');
   }
   return packet;

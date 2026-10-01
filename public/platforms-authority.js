@@ -543,6 +543,11 @@
     }
   }
 ];
+  // Match the current delivery implementation: Instagram publishes one image;
+  // other destinations receive up to ten images in the prepared packet.
+  function postImages(platformId, images = []) {
+    return images.filter(image => typeof image === 'string' ? !!image : !!image?.url).slice(0, platformId === 'instagram' ? 1 : 10);
+  }
   const labels = { auto: 'Blasty Posts It', manual: 'Ready for You to Post' };
   const byId = Object.fromEntries(records.map(p => [p.id, p]));
   const capabilityLevel = p => p.deliveryMode === 'auto' ? 'full_auto' : 'manual_assisted';
@@ -566,5 +571,5 @@
     return {...p, type:canonical && canonical.deliveryMode === 'auto' ? 'api' : 'manual', proOnly:false};
   }
   return {records, byId, labels, PLATFORM_CAPABILITY_MAP, PLATFORM_DOCS, AUTO_POST_PLATFORMS,
-    PLATFORM_DEFAULTS, mergeDisplay, normalizeSelection};
+    PLATFORM_DEFAULTS, mergeDisplay, normalizeSelection, postImages};
 });

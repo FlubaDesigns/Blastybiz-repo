@@ -3,7 +3,7 @@
 const {JSDOM}=require(process.env.JSDOM_PATH||'jsdom');
 const fs=require('node:fs'),assert=require('node:assert/strict');
 const {database,admin}=require('./lib/test-firestore.cjs');
-const {createAdService}=require('../functions/lib/ads');
+const {createAdService,freezePacket}=require('../functions/lib/ads');
 const base='users/u/businesses/b',camp=base+'/campaigns/c';
 const state=database({[base]:{name:'Business'},[camp]:{name:'Summer',platformsEnabled:['facebook']},[camp+'/images/photo']:{url:'https://example.com/photo.jpg',alt:'Photo'}});
 const service=createAdService(state.db,admin);
@@ -82,6 +82,29 @@ w.Element.prototype.animate=function(frames){animations.push({node:this,frames})
 const actions=['openHandLeft','openHandRight','openHandsBoth','pointLeft','pointRight','winkLeft','winkRight','thumbUpLeft','thumbUpRight','thumbUpBoth','eyePop','flameBoost','conePop','coneSpin','nod','reassureHand'];
 for(const action of actions){animations=[];const classes=mascot.root.className;mascot[action]();ok(animations.length>0&&mascot.root.className===classes,action+' targets SVG without full-body mood');}
 w.matchMedia=()=>({matches:true});animations=[];mascot.coneSpin();ok(animations.length===0,'reduced motion disables gesture animations');
+// Review shows exactly the images in the publishing packet, before approval.
+run('platforms-authority.js');
+const reviewHost=w.document.createElement('div');reviewHost.id='step5-review-container';w.document.body.appendChild(reviewHost);
+const reviewAd={id:'photo-review',campaignId:'c',platforms:['google','facebook','instagram','fbmarket','yelp'],imageRefs:Array.from({length:12},(_,i)=>({id:'i'+i,url:'https://example.com/'+i+'.jpg',alt:'Item view '+(i+1)}))};
+reviewAd.adaptations=Object.fromEntries(reviewAd.platforms.map(p=>[p,'Saved copy']));reviewAd.platformStatus=Object.fromEntries(reviewAd.platforms.map(p=>[p,'approved']));
+w.BBAds={active:reviewAd};
+w.platforms=reviewAd.platforms.map(id=>({id,name:id,type:['google','facebook','instagram'].includes(id)?'api':'manual',adaptedContent:'Saved copy'}));
+Object.assign(w,{_step5PlatIdx:0,getStep5Platforms:()=>w.platforms,updateStep5UI(){},_bbIsGenerating:()=>false,PLATFORM_URL_HINTS:{}});
+w.eval(html.slice(html.indexOf('function renderPlatformPhotoStrip('),html.indexOf('async function copyImageToClipboard(')));
+w.eval(html.slice(html.indexOf('function renderStep5Review()'),html.indexOf('function updateStep5UI()')));
+w.renderStep5Review();
+const packet=freezePacket(reviewAd,{name:'Photos'});
+for(const id of reviewAd.platforms){
+ const photos=w.document.getElementById('qp-photos-'+id),button=w.document.getElementById('step5-lgtm-'+id);
+ const actual=[...photos.querySelectorAll('img')].map(img=>img.src);
+ assert.deepEqual(actual,packet.imagesByPlatform[id]);checks++;
+ ok(!!(photos.compareDocumentPosition(button)&w.Node.DOCUMENT_POSITION_FOLLOWING),'photos precede Looks Good for '+id);
+ ok(photos.style.display==='block'&&actual.length>0,'selected photos are visible for '+id);
+}
+ok(packet.imagesByPlatform.instagram.length===1&&packet.imagesByPlatform.facebook.length===10,'preview respects current publisher image counts');
+ok(w.document.getElementById('qp-photos-instagram').textContent.includes('first 1 of your 12'),'review explains when only some selected photos are included');
+reviewAd.imageRefs=[];w.renderStep5Review();
+for(const id of reviewAd.platforms){const photos=w.document.getElementById('qp-photos-'+id);ok(photos.style.display==='block'&&!photos.querySelector('img')&&photos.textContent.includes('No photos selected'),'empty image selection is explicit for '+id);}
 console.log('PASS: '+checks+' Pass 10 DOM integration assertions.');dom.window.close();
 })().catch(e=>{console.error(e);dom.window.close();process.exitCode=1;});
 
