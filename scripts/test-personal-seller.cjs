@@ -40,6 +40,43 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  w.loadProfile();assert.equal(w.document.querySelector('label[for="profile-name"]').textContent,'Seller name');assert(w.document.getElementById('profile-hours').hidden);
  w.document.getElementById('profile-phone').value='9413751504';w.saveProfile();assert.equal(w.profile.sellerType,'personal');assert.equal(w._bbProfileGlobal.sellerType,'personal');assert.equal(w.profile.ownerRole,'');assert.equal(w.profile.hours,'');
  w.profile={sellerType:'business',name:'Company'};w.loadProfile();assert(!w.document.getElementById('profile-hours').hidden);assert.equal(w.document.querySelector('label[for="profile-name"]').textContent,'Business Name');dom.window.close();
+ // Personal identity uses Your Name only, including cache reload and blank company names.
+ dom=new JSDOM(app,{url:'https://example.invalid',runScripts:'outside-only',virtualConsole:new VirtualConsole()});w=dom.window;
+ Object.assign(w,{profile:{},profileLocationType:'physical',locationType:'physical',renderPlatformCats(){},updateCopyPreview(){},setProfileLocationType(){}});
+ w.eval(app.slice(app.indexOf('function saveProfile() {'),app.indexOf('function setYN(field, val)')));
+ w.eval(app.slice(app.indexOf('window._bbSetProfile = function(p) {'),app.indexOf('// _saveInsightToFirestore and _saveGlobalFactoidsToFirestore')));
+ w._bbSetProfile({sellerType:'personal',ownerName:'Fixture Seller',name:'',locationType:'physical'});
+ assert.equal(w.document.getElementById('profile-owner-name').value,'Fixture Seller');
+ assert(w.document.getElementById('profile-name').hidden);
+ assert(w.document.querySelector('label[for="profile-name"]').hidden);
+ assert(w.document.getElementById('biz-name-missing-banner').classList.contains('hidden'));
+ assert.equal(JSON.parse(w.localStorage.getItem('bb_profile')).sellerType,'personal');
+ w.document.getElementById('profile-owner-name').value='Updated Seller';w.saveProfile();
+ assert.equal(w.profile.name,'Updated Seller');assert.equal(w.profile.ownerName,'Updated Seller');
+ w._bbSetProfile(w.profile);w.profile=JSON.parse(w.localStorage.getItem('bb_profile'));w.loadProfile();
+ assert.equal(w.profile.sellerType,'personal');assert.equal(w.profile.name,'Updated Seller');
+ w.document.getElementById('profile-owner-name').value='';w.saveProfile();
+ assert(w.document.getElementById('biz-name-missing-banner').classList.contains('hidden'));
+ w._bbSetProfile({sellerType:'business',name:''});
+ assert(!w.document.getElementById('profile-name').hidden);
+ assert(!w.document.getElementById('biz-name-missing-banner').classList.contains('hidden'));
+ dom.window.close();
+ // Run the production selection resolver against owned-profile reads and writes.
+ const selectSource=app.slice(app.indexOf('async function loadWorkspaceSelection('),app.indexOf('auth.authStateReady().then(() => {'));
+ const writes=[];let records=[];let readFailure=false;
+ const selection={db:{},collection:(...v)=>v,doc:(...v)=>v,getDocs:async()=>{if(readFailure)throw Error('Offline');return {docs:records.map(r=>({id:r.id,data:()=>r}))};},setDoc:async(...v)=>writes.push(v)};
+ vm.runInNewContext(selectSource,selection);
+ records=[{id:'personal',sellerType:'personal',ownerName:'Fixture Seller'},{id:'company',sellerType:'business'}];
+ let resolved=await selection.loadWorkspaceSelection({uid:'u'},{activeBusiness:'personal'},null);
+ assert.equal(resolved.active.sellerType,'personal');assert.equal(writes.length,0);
+ resolved=await selection.loadWorkspaceSelection({uid:'u'},{activeBusiness:'missing'},null);
+ assert.equal(resolved.active.id,'personal');assert.equal(writes.at(-1)[1].activeBusiness,'personal');
+ resolved=await selection.loadWorkspaceSelection({uid:'u'},{activeBusiness:'personal'},'company');
+ assert.equal(resolved.active.id,'company');assert.equal(writes.length,1);
+ await assert.rejects(selection.loadWorkspaceSelection({uid:'u'},{activeBusiness:'personal'},'missing'),/no longer available/);
+ records=[];resolved=await selection.loadWorkspaceSelection({uid:'u'},{activeBusiness:'missing',setupHandoff:{sellerType:'personal'}},null);
+ assert.equal(resolved.active,null);assert.equal(writes.length,1);
+ readFailure=true;await assert.rejects(selection.loadWorkspaceSelection({uid:'u'},{},null),/Offline/);
  // Exercise the actual chat closure and public Skip button through a saved listing.
  for(const prefilled of [true,false]){
   dom=new JSDOM(app,{url:'https://example.invalid',runScripts:'outside-only',virtualConsole:new VirtualConsole()});w=dom.window;

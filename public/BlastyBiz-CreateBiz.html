@@ -672,11 +672,15 @@ onAuthStateChanged(auth, async user => {
       if(saved.activeBusiness && urlP.get('new')!=='1') {
         editBizId=saved.activeBusiness;
         const existing=await getDoc(doc(db,'users',user.uid,'businesses',editBizId));
-        if(!existing.exists())throw new Error('Saved business could not be found.');
-        existingCampaignId=existing.data().activeCampaign||null;
-        window._cbNeedsCampaign=!existingCampaignId;
-        prefill(existing.data());
-      } else if(urlP.get('new')!=='1' && saved.setupHandoff) {
+        if (existing.exists()) {
+          existingCampaignId=existing.data().activeCampaign||null;
+          window._cbNeedsCampaign=!existingCampaignId;
+          prefill(existing.data());
+        } else {
+          editBizId=null;
+        }
+      }
+      if(!editBizId && urlP.get('new')!=='1' && saved.setupHandoff) {
         document.getElementById('f-sellerType').value=BBSetup.sellerType(saved.setupHandoff.sellerType);
         BBSetup.fields.forEach(f=>{document.getElementById(f.setup).value=saved.setupHandoff[f.key]||'';});
       }

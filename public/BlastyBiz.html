@@ -14,6 +14,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>body{visibility:hidden}
+[hidden]{display:none!important;}
 @media (max-width:768px){.dash-img-col{display:none}}
 .scope-btn{background:var(--dark,#1a1a1a);border:1px solid var(--border,#333);border-radius:8px;padding:6px 14px;color:var(--muted,#888);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;}
 .scope-btn.active{background:var(--green,#39ff14);border-color:var(--green,#39ff14);color:#000;}
@@ -3468,7 +3469,7 @@ function setLocationType(type) {
   saveDraft();
 }
 
-function setProfileLocationType(type) {
+function setProfileLocationType(type, persist = true) {
   profileLocationType = type;
   document.getElementById('prof-loc-btn-physical').classList.toggle('active', type === 'physical');
   document.getElementById('prof-loc-btn-online').classList.toggle('active', type === 'online');
@@ -3477,14 +3478,15 @@ function setProfileLocationType(type) {
   const showRegion  = type === 'both';
   const _plpf = document.getElementById('prof-loc-physical-fields'); if (_plpf) { if (showAddress) _plpf.classList.remove('hidden'); else _plpf.classList.add('hidden'); }
   const _plof = document.getElementById('prof-loc-online-fields'); if (_plof) { if (showRegion) _plof.classList.remove('hidden'); else _plof.classList.add('hidden'); }
-  saveProfile();
+  if (persist) saveProfile();
 }
 
 // ══════════════════════════════════════════
 function saveProfile() {
   profile = {
+    ...profile,
     sellerType: profile.sellerType || 'business',
-    name:             document.getElementById('profile-name').value,
+    name:             profile.sellerType === 'personal' ? document.getElementById('profile-owner-name').value.trim() : document.getElementById('profile-name').value,
     ownerName:        document.getElementById('profile-owner-name')?.value || '',
     ownerRole:        profile.sellerType==='personal'?'':document.getElementById('profile-owner-role')?.value || 'owner',
     category:         document.getElementById('profile-cat').value,
@@ -3511,7 +3513,7 @@ function saveProfile() {
   const nameInput = document.getElementById('profile-name');
   if (nameInput) nameInput.style.borderColor = hasNameInline ? '' : '#FFA726';
   const missingBanner = document.getElementById('biz-name-missing-banner');
-  if (missingBanner) { if (hasNameInline) missingBanner.classList.add('hidden'); else missingBanner.classList.remove('hidden'); }
+  if (missingBanner) { if (hasNameInline || profile.sellerType !== 'business') missingBanner.classList.add('hidden'); else missingBanner.classList.remove('hidden'); }
   const catDisplayInline = document.getElementById('profile-biz-cat');
   if (catDisplayInline) catDisplayInline.textContent = profile.category || 'Set up your profile below';
 
@@ -3529,7 +3531,11 @@ function saveProfile() {
 function loadProfile() {
   window._bbProfileGlobal=profile;
   const personal=profile.sellerType==='personal';
-  ['profile-owner-role','profile-hours','profile-street','biz-hours'].forEach(id=>{
+  if (personal) {
+    profile.ownerName = profile.ownerName || profile.name || '';
+    profile.name = profile.ownerName;
+  }
+  ['profile-name','profile-owner-role','profile-hours','profile-street','biz-hours'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.hidden=personal;
     const label=document.querySelector('label[for="'+id+'"]');if(label)label.hidden=personal;
   });
@@ -3559,11 +3565,11 @@ function loadProfile() {
   }
   const _pnameInput = document.getElementById('profile-name');
   if (_pnameInput) _pnameInput.style.borderColor = hasName ? '' : '#FFA726';
-  const _mnb = document.getElementById('biz-name-missing-banner'); if (_mnb) { if (hasName) _mnb.classList.add('hidden'); else _mnb.classList.remove('hidden'); }
+  const _mnb = document.getElementById('biz-name-missing-banner'); if (_mnb) { if (hasName || profile.sellerType !== 'business') _mnb.classList.add('hidden'); else _mnb.classList.remove('hidden'); }
   renderPlatformCats(profile.platformCats || {});
   const _pcat = document.getElementById('profile-biz-cat');
   if (_pcat) _pcat.textContent = profile.category || 'Set up your profile below';
-  if (profile.locationType) setProfileLocationType(profile.locationType);
+  if (profile.locationType) setProfileLocationType(profile.locationType, false);
   // Pre-fill main create form with business data (only if fields are empty)
   if (!document.getElementById('biz-name').value && profile.name)         document.getElementById('biz-name').value     = profile.name;
   if (!document.getElementById('biz-phone').value && profile.phone)       document.getElementById('biz-phone').value    = profile.phone;
@@ -4523,8 +4529,8 @@ async function rerunAICats() {
   if (!window.PLATFORM_CATS) { showToast('⚠️ Category data not loaded yet'); return; }
   const btn  = document.getElementById('rerun-ai-cats-btn');
   const note = document.getElementById('platcats-note');
-  const bizName    = document.getElementById('profile-name')?.value?.trim() || profile.name || '';
-  if (!bizName) { showToast('⚠️ Add your business name first'); return; }
+  const bizName    = profile.sellerType === 'personal' ? (profile.ownerName || '') : (document.getElementById('profile-name')?.value?.trim() || profile.name || '');
+  if (!bizName && profile.sellerType !== 'personal') { showToast('⚠️ Add your business name first'); return; }
   const descParts = [
     profile.category && profile.category !== 'Other' ? profile.category : null,
     profile.website   ? 'Website: ' + profile.website  : null,
@@ -4578,7 +4584,7 @@ async function rerunAICats() {
       if (note) note.textContent = '✅ AI updated ' + Object.keys(data.categories).length + ' categories';
       showToast('✅ AI picked new categories');
     } else if (data.followUpQuestions) {
-      if (note) note.textContent = '⚠️ AI needs more info — add more detail to your business name or description';
+      if (note) note.textContent = profile.sellerType === 'personal' ? '⚠️ Add more detail about the item you are selling.' : '⚠️ AI needs more info — add more detail to your business name or description';
       showToast('⚠️ AI needs a more detailed description');
     }
   } catch(e) {
@@ -5118,6 +5124,7 @@ window._bbSetProfile = function(p) {
   // Cache to localStorage so the profile loads instantly on next visit
   try {
     localStorage.setItem('bb_profile', JSON.stringify({
+      sellerType: p.sellerType || 'business',
       name: p.name, ownerName: p.ownerName, ownerRole: p.ownerRole,
       category: p.category, phone: p.phone, email: p.email,
       street: p.street, city: p.city, state: p.state, zip: p.zip,
@@ -5146,7 +5153,7 @@ function renderSwitcherBar() {
   const bizList   = window.BUSINESSES || [];
   const currentId = window.activeBizId;
   const active    = bizList.find(b => b.id === currentId);
-  const activeName = active ? (active.name || active.businessName || 'Business') : 'Select business';
+  const activeName = active ? (active.sellerType === 'personal' ? (active.ownerName || active.name || 'Personal') : (active.name || active.businessName || 'Business')) : 'Select profile';
 
   // Keep hidden select in sync (used elsewhere)
   const select = document.getElementById('biz-select');
@@ -5644,6 +5651,18 @@ window._saveInsightToFirestore = async function(insights) {
   } catch(e) { console.error('saveInsights:', e); }
 };
 
+async function loadWorkspaceSelection(user, userData, requestedId) {
+  const snap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
+  const businesses = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  const selected = businesses.find(b => b.id === (requestedId || userData.activeBusiness));
+  if (requestedId && !selected) throw new Error('This profile is no longer available. Open your dashboard to select a profile.');
+  const active = selected || businesses[0] || null;
+  if (active && !requestedId && active.id !== userData.activeBusiness) {
+    await setDoc(doc(db, 'users', user.uid), { activeBusiness: active.id }, { merge: true });
+  }
+  return { businesses, active };
+}
+
 auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
   if (!user) return; // auth-guard.js handles redirect
@@ -5659,7 +5678,20 @@ onAuthStateChanged(auth, async (user) => {
 
   const userSnap = await getDoc(doc(db, 'users', user.uid));
   const userData = userSnap.exists() ? userSnap.data() : {};
-  activeBizId = new URLSearchParams(window.location.search).get('bizId') || userData.activeBusiness || user.uid;
+  let selection;
+  try {
+    selection = await loadWorkspaceSelection(user, userData, new URLSearchParams(window.location.search).get('bizId'));
+  } catch (e) {
+    showToast(e.message || 'Could not load your profile. Reload to try again.');
+    return;
+  }
+  if (!selection.active) {
+    // Signup identity and seller choice are restored by the existing setup form.
+    window.location.replace('BlastyBiz-CreateBiz.html');
+    return;
+  }
+  window.BUSINESSES = selection.businesses;
+  activeBizId = selection.active.id;
   userPlan = userData.plan || 'starter';
   window._bbUserPlan = userPlan;
   window.activeBizId = activeBizId;
@@ -5677,11 +5709,7 @@ onAuthStateChanged(auth, async (user) => {
   if (typeof window._applyPlanOverlays === 'function') window._applyPlanOverlays();
   renderPlatforms();
 
-  // Load all businesses for the switcher bar
-  try {
-    const allBizSnap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
-    window.BUSINESSES = allBizSnap.docs.map(d => ({ ...d.data(), id: d.id }));
-  } catch(_) { window.BUSINESSES = []; }
+  // The switcher and profile use the same owned-profile selection.
   try {
     if (typeof renderSwitcherBar === 'function') { renderSwitcherBar(); renderAgencyBar(); }
   } catch(e) { console.error('renderSwitcherBar error:', e); }
@@ -5753,12 +5781,13 @@ onAuthStateChanged(auth, async (user) => {
 
   try {
     const bizSnap = await getDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId));
+    if (!bizSnap.exists()) { window.location.replace('BlastyBiz-CreateBiz.html'); return; }
     if (bizSnap.exists()) {
       const biz = bizSnap.data();
       window._bbFeaturedPhotoUrl = biz.featuredPhoto || '';
       const p = {
         sellerType: biz.sellerType || 'business',
-        name:         biz.businessName || biz.name || '',
+        name:         biz.sellerType === 'personal' ? (biz.ownerName || biz.name || '') : (biz.businessName || biz.name || ''),
         ownerName:    biz.ownerName  || '',
         ownerRole:    biz.ownerRole  || 'owner',
         category:     biz.category   || '',
@@ -5933,6 +5962,8 @@ onAuthStateChanged(auth, async (user) => {
     }
   } catch(e) {
     console.error('Profile load error:', e);
+    showToast('Could not load your saved profile. Reload to try again.');
+    return;
   }
 
   // ── Image compression (max 1200px, JPEG 85%) ─────────────
@@ -6559,7 +6590,7 @@ window.saveProfile = function() {
     if (_phoneErr) _phoneErr.textContent = _phoneOk ? '' : 'Please enter at least 7 digits';
     await setDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), {
       // Never overwrite saved fields with blank — only write a field if it has a value
-      ...(profile.name      ? { businessName: profile.name }      : {}),
+      ...(profile.name      ? { businessName: profile.name, ...(profile.sellerType === 'personal' ? { name: profile.name } : {}) } : {}),
       ...(profile.ownerName ? { ownerName:   profile.ownerName } : {}),
       ownerRole: profile.sellerType==='personal'?'':profile.ownerRole || 'owner',
       ...(profile.category  ? { category:    profile.category }  : {}),
