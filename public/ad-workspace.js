@@ -1,7 +1,7 @@
 /* The existing Campaign form edits one selected Ad. No second Campaign store. */
 (function(){
   'use strict';
-  let ad=null, campaign='', business='', epoch=0, busy=false, dirty=false, pending=null, loading=null, saving=null, loadError=null, editVersion=0;
+  let ad=null, campaign='', business='', epoch=0, busy=false, dirty=false, pending=null, loading=null, saving=null, loadError=null, editVersion=0, autoSaveTimer=null;
   const uuid=()=>crypto.randomUUID();
   const el=id=>document.getElementById(id);
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -21,21 +21,29 @@
     if(el('ad-workspace'))return;
     const host=el('campaign-content');if(!host)return;
     const box=document.createElement('section');box.id='ad-workspace';
-    box.innerHTML='<p id="ad-message" role="status" aria-live="polite"></p><div id="ad-current" hidden><span id="ad-title" hidden></span><button type="button" data-action="save">Save details</button> <button type="button" data-action="run">Run Again</button> <button type="button" data-action="derive">Use As Starting Point</button><label>Call to action<input id="ad-cta" type="text" maxlength="12000"></label><label>Anything else about this Ad?<textarea id="ad-context" rows="3"></textarea></label><div id="ad-run-choice" hidden><h3>Run this Ad again</h3><button type="button" data-action="as-is">Run As-Is</button> <button type="button" data-action="change-run">Change This Run</button><div id="ad-run-edit" hidden><p>Adjust the copy and images in the form. Choose where to save those changes.</p><button type="button" data-action="run-only">This Run Only</button> <button type="button" data-action="update-and-run">Update the Ad</button></div></div><div id="ad-prepared"></div></div>';
+    box.innerHTML='<p id="ad-message" role="status" aria-live="polite"></p><button type="button" id="ad-save-retry" data-action="save" hidden>Retry save</button><div id="ad-current" hidden><label>Call to action (optional)<input id="ad-cta" type="text" maxlength="12000"></label><label>Extra details (optional)<textarea id="ad-context" rows="3"></textarea></label><div id="ad-prepared"></div></div>';
     const anchor=el('ad-form-anchor');
     if(anchor)anchor.parentNode.appendChild(box);else host.prepend(box);
     const style=document.createElement('style');style.textContent='#ad-workspace{padding:18px;margin-bottom:16px}#ad-workspace button{min-height:44px;margin:4px;padding:8px 12px}#ad-workspace label{display:block;margin:12px 0}#ad-workspace input,#ad-workspace textarea,#ad-workspace select{display:block;width:100%;box-sizing:border-box}.ad-copy{width:100%;min-height:100px}';document.head.appendChild(style);
     box.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(b)task(()=>act(b.dataset.action,b.dataset.id));});
-    box.addEventListener('input',markDirty);
   }
 
   async function list(){
     const requested=JSON.stringify(context());const result=await api('list');if(requested!==JSON.stringify(context()))return [];
     return result.ads;
   }
-  function markDirty(){if(ad){dirty=true;editVersion++;}}
+  function markDirty(){
+    if(!ad)return;
+    dirty=true;editVersion++;clearTimeout(autoSaveTimer);
+    const seq=epoch;
+    autoSaveTimer=setTimeout(async()=>{
+      if(seq!==epoch||!dirty)return;
+      try{await save();}catch(e){if(seq===epoch){tell('Not saved. '+e.message);el('ad-save-retry').hidden=false;}}
+    },650);
+  }
   function open(){
     mount();if(!el('ad-workspace'))return Promise.resolve();
+    clearTimeout(autoSaveTimer);el('ad-save-retry').hidden=true;
     const seq=++epoch;campaign=activeCampaignId;business=window.activeBizId;ad=null;dirty=false;pending=null;loadError=null;window._bbActiveAd=null;
     const host=el('campaign-content');host.inert=true;
     el('ad-current').hidden=true;tell('Loading saved details…');
@@ -65,8 +73,8 @@
     for(const key of Object.keys(ynState))delete ynState[key];
     Object.assign(ynState,BBSetup.mentions(ad.mentions||BBSetup.profileMentions(window._bbProfileGlobal||{})));
     for(const [field,value] of Object.entries(ynState)){for(const choice of ['yes','no'])el('yn-'+field+'-'+choice)?.classList.toggle('yn-active',value===choice);}
-    el('ad-current').hidden=false;window.BBBlasty?.fire('images.campaign_repository_intro');window.BBBlasty?.fire('images.ad_selection_intro');el('ad-title').textContent=activeCampaignName+' / '+ad.name;
-    el('ad-run-choice').hidden=true;el('ad-run-edit').hidden=true;el('ad-prepared').replaceChildren();
+    el('ad-current').hidden=false;window.BBBlasty?.fire('images.campaign_repository_intro');window.BBBlasty?.fire('images.ad_selection_intro');
+    el('ad-prepared').replaceChildren();
     if(typeof renderStep3Platforms==='function')renderStep3Platforms();
     if(el('offer-count'))el('offer-count').textContent=(ad.offer||'').length+' / 500';
     if(typeof checkAdaptBtn==='function')checkAdaptBtn();
@@ -89,13 +97,15 @@
     ad=editedDuringSave?{...data.ad,imageRefs:ad.imageRefs}:data.ad;window._bbActiveAd=ad;
     if(!editedDuringSave){
       platforms=platforms.map(p=>({...p,_reviewStatus:ad.platformStatus?.[p.id]==='excluded'?'skipped':ad.platformStatus?.[p.id]||'needs-review'}));
-      if(typeof renderStep5Review==='function')renderStep5Review();
+      if(typeof renderStep5Review==='function'&&!document.activeElement?.closest('[contenteditable]'))renderStep5Review();
     }
+    el('ad-save-retry').hidden=true;
     dirty=editedDuringSave;pending=null;tell(dirty?'Saving your latest edits…':'Saved.');
     el('ad-prepared').innerHTML=(data.prepared||[]).map(b=>'<p>Prepared Blast '+esc(b.id)+' still contains the older Ad. <button type="button" data-action="update-prepared" data-id="'+esc(b.id)+'">Update It Too</button> <button type="button" data-action="leave-prepared">Leave It</button></p>').join('');
     return data;
   }
   async function save(){
+    clearTimeout(autoSaveTimer);
     if(saving){await saving;return save();}
     saving=(async()=>{let result;do{result=await persist();}while(dirty);return result;})();
     try { const result=await saving;return result; } finally { saving=null; }
@@ -139,19 +149,7 @@
   }
 
   async function act(action,id){
-    if(action==='derive'){
-      if(dirty&&!confirm('Discard unsaved form changes?'))return;
-      if(pending?.action!==action)pending={action,adId:uuid(),requestId:uuid()};
-      const {adId,requestId}=pending;
-      const data=await api('derive',{adId,requestId,sourceAdId:ad.id,creative:{name:ad.name+' copy'}});
-      await fill(data.ad);await list();tell('Edit the Ad below. Save when ready.');return;
-    }
     if(action==='save'){await save();return;}
-    if(action==='run'){el('ad-run-choice').hidden=false;window.BBBlasty?.fire('ad.run_again_scope',{adName:ad.name,needed:true});return;}
-    if(action==='as-is'){await prepare();return;}
-    if(action==='change-run'){el('ad-run-edit').hidden=false;window.BBBlasty?.fire('ad.change_this_run_scope',{adName:ad.name,needed:true});return;}
-    if(action==='run-only'){await prepare('this_run');return;}
-    if(action==='update-and-run'){await save();await prepare();return;}
     if(action==='update-prepared'){
       await api('updatePrepared',{adId:ad.id,expectedRevision:ad.revision,blastId:id});
       tell('Prepared Blast updated. Open its preview and explicitly send or schedule it.');el('ad-prepared').replaceChildren();return;
@@ -166,7 +164,7 @@
     if(action==='select-image'){
       const pool=await window._bbLoadCampaignImages(campaign),image=pool.find(i=>i.id===id&&!i.retired);if(!image)throw Error('Image no longer available.');
       if(!(ad.imageRefs||[]).some(i=>i.id===id))ad.imageRefs=[...(ad.imageRefs||[]),image];
-      markDirty();await images();tell('Image selected. Tap Save details to keep it.');window.BBBlasty?.fire('images.first_ad_image_selected');return;
+      markDirty();await images();tell('Saving…');window.BBBlasty?.fire('images.first_ad_image_selected');return;
     }
     if(action==='remove-image'){ad.imageRefs=(ad.imageRefs||[]).filter(i=>i.id!==id);markDirty();await images();tell('Selection removed; the campaign image is preserved.');}
   }

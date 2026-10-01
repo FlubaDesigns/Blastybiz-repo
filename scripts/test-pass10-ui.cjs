@@ -27,12 +27,14 @@ run('business-form.js');run('ad-workspace.js');await w.BBAds.open();ok(!w.docume
 await w.BBAds.api('create',{adId:'first',requestId:'first',creative:{name:'July',offer:'Summer offer'}});await w.BBAds.open();ok(w.BBAds.active.name==='July'&&w.BBAds.active.offer==='Summer offer','original save/load path retains entered answers');
 ok(!w.document.querySelector('.ad-images')&&!w.document.querySelector('[data-action=upload]'),'duplicate image panel and uploader are absent');
 w.document.getElementById('biz-ad-name').value='July';w.document.getElementById('biz-offer').value='Summer offer';w.document.querySelector('#thumb-grid .thumb-wrap').click();await settled();ok(w.document.querySelector('#thumb-grid .thumb-selected-badge'),'one Photos grid displays selected state');ok(w.BBAds.active.imageRefs[0].id==='photo','photo tap selects and saves canonical Ad image');
-w.platforms[0].adaptedContent='Approved copy';w.platforms[0]._reviewStatus='approved';loseNext=true;await click('save');ok(w.document.getElementById('ad-message').textContent==='Lost response','failed save leaves retry feedback');await click('save');
+w.platforms[0].adaptedContent='Approved copy';w.platforms[0]._reviewStatus='approved';loseNext=true;w.BBAds.markDirty();await new Promise(r=>setTimeout(r,750));await settled();ok(!w.document.getElementById('ad-save-retry').hidden&&w.document.getElementById('ad-message').textContent.includes('Lost response'),'failed save leaves retry feedback');await click('save');
 let ad=w.BBAds.active;ok(ad.revision===3&&ad.imageRefs[0].id==='photo'&&ad.name==='July','retry saves exactly one revision with copy and image');
 await w.BBAds.open();ok(w.BBAds.active.id===ad.id&&w.document.getElementById('biz-ad-name').value==='July','reopening selects the saved Ad without a View button');ok(!w.document.getElementById('ad-picker'),'one saved Ad needs no picker');
-const source=JSON.stringify(state.get(camp+'/ads/'+ad.id));await click('derive');ok(w.BBAds.active.sourceAdId===ad.id&&JSON.stringify(state.get(camp+'/ads/'+ad.id))===source,'derive has new identity and unchanged source');
+ok(!w.document.querySelector('[data-action=run]')&&!w.document.querySelector('[data-action=derive]')&&w.document.getElementById('ad-save-retry').hidden,'three unnecessary buttons removed; retry appears only on failure');
 await w.BBAds.choosePhoto({id:'photo',scope:'campaign'});ok(w.BBAds.active.imageRefs.length===0&&!!state.get(camp+'/images/photo'),'remove is scoped to Ad');
-w.history.replaceState({},'','?adId='+ad.id);await w.BBAds.open();ok(w.BBAds.active.id===ad.id,'existing direct links still open the specified Ad');await click('run');ok(!w.document.getElementById('ad-run-choice').hidden,'Run Again shows scope choice');await click('change-run');ok(!w.document.getElementById('ad-run-edit').hidden,'Change This Run exposes both save scopes');
+w.document.getElementById('ad-context').value='Saved automatically';w.document.getElementById('ad-context').dispatchEvent(new w.Event('input',{bubbles:true}));await new Promise(r=>setTimeout(r,750));await settled();
+await w.BBAds.open();ok(w.document.getElementById('ad-context').value==='Saved automatically','typing persists without a Save details button');
+w.history.replaceState({},'','?adId='+ad.id);await w.BBAds.open();ok(w.BBAds.active.id===ad.id,'existing direct links still open the specified Ad');
 // Business photos import through the same campaign repository and Ad save path.
 w._bbLoadGlobalImages=async()=>[{id:'business-photo',url:'https://example.com/business.jpg'}];
 w._bbLoadCampaignImages=async()=>Object.entries(state.all()).filter(([p])=>p.startsWith(camp+'/images/')).map(([p,v])=>({id:p.split('/').at(-1),...v}));
@@ -41,9 +43,9 @@ await w.BBAds.choosePhoto({id:'business-photo',scope:'global'});ok(w.BBAds.activ
 await w.BBAds.choosePhoto({id:'business-photo',scope:'global'});ok(imports===1&&w.BBAds.active.imageRefs.some(i=>i.id==='imported'),'reusing business photo does not duplicate or deselect it');
 // Changed form values after a failed override must get a fresh request identity.
 const prepared=[];w.fetch=async(url,options)=>{const body=JSON.parse(options.body);prepared.push(body);return {ok:false,json:async()=>({error:'Simulated offline'})};};
-w.platforms[0].adaptedContent='First override';await click('run-only');await click('run-only');
+w.platforms[0].adaptedContent='First override';await w.BBAds.prepareCurrent();await w.BBAds.prepareCurrent();
 ok(prepared[0].blastId===prepared[1].blastId,'unchanged lost-response retry retains Blast identity');
-w.platforms[0].adaptedContent='Edited override';await click('run-only');
+w.platforms[0].adaptedContent='Edited override';await w.BBAds.prepareCurrent();
 ok(prepared[2].blastId!==prepared[1].blastId&&prepared[2].creative.adaptations.facebook==='Edited override','changed override retries with fresh identity and current values');
 // Each independent gesture must animate real SVG nodes without changing mood.
 run('mascot.js');const mascot=w.PBMascot.create(w.document.getElementById('mascot'),{draggable:false});let animations=[];

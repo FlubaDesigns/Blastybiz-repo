@@ -4717,7 +4717,7 @@ function renderCampaignChips() {
 
 async function selectCampaign(id, name) {
   if(window._bbAdaptationBusy || window.BBAds?.busy){showToast('Wait for the current save or generation to finish.');return;}
-  if(window.BBAds?.dirty && !confirm('Discard unsaved Ad changes before switching campaigns?'))return;
+  if(window.BBAds?.dirty){try{await window.BBAds.save();}catch(e){showToast('Could not save your changes. Please retry before switching.');return;}}
   if (window._bbDraftSavePending) { showToast('Use Retry save before switching campaigns.'); return; }
   clearTimeout(_campaignSaveTimer);
   activeCampaignId   = id;
@@ -7466,7 +7466,7 @@ window.confirmDeleteAccount = async function() {
 .cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
 </style>
 <script src="lifecycle-ui.js?v=20261001-remove-legacy"></script>
-<script src="ad-workspace.js?v=20261001-names"></script>
+<script src="ad-workspace.js?v=20261001-simple"></script>
 <script>
 document.addEventListener('click',function(e){
  const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');
