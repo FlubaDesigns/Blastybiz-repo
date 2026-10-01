@@ -6461,7 +6461,7 @@ window._afterAdaptation = async function(adaptedPlatforms) {
     });
     const platformStatus = Object.fromEntries(adaptedPlatforms.filter(p=>p.enabled).map(p=>[p.id,p._reviewStatus==='approved'?'approved':p._reviewStatus==='skipped'?'excluded':'needs-review']));
 
-    const pickupLocation=profile.sellerType==='personal'?{pickupArea:window.BBAds?.active?.pickupArea||'',pickupZip:window.BBAds?.active?.pickupZip||''}:{};
+    const pickupLocation=window._bbProfileGlobal?.sellerType==='personal'?{pickupArea:window.BBAds?.active?.pickupArea||'',pickupZip:window.BBAds?.active?.pickupZip||''}:{};
 
     // F1: If a draft already exists for this blast, update it — never create a duplicate
     const existingDraftId = window._currentDraftId;

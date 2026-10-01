@@ -79,7 +79,7 @@ async function draftTests() {
   const html=read('public/BlastyBiz.html');
   const code=section(html,'window._afterAdaptation =','document.addEventListener(\'bb:savePlatforms\'');
   const writes=[];let fail=true,next=0;
-  const c={window:{},currentUser:{uid:'u'},activeBizId:'b',activeCampaignId:'c',activeCampaignName:'Campaign',console:quiet,db:{},
+  const c={window:{_bbProfileGlobal:{sellerType:'personal'},BBAds:{active:{pickupZip:'01234',pickupArea:'Downtown'}}},currentUser:{uid:'u'},activeBizId:'b',activeCampaignId:'c',activeCampaignName:'Campaign',console:quiet,db:{},
     document:{getElementById:()=>({value:'value'})},serverTimestamp:()=>1,increment:n=>n,
     collection:(_, ...p)=>({path:p.join('/')}),doc:(base,...p)=>({id:p.length?p.at(-1):'draft'+(++next),path:p.length?p.join('/'):base.path}),
     setDoc:async(ref,data)=>{writes.push({ref,data});if(fail)throw Error('offline')},updateDoc:async(ref,data)=>{writes.push({ref,data});if(fail)throw Error('offline')}
@@ -89,6 +89,7 @@ async function draftTests() {
   fail=false;const id=await c.window._afterAdaptation(platforms);ok(writes[0].ref===writes[1].ref&&id===c.window._currentDraftId&&next===1,'retry uses same draft identity');
   ok(writes[1].data.adaptations.facebook==='Saved\ncopy','retry preserves generated text without AI');
   fail=true;await assert.rejects(c.window._afterAdaptation(platforms));ok(next===1,'failed existing draft update does not create a second draft');
+  ok(writes.every(w=>w.data.pickupZip==='01234'&&w.data.pickupArea==='Downtown'),'new and existing draft saves preserve the canonical pickup area through retries');
   const nodes={},messages=[];let saved=false;
   const d={window:{activeBizId:'b',_afterAdaptation:async()=>{if(!saved)throw Error('offline');return 'd';}},platforms,console:quiet,showToast:m=>messages.push(m),document:{getElementById:id=>nodes[id]||(nodes[id]={hidden:true,disabled:true,classList:{remove(){},add(){}}})}};
   vm.runInNewContext(section(html,'let generatedDraftSaving =','async function runAdaptation()'),d);
