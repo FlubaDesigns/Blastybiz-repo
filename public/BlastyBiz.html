@@ -2840,6 +2840,8 @@ function updatePhotoCapLabel() {
 
 var _photoReservations = new Map();
 function handleImages(e) {
+  const input = e.target;
+  if (input._bbReadingPhotos) return;
   if (photoScope !== 'global' && !activeCampaignId) {
     showToast('Pick a campaign first, then add photos');
     e.target.value = '';
@@ -2850,19 +2852,29 @@ function handleImages(e) {
   const key = [window.activeBizId,photoScope,photoScope==='global'?'':activeCampaignId].join('/');
   const reserved = _photoReservations.get(key)||0;
   const current = Math.max(items.filter(i=>!i.error).length,items.filter(i=>i.done).length+reserved);
-  const selected = Array.from(e.target.files);
+  const selected = Array.from(input.files || []);
   const files = selected.slice(0,Math.max(0,cap-current));
   if(files.length<selected.length)showToast('You have reached the 20 photo limit. Remove one to add more.');
   _photoReservations.set(key,reserved+files.length);
   const uploadContext = { scope: photoScope, campaignId: activeCampaignId, bizId: window.activeBizId };
-  e.target.value = '';
+  // Keep the picker and its selected File references alive until all bytes are read.
+  // Android gallery providers may supply temporary references rather than local bytes.
+  input._bbReadingPhotos = true;
+  input.disabled = true;
   checkAdaptBtn();
   // Sequential: compress one at a time to avoid concurrent canvas.toBlob() hangs on mobile.
   return (async () => {
-    for (const file of files) {
-      try { if (window._bbUploadPhoto) await window._bbUploadPhoto(file, uploadContext); }
-      catch(error){showToast('Photo upload failed. Please retry.');}
-      finally {_photoReservations.set(key,Math.max(0,(_photoReservations.get(key)||0)-1));}
+    try {
+      for (const file of files) {
+        try { if (window._bbUploadPhoto) await window._bbUploadPhoto(file, uploadContext); }
+        catch(error){showToast('Photo upload failed. Please retry.');}
+        finally {_photoReservations.set(key,Math.max(0,(_photoReservations.get(key)||0)-1));}
+      }
+    } finally {
+      input.value = '';
+      input.disabled = false;
+      input._bbReadingPhotos = false;
+      if (window.renderAllPhotos) window.renderAllPhotos();
     }
   })();
 }
@@ -2924,6 +2936,12 @@ window.renderAllPhotos = function() {
   const cap = photoCap();
   const uploadArea = document.getElementById('photo-upload-area');
   if (uploadArea) uploadArea.style.display = (cap !== Infinity && items.filter(item => !item.error).length >= cap) ? 'none' : 'flex';
+  if (window._bbPhotoUseFiles) {
+    const input = document.getElementById('img-input');
+    const label = document.getElementById('photo-upload-text');
+    if (input && !input._bbReadingPhotos) input.accept = '*/*';
+    if (label) label.innerHTML = 'Tap to add photos<br/><span>from Files on your phone</span>';
+  }
   updatePhotoCapLabel();
 
   let badge = document.getElementById('photo-count-badge');
@@ -6047,7 +6065,29 @@ onAuthStateChanged(auth, async (user) => {
     });
   }
 
+  async function _bbReadPhoto(file) {
+    // Snapshot one file at a time. Decoding and conversion then read stable memory,
+    // rather than repeatedly opening an Android gallery/cloud-provider reference.
+    let lastError;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const bytes = await file.arrayBuffer();
+        if (!bytes.byteLength) throw Object.assign(Error('Empty photo'), {name:'NotReadableError'});
+        return new Blob([bytes], {type:file.type || ''});
+      } catch (error) {
+        if (!['NotReadableError','NotFoundError','SecurityError','AbortError'].includes(error.name)) throw error;
+        lastError = error;
+        if (!attempt) await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
+    const error = Error('Cannot read this photo. Tap the upload box to choose a saved copy from Files.');
+    error.code = 'photo-unreadable';
+    error.cause = lastError;
+    throw error;
+  }
+
   async function compressImage(file) {
+    file = await _bbReadPhoto(file);
     const type = await _bbImageType(file);
     if (!type) throw Error('Choose a JPEG, PNG, WebP, GIF, BMP, AVIF or HEIC photo.');
     // Correct absent or misleading Android picker MIME labels using the bytes.
@@ -6120,7 +6160,10 @@ onAuthStateChanged(auth, async (user) => {
       localUrl = URL.createObjectURL(compressed); item.localUrl = localUrl;
       const fileRef = storageRef(storage, storagePath);
       task = uploadBytesResumable(fileRef, compressed, { contentType: 'image/jpeg' });
-    } catch(error) { fail(error.message || 'The photo could not be prepared. Please retry.'); return; }
+    } catch(error) {
+      if (error.code === 'photo-unreadable') window._bbPhotoUseFiles = true;
+      fail(error.message || 'The photo could not be prepared. Please retry.'); return;
+    }
     task.on('state_changed',
       snapshot => {
         item.progress = Math.round(snapshot.bytesTransferred / snapshot.totalBytes * 100);

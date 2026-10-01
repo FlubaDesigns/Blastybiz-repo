@@ -27,6 +27,9 @@ const c={console:{warn(){},error(){}},Uint8Array,DataView,setTimeout,clearTimeou
  c._bbPhotoItems=[];c.activeCampaignId='c';c.compressImage=async()=>{throw Error('The browser could not open this photo.');};
  await c._bbUploadPhoto({type:'image/jpeg'},{scope:'campaign',campaignId:'c',bizId:'b'});
  ok(uploadCalls===0&&!c._bbPhotoUploads.size&&c._bbPhotoItems[0].error,'decode failure never uploads raw bytes and clears pending');ok(notes.at(-1).includes('could not open'),'specific failure is visible');
+ c.compressImage=async()=>{throw Object.assign(Error('Choose a saved copy from Files.'),{code:'photo-unreadable'});};
+ await c._bbUploadPhoto({type:'image/jpeg'},{scope:'campaign',campaignId:'c',bizId:'b'});
+ ok(c._bbPhotoUseFiles===true&&uploadCalls===0,'unreadable gallery switches the existing picker to Files without uploading invalid bytes');
  c.compressImage=async()=>({size:100});await c._bbUploadPhoto({type:'application/unknown'},{scope:'global',bizId:'b'});
  ok(uploadCalls===1&&!c._bbPhotoUploads.size,'misleading MIME reaches byte-based preparation; synchronous storage failure cleans up');
  let savedGlobal=false;c.uploadBytesResumable=()=>({snapshot:{ref:'ref'},on:(event,progress,error,done)=>{complete=done}});c._bbSaveGlobalImage=async()=>{savedGlobal=true;return 'global-id';};

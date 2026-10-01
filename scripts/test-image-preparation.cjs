@@ -23,6 +23,16 @@ const c={Blob,Uint8Array,DataView,atob,setTimeout,clearTimeout,console,
  const nativeDecode=c.createImageBitmap;c.createImageBitmap=async()=>{throw Error('Decode failed');};
  await assert.rejects(c.compressImage(new Blob([Buffer.from([255,216,255,1,2,3])])),/could not open/);c.createImageBitmap=nativeDecode;
  assert.equal(released,6,'decoded native images released after encoding');
+ // Android provider references must be read once, before slicing/decoding.
+ let reads=0;
+ const provider={type:'image/png',arrayBuffer:async()=>{reads++;return file.arrayBuffer();},slice(){throw Error('Provider does not support partial reads');}};
+ await c.compressImage(provider);assert.equal(reads,1,'read provider bytes once, then decode the stable Blob');
+ reads=0;
+ await c.compressImage({type:'image/png',arrayBuffer:async()=>{if(++reads===1)throw Object.assign(Error('Not ready'),{name:'NotReadableError'});return file.arrayBuffer();}});
+ assert.equal(reads,2,'transient provider read recovers once');
+ reads=0;
+ await assert.rejects(c.compressImage({arrayBuffer:async()=>{reads++;throw Object.assign(Error('Not available'),{name:'NotReadableError'});}}),error=>error.code==='photo-unreadable'&&error.message.includes('Files'));
+ assert.equal(reads,2,'unreadable provider has bounded retries and an actionable Files fallback');
  // HEIC uses conversion only when native decode fails; a readable native HEIC bypasses it.
  const heic=new Blob([Buffer.from([0,0,0,12,...Buffer.from('ftypheic')])],{type:'image/heic'});
  c._heic2any=async()=>{conversions++;return file;};await c.compressImage(heic);assert.equal(conversions,1);

@@ -9,7 +9,7 @@ async function photos(){
  for(const plan of ['starter','pro','agency'])for(const scope of ['global','campaign']){
   const messages=[],uploads=[];
   const c={window:{_bbUserPlan:plan,activeBizId:'b',_bbPhotoItems:[],_bbUploadPhoto:async file=>{uploads.push(file);c.window._bbPhotoItems.push({done:true});}},photoScope:scope,activeCampaignId:'c',checkAdaptBtn(){},showToast:x=>messages.push(x)};
-  vm.createContext(c);vm.runInContext(cut(source,'function photoCap()','function updatePhotoCapLabel()')+cut(source,'var _photoReservations','window.renderAllPhotos'),c);
+  vm.createContext(c);vm.runInContext(cut(source,'function photoCap()','function updatePhotoCapLabel()')+cut(source,'var _photoReservations','window.renderAllPhotos = function()'),c);
   const first=c.handleImages({target:{files:Array.from({length:21},(_,i)=>i),value:'selected'}});
   const second=c.handleImages({target:{files:[22],value:'selected'}});
   await Promise.all([first,second]);
@@ -17,6 +17,11 @@ async function photos(){
   ok(messages.includes('You have reached the 20 photo limit. Remove one to add more.'),'clear capacity message');
   c.window._bbPhotoItems.pop();await c.handleImages({target:{files:[23]}});ok(uploads.length===21,'removing a photo frees one slot');
  }
+ const input={files:[1,2,3],value:'gallery-reference'},processed=[];
+ const c={window:{activeBizId:'b',_bbPhotoItems:[],_bbUploadPhoto:async file=>{await Promise.resolve();assert.equal(input.value,'gallery-reference','picker stays intact until all selected photos are read');processed.push(file);}},photoScope:'campaign',activeCampaignId:'c',checkAdaptBtn(){},showToast(){}};
+ vm.createContext(c);vm.runInContext(cut(source,'function photoCap()','function updatePhotoCapLabel()')+cut(source,'var _photoReservations','window.renderAllPhotos = function()'),c);
+ const batch=c.handleImages({target:input});await c.handleImages({target:input});await batch;
+ ok(processed.length===3&&input.value===''&&!input.disabled&&!input._bbReadingPhotos,'one batch, all references preserved, picker cleared and enabled afterward');
 }
 async function migration(){
  const base='users/u/businesses/b/publishJobs/',seed={'config/platforms':{facebook:{proOnly:true}}};
