@@ -105,7 +105,7 @@ w.matchMedia=()=>({matches:true});animations=[];mascot.coneSpin();ok(animations.
 // Review shows exactly the images in the publishing packet, before approval.
 run('platforms-authority.js');
 const reviewHost=w.document.createElement('div');reviewHost.id='step5-review-container';w.document.body.appendChild(reviewHost);
-const reviewAd={id:'photo-review',campaignId:'c',platforms:['google','facebook','instagram','fbmarket','yelp'],imageRefs:Array.from({length:12},(_,i)=>({id:'i'+i,url:'https://example.com/'+i+'.jpg',alt:'Item view '+(i+1)}))};
+const reviewAd={id:'photo-review',campaignId:'c',platforms:['google','facebook','instagram','fbmarket','yelp','x','pinterest'],imageRefs:Array.from({length:12},(_,i)=>({id:'i'+i,url:'https://example.com/'+i+'.jpg',alt:'Item view '+(i+1)}))};
 reviewAd.adaptations=Object.fromEntries(reviewAd.platforms.map(p=>[p,'Saved copy']));reviewAd.platformStatus=Object.fromEntries(reviewAd.platforms.map(p=>[p,'approved']));
 w.BBAds={active:reviewAd};
 w.platforms=reviewAd.platforms.map(id=>({id,name:id,type:['google','facebook','instagram'].includes(id)?'api':'manual',adaptedContent:'Saved copy'}));
@@ -120,8 +120,9 @@ for(const id of reviewAd.platforms){
  assert.deepEqual(actual,packet.imagesByPlatform[id]);checks++;
  ok(!!(photos.compareDocumentPosition(button)&w.Node.DOCUMENT_POSITION_FOLLOWING),'photos precede Looks Good for '+id);
  ok(photos.style.display==='block'&&actual.length>0,'selected photos are visible for '+id);
+ ok(photos.querySelector('.qp-photos-label').textContent.endsWith(actual.length+' / '+w.BBPlatforms.postImageLimit(id)),'photo count and allowance match the delivery limit for '+id);
 }
-ok(packet.imagesByPlatform.instagram.length===1&&packet.imagesByPlatform.facebook.length===10,'preview respects current publisher image counts');
+ok(packet.imagesByPlatform.instagram.length===1&&packet.imagesByPlatform.facebook.length===10&&packet.imagesByPlatform.x.length===4&&packet.imagesByPlatform.pinterest.length===1,'preview respects current publisher image counts');
 ok(w.document.getElementById('qp-photos-instagram').textContent.includes('first 1 of your 12'),'review explains when only some selected photos are included');
 reviewAd.imageRefs=[];w.renderStep5Review();
 for(const id of reviewAd.platforms){const photos=w.document.getElementById('qp-photos-'+id);ok(photos.style.display==='block'&&!photos.querySelector('img')&&photos.textContent.includes('No photos selected'),'empty image selection is explicit for '+id);}

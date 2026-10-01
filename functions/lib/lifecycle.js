@@ -5,7 +5,7 @@ const {createHash,randomUUID}=require('node:crypto');
 const policy=require('./lifecycle-policy');
 const {freezePacket}=require('./ads');
 const {validateSchedule,advanceSchedule,computeNextRunAt}=require('./schedule');
-const {PLATFORM_CAPABILITY_MAP}=require('./platforms');
+const {PLATFORM_CAPABILITY_MAP,postImages}=require('./platforms');
 const fail=(status,message)=>{throw Object.assign(Error(message),{httpStatus:status});};
 const id=v=>{if(typeof v!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(v))fail(400,'Invalid record identifier.');return v;};
 const terminal=new Set(['success','manual_completed','manual_posted','manual_skipped','manual_lapsed','skipped','canceled']);
@@ -161,7 +161,7 @@ function createLifecycle({db,admin,refreshCopy,sendEmail,appUrl='https://blastyb
        }
        if(packet.enabledPlatforms.includes('instagram')&&!images.length)fail(400,'Instagram needs an image.');
        packet.adaptations=Object.fromEntries(packet.enabledPlatforms.map(p=>[p,body.adaptations[p].trim()]));packet.imageRefs=images;
-       packet.imagesByPlatform=Object.fromEntries(packet.enabledPlatforms.map(p=>[p,images.map(i=>i.url).slice(0,10)]));packet.override=true;
+       packet.imagesByPlatform=Object.fromEntries(packet.enabledPlatforms.map(p=>[p,postImages(p,images).map(i=>i.url)]));packet.override=true;
        tx.update(pending.ref,{packet,adaptations:packet.adaptations,imagesByPlatform:packet.imagesByPlatform,revision:pending.data().revision+1,approvalStatus:'required',updatedAt:stamp()});
        next={...s,status:'waiting_approval'};
      } else if(action==='changeNext') {

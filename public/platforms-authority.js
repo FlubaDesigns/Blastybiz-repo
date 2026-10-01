@@ -543,10 +543,17 @@
     }
   }
 ];
-  // Match the current delivery implementation: Instagram publishes one image;
-  // other destinations receive up to ten images in the prepared packet.
+  // BlastyBiz photo allowances, shared by the preview and prepared packet.
+  // Instagram currently uses our single-image publisher. Standard Pinterest
+  // image Pins take one photo; X permits four media items. Other destinations
+  // use our current ten-photo packet allowance (not a claimed network maximum).
+  // https://help.x.com/en/using-x/how-to-post
+  // https://help.pinterest.com/en/article/types-of-pins-on-pinterest
+  function postImageLimit(platformId) {
+    return platformId === 'instagram' || platformId === 'pinterest' ? 1 : platformId === 'x' ? 4 : 10;
+  }
   function postImages(platformId, images = []) {
-    return images.filter(image => typeof image === 'string' ? !!image : !!image?.url).slice(0, platformId === 'instagram' ? 1 : 10);
+    return images.filter(image => typeof image === 'string' ? !!image : !!image?.url).slice(0, postImageLimit(platformId));
   }
   const labels = { auto: 'Blasty Posts It', manual: 'Ready for You to Post' };
   const byId = Object.fromEntries(records.map(p => [p.id, p]));
@@ -571,5 +578,5 @@
     return {...p, type:canonical && canonical.deliveryMode === 'auto' ? 'api' : 'manual', proOnly:false};
   }
   return {records, byId, labels, PLATFORM_CAPABILITY_MAP, PLATFORM_DOCS, AUTO_POST_PLATFORMS,
-    PLATFORM_DEFAULTS, mergeDisplay, normalizeSelection, postImages};
+    PLATFORM_DEFAULTS, mergeDisplay, normalizeSelection, postImageLimit, postImages};
 });

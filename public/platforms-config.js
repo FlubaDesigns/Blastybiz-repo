@@ -1,4 +1,4 @@
-import './platforms-authority.js?v=20261001-photos';
+import './platforms-authority.js?v=20261001-photo-limits';
 export const { PLATFORM_DEFAULTS, mergeDisplay } = globalThis.BBPlatforms;
 
 /**
