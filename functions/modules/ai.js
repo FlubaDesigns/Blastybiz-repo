@@ -564,6 +564,7 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
   // Both draftId and businessId are required for regeneration; without them we
   // cannot scope the doc to this user's tree and cannot grant free regen safely.
   let personalSeller=listing?.sellerType==='personal';
+  let ownerProfile=listing;
   const regenBizId = listing?.businessId || null;
   if (regenDraftId || regenBizId) {
     const validId = x => typeof x === 'string' && x.length > 0 && x.length <= 128 && !x.includes('/');
@@ -571,6 +572,7 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
     const owned = await db.collection('users').doc(decoded.uid).collection('businesses').doc(regenBizId).get();
     if (!owned.exists) return res.status(404).json({error:'Business not found'});
     personalSeller=owned.data().sellerType==='personal';
+    ownerProfile=owned.data();
   }
   let draftRef = null;
   if (isRegeneration) {
@@ -646,11 +648,14 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_K
       trimmedLibraryDocs.map(d => `[${d.name}]:\n${d.extractedText}`).join('\n\n')
     : '';
 
+  const nameRules=require('../lib/business-form');
+  const namePrefs=nameRules.mentions(listing.mentions||nameRules.profileMentions(ownerProfile));
+  const publicOwnerName=nameRules.mentionedName(ownerProfile,namePrefs);
   const prompt = `${personalSeller?'You write item listings for a private individual. This is a personal sale, not a company or dealership. Focus on the specific item and supplied details. Condition, asking price and pickup/delivery are optional: omit them when blank, without placeholders or requests to complete them. Never invent condition, mileage, battery health, warranty, financing or seller services. Do not add business history or opening hours.':'You are a local business marketing expert.'} Adapt the following listing for each platform listed. Return ONLY a valid JSON object — no markdown, no explanation, no backticks.
 
 ${personalSeller?'PERSONAL SELLER AND ITEM':'BUSINESS INFO'}:
-- ${personalSeller?'Seller name':'Business name'}: ${listing.name || 'not provided'}
-- Owner name: ${listing.ownerName || 'not provided'}
+- ${personalSeller?'Seller name':'Business name'}: ${(personalSeller?publicOwnerName:listing.name) || 'not provided'}
+- Owner name: ${publicOwnerName || 'omit owner name'}
 - Category: ${listing.category || 'General'}
 - Campaign: ${listing.campaignName || 'General'}
 - Ad: ${listing.adName || listing.offer}
@@ -666,6 +671,8 @@ ${personalSeller?'':'- Hours: '+(listing.hours || 'not provided')}
 - Images attached: ${listing.imageCount > 0 ? listing.imageCount + ' photo(s)' : 'none'}
 - Preferred tone: ${tone}
 ${personalSeller?(globalMemory?'\nSELLER DETAILS (use only facts relevant to this item):\n'+globalMemory+'\n':''):globalMemoryBlock}${campaignMemoryBlock}${personalSeller?'':aiContextBlock}${libraryDocsBlock}${campaignContextBlock}${(listing.bizInsights||[]).length ? '\n⚠️ CAMPAIGN-SPECIFIC AI FACTS — MANDATORY. These answers are specific to this campaign. Reference them directly — do NOT write generic filler:\n' + listing.bizInsights.map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(listing.globalFactoids||[]).length ? '\n📌 BUSINESS FACTS — Use selectively. Include a fact only when it genuinely strengthens this specific post. Do NOT force every fact into every piece. Higher score = stronger brand signal:\n' + [...listing.globalFactoids].sort((a,b)=>(b.importance!=null?b.importance:5)-(a.importance!=null?a.importance:5)).map(f=>`- [${f.importance!=null?f.importance:5}/10] ${f.text}`).join('\n') : ''}${(listing.campaignFactoids||[]).length ? '\n📌 CAMPAIGN FACTS — Use selectively. Include only when it fits naturally for this campaign. Higher score = more likely to strengthen this copy:\n' + [...listing.campaignFactoids].sort((a,b)=>(b.importance!=null?b.importance:5)-(a.importance!=null?a.importance:5)).map(f=>`- [${f.importance!=null?f.importance:5}/10] ${f.text}`).join('\n') : ''}
+NAME PRIVACY — overrides all memories, documents, facts and context above:
+Only use this owner/seller name: ${publicOwnerName || '[none — do not name the owner/seller]'}. First name permission: ${namePrefs.firstName}. Last name permission: ${namePrefs.lastName}. Never add any unapproved name part, initials, full-name signoff or personal-name hashtag, even if it appears in older context. Business names may be used as business names.
 PLATFORMS TO ADAPT FOR:
 ${platformList.map(buildPlatformBlock).join('\n')}
 

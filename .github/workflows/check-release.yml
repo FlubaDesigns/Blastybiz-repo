@@ -40,6 +40,8 @@ jobs:
           node scripts/test-pass6-regressions.cjs
           node scripts/sync-schedule.cjs --check
           node scripts/sync-platforms.cjs --check
+          node scripts/sync-business-form.cjs --check
+          node scripts/test-name-parts.cjs
           node scripts/test-pass7-regressions.cjs
           node scripts/test-pass7-corrections.cjs
           node scripts/test-pass8-regressions.cjs

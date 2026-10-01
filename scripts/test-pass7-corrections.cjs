@@ -18,7 +18,7 @@ async function generation() {
   };
   vm.runInNewContext(cut(html,'window._bbPrepareGenerationDraft =',"document.addEventListener('bb:savePlatforms'"),c);
   vm.runInNewContext(cut(html,'async function runAdaptation()','// ══════════════════════════════════════════\n// CLEAR & START OVER'),c);
-  await c.runAdaptation();
+  c.BBSetup=require('../functions/lib/business-form');await c.runAdaptation();
   ok(requests.length===1,'first generation must reach adaptListing; observed: '+errors.join('; '));
   ok(requests[0].draftId==='draft1'&&writes[0].ref.id==='draft1'&&writes[0].data.adaptations.facebook==='Generated copy','request and saved draft share identity and generated copy');
   await c.runAdaptation();

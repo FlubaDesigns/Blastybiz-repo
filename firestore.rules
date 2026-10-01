@@ -31,7 +31,7 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == userId && accountOpen(userId)
         && request.resource.data.plan in ['starter', 'trial']
         && request.resource.data.keys().hasOnly([
-            'ownerName', 'email', 'displayName', 'plan', 'onboarded', 'createdAt',
+            'ownerName', 'ownerFirstName', 'ownerLastName', 'email', 'displayName', 'plan', 'onboarded', 'createdAt',
             'activeBusiness', 'onboardingVersion', 'onboardingProgress',
             'onboardingCompleted', 'setupHandoff', 'blastySeen'
           ]);
@@ -42,7 +42,7 @@ service cloud.firestore {
       //    keeps their own account alive, which is the safe direction.
       allow update: if request.auth != null && request.auth.uid == userId && accountOpen(userId)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'ownerName', 'email', 'displayName', 'onboarded', 'activeBusiness',
+            'ownerName', 'ownerFirstName', 'ownerLastName', 'email', 'displayName', 'onboarded', 'activeBusiness',
             'updatedAt', 'onboardingProgress', 'onboardingVersion',
             'onboardingCompleted', 'lastActiveAt', 'setupHandoff', 'blastySeen', 'loginGuideDone'
           ]);
@@ -62,10 +62,10 @@ service cloud.firestore {
         allow update: if request.auth != null &&
           request.auth.uid == userId && accountOpen(userId) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-              'businessName', 'name', 'ownerName', 'ownerRole', 'category',
+              'businessName', 'name', 'ownerName', 'ownerFirstName', 'ownerLastName', 'ownerRole', 'category',
               'phone', 'email', 'street', 'city', 'state', 'zip', 'address',
               'website', 'hours', 'locationType', 'region', 'tone',
-              'ynMentionName', 'ynMentionRole', 'ynMentionAddress',
+              'ynMentionName', 'ynMentionFirstName', 'ynMentionLastName', 'ynMentionRole', 'ynMentionAddress',
               'ynMentionPhone', 'ynMentionWebsite', 'ynMentionEmail',
               'story', 'different', 'awards', 'customer', 'otherInfo',
               'businessDescription', 'toggles', 'onboarded', 'onboardingVersion',

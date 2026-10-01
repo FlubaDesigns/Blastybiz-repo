@@ -158,8 +158,8 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 <script src="mascot.js?v=5"></script>
 <script src="blasty-registry.js?v=20261001-drafts"></script>
 <script src="blasty-events.js"></script>
-<script src="blasty-guidance.js"></script>
-<script src="business-form.js"></script>
+<script src="blasty-guidance.js?v=20261001-names"></script>
+<script src="business-form.js?v=20261001-names"></script>
 <script type="module" src="blasty-runtime.js"></script>
 </head>
 <body class="has-site-header create-page workspace-loading">
@@ -455,10 +455,17 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
               <div id="about-you-panel" class="hidden" onclick="event.stopPropagation()">
                 <p class="helper-sm mt-10">Defaults come from your profile — override here for this blast only.</p>
                 <div class="yn-row mb-12">
-                  <span class="yn-label">Mention my name<span id="copy-name-preview" class="check-hint"></span></span>
+                  <span class="yn-label">Mention my first name<span id="copy-firstName-preview" class="check-hint"></span></span>
                   <div class="yn-btns">
-                    <button type="button" class="yn-btn yn-yes" id="yn-name-yes" onclick="setYN('name','yes')">Yes</button>
-                    <button type="button" class="yn-btn yn-no yn-active" id="yn-name-no" onclick="setYN('name','no')">No</button>
+                    <button type="button" class="yn-btn yn-yes" id="yn-firstName-yes" onclick="setYN('firstName','yes')">Yes</button>
+                    <button type="button" class="yn-btn yn-no yn-active" id="yn-firstName-no" onclick="setYN('firstName','no')">No</button>
+                  </div>
+                </div>
+                <div class="yn-row mb-12">
+                  <span class="yn-label">Mention my last name<span id="copy-lastName-preview" class="check-hint"></span></span>
+                  <div class="yn-btns">
+                    <button type="button" class="yn-btn yn-yes" id="yn-lastName-yes" onclick="setYN('lastName','yes')">Yes</button>
+                    <button type="button" class="yn-btn yn-no yn-active" id="yn-lastName-no" onclick="setYN('lastName','no')">No</button>
                   </div>
                 </div>
                 <div class="yn-row mb-12">
@@ -751,8 +758,10 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
         <label for="profile-name">Business Name</label>
         <input type="text" id="profile-name" placeholder="Your business name" oninput="saveProfile()" />
 
-        <label for="profile-owner-name">Your Name</label>
-        <input type="text" id="profile-owner-name" placeholder="e.g. Maria Rodriguez" oninput="saveProfile()" />
+        <label for="profile-owner-name">First name</label>
+        <input type="text" id="profile-owner-name" placeholder="First name" autocomplete="given-name" oninput="saveProfile()" />
+        <label for="profile-owner-last-name">Last name (optional)</label>
+        <input type="text" id="profile-owner-last-name" placeholder="Leave blank if you prefer" autocomplete="family-name" oninput="saveProfile()" />
 
         <label for="profile-owner-role">Your Role</label>
         <select id="profile-owner-role" onchange="saveProfile()">
@@ -1195,7 +1204,7 @@ let locationType        = 'physical';         // 'physical' | 'online' — creat
 let campaigns           = [];                 // [{id, name, photos:[]}] loaded from Firestore
 var activeCampaignId    = null;
 let activeCampaignName  = '';
-var ynState = { name: 'no', role: 'no', address: 'yes', phone: 'yes', email: 'yes', website: 'yes' }; // About You in Copy pill state
+var ynState = { firstName: 'no', lastName: 'no', role: 'no', address: 'yes', phone: 'yes', email: 'yes', website: 'yes' }; // About You in Copy pill state
 // Per-platform photo selection (session only — resets on reload)
 // { pid: Set of selected photo URLs }
 window._bbPlatformPhotoSel = {};
@@ -2095,7 +2104,7 @@ async function regeneratePlatformCopy(pid) {
   copyTextEl.style.opacity = '0.4';
 
   // Build full dossier — same context as runAdaptation
-  const name        = profile.name     || '';
+  const name        = profile.sellerType==='personal'?BBSetup.mentionedName(profile,ynState):(profile.name||'');
   const category    = profile.category || '';
   const phone       = ynState.phone   !== 'no' ? (profile.phone   || '') : '';
   const email       = ynState.email   !== 'no' ? (profile.email   || '') : '';
@@ -2108,7 +2117,7 @@ async function regeneratePlatformCopy(pid) {
   const price       = document.getElementById('biz-price')?.value?.trim() || '';
   const tone        = profile.tone || 'friendly';
   const adName      = document.getElementById('biz-ad-name')?.value?.trim() || '';
-  const includeName = ynState.name === 'yes' && profile.ownerName;
+  const includeName = BBSetup.mentionedName(profile,ynState);
   const includeRole = ynState.role === 'yes' && profile.ownerRole;
   const featuredPhotoUrl = (window._bbSelectedPhotoIndex !== null && window._bbPhotoItems)
     ? (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || '') : '';
@@ -2124,7 +2133,7 @@ async function regeneratePlatformCopy(pid) {
       headers: authHeaders,
       body: JSON.stringify({
         listing: { sellerType:profile.sellerType || 'business', name, category, offer, price, phone, email, address, region, locationType: effLocType,
-          website, hours, ownerName: profile.ownerName || '', adName,
+          website, hours, ownerName: includeName, mentions:BBSetup.mentions(ynState), adName,
           campaignName: activeCampaignName || '',
           adContext: document.getElementById('ad-context')?.value || '',
           cta: document.getElementById('ad-cta')?.value || '',
@@ -2147,7 +2156,7 @@ async function regeneratePlatformCopy(pid) {
         isRegeneration: true,
         draftId: window._currentDraftId || '',
         ownerMention: (includeName || includeRole)
-          ? [includeName ? profile.ownerName : null,
+          ? [includeName || null,
              includeRole ? (profile.ownerRole === 'manager' ? 'Manager' : profile.ownerRole === 'other' ? profile.ownerRole : 'Owner') : null]
               .filter(Boolean).join(', ')
           : null
@@ -3133,7 +3142,7 @@ async function runAdaptation() {
   if (window._bbDraftSavePending) { showToast('Save your generated copy with Retry save first.'); return; }
   updateCampaignMemory(); // ensure campaign object reflects current DOM before prompt is built
   // Profile is the dossier — always primary source for business identity fields
-  const name      = profile.name     || '';
+  const name      = profile.sellerType==='personal'?BBSetup.mentionedName(profile,ynState):(profile.name||'');
   const category  = profile.category || '';
   const phone     = ynState.phone   !== 'no' ? (profile.phone   || '') : '';
   const email     = ynState.email   !== 'no' ? (profile.email   || '') : '';
@@ -3146,7 +3155,7 @@ async function runAdaptation() {
   const price     = document.getElementById('biz-price').value.trim();
   const tone      = profile.tone || 'friendly';
   const adName      = document.getElementById('biz-ad-name')?.value?.trim() || '';
-  const includeName = ynState.name === 'yes' && profile.ownerName;
+  const includeName = BBSetup.mentionedName(profile,ynState);
   const includeRole = ynState.role === 'yes' && profile.ownerRole;
 
   // Validate before marking any platform as generating.
@@ -3206,7 +3215,7 @@ async function runAdaptation() {
       headers: authHeaders,
       body: JSON.stringify({
         listing: { sellerType:profile.sellerType || 'business', name, category, offer, price, phone, email, address, region, locationType: effLocType, website, hours,
-          ownerName: profile.ownerName || '',
+          ownerName: includeName, mentions:BBSetup.mentions(ynState),
           adName,
           campaignName: activeCampaignName || '',
           imageCount: (window._bbPhotoItems||[]).filter(p=>p.done).length,
@@ -3516,11 +3525,12 @@ function setProfileLocationType(type, persist = true) {
 
 // ══════════════════════════════════════════
 function saveProfile() {
+  const identity=BBSetup.nameParts({ownerFirstName:document.getElementById('profile-owner-name').value,ownerLastName:document.getElementById('profile-owner-last-name').value});
   profile = {
     ...profile,
     sellerType: profile.sellerType || 'business',
-    name:             profile.sellerType === 'personal' ? document.getElementById('profile-owner-name').value.trim() : document.getElementById('profile-name').value,
-    ownerName:        document.getElementById('profile-owner-name')?.value || '',
+    name:             profile.sellerType === 'personal' ? identity.ownerName : document.getElementById('profile-name').value,
+    ...identity,
     ownerRole:        profile.sellerType==='personal'?'':document.getElementById('profile-owner-role')?.value || 'owner',
     category:         document.getElementById('profile-cat').value,
     phone:            document.getElementById('profile-phone').value,
@@ -3562,11 +3572,11 @@ function saveProfile() {
 }
 
 function loadProfile() {
+  Object.assign(profile,BBSetup.nameParts({...profile,ownerName:profile.ownerName||(profile.sellerType==='personal'?profile.name:'')||''}));
   window._bbProfileGlobal=profile;
   const personal=profile.sellerType==='personal';
   document.body.classList.toggle('personal-seller', personal);
   if (personal) {
-    profile.ownerName = profile.ownerName || profile.name || '';
     profile.name = profile.ownerName;
   }
   ['profile-name','profile-owner-role','profile-hours','profile-street','biz-hours'].forEach(id=>{
@@ -3578,7 +3588,8 @@ function loadProfile() {
   document.getElementById('profile-name').placeholder=personal?'Your name':'Your business name';
   const profileTitle=document.getElementById('profile-name').closest('.card')?.querySelector('.card-title');if(profileTitle)profileTitle.textContent=personal?'Seller Profile':'Business Profile';
   document.getElementById('profile-name').value    = profile.name      || '';
-  if (document.getElementById('profile-owner-name')) document.getElementById('profile-owner-name').value = profile.ownerName || '';
+  if (document.getElementById('profile-owner-name')) document.getElementById('profile-owner-name').value = profile.ownerFirstName || '';
+  document.getElementById('profile-owner-last-name').value = profile.ownerLastName || '';
   if (document.getElementById('profile-owner-role')) document.getElementById('profile-owner-role').value = profile.ownerRole || 'owner';
   document.getElementById('profile-cat').value     = profile.category  || '';
   document.getElementById('profile-phone').value   = profile.phone    || '';
@@ -3630,7 +3641,8 @@ function setYN(field, val) {
 }
 
 function updateCopyPreview() {
-  const namePreview = document.getElementById('copy-name-preview');
+  const parts=BBSetup.nameParts(profile);
+  for(const key of ['firstName','lastName']){const el=document.getElementById('copy-'+key+'-preview');const value=parts[key==='firstName'?'ownerFirstName':'ownerLastName'];if(el)el.textContent=value?'→ '+value:'Not saved — add it in Profile';}
   const rolePreview = document.getElementById('copy-role-preview');
   const card        = document.getElementById('about-you-card');
   if (!card) return;
@@ -3640,7 +3652,6 @@ function updateCopyPreview() {
   const hasAddress = locType !== 'online';
   // Show card if name is saved OR location has a physical address
   // about-you-card is now a persistent collapsed accordion — always visible
-  if (namePreview) namePreview.textContent = profile.ownerName ? `→ "${profile.ownerName}" added to prompt` : 'No name saved yet — add it in Profile';
   if (rolePreview) {
     const roleLabel = profile.ownerRole === 'manager' ? 'Manager' : profile.ownerRole === 'other' ? 'Other' : 'Owner';
     rolePreview.textContent = hasRole ? `→ "${roleLabel}" added to prompt` : '';
@@ -5141,13 +5152,13 @@ window._bbSetProfile = function(p) {
   try {
     localStorage.setItem('bb_profile', JSON.stringify({
       sellerType: p.sellerType || 'business',
-      name: p.name, ownerName: p.ownerName, ownerRole: p.ownerRole,
+      name: p.name, ...BBSetup.nameParts(p), ownerRole: p.ownerRole,
       category: p.category, phone: p.phone, email: p.email,
       street: p.street, city: p.city, state: p.state, zip: p.zip,
       region: p.region, locationType: p.locationType, website: p.website,
       hours: p.hours, tone: p.tone, platformCats: p.platformCats || {},
       postingSchedule: p.postingSchedule || null, aiContext: p.aiContext || null,
-      ynMentionName: p.ynMentionName || 'no', ynMentionRole: p.ynMentionRole || 'no',
+      ynMentionFirstName: BBSetup.profileMentions(p).firstName, ynMentionLastName: BBSetup.profileMentions(p).lastName, ynMentionRole: p.ynMentionRole || 'no',
       ynMentionAddress: p.ynMentionAddress || 'yes',
       ynMentionPhone: p.ynMentionPhone || 'yes', ynMentionEmail: p.ynMentionEmail || 'yes',
       ynMentionWebsite: p.ynMentionWebsite || 'yes'
@@ -5475,7 +5486,7 @@ window._bbSaveCampaigns = async function(cams) {
   const batch = writeBatch(db);
   cams.forEach(cam => {
     const ref = doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', cam.id);
-    const safe={...cam};for(const key of ['adName','offer','price','cta','mentions','adaptations','ynMentionName','ynMentionRole','ynMentionAddress','ynMentionPhone','ynMentionEmail','ynMentionWebsite'])delete safe[key];
+    const safe={...cam};for(const key of ['adName','offer','price','cta','mentions','adaptations','ynMentionName','ynMentionFirstName','ynMentionLastName','ynMentionRole','ynMentionAddress','ynMentionPhone','ynMentionEmail','ynMentionWebsite'])delete safe[key];
     batch.set(ref, { ...safe, uid: currentUser.uid, bizId: activeBizId }, { merge: true });
   });
   await batch.commit();
@@ -5807,7 +5818,7 @@ onAuthStateChanged(auth, async (user) => {
       const p = {
         sellerType: biz.sellerType || 'business',
         name:         biz.sellerType === 'personal' ? (biz.ownerName || biz.name || '') : (biz.businessName || biz.name || ''),
-        ownerName:    biz.ownerName  || '',
+        ...BBSetup.nameParts(biz),
         ownerRole:    biz.ownerRole  || 'owner',
         category:     biz.category   || '',
         phone:        biz.phone || '',
@@ -5823,11 +5834,11 @@ onAuthStateChanged(auth, async (user) => {
         hours:        biz.hours || (biz.openTime ? biz.days + ' ' + biz.openTime + '–' + biz.closeTime : ''),
         tone:         biz.tone || 'friendly',
         platformCats: biz.platformCats || {},
-        ownerName:    biz.ownerName || '',
         postingSchedule: biz.postingSchedule || null,
         aiContext:    biz.aiContext || null,
         globalMemory: biz.globalMemory || '',
-        ynMentionName:    biz.ynMentionName    || 'no',
+        ynMentionFirstName: BBSetup.profileMentions(biz).firstName,
+        ynMentionLastName: BBSetup.profileMentions(biz).lastName,
         ynMentionRole:    biz.ynMentionRole    || 'no',
         ynMentionAddress: biz.ynMentionAddress || 'yes',
         ynMentionPhone:   biz.ynMentionPhone   || 'yes',
@@ -6633,7 +6644,7 @@ window.saveProfile = function() {
     await setDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), {
       // Never overwrite saved fields with blank — only write a field if it has a value
       ...(profile.name      ? { businessName: profile.name, ...(profile.sellerType === 'personal' ? { name: profile.name } : {}) } : {}),
-      ...(profile.ownerName ? { ownerName:   profile.ownerName } : {}),
+      ...BBSetup.nameParts(profile),
       ownerRole: profile.sellerType==='personal'?'':profile.ownerRole || 'owner',
       ...(profile.category  ? { category:    profile.category }  : {}),
       ...(_phoneOk && profile.phone ? { phone: profile.phone } : {}),
@@ -7455,7 +7466,7 @@ window.confirmDeleteAccount = async function() {
 .cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
 </style>
 <script src="lifecycle-ui.js?v=20261001-remove-legacy"></script>
-<script src="ad-workspace.js?v=20261001-photos"></script>
+<script src="ad-workspace.js?v=20261001-names"></script>
 <script>
 document.addEventListener('click',function(e){
  const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');

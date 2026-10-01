@@ -64,11 +64,11 @@ async function main(){
  ok(!state.get(ads+'retry'),'failed transaction creates no partial Ad');
  await req('create',{adId:'retry',requestId:'retry1'});ok(!!state.get(ads+'retry'),'same identity retries successfully after failed commit');
  await state.db.doc(campaign).update({status:'archived'});await assert.rejects(req('list'),/archived/);checks++;
- const values={ownerName:'Dave',businessName:'Business',ownerRole:'Owner',email:'owner@example.com',phone:'9413751504'};
+ const values={ownerFirstName:'Dave',businessName:'Business',ownerRole:'Owner',email:'owner@example.com',phone:'9413751504'};
  ok(setup.validate(values).length===0,'shared pre-email answers validate');
  for(const key of Object.keys(values))ok(setup.validate({...values,[key]:''}).some(p=>p.field.key===key),'shared required field '+key);
  ok(setup.validate({...values,phone:'1'}).length===1,'shared phone validation applies to either presentation');
- const fields=setup.fields,dom=mode=>({getElementById:id=>({value:id.endsWith('sellerType')?'business':values[fields.find(f=>f[mode]===id).key]})});
+ const fields=setup.fields,dom=mode=>({getElementById:id=>({value:id.endsWith('sellerType')?'business':values[fields.find(f=>f[mode]===id).key]||''})});
  ok(JSON.stringify(setup.collect('signup',dom('signup')))===JSON.stringify(setup.collect('setup',dom('setup'))),'pre-email and setup collect identical canonical values');
  const c={window:{},module:{},console,document:{},};c.window=c;vm.createContext(c);
  for(const file of ['blasty-registry.js','blasty-events.js'])vm.runInContext(fs.readFileSync('public/'+file,'utf8'),c);

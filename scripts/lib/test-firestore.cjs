@@ -22,7 +22,7 @@ function database(seed={}){
     async update(data){const ops=[['update',this,data]];if(beforeCommit)await beforeCommit(ops);commit(ops);}
     async delete(){const ops=[['delete',this]];if(beforeCommit)await beforeCommit(ops);commit(ops);}
   }
-  function revive(value){if(value&&typeof value==='object'){if(typeof value.stamp==='number')Object.defineProperty(value,'toMillis',{value:()=>value.stamp});for(const v of Object.values(value))revive(v);}return value;}
+  function revive(value){if(value&&typeof value==='object'){if(typeof value.stamp==='number'&&!Object.hasOwn(value,'toMillis'))Object.defineProperty(value,'toMillis',{value:()=>value.stamp});for(const v of Object.values(value))revive(v);}return value;}
   function snapshot(ref){const value=rows.get(ref.path);return {id:ref.id,ref,exists:value!==undefined,data:()=>value===undefined?undefined:revive(clone(value))};}
   class Query{
     constructor(path,group=false,filters=[],orders=[],limit=Infinity,cursor=null){Object.assign(this,{path,group,filters,orders,cap:limit,cursor});}

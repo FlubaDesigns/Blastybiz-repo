@@ -75,7 +75,7 @@ const tick=()=>new Promise(r=>setImmediate(r));
   const user={uid:'fixture',email:'seller@example.invalid',getIdToken:async()=> 'fixture-token'};
   const data={setupHandoff:{sellerType:'personal',ownerName:'Fixture Seller',phone:'555-123-4567',email:user.email}};
   Object.assign(w,{db:{},collection:()=>({}),doc:()=>({}),getDocs:async()=>({docs:savedProfiles.map(p=>({id:p.id,data:()=>p}))}),setDoc:async(_,d)=>writes.push(d),fetch:async(_,options)=>{requests.push(JSON.parse(options.body));return {ok:!fail,json:async()=>fail?{error:'Please retry'}:{success:true,bizId:'fixture'}};}});
-  w.eval(authCode.slice(authCode.indexOf('async function resumePersonalSignup('),authCode.indexOf('async function afterAuth(user)')));
+  w.eval(fs.readFileSync('public/business-form.js','utf8'));w.eval(authCode.slice(authCode.indexOf('async function resumePersonalSignup('),authCode.indexOf('async function afterAuth(user)')));
   const target=await w.resumePersonalSignup(user,data);
   assert.match(target,/tab=create&newcampaign=1/);assert(!target.includes('CreateBiz'));
   assert.equal(requests[0].profileData.ownerName,'Fixture Seller');assert.equal(requests[0].profileData.sellerType,'personal');assert.equal(requests[0].profileData.phone,'555-123-4567');assert.equal(requests[0].bizId,'fixture');assert(!requests[0].campaignData);

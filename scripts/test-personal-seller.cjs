@@ -41,17 +41,17 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  // Execute the real dashboard profile functions: a later edit must retain type.
  const app=read('public/BlastyBiz.html');dom=new JSDOM(app,{runScripts:'outside-only',virtualConsole:new VirtualConsole()});w=dom.window;
  Object.assign(w,{profile:{sellerType:'personal',name:'David',ownerName:'David'},profileLocationType:'physical',locationType:'physical',renderPlatformCats(){},updateCopyPreview(){},setProfileLocationType(){}});
- w.eval(app.slice(app.indexOf('function saveProfile() {'),app.indexOf('function setYN(field, val)')));
+ w.eval(read('public/business-form.js'));w.eval(app.slice(app.indexOf('function saveProfile() {'),app.indexOf('function setYN(field, val)')));
  w.loadProfile();assert.equal(w.document.querySelector('label[for="profile-name"]').textContent,'Seller name');assert(w.document.getElementById('profile-hours').hidden);
  w.document.getElementById('profile-phone').value='9413751504';w.saveProfile();assert.equal(w.profile.sellerType,'personal');assert.equal(w._bbProfileGlobal.sellerType,'personal');assert.equal(w.profile.ownerRole,'');assert.equal(w.profile.hours,'');
  w.profile={sellerType:'business',name:'Company'};w.loadProfile();assert(!w.document.getElementById('profile-hours').hidden);assert.equal(w.document.querySelector('label[for="profile-name"]').textContent,'Business Name');dom.window.close();
  // Personal identity uses Your Name only, including cache reload and blank company names.
  dom=new JSDOM(app,{url:'https://example.invalid',runScripts:'outside-only',virtualConsole:new VirtualConsole()});w=dom.window;
  Object.assign(w,{showTab(){},profile:{},profileLocationType:'physical',locationType:'physical',renderPlatformCats(){},updateCopyPreview(){},setProfileLocationType(){}});
- w.eval(app.slice(app.indexOf('function saveProfile() {'),app.indexOf('function setYN(field, val)')));
+ w.eval(read('public/business-form.js'));w.eval(app.slice(app.indexOf('function saveProfile() {'),app.indexOf('function setYN(field, val)')));
  w.eval(app.slice(app.indexOf('window._bbSetProfile = function(p) {'),app.indexOf('// _saveInsightToFirestore and _saveGlobalFactoidsToFirestore')));
  w._bbSetProfile({sellerType:'personal',ownerName:'Fixture Seller',name:'',locationType:'physical'});
- assert.equal(w.document.getElementById('profile-owner-name').value,'Fixture Seller');
+ assert.equal(w.document.getElementById('profile-owner-name').value,'Fixture');assert.equal(w.document.getElementById('profile-owner-last-name').value,'Seller');
  assert(w.document.getElementById('profile-name').hidden);
  assert(w.document.body.classList.contains('personal-seller'));
  assert.equal(w.getComputedStyle(w.document.getElementById('tab-profile')).display,'none');
@@ -59,10 +59,11 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  assert(w.document.querySelector('label[for="profile-name"]').hidden);
  assert(w.document.getElementById('biz-name-missing-banner').classList.contains('hidden'));
  assert.equal(JSON.parse(w.localStorage.getItem('bb_profile')).sellerType,'personal');
- w.document.getElementById('profile-owner-name').value='Updated Seller';w.saveProfile();
+ w.document.getElementById('profile-owner-name').value='Updated';w.saveProfile();
  assert.equal(w.profile.name,'Updated Seller');assert.equal(w.profile.ownerName,'Updated Seller');
  w._bbSetProfile(w.profile);w.profile=JSON.parse(w.localStorage.getItem('bb_profile'));w.loadProfile();
  assert.equal(w.profile.sellerType,'personal');assert.equal(w.profile.name,'Updated Seller');
+ w.document.getElementById('profile-owner-last-name').value='';w.saveProfile();w._bbSetProfile(w.profile);w.profile=JSON.parse(w.localStorage.getItem('bb_profile'));w.loadProfile();assert.equal(w.profile.ownerLastName,'');assert.equal(w.profile.ownerName,'Updated');assert.equal(w.document.getElementById('profile-owner-last-name').value,'');
  w.document.getElementById('profile-owner-name').value='';w.saveProfile();
  assert(w.document.getElementById('biz-name-missing-banner').classList.contains('hidden'));
  w._bbSetProfile({sellerType:'business',name:''});
@@ -115,7 +116,7 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  // Call real AI handlers with a captured model boundary. No model or live writes.
  const file=path.resolve('functions/modules/ai.js'),req=createRequire(file);let captured=[];
  let storedType='personal';
- const ref={collection:()=>ref,doc:()=>ref,get:async()=>({exists:true,data:()=>({sellerType:storedType})}),onSnapshot:cb=>cb({exists:false})};
+ const ref={collection:()=>ref,doc:()=>ref,get:async()=>({exists:true,data:()=>({sellerType:storedType,ownerFirstName:'David',ownerLastName:'Percey',ownerName:'David Percey'})}),onSnapshot:cb=>cb({exists:false})};
  const shared={db:ref,PLATFORM_DOCS:{},buildPlatformBlock:()=>'',onRequest:(_,f)=>f,withAuth:f=>f,reserveAiAction:async()=>{},trackAiUsage:async()=>{},callAI:async(prompt,options)=>{captured.push({prompt,options});return {text:'{"done":false,"message":"What condition is it in?","questions":[]}',usage:{},model:'fixture'};}};
  const c={exports:{},require:p=>p==='../lib/shared'?shared:req(p),console,Date,process:{env:{}},setTimeout,clearTimeout};vm.runInNewContext(read(file),c);
  const res=()=>({status(){return this},json(v){this.body=v;return this}});
@@ -132,6 +133,14 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
   await c.exports.adaptListing({body:{listing:{businessId:'b',sellerType:type==='personal'?'business':'personal',name:'David',adContext:'Used GEM vehicle; needs batteries',hours:'9 to 5',aiContext:{story:'Old business story'}},platforms:[],tone:'friendly'}},result,{uid:'u'});
   assert.match(captured.at(-1).prompt,type==='personal'?/private individual/:/local business marketing expert/);
   if(type==='personal'){assert(!captured.at(-1).prompt.includes('Old business story'));assert(!captured.at(-1).prompt.includes('9 to 5'));assert.match(captured.at(-1).prompt,/needs batteries/);}
+ }
+ for(const firstName of ['yes','no'])for(const lastName of ['yes','no'])for(const isRegeneration of [false,true]){
+  storedType='personal';
+  await c.exports.adaptListing({body:{isRegeneration,draftId:isRegeneration?'draft':undefined,listing:{businessId:'b',name:'David Percey',ownerName:'David Percey',mentions:{firstName,lastName},globalMemory:'Owner: David Percey'},platforms:[],tone:'friendly'}},res(),{uid:'u'});
+  const expected=[firstName==='yes'?'David':'',lastName==='yes'?'Percey':''].filter(Boolean).join(' ');
+  assert(captured.at(-1).prompt.includes('- Owner name: '+(expected||'omit owner name')));
+  assert(captured.at(-1).prompt.includes('Only use this owner/seller name: '+(expected||'[none — do not name the owner/seller]')));
+  assert(captured.at(-1).prompt.includes('Last name permission: '+lastName));
  }
  console.log('PASS personal seller: actual signup/setup/profile DOM, later campaign questions, profile edits and both AI interview branches.');
 })().catch(e=>{console.error(e);process.exitCode=1});

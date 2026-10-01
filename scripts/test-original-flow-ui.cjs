@@ -67,7 +67,7 @@ const turn=()=>new Promise(r=>setImmediate(r));
     if(slow&&body.action==='list'&&body.campaignId==='c')await new Promise(r=>releaseSlow=r);
     const data=await service('u',body);if(body.action==='prepare')lastPrepared=data;if(delaySave&&body.action==='save'){delaySave=false;await new Promise(r=>releaseSave=r);}return {ok:true,json:async()=>data};
   };
-  w.eval(read('public/ad-workspace.js'));
+  w.eval(read('public/business-form.js'));w.eval(read('public/ad-workspace.js'));
   await w.BBAds.api('create',{campaignId:'c',adId:'first',requestId:'first',creative:{name:'GEM',offer:'Original item',platforms:['facebook']}});
   await w.BBAds.api('create',{campaignId:'d',adId:'first',requestId:'first',creative:{name:'Other item',platforms:['facebook']}});
   w.activeCampaignId='c';w.activeCampaignName='GEM';await w.BBAds.open();await w.BBAds.ready();

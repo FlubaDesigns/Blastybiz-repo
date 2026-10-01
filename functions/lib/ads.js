@@ -23,7 +23,7 @@ function cleanCreative(input, previous={}) {
     if(['name','offer','price','cta','context'].includes(key)) result[key]=text(v,key==='name'?200:12000);
     if(key==='mentions') {
       if(!v||typeof v!=='object'||Array.isArray(v)) fail(400,'Invalid mention settings.');
-      result.mentions=Object.fromEntries(['name','role','address','phone','email','website'].map(k=>[k,v[k]==='yes'?'yes':'no']));
+      result.mentions=require('./business-form').mentions(v);
     }
     if(key==='platforms') {
       if(!Array.isArray(v)||v.length>30||v.some(p=>!Object.hasOwn(PLATFORM_CAPABILITY_MAP,p))) fail(400,'Choose supported destinations.');
@@ -112,7 +112,7 @@ function createAdService(db,admin) {
           source=sourceSnap.data();
         }
         const base=source?Object.fromEntries(allowed.filter(k=>source[k]!==undefined).map(k=>[k,clone(source[k])])):
-          {name:'New Ad',offer:'',price:'',cta:'',context:'',mentions:{},platforms:campaign.platformsEnabled||[],imageRefs:[],adaptations:{},platformStatus:{}};
+          {name:'New Ad',offer:'',price:'',cta:'',context:'',mentions:require('./business-form').profileMentions(bs.data()),platforms:campaign.platformsEnabled||[],imageRefs:[],adaptations:{},platformStatus:{}};
         const creative=cleanCreative(body.creative||{},base);
         await resolveImages(tx,camp,creative,!!body.creative?.imageRefs);
         creative.platformStatus=Object.fromEntries((creative.platforms||[]).map(p=>[p,'needs-review']));

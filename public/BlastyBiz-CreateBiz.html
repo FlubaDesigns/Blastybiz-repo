@@ -142,8 +142,8 @@
 </style>
 <script src="blasty-registry.js"></script>
 <script src="blasty-events.js"></script>
-<script src="blasty-guidance.js"></script>
-<script src="business-form.js"></script>
+<script src="blasty-guidance.js?v=20261001-names"></script>
+<script src="business-form.js?v=20261001-names"></script>
 <script type="module" src="blasty-runtime.js"></script>
 </head>
 <body>
@@ -249,8 +249,12 @@
         </div>
         <div class="cb-row">
           <div class="cb-field">
-            <label class="cb-label">Your name *</label>
-            <input class="cb-input" id="f-ownerName" required type="text" placeholder="First Last" autocomplete="name"/>
+            <label class="cb-label" for="f-ownerName">First name *</label>
+            <input class="cb-input" id="f-ownerName" required type="text" placeholder="First name" autocomplete="given-name"/>
+          </div>
+          <div class="cb-field">
+            <label class="cb-label" for="f-ownerLastName">Last name (optional)</label>
+            <input class="cb-input" id="f-ownerLastName" type="text" placeholder="Leave blank if you prefer" autocomplete="family-name"/>
           </div>
           <div class="cb-field">
             <label class="cb-label">Your title / role</label>
@@ -299,8 +303,12 @@
         <div id="cb-marketing-preferences" style="margin-top:8px">
           <div class="cb-label" style="margin-bottom:8px">Marketing preferences</div>
           <div class="cb-toggle-row">
-            <span class="cb-toggle-lbl">Include my name in marketing copy</span>
-            <label class="cb-toggle-sw"><input type="checkbox" id="pref-name"><span class="cb-toggle-sl"></span></label>
+            <span class="cb-toggle-lbl">Include my first name in marketing copy</span>
+            <label class="cb-toggle-sw"><input type="checkbox" id="pref-firstName"><span class="cb-toggle-sl"></span></label>
+          </div>
+          <div class="cb-toggle-row">
+            <span class="cb-toggle-lbl">Include my last name in marketing copy</span>
+            <label class="cb-toggle-sw"><input type="checkbox" id="pref-lastName"><span class="cb-toggle-sl"></span></label>
           </div>
           <div class="cb-toggle-row">
             <span class="cb-toggle-lbl">Include my title in marketing copy</span>
@@ -450,7 +458,7 @@ function cbFieldError(field) {
   const el = document.getElementById(field);
   if (!el || el.disabled) return '';
   const shared=BBSetup.fields.find(f=>f.setup===field);
-  if(shared){if(!window._cbNeedsCampaign&&!el.value.trim()&&!['ownerName','businessName'].includes(shared.key))return '';return BBSetup.error(shared.key,el.value,cbPersonal()?'personal':'business');}
+  if(shared){if(!window._cbNeedsCampaign&&!el.value.trim()&&!['ownerFirstName','businessName'].includes(shared.key))return '';return BBSetup.error(shared.key,el.value,cbPersonal()?'personal':'business');}
   if (field === 'f-website') {
     el.value = cbNormalizeWebsite(el.value);
     const problem = BBWebsite.error(el.value, el.required);
@@ -522,7 +530,7 @@ CB_GUIDE_STEPS.forEach(function(step) {
     step.validate = function() { return cbFieldError(step.field); };
   }
   if (step.section === 'cbs-campaign') step.skipIf = function() { return !window._cbNeedsCampaign; };
-  if (['f-ownerName','f-bizName','f-role','f-email','f-phone'].includes(step.field)) {
+  if (['f-ownerName','f-ownerLastName','f-bizName','f-role','f-email','f-phone'].includes(step.field)) {
     step.skipIf = function(a) { return window._cbRestoredFields.has(step.field) && !!a[step.field] && !cbFieldError(step.field); };
   }
 });
@@ -697,17 +705,20 @@ onAuthStateChanged(auth, async user => {
       }
       if(!editBizId && urlP.get('new')!=='1' && saved.setupHandoff) {
         document.getElementById('f-sellerType').value=BBSetup.sellerType(saved.setupHandoff.sellerType);
-        BBSetup.fields.forEach(f=>{document.getElementById(f.setup).value=saved.setupHandoff[f.key]||'';});
+        BBSetup.fields.forEach(f=>{document.getElementById(f.setup).value=({...saved.setupHandoff,...BBSetup.nameParts(saved.setupHandoff)})[f.key]||'';});
       }
       // Account identity is distinct from the business contact email.
       const name = document.getElementById('f-ownerName');
       const email = document.getElementById('f-email');
-      if (!name.value) name.value = saved.ownerName || saved.displayName || user.displayName || '';
+      if (!name.value && !editBizId) {
+        const parts=BBSetup.nameParts({...saved,ownerName:saved.ownerName || saved.displayName || user.displayName || ''});
+        name.value=parts.ownerFirstName;document.getElementById('f-ownerLastName').value=parts.ownerLastName;
+      }
       if (!email.value) email.value = saved.email || user.email || '';
     }
     await Promise.all([platformsReady, configReady]);
     cbConfigureForm();
-    window._cbRestoredFields = new Set(['f-ownerName','f-bizName','f-role','f-email','f-phone'].filter(id =>
+    window._cbRestoredFields = new Set(['f-ownerName','f-ownerLastName','f-bizName','f-role','f-email','f-phone'].filter(id =>
       document.getElementById(id).value.trim() && !cbFieldError(id)));
     window._cbReady = true;
     if(urlP.get('section')==='story'){cbOpenSection('cbs-story');document.getElementById('cbs-story').scrollIntoView({block:'start'});}
@@ -756,7 +767,8 @@ function prefill(d) {
   const s = (id, v) => { const el=document.getElementById(id); if(el&&v!==undefined) el.value=v; };
   s('f-sellerType',BBSetup.sellerType(d.sellerType));
   s('f-bizName',   d.businessName ?? d.name ?? '');
-  s('f-ownerName', d.ownerName||'');
+  const parts=BBSetup.nameParts(d);
+  s('f-ownerName', parts.ownerFirstName);s('f-ownerLastName',parts.ownerLastName);
   s('f-role',      d.ownerRole||'');
   s('f-phone',     d.phone||'');
   s('f-email',     d.email||'');
@@ -777,7 +789,9 @@ function prefill(d) {
     else if (tg[tgKey] !== undefined)    el.checked = !!tg[tgKey];
     else                                 el.checked = dflt;
   };
-  pref('pref-name',    'ynMentionName',    'ynMentionName',    false);
+  const namePrefs=BBSetup.profileMentions(d);
+  document.getElementById('pref-firstName').checked=namePrefs.firstName==='yes';
+  document.getElementById('pref-lastName').checked=namePrefs.lastName==='yes';
   pref('pref-role',    'ynMentionRole',    'ynMentionRole',    false);
   pref('pref-phone',   'ynMentionPhone',   'ynMentionPhone',   true);
   pref('pref-address', 'ynMentionAddress', 'ynMentionAddress', true);
@@ -833,7 +847,8 @@ window.cbSubmit = async function() {
 
   const platforms = [...document.querySelectorAll('.plat-chk input:checked')].map(c=>c.value);
   const toggles = {
-    ynMentionName:    document.getElementById('pref-name').checked,
+    ynMentionFirstName: document.getElementById('pref-firstName').checked,
+    ynMentionLastName: document.getElementById('pref-lastName').checked,
     ynMentionRole:    !personal && document.getElementById('pref-role').checked,
     ynMentionPhone:   document.getElementById('pref-phone').checked,
     ynMentionAddress: document.getElementById('pref-address').checked,
@@ -860,7 +875,8 @@ window.cbSubmit = async function() {
       zip:    document.getElementById('f-zip').value.trim(),
     } : {};
 
-    const ownerName = document.getElementById('f-ownerName').value.trim();
+    const identity=BBSetup.nameParts({ownerFirstName:document.getElementById('f-ownerName').value,ownerLastName:document.getElementById('f-ownerLastName').value});
+    const ownerName=identity.ownerName;
     const role      = personal?'':document.getElementById('f-role').value.trim();
     const story     = personal?'':document.getElementById('f-story').value.trim();
     const different = personal?'':document.getElementById('f-different').value.trim();
@@ -895,12 +911,13 @@ window.cbSubmit = async function() {
     const yn = b => (b ? 'yes' : 'no');
     const bizData = {
       sellerType:personal?'personal':'business',
-      name: bizName, businessName: bizName, ownerName, ownerRole: role,
+      name: personal?ownerName:bizName, businessName: personal?ownerName:bizName, ...identity, ownerRole: role,
       email, phone, website, locationType: locType,
       street: address.street || '', city: address.city || '',
       state:  address.state  || '', zip:  address.zip  || '',
       address,
-      ynMentionName:    yn(toggles.ynMentionName),
+      ynMentionFirstName: yn(toggles.ynMentionFirstName),
+      ynMentionLastName: yn(toggles.ynMentionLastName),
       ynMentionRole:    yn(toggles.ynMentionRole),
       ynMentionAddress: yn(toggles.ynMentionAddress),
       ynMentionPhone:   yn(toggles.ynMentionPhone),
@@ -937,7 +954,7 @@ window.cbSubmit = async function() {
     const token = await currentUser.getIdToken();
     const response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/createBusiness', {
       method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
-      body:JSON.stringify({bizId,isNew:!editBizId,profileData:bizData,...(!existingCampaignId?{campaignData:campData,initialAd:{name:campName,offer:personal?'':offer,price:'',cta:personal?offer:'',context:personal?about:'',platforms,mentions:Object.fromEntries(Object.entries(toggles).map(([k,v])=>[k.replace('ynMention','').toLowerCase(),v?'yes':'no']))}}:{})})
+      body:JSON.stringify({bizId,isNew:!editBizId,profileData:bizData,...(!existingCampaignId?{campaignData:campData,initialAd:{name:campName,offer:personal?'':offer,price:'',cta:personal?offer:'',context:personal?about:'',platforms,mentions:Object.fromEntries(Object.entries(toggles).map(([k,v])=>[k.replace('ynMention','').replace(/^./,c=>c.toLowerCase()),v?'yes':'no']))}}:{})})
     });
     const result=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(result.error||'Business could not be saved.');

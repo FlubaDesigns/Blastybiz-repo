@@ -62,7 +62,8 @@
       platforms=platforms.map(p=>({...p,enabled:(ad.platforms||[]).includes(p.id),adaptedContent:(ad.adaptations?.[p.id]||'').replace(/\n/g,'<br/>'),_reviewStatus:ad.platformStatus?.[p.id]==='excluded'?'skipped':ad.platformStatus?.[p.id]||'needs-review'}));
       if(typeof renderStep5Review==='function')renderStep5Review();
     }
-    Object.assign(ynState,Object.fromEntries(['name','role','address','phone','email','website'].map(k=>[k,'no'])),ad.mentions||{});
+    for(const key of Object.keys(ynState))delete ynState[key];
+    Object.assign(ynState,BBSetup.mentions(ad.mentions||BBSetup.profileMentions(window._bbProfileGlobal||{})));
     for(const [field,value] of Object.entries(ynState)){for(const choice of ['yes','no'])el('yn-'+field+'-'+choice)?.classList.toggle('yn-active',value===choice);}
     el('ad-current').hidden=false;window.BBBlasty?.fire('images.campaign_repository_intro');window.BBBlasty?.fire('images.ad_selection_intro');el('ad-title').textContent=activeCampaignName+' / '+ad.name;
     el('ad-run-choice').hidden=true;el('ad-run-edit').hidden=true;el('ad-prepared').replaceChildren();

@@ -17,8 +17,8 @@
 <script src="mascot.js?v=5"></script>
 <script src="blasty-registry.js"></script>
 <script src="blasty-events.js"></script>
-<script src="blasty-guidance.js?v=2"></script>
-<script src="business-form.js?v=2"></script>
+<script src="blasty-guidance.js?v=20261001-names"></script>
+<script src="business-form.js?v=20261001-names"></script>
 <script type="module" src="blasty-runtime.js"></script>
 </head>
 <body class="login-page has-site-header">
@@ -136,9 +136,14 @@
                 </div>
 
                 <div class="field">
-                  <label for="su-name">Full Name</label>
-                  <input type="text" id="su-name" placeholder="Your name" oninput="clearErr('su-name')" />
-                  <div class="field-error" id="su-name-err">Name is required</div>
+                  <label for="su-name">First name</label>
+                  <input type="text" id="su-name" placeholder="First name" autocomplete="given-name" oninput="clearErr('su-name')" />
+                  <div class="field-error" id="su-name-err">First name is required</div>
+                </div>
+                <div class="field">
+                  <label for="su-last-name">Last name (optional)</label>
+                  <input type="text" id="su-last-name" placeholder="Leave blank if you prefer" autocomplete="family-name" oninput="clearErr('su-last-name')" />
+                  <div class="field-error" id="su-last-name-err"></div>
                 </div>
 
 <div class="field"><label for="su-business">Business name</label><input id="su-business" type="text" required maxlength="300"><div class="field-error" id="su-business-err"></div></div>
@@ -639,7 +644,7 @@ function handleSetPassword() {}
       document.getElementById('su-name'),
       function(el) { return el.value.trim().length >= 2; },
       'email',
-      function() { return document.getElementById(document.getElementById('su-sellerType').value==='personal'?'su-email':'su-business').closest('.field'); }
+      function() { return document.getElementById('su-last-name').closest('.field'); }
     );
 
     // Auto-advance: sign-up email → phone
@@ -667,6 +672,7 @@ function handleSetPassword() {}
       if (this.value && _fieldEls === _suFields && picker) showGuide('billing', picker);
     });
     wire('su-name',      'name',           _suFields);
+    wire('su-last-name', 'lastName', _suFields);
     wire('su-business', 'businessName', _suFields);
     wire('su-role', 'ownerRole', _suFields);
     wire('su-email', 'email', _suFields);
@@ -1041,14 +1047,15 @@ async function resumePersonalSignup(user, userData) {
     if (existing.id !== userData.activeBusiness) await setDoc(doc(db, 'users', user.uid), { activeBusiness: existing.id }, { merge: true });
     return 'BlastyBiz.html?tab=create&bizId=' + encodeURIComponent(existing.id);
   }
-  const ownerName = handoff.ownerName || userData.ownerName || user.displayName || '';
+  const identity = BBSetup.nameParts({...handoff,ownerName:handoff.ownerName || userData.ownerName || user.displayName || ''});
+  const ownerName = identity.ownerName;
   if (!ownerName) return null;
   const token = await user.getIdToken(true);
   const response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/createBusiness', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
     body: JSON.stringify({ bizId: user.uid, isNew: true, profileData: {
-      sellerType: 'personal', ownerName, phone: handoff.phone || '',
+      sellerType: 'personal', ...identity, phone: handoff.phone || '',
       email: handoff.email || user.email || '', ownerRole: '', hours: '',
       onboarded: true, locationType: 'physical', tone: 'friendly'
     } })
@@ -1321,7 +1328,7 @@ window.handleSignUp = async function() {
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     // Always start as starter — the Square webhook upgrades the plan after payment
     await setDoc(doc(db, 'users', cred.user.uid), {
-      ownerName: name, email, setupHandoff, plan: 'starter', onboarded: false, createdAt: serverTimestamp()
+      ...BBSetup.nameParts(setupHandoff), email, setupHandoff, plan: 'starter', onboarded: false, createdAt: serverTimestamp()
     });
     BBBlasty.fire('onboard.email_handoff_explain');
     // Account created — attempt verification email.

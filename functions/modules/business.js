@@ -21,7 +21,7 @@ exports.createBusiness = onRequest({ invoker: 'public' }, withAuth(async (req, r
   if (!profileData || typeof profileData!=='object' || Array.isArray(profileData) || !validId(bizId)) return res.status(400).json({error:'Business details and a stable bizId are required.'});
   if (campaignData && (!validId(campaignData.id) || typeof campaignData!=='object')) return res.status(400).json({error:'Invalid campaign.'});
   if(profileData.sellerType!==undefined&&!['business','personal'].includes(profileData.sellerType))return res.status(400).json({error:'Choose Business or Personal seller.'});
-  const fields = ['sellerType','businessName','name','ownerName','ownerRole','category','phone','email','street','city','state','zip','address','website','hours','locationType','region','tone','ynMentionName','ynMentionRole','ynMentionAddress','ynMentionPhone','ynMentionWebsite','ynMentionEmail','story','different','awards','customer','otherInfo','businessDescription','toggles','onboarded','onboardingVersion','activeCampaign','enabledPlatforms','globalMemory','featuredPhoto','aiContext','bizInsights','platformCats','postingSchedule','platformPrefs'];
+  const fields = ['sellerType','businessName','name','ownerName','ownerFirstName','ownerLastName','ownerRole','category','phone','email','street','city','state','zip','address','website','hours','locationType','region','tone','ynMentionName','ynMentionFirstName','ynMentionLastName','ynMentionRole','ynMentionAddress','ynMentionPhone','ynMentionWebsite','ynMentionEmail','story','different','awards','customer','otherInfo','businessDescription','toggles','onboarded','onboardingVersion','activeCampaign','enabledPlatforms','globalMemory','featuredPhoto','aiContext','bizInsights','platformCats','postingSchedule','platformPrefs'];
   const clean = Object.fromEntries(fields.filter(k=>profileData[k]!==undefined).map(k=>[k,profileData[k]]));
   const uid=decoded.uid,userRef=db.collection('users').doc(uid),bizRef=userBizRef(uid,bizId);
   try {
@@ -36,6 +36,11 @@ exports.createBusiness = onRequest({ invoker: 'public' }, withAuth(async (req, r
       if(!existing.exists && !isNew)throw Object.assign(Error('Business not found'),{httpStatus:404});
       if(!existing.exists && owned.docs.length>=cap)throw Object.assign(Error('Business limit reached for your plan.'),{httpStatus:403});
       clean.sellerType=clean.sellerType||existing.data()?.sellerType||'business';
+      if(['ownerName','ownerFirstName','ownerLastName'].some(k=>Object.hasOwn(clean,k))) {
+        const identity=require('../lib/business-form').nameParts({...existing.data(),...clean});
+        if(!identity.ownerFirstName||identity.ownerFirstName.length>300||identity.ownerLastName.length>300)throw Object.assign(Error('Enter a first name and an optional last name, up to 300 characters each.'),{httpStatus:400});
+        Object.assign(clean,identity);
+      }
       if(clean.sellerType==='personal'){
         const name=String(clean.ownerName??existing.data()?.ownerName??'').trim();
         if(!name||name.length>300)throw Object.assign(Error('Please enter your seller name.'),{httpStatus:400});
