@@ -1,4 +1,4 @@
-import './platforms-authority.js';
+import './platforms-authority.js?v=20261001-personal';
 export const { PLATFORM_DEFAULTS, mergeDisplay } = globalThis.BBPlatforms;
 
 /**
