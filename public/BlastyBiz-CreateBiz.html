@@ -460,7 +460,7 @@ function cbFieldError(field) {
 function cbConfigureForm() {
   const initial = window._cbNeedsCampaign;
   const personal=cbPersonal();
-  ['f-bizName','f-role','f-locationType','f-street','f-website'].forEach(id=>{const el=document.getElementById(id);el.closest('.cb-field').hidden=personal;el.disabled=personal;});
+  ['f-bizName','f-role','f-locationType','f-street','f-website','f-category'].forEach(id=>{const el=document.getElementById(id);el.closest('.cb-field').hidden=personal;el.disabled=personal;});
   ['f-bizName','f-role'].forEach(id=>{document.getElementById(id).required=!personal;});
   document.getElementById('cbs-story').hidden=personal;
   document.getElementById('pref-role').closest('.cb-toggle-row').hidden=personal;
@@ -854,7 +854,7 @@ window.cbSubmit = async function() {
     const phone     = document.getElementById('f-phone').value.trim();
     const email     = document.getElementById('f-email').value.trim();
     const website   = personal?'':cbNormalizeWebsite(document.getElementById('f-website').value);
-    const category  = document.getElementById('f-category').value.trim();
+    const category  = personal ? '' : document.getElementById('f-category').value.trim();
     const audience  = document.getElementById('f-audience').value.trim();
     const offer     = document.getElementById('f-offer').value.trim();
 

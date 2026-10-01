@@ -24,11 +24,16 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  assert(w.document.getElementById('f-role').closest('.cb-field').hidden);
  assert(w.document.getElementById('f-website').closest('.cb-field').hidden);
  assert(w.document.getElementById('cbs-story').hidden);
+ assert(w.document.getElementById('f-category').closest('.cb-field').hidden);
+ assert(w.document.getElementById('f-category').disabled);
  assert.match(w.document.getElementById('f-about').closest('.cb-field').textContent,/condition/);
  assert(!w.document.getElementById('f-city').disabled);
  assert(!w.document.getElementById('f-about').required);assert(!w.document.getElementById('f-offer').required);
  assert(w.document.getElementById('f-campName').required);
  assert.match(w.document.getElementById('f-about').closest('.cb-field').textContent,/optional/);
+ w.document.getElementById('f-sellerType').value='business';w.cbConfigureForm();
+ assert(!w.document.getElementById('f-category').closest('.cb-field').hidden);
+ assert(!w.document.getElementById('f-category').disabled);
  w._bbProfileGlobal={sellerType:'personal'};const itemInput=w.document.createElement('input');itemInput.id='new-campaign-input';itemInput.value='GEM electric vehicle';w.document.body.appendChild(itemInput);w.ccCol={};
  let steps=w.BBBlasty.campaignSteps(w.ccCol);assert.match(steps[0].msg(),/condition/);assert.equal(steps[0].field(),'offer');
  w._bbProfileGlobal={sellerType:'business'};steps=w.BBBlasty.campaignSteps(w.ccCol);assert.match(steps[0].msg(),/offer or message/);
@@ -107,9 +112,10 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  for(const type of ['personal','business']){
   await c.exports.chatCampaign({method:'POST',body:{conversationHistory:[],businessProfile:{sellerType:type,name:'David'},collectedData:{campaignName:'GEM vehicle'}}},res(),{uid:'u'});
   assert.match(captured.at(-1).options.system,type==='personal'?/pickup, delivery or shipping/:/in-store experience/);
-  if(type==='personal')assert.match(captured.at(-1).options.system,/Do not ask for these missing details again or block completion/);
+  if(type==='personal'){assert.match(captured.at(-1).options.system,/Do not ask for these missing details again or block completion/);assert.match(captured.at(-1).options.system,/A business category is not needed for a personal sale/);}
   await c.exports.generateEnrichmentQuestions({body:{sellerType:type,businessName:'David',itemDetails:'GEM vehicle',existingInsights:[]}},res(),{uid:'u'});
   assert.match(captured.at(-1).prompt,type==='personal'?/private individual/:/local business marketing AI/);
+  if(type==='personal')assert.match(captured.at(-1).prompt,/A business category is not needed for a personal sale/);
  }
  for(const type of ['personal','business']){
   storedType=type;const result=res();
