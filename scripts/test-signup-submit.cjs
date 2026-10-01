@@ -23,6 +23,20 @@ function env({error,blockedStorage=false,wait}={}){
 }
 const tick=()=>new Promise(r=>setImmediate(r));
 (async()=>{
+ {
+  const e=env(),input=e.w.document.getElementById('su-phone');
+  input.oninput=e.w.Function('event',input.getAttribute('oninput'));input.onblur=e.w.Function('event',input.getAttribute('onblur'));
+  input.value='';
+  for(const digit of '9413751504'){input.value+=digit;input.dispatchEvent(new e.w.InputEvent('input',{inputType:'insertText'}));}
+  assert.equal(input.value,'941-375-1504');
+  input.value='(941) 375-1504';input.dispatchEvent(new e.w.InputEvent('input',{inputType:'insertFromPaste'}));assert.equal(input.value,'941-375-1504');
+  input.value='941375-1504';input.setSelectionRange(3,3);input.dispatchEvent(new e.w.InputEvent('input',{inputType:'deleteContentBackward'}));assert.equal(input.value,'941375-1504');assert.equal(input.selectionStart,3);
+  input.dispatchEvent(new e.w.Event('blur'));assert.equal(input.value,'941-375-1504');
+  input.value='9421-375-1504';input.setSelectionRange(3,3);input.dispatchEvent(new e.w.InputEvent('input',{inputType:'insertText'}));assert.equal(input.selectionStart,3);assert.equal(input.value,'9421-375-1504');
+  assert.equal(e.w.BBSetup.formatPhone('+1 (941) 375-1504'),'+1 941-375-1504');
+  for(const value of ['+44 20 7946 0958','9413751504 ext 12','123456789012'])assert.equal(e.w.BBSetup.formatPhone(value),value);
+  e.dom.window.close();
+ }
  for(const blockedStorage of [false,true]){
   const e=env({blockedStorage});assert(e.form.noValidate);e.click();await tick();
   assert.equal(e.calls.filter(c=>c==='auth').length,1);assert.equal(e.calls.find(c=>c.setupHandoff)?.setupHandoff.sellerType,'personal');assert(e.calls.includes('verify:seller@example.invalid'));e.dom.window.close();

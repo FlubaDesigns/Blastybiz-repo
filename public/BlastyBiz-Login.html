@@ -18,7 +18,7 @@
 <script src="blasty-registry.js"></script>
 <script src="blasty-events.js"></script>
 <script src="blasty-guidance.js?v=2"></script>
-<script src="business-form.js"></script>
+<script src="business-form.js?v=2"></script>
 <script type="module" src="blasty-runtime.js"></script>
 </head>
 <body class="login-page has-site-header">
@@ -149,7 +149,7 @@
                   <div class="field-error" id="su-email-err">Please enter a valid email</div>
                 </div>
 
-<div class="field"><label for="su-phone">Phone</label><input id="su-phone" type="tel" required maxlength="40"><div class="field-error" id="su-phone-err"></div></div>
+<div class="field"><label for="su-phone">Phone</label><input id="su-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="555-555-5555" required maxlength="40" oninput="BBSetup.formatPhoneInput(this,event); clearErr(this.id)" onblur="BBSetup.formatPhoneInput(this,event)"><div class="field-error" id="su-phone-err"></div></div>
                 <div class="field">
                   <label for="su-password">Password</label>
                   <div class="pw-wrap">
