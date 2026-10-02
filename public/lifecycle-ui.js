@@ -55,6 +55,7 @@
        box.hidden=true;message.textContent='Future schedule saved. Your current blast is unchanged. Review the next blast in Schedules.';
      }catch(e){message.textContent=e.message;}finally{save.disabled=false;}};
    };
+   if(location.hash==='#future-blast-schedule')setup.click();
  }
  async function dashboard() {
    style();const seq=++dashboardEpoch,wrap=document.getElementById('sched-campaigns-wrap');if(!wrap||!context)return;

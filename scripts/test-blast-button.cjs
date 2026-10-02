@@ -23,6 +23,7 @@ function setup({failLoad=false,status='draft'}={}){
  ok(w.document.querySelector('.pub-post-text').textContent==='Saved Facebook copy','real preview rail initializes and displays saved copy');
  ok(!w.document.getElementById('v1-publish-schedule')&&!w.document.querySelector('input[name="bb-send"]'),'Blast page has no scheduling choices');
  ok(typeof w._firestoreApprove==='function'&&!button.disabled&&button.textContent.includes('Blast It!'),'Blast It becomes ready with a connected handler');
+ ok(w.document.getElementById('pub-next-row').classList.contains('hidden'),'future scheduling navigation waits for submission');
  const one=w.publishBlast(),two=w.publishBlast();await Promise.all([one,two]);
  ok(f.calls.length===1&&f.calls[0].url.endsWith('/approveDraft'),'rapid taps use one existing approval request');
  assert.deepEqual(JSON.parse(JSON.stringify(f.calls[0].body)),{draftId:'d',businessId:'b',platformKeys:['facebook','yelp']});checks++;
@@ -34,6 +35,11 @@ function setup({failLoad=false,status='draft'}={}){
  stale.w._firestoreApprove=undefined;await stale.w.publishBlast();ok(stale.w.document.getElementById('pub-warn').textContent.includes('not finished loading'),'unavailable action is reported instead of silently doing nothing');stale.dom.window.close();
  const reopened=setup({status:'approved'});await reopened.boot();await reopened.w.publishBlast();ok(reopened.w.document.getElementById('publish-btn').disabled&&reopened.w.document.getElementById('publish-btn').classList.contains('is-blasted')&&reopened.calls.length===0,'reopened submitted blast stays gray and disabled');ok(reopened.w.document.getElementById('manual-text-yelp').value==='Saved Yelp copy','manual copy remains available after submission');reopened.dom.window.close();
  const other=setup();await other.boot();other.submittedElsewhere();await other.w.publishBlast();ok(other.calls.length===0&&other.w.document.getElementById('publish-btn').disabled,'fresh server state prevents a second send from another tab');other.dom.window.close();
+ const scheduleLink=w.document.getElementById('pub-schedule-link');
+ ok(!w.document.getElementById('pub-next-row').classList.contains('hidden'),'submitted blast reveals bottom navigation');
+ const target=new URL(scheduleLink.href);
+ ok(target.pathname.endsWith('BlastyBiz-Publishing-Status.html')&&target.searchParams.get('bizId')==='b'&&target.searchParams.get('draftId')==='d'&&target.hash==='#future-blast-schedule','navigation preserves canonical business and blast and opens existing scheduler');
+ ok(w.document.getElementById('manual-panel').compareDocumentPosition(scheduleLink)&w.Node.DOCUMENT_POSITION_FOLLOWING,'scheduling button is below every manual platform');
  f.dom.window.close();
  const broken=setup({failLoad:true});await broken.boot();const retry=broken.w.document.getElementById('publish-btn');
  ok(retry.textContent==='Reload blast'&&!retry.disabled&&broken.w.document.getElementById('pub-warn').textContent.includes('Connection lost'),'startup failure gives a visible explanation and reload control');broken.dom.window.close();
@@ -52,6 +58,9 @@ function setup({failLoad=false,status='draft'}={}){
  ok(saved.action==='save'&&saved.adId==='a'&&saved.campaignId==='c'&&!('blastId' in saved),'future schedule uses canonical Ad without changing the sent Blast');
  ok(saved.expectedRevision===0&&new Date(saved.schedule.firstRunAtUtc)>new Date(),'future time required and existing schedules cannot be overwritten');
  ok(host.querySelector('[data-form]').hidden&&host.textContent.includes('Future schedule saved'),'successful save is visible');
+ v.history.replaceState({},'', '#future-blast-schedule');saved=null;
+ v.BBLifecycle.futureSchedule(host,{adId:'a',campaignId:'c',status:'approved'});
+ ok(!host.querySelector('[data-form]').hidden&&saved===null,'incoming scheduling link opens the existing form without saving or posting');
  futureDom.window.close();
  console.log('PASS: '+checks+' complete preview startup and Blast button assertions.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

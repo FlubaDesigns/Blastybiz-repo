@@ -119,6 +119,15 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500)}
 
+let scheduleFocused = false;
+function focusFutureSchedule() {
+  const host = document.getElementById('future-blast-schedule');
+  if (scheduleFocused || location.hash !== '#future-blast-schedule' || !host || host.hidden ||
+      document.getElementById('content-state').classList.contains('hidden')) return;
+  scheduleFocused = true;
+  requestAnimationFrame(() => host.scrollIntoView?.({block:'start'}));
+}
+
 function renderJobs(jobs) {
   const total = jobs.length;
   const done  = jobs.filter(j => ['success','manual_completed'].includes(j.status)).length;
@@ -187,7 +196,8 @@ function renderJobs(jobs) {
   document.getElementById('hours-saved').textContent = hoursSaved;
 
   document.getElementById('loading-state').classList.add('hidden');
-  document.getElementById('content-state').classList.remove('hidden')}
+  document.getElementById('content-state').classList.remove('hidden');
+  focusFutureSchedule();}
 
 function copyListing(jobId, text) {
   navigator.clipboard.writeText(text).then(() => showToast('📋 Listing copied!'))}
@@ -203,6 +213,7 @@ function showInstructions(platform) {
 function showEmptyState(msg) {
   document.getElementById('loading-state').style.display = 'none';
   document.getElementById('content-state').classList.remove('hidden');
+  focusFutureSchedule();
   document.getElementById('progress-count').textContent = '0 of 0 Complete';
   document.getElementById('progress-bar').style.width = '0%';
   document.getElementById('platform-list').innerHTML =
@@ -214,7 +225,7 @@ function showEmptyState(msg) {
 </script>
 
 <script src="schedule-utils.js"></script>
-<script src="lifecycle-ui.js?v=20261002-future-blasts"></script>
+<script src="lifecycle-ui.js?v=20261002-schedule-navigation"></script>
 <script src="lifecycle-status.js"></script>
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
@@ -239,7 +250,7 @@ onAuthStateChanged(auth, async (user) => {
     // Offer future scheduling only after this Blast has been submitted.
     if (draftId) {
       getDoc(doc(db, 'users', user.uid, 'businesses', bizId, 'listingDrafts', draftId))
-        .then(snap => { if (snap.exists()) BBLifecycle.futureSchedule(document.getElementById('future-blast-schedule'), snap.data()); })
+        .then(snap => { if (snap.exists()) { BBLifecycle.futureSchedule(document.getElementById('future-blast-schedule'), snap.data()); focusFutureSchedule(); } })
         .catch(error => console.warn('Future scheduling could not load:', error.message));
     }
 

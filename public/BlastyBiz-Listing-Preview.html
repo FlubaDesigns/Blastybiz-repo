@@ -93,6 +93,10 @@
     <div id="manual-platform-list"></div>
   </section>
 
+  <nav id="pub-next-row" class="section-mt pub-action-card hidden" aria-label="Next step">
+    <a id="pub-schedule-link" class="pub-publish-btn" style="display:block;box-sizing:border-box;margin:0 auto;text-align:center;text-decoration:none;">Continue to Scheduling →</a>
+  </nav>
+
   </div><!-- /.pub-flow -->
 
   <!-- ── STICKY PREVIEW RAIL ─────────────────────── -->
@@ -453,6 +457,8 @@ function markBlastSubmitted() {
   var link = document.getElementById('pub-status-link');
   link.href = 'BlastyBiz-Publishing-Status.html?' + new URLSearchParams({draftId:window.draftDocId,bizId:window.businessId});
   document.getElementById('pub-status-row').classList.remove('hidden');
+  document.getElementById('pub-schedule-link').href = link.href + '#future-blast-schedule';
+  document.getElementById('pub-next-row').classList.remove('hidden');
 }
 
 async function publishBlast() {
