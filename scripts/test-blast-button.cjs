@@ -54,7 +54,7 @@ function setup({failLoad=false,status='draft'}={}){
  ok(!host.hidden&&host.textContent.includes('Would you like to set up a schedule for future blasts?'),'post-Blast page offers future scheduling');
  ok(host.querySelector('[data-form]').hidden&&saved===null,'offering a schedule does not create one');
  host.querySelector('[data-setup]').click();host.querySelector('[data-hours="24"]').click();
- const futureSave=[...host.querySelectorAll('button')].find(b=>b.textContent==='Save Future Schedule');await futureSave.onclick();
+ const futureSave=[...host.querySelectorAll('button')].find(b=>b.textContent==='Save Schedule');await futureSave.onclick();
  ok(saved.action==='save'&&saved.adId==='a'&&saved.campaignId==='c'&&!('blastId' in saved),'future schedule uses canonical Ad without changing the sent Blast');
  ok(saved.expectedRevision===0&&new Date(saved.schedule.firstRunAtUtc)>new Date(),'future time required and existing schedules cannot be overwritten');
  ok(host.querySelector('[data-form]').hidden&&host.textContent.includes('Future schedule saved'),'successful save is visible');

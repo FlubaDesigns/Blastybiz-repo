@@ -14,21 +14,28 @@
  const localValue=v=>{const d=new Date(v);return new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,16);};
  function form(host,initial={}) {
    const zone=initial.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone;
-   host.innerHTML='<label>First post <input type="datetime-local" data-field="date" required></label><p data-field="resolved" role="status"></p><div class="bb-quick">'+[[12,'In 12 hours'],[24,'Tomorrow'],[72,'In 3 days'],[168,'In 1 week']].map(([h,t])=>'<button type="button" data-hours="'+h+'">'+t+'</button>').join('')+'</div><label>Timezone <input data-field="timezone" value="'+esc(zone)+'"></label><div data-field="refire" hidden><label>Refire <select data-field="frequency"><option value="once">Just once</option><option value="weekly">Weekly</option><option value="biweekly">Every 2 weeks</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option></select></label><div data-field="recurring" hidden><label>Stop after <select data-field="count"><option value="0">Until I stop it</option><option value="4">4 Blasts</option><option value="8">8 Blasts</option><option value="12">12 Blasts</option><option value="26">26 Blasts</option></select></label><label>Copy <select data-field="copy"><option value="reuse">Reuse approved copy</option><option value="refresh">Refresh wording each time</option><option value="ask">Ask me each time</option></select></label><label>Images <select data-field="images"><option value="reuse">Reuse approved images</option><option value="remind">Remind me to replace them</option><option value="ask">Ask me each time</option></select></label><label>After the first three approved runs <select data-field="approval"><option value="always">Always ask me</option><option value="automatic">Auto-post if I do not respond</option><option value="attention">Only ask if something needs attention</option></select></label></div><p>Review required for your first three scheduled Blasts. Fresh copy and image choices always need your approval.</p><p>Manual destinations are prepared for you to post.</p></div><p data-field="summary" aria-live="polite"></p>';
+   host.innerHTML='<label>Next blast<input type="datetime-local" data-field="date" required></label><div class="bb-quick">'+[[12,'In 12 hours'],[24,'Tomorrow'],[72,'In 3 days'],[168,'In 1 week']].map(([h,t])=>'<button type="button" data-hours="'+h+'">'+t+'</button>').join('')+'</div><div data-field="refire"><label>Repeat<select data-field="frequency"><option value="once">Just once</option><option value="weekly">Weekly</option><option value="biweekly">Every 2 weeks</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option></select></label><div data-field="recurring" hidden><label>Stop after<select data-field="count"><option value="0">Until I stop it</option><option value="4">4 Blasts</option><option value="8">8 Blasts</option><option value="12">12 Blasts</option><option value="26">26 Blasts</option></select></label><details><summary>Copy, photos &amp; approval</summary><label>Wording<select data-field="copy"><option value="reuse">Reuse approved copy</option><option value="refresh">Refresh wording each time</option><option value="ask">Ask me each time</option></select></label><label>Photos<select data-field="images"><option value="reuse">Reuse approved images</option><option value="remind">Remind me to replace them</option><option value="ask">Ask me each time</option></select></label><label>After the first three approved runs<select data-field="approval"><option value="always">Always ask me</option><option value="automatic">Auto-post if I do not respond</option><option value="attention">Only ask if something needs attention</option></select></label></details></div></div><details class="bb-timezone"><summary>Change time zone</summary><label>Time zone<input data-field="timezone" value="'+esc(zone)+'"></label></details><details class="bb-schedule-help"><summary>How scheduled blasts work</summary><p>Approve your first three scheduled blasts. New wording and photo changes always need your approval.</p><p>Copy-and-paste platforms still need you to post.</p></details><p data-field="resolved" role="status" hidden></p><p data-field="summary" class="bb-schedule-summary" aria-live="polite"></p>';
    const get=n=>host.querySelector('[data-field="'+n+'"]');
    const zoned=v=>{const p=window.BBSchedule.localParts(new Date(v),get('timezone').value);return p.year+'-'+String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0')+'T'+String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0');};
    if(initial.nextRunAt||initial.firstRunAtUtc)get('date').value=zoned(initial.nextRunAt||initial.firstRunAtUtc);
    get('frequency').value=initial.frequency||'once';get('count').value=initial.stopMode==='count'?String(initial.stopAfterCount):'0';
    if(!get('count').value)get('count').value='0';get('copy').value=initial.copyBehavior||'reuse';get('images').value=initial.imageBehavior||'reuse';get('approval').value=initial.approvalBehavior||'always';
    function value(){const raw=get('date').value;if(!raw)throw Error('Choose a future date and time.');const [ymd,hm]=raw.split('T'),[y,m,day]=ymd.split('-').map(Number),[h,min]=hm.split(':').map(Number);const d=window.BBSchedule.wallTime(y,m-1,day,h,get('timezone').value,min);if(!Number.isFinite(d.getTime())||d<=new Date())throw Error('Choose a future date and time.');return {firstRunAtUtc:d.toISOString(),timezone:get('timezone').value,frequency:get('frequency').value,stopMode:Number(get('count').value)?'count':'never',stopAfterCount:Number(get('count').value),copyBehavior:get('copy').value,imageBehavior:get('images').value,approvalBehavior:get('approval').value};}
-   function update(){get('refire').hidden=!get('date').value;get('recurring').hidden=get('frequency').value==='once';try{const v=value();get('resolved').textContent=date(v.firstRunAtUtc)+' · '+v.timezone;get('summary').textContent='Starts '+date(v.firstRunAtUtc)+' · '+v.frequency+(v.frequency==='once'?'':v.stopMode==='count'?' · stops after '+v.stopAfterCount+' Blasts':' · until you pause it');}catch(e){get('resolved').textContent=get('date').value?e.message:'';get('summary').textContent='';}}
+   function update(){
+     get('recurring').hidden=get('frequency').value==='once';
+     host.querySelectorAll('[data-hours]').forEach(b=>b.setAttribute('aria-pressed','false'));
+     try{
+       const v=value(),when=new Intl.DateTimeFormat(undefined,{timeZone:v.timezone,month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(new Date(v.firstRunAtUtc));
+       get('resolved').hidden=true;get('resolved').textContent='';
+       get('summary').textContent=when+' · '+get('frequency').selectedOptions[0].textContent+(v.frequency==='once'?'':v.stopMode==='count'?' · '+v.stopAfterCount+' blasts':' · until you stop it');
+     }catch(e){get('resolved').hidden=!get('date').value;get('resolved').textContent=get('date').value?e.message:'';get('summary').textContent='';}
+   }
    host.addEventListener('change',e=>{update();if(e.target===get('frequency'))fire('schedule.refire_explain');});
-   host.addEventListener('click',e=>{const b=e.target.closest('[data-hours]');if(b){get('date').value=zoned(Date.now()+Number(b.dataset.hours)*3600000);update();fire('schedule.time_choice_explain');}});
+   host.addEventListener('click',e=>{const b=e.target.closest('[data-hours]');if(b){get('date').value=zoned(Date.now()+Number(b.dataset.hours)*3600000);update();b.setAttribute('aria-pressed','true');fire('schedule.time_choice_explain');}});
    let savedKey=null,request=null;update();return {value,requestId(){const key=JSON.stringify(value());if(key!==savedKey){savedKey=key;request=crypto.randomUUID();}return request;}};
  }
- function style(){if(document.getElementById('bb-lifecycle-style'))return;const s=document.createElement('style');s.id='bb-lifecycle-style';s.textContent='.bb-life label{display:block;margin:12px 0}.bb-life input:not([type=checkbox]),.bb-life select,.bb-life textarea{display:block;box-sizing:border-box;width:100%;padding:10px;min-height:44px}.bb-life button,.bb-life a.bb-button{min-height:44px;padding:10px 14px;margin:5px 5px 5px 0;display:inline-block}.bb-life article{padding:16px;margin:14px 0;border:1px solid #748078;border-radius:12px}.bb-life img{width:90px;height:90px;object-fit:cover;margin:5px}.bb-life textarea{min-height:110px}.bb-life [hidden]{display:none!important}.bb-life summary{padding:12px;cursor:pointer}.bb-life [role=status]{white-space:pre-wrap}';document.head.append(s);}
  async function preview(data,blastId) {
-   style();const host=document.getElementById('v1-publish-schedule');if(!host)return;
+   const host=document.getElementById('v1-publish-schedule');if(!host)return;
    host.classList.add('bb-life');
    if(!data?.adId){host.innerHTML='<h2>Scheduling</h2><p>Open the campaign and create an Ad before setting a schedule.</p>';return;}
    if(data.scheduleAdPath){host.innerHTML='<h2>'+esc(data.campaignName)+' / '+esc(data.adName)+'</h2><p>This is a scheduled Blast. Review or change it in Schedule.</p><a class="bb-button" href="BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,tab:'schedule'})+'">Open Schedule</a>';document.getElementById('publish-btn').hidden=true;return;}
@@ -43,13 +50,14 @@
  }
  function futureSchedule(host,data) {
    if(!host||!data?.adId||!data?.campaignId||data.status!=='approved')return;
-   style();host.hidden=false;host.classList.add('bb-life');
+   host.hidden=false;host.classList.add('bb-life');
    host.innerHTML='<h2>Would you like to set up a schedule for future blasts?</h2><button type="button" data-setup>Set Up a Schedule</button><div data-form hidden></div><p role="status"></p>';
    const setup=host.querySelector('[data-setup]'),box=host.querySelector('[data-form]'),message=host.querySelector(':scope > [role=status]');
    const scheduleUrl='BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,tab:'schedule',scheduleAd:data.adId,scheduleCampaign:data.campaignId});
    const link=document.createElement('a');link.className='bb-button';link.href=scheduleUrl;link.textContent='View Schedules';host.append(link);
    setup.onclick=()=>{
-     setup.hidden=true;box.hidden=false;const editor=form(box),save=document.createElement('button');save.type='button';save.textContent='Save Future Schedule';box.append(save);
+     host.querySelector('h2').textContent='Schedule future blasts';
+     setup.hidden=true;box.hidden=false;const editor=form(box),save=document.createElement('button');save.type='button';save.className='bb-primary';save.textContent='Save Schedule';box.append(save);
      save.onclick=async()=>{save.disabled=true;message.textContent='';try{
        await api('save',{adId:data.adId,campaignId:data.campaignId,expectedRevision:0,schedule:editor.value(),requestId:editor.requestId()});
        box.hidden=true;message.textContent='Future schedule saved. Your current blast is unchanged. Review the next blast in Schedules.';
@@ -58,7 +66,7 @@
    if(location.hash==='#future-blast-schedule')setup.click();
  }
  async function dashboard() {
-   style();const seq=++dashboardEpoch,wrap=document.getElementById('sched-campaigns-wrap');if(!wrap||!context)return;
+   const seq=++dashboardEpoch,wrap=document.getElementById('sched-campaigns-wrap');if(!wrap||!context)return;
    document.getElementById('sched-upcoming-card')?.setAttribute('hidden','');document.getElementById('sched-no-campaigns')?.setAttribute('hidden','');
    wrap.classList.add('bb-life');wrap.innerHTML='<p role="status">Loading schedules…</p>';
    try {

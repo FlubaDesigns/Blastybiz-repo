@@ -2096,6 +2096,30 @@ body.publishing-page .platform-msg    { font-size: 12px; color: var(--muted); ma
 .stat-card .stat-label strong         { display: block; font-size: 16px; color: var(--light); font-weight: 600; margin-bottom: 2px; }
 
 
+/* Shared scheduler: one form and theme for setup and schedule editing. */
+.bb-life { font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--light); line-height: 1.5; }
+#future-blast-schedule { padding: 20px; margin-top: 20px; }
+.bb-life label { display: block; margin: 16px 0; font-size: 14px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--light); }
+.bb-life input:not([type=checkbox]):not([type=radio]), .bb-life select, .bb-life textarea { display: block; box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; padding: 12px; min-height: 48px; margin-top: 6px; font-size: 16px; }
+.bb-life button, .bb-life a.bb-button { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 48px; padding: 12px 16px; margin: 6px 6px 6px 0; border: 1px solid var(--green); border-radius: 12px; background: transparent; color: var(--green); font: 600 15px 'DM Sans', sans-serif; text-decoration: none; cursor: pointer; }
+.bb-life button.bb-primary, .bb-life button[data-setup], .bb-life button[data-action=save], .bb-life .bb-quick button[aria-pressed=true] { background: var(--green); color: var(--dark); }
+.bb-life button:disabled { opacity: .5; cursor: wait; }
+.bb-life button:focus-visible, .bb-life a:focus-visible, .bb-life summary:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+.bb-life .bb-quick { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.bb-life .bb-quick button { width: 100%; margin: 0; padding: 10px 6px; }
+#future-blast-schedule .bb-primary, #future-blast-schedule a.bb-button { width: 100%; margin: 8px 0 0; }
+.bb-life article { padding: 16px; margin: 14px 0; border: 1px solid var(--border); border-radius: 12px; }
+.bb-life img { width: 90px; height: 90px; object-fit: cover; margin: 5px; }
+.bb-life textarea { min-height: 110px; }
+.bb-life [hidden] { display: none !important; }
+.bb-life details { margin: 8px 0; }
+.bb-life summary { padding: 12px 0; cursor: pointer; font-size: 14px; color: var(--silver); }
+.bb-life details p { font-size: 14px; color: var(--silver); }
+.bb-life .bb-schedule-summary { font-size: 14px; color: var(--light); margin: 16px 0 8px; }
+.bb-life [role=status] { white-space: pre-wrap; font-size: 14px; }
+body.publishing-page .bb-reminder { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 16px; margin: 16px 0; font: 500 14px/1.5 'DM Sans',sans-serif; letter-spacing: 0; text-transform: none; color: var(--light); cursor: pointer; }
+.bb-life input[type=checkbox], .bb-life input[type=radio], body.publishing-page .bb-reminder input[type=checkbox] { appearance: auto; -webkit-appearance: auto; accent-color: var(--green); width: 22px; min-width: 22px; max-width: 22px; height: 22px; min-height: 22px; flex: 0 0 22px; margin: 0; padding: 0; box-shadow: none; }
+
 /* ══════════════════════════════════════════════════════════════
    LISTING PREVIEW PAGE  (body.listing-preview-page)
 ══════════════════════════════════════════════════════════════ */
