@@ -2159,9 +2159,18 @@ body.listing-preview-page .pub-publish-btn:disabled { opacity: 0.45; cursor: def
 body.listing-preview-page .pub-warn               { background: rgba(255,168,0,0.08); border: 1px solid rgba(255,168,0,0.3); border-radius: 10px; padding: 12px 14px; font-size: 13px; color: var(--warn, #ffa800); margin-top: 14px; text-align: left; }
 
 /* Copy-paste panel */
-body.listing-preview-page .manual-card            { border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+body.listing-preview-page #manual-panel { padding: 16px; min-width: 0; box-sizing: border-box; }
+body.listing-preview-page #manual-panel .manual-note,
+body.listing-preview-page #manual-panel .pub-photos-label { color: #b9c7bd; }
+body.listing-preview-page .manual-card            { display: block; min-width: 0; box-sizing: border-box; border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
 body.listing-preview-page .manual-card:last-child { margin-bottom: 0; }
-body.listing-preview-page .manual-card-header     { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+body.listing-preview-page .manual-card-header     { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+body.listing-preview-page .manual-identity { display: flex; align-items: center; min-width: 0; gap: 8px; }
+body.listing-preview-page .manual-identity > div:last-child { min-width: 0; overflow-wrap: anywhere; }
+body.listing-preview-page .manual-card .copy-platform-btn { min-height: 44px; padding: 10px 16px; }
+body.listing-preview-page .manual-card .manual-textarea { display: block; min-width: 0; max-width: none; min-height: 170px; font-size: 16px; }
+body.listing-preview-page .manual-card .pub-photos-label { overflow-wrap: anywhere; }
+body.listing-preview-page .pub-publish-btn.is-blasted:disabled { background: #4b5550; color: #e0e5e2; opacity: 1; }
 body.listing-preview-page .manual-icon            { width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; margin-right: 10px; }
 body.listing-preview-page .manual-name            { font-size: 14px; font-weight: 600; color: var(--light); }
 body.listing-preview-page .manual-mode            { font-size: 11px; color: var(--muted); margin-top: 1px; }

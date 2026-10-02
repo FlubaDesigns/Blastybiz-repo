@@ -8,14 +8,14 @@ const main=scripts.find(m=>m[2].includes('var PLATFORM_META'))[2];
 const bootstrap=scripts.find(m=>m[1].includes('module')&&m[2].includes('auth.authStateReady'))[2].replace(/^import .*;\s*$/gm,'');
 let checks=0;const ok=(value,message)=>{assert(value,message);checks++;};
 const tick=async()=>{for(let i=0;i<10;i++)await new Promise(r=>setImmediate(r));};
-function setup({failLoad=false}={}){
+function setup({failLoad=false,status='draft'}={}){
  const dom=new JSDOM(html,{url:'https://blastybiz.com/BlastyBiz-Listing-Preview.html?bizId=b&draftId=d',runScripts:'outside-only',virtualConsole:new VirtualConsole()});
  const w=dom.window;let boot,calls=[],reject=true,revision=1;
- const data={adId:'a',adName:'Saved blast',campaignId:'c',campaignName:'GEM',revision:1,name:'David',adaptations:{facebook:'Saved Facebook copy',yelp:'Saved Yelp copy'},platformStatus:{facebook:'approved',yelp:'approved'},imagesByPlatform:{facebook:['https://example.com/car.jpg'],yelp:['https://example.com/car.jpg']}};
+ const data={status,adId:'a',adName:'Saved blast',campaignId:'c',campaignName:'GEM',revision:1,name:'David',adaptations:{facebook:'Saved Facebook copy',yelp:'Saved Yelp copy'},platformStatus:{facebook:'approved',yelp:'approved'},imagesByPlatform:{facebook:['https://example.com/car.jpg'],yelp:['https://example.com/car.jpg']}};
  Object.assign(w,{auth:{authStateReady:()=>Promise.resolve()},db:{},onAuthStateChanged:(auth,callback)=>{boot=callback({uid:'u',getIdToken:async()=> 'fixture'});},doc:(db,...parts)=>parts.join('/'),getDoc:async path=>{if(failLoad)throw Error('Connection lost');return {exists:()=>true,data:()=>path==='users/u'?{activeBusiness:'b'}:{...data,revision}};},BBBlasty:{fire(){}},fetch:async(url,opts)=>{calls.push({url,body:JSON.parse(opts.body)});await tick();return {ok:!reject,status:reject?503:200,json:async()=>reject?{error:'Connection unavailable'}:{}};}});
  for(const file of ['escape-utils.js','platforms-authority.js','business-form.js'])w.eval(fs.readFileSync('public/'+file,'utf8'));
  w.eval(main);w.eval(bootstrap);
- return {dom,w,calls,boot:async()=>{await tick();await boot;},allow:()=>{reject=false;},stale:()=>{revision=2;}};
+ return {dom,w,calls,boot:async()=>{await tick();await boot;},allow:()=>{reject=false;},stale:()=>{revision=2;},submittedElsewhere:()=>{data.status='approved';}};
 }
 (async()=>{
  const f=setup();const {w}=f,button=w.document.getElementById('publish-btn');
@@ -27,9 +27,13 @@ function setup({failLoad=false}={}){
  ok(f.calls.length===1&&f.calls[0].url.endsWith('/approveDraft'),'rapid taps use one existing approval request');
  assert.deepEqual(JSON.parse(JSON.stringify(f.calls[0].body)),{draftId:'d',businessId:'b',platformKeys:['facebook','yelp']});checks++;
  ok(!button.disabled&&w.document.getElementById('pub-warn').textContent.includes('Connection unavailable'),'backend failure is visible and retry remains available');
- f.allow();await w.publishBlast();ok(f.calls.length===2&&button.textContent.includes('Published'),'retry reaches the publishing-status handoff');
- f.stale();await w.publishBlast();ok(f.calls.length===2&&w.document.getElementById('pub-warn').textContent.includes('updated'),'stale draft cannot submit a changed blast');
- w._firestoreApprove=undefined;await w.publishBlast();ok(w.document.getElementById('pub-warn').textContent.includes('not finished loading'),'unavailable action is reported instead of silently doing nothing');
+ f.allow();await w.publishBlast();ok(f.calls.length===2&&button.disabled&&button.textContent==='✓ Blasted','successful submission locks the button');
+ await w.publishBlast();ok(f.calls.length===2,'returning to the submitted page cannot send again');
+ ok(!w.document.getElementById('pub-status-row').classList.contains('hidden'),'submitted blast keeps a status link');
+ const stale=setup();await stale.boot();stale.stale();await stale.w.publishBlast();ok(stale.calls.length===0&&stale.w.document.getElementById('pub-warn').textContent.includes('updated'),'stale draft cannot submit a changed blast');
+ stale.w._firestoreApprove=undefined;await stale.w.publishBlast();ok(stale.w.document.getElementById('pub-warn').textContent.includes('not finished loading'),'unavailable action is reported instead of silently doing nothing');stale.dom.window.close();
+ const reopened=setup({status:'approved'});await reopened.boot();await reopened.w.publishBlast();ok(reopened.w.document.getElementById('publish-btn').disabled&&reopened.w.document.getElementById('publish-btn').classList.contains('is-blasted')&&reopened.calls.length===0,'reopened submitted blast stays gray and disabled');ok(reopened.w.document.getElementById('manual-text-yelp').value==='Saved Yelp copy','manual copy remains available after submission');reopened.dom.window.close();
+ const other=setup();await other.boot();other.submittedElsewhere();await other.w.publishBlast();ok(other.calls.length===0&&other.w.document.getElementById('publish-btn').disabled,'fresh server state prevents a second send from another tab');other.dom.window.close();
  f.dom.window.close();
  const broken=setup({failLoad:true});await broken.boot();const retry=broken.w.document.getElementById('publish-btn');
  ok(retry.textContent==='Reload blast'&&!retry.disabled&&broken.w.document.getElementById('pub-warn').textContent.includes('Connection lost'),'startup failure gives a visible explanation and reload control');broken.dom.window.close();

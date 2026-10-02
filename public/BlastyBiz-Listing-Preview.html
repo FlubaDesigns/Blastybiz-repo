@@ -71,9 +71,10 @@
 
   <!-- ── PUBLISH ACTION ──────────────────────────── -->
   <section class="card section-mt pub-action-card">
-    <div class="card-title">🚀 Ready to go</div>
+    <div class="card-title" id="pub-action-title">🚀 Ready to go</div>
     <p id="pub-action-sub" class="helper mb-16" style="font-size:14px;color:var(--muted,#888);">Tap to publish your blast to all selected platforms.</p>
     <button type="button" class="pub-publish-btn" id="publish-btn" onclick="publishBlast()" disabled>Loading blast…</button>
+    <p id="pub-status-row" class="hidden"><a id="pub-status-link" class="pub-copy-btn">View Blast Status</a></p>
     <div id="pub-warn" class="pub-warn hidden"></div>
   </section>
 
@@ -88,7 +89,7 @@
   <!-- ── COPY-PASTE PLATFORMS ────────────────────── -->
   <section class="card section-mt hidden" id="manual-panel">
     <div class="card-title">📋 Copy-Paste Platforms</div>
-    <p class="helper mb-14" style="font-size:13px;color:var(--muted,#888);">These platforms don't allow any app to post on your behalf — that's their policy, not a BlastyBiz limitation. Your copy is written. Tap Copy and paste it in.</p>
+    <p class="helper mb-14" style="font-size:13px;color:var(--muted,#888);">Copy your text, then open a photo to save it for your post.</p>
     <div id="manual-platform-list"></div>
   </section>
 
@@ -126,6 +127,7 @@ var currentDraftData = {};
 var _railPid = null;
 var _railPids = [];
 var _blastSubmitting = false;
+var _blastSubmitted = false;
 
 // Delivery depends on the available publisher, equally on every plan.
 var pubPlan = 'starter';
@@ -416,7 +418,7 @@ function renderManualPanel() {
     var text = [d.headline, d.text, d.cta].filter(Boolean).join('\n\n');
     return '<div class="manual-card">'
       + '<div class="manual-card-header">'
-      +   '<div style="display:flex;align-items:center;">'
+      +   '<div class="manual-identity">'
       +     '<div class="manual-icon">' + meta.icon + '</div>'
       +     '<div><div class="manual-name">' + meta.name + '</div><div class="manual-mode">Copy-paste required</div></div>'
       +   '</div>'
@@ -442,8 +444,19 @@ function showBlastError(message) {
   if (warn) { warn.textContent = message; warn.classList.remove('hidden'); warn.setAttribute('role', 'alert'); warn.scrollIntoView?.({block:'nearest'}); }
 }
 
+function markBlastSubmitted() {
+  _blastSubmitted = true;
+  var btn = document.getElementById('publish-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '✓ Blasted'; btn.classList.add('is-blasted'); }
+  document.getElementById('pub-action-title').textContent = 'Blast submitted';
+  document.getElementById('pub-action-sub').textContent = 'This blast has already been submitted. You can still copy text and save photos below.';
+  var link = document.getElementById('pub-status-link');
+  link.href = 'BlastyBiz-Publishing-Status.html?' + new URLSearchParams({draftId:window.draftDocId,bizId:window.businessId});
+  document.getElementById('pub-status-row').classList.remove('hidden');
+}
+
 async function publishBlast() {
-  if (_blastSubmitting) return;
+  if (_blastSubmitting || _blastSubmitted) return;
   var keys = Object.keys(drafts);
   if (!keys.length) { showToast('No platforms to publish'); return; }
   if (typeof window._firestoreApprove !== 'function') { showBlastError('This blast has not finished loading. Refresh the page and try again.'); return; }
@@ -500,6 +513,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   window._firestoreApprove = async function(platformKeys) {
+    if (_blastSubmitted) return;
     window.BBBlasty?.fire('publish.working');
     const btn = document.getElementById('publish-btn');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Publishing…'; }
@@ -524,6 +538,7 @@ onAuthStateChanged(auth, async (user) => {
       // F8: Stale-revision guard — re-fetch draft to catch any re-generations since page load
       const freshSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts', draftId));
       if (freshSnap.exists()) {
+        if (freshSnap.data().status === 'approved') { markBlastSubmitted(); return; }
         const freshRev = freshSnap.data().revision || 0;
         if (freshRev !== (window._draftRevision || 0)) {
           if (btn) { btn.disabled = false; btn.textContent = '🚀 Blast It!'; }
@@ -547,10 +562,11 @@ onAuthStateChanged(auth, async (user) => {
         const err = await resp.json().catch(() => ({}));
         throw new Error(err.error || 'Approval failed (' + resp.status + ')');
       }
-      if (btn) btn.textContent = '✅ Published!';
+      markBlastSubmitted();
       window.location.href = `BlastyBiz-Publishing-Status.html?draftId=${draftId}&bizId=${encodeURIComponent(window.businessId)}`;
     } catch(e) {
       console.error('publishBlast error:', e);
+      if (_blastSubmitted) return;
       if (btn) { btn.disabled = false; btn.textContent = '🚀 Blast It!'; }
       const warn = document.getElementById('pub-warn');
       if (warn) { warn.textContent = '⚠️ Error publishing: ' + e.message; warn.classList.remove('hidden'); }
@@ -558,7 +574,8 @@ onAuthStateChanged(auth, async (user) => {
   };
   if (draftData) {
     const btn = document.getElementById('publish-btn');
-    if (btn) { btn.disabled = false; btn.textContent = '🚀 Blast It!'; }
+    if (draftData.status === 'approved') markBlastSubmitted();
+    else if (btn) { btn.disabled = false; btn.textContent = '🚀 Blast It!'; }
   }
   } catch (error) {
     showBlastError('Could not load this blast: ' + error.message + '. Tap Reload blast to try again.');
