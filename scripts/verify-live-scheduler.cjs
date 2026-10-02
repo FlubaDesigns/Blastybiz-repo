@@ -38,6 +38,9 @@ module.exports=async function verifyLiveScheduler(){
    assert.equal(state.packet.adaptations.craigslist,sent.payload.adaptedContent);
    assert.deepEqual(state.packet.imagesByPlatform.craigslist,sent.payload.imageUrls);
    assert.deepEqual(state.packet.imageRefs.map(i=>i.id),[image.id]);
+   // Run the actual read needed after saving, so a missing collection index is
+   // diagnosed directly rather than hidden behind the endpoint's generic 500.
+   await br.collection('listingDrafts').where('schedule.enabled','==',true).get();
    const save={expectedRevision:0,reviewKey:state.reviewKey,reviewed:true,replacePrepared:true,imageIds:[image.id],requestId:'acceptance_save',schedule:{frequency:'once',firstRunAtUtc:new Date(Date.now()+7*86400000).toISOString(),timezone:'UTC',approvalBehavior:'automatic'}};
    const saved=await api('save',save),retry=await api('save',save);assert.equal(retry.schedule.preparedBlastId,saved.schedule.preparedBlastId);
    console.log('PASS live original-format source, save and duplicate-save protection.');

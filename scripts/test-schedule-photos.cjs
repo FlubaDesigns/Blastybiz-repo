@@ -1,5 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict');
+const indexes=require('../firestore.indexes.json');
+assert(indexes.fieldOverrides.find(f=>f.collectionGroup==='listingDrafts'&&f.fieldPath==='schedule.enabled')?.indexes.some(i=>i.queryScope==='COLLECTION'&&i.order==='ASCENDING'),'Schedule listing needs its collection-scope enabled index as well as worker group indexes');
 const {database,admin}=require('./lib/test-firestore.cjs');
 const {createLifecycle}=require('../functions/lib/lifecycle');
 const {createImageGenerator}=require('../functions/lib/schedule-image');
