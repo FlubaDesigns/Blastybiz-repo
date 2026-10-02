@@ -59,6 +59,7 @@ module.exports=async function verifyLiveScheduler(){
    for(const row of images.docs){const path=row.data().path;if(path?.startsWith('photos/'+uid+'/'))await app.storage().bucket().file(path).delete({ignoreNotFound:true});}
    for(const collection of ['aiUsageLogs','activityLogs']){const rows=await db.collection(collection).where('uid','==',uid).get();for(const row of rows.docs)await row.ref.delete();}
    await db.recursiveDelete(user);
+   await db.collection('setupNudges').doc(uid).delete();
    if(created)await auth.deleteUser(uid);
    await app.delete();
  }
