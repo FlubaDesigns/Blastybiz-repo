@@ -5,7 +5,7 @@
 <meta charset="UTF-8"/>
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="stylesheet" href="global-style.css?v=20261002-compact-status" />
+<link rel="stylesheet" href="global-style.css?v=1786304797822" />
 <title>BlastyBiz — Publishing Status</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -152,9 +152,13 @@ function renderJobs(jobs) {
     }
     const header = document.createElement(actionable ? 'summary' : 'div');
     header.className = 'platform-heading';
-    header.innerHTML = `<span class="platform-icon ${meta.piClass || 'pi-default'}" aria-hidden="true">${meta.icon}</span>
-      <span class="platform-info"><span class="platform-name">${window.escHtml(meta.name)}</span>
-      <span class="status-pill ${status.cls}">${window.escHtml(status.label)}</span></span>${actionable ? '<span class="platform-expand" aria-hidden="true">⌄</span>' : ''}`;
+    const icon = document.createElement('span');
+    icon.className = 'platform-icon ' + (meta.piClass || 'pi-default'); icon.setAttribute('aria-hidden','true'); icon.textContent = meta.icon;
+    const info = document.createElement('span'); info.className = 'platform-info';
+    const name = document.createElement('span'); name.className = 'platform-name'; name.textContent = meta.name;
+    const pill = document.createElement('span'); pill.className = 'status-pill ' + status.cls; pill.textContent = status.label;
+    info.append(name,pill); header.append(icon,info);
+    if (actionable) { const expand = document.createElement('span'); expand.className = 'platform-expand'; expand.setAttribute('aria-hidden','true'); expand.textContent = '⌄'; header.append(expand); }
     row.append(header);
     if (actionable) {
       const content = document.createElement('div');
