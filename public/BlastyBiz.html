@@ -557,7 +557,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
             <button type="button" class="btn btn-primary btn--adaptive" id="s3-continue-btn" onclick="createWizNext(1, true)" disabled>
               Generate New Copy →
             </button>
-            <button type="button" class="btn btn-outline btn--adaptive" id="s3-saved-copy-btn" onclick="createWizNext(1)" disabled>
+            <button type="button" class="btn btn-outline btn--adaptive hidden" id="s3-saved-copy-btn" onclick="createWizNext(1)" hidden disabled>
               View Saved Copy →
             </button>
           </div>
@@ -2587,7 +2587,12 @@ function checkS3ContinueBtn() {
   const btn = document.getElementById('s3-continue-btn');
   if (btn) btn.disabled = !platforms.some(p => p.enabled);
   const saved = document.getElementById('s3-saved-copy-btn');
-  if (saved) saved.disabled = !platforms.some(p => p.enabled && p.adaptedContent);
+  if (saved) {
+    const hasSavedCopy = platforms.some(p => p.enabled && window.BBAds?.active?.adaptations?.[p.id]?.trim());
+    saved.hidden = !hasSavedCopy;
+    saved.disabled = !hasSavedCopy;
+    saved.classList.toggle('hidden', !hasSavedCopy);
+  }
 }
 
 // ══════════════════════════════════════════
