@@ -48,6 +48,7 @@
   function open(){
     mount();if(!el('ad-workspace'))return Promise.resolve();
     clearTimeout(autoSaveTimer);el('ad-save-retry').hidden=true;
+    if(el('step5-existing-blast'))el('step5-existing-blast').hidden=true;
     const seq=++epoch;campaign=activeCampaignId;business=window.activeBizId;ad=null;dirty=false;pending=null;loadError=null;window._bbActiveAd=null;
     const host=el('campaign-content');host.inert=true;
     el('ad-current').hidden=true;tell('Loading saved details…');
@@ -82,6 +83,7 @@
           if(seq!==epoch)return;selected=result.ad;
         }
         await fill(selected);if(seq!==epoch)return;tell('');
+        try{await findExisting();}catch(e){if(seq===epoch)tell('Could not load your last blast. Continue will retry.');}
       }catch(e){if(seq===epoch){loadError=e;ad=null;window._bbActiveAd=null;tell(e.message);}}
       finally{if(seq===epoch)host.inert=false;}
     })();
@@ -137,6 +139,31 @@
     if(saving){await saving;return save();}
     saving=(async()=>{let result;do{result=await persist();}while(dirty);return result;})();
     try { const result=await saving;return result; } finally { saving=null; }
+  }
+  async function findExisting(){
+    const seq=epoch;
+    const latest=window._bbFindLatestBlast ? await window._bbFindLatestBlast(business,campaign,ad.id) : null;
+    if(seq!==epoch)throw Error('The active campaign changed. Please continue again.');
+    const host=el('step5-existing-blast'),link=el('step5-view-blast');
+    if(host)host.hidden=!latest;
+    if(link&&latest)link.href='BlastyBiz-Listing-Preview.html?'+new URLSearchParams({bizId:business,draftId:latest.id});
+    return latest;
+  }
+  async function continueCurrent(newBlast=false){
+    if(busy)return;
+    busy=true;
+    try{
+      await ready();
+      if(!newBlast){
+        const latest=await findExisting();
+        if(latest){
+          location.href='BlastyBiz-Listing-Preview.html?'+new URLSearchParams({bizId:business,draftId:latest.id});
+          return;
+        }
+      }
+      await save();
+      await prepare('this_run');
+    }finally{busy=false;}
   }
   async function prepare(scope){
     if(!ad)throw Error('Choose an Ad first.');
@@ -227,5 +254,5 @@
     if(!dirty)return;
     flushSave();e.preventDefault();e.returnValue='';
   });
-  window.BBAds={choosePhoto,markDirty,open,ready,refreshImages:images,save,creative,prepareCurrent:()=>task(()=>prepare('this_run')),get active(){return ad;},get dirty(){return dirty;},get busy(){return busy||!!saving||pendingPhotoCount>0;},api};
+  window.BBAds={continueCurrent,choosePhoto,markDirty,open,ready,refreshImages:images,save,creative,prepareCurrent:()=>task(()=>prepare('this_run')),get active(){return ad;},get dirty(){return dirty;},get busy(){return busy||!!saving||pendingPhotoCount>0;},api};
 })();

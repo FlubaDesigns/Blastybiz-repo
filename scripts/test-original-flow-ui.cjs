@@ -158,6 +158,38 @@ const turn=()=>new Promise(r=>setImmediate(r));
   assert.equal(aiCalls,callsBefore+1,'Generate New Copy explicitly requests generation');
   await w.BBAds.prepareCurrent();
   assert.deepEqual([...lastPrepared.packet.enabledPlatforms],['facebook'],'prepared Blast excludes skipped destinations');
+  // Forward navigation reopens the submitted Blast without saving, preparing,
+  // resetting approval, or invoking any publishing API.
+  w.document.body.insertAdjacentHTML('beforeend','<div id="step5-existing-blast" hidden><a id="step5-view-blast" data-existing-blast></a></div>');
+  const sentId=lastPrepared.blastId;
+  await state.db.doc(base+'/listingDrafts/'+sentId).update({status:'approved'});
+  w._bbFindLatestBlast=async()=>({id:sentId,status:'approved'});
+  const beforeNavigation=JSON.stringify(state.all());
+  await w.BBAds.open();await w.BBAds.continueCurrent();await w.BBAds.continueCurrent();
+  assert.equal(JSON.stringify(state.all()),beforeNavigation,'opening and continuing make no persistent changes');
+  assert.equal(w.document.getElementById('step5-existing-blast').hidden,false);
+  assert(w.document.getElementById('step5-view-blast').href.includes('draftId='+sentId),'direct view uses existing identity');
+  w._bbFindLatestBlast=async()=>{throw Error('History offline');};
+  await assert.rejects(w.BBAds.continueCurrent(),/History offline/);
+  assert.equal(JSON.stringify(state.all()),beforeNavigation,'failed history read never falls through to create another Blast');
+  await w.BBAds.continueCurrent(true);
+  assert.notEqual(lastPrepared.blastId,sentId,'only explicit Prepare Another Blast creates a fresh packet');
+  assert.equal(state.get(base+'/listingDrafts/'+sentId).status,'approved','submitted status stays frozen');
+  w._bbFindLatestBlast=undefined;
+  const navigationCode=cut('async function completeBlast(', '// IMAGE HANDLING');
+  assert(!navigationCode.includes('_bbUpdateDraft')&&!navigationCode.includes('addHistory('),'Continue never resets status or invents publishing history');
+  assert(!dashboard.includes('Send It →'),'navigation never says Send It');
+  const finderDom=new JSDOM('',{runScripts:'outside-only'}),fw=finderDom.window;
+  const rows=[
+    {id:'sent',adId:'first',status:'approved',createdAt:'2026-10-01'},
+    {id:'unsent',adId:'first',status:'prepared',createdAt:'2026-10-02'},
+    {id:'other-ad',adId:'second',status:'approved',createdAt:'2026-10-03'},
+    {id:'schedule',adId:'first',status:'approved',scheduleAdPath:'schedule',createdAt:'2026-10-04'}
+  ];
+  Object.assign(fw,{currentUser:{uid:'u'},db:{},collection:(...args)=>args,query:x=>x,where:()=>null,getDocs:async()=>({docs:rows.map(data=>({id:data.id,data:()=>data}))})});
+  fw.eval(cut('window._bbFindLatestBlast =', '// Update an existing listingDraft document'));
+  assert.equal((await fw._bbFindLatestBlast('b','c','first')).id,'sent','existing sent Blast wins over unused drafts and excludes other Ads and schedules');
+  finderDom.window.close();
   slow=true;const old=w.BBAds.open();await turn();
   assert(w.document.getElementById('campaign-content').inert);
   w.activeCampaignId='d';w.activeCampaignName='Other';await w.BBAds.open();releaseSlow();await old;

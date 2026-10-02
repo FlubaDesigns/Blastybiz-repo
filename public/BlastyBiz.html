@@ -611,6 +611,10 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
             Approve each platform above to continue →
           </button>
 
+          <div id="step5-existing-blast" hidden style="margin-top:16px;">
+            <a id="step5-view-blast" class="review-btn" data-existing-blast>View Last Blast →</a>
+            <button type="button" class="create-wiz-back-btn" style="min-height:48px;margin-top:12px;" onclick="completeBlast(true)">Prepare Another Blast</button>
+          </div>
           <div class="create-wiz-nav" style="margin-top:20px;">
             <button type="button" class="create-wiz-back-btn" onclick="createWizPrev(5)">← Back to Blast</button>
           </div>
@@ -2775,10 +2779,10 @@ function updateStep5UI() {
 
   if (allDone) {
     finalBtn.disabled = false;
-    finalBtn.textContent = '🚀 Send It →';
+    finalBtn.textContent = 'Continue →';
     if (wasDisabled || wasHidden) {
       setTimeout(() => finalBtn.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-      showToast('✅ All platforms done — tap Send It below');
+      showToast('✅ All platforms done — tap Continue below');
     }
   } else {
     finalBtn.disabled = true;
@@ -2789,62 +2793,17 @@ function updateStep5UI() {
   }
 }
 
-async function completeBlast() {
+async function completeBlast(newBlast = false) {
   if (window._bbDraftSavePending) { showToast('Save your generated copy with Retry save first.'); return; }
-  const finalBtn = document.getElementById('step5-final-btn');
-  const resetBtn = () => {
-    if (finalBtn) { finalBtn.disabled = false; finalBtn.textContent = '🚀 Send It →'; }
-  };
-  if (finalBtn) { finalBtn.disabled = true; finalBtn.textContent = '⏳ Getting it ready…'; }
-
-  try { await window.BBAds.save(); }
-  catch(e) { showToast('Your changes were not saved: ' + e.message); resetBtn(); return; }
-  const approved = getStep5Platforms().filter(p => p._reviewStatus === 'approved');
-  if (!approved.length) { showToast('Approve at least one platform first'); resetBtn(); return; }
-
-  const draftId = window._currentDraftId;
-  if (!draftId || typeof window._bbUpdateDraft !== 'function') {
-    showToast('⚠️ This blast has not saved yet — give it a moment and try again');
-    resetBtn();
-    return;
-  }
-
-  // Carry the photos picked on each card through to publishing. Auto-post platforms
-  // upload them; copy-and-paste platforms show them for download on the send page.
-  const photoSel = window._bbPlatformPhotoSel || {};
-  const imagesByPlatform = {};
-  approved.forEach(p => {
-    const urls = Array.from(photoSel[p.id] || []).filter(u => typeof u === 'string' && u);
-    if (urls.length) imagesByPlatform[p.id] = urls;
-  });
-
-  // Platforms the user approved — anything they excluded or skipped is marked so the
-  // send page doesn't offer it.
-  const platformStatus = {};
-  getStep5Platforms().forEach(p => {
-    platformStatus[p.id] = p._reviewStatus === 'approved' ? 'approved' : 'excluded';
-  });
-
+  const button = document.getElementById('step5-final-btn');
+  if (button) { button.disabled = true; button.textContent = 'Opening…'; }
   try {
-    await window._bbUpdateDraft(draftId, {
-      imagesByPlatform,
-      enabledPlatforms: approved.map(p=>p.id),
-      platformStatus,
-      status: 'ready_to_publish',
-    });
+    await window.BBAds.continueCurrent(newBlast);
   } catch (e) {
-    console.error('completeBlast: could not save draft', e);
-    showToast('⚠️ Could not save — check your connection and try again');
-    resetBtn();
-    return;
+    showToast(e.message || 'Could not open your blast. Please retry.');
+  } finally {
+    updateStep5UI();
   }
-
-  // Write one history entry per approved platform
-  approved.forEach(p => addHistory(p.name));
-
-  // Hand off to the send page: it fires the auto-post platforms and holds the
-  // copy-and-paste ones with their text and photos ready to grab.
-  window.location.href = 'BlastyBiz-Listing-Preview.html?bizId=' + encodeURIComponent(window.activeBizId) + '&draftId=' + encodeURIComponent(draftId);
 }
 
 // ══════════════════════════════════════════
@@ -3421,7 +3380,7 @@ function deployPlatform(id) {
   const p = platforms.find(x => x.id === id);
   if (!p) return;
   if (!p.adaptedContent) { showToast('Run adaptation first'); return; }
-  if(window.BBAds?.active){window.BBAds.prepareCurrent();return;}
+  if(window.BBAds?.active){window.BBAds.continueCurrent();return;}
   const draftId = window._currentDraftId;
   window.location.href = 'BlastyBiz-Listing-Preview.html' + (draftId ? '?draftId=' + draftId : '');
 }
@@ -6480,6 +6439,21 @@ window._bbLoadDraft = async function(draftId) {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 };
 
+// Reopen the existing canonical Blast without changing its status or queueing posts.
+window._bbFindLatestBlast = async function(businessId, campaignId, adId) {
+  if (!currentUser || !businessId || !campaignId || !adId) throw new Error('Open a saved campaign first.');
+  const rows = await getDocs(query(
+    collection(db, 'users', currentUser.uid, 'businesses', businessId, 'listingDrafts'),
+    where('campaignId', '==', campaignId)
+  ));
+  const time = v => v?.toMillis?.() || (v?.seconds ? v.seconds * 1000 : Date.parse(v) || 0);
+  return rows.docs.map(row => ({...row.data(), id: row.id}))
+    .filter(d => (d.adId === adId || (!d.adId && adId === 'first')) &&
+      !d.scheduleAdPath && ['prepared', 'ready_to_publish', 'approved', 'completed'].includes(d.status))
+    .sort((a, b) => Number(b.status === 'approved') - Number(a.status === 'approved') ||
+      Math.max(time(b.approvedAt), time(b.createdAt)) - Math.max(time(a.approvedAt), time(a.createdAt)))[0] || null;
+};
+
 // Update an existing listingDraft document — used by approvePlatformCopy and regeneratePlatformCopy
 window._bbUpdateDraft = async function(draftId, updates) {
   if (!currentUser || !activeBizId || !draftId) throw new Error('No signed-in draft');
@@ -7527,11 +7501,11 @@ window.confirmDeleteAccount = async function() {
 .cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
 </style>
 <script src="lifecycle-ui.js?v=20261001-blast-button"></script>
-<script src="ad-workspace.js?v=20261002-campaign-recovery-online"></script>
+<script src="ad-workspace.js?v=20261002-safe-blast-navigation"></script>
 <script>
 document.addEventListener('click',function(e){
  const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');
- if(a && BBAds.active){e.preventDefault();BBAds.prepareCurrent();}
+ if(a && !a.hasAttribute('data-existing-blast') && BBAds.active){e.preventDefault();BBAds.continueCurrent();}
 },true);
 </script>
 </body>
