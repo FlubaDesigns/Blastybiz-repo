@@ -3886,3 +3886,6 @@ body.listing-preview-page .badge.locked           { background: #151f15; color: 
 @media(max-width:420px) { .bb-life .bb-post-caption { padding: 12px; } .bb-life .bb-save-bar { bottom: 0; } }
 
 .bb-life .bb-schedule-row.bb-once { grid-template-columns: minmax(0,1fr); }
+
+/* Preserve horizontal clipping without creating an ancestor scroll container. */
+body:has(.bb-save-bar), body:has(.bb-save-bar) .main { overflow-x: clip; }
