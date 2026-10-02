@@ -394,7 +394,14 @@ exports.extractBizContext = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_
     }
   } else if (sourceUrl) {
     try {
-      const raw = await safeFetchUrl(sourceUrl);
+      // Accept the way people type a website on their phone. Keep HTTPS and
+      // public-host enforcement in safeFetchUrl for every redirect as well.
+      let website = typeof sourceUrl === 'string' ? sourceUrl.trim() : '';
+      if (!website || /\s/.test(website)) throw Object.assign(new Error('Invalid website'), { code: 'SSRF_INVALID_URL' });
+      if (website.startsWith('//')) website = 'https:' + website;
+      else if (!/^[a-z][a-z0-9+.-]*:/i.test(website)) website = 'https://' + website;
+      website = website.replace(/^http:\/\//i, 'https://');
+      const raw = await safeFetchUrl(website, { followHtmlRedirects: true });
       sourceText = raw
         .replace(/<script[\s\S]*?<\/script>/gi, '')
         .replace(/<style[\s\S]*?<\/style>/gi, '')
@@ -402,11 +409,11 @@ exports.extractBizContext = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_
         .replace(/\s+/g, ' ')
         .trim()
         .slice(0, 8000);
-      sourceLabel = sourceUrl;
+      sourceLabel = website;
     } catch (e) {
       const code = e.code || '';
       if (code.startsWith('SSRF_')) {
-        return res.status(400).json({ error: 'That URL cannot be fetched. Use a public website URL starting with https://', code });
+        return res.status(400).json({ error: 'We could not read that website. Check the address, for example yourbusiness.com.', code });
       }
       return res.status(400).json({ error: 'Could not read that page — check the URL and try again.' });
     }

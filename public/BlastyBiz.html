@@ -1043,7 +1043,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
         <p class="helper" style="margin-top:6px;text-align:center;">— or paste your website below —</p>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <input type="url" id="story-extract-url" class="form-input" placeholder="https://yourbusiness.com" style="flex:1;min-width:0;" oninput="document.getElementById('story-extract-btn').disabled=!this.value.trim()" />
+        <input type="text" inputmode="url" autocomplete="url" autocapitalize="off" spellcheck="false" id="story-extract-url" class="form-input" placeholder="yourbusiness.com" style="flex:1;min-width:0;" oninput="document.getElementById('story-extract-btn').disabled=!this.value.trim()" />
         <button type="button" class="btn btn-primary" id="story-extract-btn" onclick="window._bbExtractBizContext('url')" disabled style="white-space:nowrap;">Extract ✨</button>
       </div>
       <div id="story-extract-status" style="margin-top:10px;font-size:13px;color:var(--muted,#888);display:none;"></div>
