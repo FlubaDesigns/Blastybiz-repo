@@ -25,7 +25,7 @@ async function main(){
  const once=advanceSchedule({...s,frequency:'once',nextRunAt:s.firstRunAtUtc},s.firstRunAtUtc);ok(!once.enabled&&once.status==='completed','one-time ends');
  let f=setup();const source=JSON.stringify(f.ad);await f.save();let a=f.m.get(A),blast=a.schedule.preparedBlastId;ok(!!blast,'schedule creates canonical Blast');ok(!f.m.get(D+blast).schedule,'no second schedule copy');
  ok(f.m.get(D+blast).packet.adName==='Summer Ad','identity frozen');ok(f.ai()===0,'normal schedule reuse makes zero AI calls');
- f.setNow('2027-01-01T13:01:00Z');await f.life.queue(f.m.db.doc(A));ok(!Object.keys(f.m.all()).some(p=>p.startsWith(J)),'first three hold for explicit approval');
+ f.setNow('2027-01-01T13:01:00Z');await f.life.queue(f.m.db.doc(A));ok(!Object.keys(f.m.all()).some(p=>p.startsWith(J)),'explicit always-review setting holds for approval');
  await rejects(()=>f.life.manage('u',{...f.body,action:'approveNext',packetRevision:99}),/changed/,'stale preview rejected');
  await f.life.manage('u',{...f.body,action:'approveNext',packetRevision:1});await Promise.all([f.life.queue(f.m.db.doc(A)),f.life.queue(f.m.db.doc(A))]);
  let jobs=Object.entries(f.m.all()).filter(([p])=>p.startsWith(J));ok(jobs.length===2,'concurrent worker enqueues once per platform');ok(jobs.every(([,j])=>j.blastId===blast&&j.draftId===blast),'one occurrence identity');

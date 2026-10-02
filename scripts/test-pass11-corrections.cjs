@@ -13,6 +13,7 @@ function fixture(seed={},override){
  const out={};const shared={db:m.db,admin,onRequest:(_,fn)=>fn,withAuth:fn=>fn,sendResendEmail:async e=>sent.push(e)};
  vm.runInNewContext(fs.readFileSync(require.resolve('../functions/modules/lifecycle'),'utf8'),{exports:out,console:{error:(...args)=>errors.push(args)},require:name=>{
    if(name==='../lib/shared')return shared;
+   if(name==='../lib/schedule-image')return require('../functions/lib/schedule-image');
    if(name==='firebase-functions/v2/firestore')return {onDocumentWritten:(_,fn)=>fn};
    if(name==='../lib/lifecycle')return override||service;
    if(name==='../lib/ai-rollups')return {rollupCosts};

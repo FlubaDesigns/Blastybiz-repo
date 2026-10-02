@@ -26,12 +26,40 @@ function summarize(jobs) {
     launched:jobs.length>0&&jobs.every(j=>terminal.has(j.status)||manual.has(j.status))&&jobs.some(j=>delivered.has(j.status)||manual.has(j.status)),
     platformsReached:[...new Set(jobs.filter(j=>delivered.has(j.status)).map(j=>j.platform))]};
 }
-function createLifecycle({db,admin,refreshCopy,sendEmail,appUrl='https://blastybiz-9523e.web.app',clock=()=>new Date()}) {
+function createLifecycle({db,admin,refreshCopy,generateImage,sendEmail,appUrl='https://blastybiz-9523e.web.app',clock=()=>new Date()}) {
  const stamp=()=>admin.firestore.FieldValue.serverTimestamp();
  const biz=(uid,b)=>db.doc('users/'+uid+'/businesses/'+id(b));
  const draft=(uid,b,d)=>biz(uid,b).collection('listingDrafts').doc(id(d));
  const adref=(uid,b,c,a)=>biz(uid,b).collection('campaigns').doc(id(c)).collection('ads').doc(id(a));
  const statusUrl=(uid,b,d)=>appUrl+'/BlastyBiz-Publishing-Status.html?'+new URLSearchParams({bizId:b,draftId:d,ownerUid:uid});
+ // Read the same packet for the editor and its atomic save. Never trust client copy/URLs.
+ async function editorPacket(tx,br,ad,campaign,pending,sourceId) {
+   if(pending?.exists && pending.data().status==='scheduled') {
+     if(pending.data().preparationState==='working')fail(409,'Your next post is still being prepared. Try again shortly.');
+     return pending.data().packet;
+   }
+   if(sourceId) {
+     const source=await tx.get(br.collection('listingDrafts').doc(id(sourceId)));
+     if(!source.exists||source.data().status!=='approved'||source.data().adId!==ad.id||source.data().campaignId!==ad.campaignId||!source.data().packet)fail(409,'The approved source post is unavailable. Open the Ad and review it.');
+     return source.data().packet;
+   }
+   return freezePacket(ad,campaign);
+ }
+ const reviewKey=(packet,ad,s)=>createHash('sha256').update(JSON.stringify({packet,adRevision:ad.revision,scheduleRevision:s.revision||0})).digest('hex');
+ async function selectedImages(tx,br,c,imageIds) {
+   if(!Array.isArray(imageIds)||imageIds.length>30)fail(400,'Choose up to 30 images.');
+   const images=[];
+   for(const imageId of [...new Set(imageIds)]) {
+     const image=await tx.get(br.collection('campaigns').doc(id(c)).collection('images').doc(id(imageId)));
+     if(!image.exists||image.data().retired)fail(409,'An image is no longer available. Choose another.');
+     const v=image.data();images.push({id:image.id,url:v.url,path:v.path||'',alt:v.alt||''});
+   }
+   return images;
+ }
+ function withImages(packet,images) {
+   if(packet.enabledPlatforms.includes('instagram')&&!images.length)fail(400,'Instagram needs an image.');
+   return {...packet,imageRefs:images,imagesByPlatform:Object.fromEntries(packet.enabledPlatforms.map(p=>[p,postImages(p,images).map(i=>i.url)])),override:true};
+ }
  async function list(uid,b) {
    const br=biz(uid,b),business=await br.get();if(!business.exists)fail(404,'Business not found.');
    const cs=await br.collection('campaigns').get(),rows=[];
@@ -93,6 +121,25 @@ function createLifecycle({db,admin,refreshCopy,sendEmail,appUrl='https://blastyb
      });return reconcile(dr);
    }
    const ar=adref(uid,b,body.campaignId,body.adId);
+   if(action==='editor'||action==='generateImage') {
+     const state=await db.runTransaction(async tx=>{
+       const a=await tx.get(ar),c=await tx.get(br.collection('campaigns').doc(body.campaignId)),business=await tx.get(br);
+       if(!a.exists||!c.exists||!business.exists)fail(404,'Ad or campaign not found.');
+       if(c.data().status==='archived')fail(409,'Campaign is archived.');
+       const ad={...a.data(),id:ar.id},s=ad.schedule||{};
+       const pending=s.preparedBlastId?await tx.get(draft(uid,b,s.preparedBlastId)):null;
+       const sourceId=s.sourceBlastId||body.sourceBlastId;
+       let packet=await editorPacket(tx,br,ad,c.data(),pending,sourceId);
+       if(!pending?.exists&&s.repeatImageRefs)packet=withImages(packet,await selectedImages(tx,br,body.campaignId,s.repeatImageRefs.map(i=>i.id)));
+       return {packet,schedule:s,reviewKey:reviewKey(packet,ad,s),sourceBlastId:sourceId||null};
+     });
+     if(action==='generateImage') {
+       if(!generateImage)fail(503,'Image creation is unavailable. You can upload a photo instead.');
+       return generateImage({uid,b,c:body.campaignId,adId:ar.id,prompt:body.prompt,requestId:id(body.requestId),packet:state.packet});
+     }
+     const pool=await br.collection('campaigns').doc(body.campaignId).collection('images').get();
+     return {...state,imagePool:pool.docs.filter(i=>!i.data().retired).map(i=>({id:i.id,url:i.data().url,alt:i.data().alt||''}))};
+   }
    if(action==='refreshNext') {
      const claim=await db.runTransaction(async tx=>{
        const a=await tx.get(ar);if(!a.exists||!a.data().schedule?.preparedBlastId)fail(409,'No prepared Blast.');
@@ -123,15 +170,33 @@ function createLifecycle({db,admin,refreshCopy,sendEmail,appUrl='https://blastyb
        if(body.blastId){initial=await tx.get(draft(uid,b,body.blastId));if(!initial.exists||initial.data().adId!==ar.id||initial.data().campaignId!==body.campaignId)fail(409,'Prepared Blast does not belong to this Ad.');}
        next=validateSchedule(body.schedule,clock(),s);
        if(body.requestId)next.requestId=id(body.requestId);
-       freezePacket(ad,cs.data());
+       if(body.reviewed===true) {
+         const sourceId=s.sourceBlastId||body.sourceBlastId;
+         let base=await editorPacket(tx,br,ad,cs.data(),pending,sourceId);
+         if(!pending?.exists&&s.repeatImageRefs)base=withImages(base,await selectedImages(tx,br,body.campaignId,s.repeatImageRefs.map(i=>i.id)));
+         if(body.reviewKey!==reviewKey(base,ad,s))fail(409,'The post changed. Reload and review the latest version.');
+         const images=await selectedImages(tx,br,body.campaignId,body.imageIds);
+         const packet=withImages(base,images);
+         if(sourceId)next.sourceBlastId=sourceId;
+         if(s.repeatImageRefs)next.repeatImageRefs=s.repeatImageRefs;
+         if(body.applyImagesToRepeats===true)next.repeatImageRefs=images;
+         if(s.status!=='completed'&&s.status!=='canceled'&&next.frequency!=='once'){next.runsCompleted=s.runsCompleted||0;if(next.stopMode==='count'&&next.stopAfterCount<=next.runsCompleted)fail(400,'Choose a total greater than the blasts already sent.');}
+         const key='refire_'+createHash('sha256').update(ar.path+'|'+next.nextRunAt+'|'+next.revision).digest('hex').slice(0,40);
+         next.preparedBlastId=key;
+         tx.set(br.collection('listingDrafts').doc(key),{uid,businessId:b,campaignId:body.campaignId,campaignName:cs.data().name||'',adId:ar.id,adName:ad.name||'',packet,
+           adaptations:packet.adaptations,imagesByPlatform:packet.imagesByPlatform,enabledPlatforms:packet.enabledPlatforms,
+           status:'scheduled',scheduleAdPath:ar.path,scheduledForUtc:next.nextRunAt,scheduleRevision:next.revision,
+           approvalStatus:'approved',approvedPacketRevision:1,revision:1,preparationState:'ready',copyBehavior:'reuse',imageBehavior:'reuse',createdAt:stamp(),updatedAt:stamp()});
+       } else freezePacket(ad,cs.data());
        if(pending?.exists&&pending.data().status!=='approved'&&body.replacePrepared!==true)fail(409,'A Blast is already prepared. Confirm replacing its schedule before saving.');
        if(initial?.exists&&initial.data().status!=='approved') {
          next.preparedBlastId=initial.id;
          tx.update(initial.ref,{scheduleAdPath:ar.path,scheduledForUtc:next.nextRunAt,scheduleRevision:next.revision,approvalStatus:'required',status:'scheduled',updatedAt:stamp()});
        }
-     } else if(action==='pause')next={...s,enabled:false,status:'paused',revision:(s.revision||0)+1};
+     } else if(action==='cancel'){next={...s,enabled:false,status:'canceled',revision:(s.revision||0)+1};delete next.nextRunAt;delete next.preparedBlastId;}
+     else if(action==='pause')next={...s,enabled:false,status:'paused',revision:(s.revision||0)+1};
      else if(action==='resume') {
-       if(s.status==='completed')fail(409,'This schedule is complete. Edit it to start a new schedule.');
+       if(['completed','canceled'].includes(s.status))fail(409,'This schedule is complete. Edit it to start a new schedule.');
        if(!s.nextRunAt)fail(409,'Choose a future posting time.');
        next={...s,enabled:true,status:'active',revision:(s.revision||0)+1};
        // Missed work requires review; resuming never silently authorizes it.
@@ -171,7 +236,7 @@ function createLifecycle({db,admin,refreshCopy,sendEmail,appUrl='https://blastyb
        next={...s,nextAnchorAt:s.nextAnchorAt||s.nextRunAt,nextRunAt:time.toISOString(),revision:(s.revision||0)+1};
        delete next.preparedBlastId;
      } else fail(400,'Unknown schedule action.');
-     if(pending?.exists&&['save','skipNext','changeNext'].includes(action)&&pending.id!==next.preparedBlastId&&pending.data().status!=='approved')tx.update(pending.ref,{status:'canceled',approvalStatus:'canceled',canceledAt:clock().toISOString()});
+     if(pending?.exists&&['save','skipNext','changeNext','cancel'].includes(action)&&pending.id!==next.preparedBlastId&&pending.data().status!=='approved')tx.update(pending.ref,{status:'canceled',approvalStatus:'canceled',canceledAt:clock().toISOString()});
      tx.update(ar,{schedule:next,updatedAt:stamp()});
      return {schedule:next};
    });
@@ -195,8 +260,9 @@ function createLifecycle({db,admin,refreshCopy,sendEmail,appUrl='https://blastyb
      if(d.exists&&d.data().preparationState!=='working'){tx.update(ar,{'schedule.status':d.data().approvalStatus==='required'?'waiting_approval':'active'});return {ready:true,ref:dr};}
      if(d.exists&&ms(d.data().preparationClaimedAt)>now.getTime()-10*60000)return null;
      const token=randomUUID();
-     const packet=freezePacket(ad,cs.data());
-     const required=(bs.data().approvalCount||0)<3||s.approvalBehavior==='always'||s.copyBehavior==='ask'||s.imageBehavior!=='reuse'||s.copyBehavior==='refresh';
+     let packet=await editorPacket(tx,br,ad,cs.data(),null,s.sourceBlastId);
+     if(s.repeatImageRefs)packet=withImages(packet,await selectedImages(tx,br,c,s.repeatImageRefs.map(i=>i.id)));
+     const required=s.approvalBehavior==='always'||s.copyBehavior==='ask'||s.imageBehavior!=='reuse'||s.copyBehavior==='refresh';
      tx.set(dr,{uid,businessId:b,campaignId:c,campaignName:cs.data().name||'',adId:ar.id,adName:ad.name||'',packet,
        adaptations:packet.adaptations,imagesByPlatform:packet.imagesByPlatform,enabledPlatforms:packet.enabledPlatforms,
        status:'scheduled',scheduleAdPath:ar.path,scheduledForUtc:s.nextRunAt,scheduleRevision:s.revision,
@@ -214,7 +280,7 @@ function createLifecycle({db,admin,refreshCopy,sendEmail,appUrl='https://blastyb
      let packet={...claimed.packet,copyBehavior:'reuse'};
      if(output)packet={...packet,adaptations:output,copyBehavior:'refresh'};
      tx.update(claimed.ref,{packet,adaptations:packet.adaptations,preparationState:'ready',copyFallbackReason:reason||null,
-       approvalStatus:output?'required':((claimed.business.approvalCount||0)>=3&&claimed.ad.schedule.approvalBehavior!=='always'&&claimed.ad.schedule.imageBehavior==='reuse'?'automatic':'required'),revision:d.data().revision+1,updatedAt:stamp()});
+       approvalStatus:output?'required':(claimed.ad.schedule.approvalBehavior!=='always'&&claimed.ad.schedule.imageBehavior==='reuse'?'automatic':'required'),revision:d.data().revision+1,updatedAt:stamp()});
    });return claimed;
  }
  async function queue(ar) {
@@ -227,8 +293,6 @@ function createLifecycle({db,admin,refreshCopy,sendEmail,appUrl='https://blastyb
      const d=await tx.get(dr),bs=await tx.get(br),cs=await tx.get(br.collection('campaigns').doc(c));
      if(!d.exists||!bs.exists||bs.data().schedulingPaused||!cs.exists||cs.data().status==='archived')return;
      const v=d.data();if(v.status!=='scheduled'||v.preparationState==='working'||v.scheduledForUtc!==s.nextRunAt||!['approved','automatic'].includes(v.approvalStatus))return;
-     // Safety policy is rechecked at dispatch, not only at preview creation.
-     if((bs.data().approvalCount||0)<3&&v.approvalStatus!=='approved')return;
      if(v.approvalStatus==='approved'&&v.approvedPacketRevision!==v.revision)return;
      const packet=v.packet;
      for(const p of packet.enabledPlatforms) {

@@ -20,7 +20,8 @@ async function refreshCopy({uid,b,c,ad,business,campaign,packet,ref}) {
    await trackAiUsage(uid,'scheduledRefresh',result?.model||AI_DEFAULTS.smartModel,result?.usage||null,{context,failureType:'scheduled_refresh_failed',timing:{aiElapsedMs:Date.now()-start}});throw e;
  }
 }
-const lifecycle=createLifecycle({db,admin,refreshCopy,sendEmail:payload=>sendResendEmail({...payload,strict:true}),appUrl:APP_BASE_URL});
+const generateImage=require('../lib/schedule-image').createImageGenerator({db,admin,reserveAiAction,trackAiUsage});
+const lifecycle=createLifecycle({db,admin,refreshCopy,generateImage,sendEmail:payload=>sendResendEmail({...payload,strict:true}),appUrl:APP_BASE_URL});
 exports.manageBlast=onRequest({invoker:'public',secrets:['ANTHROPIC_API_KEY','GEMINI_API_KEY'],timeoutSeconds:120},withAuth(async(req,res,user)=>{
  try{res.json(await lifecycle.manage(user.uid,req.body||{}));}
  catch(e){if(e.httpStatus)return res.status(e.httpStatus).json({error:e.message});console.error('[manageBlast]',e);res.status(500).json({error:'That could not be saved. Try again.'});}

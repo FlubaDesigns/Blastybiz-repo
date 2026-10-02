@@ -74,6 +74,7 @@ async function _setConnTokens(connRef, tokens) {
 
 // ── AI cost tracking ──────────────────────────────────────────────────────────
 const AI_COSTS = {
+  'gemini-3.1-flash-lite-image': { input: 0.25, output: 1.50, image: 30.00 },
   'claude-haiku-4-5':           { input: 0.80,  output:  4.00 },
   'claude-sonnet-4-5-20250929': { input: 3.00,  output: 15.00 },
   'claude-opus-4-5':            { input: 15.00, output: 75.00 },
@@ -94,7 +95,7 @@ async function trackAiUsage(uid, fnName, model, usage, opts = {}) {
   try {
     const rates = AI_COSTS[model] || { input: 3.00, output: 15.00 };
     const costUsd = usage
-      ? ((usage.input_tokens || 0) * rates.input + (usage.output_tokens || 0) * rates.output) / 1_000_000
+      ? ((usage.input_tokens || 0) * rates.input + Math.max(0,(usage.output_tokens || 0)-(usage.image_tokens || 0)) * rates.output + (usage.image_tokens || 0) * (rates.image || rates.output)) / 1_000_000
       : 0;
     const account=uid?(await db.collection('users').doc(uid).get()).data():null;
     await db.collection('aiUsageLogs').add({

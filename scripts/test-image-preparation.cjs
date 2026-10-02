@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const {createCanvas,loadImage}=require(process.env.CANVAS_PATH||'@napi-rs/canvas');
-const html=fs.readFileSync('public/BlastyBiz.html','utf8');
+const html=fs.readFileSync('public/photo-preparation.js','utf8').split('export {')[0]+'  // ── Photo upload';
 const code=html.slice(html.indexOf('  async function _bbImageType'),html.indexOf('  // ── Photo upload'));
 let mode='normal',released=0,conversions=0;
 const c={Blob,Uint8Array,DataView,atob,setTimeout,clearTimeout,console,

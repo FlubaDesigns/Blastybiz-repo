@@ -3849,3 +3849,40 @@ body.listing-preview-page .badge.locked           { background: #151f15; color: 
   border-left: 2px solid var(--border, #2a2a2a);
   padding-left: 10px;
 }
+
+/* One scheduler, shared by results and the Schedule tab. */
+.bb-life { min-width: 0; }
+.bb-life .bb-step-label { margin: 22px 0 6px; color: var(--green); font: 700 12px 'DM Sans',sans-serif; letter-spacing: .12em; }
+.bb-life .bb-quick { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.bb-life .bb-quick button { font-size: 13px; }
+.bb-life select { appearance: none; padding-right: 38px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2300c853' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+.bb-life .bb-schedule-row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.bb-life .bb-schedule-row label:only-child { grid-column: 1/-1; }
+.bb-life .bb-post-preview { overflow: hidden; border: 1px solid var(--border); border-radius: 16px; background: #080f08; }
+.bb-life .bb-selected-photos { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; }
+.bb-life .bb-selected-photos img { width: 100%; height: auto; max-height: 330px; aspect-ratio: 4/3; object-fit: contain; margin: 0; flex: 0 0 100%; scroll-snap-align: start; background: #050905; }
+.bb-life .bb-post-caption { padding: 16px; }
+.bb-life .bb-post-caption > p { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin: 8px 0 0; font-size: 14px; line-height: 1.55; color: var(--light); }
+.bb-life .bb-post-caption details p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.bb-life .bb-photo-choices { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; margin: 12px 0; }
+.bb-life .bb-photo-choices button { margin: 0; padding: 10px 6px; font-size: 13px; }
+.bb-life button[aria-pressed=true] { color: var(--dark); background: var(--green); }
+.bb-life .bb-photo-pool { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+.bb-life .bb-photo-pool button { display: flex; flex-direction: column; margin: 0; padding: 4px; font-size: 12px; overflow: hidden; }
+.bb-life .bb-photo-pool img { width: 100%; height: auto; aspect-ratio: 1; margin: 0 0 4px; object-fit: cover; border-radius: 8px; }
+.bb-life .bb-upload-button { position: relative; display: flex; align-items: center; justify-content: center; min-height: 52px; border: 1px dashed var(--green); border-radius: 12px; color: var(--green); overflow: hidden; cursor: pointer; }
+.bb-life .bb-upload-button input[type=file] { position: absolute; inset: 0; opacity: 0; margin: 0; width: 100%; height: 100%; cursor: pointer; }
+.bb-life [data-generated] img { width: 100%; height: auto; margin: 12px 0; border-radius: 12px; }
+.bb-life .bb-check-row { display: flex; align-items: center; gap: 10px; }
+.bb-life p.bb-small { font-size: 12px; line-height: 1.5; color: #a6b9a6; margin: 8px 0; }
+.bb-life .bb-save-bar { position: sticky; bottom: 0; z-index: 3; background: #0d190e; border-top: 1px solid #345339; padding: 12px 0 max(12px,env(safe-area-inset-bottom)); margin-top: 20px; }
+.bb-life .bb-save-bar > p:first-child { font-size: 14px; font-weight: 600; margin: 0 0 8px; }
+.bb-life .bb-save-bar button.bb-primary { width: 100%; margin: 0; min-height: 52px; font-size: 17px; }
+.bb-life .bb-text-button { border: 0; min-height: 44px; margin: 0; }
+.bb-life .bb-schedule-success { text-align: center; padding: 20px 0; }
+.bb-life .bb-schedule-success > span { display: inline-grid; place-items: center; width: 56px; height: 56px; background: var(--green); color: var(--dark); font-size: 32px; border-radius: 50%; }
+.bb-life a.bb-primary { background: var(--green); color: var(--dark); }
+.bb-life .bb-no-photo { margin: 16px; color: var(--silver); }
+@media(max-width:420px) { .bb-life .bb-post-caption { padding: 12px; } .bb-life .bb-save-bar { bottom: 0; } }
+
+.bb-life .bb-schedule-row.bb-once { grid-template-columns: minmax(0,1fr); }

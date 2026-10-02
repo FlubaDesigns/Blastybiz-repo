@@ -50,6 +50,7 @@ jobs:
           node scripts/test-pass9-corrections.cjs
           node scripts/test-pass10-regressions.cjs
           node scripts/test-pass10-corrections.cjs
+          node scripts/test-schedule-photos.cjs
           node scripts/test-pass11-lifecycle.cjs
           node scripts/test-pass11-corrections.cjs
           node scripts/test-audit2-repairs.cjs
