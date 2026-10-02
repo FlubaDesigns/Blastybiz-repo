@@ -71,7 +71,32 @@ async function run() {
       assert.equal(writes.length,1); assert.equal(writes[0][0].aiContext,undefined,'draft content is not saved over owner story');
     });
   }
-  console.log(checks+' story extraction scenarios passed.');
+  const ui = fs.readFileSync('public/BlastyBiz.html', 'utf8');
+  const saveCode = ui.slice(ui.indexOf('window.saveStory ='), ui.indexOf('async function _bbLoadLibraryDocs'));
+  for (const fail of [false, true]) {
+    await test(fail ? 'failed save keeps Story and all typed fields' : 'Save & Continue waits for persistence before opening Create', async () => {
+      const fields=['story','different','awards','customer','other'];
+      const elements=Object.fromEntries(fields.map(key=>['ctx-'+key,{value:key==='story'?' My business story ':'',style:{}}]));
+      elements['story-btn-save']={textContent:'Save & Continue →',disabled:false};
+      elements['story-save-status']={style:{}};
+      let finish;
+      const pending=new Promise((resolve,reject)=>{finish=fail?()=>reject(Error('offline')):resolve;});
+      const writes=[],navigation=[];
+      const c={window:{},activeBizId:'b',currentUser:{uid:'u'},db:{},document:{getElementById:id=>elements[id]},
+        STORY_FIELDS:fields.map(key=>({key,id:'ctx-'+key})),doc:(...parts)=>parts,
+        setDoc:async(...args)=>{writes.push(args);await pending;},showToast:()=>{},showTab:name=>navigation.push(name),setTimeout:()=>{}};
+      vm.runInNewContext(saveCode,c);
+      const saving=c.window.saveStory(true);
+      assert.equal(elements['story-btn-save'].disabled,true); assert.equal(navigation.length,0);
+      assert.equal(writes[0][1].aiContext.story,'My business story'); assert.equal(writes[0][2].merge,true);
+      finish(); await saving;
+      assert.deepEqual(navigation,fail?[]:['create']);
+      assert.equal(elements['ctx-story'].value,' My business story ');
+      assert.equal(elements['story-btn-save'].disabled,false);
+      assert.equal(elements['story-btn-save'].textContent,'Save & Continue →');
+    });
+  }
+  console.log(checks+' story extraction and navigation scenarios passed.');
 }
 module.exports = run;
 if (require.main === module) run().catch(e=>{console.error(e);process.exitCode=1;});

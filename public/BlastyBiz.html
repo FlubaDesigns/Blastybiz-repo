@@ -1085,9 +1085,10 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
       <div class="char-count"><span id="cnt-other">0</span> characters</div>
     </div>
 
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-      <button type="button" class="btn btn-primary" id="story-btn-save" onclick="saveStory()" disabled>Save Story</button>
-      <span id="story-save-status" style="font-size:12px;color:var(--green);opacity:0;transition:opacity 0.4s;"></span>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px;">
+      <button type="button" class="btn" onclick="showTab('profile')" style="min-height:48px;">← Profile</button>
+      <button type="button" class="btn btn-primary" id="story-btn-save" onclick="saveStory(true)" style="flex:1;min-height:48px;white-space:nowrap;" disabled>Save &amp; Continue →</button>
+      <span id="story-save-status" role="status" aria-live="polite" style="flex-basis:100%;font-size:12px;color:var(--green);opacity:0;transition:opacity 0.4s;"></span>
     </div>
 
     <!-- Business Library — locked for starter -->
@@ -7262,10 +7263,12 @@ window._bbLoadStory = async function() {
   }
 };
 
-window.saveStory = async function() {
+window.saveStory = async function(continueToCreate = false) {
   if (!activeBizId) { showToast('No active business found'); return; }
+  const savedBizId = activeBizId;
   const btn = document.getElementById('story-btn-save');
   const status = document.getElementById('story-save-status');
+  const idleLabel = btn?.textContent || 'Save & Continue →';
   if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
   const aiContext = {};
   STORY_FIELDS.forEach(f => {
@@ -7273,12 +7276,13 @@ window.saveStory = async function() {
     if (el) aiContext[f.key] = el.value.trim();
   });
   try {
-    await setDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), { aiContext }, { merge: true });
-    if (btn) { btn.disabled = false; btn.textContent = 'Save Story'; }
+    await setDoc(doc(db, 'users', currentUser.uid, 'businesses', savedBizId), { aiContext }, { merge: true });
+    if (btn) { btn.disabled = false; btn.textContent = idleLabel; }
     if (status) { status.textContent = '✓ Saved — AI will use this next time'; status.style.opacity = '1'; setTimeout(() => { status.style.opacity = '0'; }, 3000); }
     showToast('Business story saved');
+    if (continueToCreate && activeBizId === savedBizId) showTab('create');
   } catch(e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'Save Story'; }
+    if (btn) { btn.disabled = false; btn.textContent = idleLabel; }
     showToast('Save failed — try again');
   }
 };
