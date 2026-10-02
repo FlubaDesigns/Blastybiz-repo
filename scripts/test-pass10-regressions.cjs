@@ -78,6 +78,7 @@ async function main(){
  c.BBBlasty.configure({events:{'ad.run_again_scope':{message:'Run {{adName}}?',enabled:false}}});
  ok(c.BBBlasty.message('ad.run_again_scope',{adName:'July'})==='Run July?','admin override uses same semantic ID and substitutions');
  c.BBBlasty.initialize();ok(await c.BBBlasty.fire('ad.run_again_scope',{needed:true})===false,'disabled event never changes product action');
+ await require('./test-campaign-recovery.cjs')();
  console.log('PASS: '+checks+' Pass 10 behavior assertions.');
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

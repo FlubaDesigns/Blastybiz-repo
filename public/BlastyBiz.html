@@ -1193,7 +1193,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 </div>
 
 <!-- TOAST -->
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <!-- PAYMENT CONFIRMING — only shown when arriving back from Square checkout -->
 <div class="pay-confirm" id="pay-confirm" role="status" aria-live="polite" hidden>
@@ -4927,7 +4927,9 @@ function debounceCampaignSave() {
     cam.lastUsedAt = new Date().toISOString();
     try {
       await window._bbSaveCampaigns([cam]);
-      if (window.BBAds?.active) await window.BBAds.save();
+      if (!window.BBAds) throw new Error('Ad saving is not ready yet');
+      await window.BBAds.ready();
+      await window.BBAds.save();
       _showAdDraftStatus('Saved ✓');
     } catch(e) {
       console.warn('Campaign auto-save failed:', e);
@@ -5096,11 +5098,13 @@ function clearAll() { clearAllPrompt(); }
 // ══════════════════════════════════════════
 // TOAST
 // ══════════════════════════════════════════
+let toastTimer;
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), Math.min(12000, Math.max(4000, String(msg).length * 65)));
 }
 
 // ══════════════════════════════════════════
@@ -7499,7 +7503,7 @@ window.confirmDeleteAccount = async function() {
 .cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
 </style>
 <script src="lifecycle-ui.js?v=20261001-blast-button"></script>
-<script src="ad-workspace.js?v=20261001-photo-picker"></script>
+<script src="ad-workspace.js?v=20261002-campaign-recovery"></script>
 <script>
 document.addEventListener('click',function(e){
  const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');

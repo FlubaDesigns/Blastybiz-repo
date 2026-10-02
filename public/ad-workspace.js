@@ -59,7 +59,12 @@
         const rows=await list();if(seq!==epoch)return;
         const wanted=new URLSearchParams(location.search).get('adId');
         let selected=rows.find(a=>a.id===wanted)||rows.find(a=>a.id==='first')||rows[0];
-        if(!selected)throw Error('This campaign has no saved ad. Your campaign details are preserved.');
+        if(!selected){
+          tell('Opening your campaign details…');
+          const recovered=await api('create',{businessId:business,campaignId:campaign,adId:'first',requestId:'first',recoverCampaign:true});
+          if(seq!==epoch)return;
+          selected=recovered.ad;
+        }
         const pool=await window._bbLoadCampaignImages(campaign);if(seq!==epoch)return;
         // Bring existing campaign-array photos through the same image repository.
         const legacy=typeof campaigns!=='undefined'?(campaigns.find(c=>c.id===campaign)?.photos||[]):[];

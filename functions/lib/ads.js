@@ -85,6 +85,8 @@ function createAdService(db,admin) {
   return async function manage(uid,body) {
     const {action}=body;
     if(!['list','get','create','derive','save','prepare','updatePrepared'].includes(action))fail(400,'Unknown Ad action.');
+    if(body.recoverCampaign!==undefined && typeof body.recoverCampaign!=='boolean')fail(400,'Invalid campaign recovery.');
+    if(body.recoverCampaign && (action!=='create'||body.adId!=='first'||body.requestId!=='first'))fail(400,'Invalid campaign recovery.');
     const businessId=id(body.businessId),campaignId=id(body.campaignId);
     const biz=db.doc('users/'+uid+'/businesses/'+businessId),camp=biz.collection('campaigns').doc(campaignId);
     const ads=camp.collection('ads'),drafts=biz.collection('listingDrafts');
@@ -108,10 +110,38 @@ function createAdService(db,admin) {
       if(action==='create'||action==='derive') {
         const requestId=id(body.requestId);
         if(ad) {
-          if(ad.requestId===requestId)return {ad};
+          if(body.recoverCampaign || ad.requestId===requestId)return {ad};
           fail(409,'Ad already exists.');
         }
         let source=null;
+        let recovered=null;
+        if(body.recoverCampaign) {
+          // Older campaigns predate canonical Ads. Recover once under the same
+          // transaction and owner path; never replace an existing Ad or Blast.
+          const existing=await tx.get(ads.limit(1));
+          if(!existing.empty)return {ad:{...existing.docs[0].data(),id:existing.docs[0].id}};
+          const saved=await tx.get(drafts.where('campaignId','==',campaignId));
+          const time=v=>typeof v?.toMillis==='function'?v.toMillis():Number(v?.stamp)||(v?Date.parse(v):0)||0;
+          const latest=saved.docs.map(d=>({id:d.id,...d.data()}))
+            .filter(d=>d.status!=='canceled'&&d.status!=='deleted')
+            .sort((a,b)=>Math.max(time(b.updatedAt),time(b.lastGeneratedAt),time(b.createdAt))-Math.max(time(a.updatedAt),time(a.lastGeneratedAt),time(a.createdAt)))[0]||{};
+          const packet=latest.packet||latest;
+          const supported=p=>Object.hasOwn(PLATFORM_CAPABILITY_MAP,p);
+          const adaptations={};
+          for(const [p,history] of Object.entries(campaign.platformHistory||{})) {
+            if(!supported(p)||!Array.isArray(history))continue;
+            const entry=history.filter(x=>typeof x?.copy==='string'&&x.copy.trim()).sort((a,b)=>time(b.ranAt)-time(a.ranAt))[0];
+            if(entry)adaptations[p]=entry.copy.replace(/<br\s*\/?\s*>/gi,'\n');
+          }
+          for(const [p,copy] of Object.entries(packet.adaptations||{}))if(supported(p)&&typeof copy==='string'&&copy.trim())adaptations[p]=copy;
+          const destinations=(packet.enabledPlatforms||campaign.platformsEnabled||Object.keys(adaptations)).filter(supported);
+          recovered={name:packet.adName||campaign.adName||campaign.name||'First Ad',offer:packet.offer??campaign.offer??'',price:packet.price??campaign.price??'',
+            cta:packet.cta||campaign.cta||'',context:campaign.campaignStory??packet.context??packet.campaignContext??'',
+            platforms:[...new Set([...destinations,...Object.keys(adaptations)])],adaptations};
+          if(packet.pickupArea!==undefined)recovered.pickupArea=packet.pickupArea;
+          if(packet.pickupZip!==undefined)recovered.pickupZip=packet.pickupZip;
+          if(packet.mentions)recovered.mentions=packet.mentions;
+        }
         if(action==='derive') {
           const sourceSnap=await tx.get(ads.doc(id(body.sourceAdId)));
           if(!sourceSnap.exists)fail(404,'Source Ad not found.');
@@ -119,7 +149,7 @@ function createAdService(db,admin) {
         }
         const base=source?Object.fromEntries(allowed.filter(k=>source[k]!==undefined).map(k=>[k,clone(source[k])])):
           {name:'New Ad',offer:'',price:'',cta:'',context:'',mentions:require('./business-form').profileMentions(bs.data()),platforms:campaign.platformsEnabled||[],imageRefs:[],adaptations:{},platformStatus:{}};
-        const creative=cleanCreative(body.creative||{},base);
+        const creative=cleanCreative(recovered||body.creative||{},base);
         await resolveImages(tx,camp,creative,!!body.creative?.imageRefs);
         creative.platformStatus=Object.fromEntries((creative.platforms||[]).map(p=>[p,'needs-review']));
         const made={...creative,id:adId,campaignId,businessId,uid,requestId,revision:1,status:'draft',
