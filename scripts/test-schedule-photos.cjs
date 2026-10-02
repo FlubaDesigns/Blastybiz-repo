@@ -12,6 +12,34 @@ const request={businessId:'b',campaignId:'c',adId:'a'};
 async function editor(){return life.manage('u',{...request,action:'editor'});}
 async function save(extra={}){const state=await editor();return life.manage('u',{...request,action:'save',expectedRevision:state.schedule.revision||0,reviewKey:state.reviewKey,reviewed:true,imageIds:['new'],replacePrepared:true,requestId:'save_'+(state.schedule.revision||0),schedule:{frequency:'weekly',firstRunAtUtc:'2027-01-02T12:00Z',timezone:'UTC',approvalBehavior:'automatic'},...extra});}
 (async()=>{
+ // Original saved format: sent jobs, not subsequently edited draft/Ad copy,
+ // define the next post. Keep the per-platform photo selections unchanged.
+ const historical={status:'approved',uid:'u',campaignId:'c',adId:'a',adaptations:{craigslist:'Draft changed later'},imagesByPlatform:{craigslist:[]}};
+ const oldUrl='https://example.com/retired.jpg',jobs=B+'/publishJobs/';
+ const originalDb=database({'users/u':{},[B]:{schedulingPaused:true},[C]:{name:'Campaign'},[A]:ad,[D+'sent']:historical,
+   [jobs+'sent_cl']:{draftId:'sent',campaignId:'c',adId:'a',platform:'craigslist',status:'manual_completed',payload:{adaptedContent:'Actually sent copy',imageUrls:[oldUrl]}},
+   [jobs+'sent_fb']:{draftId:'sent',campaignId:'c',adId:'a',platform:'fbmarket',status:'manual_required',payload:{adaptedContent:'Actually sent second copy',imageUrls:[]}}});
+ const oldLife=createLifecycle({db:originalDb.db,admin,clock:()=>now}),sourceRequest={...request,sourceBlastId:'sent'};
+ const beforeSource=originalDb.get(D+'sent'),beforeJobs=Object.fromEntries(Object.entries(originalDb.all()).filter(([p])=>p.startsWith(jobs)));
+ const originalState=await oldLife.manage('u',{...sourceRequest,action:'editor'});
+ assert.deepEqual(originalState.packet.enabledPlatforms,['craigslist','fbmarket']);
+ assert.equal(originalState.packet.adaptations.craigslist,'Actually sent copy');
+ assert.deepEqual(originalState.packet.imagesByPlatform,{craigslist:[oldUrl],fbmarket:[]});
+ assert.equal(originalState.packet.imageRefs[0].url,oldUrl);
+ const originalSave={...sourceRequest,action:'save',expectedRevision:0,reviewed:true,reviewKey:originalState.reviewKey,imageIds:originalState.packet.imageRefs.map(i=>i.id),replacePrepared:true,requestId:'historical_save',schedule:{frequency:'weekly',firstRunAtUtc:'2027-01-02T12:00Z',timezone:'UTC',approvalBehavior:'automatic'}};
+ const oldSaved=await oldLife.manage('u',originalSave),oldNext=originalDb.get(D+oldSaved.schedule.preparedBlastId);
+ assert.deepEqual(oldNext.packet.imagesByPlatform,originalState.packet.imagesByPlatform,'Keep current preserves platform-specific selections');
+ await oldLife.manage('u',originalSave);
+ assert.deepEqual(originalDb.get(D+'sent'),beforeSource,'source draft is never migrated or changed');
+ assert.deepEqual(Object.fromEntries(Object.entries(originalDb.all()).filter(([p])=>p.startsWith(jobs))),beforeJobs,'editor/save/retry cannot send or replace existing jobs');
+ await originalDb.db.doc(A).update({schedule:{}});
+ await originalDb.db.doc(D+'sent').update({campaignId:'different'});
+ await assert.rejects(oldLife.manage('u',{...sourceRequest,action:'editor'}),/unavailable/);
+ await originalDb.db.doc(D+'sent').update({campaignId:'c',status:'prepared'});
+ await assert.rejects(oldLife.manage('u',{...sourceRequest,action:'editor'}),/unavailable/);
+ await originalDb.db.doc(D+'sent').update({status:'approved'});
+ await originalDb.db.doc(jobs+'sent_cl').update({campaignId:'different'});
+ await assert.rejects(oldLife.manage('u',{...sourceRequest,action:'editor'}),/incomplete/);
  let state=await editor();assert.equal(state.imagePool.length,2);
  await assert.rejects(life.manage('other',{...request,action:'editor'}),/not found/);
  await assert.rejects(save({imageIds:[]}),/Instagram/);

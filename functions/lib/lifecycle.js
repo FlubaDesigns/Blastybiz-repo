@@ -40,16 +40,44 @@ function createLifecycle({db,admin,refreshCopy,generateImage,sendEmail,appUrl='h
    }
    if(sourceId) {
      const source=await tx.get(br.collection('listingDrafts').doc(id(sourceId)));
-     if(!source.exists||source.data().status!=='approved'||source.data().adId!==ad.id||source.data().campaignId!==ad.campaignId||!source.data().packet)fail(409,'The approved source post is unavailable. Open the Ad and review it.');
-     return source.data().packet;
+     if(!source.exists||source.data().status!=='approved'||source.data().adId!==ad.id||source.data().campaignId!==ad.campaignId)fail(409,'The approved source post is unavailable. Open the Ad and review it.');
+     const saved=source.data(),original=saved.packet||saved;
+     // Delivery payloads are the historical truth, including a sent subset of
+     // destinations. Original-format drafts do not have a nested packet.
+     const jobs=await tx.get(br.collection('publishJobs').where('draftId','==',source.id));
+     if(jobs.empty) {
+       if(saved.packet)return saved.packet;
+       fail(409,'The source post has no publishing record. Open the Ad and review it.');
+     }
+     const adaptations={},imagesByPlatform={};
+     for(const row of jobs.docs) {
+       const job=row.data(),p=job.platform,payload=job.payload;
+       if(job.campaignId!==ad.campaignId||(job.adId&&job.adId!==ad.id)||!Object.hasOwn(PLATFORM_CAPABILITY_MAP,p)||typeof payload?.adaptedContent!=='string'||!payload.adaptedContent.trim()||!Array.isArray(payload.imageUrls)||payload.imageUrls.some(u=>typeof u!=='string'||!/^https:\/\//i.test(u)))fail(409,'The source publishing record is incomplete. Open the Ad and review it.');
+       if(Object.hasOwn(adaptations,p)&&(adaptations[p]!==payload.adaptedContent||JSON.stringify(imagesByPlatform[p])!==JSON.stringify(payload.imageUrls)))fail(409,'The source has conflicting publishing records. Open the Ad and review it.');
+       adaptations[p]=payload.adaptedContent;imagesByPlatform[p]=payload.imageUrls;
+     }
+     const pool=await tx.get(br.collection('campaigns').doc(ad.campaignId).collection('images'));
+     const known=[...(original.imageRefs||[]),...pool.docs.filter(i=>!i.data().retired).map(i=>({...i.data(),id:i.id}))];
+     const imageRefs=[...new Set(Object.values(imagesByPlatform).flat())].map(url=>{
+       const image=known.find(i=>i.url===url);
+       return {id:image?.id||'sent_'+createHash('sha256').update(url).digest('hex').slice(0,32),url,path:image?.path||'',alt:image?.alt||''};
+     });
+     return {version:1,adId:ad.id,campaignId:ad.campaignId,campaignName:original.campaignName||campaign.name||'',adName:original.adName||ad.name||'Ad',adRevision:original.adRevision||ad.revision,
+       offer:original.offer||'',price:original.price||'',cta:original.cta||'',context:original.context||original.campaignContext||'',mentions:original.mentions||{},
+       ...(original.pickupArea!==undefined?{pickupArea:original.pickupArea}:{}),...(original.pickupZip!==undefined?{pickupZip:original.pickupZip}:{}),
+       adaptations,imagesByPlatform,imageRefs,enabledPlatforms:Object.keys(adaptations),copyBehavior:'reuse',override:!!original.override};
    }
    return freezePacket(ad,campaign);
  }
  const reviewKey=(packet,ad,s)=>createHash('sha256').update(JSON.stringify({packet,adRevision:ad.revision,scheduleRevision:s.revision||0})).digest('hex');
- async function selectedImages(tx,br,c,imageIds) {
+ async function selectedImages(tx,br,c,imageIds,packet) {
    if(!Array.isArray(imageIds)||imageIds.length>30)fail(400,'Choose up to 30 images.');
    const images=[];
    for(const imageId of [...new Set(imageIds)]) {
+     // Keeping a sent photo uses its server-owned snapshot even if the library
+     // item was retired. Client-supplied URLs are never accepted.
+     const kept=packet?.imageRefs?.find(i=>i.id===imageId);
+     if(kept){images.push(kept);continue;}
      const image=await tx.get(br.collection('campaigns').doc(id(c)).collection('images').doc(id(imageId)));
      if(!image.exists||image.data().retired)fail(409,'An image is no longer available. Choose another.');
      const v=image.data();images.push({id:image.id,url:v.url,path:v.path||'',alt:v.alt||''});
@@ -58,6 +86,7 @@ function createLifecycle({db,admin,refreshCopy,generateImage,sendEmail,appUrl='h
  }
  function withImages(packet,images) {
    if(packet.enabledPlatforms.includes('instagram')&&!images.length)fail(400,'Instagram needs an image.');
+   if(JSON.stringify(images)===JSON.stringify(packet.imageRefs))return packet;
    return {...packet,imageRefs:images,imagesByPlatform:Object.fromEntries(packet.enabledPlatforms.map(p=>[p,postImages(p,images).map(i=>i.url)])),override:true};
  }
  async function list(uid,b) {
@@ -130,7 +159,7 @@ function createLifecycle({db,admin,refreshCopy,generateImage,sendEmail,appUrl='h
        const pending=s.preparedBlastId?await tx.get(draft(uid,b,s.preparedBlastId)):null;
        const sourceId=s.sourceBlastId||body.sourceBlastId;
        let packet=await editorPacket(tx,br,ad,c.data(),pending,sourceId);
-       if(!pending?.exists&&s.repeatImageRefs)packet=withImages(packet,await selectedImages(tx,br,body.campaignId,s.repeatImageRefs.map(i=>i.id)));
+       if(!pending?.exists&&s.repeatImageRefs)packet=withImages(packet,await selectedImages(tx,br,body.campaignId,s.repeatImageRefs.map(i=>i.id),packet));
        return {packet,schedule:s,reviewKey:reviewKey(packet,ad,s),sourceBlastId:sourceId||null};
      });
      if(action==='generateImage') {
@@ -173,9 +202,9 @@ function createLifecycle({db,admin,refreshCopy,generateImage,sendEmail,appUrl='h
        if(body.reviewed===true) {
          const sourceId=s.sourceBlastId||body.sourceBlastId;
          let base=await editorPacket(tx,br,ad,cs.data(),pending,sourceId);
-         if(!pending?.exists&&s.repeatImageRefs)base=withImages(base,await selectedImages(tx,br,body.campaignId,s.repeatImageRefs.map(i=>i.id)));
+         if(!pending?.exists&&s.repeatImageRefs)base=withImages(base,await selectedImages(tx,br,body.campaignId,s.repeatImageRefs.map(i=>i.id),base));
          if(body.reviewKey!==reviewKey(base,ad,s))fail(409,'The post changed. Reload and review the latest version.');
-         const images=await selectedImages(tx,br,body.campaignId,body.imageIds);
+         const images=await selectedImages(tx,br,body.campaignId,body.imageIds,base);
          const packet=withImages(base,images);
          if(sourceId)next.sourceBlastId=sourceId;
          if(s.repeatImageRefs)next.repeatImageRefs=s.repeatImageRefs;
@@ -261,7 +290,7 @@ function createLifecycle({db,admin,refreshCopy,generateImage,sendEmail,appUrl='h
      if(d.exists&&ms(d.data().preparationClaimedAt)>now.getTime()-10*60000)return null;
      const token=randomUUID();
      let packet=await editorPacket(tx,br,ad,cs.data(),null,s.sourceBlastId);
-     if(s.repeatImageRefs)packet=withImages(packet,await selectedImages(tx,br,c,s.repeatImageRefs.map(i=>i.id)));
+     if(s.repeatImageRefs)packet=withImages(packet,await selectedImages(tx,br,c,s.repeatImageRefs.map(i=>i.id),packet));
      const required=s.approvalBehavior==='always'||s.copyBehavior==='ask'||s.imageBehavior!=='reuse'||s.copyBehavior==='refresh';
      tx.set(dr,{uid,businessId:b,campaignId:c,campaignName:cs.data().name||'',adId:ar.id,adName:ad.name||'',packet,
        adaptations:packet.adaptations,imagesByPlatform:packet.imagesByPlatform,enabledPlatforms:packet.enabledPlatforms,
@@ -390,4 +419,3 @@ function createLifecycle({db,admin,refreshCopy,generateImage,sendEmail,appUrl='h
  return {manage,list,prepare,queue,reconcile,notify,statusUrl};
 }
 module.exports={createLifecycle,summarize,terminal,manual,delivered,remindersEligible};
-

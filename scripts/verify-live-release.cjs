@@ -1,5 +1,6 @@
 'use strict';
-// Read-only verification: never publishes a post, sends mail, or changes customer data.
+// Public release checks plus isolated authenticated scheduler acceptance in Main.
+// Never publishes a post, sends mail, or changes customer data.
 const assert = require('node:assert/strict');
 (async () => {
   assert(process.env.GITHUB_SHA, 'GITHUB_SHA is required');
@@ -31,4 +32,5 @@ const assert = require('node:assert/strict');
     }
     console.log(`PASS: ${host} serves ${process.env.GITHUB_SHA} and all reviewed page markers.`);
   }
+  if(process.env.GOOGLE_APPLICATION_CREDENTIALS)await require('./verify-live-scheduler.cjs')();
 })().catch(error => { console.error(error.message); process.exitCode = 1; });
