@@ -134,23 +134,17 @@ function renderJobs(jobs) {
 
   const list = document.getElementById('platform-list');
   const expanded = new Set([...list.querySelectorAll('details.platform-row[open]')].map(row => row.dataset.jobid));
-  const firstRender = !list.dataset.rendered;
-  list.dataset.rendered = 'true';
   list.replaceChildren();
-  let opened = false;
   jobs.forEach(job => {
     const meta = PLATFORM_META[job.platform] || { name: job.platform, icon: '●' };
     const status = STATUS_CONFIG[job.status] || { label: job.status, cls: 'pill-pending', rowCls: '' };
     const manual = ['manual_required', 'manual_followup', 'manual_ready'].includes(job.status);
-    const actionable = manual || ['failed', 'needs_connection'].includes(job.status);
-    const row = document.createElement(actionable ? 'details' : 'div');
+    const row = document.createElement('details');
     row.className = 'platform-row ' + status.rowCls;
     row.dataset.jobid = job.jobId;
-    if (actionable) {
-      row.open = expanded.has(job.jobId) || (firstRender && !opened);
-      opened = true;
-    }
-    const header = document.createElement(actionable ? 'summary' : 'div');
+    row.setAttribute('name', 'publishing-platforms');
+    row.open = expanded.has(job.jobId);
+    const header = document.createElement('summary');
     header.className = 'platform-heading';
     const icon = document.createElement('span');
     icon.className = 'platform-icon ' + (meta.piClass || 'pi-default'); icon.setAttribute('aria-hidden','true'); icon.textContent = meta.icon;
@@ -158,9 +152,9 @@ function renderJobs(jobs) {
     const name = document.createElement('span'); name.className = 'platform-name'; name.textContent = meta.name;
     const pill = document.createElement('span'); pill.className = 'status-pill ' + status.cls; pill.textContent = status.label;
     info.append(name,pill); header.append(icon,info);
-    if (actionable) { const expand = document.createElement('span'); expand.className = 'platform-expand'; expand.setAttribute('aria-hidden','true'); expand.textContent = '⌄'; header.append(expand); }
+    { const expand = document.createElement('span'); expand.className = 'platform-expand'; expand.setAttribute('aria-hidden','true'); expand.textContent = '⌄'; header.append(expand); }
     row.append(header);
-    if (actionable) {
+    {
       const content = document.createElement('div');
       content.className = 'platform-content';
       const message = document.createElement('p');
@@ -181,8 +175,6 @@ function renderJobs(jobs) {
         connect.className = 'btn-copy'; connect.textContent = 'Connect'; actions.append(connect);
       }
       content.append(actions); row.append(content);
-    } else if (!['success','manual_posted','manual_completed','manual_skipped','manual_lapsed','skipped','canceled'].includes(job.status) && job.customerVisibleMessage) {
-      const message = document.createElement('p'); message.className = 'platform-msg'; message.textContent = job.customerVisibleMessage; row.append(message);
     }
     list.append(row);
   });
@@ -211,7 +203,7 @@ function showEmptyState(msg) {
 
 <script src="schedule-utils.js"></script>
 <script src="lifecycle-ui.js?v=20261002-schedule-photos"></script>
-<script src="lifecycle-status.js?v=20261002-compact-status"></script>
+<script src="lifecycle-status.js?v=20261002-thumbnails"></script>
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';

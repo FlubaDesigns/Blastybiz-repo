@@ -2096,6 +2096,9 @@ body.publishing-page .action-btns .btn-copy { display: flex; align-items: center
 body.publishing-page .action-btns .btn-copy:nth-child(n+3) { background: transparent; color: var(--silver); border: 1px solid var(--border); }
 body.publishing-page .platform-resources { display: flex; flex-wrap: wrap; align-items: start; gap: 0 14px; margin-top: 6px; }
 body.publishing-page .platform-resources a, body.publishing-page .platform-instructions > summary { display: flex; align-items: center; min-height: 44px; color: var(--silver); font: 600 13px/1.4 'DM Sans',sans-serif; cursor: pointer; text-decoration: underline; }
+body.publishing-page .platform-resources a.platform-photo { display: flex; flex-direction: column; gap: 4px; padding: 4px 0; text-decoration: none; }
+body.publishing-page .platform-photo img { display: block; width: 72px; height: 72px; object-fit: contain; border: 1px solid var(--border); border-radius: 8px; background: var(--dark); }
+body.publishing-page .action-btns:empty { display: none; }
 body.publishing-page .platform-instructions[open] { flex-basis: 100%; }
 body.publishing-page .platform-instructions p { margin: 0; color: var(--silver); font: 400 13px/1.5 'DM Sans',sans-serif; overflow-wrap: anywhere; }
 body.publishing-page .blast-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0 0 12px; }

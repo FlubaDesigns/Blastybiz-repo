@@ -41,18 +41,23 @@
        const destination=match?'https://'+match[1]:destinations[job.platform];
        if(destination){const a=document.createElement('a');a.href=destination;a.target='_blank';a.rel='noopener';a.textContent='Open Platform';a.className='btn-copy';actions.append(a);}
        actions.append(button('Mark as Posted',()=>act('posted',job)),button('Skip This One',()=>act('skipPlatform',job)));
-       const resources=document.createElement('div');resources.className='platform-resources';
-       (job.payload?.imageUrls||[]).filter(url=>/^https:\/\//.test(url)).forEach((url,i)=>{
-         const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener';link.textContent='Photo '+(i+1);resources.append(link);
-       });
        const help=document.createElement('details');help.className='platform-instructions';
        const summary=document.createElement('summary');summary.textContent='Instructions';
        const copy=document.createElement('p');copy.textContent=job.manualInstructions||'Copy your listing, open the platform, add your photos, and publish. Then return here and mark it as posted.';
-       help.append(summary,copy);resources.append(help);row.querySelector('.platform-content').append(resources);
+       help.append(summary,copy);row.querySelector('.platform-content').append(help);
      }else if(['failed','needs_connection'].includes(job.status)){
        if(job.status==='failed'&&!job.publicationUncertain)actions.append(button('Retry',()=>act('retry',job)));
        actions.append(button('Skip This One',()=>act('skipPlatform',job)));
      }
+     const resources=document.createElement('div');resources.className='platform-resources';
+     (job.payload?.imageUrls||[]).filter(url=>/^https:\/\//.test(url)).forEach((url,i)=>{
+       const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener';link.className='platform-photo';
+       link.setAttribute('aria-label','Open photo '+(i+1)+' for '+(row.querySelector('.platform-name')?.textContent||job.platform));
+       const image=document.createElement('img');image.src=url;image.alt='Photo '+(i+1);image.loading='lazy';image.width=72;image.height=72;
+       const caption=document.createElement('span');caption.textContent='Photo '+(i+1);
+       link.append(image,caption);resources.append(link);
+     });
+     if(resources.childElementCount){const content=row.querySelector('.platform-content');content.insertBefore(resources,content.querySelector('.platform-instructions'));}
    });
    void completion();
  };
