@@ -13,14 +13,17 @@ const settle=async()=>{for(let i=0;i<25;i++)await new Promise(r=>setImmediate(r)
 const jobs=()=>Object.entries(store.all()).filter(([p])=>p.startsWith(J)).map(([,d])=>d);
 (async()=>{
  w.renderJobs(jobs());await settle();ok(w.document.getElementById('progress-count').textContent.includes('1 posted'),'manual ready does not inflate delivered');
- const buttons=()=>[...w.document.querySelectorAll('#action-items button')];ok(buttons().some(b=>b.textContent==='Mark as Posted')&&buttons().some(b=>b.textContent==='Skip This One'),'large manual completion actions exist');
- ok([...w.document.querySelectorAll('#action-items a')].some(a=>a.textContent==='View Image'),'frozen media remains available');ok([...w.document.querySelectorAll('#action-items a')].some(a=>a.href==='https://craigslist.org/'),'valid canonical destination link available');
+ ok(w.document.querySelectorAll('#platform-list .platform-row').length===2&&!w.document.getElementById('action-card'),'one row per job with no duplicated action section');
+ const manual=w.document.querySelector('details.platform-row');ok(manual.open,'first unfinished platform opens automatically');manual.open=false;w.renderJobs(jobs());await settle();ok(!w.document.querySelector('details.platform-row').open,'live updates preserve collapsed rows');
+ const buttons=()=>[...w.document.querySelectorAll('#platform-list button')];ok(buttons().some(b=>b.textContent==='Mark as Posted')&&buttons().some(b=>b.textContent==='Skip This One'),'large manual completion actions exist');
+ ok([...w.document.querySelectorAll('#platform-list a')].some(a=>a.textContent==='Photo 1'),'frozen media remains available');ok([...w.document.querySelectorAll('#platform-list a')].some(a=>a.href==='https://craigslist.org/'),'valid canonical destination link available');
  ok(w.document.getElementById('first-blast-completion'),'first mixed launch has a durable completion panel');
  confirmed=false;buttons().find(b=>b.textContent==='Mark as Posted').click();await settle();ok(store.get(J+'manual').status==='manual_required','canceling owner confirmation leaves result unchanged');
  confirmed=true;buttons().find(b=>b.textContent==='Mark as Posted').click();await settle();ok(store.get(J+'manual').status==='manual_posted','Mark Posted reaches authenticated lifecycle');
- w.renderJobs(jobs());await settle();ok(w.document.getElementById('progress-count').textContent.includes('2 posted'),'confirmed manual work counts delivered');ok(w.document.getElementById('action-card').classList.contains('hidden'),'completed manual work disappears from Your Turn');
+ w.renderJobs(jobs());await settle();ok(w.document.getElementById('progress-count').textContent.includes('2 posted'),'confirmed manual work counts delivered');ok(!w.document.querySelector('#platform-list details.platform-row'),'completed manual work collapses into its status row');
  ok(w.document.querySelectorAll('#first-blast-completion').length===1,'rerender does not replay first-use panel');
  const checkbox=w.document.querySelector('#content-state > label input');checkbox.checked=false;await checkbox.onchange();ok(store.get('users/u').manualRemindersEnabled===false,'reminder preference uses server operation');
  await store.db.doc(J+'manual').update({status:'manual_lapsed'});w.renderJobs(jobs());await settle();ok(w.document.getElementById('progress-count').textContent.includes('2 of 2 complete · 1 posted'),'lapse is complete but never posted');
  console.log(checks+' Pass 11 publishing status DOM assertions passed.');dom.window.close();
 })().catch(e=>{console.error(e);dom.window.close();process.exitCode=1;});
+

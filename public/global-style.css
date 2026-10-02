@@ -2076,6 +2076,35 @@ body.publishing-page .platform-info   { flex: 1; min-width: 0; }
 body.publishing-page .platform-name   { font-size: 14px; font-weight: 600; color: var(--light); }
 body.publishing-page .platform-msg    { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
 
+/* One status row owns its actions; narrow screens never squeeze copy beside a badge. */
+body.publishing-page .progress-header { flex-wrap: wrap; gap: 4px 12px; margin-bottom: 12px; }
+body.publishing-page .progress-count { font: 600 16px/1.4 'DM Sans',sans-serif; }
+body.publishing-page .platform-row { display: block; padding: 0; overflow: hidden; }
+body.publishing-page .platform-heading { display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 10px 12px; box-sizing: border-box; list-style: none; }
+body.publishing-page summary.platform-heading { cursor: pointer; }
+body.publishing-page .platform-heading::-webkit-details-marker { display: none; }
+body.publishing-page .platform-info { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+body.publishing-page .platform-name { font: 600 15px/1.4 'DM Sans',sans-serif; overflow-wrap: anywhere; }
+body.publishing-page .status-pill { padding: 2px 7px; font: 600 11px/1.5 'DM Sans',sans-serif; letter-spacing: 0; text-transform: none; }
+body.publishing-page .platform-expand { color: var(--silver); font: 600 20px/1 sans-serif; }
+body.publishing-page details[open] > .platform-heading .platform-expand { transform: rotate(180deg); }
+body.publishing-page .platform-content { padding: 0 12px 12px; }
+body.publishing-page .platform-msg { margin: 0 0 10px; color: var(--silver); font: 400 13px/1.5 'DM Sans',sans-serif; }
+body.publishing-page .platform-row > .platform-msg { margin: 0 12px 12px; }
+body.publishing-page .platform-content .action-btns { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+body.publishing-page .action-btns .btn-copy { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px; margin: 0; padding: 8px; font: 600 13px/1.3 'DM Sans',sans-serif; text-decoration: none; text-align: center; border-radius: 9px; }
+body.publishing-page .action-btns .btn-copy:nth-child(n+3) { background: transparent; color: var(--silver); border: 1px solid var(--border); }
+body.publishing-page .platform-resources { display: flex; flex-wrap: wrap; align-items: start; gap: 0 14px; margin-top: 6px; }
+body.publishing-page .platform-resources a, body.publishing-page .platform-instructions > summary { display: flex; align-items: center; min-height: 44px; color: var(--silver); font: 600 13px/1.4 'DM Sans',sans-serif; cursor: pointer; text-decoration: underline; }
+body.publishing-page .platform-instructions[open] { flex-basis: 100%; }
+body.publishing-page .platform-instructions p { margin: 0; color: var(--silver); font: 400 13px/1.5 'DM Sans',sans-serif; overflow-wrap: anywhere; }
+body.publishing-page .blast-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0 0 12px; }
+body.publishing-page .blast-summary p, body.publishing-page .first-blast-note { margin: 0; color: var(--silver); font: 400 13px/1.5 'DM Sans',sans-serif; }
+body.publishing-page .first-blast-note { margin-bottom: 12px; }
+body.publishing-page .blast-summary button { min-height: 44px; padding: 6px 0; background: transparent; color: var(--silver); font: 600 13px/1.4 'DM Sans',sans-serif; text-decoration: underline; }
+body.publishing-page .platform-row :focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
+@media (max-width: 480px) { body.publishing-page .progress-card { padding: 12px; } }
+
 /* Action card */
 .action-card                          { background: var(--card); border: 1px solid rgba(255,167,38,0.3); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
 .action-card-title                    { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; color: var(--warn); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
@@ -3891,3 +3920,4 @@ body.listing-preview-page .badge.locked           { background: #151f15; color: 
 body:has(.bb-save-bar), body:has(.bb-save-bar) .main { overflow-x: clip; }
 body.has-site-header .main-inner section.bb-life { padding: 20px; margin-top: 16px; }
 .bb-life > h2, .bb-life .bb-schedule-success h2 { font-family: 'Bebas Neue',sans-serif; font-size: 30px; line-height: 1.1; letter-spacing: .02em; text-transform: uppercase; }
+
