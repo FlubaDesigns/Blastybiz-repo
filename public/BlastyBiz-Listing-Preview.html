@@ -43,7 +43,7 @@
   <section class="card pub-hero">
     <div class="pub-page-eyebrow">Step 6 of 6</div>
     <h1 class="big-title">Blast it!</h1>
-    <p class="sub" id="pub-sub">Review your copy below, set a send time if needed, then tap Blast It!</p>
+    <p class="sub" id="pub-sub">Review your copy below, then tap Blast It!</p>
   </section>
 
   <div class="pub-layout">
@@ -68,8 +68,6 @@
       <div class="queue-loading" style="padding:10px 0;color:var(--muted,#888);font-size:14px;">Loading…</div>
     </div>
   </section>
-
-  <section class="card section-mt" id="v1-publish-schedule"></section>
 
   <!-- ── PUBLISH ACTION ──────────────────────────── -->
   <section class="card section-mt pub-action-card">
@@ -459,8 +457,6 @@ async function publishBlast() {
 }
 </script>
 
-<script src="schedule-utils.js"></script>
-<script src="lifecycle-ui.js?v=20261001-blast-button"></script>
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -560,8 +556,6 @@ onAuthStateChanged(auth, async (user) => {
       if (warn) { warn.textContent = '⚠️ Error publishing: ' + e.message; warn.classList.remove('hidden'); }
     }
   };
-  BBLifecycle.configure({businessId:window.businessId,token:()=>user.getIdToken()});
-  await BBLifecycle.preview(draftData,window.draftDocId);
   if (draftData) {
     const btn = document.getElementById('publish-btn');
     if (btn) { btn.disabled = false; btn.textContent = '🚀 Blast It!'; }

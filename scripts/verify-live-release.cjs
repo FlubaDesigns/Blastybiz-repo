@@ -9,7 +9,7 @@ const assert = require('node:assert/strict');
     assert.equal((await response.json()).commit, process.env.GITHUB_SHA, `${host}: wrong deployed commit`);
     for (const [page, text] of [
       ['BlastyBiz', 'lifecycle-ui.js'],
-      ['BlastyBiz-Listing-Preview', 'v1-publish-schedule'],
+      ['BlastyBiz-Listing-Preview', 'Review your copy below, then tap Blast It!'],
       ['BlastyBiz-Publishing-Status', 'lifecycle-status.js'],
       ['BlastyBiz-Admin', 'ai-cost-rollups.js'],
       ['BlastyBiz', 'async function deletePhotoRecords'],

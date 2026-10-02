@@ -74,7 +74,7 @@
 
     <a href="BlastyBiz.html?tab=history" class="dash-btn">📜 See All My Blasts</a>
     <a href="BlastyBiz.html?tab=schedule" class="dash-btn dash-btn-ghost">🗓 Scheduled Posts</a>
-    <a id="sched-refire-link" href="#" class="dash-btn dash-btn-ghost hidden">🗓 Schedule Refire</a>
+    <section class="card" id="future-blast-schedule" hidden></section>
     <a href="BlastyBiz.html" class="dash-btn-outline">＋ Create Another Listing</a>
   </div>
 </div><!-- /.main-inner -->
@@ -213,7 +213,8 @@ function showEmptyState(msg) {
   if (hoursSaved) hoursSaved.textContent = '0'}
 </script>
 
-<script src="lifecycle-ui.js?v=20261001-blast-button"></script>
+<script src="schedule-utils.js"></script>
+<script src="lifecycle-ui.js?v=20261002-future-blasts"></script>
 <script src="lifecycle-status.js"></script>
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
@@ -235,10 +236,11 @@ onAuthStateChanged(auth, async (user) => {
     const draftId = params.get('draftId');
     BBLifecycleStatus.initialize({businessId:bizId,blastId:draftId,token:()=>user.getIdToken()},userData);
 
-    // Wire "Schedule Refire" link back to the draft's review page
+    // Offer future scheduling only after this Blast has been submitted.
     if (draftId) {
-      const schedLink = document.getElementById('sched-refire-link');
-      if (schedLink) { schedLink.href = 'BlastyBiz.html?'+new URLSearchParams({bizId,tab:'schedule'}); schedLink.classList.remove('hidden')}
+      getDoc(doc(db, 'users', user.uid, 'businesses', bizId, 'listingDrafts', draftId))
+        .then(snap => { if (snap.exists()) BBLifecycle.futureSchedule(document.getElementById('future-blast-schedule'), snap.data()); })
+        .catch(error => console.warn('Future scheduling could not load:', error.message));
     }
 
     let q;

@@ -13,7 +13,7 @@ function setup({failLoad=false}={}){
  const w=dom.window;let boot,calls=[],reject=true,revision=1;
  const data={adId:'a',adName:'Saved blast',campaignId:'c',campaignName:'GEM',revision:1,name:'David',adaptations:{facebook:'Saved Facebook copy',yelp:'Saved Yelp copy'},platformStatus:{facebook:'approved',yelp:'approved'},imagesByPlatform:{facebook:['https://example.com/car.jpg'],yelp:['https://example.com/car.jpg']}};
  Object.assign(w,{auth:{authStateReady:()=>Promise.resolve()},db:{},onAuthStateChanged:(auth,callback)=>{boot=callback({uid:'u',getIdToken:async()=> 'fixture'});},doc:(db,...parts)=>parts.join('/'),getDoc:async path=>{if(failLoad)throw Error('Connection lost');return {exists:()=>true,data:()=>path==='users/u'?{activeBusiness:'b'}:{...data,revision}};},BBBlasty:{fire(){}},fetch:async(url,opts)=>{calls.push({url,body:JSON.parse(opts.body)});await tick();return {ok:!reject,status:reject?503:200,json:async()=>reject?{error:'Connection unavailable'}:{}};}});
- for(const file of ['escape-utils.js','platforms-authority.js','business-form.js','schedule-utils.js','lifecycle-ui.js'])w.eval(fs.readFileSync('public/'+file,'utf8'));
+ for(const file of ['escape-utils.js','platforms-authority.js','business-form.js'])w.eval(fs.readFileSync('public/'+file,'utf8'));
  w.eval(main);w.eval(bootstrap);
  return {dom,w,calls,boot:async()=>{await tick();await boot;},allow:()=>{reject=false;},stale:()=>{revision=2;}};
 }
@@ -21,10 +21,8 @@ function setup({failLoad=false}={}){
  const f=setup();const {w}=f,button=w.document.getElementById('publish-btn');
  ok(button.disabled,'button stays disabled while its action is loading');await f.boot();
  ok(w.document.querySelector('.pub-post-text').textContent==='Saved Facebook copy','real preview rail initializes and displays saved copy');
- ok(w.document.getElementById('v1-publish-schedule').textContent.includes('Send Now'),'boot reaches scheduling setup after rendering');
+ ok(!w.document.getElementById('v1-publish-schedule')&&!w.document.querySelector('input[name="bb-send"]'),'Blast page has no scheduling choices');
  ok(typeof w._firestoreApprove==='function'&&!button.disabled&&button.textContent.includes('Blast It!'),'Blast It becomes ready with a connected handler');
- const scheduled=w.document.querySelector('[value="schedule"]');scheduled.checked=true;scheduled.dispatchEvent(new w.Event('change',{bubbles:true}));ok(button.textContent==='Schedule Blast','schedule retains a clear action');
- const now=w.document.querySelector('[value="now"]');now.checked=true;now.dispatchEvent(new w.Event('change',{bubbles:true}));ok(button.textContent.includes('Blast It!'),'returning to Send Now restores Blast It');
  const one=w.publishBlast(),two=w.publishBlast();await Promise.all([one,two]);
  ok(f.calls.length===1&&f.calls[0].url.endsWith('/approveDraft'),'rapid taps use one existing approval request');
  assert.deepEqual(JSON.parse(JSON.stringify(f.calls[0].body)),{draftId:'d',businessId:'b',platformKeys:['facebook','yelp']});checks++;
@@ -35,5 +33,21 @@ function setup({failLoad=false}={}){
  f.dom.window.close();
  const broken=setup({failLoad:true});await broken.boot();const retry=broken.w.document.getElementById('publish-btn');
  ok(retry.textContent==='Reload blast'&&!retry.disabled&&broken.w.document.getElementById('pub-warn').textContent.includes('Connection lost'),'startup failure gives a visible explanation and reload control');broken.dom.window.close();
+ // Future scheduling is opt-in after submission and never resubmits the current Blast.
+ const futureDom=new JSDOM('<section id="future" hidden></section>',{url:'https://example.invalid',runScripts:'outside-only'}),v=futureDom.window;let saved=null;
+ v.eval(fs.readFileSync('public/schedule-utils.js','utf8'));v.eval(fs.readFileSync('public/lifecycle-ui.js','utf8'));
+ v.BBLifecycle.configure({businessId:'b',token:async()=> 'fixture'});
+ v.fetch=async(url,opts)=>{saved=JSON.parse(opts.body);return {ok:true,json:async()=>({})};};
+ const host=v.document.getElementById('future');
+ v.BBLifecycle.futureSchedule(host,{adId:'a',campaignId:'c',status:'ready'});ok(host.hidden,'unsubmitted Blast cannot offer future scheduling');
+ v.BBLifecycle.futureSchedule(host,{adId:'a',campaignId:'c',status:'approved'});
+ ok(!host.hidden&&host.textContent.includes('Would you like to set up a schedule for future blasts?'),'post-Blast page offers future scheduling');
+ ok(host.querySelector('[data-form]').hidden&&saved===null,'offering a schedule does not create one');
+ host.querySelector('[data-setup]').click();host.querySelector('[data-hours="24"]').click();
+ const futureSave=[...host.querySelectorAll('button')].find(b=>b.textContent==='Save Future Schedule');await futureSave.onclick();
+ ok(saved.action==='save'&&saved.adId==='a'&&saved.campaignId==='c'&&!('blastId' in saved),'future schedule uses canonical Ad without changing the sent Blast');
+ ok(saved.expectedRevision===0&&new Date(saved.schedule.firstRunAtUtc)>new Date(),'future time required and existing schedules cannot be overwritten');
+ ok(host.querySelector('[data-form]').hidden&&host.textContent.includes('Future schedule saved'),'successful save is visible');
+ futureDom.window.close();
  console.log('PASS: '+checks+' complete preview startup and Blast button assertions.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

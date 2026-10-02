@@ -41,6 +41,21 @@
      btn.hidden=true;const link=document.createElement('a');link.className='bb-button';link.href='BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,tab:'schedule'});link.textContent='View Schedule';host.append(link);
    }catch(e){host.querySelector('[role=status]').textContent=e.message;}finally{btn.disabled=false;}};
  }
+ function futureSchedule(host,data) {
+   if(!host||!data?.adId||!data?.campaignId||data.status!=='approved')return;
+   style();host.hidden=false;host.classList.add('bb-life');
+   host.innerHTML='<h2>Would you like to set up a schedule for future blasts?</h2><button type="button" data-setup>Set Up a Schedule</button><div data-form hidden></div><p role="status"></p>';
+   const setup=host.querySelector('[data-setup]'),box=host.querySelector('[data-form]'),message=host.querySelector(':scope > [role=status]');
+   const scheduleUrl='BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,tab:'schedule',scheduleAd:data.adId,scheduleCampaign:data.campaignId});
+   const link=document.createElement('a');link.className='bb-button';link.href=scheduleUrl;link.textContent='View Schedules';host.append(link);
+   setup.onclick=()=>{
+     setup.hidden=true;box.hidden=false;const editor=form(box),save=document.createElement('button');save.type='button';save.textContent='Save Future Schedule';box.append(save);
+     save.onclick=async()=>{save.disabled=true;message.textContent='';try{
+       await api('save',{adId:data.adId,campaignId:data.campaignId,expectedRevision:0,schedule:editor.value(),requestId:editor.requestId()});
+       box.hidden=true;message.textContent='Future schedule saved. Your current blast is unchanged. Review the next blast in Schedules.';
+     }catch(e){message.textContent=e.message;}finally{save.disabled=false;}};
+   };
+ }
  async function dashboard() {
    style();const seq=++dashboardEpoch,wrap=document.getElementById('sched-campaigns-wrap');if(!wrap||!context)return;
    document.getElementById('sched-upcoming-card')?.setAttribute('hidden','');document.getElementById('sched-no-campaigns')?.setAttribute('hidden','');
@@ -90,6 +105,6 @@
    }catch(e){if(seq===dashboardEpoch)wrap.textContent=e.message;}
  }
  function statusLink(b,d){return 'BlastyBiz-Publishing-Status.html?'+new URLSearchParams({bizId:b,draftId:d});}
- window.BBLifecycle={configure,api,preview,dashboard,statusLink,form};
+ window.BBLifecycle={configure,api,preview,futureSchedule,dashboard,statusLink,form};
 })();
 
