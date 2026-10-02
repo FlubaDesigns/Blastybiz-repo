@@ -40,14 +40,14 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  dom.window.close();
  // Execute the real dashboard profile functions: a later edit must retain type.
  const app=read('public/BlastyBiz.html');dom=new JSDOM(app,{runScripts:'outside-only',virtualConsole:new VirtualConsole()});w=dom.window;
- Object.assign(w,{profile:{sellerType:'personal',name:'David',ownerName:'David'},profileLocationType:'physical',locationType:'physical',renderPlatformCats(){},updateCopyPreview(){},setProfileLocationType(){}});
+ Object.assign(w,{profile:{sellerType:'personal',name:'David',ownerName:'David'},profileLocationType:'physical',locationType:'physical',renderPlatformCats(){},renderPlatforms(){},renderQuickSelect(){},updateCopyPreview(){},setProfileLocationType(){}});
  w.eval(read('public/business-form.js'));w.eval(app.slice(app.indexOf('function saveProfile() {'),app.indexOf('function setYN(field, val)')));
  w.loadProfile();assert.equal(w.document.querySelector('label[for="profile-name"]').textContent,'Seller name');assert(w.document.getElementById('profile-hours').hidden);
  w.document.getElementById('profile-phone').value='9413751504';w.saveProfile();assert.equal(w.profile.sellerType,'personal');assert.equal(w._bbProfileGlobal.sellerType,'personal');assert.equal(w.profile.ownerRole,'');assert.equal(w.profile.hours,'');
  w.profile={sellerType:'business',name:'Company'};w.loadProfile();assert(!w.document.getElementById('profile-hours').hidden);assert.equal(w.document.querySelector('label[for="profile-name"]').textContent,'Business Name');dom.window.close();
  // Personal identity uses Your Name only, including cache reload and blank company names.
  dom=new JSDOM(app,{url:'https://example.invalid',runScripts:'outside-only',virtualConsole:new VirtualConsole()});w=dom.window;
- Object.assign(w,{showTab(){},profile:{},profileLocationType:'physical',locationType:'physical',renderPlatformCats(){},updateCopyPreview(){},setProfileLocationType(){}});
+ Object.assign(w,{showTab(){},profile:{},profileLocationType:'physical',locationType:'physical',renderPlatformCats(){},renderPlatforms(){},renderQuickSelect(){},updateCopyPreview(){},setProfileLocationType(){}});
  w.eval(read('public/business-form.js'));w.eval(app.slice(app.indexOf('function saveProfile() {'),app.indexOf('function setYN(field, val)')));
  w.eval(app.slice(app.indexOf('window._bbSetProfile = function(p) {'),app.indexOf('// _saveInsightToFirestore and _saveGlobalFactoidsToFirestore')));
  w._bbSetProfile({sellerType:'personal',ownerName:'Fixture Seller',name:'',locationType:'physical'});
