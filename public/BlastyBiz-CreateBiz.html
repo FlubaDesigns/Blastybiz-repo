@@ -428,7 +428,18 @@ function cbToggle(id) {
   if (btn) btn.setAttribute('aria-expanded', sec.classList.contains('open') ? 'true' : 'false');
 }
 function cbPersonal(){return document.getElementById('f-sellerType').value==='personal';}
+function cbSyncPlatformEligibility() {
+  if (!window.BBPlatforms) return; // Platform config is still loading.
+  const business = { locationType: cbPersonal() ? 'physical' : document.getElementById('f-locationType').value };
+  document.querySelectorAll('.plat-chk input').forEach(input => {
+    const eligible = BBPlatforms.eligibleForBusiness(input.value, business);
+    input.closest('.plat-chk').style.display = eligible ? '' : 'none';
+    input.disabled = !eligible;
+    if (!eligible) input.checked = false;
+  });
+}
 function cbSyncLocation() {
+  cbSyncPlatformEligibility();
   if(cbPersonal()){
     document.getElementById('cb-address-fields').style.display='';
     ['f-hasWebsite','f-website'].forEach(id=>{const el=document.getElementById(id);el.required=false;el.disabled=true;});
@@ -598,7 +609,7 @@ import {
   getFirestore, doc, collection, serverTimestamp, writeBatch, getDoc
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js';
+import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js?v=20261002-online';
 
 const db = getFirestore(getApp());
 let currentUser = null;
@@ -626,6 +637,7 @@ function renderPlatformGrid(platforms) {
   grid.innerHTML = platforms.map(p =>
     `<label class="plat-chk"><input type="checkbox" value="${_cbEsc(p.slug)}"${checked.has(p.slug) ? ' checked' : ''}> <span>${_cbEsc(p.icon)} ${_cbEsc(p.name)}</span></label>`
   ).join('');
+  cbSyncPlatformEligibility();
 }
 
 // Load platforms immediately (config/platforms is public-read — no auth needed)
@@ -812,6 +824,7 @@ function prefill(d) {
     if (grid) grid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
       cb.checked = window._cbPrefillPlatforms.has(cb.value);
     });
+    cbSyncPlatformEligibility();
   }
   document.querySelector('.cb-page-title').textContent = 'Edit Business';
   document.getElementById('cb-header-msg').innerHTML = '<strong>Update your business</strong> — edit any details and hit save.';

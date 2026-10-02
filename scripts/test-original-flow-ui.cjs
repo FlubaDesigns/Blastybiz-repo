@@ -10,6 +10,39 @@ const setup=read('public/BlastyBiz-CreateBiz.html');
 const classic=[...setup.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].find(m=>!m[1].includes('src=')&&!m[1].includes('module')&&!m[1].includes('importmap'))[2];
 const turn=()=>new Promise(r=>setImmediate(r));
 (async()=>{
+  // The same location rule controls setup, platform selection and ad review.
+  {
+    const dom=new JSDOM(dashboard,{url:'https://example.invalid',runScripts:'outside-only',virtualConsole:new VirtualConsole()});
+    const w=dom.window;
+    w.eval(read('public/platforms-authority.js'));
+    Object.assign(w,{profile:{locationType:'online'},platforms:[{id:'google',name:'Google',enabled:true,adaptedContent:'Existing Google copy'},{id:'facebook',name:'Facebook',enabled:true}],escHtml:String,savePlatformSelections(){},savePlatforms(){},checkAdaptBtn(){},renderQuickSelect(){},updateStats(){},buildPlatformCard(p){const card=w.document.createElement('div');card.id='pcard-'+p.id;return card;},_renderDismissedFold(){}});
+    w.eval(cut('function platformEligible(', 'function _renderDismissedFold('));
+    w.eval(cut('function renderStep3Platforms()', '// STEP 5: PER-PLATFORM REVIEW'));
+    w.eval(cut('function toggleSelectAll()', '// CHAR COUNTER'));
+    w.eval(cut('function getStep5Platforms()', '// Bring a platform'));
+    w.renderPlatforms();w.renderStep3Platforms();
+    assert.equal(w.document.getElementById('s3-row-google'),null,'online profile has no Google choice');
+    assert.equal(w.document.getElementById('pcard-google'),null,'online platform page has no Google card');
+    assert.equal(w.platforms[0].enabled,false,'old selections cannot leave a hidden Google destination enabled');
+    assert.equal(w.platforms[0].adaptedContent,'Existing Google copy','filter does not erase wording');
+    w.toggleSelectAll();w.toggleSelectAll();w.togglePlatform('google',true);
+    assert.equal(w.platforms[0].enabled,false,'Select All and direct toggles respect online eligibility');
+    assert.equal(w.getStep5Platforms().some(p=>p.id==='google'),false);
+    for(const locationType of ['physical','both']){
+      w.profile.locationType=locationType;w.renderStep3Platforms();
+      assert(w.document.getElementById('s3-row-google'),'local businesses retain Google');
+    }
+    dom.window.close();
+    const setupDom=new JSDOM(setup,{url:'https://example.invalid',runScripts:'outside-only',virtualConsole:new VirtualConsole()});
+    const s=setupDom.window;s.eval(read('public/platforms-authority.js'));
+    s.eval(classic.slice(classic.indexOf('function cbPersonal()'),classic.indexOf('function cbSyncLocation()')));
+    s.document.getElementById('plat-grid-wrap').innerHTML='<label class="plat-chk"><input type="checkbox" value="google" checked></label><label class="plat-chk"><input type="checkbox" value="facebook" checked></label>';
+    s.document.getElementById('f-sellerType').value='business';s.document.getElementById('f-locationType').value='online';s.cbSyncPlatformEligibility();
+    const google=s.document.querySelector('input[value="google"]'),facebook=s.document.querySelector('input[value="facebook"]');
+    assert.equal(google.checked,false);assert.equal(google.disabled,true);assert.equal(google.parentElement.style.display,'none');assert.equal(facebook.checked,true);
+    s.document.getElementById('f-locationType').value='physical';s.cbSyncPlatformEligibility();assert.equal(google.disabled,false);assert.equal(google.parentElement.style.display,'');
+    setupDom.window.close();
+  }
   for(const sellerType of ['business','personal']){
     const dom=new JSDOM(setup,{url:'https://example.invalid/setup',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:new VirtualConsole()});
     const w=dom.window;

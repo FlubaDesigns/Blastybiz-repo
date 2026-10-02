@@ -107,6 +107,7 @@
     return images();
   }
   function creative(){
+    if(typeof applyPlatformEligibility==='function')applyPlatformEligibility();
     if(!ad)throw Error('Choose or create an Ad first.');
     return {name:el('biz-ad-name').value.trim()||'Untitled Ad',offer:el('biz-offer').value,price:el('biz-price').value,cta:el('ad-cta').value,context:el('ad-context').value,
       ...(window._bbProfileGlobal?.sellerType==='personal'?{pickupArea:el('ad-area').value,pickupZip:el('ad-zip').value}:{}),

@@ -1,4 +1,4 @@
-import './platforms-authority.js?v=20261001-photo-limits';
+import './platforms-authority.js?v=20261002-online';
 export const { PLATFORM_DEFAULTS, mergeDisplay } = globalThis.BBPlatforms;
 
 /**
@@ -66,3 +66,4 @@ export async function loadPlatformsREST() {
   }
   return _merge(overrides);
 }
+

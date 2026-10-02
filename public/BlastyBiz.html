@@ -1206,7 +1206,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" integrity="sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e" crossorigin="anonymous"></script>
 <script src="platform-categories.js"></script>
-<script src="platforms-authority.js?v=20261001-photo-limits"></script>
+<script src="platforms-authority.js?v=20261002-online"></script>
 <script src="photo-handoff.js?v=20261001-share"></script>
 <script>
 // ══════════════════════════════════════════
@@ -1252,6 +1252,7 @@ function _getAIMemory() {
 // INIT
 // ══════════════════════════════════════════
 function savePlatformSelections() {
+  applyPlatformEligibility();
   const ids = platforms.filter(p => p.enabled).map(p => p.id);
   try { localStorage.setItem('bb_platforms_enabled', JSON.stringify(ids)); } catch(e) {}
   if (window._bbSavePlatformSelections) {
@@ -1382,7 +1383,16 @@ function showTab(name) {
 // ══════════════════════════════════════════
 // PLATFORM RENDERING
 // ══════════════════════════════════════════
+function platformEligible(p) {
+  return BBPlatforms.eligibleForBusiness(p.id, profile);
+}
+
+function applyPlatformEligibility() {
+  platforms = platforms.map(p => platformEligible(p) ? p : { ...p, enabled: false });
+}
+
 function renderPlatforms() {
+  applyPlatformEligibility();
   const apiEl    = document.getElementById('api-platforms');
   const manualEl = document.getElementById('manual-platforms');
   apiEl.innerHTML = '';
@@ -1391,6 +1401,7 @@ function renderPlatforms() {
   const prefs = window._bbPlatPrefs || {};
 
   platforms.forEach(p => {
+    if (!platformEligible(p)) return;
     if (p.type === 'manual' && prefs[p.id]?.status === 'dismissed') return;
     const card = buildPlatformCard(p);
     if (p.type === 'api') apiEl.appendChild(card);
@@ -2367,7 +2378,7 @@ async function suggestPlatformsAI() {
       const s = suggestions[p.id];
       if (s) {
         platformReasons[p.id] = s.reason || '';
-        return { ...p, enabled: !!s.enabled };
+        return { ...p, enabled: !!s.enabled && platformEligible(p) };
       }
       return p;
     });
@@ -2392,8 +2403,8 @@ async function suggestPlatformsAI() {
 // TOGGLE PLATFORM
 // ══════════════════════════════════════════
 function toggleSelectAll() {
-  const allOn = platforms.every(p => p.enabled);
-  platforms = platforms.map(p => ({ ...p, enabled: !allOn }));
+  const allOn = platforms.filter(platformEligible).every(p => p.enabled);
+  platforms = platforms.map(p => ({ ...p, enabled: !allOn && platformEligible(p) }));
   savePlatformSelections();
   savePlatforms();
   renderPlatforms();
@@ -2404,13 +2415,13 @@ function toggleSelectAll() {
 function _updateSelectAllBtn() {
   const btn = document.getElementById('select-all-btn');
   if (!btn) return;
-  const allOn = platforms.every(p => p.enabled);
+  const allOn = platforms.filter(platformEligible).every(p => p.enabled);
   btn.textContent = allOn ? 'Deselect All' : 'Select All';
 }
 
 function togglePlatform(id, val) {
   window.BBAds?.markDirty();
-  platforms = platforms.map(p => p.id === id ? {...p, enabled: val} : p);
+  platforms = platforms.map(p => p.id === id ? {...p, enabled: val && platformEligible(p)} : p);
   savePlatformSelections();
   savePlatforms();
   renderPlatforms();
@@ -2434,6 +2445,7 @@ function countChars(el, counterId, max) {
 // ADAPT BUTTON CHECK
 // ══════════════════════════════════════════
 function checkAdaptBtn() {
+  applyPlatformEligibility();
   const btn = document.getElementById('adapt-btn');
   if (btn) btn.disabled = !platforms.some(p => p.enabled);
   checkS3ContinueBtn();
@@ -2556,10 +2568,12 @@ function toggleAboutYouPanel() {
 // STEP 3: CLEAN PLATFORM SELECTION ROWS
 // ══════════════════════════════════════════
 function renderStep3Platforms() {
+  applyPlatformEligibility();
   const el = document.getElementById('quick-platform-list');
   if (!el) return;
   el.innerHTML = '';
   platforms.forEach(p => {
+    if (!platformEligible(p)) return;
     const isApi = p.type === 'api';
 
     const row = document.createElement('div');
@@ -2601,7 +2615,7 @@ function checkS3ContinueBtn() {
 let _step5PlatIdx = 0;
 
 function getStep5Platforms() {
-  return platforms.filter(p => p.enabled);
+  return platforms.filter(p => p.enabled && platformEligible(p));
 }
 
 // Bring a platform's review card into view and treat it as the current one.
@@ -3568,6 +3582,8 @@ function saveProfile() {
     tone:             document.getElementById('profile-tone').value,
   };
   window._bbProfileGlobal=profile;
+  renderPlatforms();
+  renderQuickSelect();
   const hasNameInline = !!profile.name;
   const nameDisplayInline = document.getElementById('profile-biz-name');
   if (nameDisplayInline) {
@@ -5057,7 +5073,7 @@ function loadDraft() {
 // ══════════════════════════════════════════
 function updateStats() {
   const prefs   = window._bbPlatPrefs || {};
-  const active  = platforms.filter(p => prefs[p.id]?.status !== 'dismissed');
+  const active  = platforms.filter(p => platformEligible(p) && prefs[p.id]?.status !== 'dismissed');
   const enabled = active.filter(p => p.enabled).length;
   const api     = active.filter(p => p.enabled && p.type === 'api').length;
   const manual  = active.filter(p => p.enabled && p.type === 'manual').length;
@@ -5070,6 +5086,7 @@ function updateStats() {
 // STORAGE HELPERS
 // ══════════════════════════════════════════
 function savePlatforms() {
+  applyPlatformEligibility();
   document.dispatchEvent(new CustomEvent('bb:savePlatforms', { detail: { platforms } }));
 }
 
@@ -5123,7 +5140,7 @@ init();
 // Falls back silently if config/platforms doesn't exist yet.
 (async function _applyAdminPlatformConfig() {
   try {
-    const { PLATFORM_DEFAULTS, loadPlatformsREST } = await import('./platforms-config.js?v=20261001-photo-limits');
+    const { PLATFORM_DEFAULTS, loadPlatformsREST } = await import('./platforms-config.js?v=20261002-online');
     const activePlatforms = await loadPlatformsREST();
     // Build a complete adminMap: mark all defaults disabled first, then enable the active ones.
     // This ensures admin-disabled platforms are properly excluded by _bbSetPlatforms.
@@ -5190,6 +5207,8 @@ window._bbSetProfile = function(p) {
     }));
   } catch(e) {}
   loadProfile();
+  renderPlatforms();
+  renderQuickSelect();
   if (p.sellerType === 'personal' && document.querySelector('#tab-profile.active, #tab-story.active')) showTab('create');
   document.body.classList.remove('workspace-loading');
   document.getElementById('workspace-loading-status').hidden = true;
@@ -5408,7 +5427,7 @@ function awaitPaidPlan(uid) {
     }, PAY_CONFIRM_TIMEOUT_MS);
   });
 }
-import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js?v=20261001-photo-limits';
+import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js?v=20261002-online';
 import {
   ref as storageRef, uploadBytesResumable, getDownloadURL
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
@@ -7508,7 +7527,7 @@ window.confirmDeleteAccount = async function() {
 .cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
 </style>
 <script src="lifecycle-ui.js?v=20261001-blast-button"></script>
-<script src="ad-workspace.js?v=20261002-campaign-recovery"></script>
+<script src="ad-workspace.js?v=20261002-campaign-recovery-online"></script>
 <script>
 document.addEventListener('click',function(e){
  const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');

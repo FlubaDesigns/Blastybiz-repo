@@ -577,6 +577,11 @@
     const canonical = byId[p.id];
     return {...p, type:canonical && canonical.deliveryMode === 'auto' ? 'api' : 'manual', proOnly:false};
   }
+  // Google Business Profile requires an in-person customer presence.
+  // This destination is not Google Ads or ordinary Google Search visibility.
+  function eligibleForBusiness(platformId, business = {}) {
+    return !(platformId === 'google' && business.locationType === 'online');
+  }
   return {records, byId, labels, PLATFORM_CAPABILITY_MAP, PLATFORM_DOCS, AUTO_POST_PLATFORMS,
-    PLATFORM_DEFAULTS, mergeDisplay, normalizeSelection, postImageLimit, postImages};
+    PLATFORM_DEFAULTS, mergeDisplay, normalizeSelection, eligibleForBusiness, postImageLimit, postImages};
 });
