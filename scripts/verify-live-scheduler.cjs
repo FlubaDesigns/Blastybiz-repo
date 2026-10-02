@@ -1,6 +1,7 @@
 'use strict';
 // Runs inside the existing Authorization Engine Main job. A temporary account
-// has no email, no provider connections, and publishing paused throughout.
+// has no contact email in its profile, no provider connections, and publishing
+// paused throughout. It signs in through the ordinary email/password API.
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const {randomUUID}=require('node:crypto');
@@ -10,13 +11,14 @@ module.exports=async function verifyLiveScheduler(){
  const app=admin.initializeApp({credential:admin.credential.applicationDefault(),projectId:'blastybiz-9523e',storageBucket:'blastybiz-9523e.firebasestorage.app'},'scheduler-acceptance');
  const db=app.firestore(),auth=app.auth(),uid='scheduler_check_'+randomUUID().replaceAll('-',''),user=db.doc('users/'+uid),br=user.collection('businesses').doc('fixture'),cr=br.collection('campaigns').doc('fixture'),ar=cr.collection('ads').doc('fixture'),source=br.collection('listingDrafts').doc('original');
  const endpoint='https://us-central1-blastybiz-9523e.cloudfunctions.net/manageBlast';
+ const email=uid+'@example.invalid',password=randomUUID()+randomUUID();
  let idToken,created=false;
  async function api(action,values={},status=200){
    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+idToken},body:JSON.stringify({action,businessId:'fixture',campaignId:'fixture',adId:'fixture',sourceBlastId:'original',...values}),signal:AbortSignal.timeout(125000)});
    const data=await response.json();assert.equal(response.status,status,'Live scheduler '+action+': '+(data.error||response.status));return data;
  }
  try{
-   await auth.createUser({uid});created=true;
+   await auth.createUser({uid,email,password,emailVerified:true});created=true;
    await user.set({plan:'starter',acceptanceFixture:true,createdAt:admin.firestore.FieldValue.serverTimestamp()});
    await br.set({name:'Scheduler acceptance fixture',schedulingPaused:true});
    await cr.set({name:'Scheduler acceptance fixture'});
@@ -27,9 +29,9 @@ module.exports=async function verifyLiveScheduler(){
    const sent={uid,businessId:'fixture',campaignId:'fixture',adId:'fixture',draftId:source.id,platform:'craigslist',status:'manual_skipped',payload:{adaptedContent:'Saved original-format blast acceptance copy',imageUrls:[image.url]}};
    const job=br.collection('publishJobs').doc('original_craigslist');await job.set(sent);
    const apiKey=fs.readFileSync('public/firebase-init-v2.js','utf8').match(/apiKey:\s*["']([^"']+)/)?.[1];assert(apiKey,'Public Firebase configuration missing');
-   const token=await auth.createCustomToken(uid);
-   const signIn=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key='+encodeURIComponent(apiKey),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,returnSecureToken:true}),signal:AbortSignal.timeout(30000)});
-   assert(signIn.ok,'Fixture sign-in failed');idToken=(await signIn.json()).idToken;assert(idToken);
+   const signIn=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+encodeURIComponent(apiKey),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,returnSecureToken:true}),signal:AbortSignal.timeout(30000)});
+   const signedIn=await signIn.json();assert(signIn.ok,'Fixture sign-in failed: '+(signedIn.error?.message||signIn.status));idToken=signedIn.idToken;assert(idToken);
+   console.log('PASS live fixture sign-in through ordinary BlastyBiz authentication.');
    const unauthorized=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'editor',businessId:'fixture',campaignId:'fixture',adId:'fixture'})});assert.equal(unauthorized.status,401);
    await api('editor',{businessId:'missing'},404);
    const state=await api('editor');
@@ -38,6 +40,7 @@ module.exports=async function verifyLiveScheduler(){
    assert.deepEqual(state.packet.imageRefs.map(i=>i.id),[image.id]);
    const save={expectedRevision:0,reviewKey:state.reviewKey,reviewed:true,replacePrepared:true,imageIds:[image.id],requestId:'acceptance_save',schedule:{frequency:'once',firstRunAtUtc:new Date(Date.now()+7*86400000).toISOString(),timezone:'UTC',approvalBehavior:'automatic'}};
    const saved=await api('save',save),retry=await api('save',save);assert.equal(retry.schedule.preparedBlastId,saved.schedule.preparedBlastId);
+   console.log('PASS live original-format source, save and duplicate-save protection.');
    const prepared=br.collection('listingDrafts').doc(saved.schedule.preparedBlastId),next=(await prepared.get()).data();
    assert.equal(next.status,'scheduled');assert.equal(next.approvalStatus,'approved');assert.equal(next.packet.adaptations.craigslist,sent.payload.adaptedContent);assert.deepEqual(next.packet.imagesByPlatform.craigslist,sent.payload.imageUrls);
    const requestId='acceptance_image';
