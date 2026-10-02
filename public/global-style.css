@@ -3889,3 +3889,5 @@ body.listing-preview-page .badge.locked           { background: #151f15; color: 
 
 /* Preserve horizontal clipping without creating an ancestor scroll container. */
 body:has(.bb-save-bar), body:has(.bb-save-bar) .main { overflow-x: clip; }
+body.has-site-header .main-inner section.bb-life { padding: 20px; margin-top: 16px; }
+.bb-life > h2, .bb-life .bb-schedule-success h2 { font-family: 'Bebas Neue',sans-serif; font-size: 30px; line-height: 1.1; letter-spacing: .02em; text-transform: uppercase; }
