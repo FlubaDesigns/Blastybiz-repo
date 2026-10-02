@@ -5,12 +5,12 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
 const {database,admin}=require('./lib/test-firestore.cjs');
 const {createAdService,freezePacket}=require('../functions/lib/ads');
 const base='users/u/businesses/b',camp=base+'/campaigns/c';
-const state=database({[base]:{name:'Business'},[camp]:{name:'Summer',platformsEnabled:['facebook']},[camp+'/images/photo']:{url:'https://example.com/photo.jpg',alt:'Photo'}});
+const state=database({[base]:{name:'Business'},[camp]:{name:'Summer',platformsEnabled:['facebook']},[base+'/campaigns/empty']:{name:'Fresh campaign'},[camp+'/images/photo']:{url:'https://example.com/photo.jpg',alt:'Photo'}});
 const service=createAdService(state.db,admin);
 const dom=new JSDOM('<!doctype html><html><head></head><body><main id="campaign-content"></main><input id="biz-ad-name"><textarea id="biz-offer"></textarea><input id="biz-price"><div id="mascot"></div></body></html>',{url:'https://example.com/BlastyBiz.html',runScripts:'outside-only',pretendToBeVisual:true});
 const w=dom.window;let checks=0,loseNext=false;
 const ok=(v,m)=>{assert(v,m);checks++;};
-Object.assign(w,{activeBizId:'b',activeCampaignId:'c',activeCampaignName:'Summer',ynState:{},platforms:[{id:'facebook',enabled:true}],_bbGetToken:async()=> 'test',_bbLoadGlobalImages:async()=>[],_bbLoadCampaignImages:async()=>[{id:'photo',...state.get(camp+'/images/photo')}],confirm:()=>true,matchMedia:()=>({matches:false,addEventListener(){},addListener(){}})});
+Object.assign(w,{activeBizId:'b',activeCampaignId:'empty',activeCampaignName:'Fresh campaign',ynState:{},platforms:[{id:'facebook',enabled:true}],_bbGetToken:async()=> 'test',_bbLoadGlobalImages:async()=>[],_bbLoadCampaignImages:async cid=>cid==='c'?[{id:'photo',...state.get(camp+'/images/photo')}]:[],confirm:()=>true,matchMedia:()=>({matches:false,addEventListener(){},addListener(){}})});
 w.fetch=async(url,options)=>{try{const body=JSON.parse(options.body),result=await service('u',body);if(loseNext){loseNext=false;throw Error('Lost response');}return {ok:true,json:async()=>result};}catch(e){return {ok:false,json:async()=>({error:e.message})};}};
 const run=file=>w.eval(fs.readFileSync('public/'+file,'utf8'));
 async function settled(){for(let i=0;i<50;i++){await new Promise(r=>setImmediate(r));if(!w.BBAds.busy)return;}throw Error('UI remained busy');}
@@ -23,7 +23,8 @@ const grid=w.document.createElement('div');grid.innerHTML='<div id="thumb-grid">
 Object.assign(w,{photoScope:'campaign',_bbPhotoItems:[{id:'photo',url:'https://example.com/photo.jpg',localUrl:'https://example.com/photo.jpg',scope:'campaign',done:true}],restoreFeaturedPhotoSelection(){},photoCap:()=>20,updatePhotoCapLabel(){},checkAdaptBtn(){},escHtml:s=>String(s).replace(/</g,'&lt;')});
 w.eval(html.slice(html.indexOf('window.renderAllPhotos = function()'),html.indexOf('// IN-FLIGHT GENERATION TRACKING')));
 w.refreshPhotoGridForScope=()=>w.renderAllPhotos();
-run('business-form.js');run('ad-workspace.js');await w.BBAds.open();ok(!w.document.querySelector('[data-action=migration]')&&!w.document.querySelector('[data-action=view]')&&!w.document.querySelector('[data-action=new]')&&!w.document.getElementById('ad-list')&&!w.document.querySelector('#ad-workspace select'),'entire record-list section is absent with no replacement panel');ok(!w.BBAds.active&&state.writes.length===0,'opening an empty campaign creates no Ad');
+run('business-form.js');run('ad-workspace.js');await w.BBAds.open();ok(!w.document.querySelector('[data-action=migration]')&&!w.document.querySelector('[data-action=view]')&&!w.document.querySelector('[data-action=new]')&&!w.document.getElementById('ad-list')&&!w.document.querySelector('#ad-workspace select'),'entire record-list section is absent with no replacement panel');ok(w.BBAds.active.id==='first'&&state.writes.length===1,'an empty campaign opens a usable canonical Ad without a migration panel');
+w.activeCampaignId='c';w.activeCampaignName='Summer';
 await w.BBAds.api('create',{adId:'first',requestId:'first',creative:{name:'July',offer:'Summer offer'}});await w.BBAds.open();ok(w.BBAds.active.name==='July'&&w.BBAds.active.offer==='Summer offer','original save/load path retains entered answers');
 ok(!w.document.querySelector('.ad-images')&&!w.document.querySelector('[data-action=upload]'),'duplicate image panel and uploader are absent');
 ok(w.BBAds.active.imageRefs[0]?.id==='photo','existing campaign photos start selected automatically');
