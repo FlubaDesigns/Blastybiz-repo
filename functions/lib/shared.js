@@ -336,7 +336,7 @@ function _isPrivateAddress(ip) {
   );
 }
 
-async function safeFetchUrl(url) {
+async function safeFetchUrl(url, { followHtmlRedirects = false } = {}) {
   const dns = require('dns');
 
   async function validateHost(hostname) {
@@ -410,7 +410,38 @@ async function safeFetchUrl(url) {
       if (total > MAX_SIZE) { await reader.cancel(); throw Object.assign(new Error('SSRF_TOO_LARGE'), { code: 'SSRF_TOO_LARGE' }); }
       chunks.push(value);
     }
-    return Buffer.concat(chunks.map(c => Buffer.from(c))).toString('utf8');
+    const html = Buffer.concat(chunks.map(c => Buffer.from(c))).toString('utf8');
+    // Some public home pages redirect with a meta refresh rather than HTTP.
+    // Follow only an explicit refresh, never execute page scripts or crawl links.
+    // It shares the HTTP redirect budget and all host/protocol checks above.
+    if (followHtmlRedirects) {
+      const head = html.split(/<body\b/i)[0]
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/<script\b[\s\S]*?<\/script>/gi, '');
+      let destination;
+      for (const tag of head.match(/<meta\b[^>]*>/gi) || []) {
+        const attrs = {};
+        for (const match of tag.matchAll(/([\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g)) {
+          attrs[match[1].toLowerCase()] = match[2] ?? match[3] ?? match[4];
+        }
+        if ((attrs['http-equiv'] || '').toLowerCase() !== 'refresh') continue;
+        const refresh = (attrs.content || '').match(/^\s*\d+(?:\.\d+)?\s*;\s*url\s*=\s*(.*?)\s*$/i);
+        if (refresh) destination = refresh[1].replace(/^(['"])([\s\S]*)\1$/, '$2').replace(/&amp;/gi, '&');
+        break;
+      }
+      if (destination) {
+        if (++redirectCount > 3) throw Object.assign(new Error('SSRF_TOO_MANY_REDIRECTS'), { code: 'SSRF_TOO_MANY_REDIRECTS' });
+        let redir;
+        try { redir = new URL(destination, currentUrl); } catch {
+          throw Object.assign(new Error('SSRF_INVALID_REDIRECT'), { code: 'SSRF_INVALID_REDIRECT' });
+        }
+        if (redir.protocol !== 'https:') throw Object.assign(new Error('SSRF_NOT_HTTPS'), { code: 'SSRF_NOT_HTTPS' });
+        await validateHost(redir.hostname);
+        currentUrl = redir.href;
+        continue;
+      }
+    }
+    return html;
   }
   throw Object.assign(new Error('SSRF_TOO_MANY_REDIRECTS'), { code: 'SSRF_TOO_MANY_REDIRECTS' });
 }
