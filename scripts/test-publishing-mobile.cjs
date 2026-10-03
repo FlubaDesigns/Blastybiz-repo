@@ -19,4 +19,26 @@ await photos.first().scrollIntoViewIfNeeded();
 await page.waitForFunction(()=>[...document.querySelectorAll('details[open] .platform-photo img')].every(img=>img.complete&&img.naturalWidth>0));
 assert.equal((await photos.first().boundingBox()).width,74,'thumbnail keeps a visible 72px image plus border');
 for(const width of [320,384,430,1024]){await page.setViewportSize({width,height:832});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'no horizontal overflow '+width);const metrics=await page.locator('#platform-list').evaluate(el=>({height:el.getBoundingClientRect().height,buttons:[...el.querySelector('details[open]').querySelectorAll('.action-btns > *')].map(b=>b.getBoundingClientRect().height)}));assert(metrics.buttons.every(h=>h>=44));assert(metrics.height<750,'five platforms remain compact');console.log(width,metrics);}
-await page.setViewportSize({width:384,height:832});if(process.env.STATUS_SCREENSHOT)await page.locator('.progress-card').screenshot({path:process.env.STATUS_SCREENSHOT});await page.locator('details.platform-row').last().locator('> summary').click();assert(await page.locator('details.platform-row').last().evaluate(el=>el.open));assert.equal(await page.locator('details.platform-row[open]').count(),1,'opening another platform closes the previous one');await page.evaluate(jobs=>renderJobs(jobs),jobs);assert(await page.locator('details.platform-row').last().evaluate(el=>el.open),'live updates keep chosen accordion open');console.log((origin?'LIVE ASSETS '+origin+': ':'LOCAL ASSETS: ')+'PASS mobile: closed accordions, rendered photo thumbnails, one open platform, no overflow, 44px actions');await browser.close();})().catch(e=>{console.error(e);process.exit(1)});
+await page.setViewportSize({width:384,height:832});if(process.env.STATUS_SCREENSHOT)await page.locator('.progress-card').screenshot({path:process.env.STATUS_SCREENSHOT});await page.locator('details.platform-row').last().locator('> summary').click();assert(await page.locator('details.platform-row').last().evaluate(el=>el.open));assert.equal(await page.locator('details.platform-row[open]').count(),1,'opening another platform closes the previous one');await page.evaluate(jobs=>renderJobs(jobs),jobs);assert(await page.locator('details.platform-row').last().evaluate(el=>el.open),'live updates keep chosen accordion open');console.log((origin?'LIVE ASSETS '+origin+': ':'LOCAL ASSETS: ')+'PASS mobile: closed accordions, rendered photo thumbnails, one open platform, no overflow, 44px actions');
+const workspace=await source('BlastyBiz.html');
+await page.route('https://fixture.test/workspace*',route=>route.fulfill({contentType:'text/html',body:workspace.replace(/<script[\s\S]*?<\/script>/g,'').replace('workspace-loading','').replace('body{visibility:hidden}','body{visibility:visible}')}));
+await page.goto('https://fixture.test/workspace?tab=schedule&scheduleAd=a&scheduleCampaign=c&sourceBlastId=d');
+await page.addScriptTag({content:await source('schedule-utils.js')});
+await page.addScriptTag({content:await source('lifecycle-ui.js')});
+await page.addScriptTag({content:workspace.slice(workspace.indexOf('function showTab(name)'),workspace.indexOf('function platformEligible('))});
+await page.evaluate(()=>{
+ window.profile={sellerType:'business'};window.activeBizId='b';window.previewVisits=0;
+ window.BBAds={active:{id:'a',campaignId:'c'},continueCurrent:async()=>{window.previewVisits++;}};
+ window.showToast=message=>{throw Error(message);};
+ window.fetch=async(url,options)=>{const req=JSON.parse(options.body);if(req.action==='list')return {ok:true,json:async()=>({schedules:[],legacy:[]})};if(req.action==='editor')return {ok:true,json:async()=>({sourceBlastId:'d',schedule:{},reviewKey:'fixture',packet:{adName:'Saved blast',adaptations:{craigslist:'Existing approved copy'},imageRefs:[]},imagePool:[]})};throw Error('Navigation must not write or publish: '+req.action);};
+ window.BBLifecycle.configure({businessId:'b',token:async()=> 'fixture'});
+ window.renderScheduleTab=()=>window.BBLifecycle.dashboard();
+});
+await page.locator('#tab-schedule').click();await page.locator('#section-schedule #schedule-editor [data-save]').waitFor({state:'visible'});
+assert.equal(await page.locator('.section.active').getAttribute('id'),'section-schedule');
+assert.equal(await page.locator('[data-save]').count(),1,'one existing scheduler in Schedule');
+assert.equal(await page.locator('#section-schedule [data-photo-mode="ai"]').count(),1,'same image controls moved with the scheduler');
+await page.locator('#tab-preview').click();assert.equal(await page.evaluate(()=>previewVisits),1,'Preview and Progress reuses the existing blast action');
+for(const width of [320,384,430]){await page.setViewportSize({width,height:832});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Schedule tab fits phone '+width);}
+console.log('PASS existing scheduler and image picker are inside Schedule; Preview & Progress calls existing action; no publication on navigation.');
+await browser.close();})().catch(e=>{console.error(e);process.exit(1)});

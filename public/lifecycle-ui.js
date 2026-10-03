@@ -98,20 +98,32 @@
  function futureSchedule(host,data) {
    if(!host||!data?.adId||!data?.campaignId||data.status!=='approved')return;
    host.hidden=false;host.classList.add('bb-life');
-   const request={adId:data.adId,campaignId:data.campaignId,sourceBlastId:context.blastId||new URLSearchParams(location.search).get('draftId')||undefined};
-   const scheduleUrl='BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,tab:'schedule',scheduleAd:data.adId,scheduleCampaign:data.campaignId});
+   const url='BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,tab:'schedule',cid:data.campaignId,adId:data.adId,scheduleAd:data.adId,scheduleCampaign:data.campaignId,sourceBlastId:context.blastId||new URLSearchParams(location.search).get('draftId')||''});
+   host.innerHTML='<a class="bb-button bb-primary" href="'+esc(url)+'">Schedule your next blast →</a>';
+ }
+ function scheduleSetup(host,request) {
+   host.hidden=false;host.classList.add('bb-life');
+   const scheduleUrl='BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,tab:'schedule',cid:request.campaignId,adId:request.adId,scheduleAd:request.adId,scheduleCampaign:request.campaignId});
    function intro(){host.innerHTML='<h2>Plan your next blast</h2><p>Your post is ready to use again. Choose when it goes out and which photos to use.</p><button type="button" data-setup>Set Up a Schedule</button><a class="bb-button" href="'+esc(scheduleUrl)+'">View Schedules</a>';host.querySelector('[data-setup]').onclick=open;}
    function open(){host.innerHTML='<h2>Schedule your next blast</h2><div data-form></div>';scheduleEditor(host.querySelector('[data-form]'),request,confirmed,intro);}
-   function confirmed(result){const s=result.schedule;host.innerHTML='<div class="bb-schedule-success"><span aria-hidden="true">✓</span><h2>YOU’RE SCHEDULED</h2><p>'+esc(scheduleSummary(s))+'</p><p>Your next post and photos are saved.</p></div><button type="button" data-edit>Edit Schedule</button><button type="button" data-cancel>Cancel Schedule</button><a class="bb-button bb-primary" href="'+esc(scheduleUrl)+'">Done</a><p role="status"></p>';host.querySelector('[data-edit]').onclick=open;host.querySelector('[data-cancel]').onclick=async e=>{if(!confirm('Cancel this future schedule?'))return;e.target.disabled=true;try{await api('cancel',{...request,expectedRevision:s.revision});intro();}catch(error){host.querySelector('[role=status]').textContent=error.message;e.target.disabled=false;}};}
-   intro();if(location.hash==='#future-blast-schedule')open();
+   function confirmed(result){dashboard(true);const s=result.schedule;host.innerHTML='<div class="bb-schedule-success"><span aria-hidden="true">✓</span><h2>YOU’RE SCHEDULED</h2><p>'+esc(scheduleSummary(s))+'</p><p>Your next post and photos are saved.</p></div><button type="button" data-edit>Edit Schedule</button><button type="button" data-cancel>Cancel Schedule</button><a class="bb-button bb-primary" href="'+esc(scheduleUrl)+'">Done</a><p role="status"></p>';host.querySelector('[data-edit]').onclick=open;host.querySelector('[data-cancel]').onclick=async e=>{if(!confirm('Cancel this future schedule?'))return;e.target.disabled=true;try{await api('cancel',{...request,expectedRevision:s.revision});intro();dashboard(true);}catch(error){host.querySelector('[role=status]').textContent=error.message;e.target.disabled=false;}};}
+   open();
  }
- async function dashboard() {
+ async function dashboard(preserveEditor=false) {
    const seq=++dashboardEpoch,wrap=document.getElementById('sched-campaigns-wrap');if(!wrap||!context)return;
    document.getElementById('sched-upcoming-card')?.setAttribute('hidden','');document.getElementById('sched-no-campaigns')?.setAttribute('hidden','');
    wrap.classList.add('bb-life');wrap.innerHTML='<p role="status">Loading schedules…</p>';
    try {
      const result=await api('list');if(seq!==dashboardEpoch)return;
      const rows=result.schedules,active=rows.filter(r=>r.schedule.enabled),others=rows.filter(r=>!r.schedule.enabled);
+     const setup=document.getElementById('schedule-editor'),route=new URLSearchParams(location.search),selected=window.BBAds?.active;
+     if(setup&&!preserveEditor){
+       const request=route.get('scheduleAd')&&route.get('scheduleCampaign')&&(!selected||selected.campaignId===route.get('scheduleCampaign'))?{adId:route.get('scheduleAd'),campaignId:route.get('scheduleCampaign'),sourceBlastId:route.get('sourceBlastId')||undefined}:selected?{adId:selected.id,campaignId:selected.campaignId}:null;
+       if(request){
+         if(!request.sourceBlastId&&window._bbFindLatestBlast){const latest=await window._bbFindLatestBlast(context.businessId,request.campaignId,request.adId);if(seq!==dashboardEpoch)return;if(latest?.status==='approved')request.sourceBlastId=latest.id;}
+         scheduleSetup(setup,request);
+       }else{setup.innerHTML='<p>Select your campaign in Create, then return here to schedule its next blast.</p>';}
+     }
      const next=active[0];wrap.innerHTML='<h2>Next Up</h2><p>'+esc(next?next.campaignName+' / '+next.adName+' — '+date(next.schedule.nextRunAt):'Nothing scheduled. You can still Send Now.')+'</p><p role="status" id="bb-schedule-message"></p><div data-active></div><details><summary>Paused and completed ('+others.length+')</summary><div data-others></div></details>';
      if(result.businessPaused){const resume=document.createElement('button');resume.textContent='Business scheduling is paused — Resume';resume.onclick=async()=>{try{await api('resumeBusiness');await dashboard();}catch(e){wrap.querySelector('#bb-schedule-message').textContent=e.message;}};wrap.prepend(resume);}
      const message=t=>{wrap.querySelector('#bb-schedule-message').textContent=t;};
@@ -126,7 +138,7 @@
        let editor=null;
        card.addEventListener('click',async e=>{
          const button=e.target.closest('[data-action]');if(!button)return;const action=button.dataset.action,local=card.querySelector(':scope > [role=status]');
-         if(action==='edit'){const box=card.querySelector('[data-edit]');box.hidden=false;await scheduleEditor(box,request,()=>dashboard(),()=>{box.hidden=true;});return;}
+         if(action==='edit'){const box=document.getElementById('schedule-editor')||card.querySelector('[data-edit]');scheduleSetup(box,request);box.scrollIntoView?.({block:'start',behavior:'smooth'});return;}
          if(action==='approveNext'&&!card.querySelector('[data-reviewed]')?.checked){local.textContent='Review the copy and images, then check the confirmation.';return;}
          if(['skipNext','save','cancel'].includes(action)&&!confirm(action==='cancel'?'Cancel this future schedule?':action==='save'?'Replace this schedule and any unsent prepared Blast? The stop-after count starts again.':'Skip only the next occurrence?'))return;
          const extras={};

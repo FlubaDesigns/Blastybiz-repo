@@ -457,7 +457,7 @@ function markBlastSubmitted() {
   var link = document.getElementById('pub-status-link');
   link.href = 'BlastyBiz-Publishing-Status.html?' + new URLSearchParams({draftId:window.draftDocId,bizId:window.businessId});
   document.getElementById('pub-status-row').classList.remove('hidden');
-  document.getElementById('pub-schedule-link').href = link.href + '#future-blast-schedule';
+  document.getElementById('pub-schedule-link').href = 'BlastyBiz.html?' + new URLSearchParams({bizId:window.businessId,tab:'schedule',cid:window._scheduleCampaignId||'',adId:window._scheduleAdId||'',scheduleAd:window._scheduleAdId||'',scheduleCampaign:window._scheduleCampaignId||'',sourceBlastId:window.draftDocId});
   document.getElementById('pub-next-row').classList.remove('hidden');
 }
 
@@ -506,6 +506,7 @@ onAuthStateChanged(auth, async (user) => {
 
   if (draftData) {
     if(draftData.packet)draftData={...draftData,...draftData.packet};
+    window._scheduleAdId=draftData.adId;window._scheduleCampaignId=draftData.campaignId;
     window.populateFromDraftData(draftData);
     if(draftData.adId){const title=document.getElementById('pub-sub');if(title)title.textContent=(draftData.campaignName||'Campaign')+' / '+(draftData.adName||'Ad');}
   } else {
