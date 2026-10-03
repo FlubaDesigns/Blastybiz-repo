@@ -38,6 +38,14 @@ await page.locator('#tab-schedule').click();await page.locator('#section-schedul
 assert.equal(await page.locator('.section.active').getAttribute('id'),'section-schedule');
 assert.equal(await page.locator('[data-save]').count(),1,'one existing scheduler in Schedule');
 assert.equal(await page.locator('#section-schedule [data-photo-mode="ai"]').count(),1,'same image controls moved with the scheduler');
+await page.locator('.bb-timezone summary').click();
+const zonePicker=page.locator('#schedule-editor select[data-field="timezone"]');
+assert(await zonePicker.isVisible(),'phone gets a native time-zone picker');
+await zonePicker.selectOption('America/New_York');
+assert((await page.locator('[data-zone-label]').innerText()).includes('Eastern Time (ET)'));
+await zonePicker.selectOption('America/Los_Angeles');
+assert((await page.locator('[data-zone-label]').innerText()).includes('Pacific Time (PT)'));
+assert.equal(await page.locator('input[data-field="timezone"]').count(),0,'no raw timezone typing');
 await page.locator('#tab-preview').click();assert.equal(await page.evaluate(()=>previewVisits),1,'Preview and Progress reuses the existing blast action');
 for(const width of [320,384,430]){await page.setViewportSize({width,height:832});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Schedule tab fits phone '+width);}
 console.log('PASS existing scheduler and image picker are inside Schedule; Preview & Progress calls existing action; no publication on navigation.');

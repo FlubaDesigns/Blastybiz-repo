@@ -14,6 +14,24 @@ w.eval(fs.readFileSync('public/schedule-utils.js','utf8'));
 w.eval(fs.readFileSync('public/lifecycle-ui.js','utf8'));w.BBLifecycle.configure({businessId:'b',token:async()=>''});
 const settle=async()=>{for(let i=0;i<20;i++)await new Promise(r=>setImmediate(r));};
 (async()=>{
+ // Native zone choices feed the same canonical conversion, including DST.
+ const zoneHost=w.document.createElement('div');w.document.body.append(zoneHost);
+ const zoneForm=w.BBLifecycle.form(zoneHost,{timezone:'America/New_York'});
+ const zoneSelect=zoneHost.querySelector('[data-field=timezone]'),zoneDate=zoneHost.querySelector('[data-field=date]');
+ ok(zoneSelect.tagName==='SELECT'&&zoneSelect.selectedOptions[0].textContent==='Eastern Time (ET)','recognizable native time-zone picker replaces technical free text');
+ zoneDate.value='2027-01-15T09:00';ok(zoneForm.value().firstRunAtUtc==='2027-01-15T14:00:00.000Z','Eastern winter time uses standard offset');
+ zoneDate.value='2027-07-15T09:00';ok(zoneForm.value().firstRunAtUtc==='2027-07-15T13:00:00.000Z','Eastern summer time applies daylight saving');
+ zoneSelect.value='America/Los_Angeles';zoneSelect.dispatchEvent(new w.Event('change',{bubbles:true}));
+ ok(zoneForm.value().firstRunAtUtc==='2027-07-15T16:00:00.000Z'&&zoneHost.querySelector('[data-zone-label]').textContent.includes('Pacific Time'),'choosing Pacific updates conversion and visible zone name');
+ zoneSelect.value='America/Phoenix';ok(zoneForm.value().firstRunAtUtc==='2027-07-15T16:00:00.000Z','Arizona does not inherit Mountain daylight saving');
+ const quarter=w.BBLifecycle.form(zoneHost,{timezone:'Asia/Kathmandu',firstRunAtUtc:'2027-07-15T03:15:00Z'});
+ ok(quarter.value().timezone==='Asia/Kathmandu'&&quarter.value().firstRunAtUtc==='2027-07-15T03:15:00.000Z','saved international zones and quarter-hour offsets are preserved');
+ const RealDate=w.Date;w.Date=class extends RealDate{constructor(...args){super(...(args.length?args:['2027-03-13T14:00:00Z']));}static now(){return new RealDate('2027-03-13T14:00:00Z').getTime();}};
+ const dst=w.BBLifecycle.form(zoneHost,{timezone:'America/New_York'});
+ ok(dst.value().firstRunAtUtc==='2027-03-14T13:00:00.000Z','default tomorrow retains 9am across daylight saving');
+ zoneHost.querySelector('[data-hours="24"]').click();ok(dst.value().firstRunAtUtc==='2027-03-14T13:00:00.000Z','Tomorrow shortcut retains the local hour across daylight saving');
+ zoneHost.querySelector('[data-field=date]').value='2027-03-14T02:30';assert.throws(()=>dst.value(),/unavailable/);checks++;
+ w.Date=RealDate;zoneHost.remove();
  await w.BBLifecycle.preview({},'unlinked');ok(!w.document.getElementById('v1-publish-schedule').textContent.includes('Legacy')&&w.document.getElementById('v1-publish-schedule').textContent.includes('create an Ad'),'unlinked preview has no dead conversion instruction');
  await w.BBLifecycle.preview(m.get(D),'first');let host=w.document.getElementById('v1-publish-schedule');
  ok(host.querySelector('[data-form]').hidden,'Send Now hides schedule controls');await w._firestoreApprove(['craigslist']);ok(published===1,'Send Now retains existing approval path');
