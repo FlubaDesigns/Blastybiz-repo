@@ -10,7 +10,7 @@ const assert = require('node:assert/strict');
     assert.equal((await response.json()).commit, process.env.GITHUB_SHA, `${host}: wrong deployed commit`);
     for (const [page, text] of [
       ['BlastyBiz', 'lifecycle-ui.js'],
-      ['BlastyBiz-Listing-Preview', 'Review your copy below, then tap Blast It!'],
+      ['BlastyBiz-Listing-Preview', 'Review My Blast'],
       ['BlastyBiz-Publishing-Status', 'lifecycle-status.js'],
       ['BlastyBiz-Admin', 'ai-cost-rollups.js'],
       ['BlastyBiz', 'async function deletePhotoRecords'],
@@ -19,7 +19,7 @@ const assert = require('node:assert/strict');
       ['BlastyBiz-Admin-OnboardSteps', 'blasty-admin.js'],
       ['BlastyBiz-Profile', 'BlastyBiz-CreateBiz.html'],
       ['BlastyBiz-Story', 'BlastyBiz-CreateBiz.html'],
-      ['BlastyBiz-Publishing-Status', 'manual_followup'],
+      ['lifecycle-status.js', 'manual_followup'],
       ['BlastyBiz-Account', 'Plan &amp; Billing'],
       ['BlastyBiz-CreateBiz', 'cbNormalizeWebsite'],
       ['BlastyBiz-Admin-Queue-Manager', 'publicationUncertain'],
