@@ -45,7 +45,7 @@
     const seq=epoch;
     try{await save();}catch(e){if(seq===epoch){tell('Not saved. '+e.message);el('ad-save-retry').hidden=false;}}
   }
-  function open(){
+  function open(wantedAdId){
     mount();if(!el('ad-workspace'))return Promise.resolve();
     clearTimeout(autoSaveTimer);el('ad-save-retry').hidden=true;
     if(el('step5-existing-blast'))el('step5-existing-blast').hidden=true;
@@ -58,7 +58,7 @@
     loading=(async()=>{
       try{
         const rows=await list();if(seq!==epoch)return;
-        const wanted=new URLSearchParams(location.search).get('adId');
+        const wanted=wantedAdId===undefined?new URLSearchParams(location.search).get('adId'):wantedAdId;
         let selected=rows.find(a=>a.id===wanted)||rows.find(a=>a.id==='first')||rows[0];
         if(!selected){
           tell('Opening your campaign details…');
@@ -140,13 +140,15 @@
     saving=(async()=>{let result;do{result=await persist();}while(dirty);return result;})();
     try { const result=await saving;return result; } finally { saving=null; }
   }
-  async function findExisting(){
+  async function findExisting(options){
     const seq=epoch;
-    const latest=window._bbFindLatestBlast ? await window._bbFindLatestBlast(business,campaign,ad.id) : null;
+    const latest=window._bbFindLatestBlast ? await window._bbFindLatestBlast(business,campaign,ad.id,options) : null;
     if(seq!==epoch)throw Error('The active campaign changed. Please continue again.');
     const host=el('step5-existing-blast'),link=el('step5-view-blast');
-    if(host)host.hidden=!latest;
-    if(link&&latest)link.href='BlastyBiz-Listing-Preview.html?'+new URLSearchParams({bizId:business,draftId:latest.id});
+    if(!options){
+      if(host)host.hidden=!latest;
+      if(link&&latest){link.href='BlastyBiz-Listing-Preview.html?'+new URLSearchParams({bizId:business,draftId:latest.id});link.textContent=['approved','completed'].includes(latest.status)?'View Previously Sent Blast →':'View Saved Blast →';}
+    }
     return latest;
   }
   async function continueCurrent(newBlast=false){
@@ -154,14 +156,25 @@
     busy=true;
     try{
       await ready();
+      if(window._bbDraftSavePending)throw Error('Use Retry save before opening your blast.');
+      if(pendingPhotoCount || [...(window._bbPhotoUploads||[])].some(i=>i.bizId===business&&i.campaignId===campaign&&!i.error))throw Error('Wait for your photos to finish saving, then continue.');
+      // The canonical Ad owns current edits. Save before choosing a frozen Blast.
+      await save();
+      window._bbRecordWorkspaceRoute?.(true);
       if(!newBlast){
-        const latest=await findExisting();
+        const latest=await findExisting({adRevision:ad.revision});
         if(latest){
           location.href='BlastyBiz-Listing-Preview.html?'+new URLSearchParams({bizId:business,draftId:latest.id});
           return;
         }
       }
-      await save();
+      const included=(ad.platforms||[]).filter(p=>ad.platformStatus?.[p]!=='excluded');
+      if(!included.length||included.some(p=>!ad.adaptations?.[p]?.trim()||ad.platformStatus?.[p]!=='approved')){
+        window.createWizGoTo?.(5);
+        tell('Your latest changes are saved. Review and approve them before opening the preview.');
+        window.showToast?.('Review your latest changes below. Your previous blast is unchanged.');
+        return;
+      }
       await prepare('this_run');
     }finally{busy=false;}
   }

@@ -41,9 +41,10 @@
 
   <!-- ── HERO ─────────────────────────────────────── -->
   <section class="card pub-hero">
-    <div class="pub-page-eyebrow">Step 6 of 6</div>
+    <div class="pub-page-eyebrow" id="pub-version-label">Saved blast preview</div>
     <h1 class="big-title">Blast it!</h1>
     <p class="sub" id="pub-sub">Review your copy below, then tap Blast It!</p>
+    <a id="pub-back-to-ad" class="pub-copy-btn" hidden>← Back to this blast</a>
   </section>
 
   <div class="pub-layout">
@@ -276,6 +277,14 @@ function copyPreviewText(pid) {
 
 function populateFromDraftData(draftData) {
   currentDraftData = draftData;
+  var submitted = ['approved','completed'].includes(draftData.status);
+  document.getElementById('pub-version-label').textContent = submitted ? 'Previously submitted blast · saved copy' : 'Current prepared blast · saved copy';
+  var back = document.getElementById('pub-back-to-ad');
+  if (draftData.campaignId && draftData.adId) {
+    back.href = 'BlastyBiz.html?' + new URLSearchParams({bizId:window.businessId,cid:draftData.campaignId,adId:draftData.adId,tab:'create',step:'5'});
+    back.hidden = false;
+    back.textContent = submitted ? '← Back to current work' : '← Back to this blast';
+  }
   drafts    = {};
   _railPids = [];
   window._draftRevision = draftData.revision || 0; // F8: track revision for stale-publish guard
@@ -545,7 +554,7 @@ onAuthStateChanged(auth, async (user) => {
       // F8: Stale-revision guard — re-fetch draft to catch any re-generations since page load
       const freshSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', window.businessId, 'listingDrafts', draftId));
       if (freshSnap.exists()) {
-        if (freshSnap.data().status === 'approved') { markBlastSubmitted(); return; }
+        if (['approved','completed'].includes(freshSnap.data().status)) { markBlastSubmitted(); return; }
         const freshRev = freshSnap.data().revision || 0;
         if (freshRev !== (window._draftRevision || 0)) {
           if (btn) { btn.disabled = false; btn.textContent = '🚀 Blast It!'; }
@@ -581,7 +590,7 @@ onAuthStateChanged(auth, async (user) => {
   };
   if (draftData) {
     const btn = document.getElementById('publish-btn');
-    if (draftData.status === 'approved') markBlastSubmitted();
+    if (['approved','completed'].includes(draftData.status)) markBlastSubmitted();
     else if (btn) { btn.disabled = false; btn.textContent = '🚀 Blast It!'; }
   }
   } catch (error) {

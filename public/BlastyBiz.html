@@ -1346,7 +1346,7 @@ function _tabsScroll(dir) {
   window.addEventListener('resize', _updateTabArrows);
 })();
 
-function showTab(name) {
+function showTab(name, options = {}) {
   if (profile.sellerType === 'personal' && (name === 'profile' || name === 'story')) name = 'create';
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   // aria-selected must move with the highlight, or screen readers keep announcing
@@ -1369,7 +1369,7 @@ function showTab(name) {
   if (name === 'story')   { if (window._bbLoadStory) window._bbLoadStory(); }
   if (name === 'account') { if (window._bbLoadAccount) window._bbLoadAccount(); }
   if (name === 'create') {
-    createWizGoTo(1);
+    createWizGoTo(createWizStep, false, {record:false, scroll:false});
     if (activeCampaignId) {
       document.getElementById('campaign-content')?.classList.remove('hidden');
     }
@@ -1385,7 +1385,57 @@ function showTab(name) {
       campaignScopeBtn.style.display = '';
     }
   }
+  if (options.record !== false) window._bbRecordWorkspaceRoute?.();
 }
+
+// Navigation stores only location, never a second copy of the Ad or its edits.
+window._bbWorkspaceNavigationReady = false;
+window._bbRestoringWorkspace = false;
+window._bbRecordWorkspaceRoute = function(replace = false) {
+  if (!window._bbWorkspaceNavigationReady || window._bbRestoringWorkspace) return;
+  const url = new URL(location.href), q = url.searchParams;
+  const tab = document.querySelector('.section.active')?.id.replace('section-', '') || 'create';
+  q.set('tab', tab);
+  q.set('step', String(createWizStep));
+  if (window.activeBizId) q.set('bizId', window.activeBizId);
+  if (activeCampaignId) q.set('cid', activeCampaignId); else q.delete('cid');
+  if (window.BBAds?.active) q.set('adId', window.BBAds.active.id); else q.delete('adId');
+  for (const key of ['edit','autogenerate','checkout','draftId']) q.delete(key);
+  if (activeCampaignId) q.delete('newcampaign');
+  if (tab !== 'schedule') for (const key of ['scheduleAd','scheduleCampaign','scheduledBlastId','sourceBlastId']) q.delete(key);
+  if (url.href === location.href) return;
+  window.history[replace ? 'replaceState' : 'pushState'](null, '', url);
+};
+window._bbRestoreWorkspaceRoute = async function() {
+  if (!window._bbWorkspaceNavigationReady || window._bbRestoringWorkspace) return;
+  window._bbRestoringWorkspace = true;
+  const requestedUrl = location.href;
+  let restored = false;
+  try {
+    const q = new URLSearchParams(location.search);
+    if (window._bbAdaptationBusy || window._bbDraftSavePending || window.BBAds?.busy) throw Error('Wait for your current save or generation to finish before going back.');
+    if (window.BBAds?.active) await window.BBAds.save();
+    // A second Back/Forward tap during the save owns the final destination.
+    if (location.href !== requestedUrl) { restored = true; return; }
+    if (q.get('bizId') && q.get('bizId') !== window.activeBizId) { restored = true; location.reload(); return; }
+    const campaign = campaigns.find(c => c.id === q.get('cid'));
+    if (campaign && (activeCampaignId !== campaign.id || (q.get('adId') && q.get('adId') !== window.BBAds?.active?.id))) {
+      await selectCampaign(campaign.id, campaign.name, {adId:q.get('adId')});
+      if (activeCampaignId !== campaign.id) throw Error('Wait for the current operation to finish before going back.');
+    }
+    const step = Number(q.get('step'));
+    if (SLIDE_IDS.includes(step)) createWizGoTo(step, false, {record:false, scroll:false});
+    const tab = q.get('tab');
+    showTab(['profile','story','create','platforms','schedule','history','account'].includes(tab) ? tab : 'create');
+    restored = true;
+  } catch (e) { showToast(e.message); }
+  finally {
+    window._bbRestoringWorkspace = false;
+    if (restored && location.href !== requestedUrl) void window._bbRestoreWorkspaceRoute();
+    else window._bbRecordWorkspaceRoute(true);
+  }
+};
+window.addEventListener('popstate', () => { void window._bbRestoreWorkspaceRoute(); });
 
 // ══════════════════════════════════════════
 // PLATFORM RENDERING
@@ -2474,7 +2524,8 @@ const SLIDE_TITLES = {
   5: 'Review & Approve'
 };
 
-function createWizGoTo(step, generate = false) {
+function createWizGoTo(step, generate = false, options = {}) {
+  if (!SLIDE_IDS.includes(step)) step = SLIDE_IDS[0];
   // Some callers jump straight into a wizard step without going through
   // showTab(), which showed the Create screen while another tab stayed
   // highlighted. Entering the wizard owns the tab strip too.
@@ -2513,7 +2564,8 @@ function createWizGoTo(step, generate = false) {
   const fillEl = document.getElementById('create-progress-fill');
   if (fillEl) fillEl.style.width = Math.round((stepNum / total) * 100) + '%';
   createWizStep = step;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (options.record !== false) window._bbRecordWorkspaceRoute?.();
+  if (options.scroll !== false) window.scrollTo({ top: 0, behavior: 'smooth' });
   if (step === 1) {
     renderStep3Platforms();
     checkAdaptBtn();
@@ -2526,11 +2578,9 @@ function createWizGoTo(step, generate = false) {
     const _s5firstUnresolved = _s5enabled.findIndex(p => p._reviewStatus !== 'approved' && p._reviewStatus !== 'skipped');
     _step5PlatIdx = _s5firstUnresolved >= 0 ? _s5firstUnresolved : 0;
     // Viewing and navigation never generate; only an explicit generation action does.
-    const hasContent = platforms.some(p => p.enabled && p.adaptedContent);
     // runAdaptation owns loading state after validating the selected Ad.
     renderStep5Review();
     if (generate) runAdaptation();
-    else if (hasContent && !window._currentDraftId) retryGeneratedDraftSave();
   }
 }
 
@@ -4714,16 +4764,16 @@ function renderCampaignChips() {
   if (typeof renderRecentActivity === 'function') renderRecentActivity();
 }
 
-async function selectCampaign(id, name) {
+async function selectCampaign(id, name, options = {}) {
   if(window._bbAdaptationBusy || window.BBAds?.busy){showToast('Wait for the current save or generation to finish.');return;}
   if(window.BBAds?.dirty){try{await window.BBAds.save();}catch(e){showToast('Could not save your changes. Please retry before switching.');return;}}
   if (window._bbDraftSavePending) { showToast('Use Retry save before switching campaigns.'); return; }
   clearTimeout(_campaignSaveTimer);
   activeCampaignId   = id;
   activeCampaignName = name;
-  const adReady = window.BBAds?.open();
-  createWizGoTo(1);
-  showTab('create');
+  const adReady = window.BBAds?.open(options.adId || '');
+  createWizGoTo(1, false, {record:false});
+  showTab('create', {record:false});
   document.getElementById('campaign-content')?.classList.remove('hidden');
 
   const cam = campaigns.find(c => c.id === id) || {};
@@ -4756,6 +4806,7 @@ async function selectCampaign(id, name) {
   renderPlatformHistory();
   await adReady;
   if (activeCampaignId !== id) return;
+  window._bbRecordWorkspaceRoute?.();
   _updateAdDiscardBtn();
   checkAdaptBtn();
 }
@@ -5751,11 +5802,14 @@ onAuthStateChanged(auth, async (user) => {
   // Allow switching business from the bar
   window.switchBusiness = async function(bizId) {
     if (window._bbDraftSavePending) { showToast('Use Retry save before switching businesses.'); return; }
+    if (window._bbAdaptationBusy || window.BBAds?.busy) { showToast('Wait for the current save or generation to finish.'); return; }
+    try { if (window.BBAds?.active) await window.BBAds.save(); }
+    catch (e) { showToast('Could not save your changes. Please retry before switching.'); return; }
+    await setDoc(doc(db, 'users', user.uid), { activeBusiness: bizId }, { merge: true });
     activeBizId = bizId;
     window.activeBizId = bizId;
-    await setDoc(doc(db, 'users', user.uid), { activeBusiness: bizId }, { merge: true });
     if (typeof renderSwitcherBar === 'function') { renderSwitcherBar(); renderAgencyBar(); }
-    window.location.reload();
+    window.location.assign('BlastyBiz.html?' + new URLSearchParams({bizId,tab:'create'}));
   };
 
   // ── Add a new business — show Wizard vs Form choice modal ──
@@ -5941,7 +5995,7 @@ onAuthStateChanged(auth, async (user) => {
       } else if (_qpCid) {
         const _qpCamp = campaigns.find(c => c.id === _qpCid);
         if (_qpCamp) {
-          await selectCampaign(_qpCamp.id, _qpCamp.name);
+          await selectCampaign(_qpCamp.id, _qpCamp.name, {adId:_qp.get('adId')});
           // The original handoff resumes only after the same saved Ad is loaded.
           if (_qp.get('autogenerate') === '1') {
             window._bbFromOnboarding = true;
@@ -5972,7 +6026,11 @@ onAuthStateChanged(auth, async (user) => {
         }
       }
       // Campaign loading opens Create; restore the explicitly requested tab last.
+      const requestedStep = Number(_qp.get('step'));
+      if (SLIDE_IDS.includes(requestedStep) && _qp.get('autogenerate') !== '1') createWizGoTo(requestedStep, false, {record:false, scroll:false});
       if (_tabParam && ['profile','story','create','platforms','schedule','history','account'].includes(_tabParam)) showTab(_tabParam);
+      window._bbWorkspaceNavigationReady = true;
+      window._bbRecordWorkspaceRoute(true);
     }
   } catch(e) {
     console.error('Profile load error:', e);
@@ -6285,7 +6343,7 @@ window._bbLoadDraft = async function(draftId) {
 };
 
 // Reopen the existing canonical Blast without changing its status or queueing posts.
-window._bbFindLatestBlast = async function(businessId, campaignId, adId) {
+window._bbFindLatestBlast = async function(businessId, campaignId, adId, options = {}) {
   if (!currentUser || !businessId || !campaignId || !adId) throw new Error('Open a saved campaign first.');
   const rows = await getDocs(query(
     collection(db, 'users', currentUser.uid, 'businesses', businessId, 'listingDrafts'),
@@ -6294,8 +6352,9 @@ window._bbFindLatestBlast = async function(businessId, campaignId, adId) {
   const time = v => v?.toMillis?.() || (v?.seconds ? v.seconds * 1000 : Date.parse(v) || 0);
   return rows.docs.map(row => ({...row.data(), id: row.id}))
     .filter(d => (d.adId === adId || (!d.adId && adId === 'first')) &&
-      !d.scheduleAdPath && ['prepared', 'ready_to_publish', 'approved', 'completed'].includes(d.status))
-    .sort((a, b) => Number(b.status === 'approved') - Number(a.status === 'approved') ||
+      !d.scheduleAdPath && ['prepared', 'ready_to_publish', 'approved', 'completed'].includes(d.status) &&
+      (options.adRevision === undefined || d.packet?.adRevision === options.adRevision))
+    .sort((a, b) => (options.adRevision === undefined ? Number(b.status === 'approved') - Number(a.status === 'approved') : 0) ||
       Math.max(time(b.approvedAt), time(b.createdAt)) - Math.max(time(a.approvedAt), time(a.createdAt)))[0] || null;
 };
 
@@ -7346,11 +7405,11 @@ window.confirmDeleteAccount = async function() {
 .cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
 </style>
 <script src="lifecycle-ui.js?v=20261002-timezone-picker"></script>
-<script src="ad-workspace.js?v=20261002-safe-blast-navigation"></script>
+<script src="ad-workspace.js?v=20261003-current-blast"></script>
 <script>
 document.addEventListener('click',function(e){
  const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');
- if(a && !a.hasAttribute('data-existing-blast') && BBAds.active){e.preventDefault();BBAds.continueCurrent();}
+ if(a && !a.hasAttribute('data-existing-blast') && BBAds.active){e.preventDefault();BBAds.continueCurrent().catch(error=>showToast(error.message));}
 },true);
 </script>
 </body>

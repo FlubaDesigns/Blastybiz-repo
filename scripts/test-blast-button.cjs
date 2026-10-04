@@ -21,6 +21,9 @@ function setup({failLoad=false,status='draft'}={}){
  const f=setup();const {w}=f,button=w.document.getElementById('publish-btn');
  ok(button.disabled,'button stays disabled while its action is loading');await f.boot();
  ok(w.document.querySelector('.pub-post-text').textContent==='Saved Facebook copy','real preview rail initializes and displays saved copy');
+ const back=new URL(w.document.getElementById('pub-back-to-ad').href);
+ ok(back.searchParams.get('bizId')==='b'&&back.searchParams.get('cid')==='c'&&back.searchParams.get('adId')==='a'&&back.searchParams.get('step')==='5','Back to this blast preserves the same business, campaign, Ad and review step');
+ ok(w.document.getElementById('pub-version-label').textContent.includes('Current prepared'),'preview identifies current saved work');
  ok(!w.document.getElementById('v1-publish-schedule')&&!w.document.querySelector('input[name="bb-send"]'),'Blast page has no scheduling choices');
  ok(typeof w._firestoreApprove==='function'&&!button.disabled&&button.textContent.includes('Blast It!'),'Blast It becomes ready with a connected handler');
  ok(w.document.getElementById('pub-next-row').classList.contains('hidden'),'future scheduling navigation waits for submission');
@@ -35,6 +38,7 @@ function setup({failLoad=false,status='draft'}={}){
  stale.w._firestoreApprove=undefined;await stale.w.publishBlast();ok(stale.w.document.getElementById('pub-warn').textContent.includes('not finished loading'),'unavailable action is reported instead of silently doing nothing');stale.dom.window.close();
  const reopened=setup({status:'approved'});await reopened.boot();await reopened.w.publishBlast();ok(reopened.w.document.getElementById('publish-btn').disabled&&reopened.w.document.getElementById('publish-btn').classList.contains('is-blasted')&&reopened.calls.length===0,'reopened submitted blast stays gray and disabled');ok(reopened.w.document.getElementById('manual-text-yelp').value==='Saved Yelp copy','manual copy remains available after submission');reopened.dom.window.close();
  const other=setup();await other.boot();other.submittedElsewhere();await other.w.publishBlast();ok(other.calls.length===0&&other.w.document.getElementById('publish-btn').disabled,'fresh server state prevents a second send from another tab');other.dom.window.close();
+ const completed=setup({status:'completed'});await completed.boot();await completed.w.publishBlast();ok(completed.calls.length===0&&completed.w.document.getElementById('publish-btn').disabled&&completed.w.document.getElementById('pub-version-label').textContent.includes('Previously submitted'),'completed historical blast is labeled and cannot resend');completed.dom.window.close();
  const scheduleLink=w.document.getElementById('pub-schedule-link');
  ok(!w.document.getElementById('pub-next-row').classList.contains('hidden'),'submitted blast reveals bottom navigation');
  const target=new URL(scheduleLink.href);

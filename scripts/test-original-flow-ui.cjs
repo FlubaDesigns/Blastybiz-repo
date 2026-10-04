@@ -175,20 +175,54 @@ const turn=()=>new Promise(r=>setImmediate(r));
   await w.BBAds.continueCurrent(true);
   assert.notEqual(lastPrepared.blastId,sentId,'only explicit Prepare Another Blast creates a fresh packet');
   assert.equal(state.get(base+'/listingDrafts/'+sentId).status,'approved','submitted status stays frozen');
+  // Current edits must be saved and reviewed instead of reopening an older packet.
+  let lookups=0;
+  w._bbFindLatestBlast=async(b,c,a,options={})=>{
+    lookups++;
+    return Object.entries(state.all()).filter(([path,d])=>path.startsWith(base+'/listingDrafts/')&&d.packet&&d.adId===a&&d.campaignId===c&&(options.adRevision===undefined||d.packet.adRevision===options.adRevision))
+      .map(([path,d])=>({...d,id:path.split('/').at(-1)})).at(-1)||null;
+  };
+  const sentBefore=JSON.stringify(state.get(base+'/listingDrafts/'+sentId));
+  const preparedBefore=lastPrepared.blastId;
+  let lastStep;const realGo=w.createWizGoTo;w.createWizGoTo=(...args)=>{lastStep=args[0];return realGo(...args);};
+  w.document.getElementById('biz-offer').value='Latest offer, not the sent offer';w.BBAds.markDirty();
+  await w.BBAds.continueCurrent();
+  assert.equal(state.get(camp+'/ads/first').offer,'Latest offer, not the sent offer','Preview flushes current edits');
+  assert.equal(lastStep,5,'unreviewed edits return to the existing review step');
+  assert.equal(lastPrepared.blastId,preparedBefore,'unreviewed edits do not create a Blast');
+  assert.equal(JSON.stringify(state.get(base+'/listingDrafts/'+sentId)),sentBefore,'previously sent copy remains frozen');
+  w.platforms[0]._reviewStatus='approved';w.platforms[1]._reviewStatus='skipped';await w.BBAds.continueCurrent();
+  const currentPacket=lastPrepared.blastId;
+  assert.notEqual(currentPacket,preparedBefore,'approved changed content gets its own current packet');
+  assert.equal(lastPrepared.packet.offer,'Latest offer, not the sent offer');
+  await w.BBAds.continueCurrent();assert.equal(lastPrepared.blastId,currentPacket,'unchanged navigation reuses the same current packet');
+  failSave=true;w.document.getElementById('biz-offer').value='Keep this unsaved edit';w.BBAds.markDirty();
+  const lookupsBefore=lookups;
+  await assert.rejects(w.BBAds.continueCurrent(),/offline/);
+  assert.equal(lookups,lookupsBefore,'failed saving prevents any preview lookup or navigation');
+  assert.equal(w.document.getElementById('biz-offer').value,'Keep this unsaved edit');
+  failSave=false;await w.BBAds.save();
+  w._bbPhotoUploads=[{bizId:'b',campaignId:'c'}];
+  await assert.rejects(w.BBAds.continueCurrent(),/photos/);
+  w._bbPhotoUploads=[];
   w._bbFindLatestBlast=undefined;
   const navigationCode=cut('async function completeBlast(', '// IMAGE HANDLING');
   assert(!navigationCode.includes('_bbUpdateDraft')&&!navigationCode.includes('addHistory('),'Continue never resets status or invents publishing history');
   assert(!dashboard.includes('Send It →'),'navigation never says Send It');
   const finderDom=new JSDOM('',{runScripts:'outside-only'}),fw=finderDom.window;
   const rows=[
-    {id:'sent',adId:'first',status:'approved',createdAt:'2026-10-01'},
-    {id:'unsent',adId:'first',status:'prepared',createdAt:'2026-10-02'},
+    {id:'sent',adId:'first',status:'approved',createdAt:'2026-10-01',packet:{adRevision:2}},
+    {id:'unsent',adId:'first',status:'prepared',createdAt:'2026-10-02',packet:{adRevision:3}},
     {id:'other-ad',adId:'second',status:'approved',createdAt:'2026-10-03'},
     {id:'schedule',adId:'first',status:'approved',scheduleAdPath:'schedule',createdAt:'2026-10-04'}
   ];
   Object.assign(fw,{currentUser:{uid:'u'},db:{},collection:(...args)=>args,query:x=>x,where:()=>null,getDocs:async()=>({docs:rows.map(data=>({id:data.id,data:()=>data}))})});
   fw.eval(cut('window._bbFindLatestBlast =', '// Update an existing listingDraft document'));
   assert.equal((await fw._bbFindLatestBlast('b','c','first')).id,'sent','existing sent Blast wins over unused drafts and excludes other Ads and schedules');
+  assert.equal((await fw._bbFindLatestBlast('b','c','first',{adRevision:3})).id,'unsent','current preview matches the current Ad revision');
+  assert.equal(await fw._bbFindLatestBlast('b','c','first',{adRevision:4}),null,'old packets cannot stand in for current edits');
+  rows[0].packet.adRevision=3;
+  assert.equal((await fw._bbFindLatestBlast('b','c','first',{adRevision:3})).id,'unsent','newer prepared packet wins over earlier sent packet for current work');
   finderDom.window.close();
   slow=true;const old=w.BBAds.open();await turn();
   assert(w.document.getElementById('campaign-content').inert);

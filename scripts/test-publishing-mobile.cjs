@@ -25,7 +25,7 @@ await page.route('https://fixture.test/workspace*',route=>route.fulfill({content
 await page.goto('https://fixture.test/workspace?tab=schedule&scheduleAd=a&scheduleCampaign=c&sourceBlastId=d');
 await page.addScriptTag({content:await source('schedule-utils.js')});
 await page.addScriptTag({content:await source('lifecycle-ui.js')});
-await page.addScriptTag({content:workspace.slice(workspace.indexOf('function showTab(name)'),workspace.indexOf('function platformEligible('))});
+await page.addScriptTag({content:workspace.slice(workspace.indexOf('function showTab('),workspace.indexOf('function platformEligible('))});
 await page.evaluate(()=>{
  window.profile={sellerType:'business'};window.activeBizId='b';window.previewVisits=0;
  window.BBAds={active:{id:'a',campaignId:'c'},continueCurrent:async()=>{window.previewVisits++;}};
@@ -47,6 +47,40 @@ await zonePicker.selectOption('America/Los_Angeles');
 assert((await page.locator('[data-zone-label]').innerText()).includes('Pacific Time (PT)'));
 assert.equal(await page.locator('input[data-field="timezone"]').count(),0,'no raw timezone typing');
 await page.locator('#tab-preview').click();assert.equal(await page.evaluate(()=>previewVisits),1,'Preview and Progress reuses the existing blast action');
+// Exercise the real tab/wizard/history owner at phone width. Only data access is mocked.
+await page.addScriptTag({content:workspace.slice(workspace.indexOf('let createWizStep = 1;'),workspace.indexOf('function openCampaignPhotos()'))});
+await page.evaluate(()=>{
+ window.activeCampaignId='c';window.campaigns=[{id:'c',name:'Current campaign'}];
+ window.BBAds.save=async()=>{};window.BBAds.busy=false;
+ for(const name of ['updateStats','renderHistory','loadProfile','renderStep3Platforms','checkAdaptBtn','checkS3ContinueBtn','updateCopyPreview','renderStep5Review'])window[name]=()=>{};
+ window.runAdaptation=()=>{throw Error('Navigation must never generate');};
+ window.retryGeneratedDraftSave=()=>{throw Error('Navigation must never create working drafts');};
+ window.platforms=[{id:'facebook',enabled:true,adaptedContent:'Saved approved copy',_reviewStatus:'approved'}];
+ window._bbWorkspaceNavigationReady=true;
+ showTab('create');createWizGoTo(5);
+});
+const reviewUrl=page.url();assert.equal(new URL(reviewUrl).searchParams.get('step'),'5');
+assert.equal(new URL(reviewUrl).searchParams.get('cid'),'c');assert.equal(new URL(reviewUrl).searchParams.get('adId'),'a');
+await page.locator('#tab-platforms').click();await page.locator('#tab-create').click();
+assert.equal(await page.locator('.create-slide.cwiz-active').getAttribute('id'),'create-slide-5','Create retains Review after another tab');
+await page.goBack();await page.waitForFunction(()=>document.querySelector('.section.active')?.id==='section-platforms');
+await page.goBack();await page.waitForFunction(()=>document.querySelector('.section.active')?.id==='section-create');
+assert.equal(await page.locator('.create-slide.cwiz-active').getAttribute('id'),'create-slide-5','browser Back restores the actual review step');
+await page.goBack();await page.waitForFunction(()=>document.querySelector('.create-slide.cwiz-active')?.id==='create-slide-1');
+await page.goForward();await page.waitForFunction(()=>document.querySelector('.create-slide.cwiz-active')?.id==='create-slide-5');
+await page.evaluate(()=>{showTab('platforms');showTab('create');window.BBAds.save=()=>new Promise(resolve=>{window.finishNavigationSave=resolve;});});
+await page.goBack();await page.waitForFunction(()=>!!window.finishNavigationSave);
+await page.goBack();
+await page.evaluate(()=>{window.BBAds.save=async()=>{};window.finishNavigationSave();});
+await page.waitForFunction(()=>!window._bbRestoringWorkspace&&document.querySelector('.section.active')?.id==='section-create');
+assert.equal(new URL(page.url()).searchParams.get('tab'),'create','latest Back destination wins while save is pending');
+await page.evaluate(()=>{window.showToast=message=>{window.lastToast=message;};window.BBAds.save=async()=>{throw Error('Save unavailable');};showTab('platforms');});
+await page.goBack();await page.waitForFunction(()=>new URLSearchParams(location.search).get('tab')==='platforms');
+assert.equal(await page.locator('.section.active').getAttribute('id'),'section-platforms','failed save keeps the current screen and route together');
+await page.evaluate(()=>{window.BBAds.save=async()=>{};showTab('schedule');});
+await page.locator('#schedule-editor [data-save]').waitFor({state:'visible'});
 for(const width of [320,384,430]){await page.setViewportSize({width,height:832});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Schedule tab fits phone '+width);}
-console.log('PASS existing scheduler and image picker are inside Schedule; Preview & Progress calls existing action; no publication on navigation.');
-await browser.close();})().catch(e=>{console.error(e);process.exit(1)});
+console.log('PASS mobile current-blast navigation: tab/step/business/campaign/Ad URLs, Back/Forward, preserved review, failed saves, existing scheduler, no publication or AI generation on navigation.');
+await browser.close();
+if(origin&&process.env.GITHUB_ACTIONS==='true'&&process.env.GOOGLE_APPLICATION_CREDENTIALS)await require('./verify-live-navigation.cjs')({chromium,origin});
+})().catch(e=>{console.error(e);process.exit(1)});
