@@ -54,6 +54,22 @@ ok(state.get(camp+'/ads/'+ad.id).cta==='Text David','leaving CTA flushes the deb
 await w.BBAds.open();ok(w.document.getElementById('ad-cta').value==='Text David','typed CTA reopens from canonical Ad');
 const emptyCta=w.document.getElementById('ad-cta');emptyCta.value='';emptyCta.dispatchEvent(new w.Event('change',{bubbles:true}));await settled();await w.BBAds.open();
 ok(w.document.getElementById('ad-cta').value===''&&state.get(camp+'/ads/'+ad.id).cta==='','optional CTA can be cleared and remains blank');
+// A stale revision can recover typed edits while preserving unrelated remote changes.
+await w.BBAds.open();
+let latest=state.get(camp+'/ads/'+w.BBAds.active.id);
+await service('u',{action:'save',businessId:'b',campaignId:'c',adId:latest.id,expectedRevision:latest.revision,requestId:'remote-change-1',creative:{price:'Remote price'}});
+w.document.getElementById('ad-cta').value='My unsaved CTA';w.BBAds.markDirty();
+await assert.rejects(()=>w.BBAds.save(),/Recover my edits/);
+ok(w.document.getElementById('ad-cta').value==='My unsaved CTA','conflict preserves typed CTA');
+await click('save');
+ok(state.get(camp+'/ads/'+latest.id).cta==='My unsaved CTA'&&state.get(camp+'/ads/'+latest.id).price==='Remote price','recovery keeps my edits and unrelated newer server data');
+latest=state.get(camp+'/ads/'+w.BBAds.active.id);
+await service('u',{action:'save',businessId:'b',campaignId:'c',adId:latest.id,expectedRevision:latest.revision,requestId:'remote-change-2',creative:{cta:'Other tab CTA'}});
+w.document.getElementById('ad-cta').value='My competing CTA';w.BBAds.markDirty();await assert.rejects(()=>w.BBAds.save());
+w.confirm=()=>false;await click('save');
+ok(w.document.getElementById('ad-cta').value==='My competing CTA'&&state.get(camp+'/ads/'+latest.id).cta==='Other tab CTA','cancel conflict recovery preserves both versions without writing');
+w.confirm=()=>true;await click('save');
+ok(state.get(camp+'/ads/'+latest.id).cta==='My competing CTA','confirmed recovery uses the current server revision');
 // Personal pickup facts use the same Ad persistence and prepared packet.
 ok(w.document.getElementById('ad-location-fields').hidden,'business keeps its existing location controls');
 w._bbProfileGlobal={sellerType:'personal'};await w.BBAds.open();
@@ -127,6 +143,7 @@ ok(packet.imagesByPlatform.instagram.length===1&&packet.imagesByPlatform.faceboo
 ok(w.document.getElementById('qp-photos-instagram').textContent.includes('first 1 of your 12'),'review explains when only some selected photos are included');
 reviewAd.imageRefs=[];w.renderStep5Review();
 for(const id of reviewAd.platforms){const photos=w.document.getElementById('qp-photos-'+id);ok(photos.style.display==='block'&&!photos.querySelector('img')&&photos.textContent.includes('No photos selected'),'empty image selection is explicit for '+id);}
+await require('./test-commercial-ui.cjs')();
 console.log('PASS: '+checks+' Pass 10 DOM integration assertions.');dom.window.close();
 })().catch(e=>{console.error(e);dom.window.close();process.exitCode=1;});
 

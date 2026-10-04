@@ -49,7 +49,8 @@ body{visibility:hidden}
     <div class="cost-line hidden" id="acct-retention-row"><span>Data kept until</span><strong id="acct-retention-val">—</strong></div>
     <p class="helper acct-retention-note hidden" id="acct-retention-note"></p>
     <div class="btn-row" style="margin-top:12px;">
-      <a class="btn btn-primary" id="acct-billing-btn" href="#" onclick="handleBilling(event)">View Billing</a>
+      <p id="acct-billing-help">Plan changes and cancellations are handled by email. Your subscription stays active until the change is confirmed.</p>
+      <a class="btn btn-primary" id="acct-billing-btn" href="#" onclick="handleBilling(event)">Contact Billing Support</a>
     </div>
   </div>
 
@@ -165,7 +166,8 @@ auth.authStateReady().then(() => {
       document.getElementById('acct-plan-label').textContent = planLabel;
 
       const billingBtn = document.getElementById('acct-billing-btn');
-      billingBtn.textContent = userPlan === 'starter' ? 'Upgrade Plan' : 'View Billing';
+      billingBtn.textContent = ['starter','trial'].includes(userPlan) ? 'View Plans' : 'Contact Billing Support';
+      document.getElementById('acct-billing-help').hidden=['starter','trial'].includes(userPlan);
 
       // ── Data retention (free plans only) ──────────────────────────────────
       // Free accounts are deleted after a long dormancy. Owners should be able
@@ -197,7 +199,7 @@ auth.authStateReady().then(() => {
       // Activation toast
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('success') === '1') {
-        showToast('🎉 Subscription activated — welcome to BlastyBiz Pro!');
+        showToast(['pro','agency'].includes(userPlan)?'Your '+planLabel+' plan is active.':'Payment confirmation is pending. Your current plan is unchanged.');
         window.history.replaceState({}, '', window.location.pathname);
       }
     } catch(e) {
@@ -244,8 +246,8 @@ window.handleBilling = async function(e) {
   const btn = document.getElementById('acct-billing-btn');
   if (btn) { btn.textContent = 'Loading…'; btn.style.pointerEvents = 'none'; }
   try {
-    if (userPlan === 'starter') {
-      await startCheckout('pro');
+    if (['starter','trial'].includes(userPlan)) {
+      window.location.href='BlastyBiz-Choose-Plan.html';
     } else {
       const idToken = await currentUser.getIdToken();
       const r = await fetch(`${CF}/createPortalSession`, {
@@ -254,12 +256,13 @@ window.handleBilling = async function(e) {
         body: JSON.stringify({})
       });
       const data = await r.json();
-      if (data.url) { window.location.href = data.url; }
-      else showToast('Billing portal unavailable', true);
+      if (r.ok && data.url) { window.location.href = data.url; showToast('Your email app will open. Request your billing change there.'); }
+      else showToast('Billing support unavailable. Email info@blastybiz.com.', true);
     }
   } catch(e) {
     showToast('Billing unavailable', true);
-    if (btn) { btn.textContent = userPlan === 'starter' ? 'Upgrade Plan' : 'View Billing'; btn.style.pointerEvents = ''; }
+  } finally {
+    if (btn) { btn.textContent = ['starter','trial'].includes(userPlan) ? 'View Plans' : 'Contact Billing Support'; btn.style.pointerEvents = ''; }
   }
 };
 

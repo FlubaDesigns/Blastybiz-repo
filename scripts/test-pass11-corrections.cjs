@@ -69,9 +69,9 @@ async function main(){
  ok(logs.at(-1).purpose==='campaign_chat'&&logs.at(-1).failureType==='provider_error'&&logs.at(-1).costUsd===0,'failed calls retain truthful purpose');
  const rollup=rollupCosts(logs).businesses[0];ok(rollup.purpose.campaign_chat.callCount===2&&rollup.purpose.ad_preview.callCount===1&&rollup.purpose.fact_score.callCount===1,'rollups preserve distinct diagnostic purposes');
  const html=fs.readFileSync(require.resolve('../public/BlastyBiz-Choose-Plan.html'),'utf8');
- function render(aiLimits){const els=Object.fromEntries(['cp-plans','cp-billing','cp-foot'].map(id=>[id,{classList:{remove(){}}}]));vm.runInNewContext(html.slice(html.indexOf('function renderPlans()'),html.indexOf('// ── Actions'))+'\nrenderPlans();',{document:{getElementById:id=>els[id]},planOptions:{aiLimits},billingPeriod:'monthly',picked:[],escHtml:String,money:String});return els['cp-plans'].innerHTML;}
- const fallback=render();for(const n of [100,1000,5000])ok(fallback.includes('>'+n+' AI writes a month<'),'plan fallback '+n+' matches server');
- const custom=render({starter:0,pro:17,agency:23});for(const n of [0,17,23])ok(custom.includes('>'+n+' AI writes a month<'),'configured limit '+n+' wins');
+ function render(aiLimits){const els=Object.fromEntries(['cp-plans','cp-billing','cp-foot'].map(id=>[id,{classList:{remove(){}}}]));vm.runInNewContext(html.slice(html.indexOf('function renderPlans()'),html.indexOf('// ── Actions'))+'\nrenderPlans();',{document:{getElementById:id=>els[id],querySelector:()=>({})},planOptions:{aiLimits},billingPeriod:'monthly',picked:[],escHtml:String,money:String});return els['cp-plans'].innerHTML;}
+ const fallback=render();for(const n of [100,1000,5000])ok(fallback.includes('>'+n+' AI credits a month (writing and images)<'),'plan fallback '+n+' matches server');
+ const custom=render({starter:0,pro:17,agency:23});for(const n of [0,17,23])ok(custom.includes('>'+n+' AI credits a month (writing and images)<'),'configured limit '+n+' wins');
  for(const [error,status,message]of [[Object.assign(Error('Choose a valid Blast.'),{httpStatus:400}),400,'Choose a valid Blast.'],[Error('Firestore secret implementation detail'),500,'That could not be saved. Try again.']]){
    f=fixture({}, {...service,createLifecycle:()=>({manage:async()=>{throw error;}})});let code=200,body;
    const res={status:n=>{code=n;return res;},json:value=>{body=value;return res;}};

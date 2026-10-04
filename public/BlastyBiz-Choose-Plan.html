@@ -50,7 +50,7 @@
   <!-- ── BILLING PERIOD ───────────────────────────── -->
   <div class="cp-billing hidden" id="cp-billing" role="group" aria-label="Billing period">
     <button type="button" class="cp-billing-opt active" data-period="monthly" aria-pressed="true">Monthly</button>
-    <button type="button" class="cp-billing-opt" data-period="annual" aria-pressed="false">Annual <span class="cp-billing-save">2 months free</span></button>
+    <button type="button" class="cp-billing-opt" data-period="annual" aria-pressed="false">Annual <span class="cp-billing-save">Annual savings shown below</span></button>
   </div>
 
   <!-- ── PLAN CARDS ───────────────────────────────── -->
@@ -162,6 +162,7 @@ function renderPlans() {
   const biz  = planOptions.bizLimits || {};
   const pr   = planOptions.prices    || {};
   const rdy  = planOptions.checkoutReady || {};
+  document.querySelector('.cp-billing-save').textContent='Annual pricing';
   const per  = billingPeriod === 'annual' ? '/yr' : '/mo';
   const autoCount = picked.filter(p => p.auto).length;
 
@@ -204,7 +205,7 @@ function renderPlans() {
       cta: 'Continue free →',
       features: [
         { text: freeAutoLine },
-        { text: (ai.starter ?? 100) + ' AI writes a month' },
+        { text: (ai.starter ?? 100) + ' AI credits a month (writing and images)' },
         { text: (biz.starter ?? 1) + ' business' },
         { text: 'Auto-posting to Google, Facebook & Instagram' },
         { text: 'Copy Library & AI business memory' },
@@ -213,10 +214,10 @@ function renderPlans() {
     + planCard('pro', {
       tier: 'Pro', featured: true, badge: 'Most popular',
       price: money(billingPeriod === 'annual' ? pr.proAnnual : pr.proMonthly), per,
-      line: 'More business capacity and a larger AI budget.',
+      line: billingPeriod==='annual' && pr.proMonthly*12>pr.proAnnual ? 'Save '+money(pr.proMonthly*12-pr.proAnnual)+' per year compared with monthly billing.' : 'More business capacity and a larger AI budget.',
       cta: 'Go Pro →',
       features: [
-        { text: (ai.pro ?? 1000) + ' AI writes a month' },
+        { text: (ai.pro ?? 1000) + ' AI credits a month (writing and images)' },
         { text: (biz.pro ?? 3) + ' businesses' },
         { text: 'Auto-posting to Google, Facebook & Instagram on every plan' },
         { text: 'Copy Library & AI business memory' },
@@ -226,11 +227,11 @@ function renderPlans() {
     + planCard('agency', {
       tier: 'Agency',
       price: money(billingPeriod === 'annual' ? pr.agencyAnnual : pr.agencyMonthly), per,
-      line: 'For running this on behalf of other people\u2019s businesses.',
+      line: billingPeriod==='annual' && pr.agencyMonthly*12>pr.agencyAnnual ? 'Save '+money(pr.agencyMonthly*12-pr.agencyAnnual)+' per year compared with monthly billing.' : 'For managing other people’s businesses.',
       cta: 'Go Agency →',
       features: [
         { text: 'Everything in Pro' },
-        { text: (ai.agency ?? 5000) + ' AI writes a month' },
+        { text: (ai.agency ?? 5000) + ' AI credits a month (writing and images)' },
         { text: (biz.agency ?? 10) + ' businesses' },
         { text: 'Shared publishing, library and history features' },
       ],

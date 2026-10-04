@@ -113,6 +113,39 @@ module.exports=async function verifyLiveNavigation({chromium,origin}){
     assert.equal(await page.locator('.manual-textarea').inputValue(),'Isolated acceptance copy');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'live status fits Galaxy phone width');
     assert.equal((await business.collection('publishJobs').doc('manual_fixture').get()).data().status,'manual_required','viewing photos never claims posted');
+    // Exercise the commercial fixes through the ordinary signed-in UI.
+    await page.goto(origin+'/BlastyBiz-CreateBiz?new=1');
+    await page.waitForFunction(()=>window._cbReady===true);
+    await page.locator('#f-bizName').fill('Unfinished acceptance business');
+    await page.locator('#f-phone').fill('941-555-0199');
+    await page.waitForFunction(()=>!!localStorage.getItem('bb_setup_draft'));
+    page.once('dialog',dialog=>dialog.accept());
+    await page.reload();await page.waitForFunction(()=>window._cbReady===true);
+    assert.equal(await page.locator('#f-bizName').inputValue(),'Unfinished acceptance business');
+    assert.match(await page.locator('#cb-err').textContent(),/restored/);
+    const savedCount=(await user.collection('businesses').get()).size;
+    assert.equal(savedCount,2,'draft recovery does not create another business');
+    page.once('dialog',dialog=>dialog.accept());
+    await page.goto(workspace);await ready();
+    await page.locator('#tab-history').click();
+    await page.waitForFunction(()=>document.getElementById('history-feedback')?.textContent.includes('Showing'));
+    assert.match(await page.locator('#history-list').textContent(),/Action Needed/);
+    assert.equal(await page.locator('#stat-total-posts').textContent(),'0','manual-ready is not a successful post');
+    await page.goto(origin+'/BlastyBiz-Account');
+    await page.waitForFunction(()=>document.getElementById('acct-billing-btn')?.textContent==='Contact Billing Support');
+    assert.match(await page.locator('#acct-billing-help').textContent(),/handled by email/);
+    const billing=await page.evaluate(async()=>{
+      const {auth}=await import('/firebase-init-v2.js');await auth.authStateReady();
+      const response=await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/getPlanOptions',{headers:{Authorization:'Bearer '+await auth.currentUser.getIdToken()}});
+      return {ok:response.ok,data:await response.json()};
+    });
+    assert(billing.ok&&billing.data.prices&&billing.data.checkoutReady,'live plan configuration endpoint works');
+    await page.goto(origin+'/BlastyBiz-Plan-Pro');
+    await page.waitForFunction(()=>document.querySelector('[data-price="proMonthly"]')?.textContent.startsWith('$'));
+    const livePrice=Number((await page.locator('[data-price="proMonthly"]').first().textContent()).replace(/[^0-9.]/g,''));
+    assert.equal(livePrice,Number(billing.data.prices.proMonthly),'public price equals authenticated checkout options');
+    await page.evaluate(()=>localStorage.removeItem('bb_setup_draft'));
+    console.log('PASS LIVE COMMERCIAL: setup reload recovery without writes, History distinguishes manual work, billing support is explicit, public price matches checkout configuration. No card charged or provider post dispatched.');
     console.log('PASS LIVE AUTHENTICATED follow-through: saved-copy primary action, same-blast connection return, sign-in recovery, Schedule save/timezone/unsaved protection, real manual posting photo tools; paused isolated business, no provider dispatch.');
     console.log('PASS LIVE AUTHENTICATED mobile navigation: persisted current edits, Review/tab/Back/Forward/reload continuity, correct prepared preview and return, duplicate prevention, business switch, immutable sent Blast; no post dispatched.');
   }catch(error){

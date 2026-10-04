@@ -6,7 +6,7 @@
  const fire=(event,values={})=>window.BBBlasty?.fire(event,{needed:true,...values});
  async function api(action,values={}) {
    const ctx=context;if(!ctx?.businessId)throw Error('Choose a business first.');
-   const token=await ctx.token();const r=await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/manageBlast',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({businessId:ctx.businessId,action,...values})});
+   const token=await ctx.token();const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);let r;try{r=await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/manageBlast',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({businessId:ctx.businessId,action,...values})});}catch(error){if(error.name==='AbortError')throw Error('This request took too long. Your edits are kept here; try again.');throw error;}finally{clearTimeout(timer);}
    const data=await r.json();if(!r.ok)throw Error(data.error||'Your choice could not be saved.');return data;
  }
  function configure(c){context=c;}

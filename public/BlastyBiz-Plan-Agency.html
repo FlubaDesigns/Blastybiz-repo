@@ -5,11 +5,11 @@
   <meta charset="UTF-8"/>
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Agency Plan — $99/Month — BlastyBiz</title>
-  <meta name="description" content="BlastyBiz Agency is $99 a month. Manage up to 10 businesses under one login. AI-adapted listings for every major platform, auto-posting for connected platforms, and a full client dashboard."/>
+  <title>BlastyBiz — Agency Plan</title>
+  <meta name="description" content="BlastyBiz Agency: saved business profiles, AI writing and images, scheduling, and shared publishing tools. See current pricing and start with the free plan."/>
   <meta name="robots" content="index, follow"/>
-  <meta property="og:title" content="Agency Plan — $99/Month — BlastyBiz"/>
-  <meta property="og:description" content="Manage up to 10 businesses under one login. AI-adapted listings and auto-posting for connected platforms. $99/month."/>
+  <meta property="og:title" content="BlastyBiz Agency Plan"/>
+  <meta property="og:description" content="Explore BlastyBiz Agency, current pricing, and included publishing tools."/>
   <meta property="og:type" content="website"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -25,7 +25,6 @@
     "brand": { "@type": "Brand", "name": "BlastyBiz" },
     "offers": {
       "@type": "Offer",
-      "price": "99",
       "priceCurrency": "USD",
       "availability": "https://schema.org/InStock",
       "url": "https://blastybiz-9523e.web.app/BlastyBiz-Plan-Agency.html"
@@ -52,7 +51,7 @@
     <h1>You're Not Posting For <span>One Business.</span></h1>
     <p>You're managing listings for multiple clients or locations. BlastyBiz Agency gives you one login, one dashboard, and AI-adapted copy for all of them — done in the time it used to take for just one.</p>
     <div class="pricing__amount">
-      <div class="pricing__num">$99</div>
+      <div class="pricing__num"><span data-price="agencyMonthly">See checkout</span></div>
       <div class="pricing__per">/ month</div>
     </div>
   </div>
@@ -98,14 +97,14 @@
 
 <section class="reveal">
   <div class="row">
-    <a href="BlastyBiz-Login.html?plan=agency" class="pricing__btn pricing__btn--primary">Get Started — $99/month →</a>
+    <a href="BlastyBiz-Login.html?plan=agency" class="pricing__btn pricing__btn--primary">Get Started — <span data-price="agencyMonthly">See checkout</span>/month →</a>
     <p class="plan-sub-note">You'll create your account on the next screen.</p>
   </div>
 </section>
 
 <section class="reveal">
   <div class="row">
-    <a href="BlastyBiz-Plan-Pro.html" class="pricing__btn pricing__btn--outline">Just need it for yourself? Pro is $19/month →</a>
+    <a href="BlastyBiz-Plan-Pro.html" class="pricing__btn pricing__btn--outline">Just need it for yourself? Pro is <span data-price="proMonthly">See checkout</span>/month →</a>
   </div>
 </section>
 
@@ -144,6 +143,7 @@ const observer = new IntersectionObserver((entries) => {
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 </script>
 <script src="header-loader.js?v=1"></script>
-<script src="session.js?v=1"></script>
+<script src="session.js?v=20261004-commercial"></script>
+<script src="pricing.js?v=20261004-commercial"></script>
 </body>
 </html>

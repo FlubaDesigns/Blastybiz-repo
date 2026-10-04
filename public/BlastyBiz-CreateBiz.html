@@ -582,7 +582,7 @@ window._cbStartGuide = function(at) {
     }
   });
   try {
-    const first = window._cbBlasty._applicable(at || 0, 1);
+    const first = window._cbBlasty._applicable(at ?? window._cbResumeStep ?? 0, 1);
     window._cbBlasty.start(first);
   } catch (e) {
     console.error('[cb guide]', e);
@@ -623,6 +623,50 @@ let newCampId = null;
 
 const urlP = new URLSearchParams(window.location.search);
 editBizId = urlP.get('bizId') || null;
+
+// Recovery is a local cache of these exact controls; cbSubmit remains the only writer.
+const setupDraftKey='bb_setup_draft';
+let setupDraftDirty=false;
+function setupValues(){
+  return [...document.querySelectorAll('[id^="f-"],[id^="pref-"],#cb-include-background,.plat-chk input')]
+    .filter(el=>['INPUT','TEXTAREA','SELECT'].includes(el.tagName))
+    .map(el=>({id:el.id||'platform:'+el.value,value:el.type==='checkbox'?el.checked:el.value}));
+}
+function keepSetupDraft(){
+  if(!currentUser||!window._cbReady||!setupDraftDirty)return;
+  try{
+    if(!editBizId&&!newBizRef)newBizRef=doc(collection(db,'users',currentUser.uid,'businesses'));
+    if(!existingCampaignId&&!newCampId)newCampId='c_'+Date.now();
+    localStorage.setItem(setupDraftKey,JSON.stringify({uid:currentUser.uid,route:urlP.get('bizId')|| (urlP.get('new')==='1'?'new':'setup'),
+      businessId:editBizId||newBizRef?.id,campaignId:newCampId,values:setupValues(),step:window._cbBlasty?.idx??0,guided:!!window._cbBlasty,at:Date.now()}));
+  }catch(error){document.getElementById('cb-guide-status').textContent='Keep this page open until you save; recovery storage is unavailable.';}
+}
+function restoreSetupDraft(){
+  try{
+    const raw=localStorage.getItem(setupDraftKey);if(!raw)return;
+    const draft=JSON.parse(raw),route=urlP.get('bizId')||(urlP.get('new')==='1'?'new':'setup');
+    if(draft.uid!==currentUser.uid||draft.route!==route)return;
+    if(!Array.isArray(draft.values)||Date.now()-draft.at>7*86400000){localStorage.removeItem(setupDraftKey);return;}
+    for(const saved of draft.values){
+      const el=saved.id.startsWith('platform:')?[...document.querySelectorAll('.plat-chk input')].find(el=>el.value===saved.id.slice(9)):document.getElementById(saved.id);
+      if(!el)continue;
+      if(el.type==='checkbox')el.checked=saved.value===true;else if(typeof saved.value==='string')el.value=saved.value;
+    }
+    if(!editBizId&&/^[A-Za-z0-9_-]+$/.test(draft.businessId||''))newBizRef=doc(db,'users',currentUser.uid,'businesses',draft.businessId);
+    if(/^[A-Za-z0-9_-]+$/.test(draft.campaignId||''))newCampId=draft.campaignId;
+    window._cbResumeStep=Number.isInteger(draft.step)?draft.step:0;
+    if(draft.guided)window._cbGuideRequested=true;
+    setupDraftDirty=true;cbConfigureForm();
+    document.getElementById('cb-err').textContent='Your unfinished answers were restored. Review them and continue.';
+  }catch(error){console.warn('Setup recovery unavailable');}
+}
+for(const name of ['input','change'])document.addEventListener(name,event=>{
+  if(!event.target?.matches?.('[id^="f-"],[id^="pref-"],#cb-include-background,.plat-chk input'))return;
+  setupDraftDirty=true;keepSetupDraft();
+});
+document.addEventListener('click',()=>{if(setupDraftDirty)setTimeout(keepSetupDraft,0);});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')keepSetupDraft();});
+window.addEventListener?.('beforeunload',event=>{if(setupDraftDirty){keepSetupDraft();event.preventDefault();event.returnValue='';}});
 
 // ── Platform grid ────────────────────────────────────────────────────────────
 // Default to first two auto platforms pre-checked, rest unchecked
@@ -733,6 +777,7 @@ onAuthStateChanged(auth, async user => {
     cbConfigureForm();
     window._cbRestoredFields = new Set(['f-ownerName','f-ownerLastName','f-bizName','f-role','f-email','f-phone'].filter(id =>
       document.getElementById(id).value.trim() && !cbFieldError(id)));
+    restoreSetupDraft();
     window._cbReady = true;
     if(urlP.get('section')==='story'){cbOpenSection('cbs-story');document.getElementById('cbs-story').scrollIntoView({block:'start'});}
     BBBlasty.fire('onboard.email_return_success');
@@ -966,12 +1011,19 @@ window.cbSubmit = async function() {
     };
 
     const token = await currentUser.getIdToken();
-    const response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/createBusiness', {
+    keepSetupDraft();
+    const controller=new AbortController(),requestTimer=setTimeout(()=>controller.abort(),30000);
+    let response;
+    try{response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/createBusiness', {
+      signal:controller.signal,
       method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
       body:JSON.stringify({bizId,isNew:!editBizId,profileData:bizData,...(!existingCampaignId?{campaignData:campData,initialAd:{name:campName,offer:personal?'':offer,price:'',cta:personal?offer:'',context:personal?about:'',platforms,mentions:Object.fromEntries(Object.entries(toggles).map(([k,v])=>[k.replace('ynMention','').replace(/^./,c=>c.toLowerCase()),v?'yes':'no']))}}:{})})
     });
+    }finally{clearTimeout(requestTimer);}
     const result=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(result.error||'Business could not be saved.');
+    setupDraftDirty=false;
+    try{localStorage.removeItem(setupDraftKey);}catch(_){}
     sessionStorage.removeItem('bb_setup_handoff');
 
     cbSetMood((window._ob2Anim&&window._ob2Anim.success)||'s-celebrate s-flame-green s-lights-flash s-smoke');
@@ -999,7 +1051,7 @@ window.cbSubmit = async function() {
   } catch(e) {
     console.error('[cb save]', e);
     cbSetMood('s-ask');
-    err.textContent = e.message || 'Something went wrong. Please try again.';
+    err.textContent = e.name==='AbortError'?'Saving took too long. Your answers are kept here. Try Save again; it uses the same business.':e.message || 'Something went wrong. Please try again.';
     if (document.getElementById('gs-err')) document.getElementById('gs-err').textContent = err.textContent;
     saving = false;
     btn.disabled=false; cbConfigureForm();

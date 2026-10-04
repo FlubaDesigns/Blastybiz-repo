@@ -35,8 +35,8 @@
       "description": "Fill out one form, AI adapts your listing for every major platform — Google Business Profile, Facebook, Instagram, Craigslist, Yelp, and more. Auto-posts where platform APIs allow, copy-paste ready everywhere else.",
       "offers": [
         { "@type": "Offer", "name": "Starter", "price": "0", "priceCurrency": "USD", "url": "https://blastybiz-9523e.web.app/BlastyBiz-Plan-Free.html" },
-        { "@type": "Offer", "name": "Pro", "price": "19", "priceCurrency": "USD", "priceSpecification": { "@type": "UnitPriceSpecification", "price": "19", "priceCurrency": "USD", "unitCode": "MON" }, "url": "https://blastybiz-9523e.web.app/BlastyBiz-Plan-Pro.html" },
-        { "@type": "Offer", "name": "Agency", "price": "99", "priceCurrency": "USD", "priceSpecification": { "@type": "UnitPriceSpecification", "price": "99", "priceCurrency": "USD", "unitCode": "MON" }, "url": "https://blastybiz-9523e.web.app/BlastyBiz-Plan-Agency.html" }
+        { "@type": "Offer", "name": "Pro", "priceCurrency": "USD", "priceSpecification": { "@type": "UnitPriceSpecification", "priceCurrency": "USD", "unitCode": "MON" }, "url": "https://blastybiz-9523e.web.app/BlastyBiz-Plan-Pro.html" },
+        { "@type": "Offer", "name": "Agency", "priceCurrency": "USD", "priceSpecification": { "@type": "UnitPriceSpecification", "priceCurrency": "USD", "unitCode": "MON" }, "url": "https://blastybiz-9523e.web.app/BlastyBiz-Plan-Agency.html" }
       ]
     }
   ]
@@ -165,7 +165,7 @@
         <div class="pricing__badge">Most Popular</div>
         <div class="pricing__tier">Pro</div>
         <div class="pricing__amount">
-          <div class="pricing__num" id="price-pro">$19</div>
+          <div class="pricing__num" id="price-pro"><span data-price="proMonthly">See checkout</span></div>
           <div class="pricing__per">/ month</div>
         </div>
         <ul class="pricing__features">
@@ -178,13 +178,13 @@
           <li>Full post history</li>
           <li>AI memory — global + per campaign</li>
         </ul>
-        <a href="BlastyBiz-Plan-Pro.html" class="pricing__btn pricing__btn--primary">Start Free Trial</a>
+        <a href="BlastyBiz-Plan-Pro.html" class="pricing__btn pricing__btn--primary">Start Free</a>
         <p style="margin-top:10px;font-size:12px;color:var(--muted,#888);text-align:center;"><a href="BlastyBiz-Stop-Paying-Johnny.html" style="color:var(--green,#39ff14);text-decoration:none;">See the math vs. hiring help →</a></p>
       </div>
       <div class="pricing__card">
         <div class="pricing__tier">Agency</div>
         <div class="pricing__amount">
-          <div class="pricing__num" id="price-agency">$99</div>
+          <div class="pricing__num" id="price-agency"><span data-price="agencyMonthly">See checkout</span></div>
           <div class="pricing__per">/ month</div>
         </div>
         <ul class="pricing__features">
@@ -346,14 +346,10 @@ function setAuthUI(loggedIn) {
 setAuthUI(localStorage.getItem('bb_auth')==='1');
 onAuthStateChanged(auth, user => { document.body.classList.toggle('logged-in',!!user); localStorage.setItem('bb_auth',user?'1':'0'); setAuthUI(!!user); });
 window.doSignOut = () => window._bbSignOut(auth, signOut);
-getDoc(doc(db,'settings','pricing')).then(snap => {
-  if (!snap.exists()) return;
-  const { proMonthly, agencyMonthly } = snap.data();
-  if (proMonthly)    document.getElementById('price-pro').textContent    = '$' + proMonthly;
-  if (agencyMonthly) document.getElementById('price-agency').textContent = '$' + agencyMonthly;
-}).catch(()=>{});
+
 </script>
 <script src="header-loader.js?v=1"></script>
-<script src="session.js?v=1"></script>
+<script src="session.js?v=20261004-commercial"></script>
+<script src="pricing.js?v=20261004-commercial"></script>
 </body>
 </html>

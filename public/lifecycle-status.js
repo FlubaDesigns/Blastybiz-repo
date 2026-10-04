@@ -22,6 +22,34 @@ const STATUS_CONFIG = {
   retry_pending:    { label: 'Retrying',    cls: 'pill-running', rowCls: 'status-running' },
 };
 
+ const delivered=new Set(['success','manual_posted','manual_completed']);
+ const terminal=new Set([...delivered,'manual_skipped','manual_lapsed','skipped','canceled']);
+ const ready=new Set(['manual_required','manual_followup','manual_ready']);
+
+function historyRows(drafts,jobs){
+  const byId=new Map(drafts.map(d=>[d.id,d])),groups=new Map();
+  const time=v=>v?.toDate?.()?.toISOString()|| (typeof v==='string'?v:null);
+  for(const job of jobs){
+    const key=job.draftId||job.blastId||job.jobId;
+    if(!key)continue;
+    const draft=byId.get(job.draftId)||{},packet=draft.packet||draft;
+    if(!groups.has(key))groups.set(key,{draftId:job.draftId||null,key,listing:packet.adName||draft.blastName||job.adName||job.listingName||draft.businessName||'Blast',jobs:[],time:null});
+    const group=groups.get(key);group.jobs.push(job);
+    const stamp=time(job.publishedAt||job.manualConfirmedAt||job.updatedAt||job.createdAt);
+    if(stamp&&(!group.time||Date.parse(stamp)>Date.parse(group.time)))group.time=stamp;
+  }
+  return [...groups.values()].map(group=>({...group,
+    posted:group.jobs.filter(j=>delivered.has(j.status)).length,
+    postedPlatforms:group.jobs.filter(j=>delivered.has(j.status)).map(j=>j.platform),
+    postedTimes:group.jobs.filter(j=>delivered.has(j.status)).map(j=>time(j.publishedAt||j.manualConfirmedAt||j.updatedAt||j.createdAt)).filter(Boolean),
+    platforms:group.jobs.map(j=>j.platformName||PLATFORM_META[j.platform]?.name||j.platform),
+    summary:group.jobs.map(j=>(j.platformName||PLATFORM_META[j.platform]?.name||j.platform)+': '+(STATUS_CONFIG[j.status]?.label||'Unknown status')).join(' · ')
+  })).sort((a,b)=>(Date.parse(b.time)||0)-(Date.parse(a.time)||0));
+}
+window.BBLifecycleStatus={historyRows};
+// The workspace uses the same delivery-state definitions, without installing status-page UI.
+if(!document.getElementById('progress-count'))return;
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -111,9 +139,6 @@ function showEmptyState(msg) {
 window.showToast=showToast;window.showEmptyState=showEmptyState;window.focusFutureSchedule=focusFutureSchedule;
 
  let userInfo={},currentJobs=[],working=false,context=null,claiming=false;
- const delivered=new Set(['success','manual_posted','manual_completed']);
- const terminal=new Set([...delivered,'manual_skipped','manual_lapsed','skipped','canceled']);
- const ready=new Set(['manual_required','manual_followup','manual_ready']);
  function button(label,action){const b=document.createElement('button');b.type='button';b.className='btn-copy';b.textContent=label;b.onclick=action;return b;}
  async function act(action,job) {
    if(working)return;
@@ -170,6 +195,6 @@ window.showToast=showToast;window.showEmptyState=showEmptyState;window.focusFutu
    });
    void completion();
  };
- window.BBLifecycleStatus={initialize(ctx,user){context=ctx;userInfo=user;BBLifecycle.configure(ctx);const host=document.getElementById('content-state'),label=document.createElement('label');label.className='bb-reminder';const input=document.createElement('input');input.type='checkbox';input.checked=user.manualRemindersEnabled!==false;label.append(input,document.createTextNode('Remind me to finish manual posts'));host.append(label);input.onchange=async()=>{input.disabled=true;try{await BBLifecycle.api('reminders',{enabled:input.checked});window.BBBlasty?.fire('reminder.manual_explain');}catch(e){input.checked=!input.checked;window.showToast(e.message);}finally{input.disabled=false;}};}};
+ window.BBLifecycleStatus={historyRows,initialize(ctx,user){context=ctx;userInfo=user;BBLifecycle.configure(ctx);const host=document.getElementById('content-state'),label=document.createElement('label');label.className='bb-reminder';const input=document.createElement('input');input.type='checkbox';input.checked=user.manualRemindersEnabled!==false;label.append(input,document.createTextNode('Remind me to finish manual posts'));host.append(label);input.onchange=async()=>{input.disabled=true;try{await BBLifecycle.api('reminders',{enabled:input.checked});window.BBBlasty?.fire('reminder.manual_explain');}catch(e){input.checked=!input.checked;window.showToast(e.message);}finally{input.disabled=false;}};}};
 })();
 

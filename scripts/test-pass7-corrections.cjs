@@ -73,7 +73,7 @@ async function connections() {
   }
 }
 async function existingBusiness() {
-  const helper={require,console,URL,URLSearchParams};vm.runInNewContext(read('scripts/test-setup-regressions.cjs').split('(async()=>{')[0]+'\nglobalThis.setupEnv=env;',helper);
+  const helper={require,console,URL,URLSearchParams,AbortController};vm.runInNewContext(read('scripts/test-setup-regressions.cjs').split('(async()=>{')[0]+'\nglobalThis.setupEnv=env;',helper);
   const biz={businessName:'Existing',ownerName:'Owner',activeCampaign:'keep',locationType:'online',website:''};
   let e=helper.setupEnv({edit:true,biz});await e.start();await e.c.cbSubmit();
   ok(e.commits.length===1,'established online business without website can save unrelated edit');

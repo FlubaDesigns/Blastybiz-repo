@@ -743,7 +743,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
   <div class="stats-bar">
     <div class="stat-card">
       <div class="stat-num" id="stat-total-posts">0</div>
-      <div class="stat-label">Total Posts</div>
+      <div class="stat-label">Posted blasts shown</div>
     </div>
     <div class="stat-card">
       <div class="stat-num" id="stat-platforms-hit">0</div>
@@ -751,12 +751,13 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
     </div>
     <div class="stat-card">
       <div class="stat-num" id="stat-this-month">0</div>
-      <div class="stat-label">This Month</div>
+      <div class="stat-label">Posted this month (shown)</div>
     </div>
   </div>
 
   <div class="card">
     <div class="card-title">📋 Recent Activity</div>
+    <p class="muted">Recent delivery activity. Counts cover the loaded results.</p><p id="history-feedback" role="status"></p><button type="button" onclick="window._bbReloadHistory?.()">Refresh history</button>
     <div id="history-list">
       <div class="empty">
         <div class="empty-icon">📭</div>
@@ -3368,61 +3369,18 @@ function setPlatformStatus(id, status) {
 // ══════════════════════════════════════════
 // HISTORY
 // ══════════════════════════════════════════
-function addHistory(platformName) {
-  // Write to Firestore via module script, then reload History from Firestore
-  document.dispatchEvent(new CustomEvent('bb:addHistory', { detail: { platformName } }));
-  // Optimistic in-memory entry while Firestore reloads
-  history.unshift({
-    platform:  platformName,
-    listing:   document.getElementById('biz-name').value || 'Listing',
-    time:      new Date().toISOString(),
-    draftId:   window._currentDraftId || null,
-  });
-  renderHistory();
-  // Reload from Firestore after a short delay to get the authoritative state
-  setTimeout(() => { if (window._bbReloadHistory) window._bbReloadHistory(); }, 1500);
+function addHistory() {
+  if(window._bbReloadHistory)window._bbReloadHistory();
 }
 
 function renderHistory() {
-  const el = document.getElementById('history-list');
-  if (!history.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">No posts yet.<br/>Create your first listing to get started.</div></div>';
-    return;
-  }
-
-  // Group entries by draftId so one blast = one row
-  const groups = [];
-  const seen   = {};
-  history.slice(0, 120).forEach(h => {
-    const key = h.draftId || ('solo_' + h.time);
-    if (seen[key]) {
-      if (!seen[key].platforms.includes(h.platform)) seen[key].platforms.push(h.platform);
-    } else {
-      const g = { draftId: h.draftId || null, listing: h.listing, time: h.time, platforms: [h.platform] };
-      seen[key] = g;
-      groups.push(g);
-    }
-  });
-
-  el.innerHTML = groups.slice(0, 30).map(g => {
-    const tappable = !!g.draftId;
-    const onclick  = tappable ? `onclick="loadHistoryDraft('${escHtml(g.draftId)}')"` : '';
-    return `
-      <div class="history-item${tappable ? ' history-item-tap' : ''}" ${onclick}>
-        <div class="history-dot"></div>
-        <div style="flex:1;min-width:0;">
-          <div class="history-title">${escHtml(g.listing)}</div>
-          <div class="history-meta">${escHtml(g.platforms.join(' · '))} · ${timeAgo(g.time)}</div>
-        </div>
-        ${tappable ? '<div class="history-reload">↩</div>' : ''}
-      </div>`;
-  }).join('');
-
-  document.getElementById('stat-total-posts').textContent = groups.length;
-  const unique = [...new Set(history.map(h => h.platform))].length;
-  document.getElementById('stat-platforms-hit').textContent = unique;
-  const thisMonth = history.filter(h => new Date(h.time).getMonth() === new Date().getMonth()).length;
-  document.getElementById('stat-this-month').textContent = thisMonth;
+  const el=document.getElementById('history-list'),rows=history||[],now=new Date();
+  const posted=rows.filter(row=>row.posted>0);
+  document.getElementById('stat-total-posts').textContent=posted.length;
+  document.getElementById('stat-platforms-hit').textContent=new Set(rows.flatMap(row=>row.postedPlatforms||[])).size;
+  document.getElementById('stat-this-month').textContent=posted.filter(row=>row.postedTimes?.some(value=>{const date=new Date(value);return date.getFullYear()===now.getFullYear()&&date.getMonth()===now.getMonth();})).length;
+  if(!rows.length){el.innerHTML='<p>No posting activity loaded yet.</p>';return;}
+  el.innerHTML=rows.map(row=>'<div class="history-item"><div style="flex:1;min-width:0"><div class="history-title">'+escHtml(row.listing)+'</div><div class="history-meta">'+escHtml(row.summary)+' · '+escHtml(row.time?timeAgo(row.time):'Date unavailable')+'</div></div>'+(row.draftId?'<a class="history-reload" style="min-height:44px;padding:12px" href="BlastyBiz-Publishing-Status.html?'+new URLSearchParams({bizId:window.activeBizId,draftId:row.draftId})+'">Results →</a>':'')+'</div>').join('');
 }
 
 async function loadHistoryDraft(draftId) {
@@ -6153,103 +6111,30 @@ onAuthStateChanged(auth, async (user) => {
     console.error('Platform load error:', e);
   }
 
-  // Load recent publish history from Firestore
-  try {
-    const items = [];
-
-    // 1. Completed listingDrafts only (status === 'completed') — one row per blast
-    try {
-      const draftsSnap = await getDocs(query(
-        collection(db, 'users', user.uid, 'businesses', activeBizId, 'listingDrafts'),
-        where('status', '==', 'completed'),
-        orderBy('updatedAt', 'desc'),
-        limit(50)
-      ));
-      draftsSnap.forEach(d => {
-        const data = d.data();
-        const adaptations = data.adaptations || {};
-        if (!Object.keys(adaptations).length) return;
-        const t = data.updatedAt?.toDate?.()?.toISOString()
-               || data.lastGeneratedAt?.toDate?.()?.toISOString()
-               || new Date().toISOString();
-        // One item per draft (not per platform) — platforms listed together in render
-        Object.keys(adaptations).forEach(pid => {
-          const plat = window.PLATFORMS?.find(p => p.id === pid);
-          items.push({
-            draftId:  d.id,
-            platform: plat ? plat.name : pid,
-            listing:  data.businessName || data.blastName || data.formData?.name || 'Listing',
-            time:     t,
-          });
-        });
-      });
-    } catch(_) {}
-
-    // 2. Auto-post publish jobs (no draftId — display-only rows)
-    try {
-      const jobsSnap = await getDocs(query(
-        collection(db, 'users', user.uid, 'businesses', activeBizId, 'publishJobs'),
-        orderBy('createdAt', 'desc'),
-        limit(30)
-      ));
-      jobsSnap.forEach(d => {
-        const j = d.data();
-        items.push({
-          draftId:  null,
-          platform: j.platform || '',
-          listing:  j.listingName || j.formData?.name || 'Listing',
-          time:     j.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-        });
-      });
-    } catch(_) {}
-
-    // Sort newest-first across both sources
-    items.sort((a, b) => new Date(b.time) - new Date(a.time));
-    if (window._bbSetHistory) window._bbSetHistory(items);
-  } catch(e) {
-    console.error('History load error:', e);
-  }
+  // Load recent publish history from Firestore through the shared result reader.
+  await window._bbReloadHistory();
 });
 }); // authStateReady
 
-// Reload history from Firestore on demand (called after completeBlast)
+let historyRequest=0;
 window._bbReloadHistory = async function() {
-  if (!currentUser || !activeBizId) return;
-  try {
-    const items = [];
-    const draftsSnap = await getDocs(query(
-      collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'listingDrafts'),
-      where('status', '==', 'completed'),
-      orderBy('updatedAt', 'desc'),
-      limit(50)
-    ));
-    draftsSnap.forEach(d => {
-      const data = d.data();
-      const adaptations = data.adaptations || {};
-      if (!Object.keys(adaptations).length) return;
-      const t = data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString();
-      Object.keys(adaptations).forEach(pid => {
-        const plat = window.PLATFORMS?.find(p => p.id === pid);
-        items.push({
-          draftId:  d.id,
-          platform: plat ? plat.name : pid,
-          listing:  data.businessName || data.blastName || data.formData?.name || 'Listing',
-          time:     t,
-        });
-      });
-    });
-    const jobsSnap = await getDocs(query(
-      collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'publishJobs'),
-      orderBy('createdAt', 'desc'),
-      limit(30)
-    ));
-    jobsSnap.forEach(d => {
-      const j = d.data();
-      items.push({ draftId: null, platform: j.platform || '', listing: j.listingName || 'Listing', time: j.createdAt?.toDate?.()?.toISOString() || new Date().toISOString() });
-    });
-    items.sort((a, b) => new Date(b.time) - new Date(a.time));
-    if (window._bbSetHistory) window._bbSetHistory(items);
-  } catch(e) { console.error('reloadHistory:', e); }
+  if(!currentUser||!activeBizId)return;
+  const seq=++historyRequest,bizId=activeBizId;
+  const feedback=document.getElementById('history-feedback');if(feedback)feedback.textContent='Loading history…';
+  try{
+    const base=['users',currentUser.uid,'businesses',bizId];
+    const [drafts,jobs]=await Promise.all([
+      getDocs(query(collection(db,...base,'listingDrafts'),orderBy('updatedAt','desc'),limit(50))),
+      getDocs(query(collection(db,...base,'publishJobs'),orderBy('createdAt','desc'),limit(100)))
+    ]);
+    if(seq!==historyRequest||bizId!==activeBizId)return;
+    const records=jobs.docs.map(d=>({...d.data(),jobId:d.id}));
+    window._bbSetHistory(window.BBLifecycleStatus.historyRows(drafts.docs.map(d=>({...d.data(),id:d.id})),records));
+    if(feedback)feedback.textContent=records.length?'Showing the latest '+records.length+' destination results.':'No posting activity yet.';
+  }catch(error){
+    if(seq!==historyRequest||bizId!==activeBizId)return;
+    if(feedback)feedback.textContent='History could not be refreshed. Tap Refresh history to retry.';
+  }
 };
 
 // Fetch a listingDraft document by id
@@ -7286,7 +7171,7 @@ window.confirmDeleteAccount = async function() {
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 
 <script src="header-loader.js?v=1"></script>
-<script src="session.js?v=1"></script>
+<script src="session.js?v=20261004-commercial"></script>
 
 <!-- ── Create-Business choice modal ─────────────────────────── -->
 <div id="cb-choose-modal" class="cbm-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
@@ -7325,8 +7210,9 @@ window.confirmDeleteAccount = async function() {
 .cbm-opt-title{font-size:15px;font-weight:700;color:#e0f0e3}
 .cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
 </style>
-<script src="lifecycle-ui.js?v=20261004-flow"></script>
-<script src="ad-workspace.js?v=20261004-navigation"></script>
+<script src="lifecycle-ui.js?v=20261004-commercial"></script>
+<script src="lifecycle-status.js?v=20261004-commercial"></script>
+<script src="ad-workspace.js?v=20261004-commercial"></script>
 <script>
 document.addEventListener('click',function(e){
  const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');

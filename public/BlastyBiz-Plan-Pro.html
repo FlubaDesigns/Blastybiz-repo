@@ -5,11 +5,11 @@
   <meta charset="UTF-8"/>
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pro Plan — $19/Month — BlastyBiz</title>
-  <meta name="description" content="BlastyBiz Pro is $19 a month. Up to 3 businesses and a larger AI budget, AI-adapted copy for every major platform, auto-posting for connected platforms, saved business profile, and full post history. Start your free trial today."/>
+  <title>BlastyBiz — Pro Plan</title>
+  <meta name="description" content="BlastyBiz Pro: saved business profiles, AI writing and images, scheduling, and shared publishing tools. See current pricing and start with the free plan."/>
   <meta name="robots" content="index, follow"/>
-  <meta property="og:title" content="Pro Plan — $19/Month — BlastyBiz"/>
-  <meta property="og:description" content="Up to 3 businesses and a larger AI budget, AI-adapted copy for every major platform, auto-posting for connected platforms. Saved profile and post history. $19/month."/>
+  <meta property="og:title" content="BlastyBiz Pro Plan"/>
+  <meta property="og:description" content="Explore BlastyBiz Pro, current pricing, and included publishing tools."/>
   <meta property="og:type" content="website"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -25,7 +25,6 @@
     "brand": { "@type": "Brand", "name": "BlastyBiz" },
     "offers": {
       "@type": "Offer",
-      "price": "19",
       "priceCurrency": "USD",
       "availability": "https://schema.org/InStock",
       "url": "https://blastybiz-9523e.web.app/BlastyBiz-Plan-Pro.html"
@@ -51,12 +50,12 @@
     <div class="pricing__tier">Pro</div>
     <div class="pricing__badge">Most Popular</div>
     <h1>Everything You Need. <span>Nothing You Don't.</span></h1>
-    <p>One flat monthly price. No per-post fees. No surprise charges. Works for any business — one location or fifty.</p>
+    <p>One flat monthly price. No per-post fees. No surprise charges. Choose the business capacity that fits your work.</p>
     <div class="pricing__amount">
-      <div class="pricing__num">$19</div>
+      <div class="pricing__num"><span data-price="proMonthly">See checkout</span></div>
       <div class="pricing__per">/ month</div>
     </div>
-    <a href="BlastyBiz-Login.html?plan=pro" class="pricing__btn pricing__btn--primary">Start Free Trial — $19/month →</a>
+    <a href="BlastyBiz-Login.html?plan=pro" class="pricing__btn pricing__btn--primary">Start with the Free Plan →</a>
   </div>
 </header>
 
@@ -111,14 +110,14 @@
 <section class="reveal">
   <div class="row">
     <h2>Running an <span>Agency?</span></h2>
-    <p>If you're managing listings for multiple businesses or clients, our Agency plan covers up to 10 businesses under one login for $99/month.</p>
-    <a href="BlastyBiz-Plan-Agency.html" class="pricing__btn pricing__btn--outline">See Agency Plan — $99/month →</a>
+    <p>If you're managing listings for multiple businesses or clients, our Agency plan covers up to 10 businesses under one login for <span data-price="agencyMonthly">See checkout</span>/month.</p>
+    <a href="BlastyBiz-Plan-Agency.html" class="pricing__btn pricing__btn--outline">See Agency Plan — <span data-price="agencyMonthly">See checkout</span>/month →</a>
   </div>
 </section>
 
 <section class="reveal">
   <div class="row" style="text-align:center">
-    <a href="BlastyBiz-Login.html?plan=pro" class="pricing__btn pricing__btn--primary">Start Free Trial — $19/month →</a>
+    <a href="BlastyBiz-Login.html?plan=pro" class="pricing__btn pricing__btn--primary">Start with the Free Plan →</a>
     <p style="margin-top:12px;font-size:13px;opacity:0.6">No contract. Cancel anytime.</p>
   </div>
 </section>
@@ -158,6 +157,7 @@ const observer = new IntersectionObserver((entries) => {
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 </script>
 <script src="header-loader.js?v=1"></script>
-<script src="session.js?v=1"></script>
+<script src="session.js?v=20261004-commercial"></script>
+<script src="pricing.js?v=20261004-commercial"></script>
 </body>
 </html>

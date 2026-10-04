@@ -17,12 +17,14 @@ window.BB_KEYS = [
   'bb_platforms_enabled',
   'bb_ml',       // magic-link email-for-sign-in
   'bb_start_choice', 'bb_guided_new', 'bb_selected_plan', 'bb_billing_period',
+  'bb_setup_draft', // unfinished setup controls; cleared with the account session
   'bb_answers',  // onboarding session answers
 ];
 
 /** Clear every BB key from localStorage. */
 window._bbClearStorage = function () {
   window.BB_KEYS.forEach(function (k) { localStorage.removeItem(k); });
+  ['bb_setup_handoff','bb_preview'].forEach(function(k){sessionStorage.removeItem(k);});
 };
 
 /**

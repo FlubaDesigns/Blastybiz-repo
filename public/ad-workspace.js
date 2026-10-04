@@ -1,7 +1,7 @@
 /* The existing Campaign form edits one selected Ad. No second Campaign store. */
 (function(){
   'use strict';
-  let ad=null, campaign='', business='', epoch=0, busy=false, dirty=false, pending=null, loading=null, saving=null, loadError=null, editVersion=0, autoSaveTimer=null;
+  let ad=null, campaign='', business='', epoch=0, busy=false, dirty=false, pending=null, loading=null, saving=null, loadError=null, editVersion=0, autoSaveTimer=null, conflict=null, baseline=null;
   let photoQueue=Promise.resolve(), pendingPhotoCount=0;
   const uuid=()=>crypto.randomUUID();
   const el=id=>document.getElementById(id);
@@ -15,7 +15,7 @@
       method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+await window._bbGetToken()},
       body:JSON.stringify({...body,...ctx,action})
     },60000);
-    const data=await response.json();if(!response.ok)throw Error(data.error||'Could not save the Ad.');return data;
+    const data=await response.json();if(!response.ok)throw Object.assign(Error(data.error||'Could not save the Ad.'),{status:response.status});return data;
   }
   function tell(message){el('ad-message').textContent=message;}
   async function task(fn){if(busy)return;busy=true;document.querySelectorAll('#ad-workspace button,#ad-workspace select').forEach(b=>b.disabled=true);try{await fn();}catch(e){tell(e.message);window.showToast?.(e.message);}finally{busy=false;document.querySelectorAll('#ad-workspace button,#ad-workspace select').forEach(b=>b.disabled=false);}}
@@ -45,15 +45,15 @@
     autoSaveTimer=setTimeout(()=>{if(seq===epoch)flushSave();},650);
   }
   async function flushSave(){
-    if(!ad||!dirty||saving)return;
+    if(!ad||!dirty||saving||conflict)return;
     const seq=epoch;
     try{await save();}catch(e){if(seq===epoch){tell('Not saved. '+e.message);el('ad-save-retry').hidden=false;}}
   }
   function open(wantedAdId){
     mount();if(!el('ad-workspace'))return Promise.resolve();
-    clearTimeout(autoSaveTimer);el('ad-save-retry').hidden=true;
+    clearTimeout(autoSaveTimer);el('ad-save-retry').hidden=true;el('ad-save-retry').textContent='Retry save';
     if(el('step5-existing-blast'))el('step5-existing-blast').hidden=true;
-    const seq=++epoch;campaign=activeCampaignId;business=window.activeBizId;ad=null;dirty=false;pending=null;loadError=null;window._bbActiveAd=null;
+    const seq=++epoch;campaign=activeCampaignId;business=window.activeBizId;ad=null;dirty=false;pending=null;loadError=null;conflict=null;window._bbActiveAd=null;
     const host=el('campaign-content');host.inert=true;
     el('ad-current').hidden=true;tell('Loading saved details…');
     for(const field of ['biz-ad-name','biz-offer','biz-price','ad-context','ad-cta','ad-area','ad-zip'])if(el(field))el(field).value='';
@@ -95,6 +95,7 @@
   }
   async function ready(){await loading;if(loadError)throw loadError;if(!ad)throw Error('Open a saved campaign before continuing.');return ad;}
   function fill(next){
+    baseline=JSON.parse(JSON.stringify(next));
     ad=next;window._bbActiveAd=ad;dirty=false;pending=null;window._currentDraftId=null;window._bbPendingDraft=null;
     for(const [field,key] of Object.entries({'biz-ad-name':'name','biz-offer':'offer','biz-price':'price','ad-cta':'cta','ad-context':'context','ad-area':'pickupArea','ad-zip':'pickupZip'})){if(el(field))el(field).value=ad[key]||'';}
     if(typeof platforms!=='undefined'){
@@ -125,9 +126,19 @@
     await ready();
     const version=editVersion,seq=epoch;
     const values=creative();if(pending?.action!=='save'||JSON.stringify(pending.values)!==JSON.stringify(values))pending={action:'save',requestId:uuid(),values};
-    const data=await api('save',{adId:ad.id,expectedRevision:ad.revision,requestId:pending.requestId,creative:pending.values});
+    let data;
+    try{data=await api('save',{adId:ad.id,expectedRevision:ad.revision,requestId:pending.requestId,creative:pending.values});}
+    catch(error){
+      if(error.status===409 || /This Ad changed elsewhere/.test(error.message)){
+        conflict={base:baseline||ad};
+        const button=el('ad-save-retry');button.textContent='Recover my edits';
+        error.message='This ad changed elsewhere. Your edits are still here. Choose Recover my edits to reconcile them.';
+      }
+      throw error;
+    }
     if(seq!==epoch)throw Error('The active campaign changed during save.');
     const editedDuringSave=version!==editVersion||JSON.stringify(creative())!==JSON.stringify(values);
+    baseline=JSON.parse(JSON.stringify(data.ad));
     ad=editedDuringSave?{...data.ad,imageRefs:ad.imageRefs}:data.ad;window._bbActiveAd=ad;
     if(!editedDuringSave){
       platforms=platforms.map(p=>({...p,_reviewStatus:ad.platformStatus?.[p.id]==='excluded'?'skipped':ad.platformStatus?.[p.id]||'needs-review'}));
@@ -140,6 +151,7 @@
   }
   async function save(){
     clearTimeout(autoSaveTimer);
+    if(conflict)throw Error('Your edits are kept here. Choose Recover my edits before continuing.');
     if(saving){await saving;return save();}
     saving=(async()=>{let result;do{result=await persist();}while(dirty);return result;})();
     try { const result=await saving;return result; } catch(e){tell('Not saved. '+e.message);el('ad-save-retry').hidden=false;throw e;} finally { saving=null; }
@@ -227,7 +239,26 @@
   }
 
   async function act(action,id){
-    if(action==='save'){await save();return;}
+    if(action==='save'){
+      if(conflict){
+        const seq=epoch,base=conflict.base;
+        const {ad:latest}=await api('get',{adId:ad.id});
+        if(seq!==epoch)throw Error('The active campaign changed.');
+        const local=creative();
+        const normalized=(record,key)=>{
+          const value=record[key]??(Array.isArray(local[key])?[]:typeof local[key]==='object'?{}:'');
+          return key==='imageRefs'?value.map(image=>({id:image.id})):value;
+        };
+        const equal=(left,right,key)=>JSON.stringify(normalized(left,key))===JSON.stringify(normalized(right,key));
+        const changed=Object.keys(local).filter(key=>!equal(local,base,key));
+        const overlaps=changed.filter(key=>!equal(latest,base,key)&&!equal(latest,local,key));
+        if(overlaps.length&&!confirm('Newer saved changes also affect: '+overlaps.join(', ')+'. Keep your edits for these fields? Cancel keeps everything here for review.'))return;
+        const recovered={...latest,...Object.fromEntries(changed.map(key=>[key,local[key]]))};
+        await fill(recovered);baseline=JSON.parse(JSON.stringify(latest));conflict=null;pending=null;dirty=true;editVersion++;
+        el('ad-save-retry').textContent='Retry save';
+      }
+      await save();return;
+    }
     if(action==='update-prepared'){
       await api('updatePrepared',{adId:ad.id,expectedRevision:ad.revision,blastId:id});
       tell('Prepared Blast updated. Open its preview and explicitly send or schedule it.');el('ad-prepared').replaceChildren();return;
