@@ -4672,8 +4672,8 @@ function renderCampaignChips() {
 
 async function selectCampaign(id, name, options = {}) {
   if(window.BBLifecycle?.hasUnsavedChanges?.()&&!window.BBLifecycle.canLeave())return;
-  if(window._bbAdaptationBusy || window.BBAds?.busy){showToast('Wait for the current save or generation to finish.');return;}
-  if(window.BBAds?.dirty){try{await window.BBAds.save();}catch(e){showToast('Could not save your changes. Please retry before switching.');return;}}
+  if(window._bbAdaptationBusy || (window.BBAds?.operationBusy ?? window.BBAds?.busy)){showToast('Wait for the current save or generation to finish.');return;}
+  if(window.BBAds?.dirty||window.BBAds?.busy){try{await window.BBAds.save();}catch(e){showToast('Could not save your changes. Please retry before switching.');return;}}
   if (window._bbDraftSavePending) { showToast('Use Retry save before switching campaigns.'); return; }
   clearTimeout(_campaignSaveTimer);
   activeCampaignId   = id;
@@ -5353,7 +5353,7 @@ import { loadPlatforms, PLATFORM_DEFAULTS, deliveryReadiness } from './platforms
 import { rememberConnectionReturn } from './auth-return.js?v=20261004-flow';
 window._bbPlatformReadiness = p => deliveryReadiness(p.id, window._bbConnections === undefined ? undefined : window._bbConnections[p.id] || null, {business:profile,images:window.BBAds?.active?.imageRefs});
 window._bbOpenConnections = async function(){
-  try{if(window.BBAds?.busy || window._bbAdaptationBusy || window._bbDraftSavePending)throw Error('Finish saving your work before connecting an account.');
+  try{if((window.BBAds?.operationBusy ?? window.BBAds?.busy) || window._bbAdaptationBusy || window._bbDraftSavePending)throw Error('Finish saving your work before connecting an account.');
     if(window.BBAds?.active)await window.BBAds.save();
     window._bbRecordWorkspaceRoute?.(true);rememberConnectionReturn(location.pathname,location.search,currentUser.uid);
     location.assign('BlastyBiz-Connect.html?'+new URLSearchParams({bizId:window.activeBizId}));
@@ -5719,7 +5719,7 @@ onAuthStateChanged(auth, async (user) => {
   window.switchBusiness = async function(bizId) {
     if (window.BBLifecycle?.hasUnsavedChanges?.()&&!window.BBLifecycle.canLeave())return;
     if (window._bbDraftSavePending) { showToast('Use Retry save before switching businesses.'); return; }
-    if (window._bbAdaptationBusy || window.BBAds?.busy) { showToast('Wait for the current save or generation to finish.'); return; }
+    if (window._bbAdaptationBusy || (window.BBAds?.operationBusy ?? window.BBAds?.busy)) { showToast('Wait for the current save or generation to finish.'); return; }
     try { if (window.BBAds?.active) await window.BBAds.save(); }
     catch (e) { showToast('Could not save your changes. Please retry before switching.'); return; }
     await setDoc(doc(db, 'users', user.uid), { activeBusiness: bizId }, { merge: true });
