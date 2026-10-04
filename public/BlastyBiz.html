@@ -7,7 +7,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=1786304797822" />
+<link rel="stylesheet" href="global-style.css?v=20261004-flow" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -170,7 +170,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
   }
 }
 </script>
-  <script type="module" src="./auth-guard.js"></script>
+  <script type="module" src="./auth-guard.js?v=20261004-flow"></script>
 <script src="blastybiz-menu.js?v=7"></script>
 <script src="escape-utils.js?v=1"></script>
 <script src="mascot.js?v=5"></script>
@@ -319,6 +319,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
   <div class="create-wizard" id="create-wizard">
 
     <!-- Wizard header: step label + progress bar + dots -->
+    <div id="workspace-save-state" class="workspace-save-state"></div>
     <div class="create-wiz-header">
       <div class="create-wiz-label" id="create-wiz-label">Step 1 of 2 — Your Blast</div>
     </div>
@@ -537,7 +538,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
               <span>📡 Send To</span>
               <span id="send-to-chevron" class="chevron">›</span>
             </button>
-            <p class="helper-sm" style="margin-top:0;margin-bottom:0;">AI adapts your copy for every platform you pick — each one gets its own version. Your connected accounts are set up in your Profile; the platforms you select here apply to this campaign only.</p>
+            <p class="helper-sm" style="margin-top:0;margin-bottom:0;">AI adapts your copy for every platform you pick — each one gets its own version. Your saved destinations are kept for this blast. Check connection readiness below before sending.</p>
             <div id="send-to-body" class="hidden" onclick="event.stopPropagation()">
               <div class="row-base-sb" style="margin-top:16px;margin-bottom:12px;">
                 <span></span>
@@ -555,13 +556,14 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
       <div class="row" id="slide1-nav-row">
         <div class="col-full">
           <div class="create-wiz-nav">
-            <button type="button" class="btn btn-primary btn--adaptive" id="s3-continue-btn" onclick="createWizNext(1, true)" disabled>
-              Generate New Copy →
+            <button type="button" class="btn btn-primary btn--adaptive" id="s3-continue-btn" onclick="createWizNext(1, !platforms.some(p=>p.enabled &amp;&amp; p.adaptedContent))" disabled>
+              Generate My Blast →
             </button>
-            <button type="button" class="btn btn-outline btn--adaptive hidden" id="s3-saved-copy-btn" onclick="createWizNext(1)" hidden disabled>
-              View Saved Copy →
+            <button type="button" class="btn btn-outline btn--adaptive hidden" id="s3-saved-copy-btn" onclick="createWizNext(1, true)" hidden disabled>
+              Generate New Copy
             </button>
           </div>
+          <p id="blast-guidance" class="helper-sm" role="status"></p>
           <div class="bottom-safe"></div>
         </div>
       </div><!-- /.row nav -->
@@ -578,7 +580,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
             <div class="ai-loading-text">⚡ AI is adapting your listing...</div>
             <div class="ai-loading-sub" id="ai-loading-sub">Preparing all platforms</div>
             <div class="ai-gen-track"><div class="ai-gen-fill" id="ai-gen-fill"></div></div>
-            <div class="ai-gen-pct" id="ai-gen-pct">0%</div>
+            <div class="ai-gen-pct" id="ai-gen-pct" role="status">Waiting for AI…</div>
           </div>
         </div>
       </div>
@@ -613,7 +615,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
           </button>
 
           <div id="step5-existing-blast" hidden style="margin-top:16px;">
-            <a id="step5-view-blast" class="review-btn" data-existing-blast>View Last Blast →</a>
+            <a id="step5-view-blast" class="create-wiz-back-btn" data-existing-blast>View Last Blast →</a>
             <button type="button" class="create-wiz-back-btn" style="min-height:48px;margin-top:12px;" onclick="completeBlast(true)">Prepare Another Blast</button>
           </div>
           <div class="create-wiz-nav" style="margin-top:20px;">
@@ -1214,7 +1216,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" integrity="sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e" crossorigin="anonymous"></script>
 <script src="platform-categories.js"></script>
 <script src="platforms-authority.js?v=20261002-online"></script>
-<script src="photo-handoff.js?v=20261001-share"></script>
+<script src="photo-handoff.js?v=20261004-flow"></script>
 <script>
 // ══════════════════════════════════════════
 // PLATFORM REGISTRY — add new platforms here
@@ -1347,6 +1349,8 @@ function _tabsScroll(dir) {
 })();
 
 function showTab(name, options = {}) {
+  if(name==='schedule'&&document.getElementById('section-schedule')?.classList.contains('active')&&window.BBLifecycle?.hasUnsavedChanges?.())return;
+  if(name!=='schedule'&&document.getElementById('section-schedule')?.classList.contains('active')&&window.BBLifecycle?.canLeave&&!window.BBLifecycle.canLeave())return;
   if (profile.sellerType === 'personal' && (name === 'profile' || name === 'story')) name = 'create';
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   // aria-selected must move with the highlight, or screen readers keep announcing
@@ -1413,6 +1417,7 @@ window._bbRestoreWorkspaceRoute = async function() {
   let restored = false;
   try {
     const q = new URLSearchParams(location.search);
+    if(window.BBLifecycle?.hasUnsavedChanges?.()&&!window.BBLifecycle.canLeave())throw Error('Your unsaved schedule is still here. Save Schedule when ready.');
     if (window._bbAdaptationBusy || window._bbDraftSavePending || window.BBAds?.busy) throw Error('Wait for your current save or generation to finish before going back.');
     if (window.BBAds?.active) await window.BBAds.save();
     // A second Back/Forward tap during the save owns the final destination.
@@ -1501,7 +1506,7 @@ function buildPlatformCard(p) {
 
 
   const actionBtn = p.type === 'api'
-      ? `<button type="button" class="btn btn-primary btn-sm" onclick="deployPlatform('${p.id}')" ${!p.enabled ? 'disabled' : ''}>🚀 Post</button>`
+      ? `<button type="button" class="btn btn-outline btn-sm" onclick="window._bbOpenConnections()">Manage connection</button>`
       : `<button type="button" class="btn btn-outline btn-sm" onclick="copyText('${p.id}')" ${!p.enabled || !p.adaptedContent ? 'disabled' : ''}>📋 Copy text</button>`;
 
   div.innerHTML = `
@@ -1510,7 +1515,7 @@ function buildPlatformCard(p) {
         <div class="platform-icon" style="background:${p.color}22;">${p.icon}</div>
         <div>
           <div class="platform-name">${escHtml(p.name)}</div>
-          <div class="platform-type ${p.type}">${p.type === 'api' ? 'Blasty Posts It' : 'Ready for You to Post'}</div>
+          <div class="platform-type ${p.type}">${escHtml(window._bbPlatformReadiness?.(p).label || (p.type === 'api' ? 'Checking connection' : 'You post it'))}</div>
         </div>
       </div>
       <label class="toggle">
@@ -1666,37 +1671,7 @@ function renderPlatformPhotoStrip(pid, photos, maxPhotos, displayOnly = false) {
   const label = container.querySelector('.qp-photos-label');
   if (label) label.textContent = '📷 Photos for this post: ' + photos.length + ' / ' + maxPhotos;
 
-  strip.innerHTML = '';
-  photos.forEach((photo, index) => {
-    const thumb = document.createElement(displayOnly ? 'div' : 'button');
-    thumb.className = 'qp-thumb' + (displayOnly ? ' qp-thumb-display' : '');
-    if (!displayOnly) {
-      thumb.type = 'button';
-      thumb.title = 'Copy photo ' + (index + 1);
-      thumb.setAttribute('aria-label', thumb.title);
-      thumb.onclick = () => copyImageToClipboard(photo.url, thumb);
-    }
-    thumb.innerHTML = `<img src="${escHtml(photo.url)}" class="thumb-cover" alt="${escHtml(photo.alt || 'Selected photo')}" />`
-      + (!displayOnly ? `<div class="thumb-copy-badge">✓ Copied!</div>` : '');
-    if (displayOnly) strip.appendChild(thumb);
-    else {
-      const item = document.createElement('div'); item.className = 'qp-photo-item';
-      item.appendChild(thumb);
-      const controls = document.createElement('div'); controls.className = 'qp-photo-tools';
-      const copy = document.createElement('button'); copy.type = 'button'; copy.textContent = 'Copy photo';
-      copy.onclick = () => copyImageToClipboard(photo.url, thumb);
-      const save = document.createElement('button'); save.type = 'button'; save.textContent = 'Save photo';
-      save.onclick = async () => {
-        save.disabled = true;
-        try { await BBPhotoHandoff.save(photo.url, pid, index); showToast('Download started — choose the photo from Recent when attaching.'); }
-        catch (error) { showToast('Could not save this photo. Tap Open photo, then hold the image to save it.'); }
-        finally { save.disabled = false; }
-      };
-      const open = document.createElement('a'); open.href = photo.url; open.target = '_blank'; open.rel = 'noopener'; open.textContent = 'Open photo';
-      open.className = 'qp-photo-open';
-      controls.append(copy, save, open); item.appendChild(controls); strip.appendChild(item);
-    }
-  });
+  BBPhotoHandoff.renderPhotos(strip, pid, photos, displayOnly);
 
   container.style.display = 'block';
 }
@@ -1717,61 +1692,9 @@ function renderAdPostPhotos(p) {
 }
 
 function renderPhotoHandoff(pid, photos) {
-  const host = document.getElementById('qp-share-' + pid);
-  if (!host) return;
-  host.innerHTML = ''; host.style.display = photos.length ? 'block' : 'none';
-  if (!photos.length) return;
-  const button = document.createElement('button'); button.type = 'button';
-  const status = document.createElement('div'); status.className = 'qp-photo-share-status'; status.setAttribute('role', 'status');
-  host.append(button, status);
-  let readyFiles = [], busy = false;
-  const prepare = async () => {
-    button.disabled = true; button.textContent = 'Preparing photos…';
-    status.textContent = 'Getting these photos ready for your phone.';
-    try {
-      const files = await BBPhotoHandoff.prepare(photos.map(photo => photo.url), pid);
-      if (!host.isConnected || button.parentNode !== host) return;
-      readyFiles = files;
-      if (BBPhotoHandoff.canShare(files)) {
-        button.textContent = 'Share ' + files.length + (files.length === 1 ? ' photo' : ' photos'); button.disabled = false;
-        status.textContent = 'Choose the app in your phone’s share menu. If the caption does not carry over, use Copy text above.';
-      } else {
-        button.hidden = true;
-        status.textContent = 'Use Copy photo below and paste into your post. If the app does not accept pasted images, use Save photo, then choose it from Recent.';
-      }
-    } catch (error) {
-      if (!host.isConnected || button.parentNode !== host) return;
-      button.disabled = false; button.textContent = 'Retry preparing photos';
-      status.textContent = 'Could not load the photos for sharing. Retry, or use Open photo below.';
-    }
-  };
-  button.onclick = () => {
-    if (busy) return;
-    if (!readyFiles.length) { prepare(); return; }
-    busy = true; button.disabled = true;
-    const text = document.getElementById('qp-copy-text-' + pid)?.textContent?.trim() || '';
-    BBPhotoHandoff.share(readyFiles, text).then(() => {
-      status.textContent = 'Handed to your phone. Finish posting in the selected app.';
-    }).catch(error => {
-      if (error.name !== 'AbortError') status.textContent = 'The phone could not share these photos. Use Copy photo or Save photo below.';
-    }).finally(() => { busy = false; button.disabled = false; });
-  };
-  prepare();
+  BBPhotoHandoff.renderShare(document.getElementById('qp-share-' + pid), pid, photos,
+    () => document.getElementById('qp-copy-text-' + pid)?.textContent?.trim() || '');
 }
-
-async function copyImageToClipboard(url, thumbEl) {
-  try {
-    await BBPhotoHandoff.copy(url);
-    if (thumbEl) {
-      thumbEl.classList.add('qp-thumb-copied');
-      setTimeout(() => thumbEl.classList.remove('qp-thumb-copied'), 1800);
-    }
-    showToast('Photo copied — paste it into your post');
-  } catch (error) {
-    showToast('Photo copy is unavailable here. Use Share photos or Save photo.');
-  }
-}
-
 
 // Open a platform page in a new tab (uses saved URL or platform default)
 window.openPlatformPage = function(pid) {
@@ -2641,8 +2564,9 @@ function renderStep3Platforms() {
       + '<div class="s3-plat-meta">'
       +   '<div class="s3-plat-name">' + escHtml(p.name) + '</div>'
       +   '<div class="s3-plat-badge' + (isApi ? ' api' : '') + '">'
-      +     (isApi ? 'Blasty Posts It' : 'Ready for You to Post')
+      +     escHtml(window._bbPlatformReadiness?.(p).label || (isApi ? 'Checking connection' : 'You post it'))
       +   '</div>'
+      + (isApi ? '<button type="button" class="readiness-action" onclick="window._bbOpenConnections()">Manage connection</button>' : '')
       + '</div>'
       + '<label class="toggle" onclick="event.stopPropagation()">'
       +   '<input type="checkbox"' + (p.enabled ? ' checked' : '') + ' onchange="togglePlatform(\'' + escHtml(p.id) + '\', this.checked)" />'
@@ -2660,9 +2584,17 @@ function checkS3ContinueBtn() {
   const saved = document.getElementById('s3-saved-copy-btn');
   if (saved) {
     const hasSavedCopy = platforms.some(p => p.enabled && window.BBAds?.active?.adaptations?.[p.id]?.trim());
+    if (btn) btn.textContent = platforms.some(p=>p.enabled&&p.adaptedContent) ? 'Review My Blast →' : 'Generate My Blast →';
     saved.hidden = !hasSavedCopy;
     saved.disabled = !hasSavedCopy;
     saved.classList.toggle('hidden', !hasSavedCopy);
+  }
+  const guidance=document.getElementById('blast-guidance');
+  if(guidance){
+    const selected=platforms.filter(p=>p.enabled),saved=selected.filter(p=>p.adaptedContent).length;
+    const photos=window.BBAds?.active?.imageRefs?.length||0;
+    const missing=selected.filter(p=>window._bbPlatformReadiness?.(p).state==='connection').length;
+    guidance.textContent=selected.length ? selected.length+' destinations · '+photos+' saved photos. '+(saved ? 'Your saved copy and choices are ready to reuse. '+(selected.length-saved ? (selected.length-saved)+' still need copy. ' : '') : 'Generate copy when your details are ready. ')+(missing ? missing+' need a connection before auto-posting.' : '') : 'Choose at least one destination in Send To above.';
   }
 }
 
@@ -2791,17 +2723,17 @@ function buildStep5Card(p) {
   }
 
   // ── Row C: location/address ─────────────────────
-  inner += '<div class="s5-card-location">';
+  inner += '<details class="s5-card-location"><summary>Posting link (optional)</summary><p class="helper-sm">Your saved link is reused. It does not connect an automatic posting account.</p>';
   if (needsUrl) {
     inner += '<div class="step5-setup-title">📍 Save your ' + escHtml(p.name) + ' link</div>'
       + '<div class="step5-url-row">'
       +   '<input type="url" id="qp-url-input-' + p.id + '" class="step5-url-input" placeholder="' + urlHint + '" value="' + savedUrl + '" onblur="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', this.value.trim())" />'
-      +   '<button type="button" class="step5-url-save" onclick="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', document.getElementById(\'qp-url-input-' + p.id + '\').value.trim()); showToast(\'✓ Saved!\')">Save</button>'
-      + '</div>';
+      +   '<button type="button" class="step5-url-save" onclick="window.savePlatformUrl && window.savePlatformUrl(\'' + p.id + '\', document.getElementById(\'qp-url-input-' + p.id + '\').value.trim())">Save</button>'
+      + '</div><p id="qp-url-feedback-' + p.id + '" role="status" class="helper-sm"></p>';
   } else {
     inner += '<div class="s5-no-link">✓ No link necessary for ' + escHtml(p.name) + '</div>';
   }
-  inner += '</div>';
+  inner += '</details>';
 
   card.innerHTML = inner;
   return card;
@@ -2832,10 +2764,10 @@ function updateStep5UI() {
 
   if (allDone) {
     finalBtn.disabled = false;
-    finalBtn.textContent = 'Continue →';
+    finalBtn.textContent = 'Review My Blast →';
     if (wasDisabled || wasHidden) {
       setTimeout(() => finalBtn.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-      showToast('✅ All platforms done — tap Continue below');
+      showToast('All platforms reviewed — tap Review My Blast below');
     }
   } else {
     finalBtn.disabled = true;
@@ -3094,46 +3026,20 @@ let _aiProgressInterval = null;
 
 function _startAiProgress(platforms) {
   if (_aiProgressInterval) { clearInterval(_aiProgressInterval); _aiProgressInterval = null; }
-  let pct = 0;
-  const fill  = document.getElementById('ai-gen-fill');
-  const pctEl = document.getElementById('ai-gen-pct');
-  const sub   = document.getElementById('ai-loading-sub');
-  if (fill)  { fill.style.transition = 'none'; fill.style.width = '0%'; }
-  if (pctEl) pctEl.textContent = '0%';
+  const started=Date.now(),fill=document.getElementById('ai-gen-fill'),pctEl=document.getElementById('ai-gen-pct'),sub=document.getElementById('ai-loading-sub');
+  if(fill){fill.style.width='35%';fill.classList.add('is-waiting');}
+  if(pctEl)pctEl.textContent='Waiting for AI…';
+  if(sub)sub.textContent='Writing copy for '+platforms.length+' selected destinations. Timing varies.';
+  _aiProgressInterval=setInterval(()=>{if(pctEl)pctEl.textContent='Still writing · '+Math.floor((Date.now()-started)/1000)+' seconds';},1000);
 
-  const msgs = [
-    'Reading your business info...',
-    'Crafting your offer...',
-    ...platforms.map(p => `Writing for ${p.name}...`),
-    'Polishing the copy...',
-    'Finishing up...',
-  ];
-  let msgIdx = 0;
-
-  setTimeout(() => {
-    if (fill) fill.style.transition = 'width 0.4s ease';
-  }, 50);
-
-  _aiProgressInterval = setInterval(() => {
-    pct += Math.max((88 - pct) * 0.032, 0.2);
-    if (pct > 88) pct = 88;
-    const r = Math.round(pct);
-    if (fill)  fill.style.width  = r + '%';
-    if (pctEl) pctEl.textContent = r + '%';
-    const threshold = (msgIdx + 1) * (88 / msgs.length);
-    if (r >= threshold && msgIdx < msgs.length - 1) {
-      msgIdx++;
-      if (sub) sub.textContent = msgs[msgIdx];
-    }
-  }, 160);
 }
 
 function _completeAiProgress() {
   if (_aiProgressInterval) { clearInterval(_aiProgressInterval); _aiProgressInterval = null; }
   const fill  = document.getElementById('ai-gen-fill');
   const pctEl = document.getElementById('ai-gen-pct');
-  if (fill)  { fill.style.transition = 'width 0.4s ease'; fill.style.width = '100%'; }
-  if (pctEl) pctEl.textContent = '100%';
+  if (fill) { fill.classList.remove('is-waiting'); fill.style.width = '100%'; }
+  if (pctEl) pctEl.textContent = 'Request finished';
 }
 
 // ══════════════════════════════════════════
@@ -4765,6 +4671,7 @@ function renderCampaignChips() {
 }
 
 async function selectCampaign(id, name, options = {}) {
+  if(window.BBLifecycle?.hasUnsavedChanges?.()&&!window.BBLifecycle.canLeave())return;
   if(window._bbAdaptationBusy || window.BBAds?.busy){showToast('Wait for the current save or generation to finish.');return;}
   if(window.BBAds?.dirty){try{await window.BBAds.save();}catch(e){showToast('Could not save your changes. Please retry before switching.');return;}}
   if (window._bbDraftSavePending) { showToast('Use Retry save before switching campaigns.'); return; }
@@ -5153,7 +5060,7 @@ init();
 // Falls back silently if config/platforms doesn't exist yet.
 (async function _applyAdminPlatformConfig() {
   try {
-    const { PLATFORM_DEFAULTS, loadPlatformsREST } = await import('./platforms-config.js?v=20261002-online');
+    const { PLATFORM_DEFAULTS, loadPlatformsREST } = await import('./platforms-config.js?v=20261004-flow');
     const activePlatforms = await loadPlatformsREST();
     // Build a complete adminMap: mark all defaults disabled first, then enable the active ones.
     // This ensures admin-disabled platforms are properly excluded by _bbSetPlatforms.
@@ -5442,7 +5349,16 @@ function awaitPaidPlan(uid) {
     }, PAY_CONFIRM_TIMEOUT_MS);
   });
 }
-import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js?v=20261002-online';
+import { loadPlatforms, PLATFORM_DEFAULTS, deliveryReadiness } from './platforms-config.js?v=20261004-flow';
+import { rememberConnectionReturn } from './auth-return.js?v=20261004-flow';
+window._bbPlatformReadiness = p => deliveryReadiness(p.id, window._bbConnections === undefined ? undefined : window._bbConnections[p.id] || null, {business:profile,images:window.BBAds?.active?.imageRefs});
+window._bbOpenConnections = async function(){
+  try{if(window.BBAds?.busy || window._bbAdaptationBusy || window._bbDraftSavePending)throw Error('Finish saving your work before connecting an account.');
+    if(window.BBAds?.active)await window.BBAds.save();
+    window._bbRecordWorkspaceRoute?.(true);rememberConnectionReturn(location.pathname,location.search,currentUser.uid);
+    location.assign('BlastyBiz-Connect.html?'+new URLSearchParams({bizId:window.activeBizId}));
+  }catch(e){showToast(e.message);}
+};
 import {
   ref as storageRef, uploadBytesResumable, getDownloadURL
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
@@ -5801,6 +5717,7 @@ onAuthStateChanged(auth, async (user) => {
 
   // Allow switching business from the bar
   window.switchBusiness = async function(bizId) {
+    if (window.BBLifecycle?.hasUnsavedChanges?.()&&!window.BBLifecycle.canLeave())return;
     if (window._bbDraftSavePending) { showToast('Use Retry save before switching businesses.'); return; }
     if (window._bbAdaptationBusy || window.BBAds?.busy) { showToast('Wait for the current save or generation to finish.'); return; }
     try { if (window.BBAds?.active) await window.BBAds.save(); }
@@ -6210,8 +6127,9 @@ onAuthStateChanged(auth, async (user) => {
     const connsSnap = await getDocs(query(
       collection(db, 'users', user.uid, 'businesses', activeBizId, 'platformConnections')
     ));
-    if (!connsSnap.empty) {
+    {
       const connMap = {};
+      window._bbConnections = connMap;
       connsSnap.forEach(d => { connMap[d.data().platform || d.id] = d.data(); });
       // Load saved page URLs into global map so accordion URL inputs are pre-filled
       Object.entries(connMap).forEach(([pid, data]) => {
@@ -6543,15 +6461,18 @@ document.addEventListener('bb:savePlatPrefs', async (e) => {
 
 // Save a platform's page URL to Firestore — called from URL input onblur
 window.savePlatformUrl = async function(pid, url) {
-  window._bbPlatformUrls[pid] = url;
-  if (!currentUser || !activeBizId) return;
+  const report=message=>{const feedback=document.getElementById('qp-url-feedback-'+pid);if(feedback)feedback.textContent=message;else showToast(message);};
+  if (!currentUser || !activeBizId) { report('Sign in before saving this link.'); return; }
+  report('Saving link…');
   try {
     await setDoc(
       doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'platformConnections', pid),
       { uid: currentUser.uid, businessId: activeBizId, platform: pid, profileUrl: url, updatedAt: serverTimestamp() },
       { merge: true }
     );
-  } catch(e) { console.error('savePlatformUrl error:', e); }
+    window._bbPlatformUrls[pid] = url;
+    report('Posting link saved.');
+  } catch(e) { report('Link was not saved. Your entry is still here — tap Save to retry.'); }
 };
 
 const origSaveProfile = window.saveProfile;
@@ -7404,8 +7325,8 @@ window.confirmDeleteAccount = async function() {
 .cbm-opt-title{font-size:15px;font-weight:700;color:#e0f0e3}
 .cbm-opt-desc{font-size:12px;color:#7aab82;line-height:1.4}
 </style>
-<script src="lifecycle-ui.js?v=20261002-timezone-picker"></script>
-<script src="ad-workspace.js?v=20261003-current-blast"></script>
+<script src="lifecycle-ui.js?v=20261004-flow"></script>
+<script src="ad-workspace.js?v=20261004-flow"></script>
 <script>
 document.addEventListener('click',function(e){
  const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');

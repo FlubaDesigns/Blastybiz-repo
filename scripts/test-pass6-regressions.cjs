@@ -140,8 +140,8 @@ async function gatewayTests() {
   ok(messages.pop()==='Could not delete business.'&&!button.disabled&&d.window.BUSINESSES.length===2&&!reloaded,'HTML deletion failure preserves business and displays friendly fallback');
 }
 function presentationTests() {
-  const page=read('public/BlastyBiz-Publishing-Status.html');
-  const c={};vm.runInNewContext(section(page,'const STATUS_CONFIG =','function renderJobs(')+';globalThis.statuses=STATUS_CONFIG;',c);
+  const page=read('public/lifecycle-status.js');
+  const c={};vm.runInNewContext(section(page,'const STATUS_CONFIG =','function renderPlatformRows(')+';globalThis.statuses=STATUS_CONFIG;',c);
   ok(c.statuses.processing.label==='Publishing'&&c.statuses.manual_followup.label==='Action Needed','dispatcher states have accurate owner labels');
   for(const file of ['public/BlastyBiz.html','public/BlastyBiz-Account.html']) {
     const s=read(file);ok(!s.includes('acct-ai-usage')&&!s.includes('1 credit')&&!s.includes('Try again (free)'),'owner credits and usage meter removed from '+file);

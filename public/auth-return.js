@@ -10,16 +10,21 @@ export function parseAuthReturn(pathname, search) {
   let page;
   if (/^\/BlastyBiz(?:\.html)?$/.test(pathname)) {
     page = 'BlastyBiz.html';
-    if (q.get('tab') === 'schedule') {
-      params.tab = 'schedule';
-      for (const k of ['scheduleCampaign','scheduleAd','scheduledBlastId']) {
-        if (!valid(q.get(k))) return null;
-        params[k] = q.get(k);
-      }
-    } else {
-      if (!valid(q.get('draftId'))) return null;
-      params.draftId = q.get('draftId');
+    const tabs = ['profile','story','create','platforms','schedule','history','account'];
+    if (q.has('tab')) { if (!tabs.includes(q.get('tab'))) return null; params.tab = q.get('tab'); }
+    for (const k of ['cid','adId','draftId','scheduleCampaign','scheduleAd','scheduledBlastId','sourceBlastId']) {
+      if (q.has(k)) { if (!valid(q.get(k))) return null; params[k] = q.get(k); }
     }
+    if (q.has('step')) { if (!['1','5'].includes(q.get('step'))) return null; params.step = q.get('step'); }
+    if (q.get('newcampaign') === '1') params.newcampaign = '1';
+    if (!!params.scheduleAd !== !!params.scheduleCampaign) return null;
+  } else if (/^\/BlastyBiz-Listing-Preview(?:\.html)?$/.test(pathname)) {
+    page = 'BlastyBiz-Listing-Preview.html';
+    if (!valid(q.get('draftId'))) return null;
+    params.draftId = q.get('draftId');
+  } else if (/^\/BlastyBiz-Connect(?:\.html)?$/.test(pathname)) {
+    page = 'BlastyBiz-Connect.html';
+    if (q.get('returnTo') === 'onboarding') params.returnTo = 'onboarding';
   } else if (/^\/BlastyBiz-Publishing-Status(?:\.html)?$/.test(pathname)) {
     page = 'BlastyBiz-Publishing-Status.html';
     if (!valid(q.get('draftId'))) return null;
@@ -43,4 +48,17 @@ export function restoreAuthReturn(raw) {
     // Upgrade the original draft-only representation in the same storage key.
     return parseAuthReturn('/' + (value.page || 'BlastyBiz.html'), new URLSearchParams(value.params || value));
   } catch (_) { return null; }
+}
+
+// Connection detours reuse the same allowlist and owner/business checks.
+export function rememberConnectionReturn(pathname, search, ownerUid) {
+  const target = parseAuthReturn(pathname, search);
+  if (!target) return;
+  target.params.ownerUid = ownerUid;
+  sessionStorage.setItem('bb_connection_return', JSON.stringify(target));
+}
+export function connectionReturn(ownerUid, bizId) {
+  const target = restoreAuthReturn(sessionStorage.getItem('bb_connection_return'));
+  return target && target.params.ownerUid === ownerUid && target.params.bizId === bizId
+    ? target.page + '?' + new URLSearchParams(target.params) : null;
 }

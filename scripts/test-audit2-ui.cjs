@@ -8,7 +8,7 @@ const returnCode=read('public/auth-return.js').replace(/^export /gm,'');
 const parse={URLSearchParams};vm.runInNewContext(returnCode,parse);
 const login=read('public/BlastyBiz-Login.html'),connected=read('public/BlastyBiz-Connected.html');
 async function returnTests(){
- const destinations=[['/BlastyBiz.html','bizId=b&ownerUid=u&draftId=d'],['/BlastyBiz','bizId=b&ownerUid=u&tab=schedule&scheduleCampaign=c&scheduleAd=a&scheduledBlastId=d'],['/BlastyBiz-Publishing-Status','bizId=b&draftId=d&ownerUid=u'],['/BlastyBiz-Connected.html','bizId=b&ownerUid=u&connected=facebook&selection=nonce']];
+ const destinations=[['/BlastyBiz.html','bizId=b&ownerUid=u&cid=c&adId=a&tab=create&step=5'],['/BlastyBiz-Listing-Preview.html','bizId=b&ownerUid=u&draftId=d'],['/BlastyBiz-Connect.html','bizId=b&ownerUid=u'],['/BlastyBiz','bizId=b&ownerUid=u&tab=schedule&scheduleCampaign=c&scheduleAd=a&scheduledBlastId=d'],['/BlastyBiz-Publishing-Status','bizId=b&draftId=d&ownerUid=u'],['/BlastyBiz-Connected.html','bizId=b&ownerUid=u&connected=facebook&selection=nonce']];
  for(const [pathname,search]of destinations){
   const saved=new Map(),c={...parse,URLSearchParams,window:{location:{pathname,search}},sessionStorage:{setItem:(k,v)=>saved.set(k,v)}};
   vm.runInNewContext(cut(read('public/auth-guard.js'),'function rememberDraftDestination','// Safety valve'),c);c.rememberDraftDestination();
@@ -17,7 +17,7 @@ async function returnTests(){
   vm.runInNewContext(cut(login,'async function afterAuth','function showLoginForm'),d);
   await d.afterAuth({uid:'other'});ok(!d.window.location.href&&saved.size===1&&notes.length===1,'wrong account retains return and shows actionable message');
   await d.afterAuth({uid:'u'});const url=new URL(d.window.location.href,'https://example.com');ok(url.searchParams.get('bizId')==='b'&&!saved.size,'correct account returns to initiating business');
-  for(const key of ['draftId','scheduleCampaign','scheduleAd','scheduledBlastId','selection'])if(new URLSearchParams(search).has(key))ok(url.searchParams.get(key)===new URLSearchParams(search).get(key),'retains '+key);
+  for(const key of ['cid','adId','tab','step','draftId','scheduleCampaign','scheduleAd','scheduledBlastId','selection'])if(new URLSearchParams(search).has(key))ok(url.searchParams.get(key)===new URLSearchParams(search).get(key),'retains '+key);
  }
  for(const [p,q]of [['//evil.invalid','bizId=b&draftId=d'],['/BlastyBiz.html','bizId=../b&draftId=d'],['/BlastyBiz.html','bizId=b&tab=schedule&scheduleCampaign=c'],['/BlastyBiz-Connected.html','bizId=b&connected=constructor']])ok(!parse.parseAuthReturn(p,q),'unsafe or incomplete return rejected');
 }
@@ -36,12 +36,30 @@ function intentTests(){
  }
  ok(read('public/BlastyBiz-Start.html').includes('BlastyBiz-Login.html?intent=signin'),'Start sign-in declares explicit returning intent');
 }
+function readinessTests(){
+ const dom=new JSDOM('',{url:'https://example.com',runScripts:'outside-only'}),w=dom.window;
+ w.eval(read('public/platforms-authority.js'));w.eval(read('public/platforms-config.js').replace(/^import .*;$/gm,'').replace(/^export /gm,''));w.eval(returnCode);
+ const saved={status:'connected',pageId:'p',igUserId:'i',accountId:'a',locationId:'l',expiresAt:new Date(Date.now()+3600000).toISOString()};
+ ok(w.deliveryReadiness('facebook',null).state==='connection','missing saved connection asks for connection');
+ ok(w.deliveryReadiness('facebook',undefined).state==='checking','unloaded connection is never claimed ready');
+ ok(w.deliveryReadiness('facebook',saved).state==='ready','saved destination and future grant ready');
+ ok(w.deliveryReadiness('facebook',{...saved,expiresAt:'2000-01-01'}).state==='connection','expired Meta grant asks for connection');
+ ok(w.deliveryReadiness('google',{...saved,expiresAt:'2000-01-01'},{business:{locationType:'physical'}}).state==='ready','Google refreshable access expiry does not force reconnection');
+ ok(w.deliveryReadiness('instagram',saved,{images:[]}).state==='photo','Instagram exposes missing required photo');
+ ok(w.deliveryReadiness('instagram',saved,{images:[{url:'https://example.com/a.jpg'}]}).state==='ready','Instagram with saved destination and photo is ready');
+ ok(w.deliveryReadiness('craigslist',null).state==='manual','manual destination stays explicitly manual');
+ ok(w.deliveryReadiness('google',saved,{business:{locationType:'online'}}).state==='unavailable','online-only business remains ineligible for Google');
+ w.rememberConnectionReturn('/BlastyBiz.html','?bizId=b&cid=c&adId=a&tab=create&step=5','u');
+ ok(w.connectionReturn('u','b').includes('step=5'),'connection detour preserves review step');
+ ok(!w.connectionReturn('other','b')&&!w.connectionReturn('u','other'),'connection return stays with exact owner and business');
+ dom.window.close();
+}
 async function connectedTests(){
  const code=[...connected.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)][0][1].replace(/^import .*;$/gm,'');
  async function page(query,{record,readFailure=false,selection=false,owner='u',cancelResponse}={}){
   const navigation=[],vc=new VirtualConsole();vc.on('jsdomError',e=>{if(e.message.includes('navigation'))navigation.push(e);});
   const dom=new JSDOM('<div id="page-content"></div>',{url:'https://example.com/BlastyBiz-Connected.html?'+query,runScripts:'dangerously',virtualConsole:vc}),w=dom.window,calls=[],fires=[];
-  w.eval(read('public/escape-utils.js'));Object.assign(w,{auth:{authStateReady:()=>Promise.resolve()},db:{},onAuthStateChanged:(_a,cb)=>cb({uid:owner,getIdToken:async()=>'fixture'}),doc:(_db,...parts)=>parts.join('/'),getDoc:async path=>{
+  w.eval(read('public/escape-utils.js'));w.eval(read('public/platforms-authority.js'));w.eval(read('public/platforms-config.js').replace(/^import .*;$/gm,'').replace(/^export /gm,''));w.eval(returnCode);Object.assign(w,{auth:{authStateReady:()=>Promise.resolve()},db:{},onAuthStateChanged:(_a,cb)=>cb({uid:owner,getIdToken:async()=>'fixture'}),doc:(_db,...parts)=>parts.join('/'),getDoc:async path=>{
    calls.push(path);if(readFailure)throw Error('Connection read unavailable');const data=path.endsWith('/facebook')?record:path.endsWith('/instagram')?null:{};return {exists:()=>!!data,data:()=>data};
   },BBBlasty:{fire:name=>fires.push(name)},fetch:async(url,options)=>{
    calls.push({url,options});if(options.method==='POST'&&JSON.parse(options.body).cancel&&cancelResponse)return cancelResponse();return {ok:true,json:async()=>options.method==='POST'?{businessId:'b',platform:'facebook'}:{businessId:'b',platform:'facebook',choices:[{id:'one',label:'First'},{id:'two',label:'<img onerror=alert(1)> Intended'}]}};
@@ -76,7 +94,7 @@ async function connectedTests(){
  }
 
 }
-(async()=>{await returnTests();intentTests();await connectedTests();
+(async()=>{await returnTests();intentTests();readinessTests();await connectedTests();
  // Parse every changed page's scripts: a successful fixture must not hide a syntax error elsewhere.
  for(const file of ['public/BlastyBiz-Login.html','public/BlastyBiz-Connected.html','public/BlastyBiz-Publishing-Status.html'])for(const m of read(file).matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)){
   if(m[0].includes('type="importmap"'))continue;new vm.Script(m[1].replace(/^import[\s\S]*?from\s+['"][^'"]+['"];?/gm,''));checks++;

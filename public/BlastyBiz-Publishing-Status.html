@@ -5,7 +5,7 @@
 <meta charset="UTF-8"/>
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="stylesheet" href="global-style.css?v=1786304797822" />
+<link rel="stylesheet" href="global-style.css?v=20261004-flow" />
 <title>BlastyBiz — Publishing Status</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -22,7 +22,7 @@
   }
 }
 </script>
-  <script type="module" src="./auth-guard.js"></script>
+  <script type="module" src="./auth-guard.js?v=20261004-flow"></script>
 <script src="blastybiz-menu.js?v=7"></script>
 <script src="escape-utils.js"></script>
 <script src="blasty-registry.js"></script>
@@ -62,8 +62,8 @@
     <div class="stat-card">
       <div class="stat-num" id="hours-saved">0</div>
       <div class="stat-label">
-        <strong>Hours Saved This Month</strong>
-        BlastyBiz handled the posting so you didn't have to.
+        <strong>Estimated Time Saved</strong>
+        For this view, estimated at 48 minutes per automatically posted destination. Manual posting still takes your time.
       </div>
     </div>
 
@@ -77,135 +77,16 @@
 
 <div class="toast" id="toast"></div>
 
-<script>
-const PLATFORM_META = {
-  google:     { name: 'Google Business', icon: 'G', piClass: 'pi-google'  },
-  facebook:   { name: 'Facebook Page',   icon: 'f', piClass: 'pi-fb'      },
-  instagram:  { name: 'Instagram',       icon: '📸', piClass: 'pi-ig'     },
-  bing:       { name: 'Bing Places',     icon: 'B', piClass: 'pi-bing'    },
-  applemaps:  { name: 'Apple Maps',      icon: '🍎', piClass: 'pi-apple'  },
-  yelp:       { name: 'Yelp',            icon: 'Y', piClass: 'pi-yelp'    },
-  nextdoor:   { name: 'Nextdoor',        icon: 'N', piClass: 'pi-nd'      },
-  craigslist: { name: 'Craigslist',      icon: 'C', piClass: 'pi-cl'      },
-  fbmarket:   { name: 'FB Marketplace',  icon: 'M', piClass: 'pi-fbm'     },
-};
 
-const STATUS_CONFIG = {
-  canceled:         { label: 'Canceled', cls: 'pill-pending', rowCls: '' },
-  success:          { label: 'Live',        cls: 'pill-live',    rowCls: 'status-live' },
-  manual_required:  { label: 'Action Needed', cls: 'pill-manual', rowCls: 'status-manual' },
-  manual_posted: {label:'Posted by you',cls:'pill-live',rowCls:'status-live'},
-  manual_skipped: {label:'Skipped',cls:'pill-pending',rowCls:''},
-  manual_lapsed: {label:'Not posted',cls:'pill-pending',rowCls:''},
-  skipped: {label:'Skipped',cls:'pill-pending',rowCls:''},
-  manual_completed: { label: 'Posted',      cls: 'pill-live',    rowCls: 'status-live' },
-  processing:       { label: 'Publishing', cls: 'pill-running', rowCls: 'status-running' },
-  manual_ready: { label: 'Action Needed', cls: 'pill-manual', rowCls: 'status-manual' },
-  manual_followup:  { label: 'Action Needed', cls: 'pill-manual', rowCls: 'status-manual' },
-  running:          { label: 'Publishing',  cls: 'pill-running', rowCls: 'status-running' },
-  pending:          { label: 'Waiting',     cls: 'pill-pending', rowCls: '' },
-  failed:           { label: 'Failed',      cls: 'pill-failed',  rowCls: 'status-failed' },
-  needs_connection: { label: 'Not connected yet', cls: 'pill-manual', rowCls: 'status-manual' },
-  retry_pending:    { label: 'Retrying',    cls: 'pill-running', rowCls: 'status-running' },
-};
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500)}
-
-let scheduleFocused = false;
-function focusFutureSchedule() {
-  const host = document.getElementById('future-blast-schedule');
-  if (scheduleFocused || location.hash !== '#future-blast-schedule' || !host || host.hidden ||
-      document.getElementById('content-state').classList.contains('hidden')) return;
-  scheduleFocused = true;
-  requestAnimationFrame(() => host.scrollIntoView?.({block:'start'}));
-}
-
-function renderJobs(jobs) {
-  const total = jobs.length;
-  const done  = jobs.filter(j => ['success','manual_completed'].includes(j.status)).length;
-  const pct   = total ? Math.round((done / total) * 100) : 0;
-
-  document.getElementById('progress-count').textContent = `${done} of ${total} Complete`;
-  document.getElementById('progress-bar').style.width = pct + '%';
-
-  const list = document.getElementById('platform-list');
-  const expanded = new Set([...list.querySelectorAll('details.platform-row[open]')].map(row => row.dataset.jobid));
-  list.replaceChildren();
-  jobs.forEach(job => {
-    const meta = PLATFORM_META[job.platform] || { name: job.platform, icon: '●' };
-    const status = STATUS_CONFIG[job.status] || { label: job.status, cls: 'pill-pending', rowCls: '' };
-    const manual = ['manual_required', 'manual_followup', 'manual_ready'].includes(job.status);
-    const row = document.createElement('details');
-    row.className = 'platform-row ' + status.rowCls;
-    row.dataset.jobid = job.jobId;
-    row.setAttribute('name', 'publishing-platforms');
-    row.open = expanded.has(job.jobId);
-    const header = document.createElement('summary');
-    header.className = 'platform-heading';
-    const icon = document.createElement('span');
-    icon.className = 'platform-icon ' + (meta.piClass || 'pi-default'); icon.setAttribute('aria-hidden','true'); icon.textContent = meta.icon;
-    const info = document.createElement('span'); info.className = 'platform-info';
-    const name = document.createElement('span'); name.className = 'platform-name'; name.textContent = meta.name;
-    const pill = document.createElement('span'); pill.className = 'status-pill ' + status.cls; pill.textContent = status.label;
-    info.append(name,pill); header.append(icon,info);
-    { const expand = document.createElement('span'); expand.className = 'platform-expand'; expand.setAttribute('aria-hidden','true'); expand.textContent = '⌄'; header.append(expand); }
-    row.append(header);
-    {
-      const content = document.createElement('div');
-      content.className = 'platform-content';
-      const message = document.createElement('p');
-      message.className = 'platform-msg';
-      message.textContent = manual ? 'Copy your listing, then open the platform to post it.' : (job.customerVisibleMessage || status.label);
-      content.append(message);
-      const actions = document.createElement('div');
-      actions.className = 'action-btns';
-      if (manual) {
-        const copy = document.createElement('button');
-        copy.type = 'button'; copy.className = 'btn-copy'; copy.textContent = 'Copy Listing';
-        copy.onclick = () => copyListing(job.jobId, job.payload?.adaptedContent || '');
-        actions.append(copy);
-      }
-      if (job.status === 'needs_connection') {
-        const connect = document.createElement('a');
-        connect.href = 'BlastyBiz.html?' + new URLSearchParams({bizId:new URLSearchParams(location.search).get('bizId')||'',tab:'platforms'});
-        connect.className = 'btn-copy'; connect.textContent = 'Connect'; actions.append(connect);
-      }
-      content.append(actions); row.append(content);
-    }
-    list.append(row);
-  });
-
-  const hoursSaved = (done * 0.8).toFixed(1);
-  document.getElementById('hours-saved').textContent = hoursSaved;
-
-  document.getElementById('loading-state').classList.add('hidden');
-  document.getElementById('content-state').classList.remove('hidden');
-  focusFutureSchedule();}
-
-function copyListing(jobId, text) {
-  navigator.clipboard.writeText(text).then(() => showToast('Listing copied!')).catch(() => showToast('Could not copy. Please try again.'))}
-
-function showEmptyState(msg) {
-  document.getElementById('loading-state').style.display = 'none';
-  document.getElementById('content-state').classList.remove('hidden');
-  focusFutureSchedule();
-  document.getElementById('progress-count').textContent = '0 of 0 Complete';
-  document.getElementById('progress-bar').style.width = '0%';
-  document.getElementById('platform-list').innerHTML =
-    `<div class="empty-state-msg">${msg}</div>`;
-  const hoursSaved = document.getElementById('hours-saved');
-  if (hoursSaved) hoursSaved.textContent = '0'}
-</script>
 
 <script src="schedule-utils.js"></script>
-<script src="lifecycle-ui.js?v=20261002-timezone-picker"></script>
-<script src="lifecycle-status.js?v=20261002-thumbnails"></script>
+<script src="lifecycle-ui.js?v=20261004-flow"></script>
+<script src="platforms-authority.js"></script>
+<script src="photo-handoff.js?v=20261004-flow"></script>
+<script src="lifecycle-status.js?v=20261004-flow"></script>
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
+import { rememberConnectionReturn } from './auth-return.js?v=20261004-flow';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, query, where, orderBy, limit, onSnapshot, getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -222,7 +103,7 @@ onAuthStateChanged(auth, async (user) => {
 
     const params  = new URLSearchParams(window.location.search);
     const draftId = params.get('draftId');
-    BBLifecycleStatus.initialize({businessId:bizId,blastId:draftId,token:()=>user.getIdToken()},userData);
+    BBLifecycleStatus.initialize({businessId:bizId,blastId:draftId,token:()=>user.getIdToken(),rememberConnection:()=>rememberConnectionReturn(location.pathname,location.search,user.uid)},userData);
 
     // Offer future scheduling only after this Blast has been submitted.
     if (draftId) {

@@ -8,13 +8,14 @@ const main=scripts.find(m=>m[2].includes('var PLATFORM_META'))[2];
 const bootstrap=scripts.find(m=>m[1].includes('module')&&m[2].includes('auth.authStateReady'))[2].replace(/^import .*;\s*$/gm,'');
 let checks=0;const ok=(value,message)=>{assert(value,message);checks++;};
 const tick=async()=>{for(let i=0;i<10;i++)await new Promise(r=>setImmediate(r));};
-function setup({failLoad=false,status='draft'}={}){
+function setup({failLoad=false,status='draft',connected=true}={}){
  const dom=new JSDOM(html,{url:'https://blastybiz.com/BlastyBiz-Listing-Preview.html?bizId=b&draftId=d',runScripts:'outside-only',virtualConsole:new VirtualConsole()});
  const w=dom.window;let boot,calls=[],reject=true,revision=1;
  const data={status,adId:'a',adName:'Saved blast',campaignId:'c',campaignName:'GEM',revision:1,name:'David',adaptations:{facebook:'Saved Facebook copy',yelp:'Saved Yelp copy'},platformStatus:{facebook:'approved',yelp:'approved'},imagesByPlatform:{facebook:['https://example.com/car.jpg'],yelp:['https://example.com/car.jpg']}};
- Object.assign(w,{auth:{authStateReady:()=>Promise.resolve()},db:{},onAuthStateChanged:(auth,callback)=>{boot=callback({uid:'u',getIdToken:async()=> 'fixture'});},doc:(db,...parts)=>parts.join('/'),getDoc:async path=>{if(failLoad)throw Error('Connection lost');return {exists:()=>true,data:()=>path==='users/u'?{activeBusiness:'b'}:{...data,revision}};},BBBlasty:{fire(){}},fetch:async(url,opts)=>{calls.push({url,body:JSON.parse(opts.body)});await tick();return {ok:!reject,status:reject?503:200,json:async()=>reject?{error:'Connection unavailable'}:{}};}});
- for(const file of ['escape-utils.js','platforms-authority.js','business-form.js'])w.eval(fs.readFileSync('public/'+file,'utf8'));
- w.eval(main);w.eval(bootstrap);
+ Object.assign(w,{auth:{authStateReady:()=>Promise.resolve()},db:{},onAuthStateChanged:(auth,callback)=>{boot=callback({uid:'u',getIdToken:async()=> 'fixture'});},doc:(db,...parts)=>parts.join('/'),getDoc:async path=>{if(failLoad)throw Error('Connection lost');return {exists:()=>true,data:()=>path==='users/u'?{activeBusiness:'b'}:path.includes('platformConnections')?(connected?{status:'connected',pageId:'page',expiresAt:{seconds:Math.floor(Date.now()/1000)+3600}}:{}):{...data,revision}};},BBBlasty:{fire(){}},fetch:async(url,opts)=>{if(!opts?.body)return {ok:true,blob:async()=>new w.Blob(['image'],{type:'image/png'})};calls.push({url,body:JSON.parse(opts.body)});await tick();return {ok:!reject,status:reject?503:200,json:async()=>reject?{error:'Connection unavailable'}:{}};}});
+ for(const file of ['escape-utils.js','platforms-authority.js','business-form.js','photo-handoff.js'])w.eval(fs.readFileSync('public/'+file,'utf8'));
+ w.eval(fs.readFileSync('public/platforms-config.js','utf8').replace(/^import .*;$/gm,'').replace(/export /g,''));
+ w.rememberConnectionReturn=()=>{};w.eval(main);w.eval(bootstrap);
  return {dom,w,calls,boot:async()=>{await tick();await boot;},allow:()=>{reject=false;},stale:()=>{revision=2;},submittedElsewhere:()=>{data.status='approved';}};
 }
 (async()=>{
@@ -25,7 +26,7 @@ function setup({failLoad=false,status='draft'}={}){
  ok(back.searchParams.get('bizId')==='b'&&back.searchParams.get('cid')==='c'&&back.searchParams.get('adId')==='a'&&back.searchParams.get('step')==='5','Back to this blast preserves the same business, campaign, Ad and review step');
  ok(w.document.getElementById('pub-version-label').textContent.includes('Current prepared'),'preview identifies current saved work');
  ok(!w.document.getElementById('v1-publish-schedule')&&!w.document.querySelector('input[name="bb-send"]'),'Blast page has no scheduling choices');
- ok(typeof w._firestoreApprove==='function'&&!button.disabled&&button.textContent.includes('Blast It!'),'Blast It becomes ready with a connected handler');
+ ok(typeof w._firestoreApprove==='function'&&!button.disabled&&button.textContent.includes('Blast Now'),'Blast It becomes ready with a connected handler');
  ok(w.document.getElementById('pub-next-row').classList.contains('hidden'),'future scheduling navigation waits for submission');
  const one=w.publishBlast(),two=w.publishBlast();await Promise.all([one,two]);
  ok(f.calls.length===1&&f.calls[0].url.endsWith('/approveDraft'),'rapid taps use one existing approval request');
@@ -45,6 +46,7 @@ function setup({failLoad=false,status='draft'}={}){
  ok(target.pathname.endsWith('BlastyBiz.html')&&target.searchParams.get('bizId')==='b'&&target.searchParams.get('sourceBlastId')==='d'&&target.searchParams.get('tab')==='schedule'&&target.searchParams.get('scheduleAd')==='a'&&target.searchParams.get('scheduleCampaign')==='c','navigation preserves canonical business and blast and opens existing scheduler');
  ok(w.document.getElementById('manual-panel').compareDocumentPosition(scheduleLink)&w.Node.DOCUMENT_POSITION_FOLLOWING,'scheduling button is below every manual platform');
  f.dom.window.close();
+ const disconnected=setup({connected:false});await disconnected.boot();await disconnected.w.publishBlast();ok(disconnected.calls.length===0&&disconnected.w.document.getElementById('pub-warn').textContent.includes('destinations'),'missing connection cannot be presented as ready or sent blindly');disconnected.dom.window.close();
  const broken=setup({failLoad:true});await broken.boot();const retry=broken.w.document.getElementById('publish-btn');
  ok(retry.textContent==='Reload blast'&&!retry.disabled&&broken.w.document.getElementById('pub-warn').textContent.includes('Connection lost'),'startup failure gives a visible explanation and reload control');broken.dom.window.close();
  // Future scheduling is opt-in after submission and never resubmits the current Blast.

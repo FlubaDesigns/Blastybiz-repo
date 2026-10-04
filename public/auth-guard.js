@@ -2,7 +2,7 @@ import { auth } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { pingActivity } from './activity-ping.js';
 
-import { parseAuthReturn } from './auth-return.js';
+import { parseAuthReturn } from './auth-return.js?v=20261004-flow';
 function rememberDraftDestination() {
   const target = parseAuthReturn(window.location.pathname, window.location.search);
   if (target) { try { sessionStorage.setItem('bb_draft_return', JSON.stringify(target)); } catch (_) {} }

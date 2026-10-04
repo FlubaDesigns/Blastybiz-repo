@@ -63,7 +63,7 @@ async function browser(){
  ok(A.normalizeSelection({id:'bing',type:'api'}).type==='manual'&&A.normalizeSelection({id:'unknown',type:'api'}).type==='manual','cached and unknown selections fail closed');
  const html=read('public/BlastyBiz-Listing-Preview.html'),c={BBPlatforms:A,window:{}};
  vm.runInNewContext(cut(html,'var PLATFORM_META =','function showToast'),c);
- for(const plan of ['starter','trial','pro','agency']){c.window.setPubPlan(plan);ok(c.willAutoPost('facebook')&&!c.willAutoPost('bing')&&!c.willAutoPost('unknown'),plan+': preview matches server delivery');}
+ for(const plan of ['starter','trial','pro','agency']){c.window.setPubPlan(plan);ok(c.isAutoCapable('facebook')&&!c.isAutoCapable('bing')&&!c.isAutoCapable('unknown'),plan+': preview matches server delivery');}
  const main=read('public/BlastyBiz.html');const elements={};const make=id=>elements[id]||=( {id,style:{},classList:{values:new Set(['visible']),add(k){this.values.add(k)},remove(k){this.values.delete(k)},contains(k){return this.values.has(k)},toggle(k,on){on?this.add(k):this.remove(k)}},getAttribute:()=> 'trial starter'} );
  const overlays=['history-pro-overlay','schedule-pro-overlay','library-overlay'].map(make);
  const ctx={window:{_bbUserPlan:'starter'},document:{getElementById:make,querySelectorAll:()=>overlays}};

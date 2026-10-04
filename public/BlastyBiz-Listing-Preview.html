@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="global-style.css?v=1786304797822" />
+  <link rel="stylesheet" href="global-style.css?v=20261004-flow" />
   <title>BlastyBiz — Blast It!</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -22,7 +22,7 @@
   }
 }
 </script>
-  <script type="module" src="./auth-guard.js"></script>
+  <script type="module" src="./auth-guard.js?v=20261004-flow"></script>
   <script src="blastybiz-menu.js?v=7"></script>
   <!-- Page styles live in global-style.css (LISTING PREVIEW PAGE section). -->
 <script src="blasty-registry.js"></script>
@@ -42,8 +42,8 @@
   <!-- ── HERO ─────────────────────────────────────── -->
   <section class="card pub-hero">
     <div class="pub-page-eyebrow" id="pub-version-label">Saved blast preview</div>
-    <h1 class="big-title">Blast it!</h1>
-    <p class="sub" id="pub-sub">Review your copy below, then tap Blast It!</p>
+    <h1 class="big-title">Review My Blast</h1>
+    <p class="sub" id="pub-sub">Check your copy and photos, then choose when to send.</p>
     <a id="pub-back-to-ad" class="pub-copy-btn" hidden>← Back to this blast</a>
   </section>
 
@@ -75,6 +75,7 @@
     <div class="card-title" id="pub-action-title">🚀 Ready to go</div>
     <p id="pub-action-sub" class="helper mb-16" style="font-size:14px;color:var(--muted,#888);">Tap to publish your blast to all selected platforms.</p>
     <button type="button" class="pub-publish-btn" id="publish-btn" onclick="publishBlast()" disabled>Loading blast…</button>
+    <a id="pub-open-schedule" class="pub-copy-btn" hidden>Open Schedule →</a>
     <p id="pub-status-row" class="hidden"><a id="pub-status-link" class="pub-copy-btn">View Blast Status</a></p>
     <div id="pub-warn" class="pub-warn hidden"></div>
   </section>
@@ -95,7 +96,7 @@
   </section>
 
   <nav id="pub-next-row" class="section-mt pub-action-card hidden" aria-label="Next step">
-    <a id="pub-schedule-link" class="pub-publish-btn" style="display:block;box-sizing:border-box;margin:0 auto;text-align:center;text-decoration:none;">Continue to Scheduling →</a>
+    <a id="pub-schedule-link" class="pub-copy-btn" style="display:block;box-sizing:border-box;margin:0 auto;text-align:center;text-decoration:none;">Schedule another blast →</a>
   </nav>
 
   </div><!-- /.pub-flow -->
@@ -117,6 +118,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="platforms-authority.js"></script>
+<script src="photo-handoff.js?v=20261004-flow"></script>
 <script>
 var PLATFORM_META = Object.fromEntries(BBPlatforms.records.map(p => [p.id, {
   ...BBPlatforms.PLATFORM_CAPABILITY_MAP[p.id], icon:p.icon, name:p.name,
@@ -142,9 +144,11 @@ function isAutoCapable(pid) {
   var m = PLATFORM_META[pid];
   return !!m && m.capabilityLevel !== 'manual_assisted';
 }
-function willAutoPost(pid) {
-  return isAutoCapable(pid);
+function previewReadiness(pid) {
+  return window._bbDeliveryReadiness ? window._bbDeliveryReadiness(pid, window._bbConnections === undefined ? undefined : (Object.hasOwn(window._bbConnections,pid)?window._bbConnections[pid]:null), {business:window._bbPreviewBusiness||{},images:drafts[pid]?.images||[]}) : {state:isAutoCapable(pid)?'checking':'manual',label:isAutoCapable(pid)?'Checking connection':'You post it',detail:''};
 }
+function willAutoPost(pid) { return previewReadiness(pid).state === 'ready'; }
+
 
 function showToast(msg) {
   var t = document.getElementById('toast');
@@ -284,6 +288,9 @@ function populateFromDraftData(draftData) {
     back.href = 'BlastyBiz.html?' + new URLSearchParams({bizId:window.businessId,cid:draftData.campaignId,adId:draftData.adId,tab:'create',step:'5'});
     back.hidden = false;
     back.textContent = submitted ? '← Back to current work' : '← Back to this blast';
+    const schedule=document.getElementById('pub-open-schedule');
+    schedule.hidden=submitted;
+    schedule.href='BlastyBiz.html?'+new URLSearchParams({bizId:window.businessId,cid:draftData.campaignId,adId:draftData.adId,tab:'schedule',scheduleAd:draftData.adId,scheduleCampaign:draftData.campaignId});
   }
   drafts    = {};
   _railPids = [];
@@ -314,12 +321,14 @@ function populateFromDraftData(draftData) {
 
   var platformIds   = Object.keys(drafts);
   var autoCount     = platformIds.filter(willAutoPost).length;
-  var manualCount   = platformIds.length - autoCount;
+  var manualCount = platformIds.filter(pid=>!isAutoCapable(pid)).length;
+  var blockedCount = platformIds.length-autoCount-manualCount;
 
   var subEl = document.getElementById('pub-sub');
   if (subEl) {
     var parts = [];
-    if (autoCount)   parts.push(autoCount   + ' platform' + (autoCount   > 1 ? 's' : '') + ' will auto-post');
+    if (autoCount) parts.push(autoCount+' ready to auto-post');
+    if (blockedCount) parts.push(blockedCount+' need attention before sending');
     if (manualCount) parts.push(manualCount + ' platform' + (manualCount > 1 ? 's' : '') + ' need' + (manualCount === 1 ? 's' : '') + ' a quick paste');
     subEl.textContent = parts.length ? parts.join(' · ') + '.' : 'Your blast is ready to publish.';
   }
@@ -332,13 +341,16 @@ function populateFromDraftData(draftData) {
         var meta    = PLATFORM_META[pid] || { icon: pid[0].toUpperCase(), name: pid, capabilityLevel: 'manual_assisted' };
         var isAuto  = willAutoPost(pid);
         var locked = false;
-        var typeStr = isAuto ? 'Blasty Posts It' : 'Ready for You to Post';
+        var readiness=previewReadiness(pid);
+        var typeStr=readiness.label;
         var badgeCls = isAuto ? 'badge auto' : 'badge manual';
         var badgeTxt = typeStr;
         return '<div class="pub-plat-row' + (locked ? ' is-locked' : '') + '">'
           + '<div class="pub-plat-icon">' + escHtml(meta.icon) + '</div>'
           + '<div class="pub-plat-info"><div class="pub-plat-name">' + escHtml(meta.name) + '</div><div class="pub-plat-type">' + typeStr + '</div></div>'
-          + '<span class="' + badgeCls + '">' + badgeTxt + '</span>'
+          + '<span class="' + badgeCls + '">' + escHtml(badgeTxt) + '</span>'
+          + (['connection','checking'].includes(readiness.state) ? '<button type="button" class="pub-copy-btn" onclick="window._bbOpenConnections()">Connect / check account</button>' : '')
+          + (readiness.state==='photo' ? '<a class="pub-copy-btn" href="'+escHtml(back.href)+'">Add required photo</a>' : '')
           + '</div>';
       }).join('');
     } else {
@@ -358,12 +370,13 @@ function populateFromDraftData(draftData) {
   // Publish action sub-text
   var actionSub = document.getElementById('pub-action-sub');
   if (actionSub) {
-    if (manualCount > 0 && autoCount > 0) {
+    if(blockedCount){actionSub.textContent='Some destinations need attention above. Your saved copy is safe. Connect the account or return to Review to change your selection.';}
+    else if (manualCount > 0 && autoCount > 0) {
       actionSub.textContent = autoCount + ' platform' + (autoCount > 1 ? 's' : '') + ' will auto-post. ' + manualCount + ' platform' + (manualCount > 1 ? 's' : '') + ' need' + (manualCount === 1 ? 's' : '') + ' a manual paste — copy-ready text is below.';
     } else if (manualCount > 0) {
       actionSub.textContent = 'These platforms need a manual paste — your copy is ready in the section below.';
     } else {
-      actionSub.textContent = 'All ' + autoCount + ' platform' + (autoCount > 1 ? 's' : '') + ' will auto-post. No manual steps needed.';
+      actionSub.textContent = 'All ' + autoCount + ' platform' + (autoCount > 1 ? 's' : '') + ' are ready to auto-post. Progress appears after you send.';
     }
   }
 
@@ -418,7 +431,7 @@ function renderManualPanel() {
   // Anything that isn't actually going to auto-post needs copy-ready text —
   // on the free plan that's every platform in the blast.
   var manualKeys = Object.keys(drafts).filter(function(k){
-    return !willAutoPost(k);
+    return !isAutoCapable(k);
   });
   var panel = document.getElementById('manual-platform-list');
   var section = document.getElementById('manual-panel');
@@ -438,10 +451,15 @@ function renderManualPanel() {
       +   '<button onclick="copyPlatformText(\'' + k + '\')" class="copy-platform-btn">📋 Copy</button>'
       + '</div>'
       + '<textarea id="manual-text-' + k + '" readonly class="manual-textarea">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</textarea>'
-      + photoStripHtml(k, false)
+      + '<div id="manual-share-'+k+'" class="qp-photo-share"></div><div id="manual-photos-'+k+'"></div>'
       + (meta.manualInstructions ? '<div class="manual-note mt-8">👉 ' + meta.manualInstructions + '</div>' : '')
       + '</div>';
   }).join('');
+  manualKeys.forEach(pid=>{
+    const photos=(drafts[pid].images||[]).filter(safePhotoUrl).map(url=>({url}));
+    BBPhotoHandoff.renderPhotos(document.getElementById('manual-photos-'+pid),pid,photos);
+    BBPhotoHandoff.renderShare(document.getElementById('manual-share-'+pid),pid,photos,()=>drafts[pid].text);
+  });
 }
 
 function copyPlatformText(key) {
@@ -459,12 +477,14 @@ function showBlastError(message) {
 
 function markBlastSubmitted() {
   _blastSubmitted = true;
+  document.getElementById('pub-open-schedule').hidden=true;
   var btn = document.getElementById('publish-btn');
   if (btn) { btn.disabled = true; btn.textContent = '✓ Blasted'; btn.classList.add('is-blasted'); }
   document.getElementById('pub-action-title').textContent = 'Blast submitted';
   document.getElementById('pub-action-sub').textContent = 'This blast has already been submitted. You can still copy text and save photos below.';
   var link = document.getElementById('pub-status-link');
   link.href = 'BlastyBiz-Publishing-Status.html?' + new URLSearchParams({draftId:window.draftDocId,bizId:window.businessId});
+  link.textContent='Track Results →';link.className='pub-publish-btn';
   document.getElementById('pub-status-row').classList.remove('hidden');
   document.getElementById('pub-schedule-link').href = 'BlastyBiz.html?' + new URLSearchParams({bizId:window.businessId,tab:'schedule',cid:window._scheduleCampaignId||'',adId:window._scheduleAdId||'',scheduleAd:window._scheduleAdId||'',scheduleCampaign:window._scheduleCampaignId||'',sourceBlastId:window.draftDocId});
   document.getElementById('pub-next-row').classList.remove('hidden');
@@ -474,19 +494,24 @@ async function publishBlast() {
   if (_blastSubmitting || _blastSubmitted) return;
   var keys = Object.keys(drafts);
   if (!keys.length) { showToast('No platforms to publish'); return; }
+  if (keys.some(pid=>!['manual','ready'].includes(previewReadiness(pid).state))) { showBlastError('Check the destinations above before sending. Connect the account, add its required photo, or return to Review to change the selection.'); return; }
   if (typeof window._firestoreApprove !== 'function') { showBlastError('This blast has not finished loading. Refresh the page and try again.'); return; }
   _blastSubmitting = true;
   try { await window._firestoreApprove(keys); }
   catch (error) {
     showBlastError('Could not start this blast: ' + error.message);
     var btn = document.getElementById('publish-btn');
-    if (btn) { btn.disabled = false; btn.textContent = '🚀 Blast It!'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Blast Now'; }
   } finally { _blastSubmitting = false; }
 }
 </script>
 
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
+import { deliveryReadiness } from './platforms-config.js?v=20261004-flow';
+import { rememberConnectionReturn } from './auth-return.js?v=20261004-flow';
+window._bbDeliveryReadiness=deliveryReadiness;
+window._bbOpenConnections=function(){rememberConnectionReturn(location.pathname,location.search,window.currentUser.uid);location.assign('BlastyBiz-Connect.html?'+new URLSearchParams({bizId:window.businessId}));};
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -516,6 +541,13 @@ onAuthStateChanged(auth, async (user) => {
   if (draftData) {
     if(draftData.packet)draftData={...draftData,...draftData.packet};
     window._scheduleAdId=draftData.adId;window._scheduleCampaignId=draftData.campaignId;
+    window._bbConnections={};
+    const business=await getDoc(doc(db,'users',user.uid,'businesses',window.businessId));
+    window._bbPreviewBusiness=business.exists()?business.data():{};
+    await Promise.all(Object.keys(draftData.adaptations||{}).filter(isAutoCapable).map(async pid=>{
+      try{const snap=await getDoc(doc(db,'users',user.uid,'businesses',window.businessId,'platformConnections',pid));window._bbConnections[pid]=snap.exists()?snap.data():null;}
+      catch(_){window._bbConnections[pid]=undefined;}
+    }));
     window.populateFromDraftData(draftData);
     if(draftData.adId){const title=document.getElementById('pub-sub');if(title)title.textContent=(draftData.campaignName||'Campaign')+' / '+(draftData.adName||'Ad');}
   } else {
@@ -557,7 +589,7 @@ onAuthStateChanged(auth, async (user) => {
         if (['approved','completed'].includes(freshSnap.data().status)) { markBlastSubmitted(); return; }
         const freshRev = freshSnap.data().revision || 0;
         if (freshRev !== (window._draftRevision || 0)) {
-          if (btn) { btn.disabled = false; btn.textContent = '🚀 Blast It!'; }
+          if (btn) { btn.disabled = false; btn.textContent = 'Blast Now'; }
           const warn = document.getElementById('pub-warn');
           if (warn) { warn.textContent = '⚠️ This blast was updated after you opened this page — the copy may have changed. Please go back and re-review before publishing.'; warn.classList.remove('hidden'); }
           return;
@@ -583,7 +615,7 @@ onAuthStateChanged(auth, async (user) => {
     } catch(e) {
       console.error('publishBlast error:', e);
       if (_blastSubmitted) return;
-      if (btn) { btn.disabled = false; btn.textContent = '🚀 Blast It!'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Blast Now'; }
       const warn = document.getElementById('pub-warn');
       if (warn) { warn.textContent = '⚠️ Error publishing: ' + e.message; warn.classList.remove('hidden'); }
     }
@@ -591,7 +623,7 @@ onAuthStateChanged(auth, async (user) => {
   if (draftData) {
     const btn = document.getElementById('publish-btn');
     if (['approved','completed'].includes(draftData.status)) markBlastSubmitted();
-    else if (btn) { btn.disabled = false; btn.textContent = '🚀 Blast It!'; }
+    else if (btn) { btn.disabled = false; btn.textContent = 'Blast Now'; }
   }
   } catch (error) {
     showBlastError('Could not load this blast: ' + error.message + '. Tap Reload blast to try again.');

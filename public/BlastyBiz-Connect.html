@@ -5,7 +5,7 @@
 <meta charset="UTF-8"/>
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="stylesheet" href="global-style.css?v=1786304797822" />
+<link rel="stylesheet" href="global-style.css?v=20261004-flow" />
 <title>BlastyBiz — Connect Platforms</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -25,7 +25,7 @@ body{visibility:hidden}
   }
 }
 </script>
-  <script type="module" src="./auth-guard.js"></script>
+  <script type="module" src="./auth-guard.js?v=20261004-flow"></script>
 <script src="blastybiz-menu.js?v=7"></script>
 <script src="blasty-registry.js"></script>
 <script src="blasty-events.js"></script>
@@ -163,7 +163,7 @@ body{visibility:hidden}
   <div class="info-card">
     <div class="info-card-title">Ready to distribute?</div>
     <p>Once your platforms are connected, create a Blast and BlastyBiz adapts your copy for every platform. Google Business, Facebook, and Instagram post automatically when connected — every other platform delivers copy-ready text in seconds.</p>
-    <a class="btn-primary" href="BlastyBiz.html">⚡ Create a Blast</a>
+    <a id="connection-back" class="btn-primary" href="BlastyBiz.html">Back to my blast →</a>
   </div>
 </div><!-- left col -->
 <div class="dash-img-col">
@@ -311,6 +311,7 @@ function renderPlatform(platformId, conn, bizId, uid) {
   const statusEl  = document.getElementById('status-' + platformId);
   const cardEl    = document.getElementById('card-' + platformId);
   if (!actionsEl) return;
+  if(conn?.status==='connected'&&window._bbConnectionReadiness?.(platformId,conn).state!=='ready')conn={...conn,status:'expired'};
   if(!conn||conn.status!=='connected')window.BBBlasty?.fire('platform.connection_needed',{needed:true,platformName:platformId});
 
   if (platformId === 'instagram') {
@@ -390,6 +391,9 @@ window.disconnectPlatform = async function(platformId) {
 
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
+import { deliveryReadiness } from './platforms-config.js?v=20261004-flow';
+window._bbConnectionReadiness=deliveryReadiness;
+import { connectionReturn } from './auth-return.js?v=20261004-flow';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   collection, query, where, getDocs, getDoc, doc, deleteDoc, updateDoc
@@ -413,6 +417,7 @@ onAuthStateChanged(auth, async (user) => {
   const bizId = params.get('bizId') || userData.activeBusiness || user.uid;
   if(!/^[A-Za-z0-9_-]{1,128}$/.test(bizId) || !(await getDoc(doc(db,'users',user.uid,'businesses',bizId))).exists()){showToast('This business is no longer available. Choose one of your businesses.',true);return;}
 
+  document.getElementById('connection-back').href=connectionReturn(user.uid,bizId)||'BlastyBiz.html?'+new URLSearchParams({bizId,tab:'create'});
   const q = query(collection(db, 'users', user.uid, 'businesses', bizId, 'platformConnections'));
   const snap = await getDocs(q);
   const connMap = {};

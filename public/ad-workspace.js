@@ -27,7 +27,11 @@
     const anchor=el('ad-form-anchor');
     if(anchor)anchor.parentNode.appendChild(box);else host.prepend(box);
     const style=document.createElement('style');style.textContent='#ad-workspace{padding:18px;margin-bottom:16px}#ad-workspace button{min-height:44px;margin:4px;padding:8px 12px}#ad-workspace label{display:block;margin:12px 0}#ad-workspace input,#ad-workspace textarea,#ad-workspace select{display:block;width:100%;box-sizing:border-box}.ad-copy{width:100%;min-height:100px}';document.head.appendChild(style);
-    box.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(b)task(()=>act(b.dataset.action,b.dataset.id));});
+    const handleAction=e=>{const b=e.target.closest('[data-action]');if(b)task(()=>act(b.dataset.action,b.dataset.id));};
+    box.addEventListener('click',handleAction);
+    const status=el('workspace-save-state');
+    if(status){status.append(el('ad-message'),el('ad-save-retry'));status.addEventListener('click',handleAction);}
+
   }
 
   async function list(){
@@ -138,7 +142,7 @@
     clearTimeout(autoSaveTimer);
     if(saving){await saving;return save();}
     saving=(async()=>{let result;do{result=await persist();}while(dirty);return result;})();
-    try { const result=await saving;return result; } finally { saving=null; }
+    try { const result=await saving;return result; } catch(e){tell('Not saved. '+e.message);el('ad-save-retry').hidden=false;throw e;} finally { saving=null; }
   }
   async function findExisting(options){
     const seq=epoch;
@@ -264,7 +268,7 @@
   });
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushSave();});
   window.addEventListener('beforeunload',e=>{
-    if(!dirty)return;
+    if(!dirty&&!saving&&!pendingPhotoCount&&!window._bbDraftSavePending&&!window._bbAdaptationBusy&&!window.BBLifecycle?.hasUnsavedChanges?.())return;
     flushSave();e.preventDefault();e.returnValue='';
   });
   window.BBAds={continueCurrent,choosePhoto,markDirty,open,ready,refreshImages:images,save,creative,prepareCurrent:()=>task(()=>prepare('this_run')),get active(){return ad;},get dirty(){return dirty;},get busy(){return busy||!!saving||pendingPhotoCount>0;},api};

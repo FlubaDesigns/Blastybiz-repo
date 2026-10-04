@@ -104,14 +104,14 @@ const actions=['openHandLeft','openHandRight','openHandsBoth','pointLeft','point
 for(const action of actions){animations=[];const classes=mascot.root.className;mascot[action]();ok(animations.length>0&&mascot.root.className===classes,action+' targets SVG without full-body mood');}
 w.matchMedia=()=>({matches:true});animations=[];mascot.coneSpin();ok(animations.length===0,'reduced motion disables gesture animations');
 // Review shows exactly the images in the publishing packet, before approval.
-run('platforms-authority.js');
+run('platforms-authority.js');run('photo-handoff.js');
 const reviewHost=w.document.createElement('div');reviewHost.id='step5-review-container';w.document.body.appendChild(reviewHost);
 const reviewAd={id:'photo-review',campaignId:'c',platforms:['google','facebook','instagram','fbmarket','yelp','x','pinterest'],imageRefs:Array.from({length:12},(_,i)=>({id:'i'+i,url:'https://example.com/'+i+'.jpg',alt:'Item view '+(i+1)}))};
 reviewAd.adaptations=Object.fromEntries(reviewAd.platforms.map(p=>[p,'Saved copy']));reviewAd.platformStatus=Object.fromEntries(reviewAd.platforms.map(p=>[p,'approved']));
 w.BBAds={active:reviewAd};
 w.platforms=reviewAd.platforms.map(id=>({id,name:id,type:['google','facebook','instagram'].includes(id)?'api':'manual',adaptedContent:'Saved copy'}));
 Object.assign(w,{_step5PlatIdx:0,getStep5Platforms:()=>w.platforms,updateStep5UI(){},_bbIsGenerating:()=>false,PLATFORM_URL_HINTS:{}});
-w.eval(html.slice(html.indexOf('function renderPlatformPhotoStrip('),html.indexOf('async function copyImageToClipboard(')));
+w.eval(html.slice(html.indexOf('function renderPlatformPhotoStrip('),html.indexOf('// Open a platform page')));
 w.eval(html.slice(html.indexOf('function renderStep5Review()'),html.indexOf('function updateStep5UI()')));
 w.renderStep5Review();
 const packet=freezePacket(reviewAd,{name:'Photos'});

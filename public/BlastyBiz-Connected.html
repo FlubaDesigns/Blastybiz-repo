@@ -5,7 +5,7 @@
 <meta charset="UTF-8"/>
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="stylesheet" href="global-style.css?v=1786304797822" />
+<link rel="stylesheet" href="global-style.css?v=20261004-flow" />
 <title>BlastyBiz — Connected!</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -22,7 +22,7 @@
   }
 }
 </script>
-  <script type="module" src="./auth-guard.js"></script>
+  <script type="module" src="./auth-guard.js?v=20261004-flow"></script>
 <script src="blastybiz-menu.js?v=7"></script>
 <script src="escape-utils.js"></script>
 <script src="blasty-registry.js"></script>
@@ -49,6 +49,8 @@
 
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
+import { deliveryReadiness } from './platforms-config.js?v=20261004-flow';
+import { connectionReturn } from './auth-return.js?v=20261004-flow';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -115,6 +117,9 @@ auth.authStateReady().then(() => {
         </div>
         <a href="BlastyBiz-Dashboard.html" class="btn-secondary">Go to Dashboard</a>
       `;
+      const businessId=params.get('bizId');
+      if(businessId&&/^[A-Za-z0-9_-]{1,128}$/.test(businessId))for(const link of content.querySelectorAll('a'))link.href+='?bizId='+encodeURIComponent(businessId);
+      const back=connectionReturn(user.uid,businessId);if(back){const link=content.querySelector('.btn-secondary');link.href=back;link.textContent='Return to your blast';}
       return}
 
     if (!platform || !Object.hasOwn(PLATFORM_META, platform)) {
@@ -183,9 +188,7 @@ auth.authStateReady().then(() => {
       if(!bizSnap.exists())throw Error('This business is no longer available.');
       const connSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', bizId, 'platformConnections', platform));
       if (connSnap.exists()) connData = connSnap.data();
-      const expires=connData?.expiresAt?.toMillis?.() || Date.parse(connData?.expiresAt);
-      if (!connData || connData.status!=='connected' || !Number.isFinite(expires) || expires<=Date.now() ||
-          (platform==='google' ? !(connData.accountId && connData.locationId) : !connData.pageId)) {
+      if (deliveryReadiness(platform,connData).state!=='ready') {
         throw Error('No usable destination was saved. Check your provider permissions, then reconnect and choose your business.');
       }
       if (platform === 'facebook') {
@@ -257,6 +260,9 @@ auth.authStateReady().then(() => {
         }
       </div>
     `;
+    const resume=connectionReturn(user.uid,bizId);
+    const primary=content.querySelector('.cta-group .btn-primary');
+    if(resume&&primary){primary.href=resume;primary.textContent='Back to my blast →';}
     for(const link of content.querySelectorAll('a[href]')) {
       const url=new URL(link.href,window.location.href);url.searchParams.set('bizId',bizId);link.href=url.href;
     }

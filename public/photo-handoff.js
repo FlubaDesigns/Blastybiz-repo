@@ -62,5 +62,73 @@
     document.body.appendChild(link); link.click(); link.remove();
     setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
   }
-  root.BBPhotoHandoff = {prepare, canShare, share, copy, save};
+  function renderPhotos(host, pid, photos, displayOnly = false) {
+    host.replaceChildren(); host.classList.add('bb-photo-tools');
+    const feedback = document.createElement('p'); feedback.className='bb-photo-feedback'; feedback.setAttribute('role','status');
+    const grid = document.createElement('div'); grid.className='bb-photo-grid'; host.append(grid,feedback);
+    photos.forEach((photo,index)=>{
+      const item=document.createElement('div');item.className='qp-photo-item';
+      const link=document.createElement('a');link.href=photo.url;link.target='_blank';link.rel='noopener';link.className='platform-photo qp-thumb';
+      const img=document.createElement('img');img.src=photo.url;img.alt=photo.alt||'Photo '+(index+1);img.loading='lazy';img.width=72;img.height=72;
+      const label=document.createElement('span');label.textContent='Photo '+(index+1);link.append(img,label);item.append(link);
+      if(!displayOnly){
+        const actions=document.createElement('div');actions.className='qp-photo-tools';
+        for(const [label,action,done] of [
+          ['Copy photo',()=>copy(photo.url),'Photo copied — paste it into your post.'],
+          ['Save photo',()=>save(photo.url,pid,index),'Download started — choose the photo from Recent.']
+        ]){
+          const button=document.createElement('button');button.type='button';button.textContent=label;
+          button.onclick=()=>{button.disabled=true;feedback.textContent=label+'…';
+            action().then(()=>{feedback.textContent=done;}).catch(()=>{feedback.textContent='Use Share photos, or open the photo above and hold it to save.';}).finally(()=>{button.disabled=false;});};
+          actions.append(button);
+        }
+        item.append(actions);
+      }
+      grid.append(item);
+    });
+  }
+
+function renderShare(host, pid, photos, getText = () => '') {
+  if (!host) return;
+  host.innerHTML = ''; host.style.display = photos.length ? 'block' : 'none';
+  if (!photos.length) return;
+  const button = document.createElement('button'); button.type = 'button';
+  const status = document.createElement('div'); status.className = 'qp-photo-share-status'; status.setAttribute('role', 'status');
+  host.append(button, status);
+  let readyFiles = [], busy = false;
+  const prepare = async () => {
+    button.disabled = true; button.textContent = 'Preparing photos…';
+    status.textContent = 'Getting these photos ready for your phone.';
+    try {
+      const files = await BBPhotoHandoff.prepare(photos.map(photo => photo.url), pid);
+      if (!host.isConnected || button.parentNode !== host) return;
+      readyFiles = files;
+      if (BBPhotoHandoff.canShare(files)) {
+        button.textContent = 'Share ' + files.length + (files.length === 1 ? ' photo' : ' photos'); button.disabled = false;
+        status.textContent = 'Choose the app in your phone’s share menu. If the caption does not carry over, use Copy text above.';
+      } else {
+        button.hidden = true;
+        status.textContent = 'Use Copy photo below and paste into your post. If the app does not accept pasted images, use Save photo, then choose it from Recent.';
+      }
+    } catch (error) {
+      if (!host.isConnected || button.parentNode !== host) return;
+      button.disabled = false; button.textContent = 'Retry preparing photos';
+      status.textContent = 'Could not load the photos for sharing. Retry, or use Open photo below.';
+    }
+  };
+  button.onclick = () => {
+    if (busy) return;
+    if (!readyFiles.length) { prepare(); return; }
+    busy = true; button.disabled = true;
+    const text = getText();
+    BBPhotoHandoff.share(readyFiles, text).then(() => {
+      status.textContent = 'Handed to your phone. Finish posting in the selected app.';
+    }).catch(error => {
+      if (error.name !== 'AbortError') status.textContent = 'The phone could not share these photos. Use Copy photo or Save photo below.';
+    }).finally(() => { busy = false; button.disabled = false; });
+  };
+  prepare();
+}
+
+  root.BBPhotoHandoff = {prepare, canShare, share, copy, save, renderShare, renderPhotos};
 })(globalThis);

@@ -6,8 +6,8 @@ const B='users/u/businesses/b',D=B+'/listingDrafts/d',J=B+'/publishJobs/';let ch
 const ok=(v,m)=>{assert(v,m);checks++;};const store=database({'users/u':{email:'u@example.com',activeBusiness:'other'},[B]:{},[D]:{uid:'u',businessId:'b',campaignId:'c',adId:'a',status:'approved'},[J+'auto']:{jobId:'auto',draftId:'d',platform:'google',status:'success'},[J+'manual']:{jobId:'manual',draftId:'d',platform:'craigslist',status:'manual_required',manualInstructions:'Go to craigslist.org → your city.',payload:{adaptedContent:'Copy for owner',imageUrls:['https://example.com/photo.jpg']}}});
 const service=createLifecycle({db:store.db,admin,refreshCopy:async()=>{throw Error('unexpected AI');},sendEmail:async()=>{}});w.confirm=()=>confirmed;
 w.eval(fs.readFileSync('public/escape-utils.js','utf8'));
-const script=[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].find(m=>m[2].includes('const PLATFORM_META'))[2];w.eval(script);
-w.fetch=async(url,options)=>{try{const result=await service.manage('u',JSON.parse(options.body));return {ok:true,json:async()=>result};}catch(e){return {ok:false,json:async()=>({error:e.message})};}};
+for(const f of ['platforms-authority.js','photo-handoff.js'])w.eval(fs.readFileSync('public/'+f,'utf8'));
+w.fetch=async(url,options)=>{if(!options?.body)return {ok:true,blob:async()=>new w.Blob(['image'],{type:'image/png'})};try{const result=await service.manage('u',JSON.parse(options.body));return {ok:true,json:async()=>result};}catch(e){return {ok:false,json:async()=>({error:e.message})};}};
 w.eval(fs.readFileSync('public/lifecycle-ui.js','utf8'));w.eval(fs.readFileSync('public/lifecycle-status.js','utf8'));w.BBLifecycleStatus.initialize({businessId:'b',blastId:'d',token:async()=>''},{ownerName:'Owner',activeBusiness:'other'});
 const settle=async()=>{for(let i=0;i<25;i++)await new Promise(r=>setImmediate(r));};
 const jobs=()=>Object.entries(store.all()).filter(([p])=>p.startsWith(J)).map(([,d])=>d);

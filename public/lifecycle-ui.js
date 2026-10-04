@@ -2,7 +2,7 @@
 (function(){
  'use strict';
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- let context=null,dashboardEpoch=0;
+ let context=null,dashboardEpoch=0,activeEditor=null;
  const fire=(event,values={})=>window.BBBlasty?.fire(event,{needed:true,...values});
  async function api(action,values={}) {
    const ctx=context;if(!ctx?.businessId)throw Error('Choose a business first.');
@@ -10,8 +10,12 @@
    const data=await r.json();if(!r.ok)throw Error(data.error||'Your choice could not be saved.');return data;
  }
  function configure(c){context=c;}
- const date=v=>v?new Date(v).toLocaleString():'—';
- const localValue=v=>{const d=new Date(v);return new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,16);};
+ const date=(v,zone)=>v?new Date(v).toLocaleString(undefined,{timeZone:zone||undefined,timeZoneName:'short'}):'—';
+ const localValue=(v,zone)=>{const p=BBSchedule.localParts(new Date(v),zone);return p.year+'-'+String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0')+'T'+String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0');};
+ function fromLocal(raw,zone){if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(raw))throw Error('Choose a future date and time.');const [ymd,hm]=raw.split('T'),[y,m,d]=ymd.split('-').map(Number),[h,min]=hm.split(':').map(Number);const value=BBSchedule.wallTime(y,m-1,d,h,zone,min);if(!Number.isFinite(value.getTime())||value<=new Date())throw Error('Choose a future date and time.');return value;}
+ function hasUnsavedChanges(){if(!activeEditor?.host.isConnected)return false;const section=activeEditor.host.closest('.section');if(section&&!section.classList.contains('active'))return false;try{return JSON.stringify(activeEditor.value())!==activeEditor.saved;}catch(_){return true;}}
+ function canLeave(){if(!hasUnsavedChanges())return true;if(!confirm('Your schedule changes are not saved. Leave and discard those changes?'))return false;activeEditor=null;return true;}
+
  // Friendly choices use real IANA zone IDs; conversion stays in BBSchedule.
  function timeZoneChoices(selected) {
    const common=[['America/New_York','Eastern Time (ET)'],['America/Chicago','Central Time (CT)'],['America/Denver','Mountain Time (MT)'],['America/Los_Angeles','Pacific Time (PT)'],['America/Anchorage','Alaska Time'],['Pacific/Honolulu','Hawaii Time'],['America/Phoenix','Arizona Time'],['America/Halifax','Atlantic Time'],['America/St_Johns','Newfoundland Time'],['UTC','Coordinated Universal Time (UTC)']];
@@ -27,13 +31,13 @@
    const zone=initial.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone;
    host.innerHTML='<div class="bb-step-label">1 · WHEN</div><label>Next blast<input type="datetime-local" data-field="date" required></label><div class="bb-quick">'+[[24,'Tomorrow'],[72,'In 3 days'],[168,'Next week']].map(([h,t])=>'<button type="button" data-hours="'+h+'">'+t+'</button>').join('')+'</div><div class="bb-schedule-row"><label>Repeat<select data-field="frequency"><option value="once">Just once</option><option value="weekly">Weekly</option><option value="biweekly">Every 2 weeks</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option></select></label><label data-field="recurring" hidden>Stop after<select data-field="count"><option value="0">Until I stop it</option><option value="4">4 blasts</option><option value="8">8 blasts</option><option value="12">12 blasts</option><option value="26">26 blasts</option></select></label></div><details class="bb-timezone"><summary data-zone-label></summary><label>Time zone<select data-field="timezone">'+timeZoneChoices(zone)+'</select></label><p class="bb-small">The date and time above use this time zone. Daylight saving time is handled automatically.</p></details><details data-repeat-options hidden><summary>Options for future repeats</summary><label>Wording<select data-field="copy"><option value="reuse">Keep approved wording</option><option value="refresh">Create fresh wording for my review</option><option value="ask">Ask me each time</option></select></label><label>Photos<select data-field="images"><option value="reuse">Keep approved photos</option><option value="remind">Remind me to change photos</option><option value="ask">Ask me each time</option></select></label><label>Approval<select data-field="approval"><option value="automatic">Use my approved post automatically</option><option value="always">Ask before every repeat</option><option value="attention">Ask when something needs attention</option></select></label></details><p data-field="resolved" role="status" hidden></p><p data-field="summary" class="bb-schedule-summary" aria-live="polite"></p>';
    const get=n=>host.querySelector('[data-field="'+n+'"]');
-   const zoned=v=>{const p=window.BBSchedule.localParts(new Date(v),get('timezone').value);return p.year+'-'+String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0')+'T'+String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0');};
+   const zoned=v=>localValue(v,get('timezone').value);
    const futureDay=days=>{const p=window.BBSchedule.localParts(new Date(),get('timezone').value),day=new Date(Date.UTC(p.year,p.month-1,p.day+days));return day.toISOString().slice(0,10)+'T'+String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0');};
    get('date').value=initial.nextRunAt||initial.firstRunAtUtc?zoned(initial.nextRunAt||initial.firstRunAtUtc):futureDay(1);
    get('frequency').value=initial.frequency||'once';get('count').value=initial.stopMode==='count'?String(initial.stopAfterCount):'0';
    if(!get('count').value){const option=document.createElement('option');option.value=String(initial.stopAfterCount);option.textContent=initial.stopAfterCount+' blasts';get('count').append(option);get('count').value=option.value;}
    get('copy').value=initial.copyBehavior||'reuse';get('images').value=initial.imageBehavior||'reuse';get('approval').value=initial.approvalBehavior||'automatic';
-   function value(){const raw=get('date').value;if(!raw)throw Error('Choose a future date and time.');const [ymd,hm]=raw.split('T'),[y,m,day]=ymd.split('-').map(Number),[h,min]=hm.split(':').map(Number);const d=window.BBSchedule.wallTime(y,m-1,day,h,get('timezone').value,min);if(!Number.isFinite(d.getTime())||d<=new Date())throw Error('Choose a future date and time.');return {firstRunAtUtc:d.toISOString(),timezone:get('timezone').value,frequency:get('frequency').value,stopMode:Number(get('count').value)?'count':'never',stopAfterCount:Number(get('count').value),copyBehavior:get('copy').value,imageBehavior:get('images').value,approvalBehavior:get('approval').value};}
+   function value(){const d=fromLocal(get('date').value,get('timezone').value);return {firstRunAtUtc:d.toISOString(),timezone:get('timezone').value,frequency:get('frequency').value,stopMode:Number(get('count').value)?'count':'never',stopAfterCount:Number(get('count').value),copyBehavior:get('copy').value,imageBehavior:get('images').value,approvalBehavior:get('approval').value};}
    function update(){
      host.querySelector('[data-zone-label]').textContent='Time zone · '+get('timezone').selectedOptions[0].textContent;
      const once=get('frequency').value==='once';get('recurring').hidden=once;host.querySelector('.bb-schedule-row').classList.toggle('bb-once',once);host.querySelector('[data-repeat-options]').hidden=once;
@@ -83,14 +87,16 @@
      const time=form(host.querySelector('[data-time]'),state.schedule),photos=photoPicker(host.querySelector('[data-photos]'),state,request),save=host.querySelector('[data-save]'),message=host.querySelector('[data-save-message]');
      host.querySelector('[data-time] [data-field=summary]').hidden=true;
      function update(){host.querySelector('[data-summary]').textContent=time.summary();try{photos.repeat(time.value().frequency!=='once');save.disabled=photos.busy();}catch(_){save.disabled=true;}}
+     const values=()=>({schedule:[...host.querySelectorAll('[data-time] input,[data-time] select')].map(el=>[el.dataset.field,el.value]),...photos.value()});
+     activeEditor={host,value:values,saved:JSON.stringify(values())};
      host.addEventListener('change',update);update();
-     host.querySelector('[data-dismiss]').onclick=onCancel;
+     host.querySelector('[data-dismiss]').onclick=()=>{if(canLeave()){activeEditor=null;onCancel();}};
      let lastKey=null,requestId=null;
      save.onclick=async()=>{if(save.disabled)return;try{
        const payload={...request,sourceBlastId:state.sourceBlastId,expectedRevision:state.schedule.revision||0,reviewKey:state.reviewKey,reviewed:true,replacePrepared:true,schedule:time.value(),...photos.value()};
        const key=JSON.stringify(payload);if(key!==lastKey){lastKey=key;requestId=crypto.randomUUID();}
        host.querySelectorAll('button,input,select,textarea').forEach(x=>x.disabled=true);message.textContent='Saving your schedule…';
-       const result=await api('save',{...payload,requestId});fire('schedule.created');onSaved(result);
+       const result=await api('save',{...payload,requestId});fire('schedule.created');activeEditor=null;onSaved(result);
      }catch(error){message.textContent=error.message;host.querySelectorAll('button,input,select,textarea').forEach(x=>x.disabled=false);update();}};
    }catch(error){host.innerHTML='<p role="status">'+esc(error.message)+'</p><button type="button" data-reload>Try Again</button>';host.querySelector('button').onclick=()=>scheduleEditor(host,request,onSaved,onCancel);}
  }
@@ -99,14 +105,10 @@
    host.classList.add('bb-life');
    if(!data?.adId){host.innerHTML='<h2>Scheduling</h2><p>Open the campaign and create an Ad before setting a schedule.</p>';return;}
    if(data.scheduleAdPath){host.innerHTML='<h2>'+esc(data.campaignName)+' / '+esc(data.adName)+'</h2><p>This is a scheduled Blast. Review or change it in Schedule.</p><a class="bb-button" href="BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,tab:'schedule'})+'">Open Schedule</a>';document.getElementById('publish-btn').hidden=true;return;}
-   host.innerHTML='<h2>When should I send this?</h2><label><input type="radio" name="bb-send" value="now" checked> Send Now</label><label><input type="radio" name="bb-send" value="schedule"> Schedule It</label><div data-form hidden></div><p role="status"></p>';
-   const scheduleForm=form(host.querySelector('[data-form]')),btn=document.getElementById('publish-btn'),original=window._firestoreApprove;
-   host.addEventListener('change',()=>{const later=host.querySelector('[value="schedule"]').checked;host.querySelector('[data-form]').hidden=!later;btn.textContent=later?'Schedule Blast':'🚀 Blast It!';fire('schedule.intent_choice');});
-   window._firestoreApprove=async function(keys){if(!host.querySelector('[value="schedule"]').checked)return original(keys);btn.disabled=true;try{
-     const schedule=scheduleForm.value();const result=await api('save',{adId:data.adId,campaignId:data.campaignId,blastId,schedule,requestId:scheduleForm.requestId()});
-     fire('schedule.created');host.querySelector('[role=status]').textContent='Scheduled. Nothing has been posted yet.'+(result.overlaps.length?' Another Ad uses overlapping destinations within the same hour: '+result.overlaps.map(o=>o.campaignName+' / '+o.adName).join(', '):'');
-     btn.hidden=true;const link=document.createElement('a');link.className='bb-button';link.href='BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,tab:'schedule'});link.textContent='View Schedule';host.append(link);
-   }catch(e){host.querySelector('[role=status]').textContent=e.message;}finally{btn.disabled=false;}};
+   host.innerHTML='<h2>Send later</h2><p>Choose a time and review your photos in Schedule.</p>';
+   const link=document.createElement('a');link.className='bb-button';link.textContent='Open Schedule';
+   link.href='BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,tab:'schedule',cid:data.campaignId,adId:data.adId,scheduleAd:data.adId,scheduleCampaign:data.campaignId});host.append(link);
+
  }
  function futureSchedule(host,data) {
    if(!host||!data?.adId||!data?.campaignId||data.status!=='approved')return;
@@ -123,27 +125,27 @@
    open();
  }
  async function dashboard(preserveEditor=false) {
+   if(!preserveEditor&&!canLeave())return;
    const seq=++dashboardEpoch,wrap=document.getElementById('sched-campaigns-wrap');if(!wrap||!context)return;
    document.getElementById('sched-upcoming-card')?.setAttribute('hidden','');document.getElementById('sched-no-campaigns')?.setAttribute('hidden','');
    wrap.classList.add('bb-life');wrap.innerHTML='<p role="status">Loading schedules…</p>';
    try {
      const result=await api('list');if(seq!==dashboardEpoch)return;
-     const rows=result.schedules,active=rows.filter(r=>r.schedule.enabled),others=rows.filter(r=>!r.schedule.enabled);
+     const rows=result.schedules,active=rows.filter(r=>r.schedule.enabled).sort((a,b)=>new Date(a.schedule.nextRunAt)-new Date(b.schedule.nextRunAt)),others=rows.filter(r=>!r.schedule.enabled);
      const setup=document.getElementById('schedule-editor'),route=new URLSearchParams(location.search),selected=window.BBAds?.active;
      if(setup&&!preserveEditor){
        const request=route.get('scheduleAd')&&route.get('scheduleCampaign')&&(!selected||selected.campaignId===route.get('scheduleCampaign'))?{adId:route.get('scheduleAd'),campaignId:route.get('scheduleCampaign'),sourceBlastId:route.get('sourceBlastId')||undefined}:selected?{adId:selected.id,campaignId:selected.campaignId}:null;
        if(request){
-         if(!request.sourceBlastId&&window._bbFindLatestBlast){const latest=await window._bbFindLatestBlast(context.businessId,request.campaignId,request.adId);if(seq!==dashboardEpoch)return;if(latest?.status==='approved')request.sourceBlastId=latest.id;}
          scheduleSetup(setup,request);
        }else{setup.innerHTML='<p>Select your campaign in Create, then return here to schedule its next blast.</p>';}
      }
-     const next=active[0];wrap.innerHTML='<h2>Next Up</h2><p>'+esc(next?next.campaignName+' / '+next.adName+' — '+date(next.schedule.nextRunAt):'Nothing scheduled. You can still Send Now.')+'</p><p role="status" id="bb-schedule-message"></p><div data-active></div><details><summary>Paused and completed ('+others.length+')</summary><div data-others></div></details>';
+     const next=active[0];wrap.innerHTML='<h2>Next Up</h2><p>'+esc(next?next.campaignName+' / '+next.adName+' — '+scheduleSummary(next.schedule):'Nothing scheduled. You can still Send Now.')+'</p><p role="status" id="bb-schedule-message"></p><div data-active></div><details><summary>Paused and completed ('+others.length+')</summary><div data-others></div></details>';
      if(result.businessPaused){const resume=document.createElement('button');resume.textContent='Business scheduling is paused — Resume';resume.onclick=async()=>{try{await api('resumeBusiness');await dashboard();}catch(e){wrap.querySelector('#bb-schedule-message').textContent=e.message;}};wrap.prepend(resume);}
      const message=t=>{wrap.querySelector('#bb-schedule-message').textContent=t;};
      for(const row of rows) {
        const {schedule:s,upcoming:u}=row,card=document.createElement('article'),status=u?.approvalStatus==='required'&&s.enabled?'WAITING FOR APPROVAL':s.status||'active';
        const request={adId:row.adId,campaignId:row.campaignId,expectedRevision:s.revision};
-       card.innerHTML='<h3>'+esc(row.campaignName)+' / '+esc(row.adName)+'</h3><strong>'+esc(status.toUpperCase())+'</strong>'+(s.pauseReason?'<p>'+esc(s.pauseReason)+'</p>':'')+'<p>Next: '+esc(date(s.nextRunAt))+' · '+esc(s.frequency)+' · '+(s.stopMode==='count'?Math.max(0,s.stopAfterCount-s.runsCompleted)+' of '+s.stopAfterCount+' remaining':'Until I stop it')+'</p><p>Copy: '+esc(s.copyBehavior)+' · Images: '+esc(s.imageBehavior)+' · Review: '+esc(s.approvalBehavior)+'</p>'+(row.last?'<p>Last run: '+esc(date(row.last.startedAt))+' · '+(row.last.completion?.delivered||0)+' delivered · '+(row.last.completion?.manual||0)+' need you. <a href="'+esc(statusLink(context.businessId,row.last.id))+'">View status</a></p>':'')+'<button data-action="'+(s.enabled?'pause':'resume')+'" '+(s.status==='completed'?'hidden':'')+'>'+(s.enabled?'Pause':'Resume')+'</button><button data-action="skipNext" '+(!s.nextRunAt?'hidden':'')+'>Skip Next</button><button data-action="edit">Edit Schedule &amp; Photos</button><button data-action="cancel" '+(!s.enabled?'hidden':'')+'>Cancel Schedule</button><label>Move only the next post<input type="datetime-local" data-next></label><button data-action="changeNext" '+(!s.nextRunAt?'hidden':'')+'>Change Next Time</button><div data-edit hidden></div><div data-review></div><p role="status"></p>';
+       card.innerHTML='<h3>'+esc(row.campaignName)+' / '+esc(row.adName)+'</h3><strong>'+esc(status.toUpperCase())+'</strong>'+(s.pauseReason?'<p>'+esc(s.pauseReason)+'</p>':'')+'<p>Next: '+esc(scheduleSummary(s))+'</p><p>Copy: '+esc({reuse:'Keep approved wording',refresh:'Fresh wording for review',ask:'Ask each time'}[s.copyBehavior]||'Keep approved wording')+' · Photos: '+esc({reuse:'Keep approved photos',remind:'Remind me to change',ask:'Ask each time'}[s.imageBehavior]||'Keep approved photos')+' · Approval: '+esc({automatic:'Use approved post',always:'Ask every time',attention:'Ask when needed'}[s.approvalBehavior]||'Ask when needed')+'</p>'+(row.last?'<p>Last run: '+esc(date(row.last.startedAt,s.timezone))+' · '+(row.last.completion?.delivered||0)+' delivered · '+(row.last.completion?.manual||0)+' need you. <a href="'+esc(statusLink(context.businessId,row.last.id))+'">View status</a></p>':'')+'<button data-action="'+(s.enabled?'pause':'resume')+'" '+(s.status==='completed'?'hidden':'')+'>'+(s.enabled?'Pause':'Resume')+'</button><button data-action="skipNext" '+(!s.nextRunAt?'hidden':'')+'>Skip Next</button><button data-action="edit">Edit Schedule &amp; Photos</button><button data-action="cancel" '+(!s.enabled?'hidden':'')+'>Cancel Schedule</button><details><summary>Move only the next post</summary><p>'+esc(s.timezone||'Local time')+'</p><label>New date and time<input type="datetime-local" data-next value="'+esc(s.nextRunAt?localValue(s.nextRunAt,s.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone):'')+'"></label><button data-action="changeNext" '+(!s.nextRunAt?'hidden':'')+'>Change Next Time</button></details><div data-edit hidden></div><div data-review></div><p role="status"></p>';
        const review=card.querySelector('[data-review]');
        if(u){review.innerHTML='<details><summary>Review / Change Next Post</summary><p>'+esc(u.preparationState==='working'?'Preparing fresh copy…':u.copyFallbackReason==='allowance_ceiling'?'Fresh wording is unavailable this month. Saved approved copy is ready to reuse.':u.copyFallbackReason?'Refresh was unavailable. Saved copy is ready to review.':'Review these exact copy and image selections.')+'</p>'+Object.entries(u.packet.adaptations).map(([p,text])=>'<label>'+esc(p)+'<textarea data-copy="'+esc(p)+'">'+esc(text)+'</textarea></label>').join('')+'<div>'+row.imagePool.map(i=>'<label><input type="checkbox" data-image="'+esc(i.id)+'" '+(u.packet.imageRefs.some(x=>x.id===i.id)?'checked':'')+'><img src="'+esc(i.url)+'" alt="'+esc(i.alt||'Campaign image')+'">Use this image</label>').join('')+'</div><p>Changes below apply only to this Blast. <a href="BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,cid:row.campaignId,adId:row.adId})+'">Update the reusable Ad</a></p><button data-action="editNext">Save This Run Only</button><button data-action="refreshNext">Refresh Wording</button><label><input type="checkbox" data-reviewed> I reviewed this copy and want to keep these images</label><button data-action="approveNext">'+(s.copyBehavior==='ask'?'Approve — Reuse This Copy':'Approve This Blast')+'</button></details>';}
        if(!u&&s.nextRunAt){const prepare=document.createElement('button');prepare.dataset.action='prepareNext';prepare.textContent='Prepare / Review Next Post';review.append(prepare);}
@@ -151,13 +153,13 @@
        let editor=null;
        card.addEventListener('click',async e=>{
          const button=e.target.closest('[data-action]');if(!button)return;const action=button.dataset.action,local=card.querySelector(':scope > [role=status]');
-         if(action==='edit'){const box=document.getElementById('schedule-editor')||card.querySelector('[data-edit]');scheduleSetup(box,request);box.scrollIntoView?.({block:'start',behavior:'smooth'});return;}
+         if(action==='edit'){if(!canLeave())return;const box=document.getElementById('schedule-editor')||card.querySelector('[data-edit]');scheduleSetup(box,request);box.scrollIntoView?.({block:'start',behavior:'smooth'});return;}
          if(action==='approveNext'&&!card.querySelector('[data-reviewed]')?.checked){local.textContent='Review the copy and images, then check the confirmation.';return;}
          if(['skipNext','save','cancel'].includes(action)&&!confirm(action==='cancel'?'Cancel this future schedule?':action==='save'?'Replace this schedule and any unsent prepared Blast? The stop-after count starts again.':'Skip only the next occurrence?'))return;
          const extras={};
          try {
            if(action==='save')Object.assign(extras,{schedule:editor.value(),requestId:editor.requestId(),replacePrepared:true});
-           if(action==='changeNext'){const d=new Date(card.querySelector('[data-next]').value);if(!Number.isFinite(d.getTime()))throw Error('Choose the next posting time.');extras.nextRunAt=d.toISOString();}
+           if(action==='changeNext'){const d=fromLocal(card.querySelector('[data-next]').value,s.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone);extras.nextRunAt=d.toISOString();}
            if(action==='approveNext')Object.assign(extras,{packetRevision:u.revision,keepImages:true,copyChoice:u.packet.copyBehavior==='refresh'?'refresh':'reuse'});
            if(action==='editNext')Object.assign(extras,{packetRevision:u.revision,adaptations:Object.fromEntries([...card.querySelectorAll('[data-copy]')].map(x=>[x.dataset.copy,x.value])),imageIds:[...card.querySelectorAll('[data-image]:checked')].map(x=>x.dataset.image)});
            if(action==='approveNext') {
@@ -175,10 +177,10 @@
        const legacy=document.createElement('article');legacy.innerHTML='<h3>'+esc(old.campaignName)+' — Earlier schedule</h3><p>Next: '+esc(date(old.nextRunAt))+'</p><p>This earlier schedule can be paused here. Open the campaign to create and schedule an Ad.</p><a class="bb-button" href="BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,cid:old.campaignId})+'">Open campaign</a><button>Pause schedule</button>';
        legacy.querySelector('button').onclick=async()=>{try{await api('pauseLegacy',{blastId:old.id});await dashboard();}catch(e){message(e.message);}};wrap.append(legacy);
      }
-     fire('schedule.next_up_summary',{summary:next?next.campaignName+' / '+next.adName+' — '+date(next.schedule.nextRunAt):'Nothing scheduled right now.'});
+     fire('schedule.next_up_summary',{summary:next?next.campaignName+' / '+next.adName+' — '+scheduleSummary(next.schedule):'Nothing scheduled right now.'});
    }catch(e){if(seq===dashboardEpoch)wrap.textContent=e.message;}
  }
  function statusLink(b,d){return 'BlastyBiz-Publishing-Status.html?'+new URLSearchParams({bizId:b,draftId:d});}
- window.BBLifecycle={configure,api,preview,futureSchedule,dashboard,statusLink,form,photoPicker,scheduleEditor};
+ window.BBLifecycle={configure,api,preview,futureSchedule,dashboard,statusLink,form,photoPicker,scheduleEditor,hasUnsavedChanges,canLeave};
 })();
 
