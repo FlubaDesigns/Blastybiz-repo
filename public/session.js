@@ -23,6 +23,7 @@ window.BB_KEYS = [
 
 /** Clear every BB key from localStorage. */
 window._bbClearStorage = function () {
+  window.dispatchEvent?.(new Event('bb:session-cleared'));
   window.BB_KEYS.forEach(function (k) { localStorage.removeItem(k); });
   ['bb_setup_handoff','bb_preview'].forEach(function(k){sessionStorage.removeItem(k);});
 };

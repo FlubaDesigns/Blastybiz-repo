@@ -666,6 +666,7 @@ for(const name of ['input','change'])document.addEventListener(name,event=>{
 });
 document.addEventListener('click',()=>{if(setupDraftDirty)setTimeout(keepSetupDraft,0);});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')keepSetupDraft();});
+window.addEventListener?.('bb:session-cleared',()=>{setupDraftDirty=false;currentUser=null;});
 window.addEventListener?.('beforeunload',event=>{if(setupDraftDirty){keepSetupDraft();event.preventDefault();event.returnValue='';}});
 
 // ── Platform grid ────────────────────────────────────────────────────────────
@@ -717,7 +718,7 @@ function applyOb2Config(c) {
 }
 
 onAuthStateChanged(auth, async user => {
-  if (!user) { window.location.href = 'BlastyBiz-Login.html?next=BlastyBiz-CreateBiz.html'; return; }
+  if (!user) { currentUser=null;setupDraftDirty=false;window.location.href = 'BlastyBiz-Login.html?next=BlastyBiz-CreateBiz.html'; return; }
   currentUser = user;
   if (setupLoaded) return;
   setupLoaded = true;
