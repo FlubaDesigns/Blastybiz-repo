@@ -11,7 +11,7 @@ module.exports=async function verifyLiveNavigation({chromium,origin}){
   const user=db.doc('users/'+uid),business=user.collection('businesses').doc('fixture');
   const campaign=business.collection('campaigns').doc('fixture'),ad=campaign.collection('ads').doc('first');
   const email=uid+'@example.invalid',password=randomUUID()+randomUUID();
-  let created=false,browser;
+  let created=false,browser,page;
   try{
     await auth.createUser({uid,email,password,emailVerified:true});created=true;
     await user.set({plan:'pro',activeBusiness:'fixture',acceptanceFixture:true,createdAt:admin.firestore.FieldValue.serverTimestamp()});
@@ -27,8 +27,9 @@ module.exports=async function verifyLiveNavigation({chromium,origin}){
     const oldData={uid,businessId:'fixture',campaignId:'fixture',adId:'first',status:'completed',createdAt:new Date().toISOString(),packet:{adRevision:0,adaptations:{craigslist:'Frozen old copy'}}};
     await old.set(oldData);
     browser=await chromium.launch({headless:true,args:['--no-sandbox']});
-    const page=await browser.newPage({viewport:{width:384,height:832}});
+    page=await browser.newPage({viewport:{width:384,height:832}});
     page.setDefaultTimeout(60000);
+    page.on('pageerror',error=>console.error('LIVE PAGE ERROR: '+error.message));
     await page.goto(origin+'/BlastyBiz-Login?intent=signin');
     await page.locator('#si-email').fill(email);await page.locator('#si-password').fill(password);
     await page.locator('#btn-signin').click();
@@ -42,10 +43,13 @@ module.exports=async function verifyLiveNavigation({chromium,origin}){
     await page.waitForFunction(()=>!window.BBAds.busy&&document.querySelector('.create-slide.cwiz-active')?.id==='create-slide-5');
     assert.equal((await ad.get()).data().offer,'Current edited offer','Continue persists current edits');
     assert.deepEqual((await old.get()).data(),oldData,'Continue preserves sent records');
-    await page.locator('#tab-platforms').click();await page.locator('#tab-create').click();
+    await page.locator('#tab-platforms').click();assert.equal(new URL(page.url()).searchParams.get('tab'),'platforms','Platforms records its route');
+    await page.locator('#tab-create').click();assert.equal(new URL(page.url()).searchParams.get('tab'),'create','Create records its route');
+    console.log('PASS LIVE current edits and tab routes.');
     assert.equal(await page.locator('.create-slide.cwiz-active').getAttribute('id'),'create-slide-5');
     await page.goBack();await page.waitForFunction(()=>!window._bbRestoringWorkspace&&document.querySelector('.section.active')?.id==='section-platforms');
     await page.goForward();await page.waitForFunction(()=>!window._bbRestoringWorkspace&&document.querySelector('.section.active')?.id==='section-create');
+    console.log('PASS LIVE Back and Forward.');
     await page.reload();await ready();
     assert.equal(await page.locator('.create-slide.cwiz-active').getAttribute('id'),'create-slide-5','Reload keeps Review');
     await page.evaluate(()=>window._bbOpenConnections());
@@ -111,6 +115,9 @@ module.exports=async function verifyLiveNavigation({chromium,origin}){
     assert.equal((await business.collection('publishJobs').doc('manual_fixture').get()).data().status,'manual_required','viewing photos never claims posted');
     console.log('PASS LIVE AUTHENTICATED follow-through: saved-copy primary action, same-blast connection return, sign-in recovery, Schedule save/timezone/unsaved protection, real manual posting photo tools; paused isolated business, no provider dispatch.');
     console.log('PASS LIVE AUTHENTICATED mobile navigation: persisted current edits, Review/tab/Back/Forward/reload continuity, correct prepared preview and return, duplicate prevention, business switch, immutable sent Blast; no post dispatched.');
+  }catch(error){
+    if(page&&!page.isClosed())console.error('LIVE NAVIGATION STATE',await page.evaluate(()=>({path:location.pathname,search:location.search,section:document.querySelector('.section.active')?.id,step:document.querySelector('.create-slide.cwiz-active')?.id,restoring:window._bbRestoringWorkspace,busy:window.BBAds?.busy,dirty:window.BBAds?.dirty,draftPending:window._bbDraftSavePending,adaptationBusy:window._bbAdaptationBusy,saveMessage:document.querySelector('#ad-message')?.textContent,toast:document.querySelector('#toast')?.textContent})).catch(()=>({unavailable:true})));
+    throw error;
   }finally{
     if(browser)await browser.close();
     for(const collection of ['aiUsageLogs','activityLogs']){
