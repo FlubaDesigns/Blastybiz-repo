@@ -163,7 +163,7 @@ body{visibility:hidden}
   <div class="info-card">
     <div class="info-card-title">Ready to distribute?</div>
     <p>Once your platforms are connected, create a Blast and BlastyBiz adapts your copy for every platform. Google Business, Facebook, and Instagram post automatically when connected — every other platform delivers copy-ready text in seconds.</p>
-    <a id="connection-back" class="btn-primary" href="BlastyBiz.html">Back to my blast →</a>
+    <a id="connection-back" class="btn-primary hidden" hidden>Back to my blast →</a>
   </div>
 </div><!-- left col -->
 <div class="dash-img-col">
@@ -417,7 +417,9 @@ onAuthStateChanged(auth, async (user) => {
   const bizId = params.get('bizId') || userData.activeBusiness || user.uid;
   if(!/^[A-Za-z0-9_-]{1,128}$/.test(bizId) || !(await getDoc(doc(db,'users',user.uid,'businesses',bizId))).exists()){showToast('This business is no longer available. Choose one of your businesses.',true);return;}
 
-  document.getElementById('connection-back').href=connectionReturn(user.uid,bizId)||'BlastyBiz.html?'+new URLSearchParams({bizId,tab:'create'});
+  const back=document.getElementById('connection-back');
+  back.href=connectionReturn(user.uid,bizId)||'BlastyBiz.html?'+new URLSearchParams({bizId,tab:'create'});
+  back.hidden=false;back.classList.remove('hidden');
   const q = query(collection(db, 'users', user.uid, 'businesses', bizId, 'platformConnections'));
   const snap = await getDocs(q);
   const connMap = {};
