@@ -42,12 +42,34 @@ async function migration(){
 async function email(){
  const source=read('functions/modules/publishing.js');
  for(const [plan,limit] of [['pro',7],['agency',22]]){
-  const state=database({'users/u':{email:'fixture@example.com',plan}}),sent=[];
+  const state=database({'users/u':{email:'fixture@example.com',plan},'users/u/businesses/b':{businessName:'Fixture'}}),sent=[];
   const c={exports:{},onDocumentCreated:(_,f)=>f,db:state.db,getPlanConfig:async()=>({bizLimits:{pro:7,agency:22}}),sendResendEmail:async x=>sent.push(x),APP_BASE_URL:'https://example.com',console};
   vm.runInNewContext(source.slice(source.indexOf('exports.businessCreatedTrigger =')),c);
   await c.exports.businessCreatedTrigger({params:{uid:'u',bizId:'b'},data:{data:()=>({businessName:'Fixture'})}});
   ok(sent[0].html.includes('up to '+limit+' businesses'),plan+' email uses edited config capacity');
  }
+ // An additional business is not a new customer, including legacy profiles
+ // without a createdAt field. Exercise the actual production trigger.
+ for(const old of [{businessName:'Original'},{businessName:'Original',createdAt:'2026-01-01'}]){
+  const state=database({'users/u':{email:'fixture@example.com',plan:'agency'},'users/u/businesses/old':old,'users/u/businesses/new':{businessName:'Different Company'}}),sent=[];
+  const c={exports:{},onDocumentCreated:(_,f)=>f,db:state.db,getPlanConfig:async()=>({bizLimits:{agency:22}}),sendResendEmail:async x=>sent.push(x),APP_BASE_URL:'https://example.com',console};
+  vm.runInNewContext(source.slice(source.indexOf('exports.businessCreatedTrigger =')),c);
+  await c.exports.businessCreatedTrigger({params:{uid:'u',bizId:'new'},data:{data:()=>({businessName:'Different Company'})}});
+  ok(sent.length===0,'existing customer: no repeated welcome or false signup alert');
+  ok(state.writes.length===0,'notification check does not mutate customer or company data');
+ }
+ const state=database({'users/u':{email:'fixture@example.com',plan:'agency'},'users/u/businesses/first':{businessName:'Separate Company'}}),sent=[];
+ const c={exports:{},onDocumentCreated:(_,f)=>f,db:state.db,getPlanConfig:async()=>({bizLimits:{agency:22}}),sendResendEmail:async x=>sent.push(x),APP_BASE_URL:'https://example.com',console};
+ vm.runInNewContext(source.slice(source.indexOf('exports.businessCreatedTrigger =')),c);
+ const event={params:{uid:'u',bizId:'first'},data:{data:()=>({businessName:'Separate Company'})}};
+ await c.exports.businessCreatedTrigger(event);
+ ok(sent.length===2,'first profile still gets its welcome and admin notification');
+ ok(!/new signup/i.test(sent[1].subject+sent[1].html),'profile creation never claims an account signup');
+ ok(sent[1].html.includes('BlastyBiz plan')&&sent[1].html.includes('Advertised business'),'account plan and advertised company are distinctly labeled');
+ ok(sent[0].html.includes('advertising profile saved in your BlastyBiz'),'welcome identifies the marketing profile, not another product account');
+ await c.exports.businessCreatedTrigger(event);
+ ok(sent[0].idempotencyKey===sent[2].idempotencyKey&&sent[1].idempotencyKey===sent[3].idempotencyKey,'event replay uses stable email-provider deduplication keys');
+
 }
 async function prompt(){
  const A=require('../functions/lib/platforms');

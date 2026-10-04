@@ -1018,13 +1018,18 @@ exports.businessCreatedTrigger = onDocumentCreated(
   { document: 'users/{uid}/businesses/{bizId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
   async (event) => {
     const biz = event.data.data();
-    const uid = event.params.uid;
-    if (!uid) return;
+    const { uid, bizId } = event.params;
+    if (!uid || !bizId) return;
 
     let email, ownerName, plan;
     try {
-      const userSnap = await db.collection('users').doc(uid).get();
+      const userRef = db.collection('users').doc(uid);
+      const userSnap = await userRef.get();
       if (!userSnap.exists) return;
+      // A business-profile event is not an account signup. Additional profiles
+      // must never repeat welcome/signup messages for an existing customer.
+      const profiles = await userRef.collection('businesses').limit(2).get();
+      if (!profiles.docs.some(profile => profile.id === bizId) || profiles.docs.some(profile => profile.id !== bizId)) return;
       const userData = userSnap.data();
       email     = userData.email;
       ownerName = biz.ownerName || userData.ownerName || userData.displayName || '';
@@ -1060,7 +1065,7 @@ exports.businessCreatedTrigger = onDocumentCreated(
   </div>
   <div style="padding:32px">
     <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re Agency, ${mergeData.name}. Full power unlocked.</h1>
-    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> is live on BlastyBiz Agency. You can manage up to ${bizLimits.agency} businesses with a larger AI budget and shared publishing tools.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> has an advertising profile saved in your BlastyBiz Agency account. You can manage up to ${bizLimits.agency} businesses with a larger AI budget and shared publishing tools.</p>
     <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">Add your first client from the dashboard and start blasting.</p>
     <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Open Dashboard &#8594;</a>
   </div>
@@ -1079,7 +1084,7 @@ exports.businessCreatedTrigger = onDocumentCreated(
   </div>
   <div style="padding:32px">
     <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re Pro, ${mergeData.name}. Room to grow.</h1>
-    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> is set up on BlastyBiz Pro. You have capacity for up to ${bizLimits.pro} businesses, a larger AI budget, and shared publishing tools.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> has an advertising profile saved in your BlastyBiz Pro account. You have capacity for up to ${bizLimits.pro} businesses, a larger AI budget, and shared publishing tools.</p>
     <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">Head to your dashboard and fire off your first blast — it takes about 5 minutes.</p>
     <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Go to Dashboard &#8594;</a>
   </div>
@@ -1098,7 +1103,7 @@ exports.businessCreatedTrigger = onDocumentCreated(
   </div>
   <div style="padding:32px">
     <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re in, ${mergeData.name}. Let&#39;s blast.</h1>
-    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> is set up and ready. Fill out your profile once — BlastyBiz writes the copy for every platform automatically.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> has an advertising profile saved in your BlastyBiz account. Fill out your profile once — BlastyBiz writes the copy for every platform automatically.</p>
     <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">You&#39;re on the free Starter plan. Connect Google, Facebook or Instagram to publish after approval. Pro adds business capacity and a larger AI budget.</p>
     <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px">Go to Dashboard &#8594;</a>
     <div style="margin-top:20px">
@@ -1124,19 +1129,21 @@ exports.businessCreatedTrigger = onDocumentCreated(
       }
     } catch(e) { console.error('[businessCreatedTrigger] template fetch failed:', e.message); }
 
-    await sendResendEmail({ to: email, subject, html });
+    const notificationKey = 'first-profile-' + uid + '-' + bizId;
+    await sendResendEmail({ to: email, subject, html, idempotencyKey: notificationKey + '-welcome' });
 
     try {
       await sendResendEmail({
         to: 'info@blastybiz.com',
-        subject: `[BlastyBiz] New signup (${plan}): ${mergeData.name} (${email})`,
+        subject: `[BlastyBiz] First advertising profile saved: ${businessName}`,
+        idempotencyKey: notificationKey + '-admin',
         html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#111">
-  <h2 style="margin:0 0 12px;font-size:18px">&#128226; New signup — onboarding complete</h2>
+  <h2 style="margin:0 0 12px;font-size:18px">First advertising profile saved in BlastyBiz</h2>
   <table style="width:100%;border-collapse:collapse;font-size:14px">
-    <tr><td style="padding:6px 0;color:#888;width:140px">Plan</td><td style="padding:6px 0;font-weight:700;color:#00873a;text-transform:uppercase">${plan}</td></tr>
-    <tr><td style="padding:6px 0;color:#888">Name</td><td style="padding:6px 0;font-weight:600">${mergeData.name}</td></tr>
-    <tr><td style="padding:6px 0;color:#888">Email</td><td style="padding:6px 0">${email}</td></tr>
-    <tr><td style="padding:6px 0;color:#888">Business</td><td style="padding:6px 0">${businessName}</td></tr>
+    <tr><td style="padding:6px 0;color:#888;width:140px">BlastyBiz plan</td><td style="padding:6px 0;font-weight:700;color:#00873a;text-transform:uppercase">${plan}</td></tr>
+    <tr><td style="padding:6px 0;color:#888">Account owner</td><td style="padding:6px 0;font-weight:600">${mergeData.name}</td></tr>
+    <tr><td style="padding:6px 0;color:#888">Account email</td><td style="padding:6px 0">${email}</td></tr>
+    <tr><td style="padding:6px 0;color:#888">Advertised business</td><td style="padding:6px 0">${businessName}</td></tr>
     <tr><td style="padding:6px 0;color:#888">Time</td><td style="padding:6px 0">${new Date().toUTCString()}</td></tr>
   </table>
 </div>`,
