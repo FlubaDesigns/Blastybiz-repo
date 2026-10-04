@@ -782,32 +782,32 @@ window.BBBlastySeed = {
       "source": "4"
     },
     "profile.website": {
-      "message": "Step 7O — Website",
+      "message": "Step 7 — Website",
       "enabled": true,
       "source": "4"
     },
     "profile.street": {
-      "message": "Step 7B — Street",
+      "message": "Step 7 — Street",
       "enabled": true,
       "source": "4"
     },
     "profile.city": {
-      "message": "Step 8B — City",
+      "message": "Step 8 — City",
       "enabled": true,
       "source": "4"
     },
     "profile.state": {
-      "message": "Step 9B — State",
+      "message": "Step 9 — State",
       "enabled": true,
       "source": "4"
     },
     "profile.zip": {
-      "message": "Step 10B — ZIP",
+      "message": "Step 10 — ZIP",
       "enabled": true,
       "source": "4"
     },
     "profile.hasWebsite": {
-      "message": "Step 11B — Has Website",
+      "message": "Step 11 — Has Website",
       "enabled": true,
       "source": "4"
     },

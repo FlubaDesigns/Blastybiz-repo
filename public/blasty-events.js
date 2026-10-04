@@ -2,7 +2,7 @@
   'use strict';
   let overrides={}, seen={}, persist=null, ready=false, queue=[];
   function record(id,field=false){const seed=(field?BBBlastySeed.fields:BBBlastySeed.events)[id];return seed?{...seed,...(overrides[field?'fields':'events']?.[id]||{})}:null;}
-  function message(id,context={},field=false){let text=record(id,field)?.message||'';return text.replace(/\{\{(\w+)\}\}/g,(_,key)=>String(context[key]??''));}
+  function message(id,context={},field=false){let text=record(id,field)?.message||'';if(field)text=text.replace(/^Step (\d+)[OB](?=\s*—)/,'Step $1');return text.replace(/\{\{(\w+)\}\}/g,(_,key)=>String(context[key]??''));}
   async function fire(id,context={}){
     if(!ready){queue.push([id,context]);return false;}
     const spec=record(id);if(!spec||!spec.enabled)return false;
