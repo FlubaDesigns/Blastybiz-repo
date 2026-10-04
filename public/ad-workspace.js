@@ -271,5 +271,5 @@
     if(!dirty&&!saving&&!pendingPhotoCount&&!window._bbDraftSavePending&&!window._bbAdaptationBusy&&!window.BBLifecycle?.hasUnsavedChanges?.())return;
     flushSave();e.preventDefault();e.returnValue='';
   });
-  window.BBAds={continueCurrent,choosePhoto,markDirty,open,ready,refreshImages:images,save,creative,prepareCurrent:()=>task(()=>prepare('this_run')),get active(){return ad;},get dirty(){return dirty;},get busy(){return busy||!!saving||pendingPhotoCount>0;},api};
+  window.BBAds={continueCurrent,choosePhoto,markDirty,open,ready,refreshImages:images,save,creative,prepareCurrent:()=>task(()=>prepare('this_run')),get active(){return ad;},get dirty(){return dirty;},get busy(){return busy||!!saving||pendingPhotoCount>0;},get operationBusy(){return busy||pendingPhotoCount>0;},api};
 })();

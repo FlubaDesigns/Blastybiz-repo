@@ -72,12 +72,12 @@ await page.goBack();await page.waitForFunction(()=>document.querySelector('.sect
 assert.equal(await page.locator('.create-slide.cwiz-active').getAttribute('id'),'create-slide-5','browser Back restores the actual review step');
 await page.goBack();await page.waitForFunction(()=>document.querySelector('.create-slide.cwiz-active')?.id==='create-slide-1');
 await page.goForward();await page.waitForFunction(()=>document.querySelector('.create-slide.cwiz-active')?.id==='create-slide-5');
-await page.evaluate(()=>{showTab('platforms');showTab('create');window.BBAds.save=()=>new Promise(resolve=>{window.finishNavigationSave=resolve;});});
+await page.evaluate(()=>{showTab('platforms');showTab('create');window.BBAds.busy=true;window.BBAds.operationBusy=false;window.BBAds.save=()=>new Promise(resolve=>{window.finishNavigationSave=resolve;});});
 await page.goBack();await page.waitForFunction(()=>!!window.finishNavigationSave);
 await page.goBack();
-await page.evaluate(()=>{window.BBAds.save=async()=>{};window.finishNavigationSave();});
+await page.evaluate(()=>{window.BBAds.busy=false;window.BBAds.save=async()=>{};window.finishNavigationSave();});
 await page.waitForFunction(()=>!window._bbRestoringWorkspace&&document.querySelector('.section.active')?.id==='section-create');
-assert.equal(new URL(page.url()).searchParams.get('tab'),'create','latest Back destination wins while save is pending');
+assert.equal(new URL(page.url()).searchParams.get('tab'),'create','latest Back destination wins while autosave is pending');
 await page.evaluate(()=>{window.showToast=message=>{window.lastToast=message;};window.BBAds.save=async()=>{throw Error('Save unavailable');};showTab('platforms');});
 await page.goBack();await page.waitForFunction(()=>new URLSearchParams(location.search).get('tab')==='platforms');
 assert.equal(await page.locator('.section.active').getAttribute('id'),'section-platforms','failed save keeps the current screen and route together');
