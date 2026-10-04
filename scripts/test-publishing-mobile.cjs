@@ -21,6 +21,16 @@ await page.waitForFunction(()=>[...document.querySelectorAll('details[open] .pla
 assert.equal((await photos.first().boundingBox()).width,74,'thumbnail keeps a visible 72px image plus border');
 for(const width of [320,384,430,1024]){await page.setViewportSize({width,height:832});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'no horizontal overflow '+width);const metrics=await page.locator('#platform-list').evaluate(el=>({height:el.getBoundingClientRect().height,buttons:[...el.querySelector('details[open]').querySelectorAll('.action-btns > *')].map(b=>b.getBoundingClientRect().height)}));assert(metrics.buttons.every(h=>h>=44));assert(metrics.height<1000,'one expanded platform includes copy and usable photo controls; others stay compact');console.log(width,metrics);}
 await page.setViewportSize({width:384,height:832});if(process.env.STATUS_SCREENSHOT)await page.locator('.progress-card').screenshot({path:process.env.STATUS_SCREENSHOT});await page.locator('details.platform-row').last().locator('> summary').click();assert(await page.locator('details.platform-row').last().evaluate(el=>el.open));assert.equal(await page.locator('details.platform-row[open]').count(),1,'opening another platform closes the previous one');await page.evaluate(jobs=>renderJobs(jobs),jobs);assert(await page.locator('details.platform-row').last().evaluate(el=>el.open),'live updates keep chosen accordion open');console.log((origin?'LIVE ASSETS '+origin+': ':'LOCAL ASSETS: ')+'PASS mobile: closed accordions, rendered photo thumbnails, one open platform, no overflow, 44px actions');
+// Return links must stay hidden while their authenticated destinations load.
+for(const [file,id] of [['BlastyBiz-Connect.html','connection-back'],['BlastyBiz-Listing-Preview.html','pub-back-to-ad']]){
+ const markup=await source(file);
+ await page.route('https://fixture.test/loading-return',route=>route.fulfill({contentType:'text/html',body:markup.replace(/<script[\s\S]*?<\/script>/g,'').replace('body{visibility:hidden}','body{visibility:visible}')}));
+ await page.goto('https://fixture.test/loading-return');
+ assert.equal(await page.locator('#'+id).isVisible(),false,'button styling cannot override loading state: '+id);
+ await page.evaluate(id=>{const link=document.getElementById(id);link.href='BlastyBiz.html?bizId=b&tab=create&step=5';link.hidden=false;link.classList.remove('hidden');},id);
+ assert(await page.locator('#'+id).isVisible(),'resolved return link is available');
+ await page.unroute('https://fixture.test/loading-return');
+}
 const workspace=await source('BlastyBiz.html');
 await page.route('https://fixture.test/workspace*',route=>route.fulfill({contentType:'text/html',body:workspace.replace(/<script[\s\S]*?<\/script>/g,'').replace('workspace-loading','').replace('body{visibility:hidden}','body{visibility:visible}')}));
 await page.goto('https://fixture.test/workspace?tab=schedule&scheduleAd=a&scheduleCampaign=c&sourceBlastId=d');

@@ -54,7 +54,7 @@ module.exports=async function verifyLiveNavigation({chromium,origin}){
     assert.equal(await page.locator('.create-slide.cwiz-active').getAttribute('id'),'create-slide-5','Reload keeps Review');
     await page.evaluate(()=>window._bbOpenConnections());
     await page.waitForURL(url=>url.pathname.includes('Connect'));
-    await page.locator('#connection-back').waitFor({state:'visible'});
+    await page.locator('#connection-back[href]').waitFor({state:'visible'});
     assert.match(await page.locator('#connection-back').getAttribute('href'),/step=5/,'connection detour retains Review');
     await page.locator('#connection-back').click();await ready();
     assert.equal(await page.locator('.create-slide.cwiz-active').getAttribute('id'),'create-slide-5');
@@ -62,7 +62,7 @@ module.exports=async function verifyLiveNavigation({chromium,origin}){
     await page.waitForFunction(()=>document.querySelector('#step5-lgtm-craigslist')?.classList.contains('approved'));
     await page.locator('#tab-preview').click();
     await page.waitForURL(url=>url.pathname.includes('Listing-Preview'));
-    await page.locator('#pub-back-to-ad').waitFor({state:'visible'});
+    await page.locator('#pub-back-to-ad[href]').waitFor({state:'visible'});
     const blastId=new URL(page.url()).searchParams.get('draftId');assert.notEqual(blastId,'previously_sent');
     const prepared=(await business.collection('listingDrafts').doc(blastId).get()).data();
     assert.equal(prepared.packet.offer,'Current edited offer');
@@ -71,7 +71,7 @@ module.exports=async function verifyLiveNavigation({chromium,origin}){
     await page.evaluate(async()=>{const {auth}=await import('./firebase-init-v2.js');const {signOut}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');await signOut(auth);});
     await page.goto(previewUrl);await page.waitForURL(url=>url.pathname.includes('Login'));
     await page.locator('#si-email').fill(email);await page.locator('#si-password').fill(password);await page.locator('#btn-signin').click();
-    await page.waitForURL(url=>url.pathname.includes('Listing-Preview'));await page.locator('#pub-back-to-ad').waitFor({state:'visible'});
+    await page.waitForURL(url=>url.pathname.includes('Listing-Preview'));await page.locator('#pub-back-to-ad[href]').waitFor({state:'visible'});
     assert.equal(new URL(page.url()).searchParams.get('draftId'),blastId,'sign-in returns to the exact current preview');
     assert.match(await page.locator('#pub-open-schedule').getAttribute('href'),/scheduleAd=first/,'Review offers the existing Schedule owner');
     await page.locator('#pub-back-to-ad').click();await ready();
