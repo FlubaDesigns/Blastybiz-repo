@@ -126,6 +126,17 @@ document.addEventListener('click', function(e) {
   }
 }, true);
 
+// Keep focused desktop links fully visible without moving the page itself.
+document.addEventListener('focusin', function(event) {
+  var link = event.target;
+  var nav = link && link.parentElement;
+  if (!nav || !nav.classList.contains('header__nav')) return;
+  var bounds = nav.getBoundingClientRect();
+  var target = link.getBoundingClientRect();
+  if (target.right > bounds.right) nav.scrollLeft += target.right - bounds.right;
+  else if (target.left < bounds.left) nav.scrollLeft -= bounds.left - target.left;
+});
+
 // Measure the real rendered header height and update --main-offset and --header-h
 // so every page's content clears the fixed header exactly — no hardcoded guessing.
 function _applyHeaderOffset() {
