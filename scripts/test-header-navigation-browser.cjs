@@ -25,7 +25,7 @@ const widths=[390,767,768,980,1024,1165,1180,1440];
     if(state==='admin')for(const id of ['header__nav-admin','header__nav-testconsole','header__mobile-admin','header__mobile-testconsole'])document.getElementById(id).style.display='';
     document.querySelectorAll('a').forEach(a=>a.addEventListener('click',e=>e.preventDefault()));
    },state);
-   await page.locator('.header__logo-icon').evaluate(img=>img.decode());
+   await page.locator('.header__logo img').evaluateAll(imgs=>Promise.all(imgs.map(img=>img.decode())));
    const metrics=await page.evaluate(()=>{
     const nav=document.querySelector('.header__nav'),row=document.querySelector('.header__nav-row');
     const visible=el=>getComputedStyle(el).display!=='none'&&el.getBoundingClientRect().width>0;
@@ -52,14 +52,14 @@ const widths=[390,767,768,980,1024,1165,1180,1440];
     for(const l of metrics.links)assert(l.lines===1&&l.whiteSpace==='nowrap'&&l.shrink==='0',`${width}/${state}: ${l.text} stays on one line`);
     const centers=metrics.links.map(l=>l.center);assert(Math.max(...centers)-Math.min(...centers)<1,'all nav labels are vertically centered');
     for(let i=1;i<metrics.links.length;i++)assert(Math.abs(metrics.links[i].left-metrics.links[i-1].right-16)<1,'canonical nav gap remains even');
-    const reachable=await page.evaluate(()=>{
+    const reachable=await page.evaluate(async()=>{
      const nav=document.querySelector('.header__nav'),links=[...nav.children].filter(el=>el.matches('.header__nav-link,.header__nav-cta')&&getComputedStyle(el).display!=='none');
      nav.scrollLeft=0;const first=links[0].getBoundingClientRect().left>=nav.getBoundingClientRect().left-1;
      nav.scrollLeft=nav.scrollWidth;const last=links.at(-1).getBoundingClientRect().right<=nav.getBoundingClientRect().right+1;
-     nav.scrollLeft=0;links.at(-1).focus();const focused=links.at(-1).getBoundingClientRect().right<=nav.getBoundingClientRect().right+1;
-     return {first,last,focused,pageX:scrollX};
+     nav.scrollLeft=0;links.at(-1).focus();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));const focused=links.at(-1).getBoundingClientRect().right<=nav.getBoundingClientRect().right+1;
+     return {first,last,focused,pageX:scrollX,navWidth:nav.clientWidth,scrollLeft:nav.scrollLeft,navRight:nav.getBoundingClientRect().right,lastRight:links.at(-1).getBoundingClientRect().right};
     });
-    assert(reachable.first&&reachable.last&&reachable.focused&&reachable.pageX===0,'first/last links remain scrollable and keyboard-reachable without page scrolling');
+    assert(reachable.first&&reachable.last&&reachable.focused&&reachable.pageX===0,`${width}/${state}: first/last links remain scrollable and keyboard-reachable without page scrolling: ${JSON.stringify(reachable)}`);
     if(width===768&&state==='admin')assert(metrics.scrollWidth>metrics.clientWidth,'crowded desktop navigation uses its own horizontal scroll');
    }
    scenarios++;
