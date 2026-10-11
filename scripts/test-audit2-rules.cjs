@@ -70,6 +70,7 @@ const {doc,getDoc,setDoc,deleteDoc,writeBatch}=firestore;
   await testing.assertFails(getDoc(doc(owner,'accountDeletions/owner')));checks++;
   await env.withSecurityRulesDisabled(c=>deleteDoc(doc(c.firestore(),'users/owner')));
   await testing.assertFails(setDoc(doc(owner,'users/owner'),{plan:'starter'}));checks++;
-  assert(checks===61);console.log(checks+' actual Firestore emulator authorization assertions passed.');
+  // Original 61 plus 12 admin-variant and 4 nonadmin/guest to-do assertions.
+  assert.equal(checks, 77);console.log(checks+' actual Firestore emulator authorization assertions passed.');
  } finally {await env.cleanup();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
