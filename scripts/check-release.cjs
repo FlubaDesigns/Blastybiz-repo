@@ -311,6 +311,14 @@ if (process.env.SKIP_CF_ENDPOINT_CHECK === '1') {
 try { require('./test-operate-todos.cjs'); }
 catch (error) { console.error('Operate to-do regression failed:', error); failures++; }
 
+// Production blocker regressions use isolated fixtures; never call providers.
+for (const file of ['test-square-checkout-contract.cjs', 'test-account-oauth-security.cjs']) {
+  const result = require('node:child_process').spawnSync(process.execPath, [path.join(__dirname, file)], {
+    stdio: 'inherit', timeout: 60_000,
+  });
+  if (result.status !== 0) { console.error('Production regression failed:', file); failures++; }
+}
+
 // ── Summary ───────────────────────────────────────────────────────────────────
 console.log('\n── Summary ───────────────────────────────────────────────────────');
 if (failures === 0) {

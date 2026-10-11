@@ -29,7 +29,7 @@ async function deletion(){
 }
 async function payments(){
  const original={proMonthly:19,squareProMonthlyPlanId:'old'},m=database({'settings/pricing':original,'subscriptions/u':{squareSubscriptionId:'existing',status:'ACTIVE'}});let mode='throw',links=0,i=0;
- const square={catalog:{object:{upsert:async()=>{if(mode==='throw')throw Error('provider down');return mode==='missing'?{}:{catalogObject:{id:'plan-'+(++i)}};}}},checkout:{paymentLinks:{create:async()=>{links++;return {paymentLink:{url:'https://example.invalid'}};}}}};
+ const square={catalog:{object:{upsert:async request=>{if(mode==='throw')throw Error('provider down');return mode==='missing'?{}:{catalogObject:{...request.object,id:'plan-'+(++i)}};}}},checkout:{paymentLinks:{create:async()=>{links++;return {paymentLink:{url:'https://example.invalid'}};}}}};
  const c=load('payments',{...wrappers,db:m.db,admin,getSquare:()=>square,checkUidRateLimit:async()=>true});
  const req={body:{proMonthly:29,agencyMonthly:129,proAnnual:299,agencyAnnual:1299}};
  for(mode of ['throw','missing']){const r=response();await c.exports.adminUpdatePricing(req,r,{uid:'admin'});ok(r.code===502&&JSON.stringify(m.get('settings/pricing'))===JSON.stringify(original),'failed/incomplete Square response preserves complete pricing set');}

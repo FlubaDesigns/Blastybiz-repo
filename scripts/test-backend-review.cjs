@@ -30,8 +30,9 @@ async function activity(){
 async function payments(){
  function fixture(status='ACTIVE',sub={}){
   const m=database({'subscriptions/u':{squareSubscriptionId:'sub',status},'settings/pricing':{squareProMonthlyPlanId:'plan'}});let links=0;
-  const square={subscriptions:{get:async()=>({subscription:{id:'sub',status,chargedThroughDate:'2020-01-01',...sub}})},checkout:{paymentLinks:{create:async()=>{links++;return {paymentLink:{url:'https://example.invalid'}};}}}};
-  const c=load('payments',{...wrappers,db:m.db,admin,checkUidRateLimit:async()=>true,getSquare:()=>square,APP_BASE_URL:'https://example.invalid'});
+  const square={catalog:{object:{get:async()=>({object:{type:'SUBSCRIPTION_PLAN_VARIATION',id:'plan',subscriptionPlanVariationData:{phases:[{cadence:'MONTHLY',pricing:{type:'STATIC',priceMoney:{amount:1900n,currency:'USD'}}}]}}})}},subscriptions:{get:async()=>({subscription:{id:'sub',status,chargedThroughDate:'2020-01-01',...sub}})},checkout:{paymentLinks:{create:async()=>{links++;return {paymentLink:{url:'https://example.invalid',orderId:'order'}};}}}};
+  const c=load('payments',{...wrappers,db:m.db,admin,crypto:require('node:crypto'),checkUidRateLimit:async()=>true,getSquare:()=>square,APP_BASE_URL:'https://example.invalid'});
+  c.process.env.SQUARE_LOCATION_ID='test-location';
   return {c,square,links:()=>links,run:async()=>{const r=response();await c.exports.createCheckoutSession({body:{plan:'pro'}},r,{uid:'u'});return r;}};
  }
  await test('active subscription receives support guidance with no new checkout',async()=>{const f=fixture();const r=await f.run();assert.equal(r.code,409);assert.equal(r.body.code,'EXISTING_SUBSCRIPTION');assert.match(r.body.error,/support@blastybiz.com/);assert.equal(f.links(),0);});

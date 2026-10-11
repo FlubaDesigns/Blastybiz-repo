@@ -59,10 +59,10 @@ async function connectedTests(){
  async function page(query,{record,readFailure=false,selection=false,owner='u',cancelResponse}={}){
   const navigation=[],vc=new VirtualConsole();vc.on('jsdomError',e=>{if(e.message.includes('navigation'))navigation.push(e);});
   const dom=new JSDOM('<div id="page-content"></div>',{url:'https://example.com/BlastyBiz-Connected.html?'+query,runScripts:'dangerously',virtualConsole:vc}),w=dom.window,calls=[],fires=[];
-  w.eval(read('public/escape-utils.js'));w.eval(read('public/platforms-authority.js'));w.eval(read('public/platforms-config.js').replace(/^import .*;$/gm,'').replace(/^export /gm,''));w.eval(returnCode);Object.assign(w,{auth:{authStateReady:()=>Promise.resolve()},db:{},onAuthStateChanged:(_a,cb)=>cb({uid:owner,getIdToken:async()=>'fixture'}),doc:(_db,...parts)=>parts.join('/'),getDoc:async path=>{
+  w.BBOAuth={read:()=> 'a'.repeat(64),clear:()=>{}};w.eval(read('public/escape-utils.js'));w.eval(read('public/platforms-authority.js'));w.eval(read('public/platforms-config.js').replace(/^import .*;$/gm,'').replace(/^export /gm,''));w.eval(returnCode);Object.assign(w,{auth:{authStateReady:()=>Promise.resolve()},db:{},onAuthStateChanged:(_a,cb)=>cb({uid:owner,getIdToken:async()=>'fixture'}),doc:(_db,...parts)=>parts.join('/'),getDoc:async path=>{
    calls.push(path);if(readFailure)throw Error('Connection read unavailable');const data=path.endsWith('/facebook')?record:path.endsWith('/instagram')?null:{};return {exists:()=>!!data,data:()=>data};
   },BBBlasty:{fire:name=>fires.push(name)},fetch:async(url,options)=>{
-   calls.push({url,options});if(options.method==='POST'&&JSON.parse(options.body).cancel&&cancelResponse)return cancelResponse();return {ok:true,json:async()=>options.method==='POST'?{businessId:'b',platform:'facebook'}:{businessId:'b',platform:'facebook',choices:[{id:'one',label:'First'},{id:'two',label:'<img onerror=alert(1)> Intended'}]}};
+   calls.push({url,options});if(options.method==='POST'&&JSON.parse(options.body).cancel&&cancelResponse)return cancelResponse();return {ok:true,json:async()=>JSON.parse(options.body).action!=='inspect'?{businessId:'b',platform:'facebook'}:{businessId:'b',platform:'facebook',choices:[{id:'one',label:'First'},{id:'two',label:'<img onerror=alert(1)> Intended'}]}};
   }});w.eval(code);await settle();return {dom,w,calls,fires,navigation};
  }
  let e=await page('error='+encodeURIComponent('<img src=x onerror="document.body.dataset.pwned=1">'));
@@ -73,13 +73,13 @@ async function connectedTests(){
  }
  e=await page('connected=facebook&bizId=b&ownerUid=u',{record:{status:'connected',pageId:'p',pageName:'Second Page',expiresAt:new Date(Date.now()+3600000).toISOString()}});
  ok(e.fires.length===1&&e.w.document.body.textContent.includes('Second Page'),'verified saved binding shows actual destination');ok(!e.calls.includes('users/u'),'success never substitutes activeBusiness');ok([...e.w.document.querySelectorAll('a')].every(a=>new URL(a.href).searchParams.get('bizId')==='b'),'success navigation preserves business context');e.dom.window.close();
- e=await page('connected=facebook&bizId=b&ownerUid=u&selection=nonce');
+ e=await page('connected=facebook&bizId=b&ownerUid=u&pending=1#selection=nonce&state=state');
  const select=e.w.document.querySelector('select'),button=e.w.document.querySelector('button');ok(select.options.length===3&&button.disabled&&!e.w.document.querySelector('img'),'destination choice has no default and renders provider label as text');
- select.value='two';select.dispatchEvent(new e.w.Event('change'));button.click();await settle();ok(JSON.parse(e.calls.find(c=>c.options?.method==='POST').options.body).choiceId==='two','actual second option submits its identity');e.dom.window.close();
+ select.value='two';select.dispatchEvent(new e.w.Event('change'));button.click();await settle();ok(JSON.parse(e.calls.find(c=>c.options?.method==='POST'&&!JSON.parse(c.options.body).action).options.body).choiceId==='two','actual second option submits its identity');e.dom.window.close();
  let finishCancel;
- e=await page('connected=facebook&bizId=b&ownerUid=u&selection=nonce',{cancelResponse:()=>new Promise(resolve=>{finishCancel=resolve;})});
+ e=await page('connected=facebook&bizId=b&ownerUid=u&pending=1#selection=nonce&state=state',{cancelResponse:()=>new Promise(resolve=>{finishCancel=resolve;})});
  let cancel=[...e.w.document.querySelectorAll('button')].find(b=>b.textContent==='Cancel');cancel.click();await settle();
- let request=e.calls.find(c=>c.options?.method==='POST');
+ let request=e.calls.find(c=>c.options?.method==='POST'&&!JSON.parse(c.options.body).action);
  ok(JSON.parse(request.options.body).cancel===true&&JSON.parse(request.options.body).selection==='nonce','Cancel submits authenticated deletion for exact pending selection');
  ok(request.options.headers.Authorization==='Bearer fixture','Cancel carries signed-in owner token');
  ok(cancel.disabled&&e.w.document.querySelector('select').disabled&&e.w.document.querySelector('button').disabled,'Cancel locks choice controls while deletion is pending');
@@ -87,7 +87,7 @@ async function connectedTests(){
  finishCancel({ok:true,json:async()=>({cancelled:true})});await settle();
  ok(e.navigation.length===1,'Cancel navigates only after server confirms cleanup');e.dom.window.close();
  for(const response of [{ok:false,json:async()=>({error:'Try again'})},{ok:true,json:async()=>({})}]){
-  e=await page('connected=facebook&bizId=b&ownerUid=u&selection=nonce',{cancelResponse:async()=>response});
+  e=await page('connected=facebook&bizId=b&ownerUid=u&pending=1#selection=nonce&state=state',{cancelResponse:async()=>response});
   cancel=[...e.w.document.querySelectorAll('button')].find(b=>b.textContent==='Cancel');cancel.click();await settle();
   ok(!e.navigation.length&&!cancel.disabled&&!e.w.document.querySelector('select').disabled,'Failed or unconfirmed deletion retains page and enables retry');
   ok(e.w.document.querySelector('button').disabled,'Failed cancellation cannot submit an unselected destination');e.dom.window.close();

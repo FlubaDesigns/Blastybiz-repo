@@ -1,4 +1,5 @@
 'use strict';
+const {requireVerifier,validHash}=require('./oauth-binding');
 const { randomUUID } = require('node:crypto');
 const { META_GRAPH_BASE, providerId } = require('./provider-api');
 const fail = (status, message) => { throw Object.assign(Error(message), {httpStatus:status}); };
@@ -9,8 +10,9 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
     return db.collection('oauthNonces').doc(id);
   };
   const business = p => db.doc(`users/${p.uid}/businesses/${p.businessId}`);
-  const validate = (p, uid) => {
+  const validate = (p, uid, verifier) => {
     if (!p || p.phase !== 'selection' || p.uid !== uid || millis(p.expiresAt) <= clock()) fail(403, 'This connection request has expired or belongs to another account. Please reconnect.');
+    requireVerifier(p,verifier);
     if (millis(p.tokenExpiresAt)<=clock()) fail(403, 'Provider access has expired. Please reconnect.');
     if (!providerId(p.businessId) || !providerId(p.uid)) fail(400, 'Invalid business.');
   };
@@ -59,29 +61,31 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
       .map(p=>({id:p.id,pageId:p.id,label:p.name||p.id,accessToken:p.access_token,instagramAuthorized:granted.has('instagram_basic')&&granted.has('instagram_content_publish')}));
   }
   async function prepare(p) {
+    if(!validHash(p.verifierHash)||!providerId(p.state)) fail(400,'Missing browser binding. Please reconnect.');
     if (!p.choices.length) fail(409, 'No eligible destination was found. Check your provider permissions and reconnect.');
     if (Buffer.byteLength(JSON.stringify(p))>800000) fail(409,'Too many destinations. Narrow access and reconnect.');
     const id=randomUUID();
     await nonceRef(id).set({...p,phase:'selection',expiresAt:new Date(clock()+10*60*1000)});
     return id;
   }
-  async function inspect(id, uid) {
-    const p=(await nonceRef(id).get()).data(); validate(p,uid);
+  async function inspect(id, uid, verifier) {
+    const p=(await nonceRef(id).get()).data(); validate(p,uid,verifier);
     if (!(await business(p).get()).exists) fail(404,'Business no longer exists.');
     return {businessId:p.businessId,platform:p.platform,returnTo:p.returnTo||'',choices:p.choices.map(c=>({id:c.id,label:c.label}))};
   }
-  async function cancel(id,uid) {
+  async function cancel(id,uid,verifier) {
     const ref=nonceRef(id);
     return db.runTransaction(async tx=>{
       const p=(await tx.get(ref)).data();
       if(!p)return {cancelled:true}; // Safe, idempotent retry after deletion.
       if(p.uid!==uid || p.phase!=='selection')fail(403,'This connection request belongs to another account.');
+      requireVerifier(p,verifier);
       tx.delete(ref); // Owner can discard even an expired choice immediately.
       return {cancelled:true};
     });
   }
-  async function confirm(id, uid, choiceId) {
-    const ref=nonceRef(id), p=(await ref.get()).data(); validate(p,uid);
+  async function confirm(id, uid, choiceId, verifier) {
+    const ref=nonceRef(id), p=(await ref.get()).data(); validate(p,uid,verifier);
     const choice=p.choices.find(c=>c.id===choiceId);
     if (!choice) fail(400,'Choose one of the available destinations.');
     let igUserId='';
@@ -93,7 +97,7 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
       if (igUserId && !providerId(igUserId)) fail(409,'Invalid linked Instagram account.');
     }
     await db.runTransaction(async tx=>{
-      const fresh=(await tx.get(ref)).data(); validate(fresh,uid);
+      const fresh=(await tx.get(ref)).data(); validate(fresh,uid,verifier);
       if (!fresh.choices.some(c=>c.id===choiceId)) fail(409,'Connection choice changed. Reconnect.');
       const br=business(p); if (!(await tx.get(br)).exists) fail(404,'Business no longer exists.');
       const cr=br.collection('platformConnections').doc(p.platform);

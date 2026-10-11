@@ -77,6 +77,14 @@ jobs:
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-personal-seller.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-signup-submit.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-original-flow-ui.cjs
+          JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-public-promises-ui.cjs
+          JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-oauth-browser-security.cjs
+      - name: OAuth browser-origin contract (local fixtures only)
+        run: |
+          npm install --prefix "$RUNNER_TEMP/blasty-browser" --no-audit --no-fund playwright@1.55.0
+          "$RUNNER_TEMP/blasty-browser/node_modules/.bin/playwright" install chromium --with-deps
+          CHROMIUM_PATH="$(node -e "process.stdout.write(require('$RUNNER_TEMP/blasty-browser/node_modules/playwright').chromium.executablePath())")" node scripts/test-oauth-origin-browser.cjs
+          PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-oauth-playwright-security.cjs
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

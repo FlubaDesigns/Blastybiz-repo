@@ -8,7 +8,10 @@ function createAccountDeletion({db,admin,getSquare,revokeConnections,clock=Date.
   const user=db.collection('users').doc(uid),journal=db.collection('accountDeletions').doc(uid),subRef=db.collection('subscriptions').doc(uid);
   const result={uid,dryRun:!!opts.dryRun,businesses:0,docsDeleted:0,storagePrefixes:[],subscriptionCancelled:false,authUserDeleted:false,errors:[]};
   const businesses=await user.collection('businesses').get();result.businesses=businesses.size;
-  result.storagePrefixes=[`users/${uid}/images/`,`photos/${uid}/`,...businesses.docs.map(d=>`businesses/${d.id}/`)];
+  // Business IDs are tenant-selected, not globally unique ownership evidence.
+  // Preserve ambiguous legacy businesses/{bizId}/ objects for manual reconciliation.
+  const ownedPrefixes=[`users/${uid}/images/`,`photos/${uid}/`];
+  result.storagePrefixes=ownedPrefixes;
   if(opts.dryRun)return result;
   const lease=require('node:crypto').randomUUID(),now=clock();
   const claimed=await db.runTransaction(async tx=>{
@@ -19,12 +22,13 @@ function createAccountDeletion({db,admin,getSquare,revokeConnections,clock=Date.
     const r=opts.retention;
     if(!current||!['trial','starter'].includes(current.plan)||current.planActive||!current.dormancyWarnedAt||!millis(current.lastActiveAt)||millis(current.lastActiveAt)>=r.cutoff||millis(current.lastActiveAt)!==r.lastActiveAt||!millis(current.dormancyPurgeAt)||millis(current.dormancyPurgeAt)>now||millis(current.dormancyPurgeAt)!==r.purgeAt)return false;
    }
-   tx.set(journal,{status:'running',lease,leaseUntil:now+15*60*1000,requestedAt:prior.requestedAt||stamp(),updatedAt:stamp(),storagePrefixes:[...new Set([...(prior.storagePrefixes||[]),...result.storagePrefixes])],squareSubscriptionId:prior.squareSubscriptionId||s.data()?.squareSubscriptionId||null},{merge:true});
+   tx.set(journal,{status:'running',lease,leaseUntil:now+15*60*1000,requestedAt:prior.requestedAt||stamp(),updatedAt:stamp(),storagePrefixes:ownedPrefixes,squareSubscriptionId:prior.squareSubscriptionId||s.data()?.squareSubscriptionId||null},{merge:true});
    if(u.exists)tx.update(user,{deletionRequestedAt:stamp()});
    return true;
   });
   if(!claimed){result.skipped=true;return result;}
-  const record=(await journal.get()).data();result.storagePrefixes=record.storagePrefixes;
+  const record=(await journal.get()).data();// Never trust prefixes carried forward by a pre-fix deletion journal.
+  result.storagePrefixes=ownedPrefixes;
   try {
    if(record.squareSubscriptionId&&!record.subscriptionCancelled){
     if(opts.cancelSubscription===false)throw Error('Cannot delete an account with an uncancelled subscription');

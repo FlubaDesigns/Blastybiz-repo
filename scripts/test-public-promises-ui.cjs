@@ -1,0 +1,40 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const {JSDOM}=require(process.env.JSDOM_PATH||'jsdom');
+const read=name=>fs.readFileSync('public/'+name,'utf8');
+const scripts=dom=>[...dom.window.document.scripts].filter(s=>!s.src&&!s.type).map(s=>s.textContent);
+module.exports=async function(){
+  let dom=new JSDOM(read('BlastyBiz-Contact.html'),{runScripts:'outside-only'}),w=dom.window;
+  w.eval(scripts(dom).find(s=>s.includes('// Accordion toggle')));
+  const headers=[...w.document.querySelectorAll('.contact-card__header')];assert.equal(headers.length,4);
+  for(const h of headers){assert.equal(h.tagName,'BUTTON');assert.equal(h.type,'button');assert.equal(h.getAttribute('aria-expanded'),'false');assert(w.document.getElementById(h.getAttribute('aria-controls')).hidden);}
+  headers[0].click();assert.equal(headers[0].getAttribute('aria-expanded'),'true');assert.equal(w.document.getElementById('support-panel').hidden,false);
+  w.document.getElementById('support-name').click();assert.equal(headers[0].getAttribute('aria-expanded'),'true');
+  headers[1].click();assert(w.document.getElementById('support-panel').hidden);assert.equal(headers[0].getAttribute('aria-expanded'),'false');
+  headers[1].click();assert(w.document.getElementById('general-panel').hidden);
+  headers[1].click();assert.equal(w.document.getElementById('general-panel').hidden,false);dom.window.close();
+  dom=new JSDOM(read('BlastyBiz-Trial.html'),{runScripts:'outside-only'});w=dom.window;
+  w.HTMLElement.prototype.scrollIntoView=function(){};w.setTimeout=fn=>fn();w.eval(scripts(dom).find(s=>s.includes('const STEPS =')));
+  let input=w.document.querySelector('.bubble-input');assert.equal(input.getAttribute('aria-label'),'Your name');assert.equal(input.id,'preboard-name');
+  input.value='Test';input.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));input=w.document.querySelector('.bubble-input');assert.equal(input.type,'email');assert.equal(input.getAttribute('aria-label'),'Email address');assert.equal(input.id,'preboard-email');dom.window.close();
+  dom=new JSDOM(read('BlastyBiz-Stop-Paying-Johnny.html'),{runScripts:'outside-only'});w=dom.window;
+  w.fetch=async()=>({ok:true,json:async()=>({fields:{proMonthly:{integerValue:'19'}}})});w.eval(read('pricing.js'));w.document.dispatchEvent(new w.Event('DOMContentLoaded'));await new Promise(r=>setImmediate(r));
+  assert.equal(w.document.querySelector('[data-price-period="weekly"]').textContent,'$4.38');assert.equal(w.document.querySelector('[data-price-period="annual"]').textContent,'$228');assert.equal(w.document.querySelector('[data-price-period="annual-difference"]').textContent,'$17,972');
+  w.fetch=async()=>({ok:true,json:async()=>({fields:{proMonthly:{integerValue:'27'}}})});w.document.dispatchEvent(new w.Event('DOMContentLoaded'));await new Promise(r=>setImmediate(r));assert.equal(w.document.querySelector('[data-price-period="annual"]').textContent,'$324');assert.equal(w.document.querySelector('[data-price-period="annual-difference"]').textContent,'$17,876');
+  w.fetch=async()=>{throw Error('offline');};w.document.dispatchEvent(new w.Event('DOMContentLoaded'));await new Promise(r=>setImmediate(r));for(const n of w.document.querySelectorAll('[data-price]'))assert.equal(n.textContent,'See checkout');dom.window.close();
+  const home=read('BlastyBiz-Home.html'),source=require('../functions/lib/platforms.js');assert.deepEqual([...source.AUTO_POST_PLATFORMS].sort(),['facebook','google','instagram']);assert.equal(Object.keys(source.PLATFORM_CAPABILITY_MAP).length,15);assert.match(home,/other 12 supported destinations/);assert(!home.includes('TikTok'));assert(!home.includes('Post everywhere in one tap'));
+  assert.match(read('BlastyBiz-AI.html'),/href="BlastyBiz-Home.html#pricing"[^>]*>Compare plans/);
+  assert(!read('BlastyBiz-Plan-Pro.html').includes('15–20×'));assert(!read('BlastyBiz-Stop-Paying-Johnny.html').includes('Average annual savings'));assert(!read('BlastyBiz-Stop-Paying-Johnny.html').includes('$4.75'));
+  const css=read('global-style.css');assert.match(css,/html, body \{ font-family: 'DM Sans', sans-serif/);assert.match(css,/contact-card__form\[hidden\] \{ display: none/);
+  const color=css.match(/--muted:\s*(#[a-f0-9]{6})/i)[1];const lum=hex=>hex.match(/[a-f0-9]{2}/gi).map(v=>parseInt(v,16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);
+  for(const bg of ['000000','0D160D','0a1a0a'])assert((lum(color.slice(1))+.05)/(lum(bg)+.05)>=4.5);
+  for(const file of ['BlastyBiz-Home.html','BlastyBiz-Stop-Paying-Johnny.html']){const d=new JSDOM(read(file));for(const s of d.window.document.querySelectorAll('script[type="application/ld+json"]'))JSON.parse(s.textContent);d.window.close();}
+  const terms=read('BlastyBiz-Terms.html');
+  assert(!/3 listings\/month|Unlimited listings|white label|client dashboard/i.test(terms));
+  assert.match(terms,/configured account limits shown in the app/);assert.match(terms,/monthly or annual billing period/);
+  assert.match(terms,/Other supported destinations use copy-and-paste output that you post manually/);
+  for(const sentence of ['You can cancel at any time.','You will not receive a refund for the current billing period if you cancel mid-cycle, but you will retain access through the end of the period you paid for.','We do not delete customer data when a subscription lapses.','Material changes will be communicated by email to active account holders at least 14 days before they take effect.'])assert(terms.includes(sentence),'existing policy preserved: '+sentence);
+  for(const page of ['BlastyBiz-Home.html','BlastyBiz-Plan-Agency.html'])assert(!/white label|client dashboard/i.test(read(page)));
+  console.log('PASS public promises UI: contact disclosure/repeat/hidden panels, trial accessible names, server-map catalog, public plan link, pricing arithmetic/change/offline, contrast/font, schema, approved factual Terms with existing policies preserved.');
+};
+if(require.main===module)module.exports().catch(e=>{console.error(e);process.exitCode=1;});

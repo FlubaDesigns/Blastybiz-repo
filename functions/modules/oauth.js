@@ -10,7 +10,7 @@ const { META_GRAPH_VERSION, META_GRAPH_BASE, providerId, googlePostsUrl } = requ
 
 const {
   onRequest, onSchedule, admin, db, axios,
-  APP_BASE_URL, sendResendEmail,
+  APP_BASE_URL, ALLOWED_ORIGINS, sendResendEmail,
   userBizRef, userBizConnsRef,
   _getConnTokens, _setConnTokens,
   checkUidRateLimit, setCors, withAuth, verifyBearer,
@@ -18,23 +18,30 @@ const {
 } = require('../lib/shared');
 
 const selection = require('../lib/oauth-selection').createOAuthSelection({db,admin,axios});
-function connectionUrl(platform, businessId, uid, returnTo, extra={}) {
-  return APP_BASE_URL + '/BlastyBiz-Connected.html?' + new URLSearchParams({connected:platform,bizId:businessId,ownerUid:uid,...(returnTo==='onboarding'?{returnTo}:{}),...extra});
+const {createOAuthBinding,validHash,cookieName}=require('../lib/oauth-binding');
+const binding=createOAuthBinding({db});
+function connectionUrl(platform, businessId, uid, returnTo, extra={}, appOrigin=APP_BASE_URL) {
+  const {selection,state,...query}=extra;
+  return appOrigin + '/BlastyBiz-Connected.html?' + new URLSearchParams({connected:platform,bizId:businessId,ownerUid:uid,...(returnTo==='onboarding'?{returnTo}:{}),...(selection?{pending:'1'}:{}),...query}) + (selection?'#'+new URLSearchParams({selection,state}):'');
 }
-async function consumeState(state, platform) {
-  if (!providerId(state)) throw Error('Invalid OAuth state.');
-  const ref=db.collection('oauthNonces').doc(state);
-  return db.runTransaction(async tx=>{
-    const snap=await tx.get(ref), p=snap.data();
-    if (!p || p.platform!==platform || p.phase!=='oauth' || p.expiresAt.toMillis()<=Date.now()) throw Error('Expired or mismatched OAuth state.');
-    tx.delete(ref); return p;
-  });
-}
-exports.oauthDestination = onRequest({invoker:'public'}, withAuth(async (req,res,decoded)=>{
+// Top-level POST establishes a first-party callback cookie, including on browsers
+// that block third-party cookies. The same-origin bridge never puts its secret in a URL.
+exports.oauthStart = onRequest({invoker:'public',region:'us-central1'},async (req,res)=>{
+  setCors(req,res);
+  if(req.method==='OPTIONS')return res.status(204).send('');
+  res.set('Cache-Control','no-store');res.set('Referrer-Policy','no-referrer');
+  if(req.method!=='POST')return res.status(405).send('POST only');
   try {
-    if (!['GET','POST'].includes(req.method)) return res.status(405).json({error:'GET or POST only'});
-    const input=req.method==='GET'?req.query:req.body||{};
-    const result=req.method==='GET'?await selection.inspect(input.selection,decoded.uid):input.cancel===true?await selection.cancel(input.selection,decoded.uid):await selection.confirm(input.selection,decoded.uid,input.choiceId);
+    const result=await binding.start(req.body?.state,req.body?.verifier,req.headers?.origin);
+    res.set('Set-Cookie',result.cookie);return res.redirect(303,result.url);
+  }catch(e){return res.status(403).send('Connection could not start. Return to BlastyBiz and reconnect in the same browser tab.');}
+});
+exports.oauthDestination = onRequest({invoker:'public'}, withAuth(async (req,res,decoded)=>{
+  res.set('Cache-Control','no-store');
+  try {
+    if (req.method!=='POST') return res.status(405).json({error:'POST only'});
+    const input=req.body||{};
+    const result=input.action==='inspect'?await selection.inspect(input.selection,decoded.uid,input.verifier):input.cancel===true?await selection.cancel(input.selection,decoded.uid,input.verifier):await selection.confirm(input.selection,decoded.uid,input.choiceId,input.verifier);
     return res.json(result);
   } catch(e) {
     return res.status(e.httpStatus||502).json({error:e.httpStatus?e.message:'Could not verify the provider destination. Reconnect or try again.'});
@@ -44,7 +51,9 @@ exports.oauthDestination = onRequest({invoker:'public'}, withAuth(async (req,res
 exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_CLIENT_ID'] }, withAuth(async (req, res, decoded) => {
   res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   const uid = decoded.uid;
-  const { businessId, returnTo } = req.query;
+  const { businessId, returnTo, verifierHash } = req.query;
+  const appOrigin=req.headers?.origin;
+  if(!ALLOWED_ORIGINS.has(appOrigin)||!validHash(verifierHash))return res.status(400).json({error:'Start this connection from BlastyBiz in the same browser tab.'});
   if (!providerId(businessId)) { res.status(400).json({ error: 'Invalid businessId' }); return; }
   if (!(await checkUidRateLimit('oauthInitRateLimit', uid, 20, 60 * 60 * 1000))) {
     return res.status(429).json({ error: 'Too many connection attempts. Please try again in an hour.' });
@@ -54,10 +63,6 @@ exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId) { res.status(503).json({ error: 'Google OAuth not configured' }); return; }
   const nonce = require('crypto').randomUUID();
-  await db.collection('oauthNonces').doc(nonce).set({
-    uid, businessId, platform: 'google', phase: 'oauth', returnTo: returnTo === 'onboarding' ? returnTo : '',
-    expiresAt: new Date(Date.now() + 10 * 60 * 1000)
-  });
   const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/googleOAuthCallback';
   const scope = 'https://www.googleapis.com/auth/business.manage';
   const url =
@@ -68,16 +73,22 @@ exports.initiateGoogleOAuth = onRequest({ invoker: 'public', secrets: ['GOOGLE_C
     `&scope=${encodeURIComponent(scope)}` +
     `&access_type=offline&prompt=consent` +
     `&state=${encodeURIComponent(nonce)}`;
-  res.json({ url });
+  await db.collection('oauthNonces').doc(nonce).set({
+    uid,businessId,platform:'google',phase:'start',appOrigin,verifierHash,authorizationUrl:url,
+    returnTo:returnTo==='onboarding'?returnTo:'',expiresAt:new Date(Date.now()+10*60*1000)
+  });
+  res.set('Cache-Control','no-store');
+  res.json({state:nonce,url:appOrigin+'/BlastyBiz-OAuth-Start.html?state='+encodeURIComponent(nonce)});
 }));
 
 exports.googleOAuthCallback = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] }, async (req, res) => {
   const { code, state } = req.query;
-  let businessId, uid, returnTo;
-  try { ({businessId,uid,returnTo} = await consumeState(state, 'google')); }
+  let businessId, uid, returnTo, appOrigin, verifierHash;
+  res.set('Cache-Control','no-store');res.set('Referrer-Policy','no-referrer');
+  try { ({businessId,uid,returnTo,appOrigin,verifierHash} = await binding.consume(state, 'google',req.headers?.cookie)); }
   catch(e) { return res.status(400).send('Invalid or expired OAuth state. Please try connecting again.'); }
-  const connectedRedirect = connectionUrl('google',businessId,uid,returnTo);
-  const errorRedirect = connectionUrl('google',businessId,uid,returnTo,{error:'google'});
+  res.set('Set-Cookie',`${cookieName(state)}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`);
+  const errorRedirect = connectionUrl('google',businessId,uid,returnTo,{error:'google'},appOrigin);
   if (!code) return res.redirect(errorRedirect);
 
   try {
@@ -93,11 +104,9 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', region: 'us-central
 
     if (!access_token) throw Error('Google did not return an access token.');
     const choices=await selection.googleChoices(access_token);
-    const selectionId=await selection.prepare({uid,businessId,returnTo,platform:'google',choices,accessToken:access_token,refreshToken:refresh_token||'',tokenExpiresAt:new Date(Date.now()+(expires_in||3600)*1000)});
-    if (choices.length===1) {
-      await selection.confirm(selectionId,uid,choices[0].id);
-      res.redirect(connectedRedirect);
-    } else res.redirect(connectionUrl('google',businessId,uid,returnTo,{selection:selectionId}));
+    const selectionId=await selection.prepare({uid,businessId,returnTo,verifierHash,state,platform:'google',choices,accessToken:access_token,refreshToken:refresh_token||'',tokenExpiresAt:new Date(Date.now()+(expires_in||3600)*1000)});
+    // Even one destination requires authenticated, same-tab confirmation.
+    res.redirect(connectionUrl('google',businessId,uid,returnTo,{selection:selectionId,state},appOrigin));
   } catch(e) {
     console.error('googleOAuthCallback failed:', e.response?.status || e.httpStatus || 'provider_error');
     res.redirect(errorRedirect);
@@ -107,7 +116,9 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', region: 'us-central
 exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBOOK_APP_ID'] }, withAuth(async (req, res, decoded) => {
   res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   const uid = decoded.uid;
-  const { businessId, returnTo } = req.query;
+  const { businessId, returnTo, verifierHash } = req.query;
+  const appOrigin=req.headers?.origin;
+  if(!ALLOWED_ORIGINS.has(appOrigin)||!validHash(verifierHash))return res.status(400).json({error:'Start this connection from BlastyBiz in the same browser tab.'});
   if (!providerId(businessId)) { res.status(400).json({ error: 'Invalid businessId' }); return; }
   if (!(await checkUidRateLimit('oauthInitRateLimit', uid, 20, 60 * 60 * 1000))) {
     return res.status(429).json({ error: 'Too many connection attempts. Please try again in an hour.' });
@@ -117,10 +128,6 @@ exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBO
   const appId = process.env.FACEBOOK_APP_ID;
   if (!appId) { res.status(503).json({ error: 'Facebook OAuth not configured' }); return; }
   const nonce = require('crypto').randomUUID();
-  await db.collection('oauthNonces').doc(nonce).set({
-    uid, businessId, platform: 'facebook', phase: 'oauth', returnTo: returnTo === 'onboarding' ? returnTo : '',
-    expiresAt: new Date(Date.now() + 10 * 60 * 1000)
-  });
   const redirectUri = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/facebookOAuthCallback';
   const scope = 'pages_show_list,pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish';
   const url =
@@ -129,16 +136,22 @@ exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBO
     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
     `&scope=${encodeURIComponent(scope)}` +
     `&state=${encodeURIComponent(nonce)}`;
-  res.json({ url });
+  await db.collection('oauthNonces').doc(nonce).set({
+    uid,businessId,platform:'facebook',phase:'start',appOrigin,verifierHash,authorizationUrl:url,
+    returnTo:returnTo==='onboarding'?returnTo:'',expiresAt:new Date(Date.now()+10*60*1000)
+  });
+  res.set('Cache-Control','no-store');
+  res.json({state:nonce,url:appOrigin+'/BlastyBiz-OAuth-Start.html?state='+encodeURIComponent(nonce)});
 }));
 
 exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['FACEBOOK_APP_ID', 'FACEBOOK_APP_SECRET'] }, async (req, res) => {
   const { code, state } = req.query;
-  let businessId, uid, returnTo;
-  try { ({businessId,uid,returnTo} = await consumeState(state, 'facebook')); }
+  let businessId, uid, returnTo, appOrigin, verifierHash;
+  res.set('Cache-Control','no-store');res.set('Referrer-Policy','no-referrer');
+  try { ({businessId,uid,returnTo,appOrigin,verifierHash} = await binding.consume(state, 'facebook',req.headers?.cookie)); }
   catch(e) { return res.status(400).send('Invalid or expired OAuth state. Please try connecting again.'); }
-  const connectedRedirect = connectionUrl('facebook',businessId,uid,returnTo);
-  const errorRedirect = connectionUrl('facebook',businessId,uid,returnTo,{error:'facebook'});
+  res.set('Set-Cookie',`${cookieName(state)}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`);
+  const errorRedirect = connectionUrl('facebook',businessId,uid,returnTo,{error:'facebook'},appOrigin);
   if (!code) return res.redirect(errorRedirect);
 
   try {
@@ -166,11 +179,9 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-centr
 
     if (!longLivedToken) throw Error('Facebook did not return an access token.');
     const choices=await selection.facebookChoices(longLivedToken);
-    const selectionId=await selection.prepare({uid,businessId,returnTo,platform:'facebook',choices,userAccessToken:longLivedToken,tokenExpiresAt:expiresAt});
-    if (choices.length===1) {
-      await selection.confirm(selectionId,uid,choices[0].id);
-      res.redirect(connectedRedirect);
-    } else res.redirect(connectionUrl('facebook',businessId,uid,returnTo,{selection:selectionId}));
+    const selectionId=await selection.prepare({uid,businessId,returnTo,verifierHash,state,platform:'facebook',choices,userAccessToken:longLivedToken,tokenExpiresAt:expiresAt});
+    // Even one destination requires authenticated, same-tab confirmation.
+    res.redirect(connectionUrl('facebook',businessId,uid,returnTo,{selection:selectionId,state},appOrigin));
   } catch(e) {
     console.error('facebookOAuthCallback failed:', e.response?.status || e.httpStatus || 'provider_error');
     res.redirect(errorRedirect);
@@ -309,7 +320,7 @@ exports.checkPlatformTokenExpiry = onSchedule(
           continue;
         } catch (e) {
           console.warn(`[checkPlatformTokenExpiry] Facebook refresh failed for biz ${conn.businessId}:`,
-            e.response?.data || e.message);
+            Number.isInteger(e.response?.status) ? e.response.status : 'provider_error');
           // A failed proactive refresh does not invalidate a still-valid grant.
         }
       }
@@ -332,7 +343,7 @@ exports.checkPlatformTokenExpiry = onSchedule(
           continue;
         } catch (e) {
           console.warn(`[checkPlatformTokenExpiry] Google refresh failed for ${docSnap.id}:`,
-            e.response?.data || e.message);
+            Number.isInteger(e.response?.status) ? e.response.status : 'provider_error');
         }
       }
 

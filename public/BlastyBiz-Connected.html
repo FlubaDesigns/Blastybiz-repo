@@ -3,9 +3,10 @@
 <head>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8"/>
+<meta name="referrer" content="no-referrer"/>
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="stylesheet" href="global-style.css?v=20261004-flow" />
+<link rel="stylesheet" href="global-style.css?v=20261011-production" />
 <title>BlastyBiz — Connected!</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -22,13 +23,14 @@
   }
 }
 </script>
-  <script type="module" src="./auth-guard.js?v=20261004-flow"></script>
+  <script type="module" src="./auth-guard.js?v=20261011-security"></script>
 <script src="blastybiz-menu.js?v=7"></script>
 <script src="escape-utils.js"></script>
 <script src="blasty-registry.js"></script>
 <script src="blasty-events.js"></script>
 <script src="blasty-guidance.js"></script>
 <script src="business-form.js"></script>
+<script src="oauth-browser.js?v=20261011-security"></script>
 <script type="module" src="blasty-runtime.js"></script>
 </head>
 <body class="app-page connected-page has-site-header">
@@ -50,7 +52,7 @@
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { deliveryReadiness } from './platforms-config.js?v=20261004-flow';
-import { connectionReturn } from './auth-return.js?v=20261004-flow';
+import { connectionReturn } from './auth-return.js?v=20261011-security';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -141,12 +143,16 @@ auth.authStateReady().then(() => {
     if (!bizId || !/^[A-Za-z0-9_-]{1,128}$/.test(bizId) || (ownerUid && ownerUid!==user.uid)) {
       fail('Open this connection with the account and business that started it.'); return;
     }
-    const selectionId=params.get('selection');
+    const completion=new URLSearchParams(window.location.hash.slice(1));
+    const selectionId=completion.get('selection');
+    const state=completion.get('state');
+    if(params.get('pending')==='1'&&!selectionId){fail('This connection was interrupted. Please reconnect in this browser tab.');return;}
     if(selectionId) {
       try {
+        const verifier=window.BBOAuth.read(state);
         const token=await user.getIdToken();
         const endpoint='https://us-central1-blastybiz-9523e.cloudfunctions.net/oauthDestination';
-        const response=await fetch(endpoint+'?selection='+encodeURIComponent(selectionId),{headers:{Authorization:'Bearer '+token}});
+        const response=await fetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({selection:selectionId,verifier,action:'inspect'})});
         const data=await response.json(); if(!response.ok)throw Error(data.error||'Could not load your destinations.');
         if(data.businessId!==bizId || data.platform!==platform)throw Error('This connection belongs to a different business.');
         content.replaceChildren();
@@ -161,8 +167,9 @@ auth.authStateReady().then(() => {
         button.addEventListener('click',async()=>{
           button.disabled=true;cancel.disabled=true;select.disabled=true;feedback.textContent='Saving your choice…';
           try {
-            const r=await fetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+await user.getIdToken(),'Content-Type':'application/json'},body:JSON.stringify({selection:selectionId,choiceId:select.value})});
+            const r=await fetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+await user.getIdToken(),'Content-Type':'application/json'},body:JSON.stringify({selection:selectionId,verifier,choiceId:select.value})});
             const result=await r.json();if(!r.ok)throw Error(result.error||'Your choice was not saved.');
+            window.BBOAuth.clear(state);
             const next=new URLSearchParams({connected:result.platform,bizId:result.businessId,ownerUid:user.uid});
             if(result.returnTo==='onboarding')next.set('returnTo','onboarding');
             window.location.replace('BlastyBiz-Connected.html?'+next);
@@ -172,8 +179,9 @@ auth.authStateReady().then(() => {
         cancel.addEventListener('click',async()=>{
           cancel.disabled=true;button.disabled=true;select.disabled=true;feedback.textContent='Discarding your connection choice…';
           try {
-            const r=await fetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+await user.getIdToken(),'Content-Type':'application/json'},body:JSON.stringify({selection:selectionId,cancel:true})});
+            const r=await fetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+await user.getIdToken(),'Content-Type':'application/json'},body:JSON.stringify({selection:selectionId,verifier,cancel:true})});
             const result=await r.json();if(!r.ok || !result.cancelled)throw Error(result.error||'Could not discard this choice. Please try Cancel again.');
+            window.BBOAuth.clear(state);
             window.location.replace('BlastyBiz-Connect.html?bizId='+encodeURIComponent(bizId));
           }catch(e){feedback.textContent=e.message;cancel.disabled=false;button.disabled=!select.value;select.disabled=false;}
         });

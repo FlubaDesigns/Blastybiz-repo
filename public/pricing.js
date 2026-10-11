@@ -9,7 +9,11 @@
       const {fields={}}=await response.json();
       document.querySelectorAll('[data-price]').forEach(node=>{
         const value=fields[node.dataset.price],number=Number(value?.doubleValue??value?.integerValue??value?.stringValue);
-        node.textContent=Number.isFinite(number)&&number>0?money(number):'See checkout';
+        let display = number;
+        if (node.dataset.pricePeriod === 'weekly') display = number * 12 / 52;
+        if (node.dataset.pricePeriod === 'annual') display = number * 12;
+        if (node.dataset.pricePeriod === 'annual-difference') display = Number(node.dataset.comparisonAnnual) - number * 12;
+        node.textContent=Number.isFinite(number)&&number>0&&Number.isFinite(display)?money(display):'See checkout';
       });
     }catch(error){document.querySelectorAll('[data-price]').forEach(node=>node.textContent='See checkout');}
     finally{clearTimeout(timer);}

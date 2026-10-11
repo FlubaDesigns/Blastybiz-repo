@@ -24,19 +24,51 @@ async function loadPricing() {
     const snap = await db.collection('settings').doc('pricing').get();
     if (snap.exists) {
       const d = snap.data();
-      if (d.proMonthly)    out.proMonthly    = d.proMonthly;
-      if (d.agencyMonthly) out.agencyMonthly = d.agencyMonthly;
-      if (d.proAnnual)     out.proAnnual     = d.proAnnual;
-      if (d.agencyAnnual)  out.agencyAnnual  = d.agencyAnnual;
-      out.planIds.pro.monthly    = d.squareProMonthlyPlanId;
-      out.planIds.pro.annual     = d.squareProAnnualPlanId;
-      out.planIds.agency.monthly = d.squareAgencyMonthlyPlanId;
-      out.planIds.agency.annual  = d.squareAgencyAnnualPlanId;
+      if (Object.prototype.hasOwnProperty.call(d, 'proMonthly'))    out.proMonthly    = d.proMonthly;
+      if (Object.prototype.hasOwnProperty.call(d, 'agencyMonthly')) out.agencyMonthly = d.agencyMonthly;
+      if (Object.prototype.hasOwnProperty.call(d, 'proAnnual'))     out.proAnnual     = d.proAnnual;
+      if (Object.prototype.hasOwnProperty.call(d, 'agencyAnnual'))  out.agencyAnnual  = d.agencyAnnual;
+      out.planIds.pro.monthly    = d.squareProMonthlyPlanVariationId || d.squareProMonthlyPlanId;
+      out.planIds.pro.annual     = d.squareProAnnualPlanVariationId || d.squareProAnnualPlanId;
+      out.planIds.agency.monthly = d.squareAgencyMonthlyPlanVariationId || d.squareAgencyMonthlyPlanId;
+      out.planIds.agency.annual  = d.squareAgencyAnnualPlanVariationId || d.squareAgencyAnnualPlanId;
     }
   } catch (e) {
     console.warn('[loadPricing] Firestore pricing read failed, using defaults:', e.message);
   }
   return out;
+}
+
+// Reject invalid/over-precise prices instead of silently changing the amount.
+function priceCents(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return null;
+  const cents = Math.round(value * 100);
+  return Number.isSafeInteger(cents) && cents > 0 && Math.abs(value * 100 - cents) < 1e-7 ? cents : null;
+}
+
+// Older settings used the PlanId key for either a legacy plan or a variation.
+// Resolve read-only and require one exact cadence/price match. Never guess among
+// variations or let quickPay silently override a mismatched catalog price.
+async function checkoutVariationId(square, configuredId, billingPeriod, cents) {
+  const result = await square.catalog.object.get({ objectId: configuredId, includeRelatedObjects: true });
+  const object = result.object;
+  if (result.errors?.length || !object || object.id !== configuredId || object.isDeleted) throw Error('Invalid subscription catalog object');
+  const candidates = object.type === 'SUBSCRIPTION_PLAN_VARIATION' ? [object] :
+    object.type === 'SUBSCRIPTION_PLAN' ? [
+      ...(object.subscriptionPlanData?.subscriptionPlanVariations || []),
+      ...(result.relatedObjects || []).filter(v => v.subscriptionPlanVariationData?.subscriptionPlanId === object.id),
+    ] : [];
+  const matching = candidates.filter(v => {
+    const phases = v.subscriptionPlanVariationData?.phases;
+    if (v.type !== 'SUBSCRIPTION_PLAN_VARIATION' || v.isDeleted || !v.id || phases?.length !== 1) return false;
+    const phase = phases[0], money = phase.pricing?.priceMoney || phase.recurringPriceMoney;
+    return phase.cadence === (billingPeriod === 'annual' ? 'ANNUAL' : 'MONTHLY') &&
+      !phase.periods && (!phase.pricing || phase.pricing.type === 'STATIC') &&
+      money?.currency === 'USD' && String(money.amount) === String(cents);
+  });
+  const ids = [...new Set(matching.map(v => v.id))];
+  if (ids.length !== 1) throw Error('Subscription variation is missing, ambiguous, or does not match configured pricing');
+  return ids[0];
 }
 
 // ── Checkout return path ──────────────────────────────────────────────────────
@@ -130,17 +162,35 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
   }
 
   const pricing = await loadPricing();
-  const subscriptionPlanId = pricing.planIds[plan][billingPeriod];
-  if (!subscriptionPlanId) {
+  const configuredId = pricing.planIds[plan][billingPeriod];
+  if (!configuredId) {
     return res.status(503).json({ error: 'Subscription plans not yet configured. Run adminUpdatePricing first.' });
+  }
+
+  const locationId = process.env.SQUARE_LOCATION_ID?.trim();
+  const cents = priceCents(pricing[plan + (billingPeriod === 'annual' ? 'Annual' : 'Monthly')]);
+  if (!locationId || cents === null) return res.status(503).json({ error: 'Checkout pricing or location is not configured correctly.' });
+  const square = getSquare();
+  let subscriptionPlanId;
+  try { subscriptionPlanId = await checkoutVariationId(square, configuredId, billingPeriod, cents); }
+  catch (e) {
+    console.error('[createCheckoutSession] catalog validation failed:', e.message);
+    return res.status(503).json({ error: 'Subscription pricing could not be verified. Please try again or contact support@blastybiz.com.' });
   }
 
   const returnPath = safeReturnPath(req.body.returnPath) || '/BlastyBiz-Dashboard.html?success=1';
 
-  const idempotencyKey = `checkout-${uid}-${plan}-${billingPeriod}-${Math.floor(Date.now() / 3600000)}`;
+  const idempotencyKey = 'checkout-' + crypto.createHash('sha256').update(JSON.stringify([
+    uid, plan, billingPeriod, subscriptionPlanId, cents, locationId, returnPath, email, Math.floor(Date.now() / 3600000),
+  ])).digest('hex');
 
-  const response = await getSquare().checkout.paymentLinks.create({
+  const response = await square.checkout.paymentLinks.create({
     idempotencyKey,
+    quickPay: {
+      name: `BlastyBiz ${plan === 'pro' ? 'Pro' : 'Agency'} (${billingPeriod})`,
+      priceMoney: { amount: BigInt(cents), currency: 'USD' },
+      locationId,
+    },
     checkoutOptions: {
       redirectUrl: `${APP_BASE_URL}${returnPath}`,
       merchantSupportEmail: 'info@blastybiz.com',
@@ -149,7 +199,10 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
     prePopulatedData: { buyerEmail: email },
   });
 
-  const orderId = response.paymentLink?.orderId;
+  if (response.errors?.length || !response.paymentLink?.url || !response.paymentLink?.orderId) {
+    return res.status(502).json({ error: 'Square did not return a complete checkout link. Please try again.' });
+  }
+  const orderId = response.paymentLink.orderId;
   if (orderId) {
     const checkoutRef=db.collection('pendingCheckouts').doc(orderId);
     await db.runTransaction(async tx=>{
@@ -538,115 +591,46 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
 });
 
 exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_ACCESS_TOKEN'] }, withAuth(async (req, res, decoded) => {
-  const { proMonthly, agencyMonthly, proAnnual, agencyAnnual } = req.body;
-  if (!proMonthly || !agencyMonthly) return res.status(400).json({ error: 'proMonthly and agencyMonthly required' });
-  const pro          = parseFloat(proMonthly);
-  const agency       = parseFloat(agencyMonthly);
-  const proAnn       = proAnnual    ? parseFloat(proAnnual)    : 199;
-  const agencyAnn    = agencyAnnual ? parseFloat(agencyAnnual) : 999;
-  if ([pro, agency, proAnn, agencyAnn].some(v => !Number.isFinite(v) || v <= 0)) return res.status(400).json({ error: 'Invalid prices' });
-
+  const values = {
+    proMonthly: req.body.proMonthly, agencyMonthly: req.body.agencyMonthly,
+    proAnnual: req.body.proAnnual ?? 199, agencyAnnual: req.body.agencyAnnual ?? 999,
+  };
+  // Accept numeric form values but not parseFloat's partial strings ("19oops").
+  for (const key of Object.keys(values)) values[key] = typeof values[key] === 'string' && values[key].trim() ? Number(values[key]) : values[key];
+  if (Object.values(values).some(v => priceCents(v) === null)) return res.status(400).json({ error: 'Prices must be positive USD amounts with at most two decimal places.' });
   const catalog = getSquare().catalog;
   const ts = Date.now();
-
-  let squareProMonthlyPlanId, squareProAnnualPlanId;
-  let squareAgencyMonthlyPlanId, squareAgencyAnnualPlanId;
-  let squareError;
+  const update = { ...values, updatedAt: admin.firestore.FieldValue.serverTimestamp() };
   try {
-    const [proMonResult, proAnnResult, agencyMonResult, agencyAnnResult] = await Promise.all([
-      catalog.object.upsert({
-        idempotencyKey: `bb-pro-monthly-${ts}`,
+    for (const [key, value] of Object.entries(values)) {
+      const field = key[0].toUpperCase() + key.slice(1);
+      const name = `BlastyBiz ${key.startsWith('pro') ? 'Pro' : 'Agency'} — $${value}/${key.endsWith('Annual') ? 'yr' : 'mo'}`;
+      const plan = await catalog.object.upsert({
+        idempotencyKey: `bb-${key}-plan-${ts}`,
+        object: { type: 'SUBSCRIPTION_PLAN', id: `#${key}_plan`, subscriptionPlanData: { name } },
+      });
+      if (plan.errors?.length || plan.catalogObject?.type !== 'SUBSCRIPTION_PLAN' || !plan.catalogObject.id) throw Error('Square did not return a subscription plan');
+      const variation = await catalog.object.upsert({
+        idempotencyKey: `bb-${key}-variation-${ts}`,
         object: {
-          type: 'SUBSCRIPTION_PLAN',
-          id: '#pro_monthly_plan',
-          subscriptionPlanData: {
-            name: `BlastyBiz Pro — $${pro}/mo`,
-            phases: [{
-              cadence: 'MONTHLY',
-              recurringPriceMoney: { amount: BigInt(Math.round(pro * 100)), currency: 'USD' },
-              ordinal: BigInt(0),
-            }],
+          type: 'SUBSCRIPTION_PLAN_VARIATION', id: `#${key}_variation`,
+          subscriptionPlanVariationData: {
+            name, subscriptionPlanId: plan.catalogObject.id,
+            phases: [{ cadence: key.endsWith('Annual') ? 'ANNUAL' : 'MONTHLY', ordinal: BigInt(0),
+              pricing: { type: 'STATIC', priceMoney: { amount: BigInt(priceCents(value)), currency: 'USD' } } }],
           },
         },
-      }),
-      catalog.object.upsert({
-        idempotencyKey: `bb-pro-annual-${ts}`,
-        object: {
-          type: 'SUBSCRIPTION_PLAN',
-          id: '#pro_annual_plan',
-          subscriptionPlanData: {
-            name: `BlastyBiz Pro — $${proAnn}/yr`,
-            phases: [{
-              cadence: 'ANNUAL',
-              recurringPriceMoney: { amount: BigInt(Math.round(proAnn * 100)), currency: 'USD' },
-              ordinal: BigInt(0),
-            }],
-          },
-        },
-      }),
-      catalog.object.upsert({
-        idempotencyKey: `bb-agency-monthly-${ts}`,
-        object: {
-          type: 'SUBSCRIPTION_PLAN',
-          id: '#agency_monthly_plan',
-          subscriptionPlanData: {
-            name: `BlastyBiz Agency — $${agency}/mo`,
-            phases: [{
-              cadence: 'MONTHLY',
-              recurringPriceMoney: { amount: BigInt(Math.round(agency * 100)), currency: 'USD' },
-              ordinal: BigInt(0),
-            }],
-          },
-        },
-      }),
-      catalog.object.upsert({
-        idempotencyKey: `bb-agency-annual-${ts}`,
-        object: {
-          type: 'SUBSCRIPTION_PLAN',
-          id: '#agency_annual_plan',
-          subscriptionPlanData: {
-            name: `BlastyBiz Agency — $${agencyAnn}/yr`,
-            phases: [{
-              cadence: 'ANNUAL',
-              recurringPriceMoney: { amount: BigInt(Math.round(agencyAnn * 100)), currency: 'USD' },
-              ordinal: BigInt(0),
-            }],
-          },
-        },
-      }),
-    ]);
-    squareProMonthlyPlanId    = proMonResult.catalogObject?.id;
-    squareProAnnualPlanId     = proAnnResult.catalogObject?.id;
-    squareAgencyMonthlyPlanId = agencyMonResult.catalogObject?.id;
-    squareAgencyAnnualPlanId  = agencyAnnResult.catalogObject?.id;
-    if([proMonResult,proAnnResult,agencyMonResult,agencyAnnResult].some(r=>r.errors?.length||!r.catalogObject?.id))throw Error('Square did not return all four valid plan IDs');
+      });
+      if (variation.errors?.length || variation.catalogObject?.type !== 'SUBSCRIPTION_PLAN_VARIATION' || !variation.catalogObject.id) throw Error('Square did not return a subscription variation');
+      update[`square${field}PlanVariationId`] = variation.catalogObject.id;
+      // Keep old readers compatible; both keys now identify the checkout variation.
+      update[`square${field}PlanId`] = variation.catalogObject.id;
+    }
   } catch (e) {
-    squareError = e.message || String(e);
-    console.error('[adminUpdatePricing] Square plan creation failed:', squareError);
-    return res.status(502).json({ok:false,error:'Square pricing update failed. Existing prices and checkout plans were preserved.'});
+    console.error('[adminUpdatePricing] Square plan creation failed:', e.message);
+    return res.status(502).json({ ok: false, error: 'Square pricing update failed. Existing prices and checkout plans were preserved.' });
   }
-
-  const update = {
-    proMonthly: pro,
-    agencyMonthly: agency,
-    proAnnual: proAnn,
-    agencyAnnual: agencyAnn,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  };
-  if (squareProMonthlyPlanId)    update.squareProMonthlyPlanId    = squareProMonthlyPlanId;
-  if (squareProAnnualPlanId)     update.squareProAnnualPlanId     = squareProAnnualPlanId;
-  if (squareAgencyMonthlyPlanId) update.squareAgencyMonthlyPlanId = squareAgencyMonthlyPlanId;
-  if (squareAgencyAnnualPlanId)  update.squareAgencyAnnualPlanId  = squareAgencyAnnualPlanId;
   await db.collection('settings').doc('pricing').set(update, { merge: true });
-
-  res.json({
-    ok: true,
-    proMonthly: pro, proAnnual: proAnn,
-    agencyMonthly: agency, agencyAnnual: agencyAnn,
-    squareProMonthlyPlanId:    squareProMonthlyPlanId    || null,
-    squareProAnnualPlanId:     squareProAnnualPlanId     || null,
-    squareAgencyMonthlyPlanId: squareAgencyMonthlyPlanId || null,
-    squareAgencyAnnualPlanId:  squareAgencyAnnualPlanId  || null,
-    squareError: squareError || null,
-  });
+  const { updatedAt, ...result } = update;
+  res.json({ ok: true, ...result, squareError: null });
 }, { admin: true }));

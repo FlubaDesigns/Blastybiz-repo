@@ -5,7 +5,7 @@
 <meta charset="UTF-8"/>
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="stylesheet" href="global-style.css?v=20261004-flow" />
+<link rel="stylesheet" href="global-style.css?v=20261011-production" />
 <title>BlastyBiz — Connect Platforms</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -26,12 +26,13 @@ body{visibility:hidden}
   }
 }
 </script>
-  <script type="module" src="./auth-guard.js?v=20261004-flow"></script>
+  <script type="module" src="./auth-guard.js?v=20261011-security"></script>
 <script src="blastybiz-menu.js?v=7"></script>
 <script src="blasty-registry.js"></script>
 <script src="blasty-events.js"></script>
 <script src="blasty-guidance.js"></script>
 <script src="business-form.js"></script>
+<script src="oauth-browser.js?v=20261011-security"></script>
 <script type="module" src="blasty-runtime.js"></script>
 </head>
 <body class="app-page connect-page has-site-header">
@@ -258,10 +259,7 @@ window.proceedGoogleConnect = async function() {
   if (!_googleConnectUrl || !window._bbGetToken) return;
   try {
     const token = await window._bbGetToken();
-    const r = await fetch(_googleConnectUrl, { headers: { Authorization: `Bearer ${token}` } });
-    const data = await r.json();
-    if (data.url) { window.location.href = data.url; }
-    else { showToast('Could not start Google connection. Try again.', true); }
+    await window.BBOAuth.begin(_googleConnectUrl, token);
   } catch(e) { showToast('Could not start Google connection. Try again.', true); }
 };
 
@@ -276,10 +274,7 @@ window.fbGateYes = async function() {
   if (!_fbConnectUrl || !window._bbGetToken) return;
   try {
     const token = await window._bbGetToken();
-    const r = await fetch(_fbConnectUrl, { headers: { Authorization: `Bearer ${token}` } });
-    const data = await r.json();
-    if (data.url) { window.location.href = data.url; }
-    else { showToast('Could not start Facebook connection. Try again.', true); }
+    await window.BBOAuth.begin(_fbConnectUrl, token);
   } catch(e) { showToast('Could not start Facebook connection. Try again.', true); }
 };
 window.fbGateNo = function() {
@@ -294,10 +289,7 @@ window.reconnectPlatform = async function(platformId) {
   }
   try {
     const token = await window._bbGetToken();
-    const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    const data = await r.json();
-    if (data.url) { window.location.href = data.url; }
-    else { showToast('Could not reconnect. Try again.', true); }
+    await window.BBOAuth.begin(url, token);
   } catch(e) {
     showToast('Could not reconnect. Try again.', true);
   }
@@ -394,7 +386,7 @@ window.disconnectPlatform = async function(platformId) {
 import { auth, db } from './firebase-init-v2.js';
 import { deliveryReadiness } from './platforms-config.js?v=20261004-flow';
 window._bbConnectionReadiness=deliveryReadiness;
-import { connectionReturn } from './auth-return.js?v=20261004-flow';
+import { connectionReturn } from './auth-return.js?v=20261011-security';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   collection, query, where, getDocs, getDoc, doc, deleteDoc, updateDoc

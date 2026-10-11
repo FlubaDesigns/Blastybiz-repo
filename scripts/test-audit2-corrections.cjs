@@ -4,6 +4,8 @@ const {createRequire}=require('node:module');
 const {database,admin}=require('./lib/test-firestore.cjs');
 const {sameConnection}=require('../functions/lib/connection-state');
 const {createOAuthSelection}=require('../functions/lib/oauth-selection');
+const {hash,cookieName}=require('../functions/lib/oauth-binding');
+const verifier='a'.repeat(64),verifierHash=hash(verifier);
 const {metaRevokeToken,revokeMeta}=require('../functions/lib/meta-revoke');
 const B='users/u/businesses/b',C=B+'/platformConnections/',future=()=>new Date(Date.now()+6*86400000);
 let checks=0;const ok=(v,m)=>{assert(v,m);checks++;};
@@ -63,14 +65,14 @@ async function expiryAndIdentity(){
 }
 async function cancelTests(){
  const f=fixture(),worker=createOAuthSelection({db:f.db,admin,axios:{get:async()=>({data:{id:'page'}})}});
- const prepare=()=>worker.prepare({uid:'u',businessId:'b',platform:'facebook',choices:[{id:'page',pageId:'page',label:'Page',accessToken:'secret'}],userAccessToken:'user',tokenExpiresAt:future()});
- let id=await prepare();await assert.rejects(()=>worker.cancel(id,'other'),/another account/);checks++;ok(f.get('oauthNonces/'+id),'other owner cannot cancel');
- f.failNext();await assert.rejects(()=>worker.cancel(id,'u'),/offline/);checks++;ok(f.get('oauthNonces/'+id),'failed cancellation remains retryable');
- await worker.cancel(id,'u');ok(!f.get('oauthNonces/'+id),'cancel immediately removes all pending provider credentials');
- ok((await worker.cancel(id,'u')).cancelled,'cancel retry is idempotent');
- await assert.rejects(()=>worker.confirm(id,'u','page'),/expired/);checks++;
- id=await prepare();await f.db.doc('oauthNonces/'+id).update({expiresAt:new Date(0)});await worker.cancel(id,'u');ok(!f.get('oauthNonces/'+id),'expired pending credentials can be explicitly discarded');
- id=await prepare();const endpoint=load('functions/modules/oauth.js',f.shared).exports.oauthDestination,r={status(n){this.code=n;return this;},json(data){this.body=data;return this;}};await endpoint({method:'POST',body:{selection:id,cancel:true}},r,{uid:'u'});ok(r.body.cancelled&&!f.get('oauthNonces/'+id),'actual authenticated endpoint routes cancellation');
+ const prepare=()=>worker.prepare({uid:'u',businessId:'b',state:'state',verifierHash,platform:'facebook',choices:[{id:'page',pageId:'page',label:'Page',accessToken:'secret'}],userAccessToken:'user',tokenExpiresAt:future()});
+ let id=await prepare();await assert.rejects(()=>worker.cancel(id,'other',verifier),/another account/);checks++;ok(f.get('oauthNonces/'+id),'other owner cannot cancel');
+ f.failNext();await assert.rejects(()=>worker.cancel(id,'u',verifier),/offline/);checks++;ok(f.get('oauthNonces/'+id),'failed cancellation remains retryable');
+ await worker.cancel(id,'u',verifier);ok(!f.get('oauthNonces/'+id),'cancel immediately removes all pending provider credentials');
+ ok((await worker.cancel(id,'u',verifier)).cancelled,'cancel retry is idempotent');
+ await assert.rejects(()=>worker.confirm(id,'u','page',verifier),/expired/);checks++;
+ id=await prepare();await f.db.doc('oauthNonces/'+id).update({expiresAt:new Date(0)});await worker.cancel(id,'u',verifier);ok(!f.get('oauthNonces/'+id),'expired pending credentials can be explicitly discarded');
+ id=await prepare();const endpoint=load('functions/modules/oauth.js',f.shared).exports.oauthDestination,r={set(){return this;},status(n){this.code=n;return this;},json(data){this.body=data;return this;}};await endpoint({method:'POST',body:{selection:id,cancel:true,verifier}},r,{uid:'u'});ok(r.body.cancelled&&!f.get('oauthNonces/'+id),'actual authenticated endpoint routes cancellation');
 }
 async function revocationTests(){
  for(const platform of ['facebook','instagram'])for(const userToken of [true,false]){
@@ -92,4 +94,14 @@ async function revocationTests(){
  ok(calls.length===2&&calls.every(url=>new URL(url).searchParams.get('access_token')==='user-grant'),'purge uses user grant for Facebook and paired Instagram');
  ok(warnings.length===2,'purge also exposes non-2xx revoke failures');
 }
-(async()=>{for(const test of [races,expiryAndIdentity,cancelTests,revocationTests]){await test();console.log('PASS '+test.name);}console.log(checks+' Audit 2 correction assertions passed.');})().catch(e=>{console.error(e);process.exitCode=1;});
+async function refreshLogPrivacy(){
+ for(const provider of ['google','facebook']){
+  const secret='sensitive-provider-token-must-not-be-logged',error=Object.assign(Error(secret),{response:{status:401,data:{access_token:secret}}});
+  const axios={get:async()=>{throw error;},post:async()=>{throw error;}},record=provider==='google'?google:facebook;
+  const f=fixture({[C+provider]:{...record,expiresAt:new Date(Date.now()+120000)},[C+provider+'/private/tokens']:{accessToken:secret,refreshToken:secret,userAccessToken:secret}},axios),logs=[];
+  await load('functions/modules/oauth.js',f.shared,{console:{log:(...a)=>logs.push(a),warn:(...a)=>logs.push(a),error:(...a)=>logs.push(a)}}).exports.checkPlatformTokenExpiry();
+  ok(logs.some(a=>String(a[0]).includes('refresh failed')&&a[1]===401),provider+' refresh failure retains numeric diagnostic status');
+  ok(!JSON.stringify(logs).includes(secret),provider+' refresh failure never logs token-bearing body or error message');
+ }
+}
+(async()=>{for(const test of [races,expiryAndIdentity,cancelTests,revocationTests,refreshLogPrivacy]){await test();console.log('PASS '+test.name);}console.log(checks+' Audit 2 correction assertions passed.');})().catch(e=>{console.error(e);process.exitCode=1;});

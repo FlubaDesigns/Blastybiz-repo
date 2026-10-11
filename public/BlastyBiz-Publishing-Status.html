@@ -5,7 +5,7 @@
 <meta charset="UTF-8"/>
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="stylesheet" href="global-style.css?v=20261004-flow" />
+<link rel="stylesheet" href="global-style.css?v=20261011-production" />
 <title>BlastyBiz — Publishing Status</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -22,7 +22,7 @@
   }
 }
 </script>
-  <script type="module" src="./auth-guard.js?v=20261004-flow"></script>
+  <script type="module" src="./auth-guard.js?v=20261011-security"></script>
 <script src="blastybiz-menu.js?v=7"></script>
 <script src="escape-utils.js"></script>
 <script src="blasty-registry.js"></script>
@@ -86,7 +86,7 @@
 <script src="lifecycle-status.js?v=20261004-commercial"></script>
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
-import { rememberConnectionReturn } from './auth-return.js?v=20261004-flow';
+import { rememberConnectionReturn } from './auth-return.js?v=20261011-security';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, query, where, orderBy, limit, onSnapshot, getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 

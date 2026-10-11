@@ -7,7 +7,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=20261004-flow" />
+<link rel="stylesheet" href="global-style.css?v=20261011-production" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -170,7 +170,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
   }
 }
 </script>
-  <script type="module" src="./auth-guard.js?v=20261004-flow"></script>
+  <script type="module" src="./auth-guard.js?v=20261011-security"></script>
 <script src="blastybiz-menu.js?v=7"></script>
 <script src="escape-utils.js?v=1"></script>
 <script src="mascot.js?v=5"></script>
@@ -5308,7 +5308,7 @@ function awaitPaidPlan(uid) {
   });
 }
 import { loadPlatforms, PLATFORM_DEFAULTS, deliveryReadiness } from './platforms-config.js?v=20261004-flow';
-import { rememberConnectionReturn } from './auth-return.js?v=20261004-flow';
+import { rememberConnectionReturn } from './auth-return.js?v=20261011-security';
 window._bbPlatformReadiness = p => deliveryReadiness(p.id, window._bbConnections === undefined ? undefined : window._bbConnections[p.id] || null, {business:profile,images:window.BBAds?.active?.imageRefs});
 window._bbOpenConnections = async function(){
   try{if((window.BBAds?.operationBusy ?? window.BBAds?.busy) || window._bbAdaptationBusy || window._bbDraftSavePending)throw Error('Finish saving your work before connecting an account.');

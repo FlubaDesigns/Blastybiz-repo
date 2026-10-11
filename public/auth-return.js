@@ -34,6 +34,9 @@ export function parseAuthReturn(pathname, search) {
     const platform = q.get('connected') || q.get('error');
     if (!['google','facebook'].includes(platform)) return null;
     params[q.has('error') ? 'error' : 'connected'] = platform;
+    // A lost OAuth fragment (for example after login) must never show an old
+    // saved connection as confirmation of a new pending attempt.
+    if (q.get('pending') === '1') params.pending = '1';
     if (q.has('selection')) {
       if (!valid(q.get('selection'))) return null;
       params.selection = q.get('selection');
