@@ -85,6 +85,7 @@ jobs:
           "$RUNNER_TEMP/blasty-browser/node_modules/.bin/playwright" install chromium --with-deps
           CHROMIUM_PATH="$(node -e "process.stdout.write(require('$RUNNER_TEMP/blasty-browser/node_modules/playwright').chromium.executablePath())")" node scripts/test-oauth-origin-browser.cjs
           PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-oauth-playwright-security.cjs
+          PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-header-navigation-browser.cjs
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
