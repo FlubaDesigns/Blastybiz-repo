@@ -23,6 +23,11 @@ module.exports=async function(){
   w.fetch=async()=>({ok:true,json:async()=>({fields:{proMonthly:{integerValue:'27'}}})});w.document.dispatchEvent(new w.Event('DOMContentLoaded'));await new Promise(r=>setImmediate(r));assert.equal(w.document.querySelector('[data-price-period="annual"]').textContent,'$324');assert.equal(w.document.querySelector('[data-price-period="annual-difference"]').textContent,'$17,876');
   w.fetch=async()=>{throw Error('offline');};w.document.dispatchEvent(new w.Event('DOMContentLoaded'));await new Promise(r=>setImmediate(r));for(const n of w.document.querySelectorAll('[data-price]'))assert.equal(n.textContent,'See checkout');dom.window.close();
   const home=read('BlastyBiz-Home.html'),source=require('../functions/lib/platforms.js');assert.deepEqual([...source.AUTO_POST_PLATFORMS].sort(),['facebook','google','instagram']);assert.equal(Object.keys(source.PLATFORM_CAPABILITY_MAP).length,15);assert.match(home,/other 12 supported destinations/);assert(!home.includes('TikTok'));assert(!home.includes('Post everywhere in one tap'));
+  const heroDom=new JSDOM(home),hero=heroDom.window.document.getElementById('hero-publishing-summary');
+  assert(hero&&hero.classList.contains('hero-img-col'));assert.equal(hero.querySelectorAll('.card').length,2);
+  assert.match(hero.textContent,/3 auto-post platforms/);assert.match(hero.textContent,/Google Business Profile, Facebook, and Instagram/);
+  assert.match(hero.textContent,/provider permissions/);assert.match(hero.textContent,/12 manual destinations/);assert.match(hero.textContent,/copy, paste, and publish it yourself/);
+  assert(!home.includes('hero-blast-new.png'),'retired hero illustration must not advertise unsupported platforms or one-click publishing');assert.equal(hero.querySelectorAll('img,[style]').length,0);heroDom.window.close();
   assert.match(read('BlastyBiz-AI.html'),/href="BlastyBiz-Home.html#pricing"[^>]*>Compare plans/);
   assert(!read('BlastyBiz-Plan-Pro.html').includes('15–20×'));assert(!read('BlastyBiz-Stop-Paying-Johnny.html').includes('Average annual savings'));assert(!read('BlastyBiz-Stop-Paying-Johnny.html').includes('$4.75'));
   const css=read('global-style.css');assert.match(css,/html, body \{ font-family: 'DM Sans', sans-serif/);assert.match(css,/contact-card__form\[hidden\] \{ display: none/);
