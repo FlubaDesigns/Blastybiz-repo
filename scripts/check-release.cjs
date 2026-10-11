@@ -307,6 +307,10 @@ if (process.env.SKIP_CF_ENDPOINT_CHECK === '1') {
   }
 }
 
+// Operator checklist model contract (runs without browser dependencies).
+try { require('./test-operate-todos.cjs'); }
+catch (error) { console.error('Operate to-do regression failed:', error); failures++; }
+
 // ── Summary ───────────────────────────────────────────────────────────────────
 console.log('\n── Summary ───────────────────────────────────────────────────────');
 if (failures === 0) {

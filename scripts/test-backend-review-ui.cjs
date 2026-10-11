@@ -17,5 +17,6 @@ const settle=async()=>{for(let i=0;i<6;i++)await new Promise(setImmediate);};
   await w.startCheckout('agency');const toast=w.document.getElementById('toast');assert.match(toast.textContent,/support@blastybiz.com/);assert(toast.classList.contains('show'));assert.equal(toast.style.whiteSpace,'normal');
   dom.window.close();
  }
+ require('./test-operate-todos-ui.cjs');
  console.log('PASS actual Account DOM: deletion retry remains available; permission errors are not misidentified; checkout support message is visible and wraps on mobile.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

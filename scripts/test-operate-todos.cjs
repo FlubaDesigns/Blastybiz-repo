@@ -1,0 +1,46 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const model = require('../public/operate-todos.js');
+const html = fs.readFileSync(path.join(__dirname, '../public/BlastyBiz-Admin-Operate.html'), 'utf8');
+const defaults = [...html.matchAll(/id="chk-([^"]+)"/g)].map(match => ({ id: match[1], title: match[1], notes: '' }));
+assert.equal(defaults.length, 19);
+assert(defaults.some(task => task.id === 'fb-signin'));
+let state = model.seed({}, defaults, { 'client-google': true, 'fb-signin': true, 'client-yelp': false });
+assert.equal(Object.keys(state.tasks).length, 20);
+assert.equal(state.tasks['client-google'].done, true);
+assert.equal(state.tasks['fb-signin'].done, true);
+assert.equal(state.tasks['client-yelp'].done, false);
+assert.deepEqual(model.seed(state, defaults, { 'client-google': true }), state);
+state = model.change(state, { type: 'complete', id: 'client-google', done: false });
+assert.equal(model.seed(state, defaults, { 'client-google': true }).tasks['client-google'].done, false);
+// A second browser can contribute a previously unchecked task without erasing others.
+state = model.seed(state, defaults, { 'client-yelp': true, 'fb-signin': false });
+assert.equal(state.tasks['client-yelp'].done, true);
+assert.equal(state.tasks['fb-signin'].done, true);
+state = model.change(state, { type: 'save', id: 'custom', title: 'New task', notes: 'First notes' });
+state = model.change(state, { type: 'complete', id: 'custom', done: true });
+state = model.change(state, { type: 'save', id: 'custom', title: 'Edited task', notes: '<img src=x onerror=alert(1)>' });
+assert.equal(state.tasks.custom.done, true);
+assert.equal(state.tasks.custom.title, 'Edited task');
+assert.deepEqual(model.seed(JSON.parse(JSON.stringify(state)), defaults, {}), state);
+const dedup = model.seed({ tasks: { existing: { id: 'existing', title: 'Repair Square checkout', notes: 'Sandbox verification', done: false } } }, defaults, {});
+assert(!dedup.tasks[model.SQUARE_ID]);
+assert.equal(Object.values(model.seed(dedup, defaults, {} ).tasks).filter(task => /Square/.test(task.title)).length, 1);
+assert.deepEqual(model.readLegacy({ getItem() { throw Error('Blocked storage'); } }), {});
+assert.deepEqual(model.readLegacy({ getItem() { return 'null'; } }), {});
+assert.throws(() => model.change(state, { type: 'save', id: 'bad', title: '  ' }));
+assert.throws(() => model.change(state, { type: 'save', id: '../bad', title: 'Bad' }));
+// Transaction retry: apply each operation against the current server snapshot.
+let server = model.change(state, { type: 'save', id: 'a', title: 'Other admin addition' });
+server = model.change(server, { type: 'complete', id: 'custom', done: false });
+assert.equal(server.tasks.a.title, 'Other admin addition');
+assert.equal(server.tasks.custom.done, false);
+assert.equal(server.tasks.custom.title, 'Edited task');
+// This feature reuses the existing verified-admin-only document boundary.
+const rules = fs.readFileSync(path.join(__dirname, '../firestore.rules'), 'utf8');
+assert.match(rules, /match \/config\/\{doc\} \{\s*allow read, write: if isAdmin\(\);/);
+assert.match(rules, /request\.auth != null && request\.auth\.token\.email_verified == true/);
+assert.match(rules, /request\.auth\.token\.email in get\(/);
+console.log('Operate to-do model: preservation, create/edit/complete/reload, migration, retries, dedup, validation, existing auth boundary passed.');

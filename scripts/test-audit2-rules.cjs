@@ -18,6 +18,8 @@ const {doc,getDoc,setDoc,deleteDoc,writeBatch}=firestore;
   for(const email of ['info@blastybiz.com','listed@example.com'])for(const verified of [true,false,undefined]){
    const db=env.authenticatedContext('admin-fixture',{email,...(verified===undefined?{}:{email_verified:verified})}).firestore();
    const expect=verified===true?testing.assertSucceeds:testing.assertFails;
+   await expect(getDoc(doc(db,'config/operateTodos')));checks++;
+   await expect(setDoc(doc(db,'config/operateTodos'),{version:1,tasks:{fixture:{id:'fixture',title:'Task',notes:'',done:false}}}));checks++;
    await expect(getDoc(doc(db,'users/owner')));checks++;
    await expect(setDoc(doc(db,'config/plans'),{aiLimits:{pro:1000}}));checks++;
    await testing.assertFails(getDoc(doc(db,'oauthNonces/secret-choice')));checks++;
@@ -28,6 +30,10 @@ const {doc,getDoc,setDoc,deleteDoc,writeBatch}=firestore;
   await testing.assertFails(setDoc(doc(owner,'users/owner'),{plan:'agency'},{merge:true}));checks++;
   await testing.assertFails(setDoc(doc(owner,'users/owner'),{dormancyWarningPending:{key:'fake'}},{merge:true}));checks++;
   await testing.assertFails(getDoc(doc(owner,'oauthNonces/secret-choice')));checks++;
+  for(const db of [owner,env.unauthenticatedContext().firestore()]) {
+   await testing.assertFails(getDoc(doc(db,'config/operateTodos')));checks++;
+   await testing.assertFails(setDoc(doc(db,'config/operateTodos'),{tasks:{}}));checks++;
+  }
   const other=env.authenticatedContext('other',{email:'other@example.com',email_verified:true}).firestore();
   await testing.assertFails(getDoc(doc(other,'users/owner')));checks++;
   await testing.assertFails(getDoc(doc(other,'users/owner/businesses/business')));checks++;

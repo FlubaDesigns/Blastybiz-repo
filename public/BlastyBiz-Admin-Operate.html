@@ -12,6 +12,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="global-style.css?v=20261004-flow">
+<link rel="stylesheet" href="operate-todos.css?v=1">
 
 <style>body{visibility:hidden}</style>
 <script type="importmap">
@@ -36,15 +37,36 @@
 
   <div class="op-page-header">
     <h1 class="op-page-title">Operator Setup</h1>
-    <p class="op-page-sub">Paste each key into the field and hit Save — no terminal needed. Check items off as you complete them.</p>
+    <p class="op-page-sub">Manage setup tasks and follow-ups. Your to-dos and progress are saved to the admin account and synced across devices.</p>
   </div>
 
   <!-- PROGRESS -->
   <div class="progress-block">
-    <div class="progress-title">Setup Progress</div>
+    <div class="progress-title">To-do Progress</div>
     <div class="progress-bar-wrap"><div class="progress-bar" id="prog-bar" style="width:0%"></div></div>
     <div class="progress-label" id="prog-label">0 / 0 done</div>
   </div>
+
+  <section class="op-section todo-panel" aria-labelledby="todo-heading">
+    <h2 id="todo-heading">Admin to-dos</h2>
+    <p id="todo-status" role="status" aria-live="polite">Loading saved to-dos…</p>
+    <div class="todo-actions">
+      <button type="button" id="todo-add" data-todo-control disabled>Add a to-do</button>
+      <button type="button" id="todo-retry">Retry sync</button>
+    </div>
+    <div id="todo-editor" hidden>
+      <button type="button" id="todo-close" data-todo-control>Close</button>
+      <h3 id="todo-editor-heading">Add a to-do</h3>
+      <form id="todo-form">
+        <label for="todo-title">Title</label>
+        <input id="todo-title" maxlength="160" required data-todo-control>
+        <label for="todo-notes">Notes</label>
+        <textarea id="todo-notes" maxlength="2000" rows="4" data-todo-control></textarea>
+        <button type="submit" data-todo-control>Save to-do</button>
+      </form>
+    </div>
+    <div id="todo-list"></div>
+  </section>
 
   <!-- REDEPLOY BANNER — shown after first secret is saved -->
   <div id="redeploy-banner">
@@ -69,7 +91,7 @@
     <!-- Google Business Profile -->
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-client-google" onclick="toggleCheck(event,'client-google')"></div>
+        <button type="button" class="check-box" id="chk-client-google" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">🔍 Google Business Profile</div>
           <div class="op-card-sub">Auto-post — set this up before connecting Google OAuth below</div>
@@ -91,7 +113,7 @@
     <!-- Facebook Page -->
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-client-facebook" onclick="toggleCheck(event,'client-facebook')"></div>
+        <button type="button" class="check-box" id="chk-client-facebook" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">📘 Facebook Page</div>
           <div class="op-card-sub">Auto-post — set this up before connecting Facebook OAuth below</div>
@@ -112,7 +134,7 @@
     <!-- Instagram -->
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-client-instagram" onclick="toggleCheck(event,'client-instagram')"></div>
+        <button type="button" class="check-box" id="chk-client-instagram" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">📸 Instagram Business</div>
           <div class="op-card-sub">Auto-post — requires the Facebook Page above to be linked first</div>
@@ -132,7 +154,7 @@
     <!-- Yelp -->
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-client-yelp" onclick="toggleCheck(event,'client-yelp')"></div>
+        <button type="button" class="check-box" id="chk-client-yelp" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">⭐ Yelp</div>
           <div class="op-card-sub">Copy-paste — BlastyBiz generates the text, you paste it in</div>
@@ -153,7 +175,7 @@
     <!-- Nextdoor -->
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-client-nextdoor" onclick="toggleCheck(event,'client-nextdoor')"></div>
+        <button type="button" class="check-box" id="chk-client-nextdoor" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">🏘️ Nextdoor</div>
           <div class="op-card-sub">Copy-paste — community-focused business page</div>
@@ -174,7 +196,7 @@
     <!-- Apple Maps -->
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-client-apple" onclick="toggleCheck(event,'client-apple')"></div>
+        <button type="button" class="check-box" id="chk-client-apple" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">🗺️ Apple Maps</div>
           <div class="op-card-sub">Copy-paste — via Apple Business Connect (free)</div>
@@ -195,7 +217,7 @@
     <!-- Bing Places -->
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-client-bing" onclick="toggleCheck(event,'client-bing')"></div>
+        <button type="button" class="check-box" id="chk-client-bing" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">🔵 Bing Places</div>
           <div class="op-card-sub">Copy-paste — Microsoft's business directory</div>
@@ -216,7 +238,7 @@
     <!-- Thumbtack -->
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-client-thumbtack" onclick="toggleCheck(event,'client-thumbtack')"></div>
+        <button type="button" class="check-box" id="chk-client-thumbtack" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">📌 Thumbtack</div>
           <div class="op-card-sub">Copy-paste — local professional services marketplace</div>
@@ -247,7 +269,7 @@
     </div>
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-google-logo" onclick="toggleCheck(event,'google-logo')"></div>
+        <button type="button" class="check-box" id="chk-google-logo" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">✅ Logo uploaded, app is live in production</div>
           <div class="op-card-sub">The 120×120 BlastyBiz logo is uploaded in Branding, and the OAuth consent screen is already published (Publishing status: In production).</div>
@@ -265,7 +287,7 @@
     </div>
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-google-verify" onclick="toggleCheck(event,'google-verify')"></div>
+        <button type="button" class="check-box" id="chk-google-verify" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">Nothing to submit — only matters if you cross 100 users</div>
           <div class="op-card-sub">There is no "Rejected" status and no submit-for-review button anywhere in the console right now. Google only requires full verification if BlastyBiz starts requesting sensitive scopes or exceeds the 100-user OAuth cap.</div>
@@ -295,7 +317,7 @@
     </div>
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-meta-review" onclick="toggleCheck(event,'meta-review')"></div>
+        <button type="button" class="check-box" id="chk-meta-review" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">Waiting on Meta's decision — switch app to Live once approved</div>
           <div class="op-card-sub">Submission is done. Facebook &amp; Instagram OAuth currently works for test accounts only (Development mode) until Meta approves.</div>
@@ -317,7 +339,7 @@
     <!-- Facebook Sign-In reminder -->
     <div class="card" style="border-left:4px solid #e65100;">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-fb-signin" onclick="toggleCheck(event,'fb-signin')"></div>
+        <button type="button" class="check-box" id="chk-fb-signin" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">🔐 Verify Facebook sign-in is enabled in Firebase Console</div>
           <div class="op-card-sub">The login page is wired up — but Firebase needs the App ID &amp; Secret entered before it will work for real users</div>
@@ -350,7 +372,7 @@
     <!-- LinkedIn API -->
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-linkedin-api" onclick="toggleCheck(event,'linkedin-api')"></div>
+        <button type="button" class="check-box" id="chk-linkedin-api" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">💼 LinkedIn Posts API</div>
           <div class="op-card-sub">Upgrade LinkedIn from copy-paste to auto-post</div>
@@ -374,7 +396,7 @@
     <!-- X (Twitter) API -->
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-x-api" onclick="toggleCheck(event,'x-api')"></div>
+        <button type="button" class="check-box" id="chk-x-api" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">✖️ X (Twitter) Posts API</div>
           <div class="op-card-sub">Upgrade X from copy-paste to auto-post — requires per-user developer accounts</div>
@@ -398,7 +420,7 @@
     <!-- Facebook Marketplace subcategories -->
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-fbmarket-categories" onclick="toggleCheck(event,'fbmarket-categories')"></div>
+        <button type="button" class="check-box" id="chk-fbmarket-categories" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">🛒 Facebook Marketplace — Fill In Subcategories</div>
           <div class="op-card-sub">Currently only 20 top-level categories; needs full subcategory tree</div>
@@ -574,7 +596,7 @@
     <!-- Leg 1: Onboarding -->
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-e2e-onboard" onclick="toggleCheck(event,'e2e-onboard')"></div>
+        <button type="button" class="check-box" id="chk-e2e-onboard" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">🦵 Leg 1 — Trial Signup + Blasty Onboarding</div>
           <div class="op-card-sub">Sign up → magic link → complete all 22 Blasty steps → confirm business saved</div>
@@ -596,7 +618,7 @@
     <!-- Leg 2: Blast / AI -->
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-e2e-blast" onclick="toggleCheck(event,'e2e-blast')"></div>
+        <button type="button" class="check-box" id="chk-e2e-blast" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">🦵 Leg 2 — Blast + AI Draft Generation</div>
           <div class="op-card-sub">Trigger a blast from the dashboard → confirm AI drafts appear for each platform</div>
@@ -617,7 +639,7 @@
     <!-- Leg 3: Admin Subscriptions / Business Limits -->
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-e2e-limits" onclick="toggleCheck(event,'e2e-limits')"></div>
+        <button type="button" class="check-box" id="chk-e2e-limits" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">🦵 Leg 3 — Admin Business Limits</div>
           <div class="op-card-sub">Confirm the "Business Limits per Plan" section loads, saves, and is enforced by createBusiness</div>
@@ -639,7 +661,7 @@
     <!-- Leg 4: Admin Queue -->
     <div class="card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box" id="chk-e2e-queue" onclick="toggleCheck(event,'e2e-queue')"></div>
+        <button type="button" class="check-box" id="chk-e2e-queue" disabled aria-pressed="false"></button>
         <div class="flex-1">
           <div class="op-card-title">🦵 Leg 4 — Admin Queue + Platform Health</div>
           <div class="op-card-sub">Confirm queue manager shows live jobs and platform health reads real connection data</div>
@@ -684,52 +706,6 @@
 </div></div></main>
 
 <script>
-const STORAGE_KEY = 'blastybiz_operate_checks';
-
-function loadChecks() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { return {}; }
-}
-function saveChecks(checks) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(checks));
-}
-
-function toggleCheck(e, key) {
-  e.stopPropagation();
-  const checks = loadChecks();
-  checks[key] = !checks[key];
-  saveChecks(checks);
-  renderChecks();
-}
-
-function renderChecks() {
-  const checks = loadChecks();
-  const checkable = ['client-google','client-facebook','client-instagram',
-                     'client-yelp','client-nextdoor','client-apple',
-                     'client-bing','client-thumbtack',
-                     'google-verify','google-logo',
-                     'meta-review',
-                     'linkedin-api','x-api','fbmarket-categories',
-                     'e2e-onboard','e2e-blast','e2e-limits','e2e-queue'];
-  checkable.forEach(key => {
-    const box = document.getElementById('chk-' + key);
-    if (!box) return;
-    if (checks[key]) box.classList.add('done');
-    else box.classList.remove('done');
-  });
-
-  const done = checkable.filter(k => checks[k]).length;
-  const total = checkable.length;
-  document.getElementById('prog-bar').style.width = (done/total*100) + '%';
-  document.getElementById('prog-label').textContent = `${done} / ${total} done`;
-
-  const clientKeys = ['client-google','client-facebook','client-instagram',
-                      'client-yelp','client-nextdoor','client-apple',
-                      'client-bing','client-thumbtack'];
-  updateBadge('badge-client', clientKeys, checks);
-  updateBadge('badge-e2e', ['e2e-onboard','e2e-blast','e2e-limits','e2e-queue'], checks);
-
-}
-
 function updateBadge(badgeId, keys, checks) {
   const done = keys.filter(k => checks[k]).length;
   const badge = document.getElementById(badgeId);
@@ -754,21 +730,14 @@ function copyCode(btn, text) {
   });
 }
 
-renderChecks();
 </script>
 
+<script src="operate-todos.js?v=1"></script>
+<script type="module" src="operate-todos-ui.js?v=1"></script>
 <script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
-const app = initializeApp({
-  apiKey: 'AIzaSyCyEwA6jGHp0xjAJO3NOXHblYfpajtFXGM',
-  authDomain: 'blastybiz-9523e.firebaseapp.com',
-  projectId: 'blastybiz-9523e'
-});
-const auth = getAuth(app);
-const db   = getFirestore(app);
+import { auth, db } from './firebase-init-v2.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // ── Mascot animation toggle ───────────────────────────────────────────────────
 function _setMascotToggleUI(on) {
