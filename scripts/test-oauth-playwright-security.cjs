@@ -8,7 +8,7 @@ const {database,admin}=require('./lib/test-firestore.cjs');
 const APP='https://app.blastybiz.test',FN='https://functions.callback.test',PROVIDER='https://provider.oauth.test';
 const read=p=>fs.readFileSync(p,'utf8');
 const m=database({'users/owner/businesses/business':{},'users/victim/businesses/business':{}});
-const exchanges=[],starts=[],callbacks=[],unexpected=[];
+const exchanges=[],starts=[],callbacks=[],unexpected=[],intercepted=[],diagnostics=[];
 const axios={post:async url=>{exchanges.push(url);return {data:{access_token:'fixture-only-access',refresh_token:'fixture-only-refresh'}};},get:async url=>({data:url.endsWith('/accounts')?{accounts:[{name:'accounts/account',accountName:'Fixture account'}]}:{locations:[{name:'locations/location',title:'Fixture location'}]}})};
 const shared={db:m.db,admin,axios,APP_BASE_URL:APP,ALLOWED_ORIGINS:new Set([APP]),onRequest:(...args)=>args.at(-1),onSchedule:(...args)=>args.at(-1),withAuth:fn=>async(req,res)=>{
  const uid=req.headers.authorization==='Bearer fixture-owner'?'owner':req.headers.authorization==='Bearer fixture-victim'?'victim':null;
@@ -41,44 +41,70 @@ function completionHtml(uid){
  const setup=`const fixtureData=${JSON.stringify(m.all())};Object.assign(window,{auth:{authStateReady:async()=>{}},db:{},onAuthStateChanged:(_,cb)=>cb({uid:${JSON.stringify(uid)},getIdToken:async()=>${JSON.stringify('fixture-'+uid)}}),doc:(_, ...p)=>p.join('/'),getDoc:async p=>({exists:()=>Object.hasOwn(fixtureData,p),data:()=>fixtureData[p]}),deliveryReadiness:(_,d)=>({state:d?.status==='connected'?'ready':'connection'}),connectionReturn:()=>null,BBBlasty:{fire:()=>{}},escHtml:s=>String(s).replace(/[<>&]/g,'')});`;
  return '<!doctype html><meta name="referrer" content="no-referrer"><div id="page-content"></div><script src="/oauth-browser.js"></script><script>'+setup+inline+'</script>';
 }
-async function installRoutes(context,uid){
- await context.route('**/*',async route=>{
+async function installRoutes(context,page,uid){
+ // Playwright context.route only intercepts the first URL in a redirect chain.
+ // Raw CDP Fetch reports every redirect hop, preserving genuine HTTP 303 and
+ // Set-Cookie handling while preventing fake HTTPS hosts from reaching DNS/TLS.
+ // https://playwright.dev/docs/next/network#redirects
+ // https://github.com/ChromeDevTools/devtools-protocol/blob/master/pdl/domains/Fetch.pdl
+ page.on('requestfailed',request=>diagnostics.push({event:'requestfailed',url:request.url(),error:request.failure()?.errorText}));
+ page.on('pageerror',error=>diagnostics.push({event:'pageerror',error:error.message}));
+ const session=await context.newCDPSession(page);
+ session.on('Fetch.requestPaused',async event=>{
+  const request=event.request;
+  const headers=Object.fromEntries(Object.entries(request.headers).map(([name,value])=>[name.toLowerCase(),String(value)]));
+  intercepted.push({url:request.url,method:request.method,redirected:!!event.redirectedRequestId});
+  let settled=false;
+  const route={
+   request:()=>({url:()=>request.url,method:()=>request.method,postData:()=>request.postData||'',allHeaders:async()=>headers}),
+   fulfill:async(options={})=>{
+    const responseHeaders={...(options.headers||{})};
+    if(options.contentType)responseHeaders['Content-Type']=options.contentType;
+    else if(!Object.keys(responseHeaders).some(name=>name.toLowerCase()==='content-type'))responseHeaders['Content-Type']='text/plain';
+    await session.send('Fetch.fulfillRequest',{requestId:event.requestId,responseCode:options.status||200,responseHeaders:Object.entries(responseHeaders).map(([name,value])=>({name,value:String(value)})),body:Buffer.from(options.body||'').toString('base64')});
+    settled=true;
+   },
+   abort:async reason=>{if(!settled){await session.send('Fetch.failRequest',{requestId:event.requestId,errorReason:reason==='blockedbyclient'?'BlockedByClient':'Failed'});settled=true;}}
+  };
+
   try {
    const url=new URL(route.request().url());
-   if([APP,FN,PROVIDER].includes(url.origin)&&url.pathname==='/favicon.ico')return route.fulfill({status:204,body:''});
+   if([APP,FN,PROVIDER].includes(url.origin)&&url.pathname==='/favicon.ico')return await route.fulfill({status:204,body:''});
    if(url.origin===FN){
-    if(url.pathname==='/cookie-inspection')return route.fulfill({contentType:'text/html',body:'<!doctype html><p>Cookie inspection fixture</p>'});
-    return serveEndpoint(route,url);
+    if(url.pathname==='/cookie-inspection')return await route.fulfill({contentType:'text/html',body:'<!doctype html><p>Cookie inspection fixture</p>'});
+    return await serveEndpoint(route,url);
    }
    if(url.origin===PROVIDER){
     assert.equal(url.pathname,'/authorize');
     const callback=FN+'/googleOAuthCallback?code=fixture-code&state='+encodeURIComponent(url.searchParams.get('state'));
-    return route.fulfill({contentType:'text/html',body:'<!doctype html><a id="approve" href="'+callback+'">Approve fixture provider</a>'});
+    return await route.fulfill({contentType:'text/html',body:'<!doctype html><a id="approve" href="'+callback+'">Approve fixture provider</a>'});
    }
    if(url.origin===APP){
-    if(url.pathname==='/oauth-browser.js')return route.fulfill({contentType:'text/javascript',body:read('public/oauth-browser.js')});
-    if(url.pathname==='/oauth-start.js')return route.fulfill({contentType:'text/javascript',body:read('public/oauth-start.js').replace('https://us-central1-blastybiz-9523e.cloudfunctions.net',FN)});
-    if(url.pathname==='/BlastyBiz-OAuth-Start.html')return route.fulfill({contentType:'text/html',body:read('public/BlastyBiz-OAuth-Start.html').replace(/<link[^>]*>/g,'')});
-    if(url.pathname==='/BlastyBiz-Connected.html')return route.fulfill({contentType:'text/html',body:completionHtml(uid)});
-    if(url.pathname==='/start')return route.fulfill({contentType:'text/html',body:'<!doctype html><script src="/oauth-browser.js"></script><button id="connect">Connect fixture</button><script>document.getElementById("connect").onclick=()=>BBOAuth.begin('+JSON.stringify(FN+'/initiateGoogleOAuth?businessId=business')+','+JSON.stringify('fixture-'+uid)+');</script>'});
+    if(url.pathname==='/oauth-browser.js')return await route.fulfill({contentType:'text/javascript',body:read('public/oauth-browser.js')});
+    if(url.pathname==='/oauth-start.js')return await route.fulfill({contentType:'text/javascript',body:read('public/oauth-start.js').replace('https://us-central1-blastybiz-9523e.cloudfunctions.net',FN)});
+    if(url.pathname==='/BlastyBiz-OAuth-Start.html')return await route.fulfill({contentType:'text/html',body:read('public/BlastyBiz-OAuth-Start.html').replace(/<link[^>]*>/g,'')});
+    if(url.pathname==='/BlastyBiz-Connected.html')return await route.fulfill({contentType:'text/html',body:completionHtml(uid)});
+    if(url.pathname==='/start')return await route.fulfill({contentType:'text/html',body:'<!doctype html><script src="/oauth-browser.js"></script><button id="connect">Connect fixture</button><script>document.getElementById("connect").onclick=()=>BBOAuth.begin('+JSON.stringify(FN+'/initiateGoogleOAuth?businessId=business')+','+JSON.stringify('fixture-'+uid)+');</script>'});
    }
    unexpected.push(url.origin+url.pathname);await route.abort('blockedbyclient');
-  }catch(error){unexpected.push(error.stack);await route.abort('failed');}
+  }catch(error){unexpected.push(error.stack);await route.abort('failed').catch(()=>{});}
  });
+ await session.send('Fetch.enable',{patterns:[{urlPattern:'*',requestStage:'Request'}]});
 }
 (async()=>{
  const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})});
  try {
   const owner=await browser.newContext({serviceWorkers:'block'}),victim=await browser.newContext({serviceWorkers:'block'});
-  await installRoutes(owner,'owner');await installRoutes(victim,'victim');
   const page=await owner.newPage(),other=await victim.newPage();
+  await installRoutes(owner,page,'owner');await installRoutes(victim,other,'victim');
   await page.goto(APP+'/start');await page.click('#connect');await page.waitForURL(PROVIDER+'/**');
   assert.equal(starts.length,1);assert.equal(starts[0].headers.origin,APP,'real cross-origin top-level form retains exact Origin');
   assert.equal(starts[0].method,'POST');assert.match(starts[0].body.verifier,/^[a-f0-9]{64}$/);
   const providerUrl=page.url(),state=new URL(providerUrl).searchParams.get('state');
+  assert(intercepted.some(r=>r.url===providerUrl&&r.method==='GET'&&r.redirected),'real 303 changes POST to GET and its redirect hop is intercepted');
   const cookie=(await owner.cookies(FN)).find(c=>c.name==='__Secure-bb-oauth-'+state);
   assert(cookie,'callback cookie must actually be stored by Chromium');assert(cookie.secure&&cookie.httpOnly);assert.equal(cookie.sameSite,'Lax');assert.equal(cookie.path,'/');
-  const inspector=await owner.newPage();await inspector.goto(FN+'/cookie-inspection');assert.equal(await inspector.evaluate(()=>document.cookie),'','HttpOnly callback secret is inaccessible to scripts');await inspector.close();
+  const inspector=await owner.newPage();await installRoutes(owner,inspector,'owner');await inspector.goto(FN+'/cookie-inspection');assert.equal(await inspector.evaluate(()=>document.cookie),'','HttpOnly callback secret is inaccessible to scripts');await inspector.close();
   await other.goto(bootstrapUrl);await other.getByRole('status').filter({hasText:'browser tab'}).waitFor();assert.equal(starts.length,1,'transferred bootstrap cannot start without original sessionStorage');
   await other.goto(providerUrl);await other.click('#approve');await other.waitForURL(FN+'/googleOAuthCallback**');
   await other.getByText('Invalid or expired OAuth state. Please try connecting again.').waitFor();
@@ -97,4 +123,4 @@ async function installRoutes(context,uid){
   assert.equal(unexpected.length,0,unexpected.join('\n'));
   console.log('PASS real Chromium HTTPS interception: bridge Origin, Secure/HttpOnly/SameSite=Lax cookie roundtrip, transferred bootstrap/provider rejection before exchange, authenticated explicit sole-destination completion.');
  }finally{await browser.close();}
-})().catch(error=>{console.error(error);process.exitCode=1;});
+})().catch(error=>{console.error(error);console.error('OAuth fixture diagnostics:',JSON.stringify({unexpected,diagnostics,intercepted},null,2));process.exitCode=1;});
