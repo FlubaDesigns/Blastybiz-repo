@@ -52,13 +52,18 @@ const widths=[390,767,768,980,1024,1165,1180,1440];
     for(const l of metrics.links)assert(l.lines===1&&l.whiteSpace==='nowrap'&&l.shrink==='0',`${width}/${state}: ${l.text} stays on one line`);
     const centers=metrics.links.map(l=>l.center);assert(Math.max(...centers)-Math.min(...centers)<1,'all nav labels are vertically centered');
     for(let i=1;i<metrics.links.length;i++)assert(Math.abs(metrics.links[i].left-metrics.links[i-1].right-16)<1,'canonical nav gap remains even');
-    const reachable=await page.evaluate(async()=>{
+    const reachable=await page.evaluate(()=>{
      const nav=document.querySelector('.header__nav'),links=[...nav.children].filter(el=>el.matches('.header__nav-link,.header__nav-cta')&&getComputedStyle(el).display!=='none');
      nav.scrollLeft=0;const first=links[0].getBoundingClientRect().left>=nav.getBoundingClientRect().left-1;
      nav.scrollLeft=nav.scrollWidth;const last=links.at(-1).getBoundingClientRect().right<=nav.getBoundingClientRect().right+1;
-     nav.scrollLeft=0;links.at(-1).focus();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));const focused=links.at(-1).getBoundingClientRect().right<=nav.getBoundingClientRect().right+1;
-     return {first,last,focused,pageX:scrollX,navWidth:nav.clientWidth,scrollLeft:nav.scrollLeft,navRight:nav.getBoundingClientRect().right,lastRight:links.at(-1).getBoundingClientRect().right};
+     nav.scrollLeft=0;links[0].focus();
+     return {first,last,count:links.length};
     });
+    for(let i=1;i<reachable.count;i++)await page.keyboard.press('Tab');
+    Object.assign(reachable,await page.evaluate(()=>{
+     const nav=document.querySelector('.header__nav'),last=[...nav.children].filter(el=>el.matches('.header__nav-link,.header__nav-cta')&&getComputedStyle(el).display!=='none').at(-1),r=last.getBoundingClientRect(),n=nav.getBoundingClientRect();
+     return {focused:document.activeElement===last&&r.left>=n.left-1&&r.right<=n.right+1,pageX:scrollX,navWidth:nav.clientWidth,scrollLeft:nav.scrollLeft,navRight:n.right,lastRight:r.right,active:document.activeElement.textContent};
+    }));
     assert(reachable.first&&reachable.last&&reachable.focused&&reachable.pageX===0,`${width}/${state}: first/last links remain scrollable and keyboard-reachable without page scrolling: ${JSON.stringify(reachable)}`);
     if(width===768&&state==='admin')assert(metrics.scrollWidth>metrics.clientWidth,'crowded desktop navigation uses its own horizontal scroll');
    }
