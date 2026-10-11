@@ -37,18 +37,17 @@
 
   <div class="op-page-header">
     <h1 class="op-page-title">Operator Setup</h1>
-    <p class="op-page-sub">Manage setup tasks and follow-ups. Your to-dos and progress are saved to the admin account and synced across devices.</p>
+    <p class="op-page-sub">Keep track of actions you personally need to take. Your list is saved to the admin account and synced across devices.</p>
   </div>
 
-  <!-- PROGRESS -->
+  <!-- PERSONAL ACTION COUNT -->
   <div class="progress-block">
-    <div class="progress-title">To-do Progress</div>
-    <div class="progress-bar-wrap"><div class="progress-bar" id="prog-bar" style="width:0%"></div></div>
-    <div class="progress-label" id="prog-label">0 / 0 done</div>
+    <div class="progress-title">Your actions</div>
+    <div class="progress-label" id="prog-label">Loading…</div>
   </div>
 
   <section class="op-section todo-panel" aria-labelledby="todo-heading">
-    <h2 id="todo-heading">Admin to-dos</h2>
+    <h2 id="todo-heading">My action list</h2>
     <p id="todo-status" role="status" aria-live="polite">Loading saved to-dos…</p>
     <div class="todo-actions">
       <button type="button" id="todo-add" data-todo-control disabled>Add a to-do</button>
@@ -65,7 +64,12 @@
         <button type="submit" data-todo-control>Save to-do</button>
       </form>
     </div>
+    <p id="todo-empty" hidden>No personal actions are currently listed. Add a task when there’s something you need to do.</p>
     <div id="todo-list"></div>
+    <details id="todo-completed" hidden>
+      <summary id="todo-completed-heading">Completed</summary>
+      <div id="todo-completed-list"></div>
+    </details>
   </section>
 
   <!-- REDEPLOY BANNER — shown after first secret is saved -->
@@ -78,6 +82,8 @@
     </div>
   </div>
 
+  <!-- Historical seed signatures only; never displayed as owner tasks. -->
+  <template data-legacy-todos>
   <!-- ══════════════════════════════════════════
        BLASTYBIZ AS FIRST CLIENT
   ══════════════════════════════════════════ -->
@@ -440,6 +446,8 @@
 
   </div>
 
+  </template>
+
   <!-- ══════════════════════════════════════════
        ONGOING
   ══════════════════════════════════════════ -->
@@ -582,6 +590,7 @@
     </div>
   </div>
 
+  <template data-legacy-todos>
   <!-- ══════════════════════════════════════════
        LIVE E2E VERIFICATION
   ══════════════════════════════════════════ -->
@@ -680,6 +689,8 @@
     </div>
 
   </div>
+
+  </template>
 
   <!-- ══════════════════════════════════════════
        ONBOARDING FUNNEL

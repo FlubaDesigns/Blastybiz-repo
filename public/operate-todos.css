@@ -15,3 +15,6 @@
 .operate-page .todo-panel button:focus-visible, .operate-page .todo-edit:focus-visible, .operate-page .check-box:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
 .operate-page .todo-panel .check-box.done { background: #10b981; border-color: #10b981; }
 .operate-page .op-card-header .check-box { min-width: 44px; min-height: 44px; }
+
+.operate-page #todo-completed summary { cursor: pointer; min-height: 44px; padding: 12px 0; box-sizing: border-box; }
+.operate-page #todo-completed summary:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
