@@ -21,7 +21,13 @@ const crypto    = require('crypto');
 
 // ── Resend email helper (uses native fetch — Node 22) ─────────────────────────
 async function sendResendEmail({ to, subject, html, strict=false, idempotencyKey }) {
-  const apiKey = await readFlubaProviderKey('RESEND_API_KEY');
+  let apiKey;
+  try { apiKey = await readFlubaProviderKey('RESEND_API_KEY'); }
+  catch {
+    if(strict)throw Object.assign(Error('Email credentials are unavailable in Fluba.'),{providerRejected:true});
+    console.error('[email] Fluba credential unavailable; no email sent');
+    return;
+  }
   if (!apiKey || apiKey === 'placeholder') {
     if(strict)throw Object.assign(Error('Email service is not configured.'),{providerRejected:true});
     console.log('[email] RESEND_API_KEY not configured — skipping email to', to);
