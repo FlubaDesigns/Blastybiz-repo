@@ -90,7 +90,7 @@ async function retentionTests(){
  const code=original.slice(original.indexOf('async function sendResendEmail'),original.indexOf('// ── Lazy-init Square'));
  for(const failure of ['missing','rejected','network','success']) {
   const m=database({'users/u':{plan:'trial',email:'u@example.com',lastActiveAt:{stamp:Date.now()-400*86400000}}}),calls=[];
-  const email={process:{env:{RESEND_API_KEY:failure==='missing'?'':'fixture'}},console:quiet,fetch:async(url,options)=>{calls.push(options);if(failure==='network')throw Error('offline');return {ok:failure==='success',status:503};}};
+  const email={readFlubaProviderKey:async name=>{assert.equal(name,'RESEND_API_KEY');if(failure==='missing')throw Error('Central key unavailable');return 'fixture';},process:{env:{}},console:quiet,fetch:async(url,options)=>{calls.push(options);if(failure==='network')throw Error('offline');return {ok:failure==='success',status:503};}};
   vm.runInNewContext(code,email);
   const shared={db:m.db,admin,onRequest:(...a)=>a.at(-1),onSchedule:(...a)=>a.at(-1),withAuth:f=>f,getPlanConfig:async()=>({retention:{mode:'warn'}}),sendResendEmail:email.sendResendEmail,makeUnsubSig:()=>'',_unsubSecret:()=>'',APP_BASE_URL:'https://example.com',purgeUserData:async()=>{throw Error('Unexpected purge');}};
   const c=load('functions/modules/retention.js',shared);
