@@ -434,17 +434,28 @@ const ONBOARDING_STEP_LABELS = {
   step8: 'Upgraded to Pro',
 };
 
+const { buildOnboardingReport } = require('../lib/onboarding-report');
+
 exports.adminOnboardingFunnel = onRequest({ invoker: 'public' }, withAuth(async (req, res) => {
+  const stepIndex = req.query?.stepIndex;
+  if (stepIndex !== undefined && !['0', '1'].includes(stepIndex)) {
+    return res.status(400).json({ error: 'stepIndex must be 0 or 1' });
+  }
   try {
+    // Read one extra record so a partial scan can never look like a complete report.
     // Limits prevent timeout/runaway cost. At ~2 000+ users replace with
     // scheduled aggregation counters (e.g. a nightly Cloud Function writing
     // funnel snapshots to Firestore) rather than live full-table scans.
-    const usersSnap  = await db.collection('users').limit(2000).get();
-    const bizSnap    = await db.collectionGroup('businesses').limit(2000).get();
-    const draftsSnap = await db.collectionGroup('listingDrafts').where('status', '==', 'approved').limit(2000).get();
-    const jobsSnap   = await db.collectionGroup('publishJobs').limit(5000).get();
-    const connsSnap  = await db.collectionGroup('platformConnections').where('status', '==', 'connected').limit(2000).get();
+    const usersSnap  = await db.collection('users').limit(2001).get();
+    const bizSnap    = await db.collectionGroup('businesses').limit(2001).get();
+    const draftsSnap = await db.collectionGroup('listingDrafts').where('status', '==', 'approved').limit(2001).get();
+    const jobsSnap   = await db.collectionGroup('publishJobs').limit(5001).get();
+    const connsSnap  = await db.collectionGroup('platformConnections').where('status', '==', 'connected').limit(2001).get();
 
+    if ([usersSnap, bizSnap, draftsSnap, connsSnap].some(s => s.size > 2000) || jobsSnap.size > 5000) {
+      return res.status(503).json({ error: 'Onboarding report unavailable: the report limit was reached.' });
+    }
+    const report = buildOnboardingReport(usersSnap.docs, bizSnap.docs);
     const totalUsers = usersSnap.size;
     const uidsWithBiz   = new Set(bizSnap.docs.map(d => d.data().uid));
     const uidsVerified  = new Set(usersSnap.docs.filter(d => d.data().emailVerified).map(d => d.id));
@@ -468,7 +479,12 @@ exports.adminOnboardingFunnel = onRequest({ invoker: 'public' }, withAuth(async 
       pctOfTotal: totalUsers > 0 ? Math.round(s.count / totalUsers * 100) : 0,
     }));
 
-    res.json({ funnel, totalUsers });
+    // Retain the original aggregate contract for older consumers. The setup
+    // report is account-based and must not be inferred from milestone totals.
+    const { usersByStep, ...summary } = report;
+    res.json({ funnel, totalUsers, ...summary,
+      ...(stepIndex === undefined ? {} : { stepIndex: Number(stepIndex), users: usersByStep[stepIndex] }),
+    });
   } catch(e) {
     console.error('[adminOnboardingFunnel]', e.message);
     res.status(500).json({ error: e.message });

@@ -79,6 +79,7 @@ jobs:
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-original-flow-ui.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-public-promises-ui.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-oauth-browser-security.cjs
+          JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-onboarding-report-ui.cjs
       - name: OAuth browser-origin contract (local fixtures only)
         run: |
           npm install --prefix "$RUNNER_TEMP/blasty-browser" --no-audit --no-fund playwright@1.55.0

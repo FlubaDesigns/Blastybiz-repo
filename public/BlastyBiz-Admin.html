@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <script src="escape-utils.js?v=1"></script>
+  <script src="onboarding-report.js?v=1"></script>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
@@ -107,12 +108,14 @@
   <!-- ── ONBOARDING FUNNEL WIDGET ── -->
   <section class="card mb-16" id="onboarding-funnel-widget" style="border-left:4px solid #FF6D00;">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-      <div class="card-title" style="margin:0;">🚧 Onboarding Funnel</div>
-      <a href="BlastyBiz-Admin-Operate.html#onboarding-funnel" style="font-size:13px;color:#FF6D00;text-decoration:none;white-space:nowrap;">View full funnel →</a>
+      <div class="card-title" style="margin:0;">🚧 Incomplete Onboarding</div>
+      <a href="BlastyBiz-Admin-Operate.html#onboarding-funnel" style="font-size:13px;color:#FF6D00;text-decoration:none;white-space:nowrap;">View full report →</a>
     </div>
-    <div id="funnel-widget-body">
+    <button type="button" id="funnel-widget-refresh">Refresh report</button>
+    <div id="funnel-widget-body" role="status" aria-live="polite">
       <div style="font-size:13px;color:#888;">Loading…</div>
     </div>
+    <p id="funnel-widget-meta" style="font-size:12px;color:#666;"></p>
   </section>
 
   <section class="two-col">
@@ -367,6 +370,53 @@ window.saveAiSettings = async function() {
   }
 };
 
+  // ── Onboarding funnel widget ──
+  let funnelWidgetRequest = 0;
+  async function loadFunnelWidget() {
+    const funnelBody = document.getElementById('funnel-widget-body');
+    const refresh = document.getElementById('funnel-widget-refresh');
+    if (!funnelBody) return;
+    const user = auth.currentUser;
+    if (!user) return;
+    const request = ++funnelWidgetRequest;
+    funnelBody.textContent = 'Loading…';
+    const meta = document.getElementById('funnel-widget-meta');
+    meta.textContent = '';
+    if (refresh) refresh.disabled = true;
+    try {
+      const token = await user.getIdToken();
+      const resp = await fetch(`${CF_BASE}/adminOnboardingFunnel`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = window.BBOnboardingReport.validate(await resp.json());
+      if (request !== funnelWidgetRequest || auth.currentUser?.uid !== user.uid) return;
+      meta.textContent = `As of ${new Date(data.asOf).toLocaleString()} · ${data.totalUsers} recorded account${data.totalUsers === 1 ? '' : 's'}`;
+      if (data.totalNotOnboarded === 0) {
+        funnelBody.textContent = data.totalUsers === 0 ? 'No accounts have been recorded yet.' : 'No incomplete onboarding found in saved records.';
+        return;
+      }
+      const rows = data.steps.map(s => `<li>${_esc(s.label)}: ${s.count}</li>`).join('');
+      funnelBody.innerHTML = `<p><strong>${_esc(data.totalNotOnboarded)}</strong> incomplete account${data.totalNotOnboarded === 1 ? '' : 's'}</p><ul>${rows}</ul><p style="font-size:12px;color:#666;">Saved setup status only. Per-question progress and inactivity duration are not recorded.</p>`;
+    } catch(e) {
+      if (request === funnelWidgetRequest && auth.currentUser?.uid === user.uid) funnelBody.textContent = 'Onboarding report unavailable. Use Refresh to retry.';
+      console.warn('[funnel-widget]', e.message);
+    } finally {
+      if (request === funnelWidgetRequest && refresh) refresh.disabled = false;
+    }
+  }
+  document.getElementById('funnel-widget-refresh').onclick = loadFunnelWidget;
+  onAuthStateChanged(auth, user => {
+    if (user) loadFunnelWidget();
+    else {
+      ++funnelWidgetRequest;
+      document.getElementById('funnel-widget-body').textContent = 'Sign in to view onboarding records.';
+      document.getElementById('funnel-widget-meta').textContent = '';
+      document.getElementById('funnel-widget-refresh').disabled = true;
+    }
+  });
+
+  // ── Remaining admin dashboard ──
 onAuthStateChanged(auth, async (user) => {
   if (!user) return;
   window._adminUser = user;
@@ -565,54 +615,6 @@ onAuthStateChanged(auth, async (user) => {
     },
     (err) => { console.error('[admin] aiUsageLogs snapshot error:', err.message); }
   );
-
-  // ── Onboarding funnel widget ──
-  (async () => {
-    const funnelBody = document.getElementById('funnel-widget-body');
-    if (!funnelBody) return;
-    try {
-      const token = await user.getIdToken();
-      const resp = await fetch(`${CF_BASE}/adminOnboardingFunnel`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const { steps = [], totalStuck = 0 } = await resp.json();
-
-      if (totalStuck === 0) {
-        funnelBody.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:#00C853;font-size:14px;font-weight:600;">✓ All users onboarded — nobody stuck right now.</div>';
-        return;
-      }
-
-      const top3 = steps.slice(0, 3);
-      const maxCount = top3[0]?.count || 1;
-
-      const rows = top3.map(s => {
-        const pct = Math.round((s.count / maxCount) * 100);
-        return `<div style="margin-bottom:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
-            <span style="font-size:13px;font-weight:600;color:#111;">${_esc(s.label)}</span>
-            <span style="font-size:13px;font-weight:700;color:#FF6D00;min-width:32px;text-align:right;">${s.count}</span>
-          </div>
-          <div style="height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:${pct}%;background:#FF6D00;border-radius:3px;transition:width .4s;"></div>
-          </div>
-        </div>`;
-      }).join('');
-
-      const more = steps.length > 3
-        ? `<div style="font-size:12px;color:#888;margin-top:6px;">+ ${steps.length - 3} more step${steps.length - 3 === 1 ? '' : 's'} with drop-off</div>`
-        : '';
-
-      funnelBody.innerHTML = `
-        <div style="font-size:13px;color:#555;margin-bottom:12px;">
-          <strong style="font-size:16px;color:#111;">${totalStuck}</strong> user${totalStuck === 1 ? '' : 's'} stuck mid-onboarding — top drop-off steps:
-        </div>
-        ${rows}${more}`;
-    } catch(e) {
-      if (funnelBody) funnelBody.innerHTML = '<div style="font-size:13px;color:#aaa;">Could not load funnel data.</div>';
-      console.warn('[funnel-widget]', e.message);
-    }
-  })();
 
   // Failed jobs snapshot
   onSnapshot(query(collectionGroup(db, 'publishJobs'), where('status','in',['failed','manual_required']), orderBy('updatedAt','desc'), limit(50)), (snap) => {

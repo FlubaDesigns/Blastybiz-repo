@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <script src="escape-utils.js?v=1"></script>
+  <script src="onboarding-report.js?v=1"></script>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8"/>
   <meta name="theme-color" content="#000000"/>
@@ -695,18 +696,19 @@
   <!-- ══════════════════════════════════════════
        ONBOARDING FUNNEL
   ══════════════════════════════════════════ -->
-  <div class="op-section">
+  <div class="op-section" id="onboarding-funnel">
     <div class="op-card">
       <div class="op-card-header" onclick="toggleCard(this)">
-        <span>📊 Onboarding Funnel — Where Users Drop Off</span>
+        <span>📊 Incomplete Onboarding</span>
         <span class="op-chevron">▶</span>
       </div>
       <div class="op-card-body">
         <p style="font-size:13px;color:#888;margin:0 0 14px;line-height:1.6;">
-          Users who signed up but haven't finished onboarding, grouped by the step where they stopped.
-          Highest bar = biggest friction point. Click any bar to see exactly who's stuck there.
+          Accounts without a completed saved business setup, grouped by saved setup status.
+          Per-question progress and inactivity duration are not recorded, so incomplete does not mean stalled. Click a group to view its accounts.
         </p>
-        <div id="funnel-status" style="font-size:13px;color:#888;min-height:18px;margin-bottom:10px;"></div>
+        <button type="button" id="funnel-refresh">Refresh report</button>
+        <div id="funnel-status" role="status" aria-live="polite" style="font-size:13px;color:#888;min-height:18px;margin-bottom:10px;"></div>
         <div id="funnel-chart"></div>
         <div id="funnel-meta" style="font-size:12px;color:#9ca3af;margin-top:14px;"></div>
         <div id="funnel-detail" style="margin-top:18px;display:none;"></div>
@@ -920,179 +922,124 @@ async function removeAdminEmail(email) {
 }
 
 // ── Onboarding Funnel ────────────────────────────────────────────────────────
-let _funnelOpenStep = null; // currently expanded step index
+let _funnelOpenStep = null;
+let _funnelRequest = 0;
+let _funnelDetailRequest = 0;
 
 async function loadOnboardingFunnel() {
   const statusEl = document.getElementById('funnel-status');
-  const chartEl  = document.getElementById('funnel-chart');
-  const metaEl   = document.getElementById('funnel-meta');
-  if (!statusEl || !chartEl) return;
+  const chartEl = document.getElementById('funnel-chart');
+  const metaEl = document.getElementById('funnel-meta');
+  const detailEl = document.getElementById('funnel-detail');
+  const refresh = document.getElementById('funnel-refresh');
+  if (!statusEl || !chartEl || !metaEl || !detailEl) return;
+  const userId = auth.currentUser?.uid;
+  const request = ++_funnelRequest;
+  ++_funnelDetailRequest;
+  _funnelOpenStep = null;
+  statusEl.style.color = '#888';
   statusEl.textContent = 'Loading…';
+  chartEl.innerHTML = '';
+  metaEl.textContent = '';
+  detailEl.innerHTML = '';
+  detailEl.style.display = 'none';
+  if (refresh) refresh.disabled = true;
   try {
     const token = await auth.currentUser.getIdToken();
-    const res   = await fetch(CF_BASE + '/adminOnboardingFunnel', {
+    const res = await fetch(CF_BASE + '/adminOnboardingFunnel', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Server error ' + res.status);
-
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || 'Server error ' + res.status);
+    const data = window.BBOnboardingReport.validate(body);
+    if (request !== _funnelRequest || auth.currentUser?.uid !== userId) return;
     statusEl.textContent = '';
-
-    if (!data.steps || data.steps.length === 0) {
-      chartEl.innerHTML = '<p style="font-size:13px;color:#9ca3af;margin:0;">No users are currently stuck mid-onboarding. 🎉</p>';
-      metaEl.textContent = `Total not yet onboarded: ${data.totalNotOnboarded ?? 0} · As of: ${new Date(data.asOf).toLocaleString()}`;
-      return;
+    if (!data.steps.length) {
+      chartEl.textContent = data.totalUsers === 0 ? 'No accounts have been recorded yet.' : 'No incomplete onboarding found in saved records.';
+    } else {
+      const maxCount = Math.max(...data.steps.map(s => s.count));
+      chartEl.innerHTML = data.steps.map(s => `<button type="button" data-step="${window.escHtml(s.stepIndex)}" aria-expanded="false"
+        style="display:flex;align-items:center;gap:10px;width:100%;margin-bottom:8px;text-align:left;cursor:pointer;border:1px solid #e5e7eb;border-radius:6px;padding:8px;background:white;">
+        <span style="flex:1;">${window.escHtml(s.label)}</span>
+        <span style="width:35%;background:#f3f4f6;border-radius:4px;height:16px;overflow:hidden;">
+          <span style="display:block;height:100%;width:${Math.round(s.count / maxCount * 100)}%;background:#2563eb;"></span>
+        </span><strong>${s.count}</strong><span aria-hidden="true">▸</span></button>`).join('');
+      chartEl.querySelectorAll('[data-step]').forEach(row => {
+        const step = data.steps.find(s => s.stepIndex === Number(row.dataset.step));
+        row.addEventListener('click', () => toggleStepUsers(step.stepIndex, step.label));
+      });
     }
-
-    const maxCount = data.steps[0].count;
-    const rows = data.steps.map(s => {
-      const pct = maxCount > 0 ? Math.max(4, Math.round((s.count / maxCount) * 100)) : 4;
-      const stepNum = s.stepIndex + 1;
-      return `<div data-step="${s.stepIndex}" onclick="toggleStepUsers(${s.stepIndex},'${window.escHtml(String(s.label).replace(/['\\]/g,''))}',this)"
-        style="display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer;border-radius:6px;padding:3px 6px;transition:background .15s;"
-        onmouseenter="this.style.background='#f0f4ff'" onmouseleave="this.style.background=''">
-        <div style="width:26px;text-align:right;font-size:11px;color:#9ca3af;flex-shrink:0;">s${stepNum}</div>
-        <div style="flex:1;background:#f3f4f6;border-radius:4px;height:22px;overflow:hidden;">
-          <div style="height:100%;width:${pct}%;background:#2563eb;border-radius:4px;transition:width .3s;"></div>
-        </div>
-        <div style="width:28px;text-align:right;font-size:12px;font-weight:700;color:#111;flex-shrink:0;">${s.count}</div>
-        <div style="min-width:160px;font-size:12px;color:#555;">${window.escHtml(s.label)}</div>
-        <div style="font-size:11px;color:#9ca3af;flex-shrink:0;">▸</div>
-      </div>`;
-    }).join('');
-
-    chartEl.innerHTML = rows;
-    metaEl.textContent = `${data.totalStuck} user${data.totalStuck === 1 ? '' : 's'} stuck · ${data.totalNotOnboarded} total not yet onboarded · As of ${new Date(data.asOf).toLocaleString()}`;
+    metaEl.textContent = `${data.totalNotOnboarded} incomplete account${data.totalNotOnboarded === 1 ? '' : 's'} of ${data.totalUsers} · As of ${new Date(data.asOf).toLocaleString()}`;
   } catch(e) {
-    statusEl.style.color = '#f87171';
-    statusEl.textContent = '✗ ' + e.message;
+    if (request !== _funnelRequest || auth.currentUser?.uid !== userId) return;
+    chartEl.innerHTML = '';
+    metaEl.textContent = '';
+    statusEl.style.color = '#b91c1c';
+    statusEl.textContent = 'Onboarding report unavailable. ' + e.message + ' Use Refresh to retry.';
+  } finally {
+    if (request === _funnelRequest && refresh) refresh.disabled = false;
   }
 }
 
-function _fmtAgo(isoStr) {
-  if (!isoStr) return '—';
-  const ms = Date.now() - new Date(isoStr).getTime();
-  const mins  = Math.floor(ms / 60000);
-  const hours = Math.floor(ms / 3600000);
-  const days  = Math.floor(ms / 86400000);
-  if (days > 0)  return days  + 'd ago';
-  if (hours > 0) return hours + 'h ago';
-  if (mins > 0)  return mins  + 'm ago';
-  return 'just now';
-}
-
-function _fmtDate(isoStr) {
-  if (!isoStr) return '—';
-  return new Date(isoStr).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
-}
-
-async function toggleStepUsers(stepIndex, stepLabel, rowEl) {
+async function toggleStepUsers(stepIndex, stepLabel) {
   const detailEl = document.getElementById('funnel-detail');
   if (!detailEl) return;
-
-  // If clicking the already-open step, close it
-  if (_funnelOpenStep === stepIndex) {
-    _funnelOpenStep = null;
-    detailEl.style.display = 'none';
-    detailEl.innerHTML = '';
-    // Reset all row indicators
-    document.querySelectorAll('#funnel-chart [data-step]').forEach(r => {
-      const ind = r.querySelector('div:last-child');
-      if (ind) ind.textContent = '▸';
-    });
-    return;
-  }
-
-  // Update open state and indicator
-  _funnelOpenStep = stepIndex;
-  document.querySelectorAll('#funnel-chart [data-step]').forEach(r => {
-    const ind = r.querySelector('div:last-child');
-    if (ind) ind.textContent = r.dataset.step == stepIndex ? '▾' : '▸';
+  const userId = auth.currentUser?.uid;
+  const request = ++_funnelDetailRequest;
+  _funnelOpenStep = _funnelOpenStep === stepIndex ? null : stepIndex;
+  document.querySelectorAll('#funnel-chart [data-step]').forEach(row => {
+    row.setAttribute('aria-expanded', String(Number(row.dataset.step) === _funnelOpenStep));
   });
-
-  detailEl.style.display = 'block';
-  detailEl.innerHTML = `<div style="font-size:13px;color:#888;padding:10px 0;">Loading users for "${window.escHtml(stepLabel)}"…</div>`;
-
+  detailEl.innerHTML = '';
+  detailEl.style.display = _funnelOpenStep === null ? 'none' : 'block';
+  if (_funnelOpenStep === null) return;
+  detailEl.textContent = 'Loading accounts…';
   try {
     const token = await auth.currentUser.getIdToken();
-    const res   = await fetch(`${CF_BASE}/adminOnboardingFunnel?stepIndex=${stepIndex}`, {
+    const res = await fetch(`${CF_BASE}/adminOnboardingFunnel?stepIndex=${stepIndex}`, {
       headers: { 'Authorization': 'Bearer ' + token }
     });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Server error ' + res.status);
-
-    const users = data.users || [];
-    if (!users.length) {
-      detailEl.innerHTML = `<p style="font-size:13px;color:#9ca3af;padding:10px 0;">No users found at this step.</p>`;
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || 'Server error ' + res.status);
+    const data = window.BBOnboardingReport.validate(body, stepIndex);
+    if (request !== _funnelDetailRequest || auth.currentUser?.uid !== userId) return;
+    if (!data.users.length) {
+      detailEl.textContent = 'No incomplete accounts remain in this group. Refresh the report for current totals.';
       return;
     }
-
-    const tableRows = users.map(u => {
-      const stuckFor = _fmtAgo(u.lastProgressAt || u.createdAt);
-      const started  = _fmtDate(u.createdAt);
-      const nudgeLabel = u.nudgeCount > 0
-        ? `Nudged ${u.nudgeCount}× (last ${_fmtAgo(u.lastNudgeAt)})`
-        : 'Send nudge';
-      const nudgeStyle = u.nudgeCount > 0
-        ? 'font-size:11px;color:#6b7280;background:#f9fafb;border:1px solid #e5e7eb;padding:4px 10px;border-radius:4px;cursor:pointer;white-space:nowrap;'
-        : 'font-size:11px;color:#fff;background:#2563eb;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;white-space:nowrap;';
-      return `<tr>
-        <td style="padding:7px 10px 7px 0;font-size:12px;color:#111;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.email ? window.escHtml(u.email) : '<em style="color:#9ca3af">no email</em>'}</td>
-        <td style="padding:7px 8px;font-size:11px;color:#9ca3af;font-family:monospace;white-space:nowrap;">${u.uid.slice(0,10)}…</td>
-        <td style="padding:7px 8px;font-size:12px;color:#555;white-space:nowrap;">${started}</td>
-        <td style="padding:7px 8px;font-size:12px;color:#555;white-space:nowrap;">${stuckFor}</td>
-        <td style="padding:7px 0 7px 8px;white-space:nowrap;">
-          <button type="button" id="nudge-btn-${u.uid}" style="${nudgeStyle}"
-            onclick="sendOnboardingNudge('${window.escHtml(String(u.uid).replace(/['\\]/g,''))}','${window.escHtml(String(u.email||'').replace(/['\\]/g,''))}',this)">${nudgeLabel}</button>
-        </td>
-      </tr>`;
-    }).join('');
-
-    detailEl.innerHTML = `
-      <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:8px;">
-        ${users.length} user${users.length===1?'':'s'} stuck at <em>${stepLabel}</em>
-      </div>
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;min-width:460px;">
-          <thead>
-            <tr style="border-bottom:1px solid #e5e7eb;">
-              <th style="text-align:left;font-size:11px;color:#6b7280;font-weight:600;padding:0 10px 6px 0;">Email</th>
-              <th style="text-align:left;font-size:11px;color:#6b7280;font-weight:600;padding:0 8px 6px;">UID</th>
-              <th style="text-align:left;font-size:11px;color:#6b7280;font-weight:600;padding:0 8px 6px;">Started</th>
-              <th style="text-align:left;font-size:11px;color:#6b7280;font-weight:600;padding:0 8px 6px;">Stuck for</th>
-              <th style="text-align:left;font-size:11px;color:#6b7280;font-weight:600;padding:0 0 6px 8px;">Action</th>
-            </tr>
-          </thead>
-          <tbody>${tableRows}</tbody>
-        </table>
-      </div>`;
+    const rows = data.users.map(u => `<tr>
+      <td style="padding:8px;">${window.escHtml(u.email || 'No email recorded')}</td>
+      <td style="padding:8px;font-family:monospace;">${window.escHtml(u.uid)}</td>
+      <td style="padding:8px;">${window.escHtml(u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'Unknown')}</td>
+      <td style="padding:8px;"><button type="button" disabled title="Reminder sending is unavailable in this report.">Reminder unavailable</button></td>
+    </tr>`).join('');
+    detailEl.innerHTML = `<p>${window.escHtml(stepLabel)} · ${data.users.length} account${data.users.length === 1 ? '' : 's'}</p>
+      <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;min-width:460px;">
+        <thead><tr><th scope="col">Email</th><th scope="col">UID</th><th scope="col">Account created</th><th scope="col">Action</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`;
   } catch(e) {
-    detailEl.innerHTML = `<p style="font-size:13px;color:#f87171;padding:10px 0;">✗ ${window.escHtml(e.message)}</p>`;
+    if (request !== _funnelDetailRequest || auth.currentUser?.uid !== userId) return;
+    detailEl.textContent = 'Account details unavailable. ' + e.message + ' Close and reopen this group to retry.';
   }
 }
 
-async function sendOnboardingNudge(uid, email, btn) {
-  const original = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = 'Sending…';
-  try {
-    const token = await auth.currentUser.getIdToken();
-    const res = await fetch(CF_BASE + '/adminSendOnboardingNudge', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Server error ' + res.status);
-    btn.textContent = '✓ Sent';
-    btn.style.background = '#dcfce7';
-    btn.style.color = '#166534';
-    btn.style.border = '1px solid #bbf7d0';
-  } catch(e) {
-    btn.disabled = false;
-    btn.textContent = original;
-    alert('Failed to send nudge: ' + e.message);
-  }
+document.getElementById('funnel-refresh')?.addEventListener('click', loadOnboardingFunnel);
+function showLinkedOnboardingReport() {
+  if (location.hash !== '#onboarding-funnel') return;
+  document.querySelector('#onboarding-funnel .op-card-body')?.classList.add('open');
+  document.querySelector('#onboarding-funnel .op-chevron')?.classList.add('open');
+}
+window.addEventListener('hashchange', showLinkedOnboardingReport);
+showLinkedOnboardingReport();
+
+function clearOnboardingReport() {
+  ++_funnelRequest;
+  ++_funnelDetailRequest;
+  _funnelOpenStep = null;
+  for (const id of ['funnel-chart', 'funnel-meta', 'funnel-detail']) document.getElementById(id).textContent = '';
+  document.getElementById('funnel-detail').style.display = 'none';
+  document.getElementById('funnel-status').textContent = 'Sign in to view onboarding records.';
+  document.getElementById('funnel-refresh').disabled = true;
 }
 
 // Load admin emails once Firebase auth is ready
@@ -1101,6 +1048,8 @@ onAuthStateChanged(auth, user => {
     loadAdminEmails();
     loadOnboardingFunnel();
     loadMascotSetting();
+  } else {
+    clearOnboardingReport();
   }
 });
 
