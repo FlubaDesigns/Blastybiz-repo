@@ -100,7 +100,7 @@ exports.deleteBusiness = onRequest({ invoker: 'public' }, withAuth(async (req, r
   }
 }));
 
-exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', timeoutSeconds: 540, secrets: ['SQUARE_ACCESS_TOKEN'] }, async (req, res) => {
+exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', timeoutSeconds: 540, secrets: [] }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.sendStatus(204);
 
@@ -127,7 +127,7 @@ exports.deleteAccount = onRequest({ invoker: 'public', region: 'us-central1', ti
   }
 });
 
-exports.sendVerificationEmail = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, async (req, res) => {
+exports.sendVerificationEmail = onRequest({ invoker: 'public', secrets: [] }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') { res.set('Access-Control-Allow-Headers', 'Content-Type'); return res.status(204).send(''); }
   try {

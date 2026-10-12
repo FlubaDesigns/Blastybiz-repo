@@ -132,7 +132,7 @@ async function queueScheduledDraft(draftRef, now) {
 }
 
 exports.scheduledPostingCheck = onSchedule(
-  { schedule: 'every 5 minutes', region: 'us-central1', timeoutSeconds:540, secrets:['RESEND_API_KEY','ANTHROPIC_API_KEY','GEMINI_API_KEY'] },
+  { schedule: 'every 5 minutes', region: 'us-central1', timeoutSeconds:540, secrets: [] },
   async () => {
     const now = new Date();
     try {
@@ -157,7 +157,7 @@ const CF_BASE = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
 
 exports.scheduledDraftPreview = onSchedule(
   { schedule: 'every 24 hours', region: 'us-central1',
-    secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY', 'ACTION_SIGNING_KEY','ANTHROPIC_API_KEY','GEMINI_API_KEY'] },
+    secrets: ['UNSUB_SIGNING_KEY', 'ACTION_SIGNING_KEY'] },
   async () => {
     const now  = new Date();
     const h48  = new Date(now.getTime() + 48 * 60 * 60 * 1000);
@@ -346,7 +346,7 @@ exports.scheduledDraftPreview = onSchedule(
 
 // ── scheduledUpgradeNudge ─────────────────────────────────────────────────────
 exports.scheduledUpgradeNudge = onSchedule(
-  { schedule: 'every monday 10:00', timeZone: 'America/New_York', region: 'us-central1', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] },
+  { schedule: 'every monday 10:00', timeZone: 'America/New_York', region: 'us-central1', secrets: ['UNSUB_SIGNING_KEY'] },
   async () => {
     try {
       const cutoff = admin.firestore.Timestamp.fromMillis(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -413,7 +413,7 @@ exports.scheduledUpgradeNudge = onSchedule(
 
 // ── scheduledWeeklyDigest ─────────────────────────────────────────────────────
 exports.scheduledWeeklyDigest = onSchedule(
-  { schedule: 'every monday 08:00', timeZone: 'America/New_York', region: 'us-central1', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] },
+  { schedule: 'every monday 08:00', timeZone: 'America/New_York', region: 'us-central1', secrets: ['UNSUB_SIGNING_KEY'] },
   async () => {
     const weekAgo = admin.firestore.Timestamp.fromMillis(Date.now() - 7 * 24 * 60 * 60 * 1000);
     try {
@@ -499,7 +499,7 @@ exports.scheduledWeeklyDigest = onSchedule(
 
 // ── scheduledSetupNudge ───────────────────────────────────────────────────────
 exports.scheduledSetupNudge = onSchedule(
-  { schedule: 'every monday 09:00', timeZone: 'America/New_York', region: 'us-central1', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] },
+  { schedule: 'every monday 09:00', timeZone: 'America/New_York', region: 'us-central1', secrets: ['UNSUB_SIGNING_KEY'] },
   async () => {
     const now = Date.now();
     try {

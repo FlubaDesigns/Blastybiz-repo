@@ -240,7 +240,7 @@ exports.adminPlatformHealth = onRequest({ invoker: 'public' }, withAuth(async (r
 }, { admin: true }));
 
 // ── adminSendReconnectNudge ───────────────────────────────────────────────────
-exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] }, withAuth(async (req, res) => {
+exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['UNSUB_SIGNING_KEY'] }, withAuth(async (req, res) => {
   const { uid: targetUid, platform: targetPlatform, businessId: targetBizId } = req.body;
   if (!targetUid || !targetPlatform || !targetBizId) {
     return res.status(400).json({ error: 'uid, platform, businessId required' });
@@ -313,7 +313,7 @@ exports.adminSendReconnectNudge = onRequest({ invoker: 'public', secrets: ['RESE
 }, { admin: true }));
 
 // ── adminSendRecoveryEmails ───────────────────────────────────────────────────
-exports.adminSendRecoveryEmails = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] }, withAuth(async (req, res) => {
+exports.adminSendRecoveryEmails = onRequest({ invoker: 'public', secrets: ['UNSUB_SIGNING_KEY'] }, withAuth(async (req, res) => {
   const { dryRun = true } = req.body;
   try {
     const snap = await db.collection('users')
@@ -492,7 +492,7 @@ exports.adminOnboardingFunnel = onRequest({ invoker: 'public' }, withAuth(async 
 }, { admin: true }));
 
 // ── adminSendOnboardingNudge ──────────────────────────────────────────────────
-exports.adminSendOnboardingNudge = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] }, withAuth(async (req, res) => {
+exports.adminSendOnboardingNudge = onRequest({ invoker: 'public', secrets: ['UNSUB_SIGNING_KEY'] }, withAuth(async (req, res) => {
   const { targetUid, templateType, nudgeContext } = req.body;
   if (!targetUid || !templateType) return res.status(400).json({ error: 'targetUid and templateType required' });
 

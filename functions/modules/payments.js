@@ -137,7 +137,7 @@ function paidPeriodEnded(subscription,now=new Date()) {
   }catch(_){return false;}
 }
 
-exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_ACCESS_TOKEN', 'SQUARE_LOCATION_ID'] }, withAuth(async (req, res, decoded) => {
+exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_LOCATION_ID'] }, withAuth(async (req, res, decoded) => {
   const uid   = decoded.uid;
   const email = decoded.email || req.body.email || '';
   const { plan, billingPeriod: rawPeriod } = req.body;
@@ -154,7 +154,7 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
     let mayRestart=false;
     if(['CANCELED','DEACTIVATED'].includes(String(existingSubscription.status||'').toUpperCase())){
       try {
-        const current=await getSquare().subscriptions.get({subscriptionId:existingSubscription.squareSubscriptionId});
+        const current=await (await getSquare()).subscriptions.get({subscriptionId:existingSubscription.squareSubscriptionId});
         mayRestart=!current.errors?.length&&current.subscription?.id===existingSubscription.squareSubscriptionId&&paidPeriodEnded(current.subscription);
       }catch(_){return res.status(503).json({error:'We could not confirm your subscription status. Please try again or contact support@blastybiz.com.'});}
     }
@@ -170,7 +170,7 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
   const locationId = process.env.SQUARE_LOCATION_ID?.trim();
   const cents = priceCents(pricing[plan + (billingPeriod === 'annual' ? 'Annual' : 'Monthly')]);
   if (!locationId || cents === null) return res.status(503).json({ error: 'Checkout pricing or location is not configured correctly.' });
-  const square = getSquare();
+  const square = await getSquare();
   let subscriptionPlanId;
   try { subscriptionPlanId = await checkoutVariationId(square, configuredId, billingPeriod, cents); }
   catch (e) {
@@ -343,7 +343,7 @@ async function applySquareEvent(event) {
   });
 }
 
-exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_WEBHOOK_SIGNATURE_KEY', 'RESEND_API_KEY'] }, async (req, res) => {
+exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['SQUARE_WEBHOOK_SIGNATURE_KEY'] }, async (req, res) => {
   const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
   const notificationUrl = 'https://us-central1-blastybiz-9523e.cloudfunctions.net/squareWebhook';
   const body = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body);
@@ -590,7 +590,7 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
   res.json({ received: true });
 });
 
-exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_ACCESS_TOKEN'] }, withAuth(async (req, res, decoded) => {
+exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: [] }, withAuth(async (req, res, decoded) => {
   const values = {
     proMonthly: req.body.proMonthly, agencyMonthly: req.body.agencyMonthly,
     proAnnual: req.body.proAnnual ?? 199, agencyAnnual: req.body.agencyAnnual ?? 999,
@@ -598,7 +598,7 @@ exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: ['SQUARE_AC
   // Accept numeric form values but not parseFloat's partial strings ("19oops").
   for (const key of Object.keys(values)) values[key] = typeof values[key] === 'string' && values[key].trim() ? Number(values[key]) : values[key];
   if (Object.values(values).some(v => priceCents(v) === null)) return res.status(400).json({ error: 'Prices must be positive USD amounts with at most two decimal places.' });
-  const catalog = getSquare().catalog;
+  const catalog = (await getSquare()).catalog;
   const ts = Date.now();
   const update = { ...values, updatedAt: admin.firestore.FieldValue.serverTimestamp() };
   try {

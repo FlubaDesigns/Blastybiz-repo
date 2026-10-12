@@ -1,3 +1,4 @@
+const {readFlubaProviderKey}=require('../lib/fluba-provider-keys');
 /**
  * BlastyBiz — AI endpoints
  * generateEnrichmentQuestions, suggestCategory, previewAds, extractBizContext,
@@ -40,7 +41,7 @@ async function loggedAI(uid, fn, body, prompt, options) {
 }
 
 
-exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
+exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: [] }, withAuth(async (req, res, decoded) => {
 
   try {
     await reserveAiAction(decoded.uid);
@@ -104,7 +105,7 @@ Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
   }
 }));
 
-exports.suggestCategory = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'], timeoutSeconds: 120 }, async (req, res) => {
+exports.suggestCategory = onRequest({ invoker: 'public', secrets: [], timeoutSeconds: 120 }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
   const { ALL_CATEGORIES } = require('../lib/platform-cats');
@@ -149,7 +150,7 @@ Be specific and vivid. Preserve anything quirky or unusual — that is what make
 
   // Direct Gemini native call — uses ?key= param (not Authorization: Bearer)
   async function _gem(prompt, maxTok) {
-    const key = process.env.GEMINI_API_KEY;
+    const key = await readFlubaProviderKey('GEMINI_API_KEY');
     if (!key) throw new Error('GEMINI_API_KEY not set');
     const r = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${key}`,
@@ -234,7 +235,7 @@ function _previewFallback(bizName, city, category) {
 }
 
 exports.previewAds = onRequest(
-  { invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'], timeoutSeconds: 60 },
+  { invoker: 'public', secrets: [], timeoutSeconds: 60 },
   async (req, res) => {
     setCors(req, res);
     if (req.method === 'OPTIONS') return res.status(204).end();
@@ -348,7 +349,7 @@ Write one authentic ad for each platform. Return ONLY valid JSON in exactly this
 // Fetches a business website (or reads Google Business Profile) and uses AI
 // to populate the five aiContext story fields. One AI credit per call.
 // Rate-limited to 5 calls/hour/user.
-exports.extractBizContext = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'], timeoutSeconds: 90 }, withAuth(async (req, res, decoded) => {
+exports.extractBizContext = onRequest({ invoker: 'public', secrets: [], timeoutSeconds: 90 }, withAuth(async (req, res, decoded) => {
   const { bizId, sourceUrl, source } = req.body;
   if (!bizId) return res.status(400).json({ error: 'bizId required' });
 
@@ -541,7 +542,7 @@ function _mergeAdminPlatformDoc(baseDoc, fsDoc) {
   return merged;
 }
 
-exports.adaptListing = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'], timeoutSeconds: 120 }, withAuth(async (req, res, decoded) => {
+exports.adaptListing = onRequest({ invoker: 'public', secrets: [], timeoutSeconds: 120 }, withAuth(async (req, res, decoded) => {
   const fnStartMs = Date.now();
 
   if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
@@ -734,7 +735,7 @@ ${platformList.map(p => `    "${p.id}": "adapted text for ${p.name}"`).join(',\n
   res.json(parsed);
 }));
 
-exports.resolveCategories = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
+exports.resolveCategories = onRequest({ invoker: 'public', secrets: [] }, withAuth(async (req, res, decoded) => {
   const fnStartMs = Date.now();
 
   if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
@@ -869,7 +870,7 @@ ${platformBlocks}`;
   res.json(parsed);
 }));
 
-exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
+exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: [] }, withAuth(async (req, res, decoded) => {
 
   const { name, category, description, locationType, website, requestId: spRequestId } = req.body;
 
@@ -942,7 +943,7 @@ ${JSON.stringify({suggestions:Object.fromEntries(Object.keys(PLATFORM_DOCS).map(
   }
 }));
 
-exports.chatCampaign = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
+exports.chatCampaign = onRequest({ invoker: 'public', secrets: [] }, withAuth(async (req, res, decoded) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
   const { conversationHistory, businessProfile, collectedData } = req.body || {};
   if (!Array.isArray(conversationHistory)) return res.status(400).json({ error: 'conversationHistory array required' });
@@ -1012,7 +1013,7 @@ If finished: {"done":true,"message":"brief warm wrap-up line","campaignMemory":"
   }
 }));
 
-exports.scoreFact = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY'] }, async (req, res) => {
+exports.scoreFact = onRequest({ invoker: 'public', secrets: [] }, async (req, res) => {
   setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
@@ -1069,14 +1070,14 @@ exports.adminGetAiSettings = onRequest({ invoker: 'public' }, withAuth(async (re
   }
 }, { admin: true }));
 
-exports.adminSetAiSettings = onRequest({ invoker: 'public', secrets: ['ANTHROPIC_API_KEY','GEMINI_API_KEY'] }, withAuth(async (req, res, decoded) => {
+exports.adminSetAiSettings = onRequest({ invoker: 'public', secrets: [] }, withAuth(async (req, res, decoded) => {
   const VALID_PROVIDERS = ['anthropic', 'gemini']; // Only providers bound on every deployed AI entrypoint.
   const { provider, fastModel, smartModel } = req.body;
   if (!provider || !fastModel || !smartModel) return res.status(400).json({ error: 'provider, fastModel, and smartModel are required' });
   if (!VALID_PROVIDERS.includes(provider)) return res.status(400).json({ error: `provider must be one of: ${VALID_PROVIDERS.join(', ')}` });
 
   try {
-    const key=provider==='gemini'?process.env.GEMINI_API_KEY:process.env.ANTHROPIC_API_KEY;
+    const key=provider==='gemini'?await readFlubaProviderKey('GEMINI_API_KEY'):await readFlubaProviderKey('ANTHROPIC_API_KEY');
     if(!key||key==='placeholder')return res.status(409).json({error:'This provider is not configured on the backend.'});
     for(const model of new Set([fastModel,smartModel])){
       if(typeof model!=='string'||!/^[-A-Za-z0-9_.]+$/.test(model))return res.status(400).json({error:'Invalid model ID'});

@@ -1,12 +1,14 @@
+const {readFlubaProviderKey}=require('./fluba-provider-keys');
 'use strict';
 // Uses the existing Gemini secret, AI allowance, campaign image collection and Storage.
 const {randomUUID}=require('node:crypto');
 const MODEL='gemini-3.1-flash-lite-image';
 const error=(status,message)=>Object.assign(Error(message),{httpStatus:status});
-function createImageGenerator({db,admin,reserveAiAction,trackAiUsage,fetchImpl=fetch,key=()=>process.env.GEMINI_API_KEY}) {
+function createImageGenerator({db,admin,reserveAiAction,trackAiUsage,fetchImpl=fetch,key=()=>readFlubaProviderKey('GEMINI_API_KEY')}) {
  return async function generate({uid,b,c,adId,prompt,requestId,packet}) {
    if(typeof prompt!=='string'||!prompt.trim()||prompt.length>2000)throw error(400,'Describe the image you want in 2,000 characters or fewer.');
-   if(!key())throw error(503,'Image creation is unavailable. Upload a photo or choose one from your library.');
+   const apiKey=await key();
+   if(!apiKey)throw error(503,'Image creation is unavailable. Upload a photo or choose one from your library.');
    const imageId='ai_'+requestId,ref=db.doc(`users/${uid}/businesses/${b}/campaigns/${c}/images/${imageId}`);
    const prior=await db.runTransaction(async tx=>{
      const d=await tx.get(ref);
@@ -18,7 +20,7 @@ function createImageGenerator({db,admin,reserveAiAction,trackAiUsage,fetchImpl=f
    const start=Date.now();let usage=null;
    try {
      await reserveAiAction(uid);
-     const r=await fetchImpl('https://generativelanguage.googleapis.com/v1beta/interactions',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key()},signal:AbortSignal.timeout(90000),body:JSON.stringify({model:MODEL,input:[{type:'text',text:'Create one polished square marketing image for this approved post. Do not invent offers, prices, contact information or factual claims. Avoid text unless the user explicitly requests it. User image direction: '+prompt.trim()+'\nApproved post context: '+JSON.stringify({adName:packet.adName,offer:packet.offer,context:packet.context,copy:packet.adaptations}).slice(0,10000)}]})});
+     const r=await fetchImpl('https://generativelanguage.googleapis.com/v1beta/interactions',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},signal:AbortSignal.timeout(90000),body:JSON.stringify({model:MODEL,input:[{type:'text',text:'Create one polished square marketing image for this approved post. Do not invent offers, prices, contact information or factual claims. Avoid text unless the user explicitly requests it. User image direction: '+prompt.trim()+'\nApproved post context: '+JSON.stringify({adName:packet.adName,offer:packet.offer,context:packet.context,copy:packet.adaptations}).slice(0,10000)}]})});
      if(!r.ok)throw error(503,'AI could not create this image. Your current photo is unchanged.');
      const data=await r.json(),blocks=(data.steps||[]).filter(s=>s.type==='model_output').flatMap(s=>s.content||[]),images=blocks.filter(x=>x.type==='image'&&x.data);
      if(!images.length&&data.output_image?.data)images.push(data.output_image);

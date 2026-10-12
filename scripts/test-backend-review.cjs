@@ -25,7 +25,7 @@ async function activity(){
  await test('pending purge forces serialized activity even inside throttle window',async()=>{const f=fixture({'users/u':{lastActiveAt:{stamp:Date.now()},dormancyPurgeAt:{stamp:1},dormancyWarnedAt:{stamp:1}}});await f.run();assert.equal(f.transactions(),1);assert.equal(f.m.get('users/u').dormancyPurgeAt,undefined);});
  await test('missing user is not recreated',async()=>{const f=fixture({});await f.run();assert.equal(f.transactions(),0);assert.equal(f.m.get('users/u'),undefined);});
  await test('new concurrent activity avoids redundant write',async()=>{const f=fixture({'users/u':{lastActiveAt:{stamp:1}}},m=>m.db.doc('users/u').update({lastActiveAt:{stamp:Date.now()}}));await f.run();assert.equal(f.m.writes.length,1);});
- await test('missing email credential is definitely not sent',async()=>{let called=false;const c={process:{env:{}},fetch:()=>{called=true;},console:quiet};vm.runInNewContext(source.slice(source.indexOf('async function sendResendEmail'),source.indexOf('// ── Lazy-init Square')),c);await assert.rejects(()=>c.sendResendEmail({strict:true}),e=>e.providerRejected===true);assert.equal(called,false);});
+ await test('missing email credential is definitely not sent',async()=>{let called=false;const c={readFlubaProviderKey:async()=>{throw Error('Central vault unavailable');},process:{env:{}},fetch:()=>{called=true;},console:quiet};vm.runInNewContext(source.slice(source.indexOf('async function sendResendEmail'),source.indexOf('// ── Lazy-init Square')),c);await assert.rejects(()=>c.sendResendEmail({strict:true}),e=>e.providerRejected===true);assert.equal(called,false);});
 }
 async function payments(){
  function fixture(status='ACTIVE',sub={}){

@@ -256,7 +256,7 @@ exports.approvePendingPost = onRequest({ invoker: 'public' }, withAuth(async (re
   }
 }));
 
-exports.approveDraft = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, withAuth(async (req, res, decoded) => {
+exports.approveDraft = onRequest({ invoker: 'public', secrets: [] }, withAuth(async (req, res, decoded) => {
 
   if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
     return res.status(400).json({ error: 'Request body must be a JSON object' });
@@ -530,7 +530,7 @@ exports.dispatchPublishJob = onDocumentCreated(
 );
 
 exports.resumePublishJob = onDocumentUpdated(
-  { document:'users/{userId}/businesses/{bizId}/publishJobs/{jobId}',region:'us-central1',retry:true,secrets:['GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET'] },
+  { document:'users/{userId}/businesses/{bizId}/publishJobs/{jobId}',region:'us-central1',retry:true,secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
   async event=>{
     const before=event.data.before.data(),after=event.data.after.data();
     if(!after.ownerRetryRequest||before.ownerRetryRequest===after.ownerRetryRequest)return;
@@ -539,7 +539,7 @@ exports.resumePublishJob = onDocumentUpdated(
 );
 
 exports.jobFailedTrigger = onDocumentUpdated(
-  { document: 'users/{userId}/businesses/{bizId}/publishJobs/{jobId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
+  { document: 'users/{userId}/businesses/{bizId}/publishJobs/{jobId}', region: 'us-central1', secrets: [] },
   async (event) => {
     const before = event.data.before.data();
     const after  = event.data.after.data();
@@ -616,7 +616,7 @@ exports.jobFailedTrigger = onDocumentUpdated(
 );
 
 exports.jobCompletedTrigger = onDocumentUpdated(
-  { document: 'users/{userId}/businesses/{bizId}/publishJobs/{jobId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
+  { document: 'users/{userId}/businesses/{bizId}/publishJobs/{jobId}', region: 'us-central1', secrets: [] },
   async (event) => {
     const before = event.data.before.data();
     const after  = event.data.after.data();
@@ -911,7 +911,7 @@ exports.importGooglePhotos = onRequest(
  * with status 'queued'. Calls the shared import helper.
  */
 exports.onGoogleImportQueued = onDocumentCreated(
-  { document: 'importJobs/{docId}', region: 'us-central1', timeoutSeconds: 540, retry: true, secrets: ['GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET'] },
+  { document: 'importJobs/{docId}', region: 'us-central1', timeoutSeconds: 540, retry: true, secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
   async (event) => {
     const data = event.data?.data?.();
     if (!data || data.status !== 'queued') return;
@@ -945,7 +945,7 @@ function _actionHtmlPage(icon, title, body, dashUrl) {
 }
 
 exports.draftAction = onRequest(
-  { invoker: 'public', region: 'us-central1', secrets: ['ACTION_SIGNING_KEY', 'UNSUB_SIGNING_KEY', 'RESEND_API_KEY'] },
+  { invoker: 'public', region: 'us-central1', secrets: ['ACTION_SIGNING_KEY', 'UNSUB_SIGNING_KEY'] },
   async (req, res) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.set('Referrer-Policy', 'no-referrer');
@@ -1015,7 +1015,7 @@ exports.draftAction = onRequest(
 // ─────────────────────────────────────────────────────────────────────────────
 
 exports.businessCreatedTrigger = onDocumentCreated(
-  { document: 'users/{uid}/businesses/{bizId}', region: 'us-central1', secrets: ['RESEND_API_KEY'] },
+  { document: 'users/{uid}/businesses/{bizId}', region: 'us-central1', secrets: [] },
   async (event) => {
     const biz = event.data.data();
     const { uid, bizId } = event.params;

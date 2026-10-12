@@ -33,10 +33,10 @@ function createAccountDeletion({db,admin,getSquare,revokeConnections,clock=Date.
    if(record.squareSubscriptionId&&!record.subscriptionCancelled){
     if(opts.cancelSubscription===false)throw Error('Cannot delete an account with an uncancelled subscription');
     let response;
-    try { response=await getSquare().subscriptions.cancel({subscriptionId:record.squareSubscriptionId}); }
+    try { response=await (await getSquare()).subscriptions.cancel({subscriptionId:record.squareSubscriptionId}); }
     catch(e){
      // A retry may follow a successful provider cancellation whose local receipt failed.
-     const current=await getSquare().subscriptions.get({subscriptionId:record.squareSubscriptionId});
+     const current=await (await getSquare()).subscriptions.get({subscriptionId:record.squareSubscriptionId});
      if(current.subscription?.status!=='CANCELED'&&!current.subscription?.canceledDate)throw e;
      response=current;
     }

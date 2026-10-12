@@ -308,7 +308,7 @@ async function runRetentionSweep({ trigger = 'schedule', forceMode = null } = {}
 exports.scheduledRetentionSweep = onSchedule(
   {
     schedule: 'every day 04:00', timeZone: 'America/New_York', region: 'us-central1',
-    secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY', 'SQUARE_ACCESS_TOKEN'],
+    secrets: ['UNSUB_SIGNING_KEY'],
     timeoutSeconds: 540, memory: '512MiB',
   },
   async () => {
