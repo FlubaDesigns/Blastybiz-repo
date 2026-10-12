@@ -1,3 +1,4 @@
+const {readFlubaProviderKey}=require('./fluba-provider-keys');
 /**
  * BlastyBiz — shared helpers for all Cloud Function modules
  * Every module does:  const { db, withAuth, bbLog, ... } = require('../lib/shared');
@@ -20,7 +21,7 @@ const crypto    = require('crypto');
 
 // ── Resend email helper (uses native fetch — Node 22) ─────────────────────────
 async function sendResendEmail({ to, subject, html, strict=false, idempotencyKey }) {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = await readFlubaProviderKey('RESEND_API_KEY');
   if (!apiKey || apiKey === 'placeholder') {
     if(strict)throw Object.assign(Error('Email service is not configured.'),{providerRejected:true});
     console.log('[email] RESEND_API_KEY not configured — skipping email to', to);
@@ -40,16 +41,11 @@ async function sendResendEmail({ to, subject, html, strict=false, idempotencyKey
 }
 
 // ── Lazy-init Square client — secret not available at module load time ─────────
-let _square;
-function getSquare() {
-  if (!_square) {
-    const { SquareClient, SquareEnvironment } = require('square');
-    _square = new SquareClient({
-      token: process.env.SQUARE_ACCESS_TOKEN,
-      environment: SquareEnvironment.Production,
-    });
-  }
-  return _square;
+async function getSquare() {
+  const { SquareClient, SquareEnvironment } = require('square');
+  const token = await readFlubaProviderKey('SQUARE_ACCESS_TOKEN');
+  if (!token) throw Error('Square is not configured in Fluba.');
+  return new SquareClient({token, environment: SquareEnvironment.Production});
 }
 
 admin.initializeApp();
@@ -199,7 +195,7 @@ async function callAI(content, { system = '', maxTokens = 1024, tier = 'smart', 
     if (system) body.system = system;
     const resp = await fetchWithTimeout(
       'https://api.anthropic.com/v1/messages',
-      { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' }, body: JSON.stringify(body) },
+      { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': await readFlubaProviderKey('ANTHROPIC_API_KEY'), 'anthropic-version': '2023-06-01' }, body: JSON.stringify(body) },
       timeoutMs
     );
     if (!resp.ok) {
@@ -212,8 +208,8 @@ async function callAI(content, { system = '', maxTokens = 1024, tier = 'smart', 
   }
 
   const baseUrl = _OAI_BASES[provider];
-  const apiKey  = process.env[_OAI_KEY_VARS[provider]];
-  if (!baseUrl || !apiKey) throw new Error(`Provider "${provider}" is not configured — set its API key as a Firebase secret and redeploy functions once.`);
+  const apiKey  = (_OAI_KEY_VARS[provider] ? await readFlubaProviderKey(_OAI_KEY_VARS[provider]) : '');
+  if (!baseUrl || !apiKey) throw new Error(`Provider "${provider}" is not configured — manage its API key in Fluba Cortex.`);
   const oaiMsgs = system
     ? [{ role: 'system', content: system }, ...messages.filter(m => m.role !== 'system')]
     : messages;
@@ -591,7 +587,7 @@ function makeUnsubSig(uid, secret) {
   return crypto.createHmac('sha256', secret).update(uid).digest('hex');
 }
 function _unsubSecret() {
-  return process.env.UNSUB_SIGNING_KEY || process.env.RESEND_API_KEY;
+  return process.env.UNSUB_SIGNING_KEY;
 }
 
 // ── HMAC-signed draft action tokens (approve / skip / change / pause) ─────────
@@ -601,7 +597,7 @@ function makeActionSig(uid, bizId, draftId, action, cycle, key) {
   return crypto.createHmac('sha256', key).update(JSON.stringify(['v2', uid, bizId, draftId, action, cycle])).digest('hex');
 }
 function _actionSecret() {
-  return process.env.ACTION_SIGNING_KEY || process.env.UNSUB_SIGNING_KEY || process.env.RESEND_API_KEY;
+  return process.env.ACTION_SIGNING_KEY || process.env.UNSUB_SIGNING_KEY;
 }
 
 // ── Shared schedule helper ────────────────────────────────────────────────────

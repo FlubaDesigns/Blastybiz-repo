@@ -244,7 +244,7 @@ exports.checkPlatformTokenExpiry = onSchedule(
   {
     schedule: 'every 30 minutes',
     region: 'us-central1',
-    secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'RESEND_API_KEY', 'FACEBOOK_APP_ID', 'FACEBOOK_APP_SECRET'],
+    secrets: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'FACEBOOK_APP_ID', 'FACEBOOK_APP_SECRET'],
   },
   async () => {
     // OAuth selections contain private credentials; erase abandoned expired choices.

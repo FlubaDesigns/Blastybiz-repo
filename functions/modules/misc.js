@@ -1,3 +1,4 @@
+const {readFlubaProviderKey}=require('../lib/fluba-provider-keys');
 /**
  * BlastyBiz — Miscellaneous public endpoints
  * sendTestEmail, contactForm, unsubscribeEmail
@@ -11,10 +12,10 @@ const {
   makeUnsubSig, _unsubSecret,
 } = require('../lib/shared');
 
-exports.sendTestEmail = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, withAuth(async (req, res, decoded) => {
+exports.sendTestEmail = onRequest({ invoker: 'public', secrets: [] }, withAuth(async (req, res, decoded) => {
   const { to, subject: rawSubject, html: rawHtml } = req.body;
   if (!to || !rawSubject || !rawHtml) return res.status(400).json({ error: 'to, subject, and html are required' });
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = await readFlubaProviderKey('RESEND_API_KEY');
   if (!apiKey || apiKey === 'placeholder') return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
 
   const SAMPLE = {
@@ -48,7 +49,7 @@ exports.sendTestEmail = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY
   }
 }, { admin: true }));
 
-exports.contactForm = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY'] }, withAuth(async (req, res) => {
+exports.contactForm = onRequest({ invoker: 'public', secrets: [] }, withAuth(async (req, res) => {
   const ALLOWED_TO = new Set(['support@blastybiz.com', 'info@blastybiz.com', 'sales@blastybiz.com', 'billing@blastybiz.com']);
   const { to, name, email, message } = req.body || {};
   if (!ALLOWED_TO.has(to)) return res.status(400).json({ error: 'Invalid recipient' });
@@ -78,7 +79,7 @@ exports.contactForm = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY']
     }
   } catch(e) { /* rate-limit check non-fatal */ }
 
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = await readFlubaProviderKey('RESEND_API_KEY');
   if (!apiKey || apiKey === 'placeholder') return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
   function escHtml(str) {
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -106,7 +107,7 @@ exports.contactForm = onRequest({ invoker: 'public', secrets: ['RESEND_API_KEY']
   }
 }, { public: true }));
 
-exports.unsubscribeEmail = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['RESEND_API_KEY', 'UNSUB_SIGNING_KEY'] }, async (req, res) => {
+exports.unsubscribeEmail = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['UNSUB_SIGNING_KEY'] }, async (req, res) => {
   const uid = req.query.uid;
   const sig = req.query.sig;
   if (!uid || !sig) return res.status(400).send('<p>Missing unsubscribe parameters.</p>');
