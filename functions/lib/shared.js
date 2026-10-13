@@ -20,7 +20,8 @@ const axios     = require('axios');
 const crypto    = require('crypto');
 
 // ── Resend email helper (uses native fetch — Node 22) ─────────────────────────
-async function sendResendEmail({ to, subject, html, strict=false, idempotencyKey }) {
+async function sendResendEmail({ to, subject, html, strict=false, idempotencyKey, dailyLimited=false }) {
+  strict = strict || dailyLimited;
   let apiKey;
   try { apiKey = await readFlubaProviderKey('RESEND_API_KEY'); }
   catch {
@@ -33,13 +34,18 @@ async function sendResendEmail({ to, subject, html, strict=false, idempotencyKey
     console.log('[email] RESEND_API_KEY not configured — skipping email to', to);
     return;
   }
+  const cadence=dailyLimited?require('./email-cadence'):null;
+  const slot=cadence?await cadence.reserve(db,to):null;
+  if(cadence&&!slot)return {deferred:true};
   try {
     const resp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json',...(idempotencyKey?{'Idempotency-Key':idempotencyKey}:{}) },
       body: JSON.stringify({ from: 'BlastyBiz <info@blastybiz.com>', to: [to], subject, html }),
     });
-    if (!resp.ok) {if(strict)throw Object.assign(Error('Email provider rejected the send ('+resp.status+').'),{providerRejected:true});console.error('[email] Resend error:', await resp.text());}
+    if (!resp.ok) {if(slot)await cadence.settle(db,slot,false);if(strict)throw Object.assign(Error('Email provider rejected the send ('+resp.status+').'),{providerRejected:true});console.error('[email] Resend error:', await resp.text());}
+    if(resp.ok&&slot)await cadence.settle(db,slot,true);
+    return {sent:resp.ok};
   } catch (e) {
     console.error('[email] sendResendEmail failed:', e.message);
     if(strict)throw e;

@@ -9,7 +9,7 @@ const STATUS_CONFIG = {
   manual_required:  { label: 'Action Needed', cls: 'pill-manual', rowCls: 'status-manual' },
   manual_posted: {label:'Posted by you',cls:'pill-live',rowCls:'status-live'},
   manual_skipped: {label:'Skipped',cls:'pill-pending',rowCls:''},
-  manual_lapsed: {label:'Not posted',cls:'pill-pending',rowCls:''},
+  manual_lapsed: {label:'Expired — not posted',cls:'pill-pending',rowCls:''},
   skipped: {label:'Skipped',cls:'pill-pending',rowCls:''},
   manual_completed: { label: 'Posted',      cls: 'pill-live',    rowCls: 'status-live' },
   processing:       { label: 'Publishing', cls: 'pill-running', rowCls: 'status-running' },
@@ -93,7 +93,7 @@ function renderPlatformRows(jobs) {
       content.className = 'platform-content';
       const message = document.createElement('p');
       message.className = 'platform-msg';
-      message.textContent = manual ? 'Copy your listing, then open the platform to post it.' : (job.customerVisibleMessage || status.label);
+      message.textContent = manual ? 'Copy your listing, then open the platform to post it.' : (job.status==='manual_lapsed'?'Expired — not posted. The manual posting deadline passed without a posting confirmation.'+(job.lapsedAt?' Closed '+new Date(job.lapsedAt).toLocaleDateString()+'.':''):(job.customerVisibleMessage || status.label));
       content.append(message);
       if(manual){const copyText=document.createElement('textarea');copyText.readOnly=true;copyText.value=job.payload?.adaptedContent||'';copyText.className='manual-textarea';copyText.setAttribute('aria-label','Post text for '+meta.name);content.append(copyText);}
       const actions = document.createElement('div');
@@ -150,7 +150,8 @@ window.showToast=showToast;window.showEmptyState=showEmptyState;window.focusFutu
    try {
      const {summary}=await BBLifecycle.api('reconcile',{blastId:context.blastId});
      let panel=document.getElementById('blast-truth');if(!panel){panel=document.createElement('section');panel.id='blast-truth';panel.className='blast-summary';document.querySelector('.progress-card').insertBefore(panel,document.getElementById('platform-list'));}
-     panel.replaceChildren();const text=document.createElement('p');text.textContent=summary.complete?'This Blast is complete. '+summary.delivered+' destinations were posted.':summary.delivered+' posted · '+summary.manual+' ready for you · '+(summary.total-summary.terminal-summary.manual)+' still in progress or needing attention.';panel.append(text);
+     panel.replaceChildren();const text=document.createElement('p');text.textContent=summary.complete?(summary.delivered===summary.total?'All destinations were posted.':'This Blast is closed. '+outcomes(currentJobs)+'.'):summary.delivered+' posted · '+summary.manual+' ready for you · '+(summary.total-summary.terminal-summary.manual)+' still in progress or needing attention.';panel.append(text);
+     if(summary.manual){const deadline=document.createElement('p');deadline.textContent=summary.manualExpiresAt?'Unconfirmed manual posts expire '+new Date(summary.manualExpiresAt).toLocaleString()+'.':'Unconfirmed manual posts expire '+summary.manualLapseDays+' days after the final reminder.';panel.append(deadline);}
      if(summary.manual)panel.append(button('Skip Remaining',()=>act('skipRemaining',{draftId:context.blastId})));
      if(!summary.launched)return;
      const result=await BBLifecycle.api('acknowledge',{blastId:context.blastId});
@@ -162,10 +163,14 @@ window.showToast=showToast;window.showEmptyState=showEmptyState;window.focusFutu
      window.BBBlasty?.fire('onboard.first_blast_complete',{ownerName:userInfo.ownerName||userInfo.displayName||'there',handoff:summary.manual?'The remaining manual destinations are ready for you.':'Your selected destinations are complete.'});
    }catch(e){console.warn('Blast milestone could not be loaded:',e.message);}finally{claiming=false;}
  }
+ function outcomes(jobs){
+   const count=statuses=>jobs.filter(j=>statuses.has(j.status)).length;
+   return [count(delivered)+' posted',count(new Set(['manual_skipped','skipped']))+' skipped',count(new Set(['manual_lapsed']))+' expired',...(jobs.some(j=>j.status==='canceled')?[count(new Set(['canceled']))+' canceled']:[])].join(' · ');
+ }
  window.renderJobs=function(jobs){
    currentJobs=jobs;renderPlatformRows(jobs);
    const done=jobs.filter(j=>terminal.has(j.status)).length,posted=jobs.filter(j=>delivered.has(j.status)).length;
-   document.getElementById('progress-count').textContent=done+' of '+jobs.length+' complete · '+posted+' posted';document.getElementById('progress-bar').style.width=(jobs.length?done/jobs.length*100:0)+'%';document.getElementById('hours-saved').textContent=(jobs.filter(j=>j.status==='success').length*.8).toFixed(1);
+   document.getElementById('progress-count').textContent=outcomes(jobs)+(done<jobs.length?' · '+(jobs.length-done)+' remaining':'');document.getElementById('progress-bar').style.width=(jobs.length?posted/jobs.length*100:0)+'%';document.getElementById('hours-saved').textContent=(jobs.filter(j=>j.status==='success').length*.8).toFixed(1);
    document.querySelectorAll('#platform-list .platform-row').forEach(row=>{
      const job=jobs.find(j=>j.jobId===row.dataset.jobid);if(!job)return;
      const actions=row.querySelector('.action-btns');if(!actions)return;
@@ -195,6 +200,6 @@ window.showToast=showToast;window.showEmptyState=showEmptyState;window.focusFutu
    });
    void completion();
  };
- window.BBLifecycleStatus={historyRows,initialize(ctx,user){context=ctx;userInfo=user;BBLifecycle.configure(ctx);const host=document.getElementById('content-state'),label=document.createElement('label');label.className='bb-reminder';const input=document.createElement('input');input.type='checkbox';input.checked=user.manualRemindersEnabled!==false;label.append(input,document.createTextNode('Remind me to finish manual posts'));host.append(label);input.onchange=async()=>{input.disabled=true;try{await BBLifecycle.api('reminders',{enabled:input.checked});window.BBBlasty?.fire('reminder.manual_explain');}catch(e){input.checked=!input.checked;window.showToast(e.message);}finally{input.disabled=false;}};}};
+ window.BBLifecycleStatus={historyRows,initialize(ctx,user){context=ctx;userInfo=user;BBLifecycle.configure(ctx);const host=document.getElementById('content-state'),label=document.createElement('label');label.className='bb-reminder';const input=document.createElement('input');input.type='checkbox';input.checked=user.manualRemindersEnabled!==false;label.append(input,document.createTextNode('Remind me to finish manual posts (at most one email every 24 hours)'));host.append(label);input.onchange=async()=>{input.disabled=true;try{await BBLifecycle.api('reminders',{enabled:input.checked});window.BBBlasty?.fire('reminder.manual_explain');}catch(e){input.checked=!input.checked;window.showToast(e.message);}finally{input.disabled=false;}};}};
 })();
 

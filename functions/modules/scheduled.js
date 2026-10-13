@@ -310,7 +310,7 @@ exports.scheduledDraftPreview = onSchedule(
   </div>`;
 
           try {
-            await sendResendEmail({ to: email, subject, html });
+            if((await sendResendEmail({ to: email, subject, html, dailyLimited:true }))?.deferred)continue;
             await draftSnap.ref.update({
               'schedule.previewSentAt': now.toISOString(),
               updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -400,7 +400,7 @@ exports.scheduledUpgradeNudge = onSchedule(
   </div>
 </div>`;
         }
-        await sendResendEmail({ to: userData.email, subject, html });
+        if((await sendResendEmail({ to: userData.email, subject, html, dailyLimited:true }))?.deferred)continue;
         await docSnap.ref.update({ upgradeNudgeSentAt: admin.firestore.FieldValue.serverTimestamp() });
         sent++;
       }
@@ -489,7 +489,7 @@ exports.scheduledWeeklyDigest = onSchedule(
   </div>
 </div>`;
         }
-        await sendResendEmail({ to: userData.email, subject, html });
+        if((await sendResendEmail({ to: userData.email, subject, html, dailyLimited:true }))?.deferred)continue;
       }
     } catch(e) {
       console.error('[scheduledWeeklyDigest] error:', e.message);
@@ -573,14 +573,16 @@ exports.scheduledSetupNudge = onSchedule(
             const current=(await tx.get(docSnap.ref)).data();
             if(!current||current.sent||current.needsReview||current.leaseUntil>Date.now())return null;
             const prior=current.delivery;
-            if(prior&&Date.now()-prior.createdAt>23*60*60*1000&&current.deliveryStatus!=='rejected'){
+            if(prior&&Date.now()-prior.createdAt>23*60*60*1000&&!['rejected','deferred'].includes(current.deliveryStatus)){
               tx.update(docSnap.ref,{needsReview:true,deliveryStatus:'uncertain'});return null;
             }
             const next=prior&&Date.now()-prior.createdAt<=23*60*60*1000?prior:{key:'setup-'+require('node:crypto').randomUUID(),createdAt:Date.now(),to:userEmail,subject,html};
-            tx.update(docSnap.ref,{delivery:next,deliveryStatus:'sending',leaseUntil:Date.now()+120000});return next;
+            tx.update(docSnap.ref,{delivery:next,deliveryStatus:'sending',leaseUntil:Date.now()+120000});return {...next,previousStatus:current.deliveryStatus};
           });
           if(!delivery)continue;
-          await sendResendEmail({to:delivery.to,subject:delivery.subject,html:delivery.html,strict:true,idempotencyKey:delivery.key});
+          if((await sendResendEmail({to:delivery.to,subject:delivery.subject,html:delivery.html,strict:true,idempotencyKey:delivery.key,dailyLimited:true}))?.deferred){
+            await docSnap.ref.update({deliveryStatus:delivery.previousStatus==='uncertain'?'uncertain':'deferred',leaseUntil:0});continue;
+          }
           await docSnap.ref.update({sent:true,deliveryStatus:'sent',leaseUntil:0,sentAt:admin.firestore.FieldValue.serverTimestamp()});
         }catch(e){
           await docSnap.ref.update({deliveryStatus:e.providerRejected?'rejected':'uncertain',leaseUntil:0,lastError:String(e.message).slice(0,200)});

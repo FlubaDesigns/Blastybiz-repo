@@ -25,7 +25,12 @@ const jobs=()=>Object.entries(store.all()).filter(([p])=>p.startsWith(J)).map(([
  w.renderJobs(jobs());await settle();ok(w.document.getElementById('progress-count').textContent.includes('2 posted'),'confirmed manual work counts delivered');ok(!buttons().some(b=>b.textContent==='Mark as Posted')&&w.document.querySelectorAll('details.platform-row').length===2,'completed manual work retains its accordion without posting actions');
  ok(w.document.querySelectorAll('#first-blast-completion').length===1,'rerender does not replay first-use panel');
  const checkbox=w.document.querySelector('#content-state > label input');checkbox.checked=false;await checkbox.onchange();ok(store.get('users/u').manualRemindersEnabled===false,'reminder preference uses server operation');
- await store.db.doc(J+'manual').update({status:'manual_lapsed'});w.renderJobs(jobs());await settle();ok(w.document.getElementById('progress-count').textContent.includes('2 of 2 complete · 1 posted'),'lapse is complete but never posted');
+ await store.db.doc(J+'manual').update({status:'manual_lapsed'});w.renderJobs(jobs());await settle();ok(w.document.getElementById('progress-count').textContent.includes('1 posted · 0 skipped · 1 expired'),'expired destination is separately counted');
+ ok(w.document.querySelector('[data-jobid=manual] .platform-msg').textContent.includes('deadline passed'),'old expired records explain the reason');
+ ok(!w.document.getElementById('blast-truth').textContent.includes('Blast is complete'),'mixed results are closed, not all posted');
+ await store.db.doc(J+'skipped').set({jobId:'skipped',draftId:'d',platform:'fbmarket',status:'manual_skipped'});w.renderJobs(jobs());await settle();
+ ok(w.document.getElementById('progress-count').textContent.includes('1 posted · 1 skipped · 1 expired'),'all outcomes remain distinct');
+ ok(w.document.getElementById('progress-bar').style.width.startsWith('33.333'),'progress bar measures actual posting');
  console.log(checks+' Pass 11 publishing status DOM assertions passed.');dom.window.close();
 })().catch(e=>{console.error(e);dom.window.close();process.exitCode=1;});
 

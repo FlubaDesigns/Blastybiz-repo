@@ -36,7 +36,8 @@ async function main(){
  ok(f.m.get('users/u').firstBlastCompletion.adId==='a','durable milestone names first Ad');
  const shown=await Promise.all([f.life.manage('u',{...f.body,action:'acknowledge',blastId:blast}),f.life.manage('u',{...f.body,action:'acknowledge',blastId:blast})]);ok(shown.filter(x=>x.show).length===1,'milestone shown once across tabs');
  await f.life.notify(f.m.db.doc(D+blast),'ready');await f.life.notify(f.m.db.doc(D+blast),'ready');ok(f.sent.length===1,'one ready email per occurrence');ok(f.sent[0].html.includes('bizId=b')&&f.sent[0].html.includes(blast),'exact business + Blast link');
- f.setNow('2027-01-02T01:02:00Z');await f.life.notify(f.m.db.doc(D+blast),'first');ok(f.sent.length===2,'first reminder at twelve hours');
+ f.setNow('2027-01-02T01:02:00Z');await f.life.notify(f.m.db.doc(D+blast),'first');ok(f.sent.length===1,'no twelve-hour reminder');
+ f.setNow('2027-01-02T13:02:00Z');await f.life.notify(f.m.db.doc(D+blast),'first');ok(f.sent.length===2,'first reminder waits a full day');
  await f.life.manage('u',{...f.body,action:'posted',blastId:blast,jobId:manual[1].jobId,confirm:true});ok(f.m.get(manual[0]).confirmationSource==='owner','manual result explicitly owner confirmed');
  summary=(await f.life.reconcile(f.m.db.doc(D+blast))).summary;ok(summary.complete&&summary.delivered===2,'manual posting counts only after confirmation');
  const celebrations=await Promise.all([f.life.manage('u',{...f.body,action:'acknowledge',blastId:blast,phase:'complete'}),f.life.manage('u',{...f.body,action:'acknowledge',blastId:blast,phase:'complete'})]);ok(celebrations.filter(x=>x.show).length===1,'first completion celebration is durable and shown once');
@@ -53,9 +54,9 @@ async function main(){
  f=setup();await f.save({frequency:'weekly',stopMode:'count',stopAfterCount:1});a=f.m.get(A);blast=a.schedule.preparedBlastId;
  await f.life.manage('u',{...f.body,action:'approveNext',packetRevision:1});f.setNow('2027-01-01T13:01Z');await f.life.queue(f.m.db.doc(A));ok(f.m.get(A).schedule.status==='completed','stop-after enforced by worker');
  const allJobs=Object.entries(f.m.all()).filter(([p])=>p.startsWith(J));for(const [p,j] of allJobs)if(j.platform==='google')await f.m.db.doc(p).update({status:'success'});
- await f.life.reconcile(f.m.db.doc(D+blast));await f.life.notify(f.m.db.doc(D+blast),'ready');f.setNow('2027-01-02T01:02Z');await f.life.notify(f.m.db.doc(D+blast),'first');f.setNow('2027-01-03T01:03Z');await f.life.notify(f.m.db.doc(D+blast),'final');ok(f.sent.length===3,'ready first final cadence');
+ await f.life.reconcile(f.m.db.doc(D+blast));await f.life.notify(f.m.db.doc(D+blast),'ready');f.setNow('2027-01-02T13:02Z');await f.life.notify(f.m.db.doc(D+blast),'first');f.setNow('2027-01-03T13:03Z');await f.life.notify(f.m.db.doc(D+blast),'final');ok(f.sent.length===3,'ready first final cadence');
  f.setNow('2027-01-09T01:03Z');await f.life.notify(f.m.db.doc(D+blast),'lapse',{manualLapseDays:7,remindersStartAt:'2027-01-01T00:00:00Z'});ok(f.m.get(J+blast+'_craigslist').status==='manual_required','not lapsed before configured deadline');
- f.setNow('2027-01-10T01:04Z');await f.life.notify(f.m.db.doc(D+blast),'lapse',{manualLapseDays:7,remindersStartAt:'2027-01-01T00:00:00Z'});ok(f.m.get(J+blast+'_craigslist').status==='manual_lapsed','lapse seven days after final');ok(f.m.get(D+blast).completion.delivered===1,'lapse preserves truthful delivered count');
+ f.setNow('2027-01-10T13:04Z');await f.life.notify(f.m.db.doc(D+blast),'lapse',{manualLapseDays:7,remindersStartAt:'2027-01-01T00:00:00Z'});ok(f.m.get(J+blast+'_craigslist').status==='manual_lapsed','lapse seven days after final');ok(f.m.get(D+blast).completion.delivered===1,'lapse preserves truthful delivered count');
  f=setup();await f.save({copyBehavior:'ask',imageBehavior:'ask'});blast=f.m.get(A).schedule.preparedBlastId;
  await rejects(()=>f.life.manage('u',{...f.body,action:'approveNext',packetRevision:1}),/Reuse or Refresh/,'ask requires explicit choice');
  await f.life.manage('u',{...f.body,action:'editNext',packetRevision:1,adaptations:{google:'Only this run',craigslist:'Only this manual run'},imageIds:[]});

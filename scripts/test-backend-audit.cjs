@@ -44,6 +44,7 @@ async function aiAndEmail(){
  let accepted=false,attempts=0;const keys=[],email={readFlubaProviderKey:async()=> 'central-fixture',process:{env:{RESEND_API_KEY:'revoked-local-fixture'}},console:quiet,fetch:async(url,o)=>{attempts++;keys.push(o.headers['Idempotency-Key']);return {ok:accepted,status:429,text:async()=>''};}};
  vm.runInNewContext(source.slice(source.indexOf('async function sendResendEmail'),source.indexOf('// ── Lazy-init Square')),email);
  const m=database({'users/u':{email:'fixture@example.invalid'},'setupNudges/n':{uid:'u',email:'fixture@example.invalid',sent:false,sendAfter:{stamp:1}}});
+ Object.assign(email,{db:m.db,require:p=>require('../functions/lib/'+p.replace('./',''))});
  const scheduled=load('scheduled',{...wrappers,db:m.db,admin,sendResendEmail:email.sendResendEmail,makeUnsubSig:()=>'',_unsubSecret:()=>'',APP_BASE_URL:'https://example.invalid'});
  await scheduled.exports.scheduledSetupNudge();ok(attempts===1&&!m.get('setupNudges/n').sent&&m.get('setupNudges/n').deliveryStatus==='rejected','rejected email remains retryable and unsent');accepted=true;await scheduled.exports.scheduledSetupNudge();ok(m.get('setupNudges/n').sent&&keys[0]===keys[1],'successful retry reuses frozen idempotent email');await scheduled.exports.scheduledSetupNudge();ok(attempts===2,'confirmed email is not sent again');
 }

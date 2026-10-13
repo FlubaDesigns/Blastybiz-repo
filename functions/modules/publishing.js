@@ -611,7 +611,7 @@ exports.jobFailedTrigger = onDocumentUpdated(
 </div>`;
     }
 
-    await sendResendEmail({ to: toEmail, subject, html });
+    await sendResendEmail({ to: toEmail, subject, html, dailyLimited:true });
   }
 );
 
@@ -694,7 +694,7 @@ exports.jobCompletedTrigger = onDocumentUpdated(
 </div>`;
     }
 
-    await sendResendEmail({ to: toEmail, subject, html });
+    await sendResendEmail({ to: toEmail, subject, html, dailyLimited:true });
   }
 );
 

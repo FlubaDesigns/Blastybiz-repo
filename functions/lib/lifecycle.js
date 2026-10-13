@@ -19,7 +19,7 @@ function remindersEligible(blast,config) {
   return start>0&&launched>=start&&blast?.status==='approved'&&!blast.completedAt;
 }
 function summarize(jobs) {
-  return {total:jobs.length,delivered:jobs.filter(j=>delivered.has(j.status)).length,
+  return {skipped:jobs.filter(j=>['manual_skipped','skipped'].includes(j.status)).length,expired:jobs.filter(j=>j.status==='manual_lapsed').length,canceled:jobs.filter(j=>j.status==='canceled').length,total:jobs.length,delivered:jobs.filter(j=>delivered.has(j.status)).length,
     terminal:jobs.filter(j=>terminal.has(j.status)).length,manual:jobs.filter(j=>manual.has(j.status)).length,
     complete:jobs.length>0&&jobs.every(j=>terminal.has(j.status)),
     ready:jobs.length>0&&jobs.every(j=>!['pending','processing','running','retry_pending'].includes(j.status)),
@@ -347,7 +347,11 @@ function createLifecycle({db,admin,refreshCopy,generateImage,sendEmail,appUrl='h
      const d=await tx.get(dr);if(!d.exists)fail(404,'Blast not found.');
      const p=dr.path.split('/'),uid=p[1],b=p[3],ur=db.doc('users/'+uid);
      const jobs=await tx.get(biz(uid,b).collection('publishJobs').where('draftId','==',dr.id)),u=await tx.get(ur);
+     const config=(await tx.get(db.collection('config').doc('lifecycle'))).data()||{};
      const summary=summarize(jobs.docs.map(j=>j.data())),v=d.data();
+     summary.manualLapseDays=Number.isFinite(config.manualLapseDays)&&config.manualLapseDays>0?config.manualLapseDays:policy.manualLapseDays;
+     const finalAt=ms(v.reminders?.finalSentAt)||ms(v.reminders?.disabledFinalAt);
+     summary.manualExpiresAt=finalAt?new Date(finalAt+summary.manualLapseDays*86400000).toISOString():null;
      if(summary.total)tx.update(dr,{completion:summary,...(summary.complete&&!v.completedAt?{completedAt:clock().toISOString()}:{}),...(summary.ready&&!v.readyAt?{readyAt:clock().toISOString()}:{}),updatedAt:stamp()});
      if(summary.complete&&summary.delivered>0&&u.data()?.firstBlastCompletion?.blastId===dr.id&&u.data().firstBlastCompletion.businessId===b&&!u.data().firstBlastCompletion.completedAt)tx.update(ur,{'firstBlastCompletion.completedAt':clock().toISOString()});
      if(summary.launched&&!u.data()?.firstBlastCompletion)tx.update(ur,{firstBlastCompletion:{businessId:b,campaignId:v.campaignId||null,adId:v.adId||null,blastId:dr.id,launchedAt:clock().toISOString(),presentedAt:null,...(summary.complete&&summary.delivered>0?{completedAt:clock().toISOString()}:{})}});
@@ -378,12 +382,12 @@ function createLifecycle({db,admin,refreshCopy,generateImage,sendEmail,appUrl='h
        const days=Number.isFinite(config.manualLapseDays)&&config.manualLapseDays>0?config.manualLapseDays:policy.manualLapseDays;
        const base=ms(reminders.finalSentAt)||ms(reminders.disabledFinalAt);
        if(!base||now.getTime()<base+days*86400000)return null;
-       for(const j of remaining)tx.update(j.ref,{status:'manual_lapsed',customerLabel:'Not posted',customerVisibleMessage:'Not posted. This Blast is closed for this destination.',lapsedAt:now.toISOString(),updatedAt:stamp()});
+       for(const j of remaining)tx.update(j.ref,{status:'manual_lapsed',customerLabel:'Expired — not posted',customerVisibleMessage:'Expired — not posted. The manual posting deadline passed without a posting confirmation.',lapsedAt:now.toISOString(),updatedAt:stamp()});
        return {lapsed:true};
      }
      if((user.manualRemindersEnabled===false||user.emailUnsubscribed)&&kind!=='preview') {
        // Reminders-off still closes abandoned work after the same virtual final slot.
-       if(v.readyAt&&!reminders.disabledFinalAt)tx.update(dr,{'reminders.disabledFinalAt':new Date(ms(v.readyAt)+36*3600000).toISOString()});
+       if(v.readyAt&&!reminders.disabledFinalAt)tx.update(dr,{'reminders.disabledFinalAt':new Date(ms(v.readyAt)+48*3600000).toISOString()});
        return null;
      }
      if(user.emailUnsubscribed||!user.email)return null;
@@ -392,7 +396,7 @@ function createLifecycle({db,admin,refreshCopy,generateImage,sendEmail,appUrl='h
        if(a?.data()?.schedule?.preparedBlastId!==dr.id||!a?.data()?.schedule?.enabled)return null;
      } else {
        if(!remaining.length||!summarize(jobs.docs.map(j=>j.data())).ready)return null;
-       if(kind==='first'&&(!reminders.readySentAt||now.getTime()<ms(reminders.readySentAt)+12*3600000))return null;
+       if(kind==='first'&&(!reminders.readySentAt||now.getTime()<ms(reminders.readySentAt)+24*3600000))return null;
        if(kind==='final'&&(!reminders.firstSentAt||now.getTime()<ms(reminders.firstSentAt)+24*3600000))return null;
      }
      if(reminders[kind+'SentAt']||ms(reminders[kind+'LeaseAt'])>now.getTime()-10*60000)return null;
@@ -413,7 +417,8 @@ function createLifecycle({db,admin,refreshCopy,generateImage,sendEmail,appUrl='h
    const link=kind==='preview'?appUrl+'/BlastyBiz.html?'+new URLSearchParams({bizId:b,ownerUid:uid,tab:'schedule',scheduleCampaign:v.campaignId,scheduleAd:v.adId,scheduledBlastId:dr.id}):statusUrl(uid,b,dr.id);
    const subject=kind==='preview'?'Review required: '+name:kind==='final'?'Still want to post these?':names.length+' destinations need you — '+name;
    const preview=kind==='preview'?Object.entries(v.packet?.adaptations||{}).map(([p,copy])=>'<h3>'+esc(p)+'</h3><p>'+esc(copy)+'</p>').join('')+(v.packet?.imageRefs||[]).filter(i=>/^https:\/\//.test(i.url||'')).map(i=>'<a href="'+esc(i.url)+'"><img width="120" src="'+esc(i.url)+'" alt="'+esc(i.alt||'Selected image')+'"></a>').join(''):'';
-   await sendEmail({to:user.data().email,subject,html:'<h2>'+esc(name)+'</h2><p>'+(kind==='preview'?'Approval is required before this Blast goes out. Review copy and images, then Approve, Change, Skip, or Pause.':esc(names.join(', '))+' '+(names.length===1?'is':'are')+' ready for you. Manual posts count only after you confirm them.')+'</p>'+preview+'<a href="'+esc(link)+'">'+(kind==='preview'?'REVIEW THIS BLAST':'FINISH MY BLAST')+'</a>'+(kind==='final'?'<p><a href="'+esc(link+'&action=skipRemaining')+'">SKIP REMAINING</a> — opens a confirmation in the app.</p>':''),idempotencyKey:dr.id+'-'+kind});
+   const result=await sendEmail({to:user.data().email,subject,html:'<h2>'+esc(name)+'</h2><p>'+(kind==='preview'?'Approval is required before this Blast goes out. Review copy and images, then Approve, Change, Skip, or Pause.':esc(names.join(', '))+' '+(names.length===1?'is':'are')+' ready for you. Manual posts count only after you confirm them.')+'</p>'+ (kind==='final'?'<p>Unconfirmed manual destinations expire '+(Number.isFinite(config.manualLapseDays)&&config.manualLapseDays>0?config.manualLapseDays:policy.manualLapseDays)+' days after this reminder. Expired destinations are not counted as posted.</p>':'')+preview+'<a href="'+esc(link)+'">'+(kind==='preview'?'REVIEW THIS BLAST':'FINISH MY BLAST')+'</a>'+(kind==='final'?'<p><a href="'+esc(link+'&action=skipRemaining')+'">SKIP REMAINING</a> — opens a confirmation in the app.</p>':''),idempotencyKey:dr.id+'-'+kind});
+   if(result?.deferred)return;
    await dr.update({['reminders.'+kind+'SentAt']:clock().toISOString()});
  }
  return {manage,list,prepare,queue,reconcile,notify,statusUrl};
