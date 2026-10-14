@@ -598,14 +598,14 @@ onAuthStateChanged(auth, async (user) => {
         const fmt = n => '$' + n.toFixed(4);
         const fmtK = n => n >= 1000 ? (n/1000).toFixed(1) + 'k' : n.toString();
         const rows = [
-          ['AI spend this month',    '<span class="' + (totalCost > 50 ? 'warn' : 'money') + '">' + fmt(totalCost) + '</span>', '< $50/mo'],
+          ['AI spend this month',    fmt(totalCost), '< $50/mo', totalCost > 50 ? 'warn' : 'money'],
           ['Total AI calls',         logs.length,       '—'],
           ['Input tokens',           fmtK(totalTokensIn),  '—'],
           ['Output tokens',          fmtK(totalTokensOut), '—'],
           ...Object.entries(callCounts).map(([fn, n]) => [fn, n + ' calls', '—']),
         ];
-        tbody.innerHTML = rows.map(([m, v, t]) =>
-          '<tr><td>' + window.escHtml(m) + '</td><td>' + window.escHtml(v) + '</td><td class="muted">' + window.escHtml(t) + '</td></tr>'
+        tbody.innerHTML = rows.map(([m, v, t, valueClass = '']) =>
+          '<tr><td>' + window.escHtml(m) + '</td><td class="' + window.escHtml(valueClass) + '">' + window.escHtml(v) + '</td><td class="muted">' + window.escHtml(t) + '</td></tr>'
         ).join('');
         const note = el('admin-ai-note');
         if (note) note.textContent = logs.length
