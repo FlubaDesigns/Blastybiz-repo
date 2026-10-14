@@ -1,0 +1,169 @@
+{
+  "platforms": [
+    {
+      "slug": "google",
+      "name": "Google Business Profile",
+      "icon": "🔍",
+      "order": 1,
+      "enabled": true,
+      "proOnly": false,
+      "deliveryMode": "auto",
+      "capabilityLevel": "full_auto",
+      "imageLimit": 10
+    },
+    {
+      "slug": "facebook",
+      "name": "Facebook Page",
+      "icon": "📘",
+      "order": 2,
+      "enabled": true,
+      "proOnly": false,
+      "deliveryMode": "auto",
+      "capabilityLevel": "full_auto",
+      "imageLimit": 10
+    },
+    {
+      "slug": "instagram",
+      "name": "Instagram",
+      "icon": "📸",
+      "order": 3,
+      "enabled": true,
+      "proOnly": false,
+      "deliveryMode": "auto",
+      "capabilityLevel": "full_auto",
+      "imageLimit": 1
+    },
+    {
+      "slug": "fbmarket",
+      "name": "Facebook Marketplace",
+      "icon": "🛒",
+      "order": 4,
+      "enabled": true,
+      "proOnly": false,
+      "deliveryMode": "manual",
+      "capabilityLevel": "manual_assisted",
+      "imageLimit": 10
+    },
+    {
+      "slug": "yelp",
+      "name": "Yelp",
+      "icon": "⭐",
+      "order": 5,
+      "enabled": true,
+      "proOnly": false,
+      "deliveryMode": "manual",
+      "capabilityLevel": "manual_assisted",
+      "imageLimit": 10
+    },
+    {
+      "slug": "craigslist",
+      "name": "Craigslist",
+      "icon": "📋",
+      "order": 6,
+      "enabled": true,
+      "proOnly": false,
+      "deliveryMode": "manual",
+      "capabilityLevel": "manual_assisted",
+      "imageLimit": 10
+    },
+    {
+      "slug": "nextdoor",
+      "name": "Nextdoor",
+      "icon": "🏘️",
+      "order": 7,
+      "enabled": true,
+      "proOnly": false,
+      "deliveryMode": "manual",
+      "capabilityLevel": "manual_assisted",
+      "imageLimit": 10
+    },
+    {
+      "slug": "linkedin",
+      "name": "LinkedIn",
+      "icon": "💼",
+      "order": 8,
+      "enabled": true,
+      "proOnly": false,
+      "deliveryMode": "manual",
+      "capabilityLevel": "manual_assisted",
+      "imageLimit": 10
+    },
+    {
+      "slug": "pinterest",
+      "name": "Pinterest",
+      "icon": "📌",
+      "order": 9,
+      "enabled": true,
+      "proOnly": false,
+      "deliveryMode": "manual",
+      "capabilityLevel": "manual_assisted",
+      "imageLimit": 1
+    },
+    {
+      "slug": "x",
+      "name": "X (Twitter)",
+      "icon": "𝕏",
+      "order": 10,
+      "enabled": true,
+      "proOnly": false,
+      "deliveryMode": "manual",
+      "capabilityLevel": "manual_assisted",
+      "imageLimit": 4
+    },
+    {
+      "slug": "bing",
+      "name": "Bing Places",
+      "icon": "🔵",
+      "order": 11,
+      "enabled": true,
+      "proOnly": false,
+      "deliveryMode": "manual",
+      "capabilityLevel": "manual_assisted",
+      "imageLimit": 10
+    },
+    {
+      "slug": "applemaps",
+      "name": "Apple Maps",
+      "icon": "🍎",
+      "order": 12,
+      "enabled": true,
+      "proOnly": false,
+      "deliveryMode": "manual",
+      "capabilityLevel": "manual_assisted",
+      "imageLimit": 10
+    },
+    {
+      "slug": "alignable",
+      "name": "Alignable",
+      "icon": "🤝",
+      "order": 13,
+      "enabled": true,
+      "proOnly": false,
+      "deliveryMode": "manual",
+      "capabilityLevel": "manual_assisted",
+      "imageLimit": 10
+    },
+    {
+      "slug": "thumbtack",
+      "name": "Thumbtack",
+      "icon": "📌",
+      "order": 14,
+      "enabled": true,
+      "proOnly": false,
+      "deliveryMode": "manual",
+      "capabilityLevel": "manual_assisted",
+      "imageLimit": 10
+    },
+    {
+      "slug": "angi",
+      "name": "Angi",
+      "icon": "🔧",
+      "order": 15,
+      "enabled": true,
+      "proOnly": false,
+      "deliveryMode": "manual",
+      "capabilityLevel": "manual_assisted",
+      "imageLimit": 10
+    }
+  ]
+}
