@@ -1045,7 +1045,7 @@ window.cbSubmit = async function() {
     // Everything the owner typed is now committed. Only after that do we send
     // them anywhere — a new business goes to the plan step (which forwards
     // paid accounts straight through), editing an existing one does not.
-    const nextUrl = !createCampaign
+    const nextUrl = !createCampaign && !existingCampaignId
       ? 'BlastyBiz-Dashboard.html'
       : editBizId
       ? 'BlastyBiz.html?bizId=' + encodeURIComponent(bizId) + '&cid=' + encodeURIComponent(campId) + (existingCampaignId ? '' : '&autogenerate=1')
