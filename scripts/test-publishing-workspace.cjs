@@ -1,0 +1,36 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const {JSDOM}=require(process.env.JSDOM_PATH||'jsdom');
+const html=fs.readFileSync('public/BlastyBiz.html','utf8');
+const source=fs.readFileSync('public/publishing-workspace.js','utf8');
+const turn=()=>new Promise(resolve=>setImmediate(resolve));
+(async()=>{
+ const dom=new JSDOM(html,{url:'https://blastybiz.example/BlastyBiz.html?ownerUid=owner&bizId=site-a&tab=publishing',runScripts:'outside-only'}),w=dom.window,d=w.document;
+ let history=[];w._bbGetHistory=()=>history;
+ let calls=[],schedule={schedules:[]},readyError=null,loadError=false;
+ const ad={id:'first',campaignId:'campaign-a',name:'Saved proposal <script>bad()</script>',platforms:['facebook','instagram'],platformStatus:{facebook:'approved',instagram:'excluded'},adaptations:{facebook:'Real saved copy\nSecond line',instagram:'Excluded copy'},imageRefs:[{url:'https://images.example/real.jpg',alt:'Real image'},{url:'javascript:alert(1)',alt:'unsafe'}]};
+ Object.assign(w,{activeBizId:'site-a',activeCampaignId:'campaign-a',_bbUid:'owner',_bbWorkspaceNavigationReady:true,_bbUserPlan:'pro',profile:{name:'Site A'},campaigns:[{id:'campaign-a',name:'First campaign'},{id:'campaign-b',name:'Second campaign'}],PLATFORMS:[{id:'facebook',name:'Facebook'},{id:'instagram',name:'Instagram'}],_bbGetToken:async()=>'',BBAds:{active:ad,dirty:false,ready:async()=>{if(readyError)throw readyError;return w.BBAds.active;},save:async()=>calls.push('save'),continueCurrent:async()=>calls.push('preview')},BBLifecycle:{configure:ctx=>calls.push(['configure',ctx.businessId]),api:async action=>{calls.push(action);if(loadError)throw Error('offline');return schedule;}},_bbReloadHistory:async()=>{d.getElementById('history-feedback').textContent='Latest results';},showTab:tab=>calls.push(['tab',tab]),createWizGoTo:step=>calls.push(['step',step]),openNewCampaign:()=>calls.push('new'),selectCampaign:async id=>{w.activeCampaignId=id;w.BBAds.active={...ad,campaignId:id,name:'Second saved proposal'};},showToast:()=>{}});
+ w.eval(source);
+ const original=d.getElementById('api-platforms');let toggled=0;original.addEventListener('click',()=>toggled++);
+ w.BBPublishing.mountDestinations(true);assert.equal(d.querySelectorAll('#api-platforms').length,1);assert(d.getElementById('publishing-platforms').contains(original));original.click();assert.equal(toggled,1);
+ w.BBPublishing.mountDestinations(false);assert(d.getElementById('section-platforms').contains(original));
+ await w.BBPublishing.refresh();
+ assert(!d.getElementById('publishing-message').textContent.includes('Could not'),d.getElementById('publishing-message').textContent);const proposal=d.getElementById('publishing-proposal');assert.match(proposal.textContent,/Real saved copy/);assert(!proposal.textContent.includes('Excluded copy'));assert.equal(proposal.querySelectorAll('script').length,0);assert.equal(proposal.querySelectorAll('img').length,1);assert.match(proposal.textContent,/Copy approved/);assert.match(d.getElementById('publishing-timing').textContent,/Nothing scheduled/);
+ assert(!calls.includes('save'),'opening a clean proposal makes no save call');assert(calls.every(c=>Array.isArray(c)||c==='list'),'reading never publishes, approves, prepares or generates');
+ for(const [action,expected] of [['edit',1],['review',5]]){proposal.querySelector(`[data-publishing-action=${action}]`).click();await turn();assert(calls.some(c=>Array.isArray(c)&&c[0]==='step'&&c[1]===expected));}
+ proposal.querySelector('[data-publishing-action=preview]').click();await turn();assert(calls.includes('preview'));
+ schedule={businessPaused:true,schedules:[{campaignId:'campaign-a',adId:'first',campaignName:'Campaign A',adName:'Saved ad',schedule:{enabled:true,status:'active',nextRunAt:'2026-10-21T16:00:00Z',timezone:'America/New_York'},upcoming:{id:'frozen-1',approvalStatus:'required',packet:{adaptations:{facebook:'Older frozen copy'},imageRefs:[]}}}]};
+ history=[{listing:'Old blast',summary:'Facebook: Live · Instagram: Failed',draftId:'old-blast',time:'2026-10-13T12:00:00Z'}];
+ await w.BBPublishing.refresh();assert.match(d.getElementById('publishing-timing').textContent,/Older frozen copy/);assert.match(proposal.textContent,/Real saved copy/);assert.match(d.getElementById('publishing-timing').textContent,/Awaiting approval/);assert.match(d.getElementById('publishing-timing').textContent,/Business scheduling is paused/);
+ const scheduled=new URL(d.querySelector('#publishing-timing a').href);assert.equal(scheduled.searchParams.get('bizId'),'site-a');assert.equal(scheduled.searchParams.get('ownerUid'),'owner');assert.equal(scheduled.searchParams.get('scheduledBlastId'),'frozen-1');
+ const result=new URL(d.querySelector('#publishing-results a').href);assert.equal(result.searchParams.get('bizId'),'site-a');assert.equal(result.searchParams.get('draftId'),'old-blast');assert.match(d.getElementById('publishing-results').textContent,/Instagram: Failed/);
+ loadError=true;await w.BBPublishing.refresh();assert.match(d.getElementById('publishing-timing').textContent,/could not be loaded/);assert(!d.getElementById('publishing-timing').textContent.includes('Older frozen copy'));loadError=false;
+ readyError=Error('Saved ad unavailable');await w.BBPublishing.refresh();assert.equal(proposal.children.length,0);assert.match(d.getElementById('publishing-message').textContent,/Saved ad unavailable/);readyError=null;
+ w.activeCampaignId=null;w.BBAds.active=null;await w.BBPublishing.refresh();assert.match(proposal.textContent,/No saved ad/);
+ w._bbWorkspaceNavigationReady=false;calls=[];await w.BBPublishing.refresh();assert.equal(calls.length,0,'no reads before owner and workspace authentication');
+ const start=html.indexOf('async function loadWorkspaceSelection('),end=html.indexOf('auth.authStateReady()',start);w.eval(html.slice(start,end));
+ w.getDocs=async()=>({docs:[{id:'site-b',data:()=>({name:'Other site'})}]});w.collection=()=>({});w.db={};
+ await assert.rejects(w.loadWorkspaceSelection({uid:'owner'},{activeBusiness:'site-b'},'site-a'),/no longer available/);
+ assert.equal((html.match(/\['publishing','profile','story','create','platforms','schedule','history','account'\]/g)||[]).length,3,'direct links, final restore, and browser back support Publishing');
+ dom.window.close();console.log('Publishing workspace: saved proposal, exact prepared packet, destinations, action routing, isolation, empty/error and no-send checks passed.');
+})().catch(e=>{console.error(e);process.exitCode=1;});

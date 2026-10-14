@@ -189,6 +189,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 <div class="tabs-row">
   <button class="tabs-arrow tabs-arrow--left" id="tabs-arrow-left" aria-label="Scroll tabs left" onclick="_tabsScroll(-1)">&#8249;</button>
   <div class="tabs" id="tabs-scroll" role="tablist" aria-label="App navigation">
+    <button type="button" class="tab" role="tab" aria-selected="false" onclick="showTab('publishing')" id="tab-publishing">Publishing</button>
     <button type="button" class="tab active" role="tab" aria-selected="true" onclick="showTab('profile')" id="tab-profile"><span class="tab-icon">⚙️ </span>Profile</button>
     <button type="button" class="tab" role="tab" aria-selected="false" onclick="showTab('story')" id="tab-story"><span class="tab-icon">📖 </span>Story</button>
     <button type="button" class="tab" role="tab" aria-selected="false" onclick="showTab('create')" id="tab-create"><span class="tab-icon">✏️ </span>Create</button>
@@ -633,6 +634,25 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 <!-- ══════════════════════════════════════════
      TAB 2: PLATFORMS
 ══════════════════════════════════════════ -->
+<div class="section" id="section-publishing">
+  <div class="row"><div class="col-full">
+    <h1 id="publishing-title">Publishing</h1>
+    <p>Review your proposed blast, choose destinations, and follow its results.</p>
+    <p id="publishing-message" role="status" aria-live="polite">Loading saved business…</p>
+    <label for="publishing-campaign">Campaign</label>
+    <select id="publishing-campaign" class="form-select" disabled></select>
+    <button type="button" class="btn btn-secondary" id="publishing-refresh">Refresh publishing</button>
+    <div id="publishing-proposal"></div>
+    <h2>Publishing destinations</h2>
+    <p>These are this business’s destination controls. Review the selected destinations on the proposed blast before sending.</p>
+    <div id="publishing-platforms"></div>
+    <h2>Timing and prepared blasts</h2>
+    <div id="publishing-timing" aria-live="polite"></div>
+    <h2>Results and attention needed</h2>
+    <div id="publishing-results" aria-live="polite"></div>
+  </div></div>
+</div>
+
 <div class="section" id="section-platforms">
 
   <!-- Row 1: stats -->
@@ -1367,6 +1387,8 @@ function showTab(name, options = {}) {
     activeTab.setAttribute('aria-selected', 'true');
     activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
   }
+  window.BBPublishing?.mountDestinations(name === 'publishing');
+  if (name === 'publishing') void window.BBPublishing?.refresh();
   if (name === 'platforms') updateStats();
   if (name === 'history')  renderHistory();
   if (name === 'schedule') renderScheduleTab();
@@ -1432,7 +1454,7 @@ window._bbRestoreWorkspaceRoute = async function() {
     const step = Number(q.get('step'));
     if (SLIDE_IDS.includes(step)) createWizGoTo(step, false, {record:false, scroll:false});
     const tab = q.get('tab');
-    showTab(['profile','story','create','platforms','schedule','history','account'].includes(tab) ? tab : 'create');
+    showTab(['publishing','profile','story','create','platforms','schedule','history','account'].includes(tab) ? tab : 'create');
     restored = true;
   } catch (e) { showToast(e.message); }
   finally {
@@ -5062,6 +5084,7 @@ window._bbSetPlatforms = function(updatedPlatforms) {
   renderQuickSelect();
   updateStats();
 };
+window._bbGetHistory = () => history;
 window._bbSetHistory = function(items) {
   history = items;
   renderHistory();
@@ -5837,7 +5860,7 @@ onAuthStateChanged(auth, async (user) => {
 
       // ?tab=X — nav links from the site header route here so onboarded users skip the mascot wizard
       const _tabParam = new URLSearchParams(window.location.search).get('tab');
-      if (_tabParam && ['profile','story','create','platforms','schedule','history','account'].includes(_tabParam)) {
+      if (_tabParam && ['publishing','profile','story','create','platforms','schedule','history','account'].includes(_tabParam)) {
         showTab(_tabParam);
       }
 
@@ -5903,7 +5926,7 @@ onAuthStateChanged(auth, async (user) => {
       // Campaign loading opens Create; restore the explicitly requested tab last.
       const requestedStep = Number(_qp.get('step'));
       if (SLIDE_IDS.includes(requestedStep) && _qp.get('autogenerate') !== '1') createWizGoTo(requestedStep, false, {record:false, scroll:false});
-      if (_tabParam && ['profile','story','create','platforms','schedule','history','account'].includes(_tabParam)) showTab(_tabParam);
+      if (_tabParam && ['publishing','profile','story','create','platforms','schedule','history','account'].includes(_tabParam)) showTab(_tabParam);
       window._bbWorkspaceNavigationReady = true;
       window._bbRecordWorkspaceRoute(true);
     }
@@ -6113,6 +6136,7 @@ onAuthStateChanged(auth, async (user) => {
 
   // Load recent publish history from Firestore through the shared result reader.
   await window._bbReloadHistory();
+  if (document.getElementById('section-publishing')?.classList.contains('active')) void window.BBPublishing?.refresh();
 });
 }); // authStateReady
 
@@ -7213,6 +7237,8 @@ window.confirmDeleteAccount = async function() {
 <script src="lifecycle-ui.js?v=20261004-commercial"></script>
 <script src="lifecycle-status.js?v=20261013-email-cadence"></script>
 <script src="ad-workspace.js?v=20261004-commercial"></script>
+<script src="publishing-workspace.js?v=20261014"></script>
+<link rel="stylesheet" href="publishing-workspace.css?v=20261014">
 <script>
 document.addEventListener('click',function(e){
  const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');
@@ -7221,3 +7247,4 @@ document.addEventListener('click',function(e){
 </script>
 </body>
 </html>
+
