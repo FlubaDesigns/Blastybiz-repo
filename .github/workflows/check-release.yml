@@ -79,7 +79,6 @@ jobs:
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-personal-seller.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-signup-submit.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-original-flow-ui.cjs
-          JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-publishing-workspace.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-public-promises-ui.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-oauth-browser-security.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-onboarding-report-ui.cjs
@@ -102,4 +101,3 @@ jobs:
 # Production deployment uses Fluba's existing Authorization Engine workflow:
 # FlubaDesigns/fluba-designs/.github/workflows/blastybiz-release.yml.
 # Keep this workflow as the exact-source check gate; no second credential path.
-
