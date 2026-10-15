@@ -187,6 +187,38 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 .workspace-campaign-manage>summary{padding:8px 4px;min-height:44px;box-sizing:border-box;cursor:pointer;color:var(--muted);font-size:13px;}
 .workspace-campaign-empty{padding:8px 12px;color:var(--muted);font-size:13px;}
 
+
+/* Page two: compact platform summaries, one review open at a time. */
+.step5-review-card{padding:0;margin-bottom:8px;border-radius:10px;}
+.step5-review-card>.step5-plat-hdr{list-style:none;cursor:pointer;min-height:64px;box-sizing:border-box;margin:0;padding:12px;gap:8px;}
+.step5-review-card>.step5-plat-hdr::-webkit-details-marker{display:none;}
+.step5-review-card>.step5-plat-hdr::after{content:'▾';color:var(--muted);flex-shrink:0;}
+.step5-review-card[open]>.step5-plat-hdr::after{content:'▴';}
+.step5-review-card>.step5-plat-hdr:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:10px;}
+.step5-review-card .step5-plat-icon{width:30px;height:30px;font-size:18px;border-radius:8px;}
+.step5-review-card .step5-plat-name{font-size:14px;overflow-wrap:anywhere;}
+.step5-review-card .step5-status-pill{padding:3px 6px;font-size:10px;}
+.step5-review-card>.s5-card-body{padding:0 12px;margin:0;}
+.step5-review-card .step5-copy-actions{margin:0 0 8px;}
+.step5-review-card .step5-action-btn{min-height:44px;}
+.step5-review-card .step5-copy-text{min-height:100px;max-height:40dvh;overflow-y:auto;overflow-wrap:anywhere;padding:10px;line-height:1.5;}
+.step5-review-card .qp-photos-section{margin-top:10px;}
+.step5-review-card .qp-photos-label{font-size:12px;letter-spacing:0;text-transform:none;margin-bottom:8px;}
+.step5-review-card .bb-photo-tools .qp-photo-item{width:88px;flex:0 0 88px;}
+.step5-review-card .bb-photo-tools .platform-photo.qp-thumb{display:flex;flex-direction:column;align-items:flex-start;width:78px;height:auto;min-height:98px;gap:4px;font-size:12px;}
+.step5-review-card .bb-photo-tools .platform-photo img{display:block;width:76px;height:76px;object-fit:cover;box-sizing:border-box;flex-shrink:0;}
+.step5-review-card .bb-photo-tools .platform-photo span{display:block;white-space:nowrap;line-height:18px;}
+.step5-review-card .s5-photo-help{margin:0 0 8px;font-size:12px;color:var(--muted);}
+.step5-review-card .s5-photo-help>summary{cursor:pointer;min-height:32px;display:flex;align-items:center;gap:5px;}
+.step5-review-card .s5-photo-help>summary::after{content:'▾';}
+.step5-review-card .s5-photo-help .s5-photo-note{margin:4px 0 8px;}
+.step5-review-card>.step5-looks-good-btn{width:calc(100% - 24px);margin:12px;min-height:44px;padding:10px;font-size:14px;}
+.step5-review-card>.step5-looks-good-btn.approved{display:none;}
+.step5-review-card>.s5-card-location{margin:8px 12px 12px;padding-top:8px;font-size:12px;}
+.step5-review-card>.s5-card-location>summary{min-height:44px;align-content:center;cursor:pointer;color:var(--muted);}
+#create-slide-5>.row>.col-full>button[onclick="openCampaignPhotos()"]{min-height:44px;padding:8px 12px;margin-bottom:12px;font-size:13px;}
+@media(max-width:767px){.step5-review-card .s5-card-body.col-2-1{grid-template-columns:1fr;gap:0;}}
+
 </style>
 <script type="importmap">
 {
@@ -623,7 +655,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
             <button type="button" class="btn" onclick="runAdaptation()">Retry generation</button>
             <button type="button" class="btn" onclick="createWizGoTo(1)">Back to details</button>
           </div>
-          <!-- All platform cards stacked — populated by renderStep5Review() -->
+          <!-- Compact platform review accordions — populated by renderStep5Review() -->
           <div id="step5-review-container"></div>
 
           <div id="draft-save-error" role="alert" hidden style="padding:12px;border:1px solid #c44;border-radius:8px;">
@@ -1721,7 +1753,7 @@ function renderPlatformPhotoStrip(pid, photos, maxPhotos, displayOnly = false) {
   if (!container || !strip) return;
 
   const label = container.querySelector('.qp-photos-label');
-  if (label) label.textContent = '📷 Photos for this post: ' + photos.length + ' / ' + maxPhotos;
+  if (label) label.textContent = 'Photos: ' + photos.length + ' / ' + maxPhotos;
 
   BBPhotoHandoff.renderPhotos(strip, pid, photos, displayOnly);
 
@@ -2264,6 +2296,7 @@ async function regeneratePlatformCopy(pid) {
       if (updatedPlatform) {
         const wasVisible = oldCard.style.display !== 'none';
         const newCard = buildStep5Card(updatedPlatform);
+        newCard.open = oldCard.open;
         if (!wasVisible) newCard.style.display = 'none';
         oldCard.parentNode.replaceChild(newCard, oldCard);
         // Repopulate photo strip for the rebuilt card (renderStep5Review doesn't re-run for inline rebuilds)
@@ -2296,7 +2329,7 @@ async function regeneratePlatformCopy(pid) {
     // Mark free regen as used (either it was just used, or it was already gone)
     window._bbDraftFreeRegenUsed = true;
     document.querySelectorAll('[id^="qp-regen-"]').forEach(btn => {
-      if (btn.id !== 'qp-regen-' + pid && !btn.disabled) btn.textContent = '🔄 Try again';
+      if (btn.id !== 'qp-regen-' + pid && !btn.disabled) btn.textContent = '↻ Rewrite copy';
     });
     // #6 Show restore-previous button so user can revert without re-running AI
     if (previousContent) {
@@ -2329,7 +2362,7 @@ async function regeneratePlatformCopy(pid) {
     window._bbAdaptationBusy=false;
     // Use fresh element refs — card may have been rebuilt
     const freshRegenBtn = document.getElementById('qp-regen-' + pid);
-    if (freshRegenBtn) { freshRegenBtn.disabled = false; freshRegenBtn.textContent = '🔄 Try again'; }
+    if (freshRegenBtn) { freshRegenBtn.disabled = false; freshRegenBtn.textContent = '↻ Rewrite copy'; }
     const freshCopyEl = document.getElementById('qp-copy-text-' + pid);
     if (freshCopyEl) freshCopyEl.style.opacity = '1';
     // A retry that produced nothing must fall back to the failure card, or the
@@ -2660,16 +2693,15 @@ function getStep5Platforms() {
 }
 
 // Bring a platform's review card into view and treat it as the current one.
-// Step 5 used to show one platform at a time; it now renders every card at once,
-// so "go to" means scroll rather than swap. Approving or excluding a platform
-// calls this to jump to the next unresolved card — without it those handlers
-// threw ReferenceError and the auto-advance silently stopped working.
+// Open the requested review while the other platforms remain compact summaries.
+// Successful approval advances through the existing unresolved-platform flow.
 function step5GoTo(idx) {
   const enabled = getStep5Platforms();
   if (!enabled.length) return;
   _step5PlatIdx = Math.max(0, Math.min(idx, enabled.length - 1));
   const card = document.getElementById('step5-card-' + enabled[_step5PlatIdx].id);
   if (!card) return;
+  card.open = true;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   card.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
 }
@@ -2684,18 +2716,29 @@ function renderStep5Review() {
     return;
   }
   if (_step5PlatIdx >= enabled.length) _step5PlatIdx = 0;
+  const openId = container.querySelector('details.step5-review-card[open]')?.id;
+  const firstRender = !container.children.length;
   container.innerHTML = '';
   enabled.forEach(p => {
     const card = buildStep5Card(p);
     container.appendChild(card);
+    if (card.id === openId) card.open = true;
   });
+  if (firstRender) {
+    const next = enabled.find(p => p.adaptedContent && p._reviewStatus !== 'approved' && p._reviewStatus !== 'skipped');
+    if (next) document.getElementById('step5-card-' + next.id).open = true;
+  }
   // Use the same photo selection as the prepared publishing packet.
   enabled.filter(p => p.adaptedContent).forEach(renderAdPostPhotos);
   updateStep5UI();
 }
 
 function buildStep5Card(p) {
-  const card = document.createElement('div');
+  const card = document.createElement('details');
+  card.name = 'platform-review';
+  card.addEventListener('toggle', () => {
+    if (card.open) _step5PlatIdx = getStep5Platforms().findIndex(item => item.id === p.id);
+  });
   card.className = 'step5-review-card';
   card.id = 'step5-card-' + p.id;
   const hasContent = !!p.adaptedContent;
@@ -2715,14 +2758,14 @@ function buildStep5Card(p) {
     : 'Tap a photo to copy it, then paste it into your post.';
 
   // ── Row A: header ──────────────────────────────
-  let inner = '<div class="step5-plat-hdr">'
+  let inner = '<summary class="step5-plat-hdr">'
     + '<div class="step5-plat-icon" style="background:' + escHtml(p.color || '#222') + '22;">' + p.icon + '</div>'
     + '<div class="step5-plat-info">'
     +   '<div class="step5-plat-name">' + escHtml(p.name) + '</div>'
     +   '<div class="step5-plat-type">' + (isApi ? 'Blasty Posts It' : 'Ready for You to Post') + '</div>'
     + '</div>'
     + '<span class="step5-status-pill ' + statusClass + '" id="step5-pill-' + p.id + '">' + statusLabel + '</span>'
-    + '</div>';
+    + '</summary>';
 
   // ── Row B: col-2-1 — copy left, photos right ──
   if (hasContent) {
@@ -2731,7 +2774,7 @@ function buildStep5Card(p) {
       // Left — copy
       + '<div class="col-left">'
       +   '<div class="step5-copy-actions">'
-      +     '<button type="button" class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">' + '🔄 Try again' + '</button>'
+      +     '<button type="button" class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">' + '↻ Rewrite copy' + '</button>'
       +     (!isApi ? '<button type="button" class="step5-action-btn" onclick="copyQpText(\'' + escHtml(p.id) + '\')">📋 Copy text</button>' : '')
       +   '</div>'
       +   '<div id="qp-copy-text-' + p.id + '" class="step5-copy-text" contenteditable="true">' + safeText + '</div>'
@@ -2741,7 +2784,7 @@ function buildStep5Card(p) {
       +   '<div id="qp-copy-img-' + p.id + '" class="qp-copy-img-note"></div>'
       +   '<div id="qp-photos-' + p.id + '" class="qp-photos-section">'
       +     '<div class="qp-photos-label">📷 Photos for this post</div>'
-      +     '<div class="s5-photo-note">' + photoNote + '</div>'
+      +     '<details class="s5-photo-help"><summary>Photo details</summary><div class="s5-photo-note">' + photoNote + '</div></details>'
       +     (!isApi ? '<div id="qp-share-' + p.id + '" class="qp-photo-share"></div>' : '')
       +     '<div id="qp-photo-strip-' + p.id + '" class="qp-photo-strip"></div>'
       +   '</div>'
@@ -2793,6 +2836,16 @@ function buildStep5Card(p) {
 
 function updateStep5UI() {
   const enabled = getStep5Platforms();
+  enabled.filter(p => p.adaptedContent).forEach(p => {
+    const approved = p._reviewStatus === 'approved';
+    const button = document.getElementById('step5-lgtm-' + p.id);
+    if (button && button.dataset.saving !== '1') {
+      button.classList.toggle('approved', approved);
+      button.textContent = approved ? '✓ Approved' : '✓ Looks Good';
+    }
+    const pill = document.getElementById('step5-pill-' + p.id);
+    if (pill) { pill.className = 'step5-status-pill ' + (approved ? 'approved' : 'needs-review'); pill.textContent = approved ? '✓ Approved' : 'Needs Review'; }
+  });
   const doneCount = enabled.filter(p =>
     p._reviewStatus === 'approved' || p._reviewStatus === 'skipped'
   ).length;
@@ -3204,7 +3257,7 @@ async function runAdaptation() {
   window._bbDraftFreeRegenUsed = false;
   // Refresh the visible regeneration buttons.
   document.querySelectorAll('[id^="qp-regen-"]').forEach(btn => {
-    if (!btn.disabled) btn.textContent = '🔄 Try again';
+    if (!btn.disabled) btn.textContent = '↻ Rewrite copy';
   });
 
     document.getElementById('ai-loading-sub').textContent = `Adapting for ${enabledPlatforms.length} platform${enabledPlatforms.length > 1 ? 's' : ''}...`;
@@ -7278,5 +7331,6 @@ document.addEventListener('click',function(e){
 </script>
 </body>
 </html>
+
 
 

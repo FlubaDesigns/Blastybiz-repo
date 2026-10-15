@@ -77,3 +77,5 @@ const widths=[390,767,768,980,1024,1165,1180,1440];
 require('./test-business-dropdown-browser.cjs');
 
 require('./test-compact-workspace-browser.cjs');
+
+require('./test-review-layout-browser.cjs');
