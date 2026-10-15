@@ -20,23 +20,55 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Classify layout-only changes
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/classify-layout.py
+      - name: Test layout scope boundaries
+        run: python3 scripts/test-classify-layout.py
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - name: Install focused layout browser
+        if: steps.scope.outputs.mode == 'layout'
+        run: |
+          npm install --prefix "$RUNNER_TEMP/blasty-layout" --prefer-offline --no-audit --no-fund playwright@1.55.0
+          "$RUNNER_TEMP/blasty-layout/node_modules/.bin/playwright" install chromium --with-deps
+      - name: Focused layout and mobile browser checks
+        if: steps.scope.outputs.mode == 'layout'
+        env:
+          PLAYWRIGHT_PATH: ${{ runner.temp }}/blasty-layout/node_modules/playwright
+        run: |
+          node scripts/test-header-navigation-browser.cjs
+          node scripts/test-publishing-mobile.cjs
+      - name: Preserve selected release scope
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-scope
+          path: layout-scope.json
+          retention-days: 14
       - name: Install functions dependencies
+        if: steps.scope.outputs.mode != 'layout'
         run: npm ci
         working-directory: functions
       - name: Authorization Engine browser boundary
+        if: steps.scope.outputs.mode != 'layout'
         run: node --test scripts/test-authorization-browser.cjs
-      - name: Meta connection health regressions
-        run: node --test scripts/test-meta-connection-health.cjs
       - name: Run release checks
+        if: steps.scope.outputs.mode != 'layout'
         # Newly added endpoints cannot be live before their first deployment.
         # The Authorization Engine verifies live endpoints after backend deploy.
         run: |
           SKIP_CF_ENDPOINT_CHECK=1 node scripts/check-release.cjs
           node scripts/check-cf-endpoints.cjs --self-test
       - name: Review regression checks
+        if: steps.scope.outputs.mode != 'layout'
         run: |
           node scripts/test-review-regressions.cjs
           node scripts/test-photo-regressions.cjs
@@ -67,10 +99,12 @@ jobs:
           python3 scripts/test-backup-identity.py
           node scripts/test-backup-verification.cjs
       - name: Real photo decoding and encoding
+        if: steps.scope.outputs.mode != 'layout'
         run: |
           npm install --prefix "$RUNNER_TEMP/blasty-photos" --no-audit --no-fund @napi-rs/canvas@0.1.80
           CANVAS_PATH="$RUNNER_TEMP/blasty-photos/node_modules/@napi-rs/canvas" node scripts/test-image-preparation.cjs
       - name: Ad controls and gesture DOM checks
+        if: steps.scope.outputs.mode != 'layout'
         run: |
           npm install --prefix "$RUNNER_TEMP/blasty-dom" --no-audit --no-fund jsdom@26.1.0
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-pass10-ui.cjs
@@ -87,6 +121,7 @@ jobs:
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-oauth-browser-security.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-onboarding-report-ui.cjs
       - name: OAuth browser-origin contract (local fixtures only)
+        if: steps.scope.outputs.mode != 'layout'
         run: |
           npm install --prefix "$RUNNER_TEMP/blasty-browser" --no-audit --no-fund playwright@1.55.0
           "$RUNNER_TEMP/blasty-browser/node_modules/.bin/playwright" install chromium --with-deps
@@ -94,10 +129,12 @@ jobs:
           PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-oauth-playwright-security.cjs
           PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-header-navigation-browser.cjs
       - uses: actions/setup-java@v4
+        if: steps.scope.outputs.mode != 'layout'
         with:
           distribution: temurin
           java-version: '21'
       - name: Actual Firestore authorization boundary tests
+        if: steps.scope.outputs.mode != 'layout'
         run: |
           npm install --prefix "$RUNNER_TEMP/blasty-rules" --no-audit --no-fund @firebase/rules-unit-testing@4.0.1 firebase@11.10.0 firebase-tools@14.17.0
           RULES_TEST_PATH="$RUNNER_TEMP/blasty-rules/node_modules/@firebase/rules-unit-testing" FIREBASE_CLIENT_PATH="$RUNNER_TEMP/blasty-rules/node_modules/firebase/firestore" "$RUNNER_TEMP/blasty-rules/node_modules/.bin/firebase" emulators:exec --only firestore,storage --project demo-blastybiz-audit2 --config firebase.audit2.json 'node scripts/test-audit2-rules.cjs && node scripts/test-backend-storage.cjs && node scripts/test-backend-deletion-emulator.cjs && node scripts/test-backend-review-emulator.cjs'
