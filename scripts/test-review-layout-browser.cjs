@@ -35,6 +35,38 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
  await page.evaluate(()=>window.failSave=false);await page.locator('#step5-lgtm-facebook').click();await page.waitForFunction(()=>document.getElementById('step5-card-instagram').open);
  assert.equal(await page.locator('.step5-review-card[open]').count(),1);assert.equal(await page.evaluate(()=>saveCalls),1);assert(!await page.locator('#step5-lgtm-facebook').isVisible());
  await page.evaluate(()=>{platforms[0]._reviewStatus='needs-review';updateStep5UI();step5GoTo(0);});assert(await page.locator('#step5-lgtm-facebook').isVisible(),'edited copy can be approved again');assert.equal(await page.locator('#step5-pill-facebook').innerText(),'Needs Review');
+ await page.addScriptTag({content:fs.readFileSync('public/mascot.js','utf8')});
+ await page.addScriptTag({content:fs.readFileSync('public/workspace-help.js','utf8')});
+ assert(!await page.locator('#workspace-help-panel').isVisible(),'help starts closed');
+ assert.equal(await page.locator('#workspace-help-mascot svg').count(),0,'mascot mounts on demand only');
+ const beforeHelpSaves=await page.evaluate(()=>saveCalls);
+ for(const width of [320,390,768,1440]){
+  await page.setViewportSize({width,height:900});
+  await page.evaluate(()=>{document.getElementById('create-slide-1').classList.add('cwiz-active');document.getElementById('create-slide-5').classList.remove('cwiz-active');});
+  await page.locator('#workspace-help-toggle').click();
+  assert(await page.locator('#workspace-help-panel').isVisible());
+  assert.equal(await page.locator('#workspace-help-toggle').getAttribute('aria-expanded'),'true');
+  assert.equal(await page.locator('#workspace-help-mascot svg').count(),1,'one reusable mascot');
+  assert.equal((await page.locator('#workspace-help-mascot').boundingBox()).width,44);
+  assert((await page.locator('#workspace-help-message').innerText()).includes('Choose a campaign'));
+  await page.evaluate(()=>{document.getElementById('create-slide-1').classList.remove('cwiz-active');document.getElementById('create-slide-5').classList.add('cwiz-active');});
+  await page.waitForFunction(()=>document.getElementById('workspace-help-message').textContent.includes('Open a platform'));
+  await page.locator('#workspace-help-show').click();
+  assert(await page.locator('#step5-lgtm-facebook').evaluate(e=>e.classList.contains('pb-spotlight')),'points to actual open platform control');
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'help has no overflow');
+  await page.locator('#workspace-help-close').click();
+  assert(!await page.locator('#workspace-help-panel').isVisible());
+  assert.equal(await page.locator('#workspace-help-toggle').getAttribute('aria-expanded'),'false');
+  console.log('PASS on-demand mascot, current-step guidance, correct target and no overflow at '+width);
+ }
+ await page.evaluate(()=>{platforms.forEach(p=>p._reviewStatus='approved');updateStep5UI();});
+ await page.locator('#workspace-help-toggle').click();
+ assert((await page.locator('#workspace-help-message').innerText()).includes('final preview'));
+ await page.locator('#workspace-help-show').click();
+ assert(await page.locator('#step5-final-btn').evaluate(e=>e.classList.contains('pb-spotlight')));
+ await page.locator('#workspace-help-close').focus();await page.keyboard.press('Escape');
+ assert(!await page.locator('#workspace-help-panel').isVisible());
+ assert.equal(await page.evaluate(()=>saveCalls),beforeHelpSaves,'help never approves or saves');
  if(process.env.REVIEW_SCREENSHOT){await page.setViewportSize({width:360,height:900});await page.locator('#step5-review-container').screenshot({path:process.env.REVIEW_SCREENSHOT});}
  console.log('PASS explicit saved approval, failed-save protection, next platform opening, and edit approval reset; no provider calls');
  }finally{await browser.close();}

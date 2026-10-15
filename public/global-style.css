@@ -4008,3 +4008,15 @@ body.create-page #step5-existing-blast > .create-wiz-back-btn,
 body.create-page #create-slide-5 .create-wiz-nav { margin-top: 8px !important; }
 body.create-page #step5-existing-blast > .create-wiz-back-btn:first-child { margin-top: 0 !important; }
 body.create-page .header__business-dropdown > summary { min-height: 48px; border-radius: 10px; font-size: 14px; line-height: 22px; padding: 12px 14px; }
+
+/* On-demand workspace help stays in the page flow, clear of the controls. */
+body.create-page #create-wizard .create-wiz-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+body.create-page #create-wizard .create-wiz-label { min-width: 0; }
+body.create-page #workspace-help-toggle { flex-shrink: 0; white-space: nowrap; }
+body.create-page .workspace-help-panel { padding: 12px; margin: 8px 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); }
+body.create-page .workspace-help-panel[hidden] { display: none; }
+body.create-page .workspace-help-content { display: flex; align-items: center; gap: 12px; }
+body.create-page #workspace-help-mascot { width: 44px; flex: 0 0 44px; }
+body.create-page #workspace-help-message { margin: 0; min-width: 0; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+body.create-page .workspace-help-actions { display: flex; gap: 8px; margin-top: 12px; }
+body.create-page .workspace-help-actions .btn { flex: 1; min-width: 0; }

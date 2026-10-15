@@ -384,7 +384,18 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
     <div id="workspace-save-state" class="workspace-save-state"></div>
     <div class="create-wiz-header">
       <div class="create-wiz-label" id="create-wiz-label">Step 1 of 2 — Your Blast</div>
+      <button type="button" class="btn" id="workspace-help-toggle" aria-expanded="false" aria-controls="workspace-help-panel">Ask Blasty</button>
     </div>
+    <section id="workspace-help-panel" class="workspace-help-panel" aria-label="Blasty help" hidden>
+      <div class="workspace-help-content">
+        <div id="workspace-help-mascot" aria-hidden="true"></div>
+        <p id="workspace-help-message" role="status"></p>
+      </div>
+      <div class="workspace-help-actions">
+        <button type="button" class="btn" id="workspace-help-show">Show me</button>
+        <button type="button" class="btn" id="workspace-help-close">Close help</button>
+      </div>
+    </section>
     <div class="create-progress-track">
       <div class="create-progress-fill" id="create-progress-fill" style="width:20%"></div>
     </div>
@@ -7321,6 +7332,7 @@ window.confirmDeleteAccount = async function() {
 <script src="lifecycle-ui.js?v=20261004-commercial"></script>
 <script src="lifecycle-status.js?v=20261013-email-cadence"></script>
 <script src="ad-workspace.js?v=20261004-commercial"></script>
+<script src="workspace-help.js"></script>
 <script src="publishing-workspace.js?v=20261014"></script>
 <link rel="stylesheet" href="publishing-workspace.css?v=20261014">
 <script>
