@@ -26,6 +26,8 @@ jobs:
       - name: Install functions dependencies
         run: npm ci
         working-directory: functions
+      - name: Authorization Engine browser boundary
+        run: node --test scripts/test-authorization-browser.cjs
       - name: Run release checks
         # Newly added endpoints cannot be live before their first deployment.
         # The Authorization Engine verifies live endpoints after backend deploy.

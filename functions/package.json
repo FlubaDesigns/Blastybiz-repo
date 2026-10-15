@@ -15,6 +15,7 @@
     "axios": "1.17.0",
     "firebase-admin": "12.7.0",
     "firebase-functions": "^7.3.2",
+    "google-auth-library": "^9.15.1",
     "square": "44.2.0"
   }
 }

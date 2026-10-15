@@ -26,3 +26,5 @@ Object.assign(exports, require('./modules/misc'));
 Object.assign(exports, require('./modules/retention'));
 
 Object.assign(exports, require('./modules/lifecycle'));
+
+Object.assign(exports, require('./modules/authorization-browser'));
