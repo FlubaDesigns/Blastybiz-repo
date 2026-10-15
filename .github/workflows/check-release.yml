@@ -110,6 +110,7 @@ jobs:
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-pass10-ui.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-photo-handoff.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-blast-button.cjs
+          JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-dashboard-loading.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-pass11-ui.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-pass11-status.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-audit2-ui.cjs

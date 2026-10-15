@@ -72,7 +72,8 @@ body{visibility:hidden}
     </div>
   </div>
 
-  <p class="sub" style="margin-bottom:16px;">Showing data for <strong id="dashboard-biz-name"></strong></p>
+  <div id="dashboard-load-status" role="status" class="card hidden"></div>
+  <p class="sub" id="dashboard-data-label" style="margin-bottom:16px;">Showing data for <strong id="dashboard-biz-name"></strong></p>
 
   <div class="layout__split-2-1">
 
@@ -219,21 +220,17 @@ function init() {
 // EMPTY STATE — no businesses on this account yet
 // ══════════════════════════════════════════
 function renderNoBusinessState() {
-  const switcher = document.getElementById('biz-active-btn');
-  if (switcher) switcher.style.display = 'none';
-  const main = document.querySelector('main');
-  if (main) main.style.display = 'none';
-  const body = document.body;
-  if (!document.getElementById('no-biz-state')) {
-    const div = document.createElement('div');
-    div.id = 'no-biz-state';
-    div.style.cssText = 'text-align:center;padding:80px 20px;';
-    div.innerHTML = '<div class="no-biz-icon">📢</div>'
-      + '<h2 class="no-biz-h2">No Business Yet</h2>'
-      + '<p class="no-biz-p">Add your first business to start blasting across every platform.</p>'
-      + '<button type="button" onclick="window.addBusiness && window.addBusiness()" class="no-biz-btn">+ Add Your Business</button>';
-    body.appendChild(div);
-  }
+  document.getElementById('biz-dd-label').textContent = 'No businesses on this account';
+  document.getElementById('dashboard-data-label').classList.add('hidden');
+  document.getElementById('dashboard-campaign-list').innerHTML = '<div class="activity-empty">No campaigns on this account.</div>';
+  const status = document.getElementById('dashboard-load-status');
+  status.classList.remove('hidden');
+  status.innerHTML = '<h2>No businesses on this account</h2>'
+    + '<p>Signed in as <strong>' + escHtml(window._bbDashboardEmail || '') + '</strong>.</p>'
+    + '<p>If you already have businesses here, sign in with the Google account you used to create them.</p>'
+    + '<button type="button" class="btn btn-primary" onclick="doSignOut()">Use another account</button>'
+    + '<p><a href="BlastyBiz-Owner-Access.html">Owner sign-in through Authorization Engine</a></p>';
+
 }
 
 // ══════════════════════════════════════════
@@ -505,6 +502,22 @@ window.openCampaignSheet = async function(draftId) {
   }
 };
 
+function dashboardRead(request) {
+  let timer;
+  return Promise.race([request, new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error('dashboard-read-timeout')), 15000);
+  })]).finally(() => clearTimeout(timer));
+}
+function dashboardLoadFailed() {
+  document.getElementById('biz-dd-label').textContent = 'Could not load businesses';
+  document.getElementById('dashboard-data-label').classList.add('hidden');
+  document.getElementById('dashboard-campaign-list').textContent = 'Your saved campaigns could not be loaded.';
+  const status = document.getElementById('dashboard-load-status');
+  status.classList.remove('hidden');
+  status.innerHTML = '<h2>Your dashboard could not load</h2><p>Check your connection and try again. Your saved businesses have not been changed.</p>'
+    + '<button type="button" class="btn btn-primary" onclick="location.reload()">Retry</button>';
+}
+
 let currentUser = null;
 let allBusinesses = [];
 let userPlan = 'starter';
@@ -513,15 +526,17 @@ auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
   if (!user) return; // auth-guard.js handles redirect
   currentUser = user;
+  window._bbDashboardEmail = user.email || '';
+  try {
 
-  const userSnap = await getDoc(doc(db, 'users', user.uid));
+  const userSnap = await dashboardRead(getDoc(doc(db, 'users', user.uid)));
   const userData = userSnap.exists() ? userSnap.data() : {};
 
   userPlan = userData.plan || 'starter';
   window.userPlan = userPlan;
   // Fetch effective limit from Firestore (admin can override in settings/bizLimits)
   try {
-    const limSnap = await getDoc(doc(db, 'settings', 'bizLimits'));
+    const limSnap = await dashboardRead(getDoc(doc(db, 'settings', 'bizLimits')));
     const limData = limSnap.exists() ? limSnap.data() : {};
     window._bizLimit = limData[userPlan + 'Max'] != null
       ? Number(limData[userPlan + 'Max'])
@@ -546,7 +561,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   try {
-    const snap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
+    const snap = await dashboardRead(getDocs(collection(db, 'users', user.uid, 'businesses')));
 
     if (!snap.empty) {
       allBusinesses = snap.docs.map(d => ({
@@ -560,15 +575,14 @@ onAuthStateChanged(auth, async (user) => {
       }));
 
       window.BUSINESSES = allBusinesses;
-      window.activeBizId = userData.activeBusiness || allBusinesses[0].id;
+      window.activeBizId = allBusinesses.some(b => b.id === userData.activeBusiness) ? userData.activeBusiness : allBusinesses[0].id;
     } else {
       window.BUSINESSES = [];
       window.activeBizId = null;
     }
   } catch(e) {
     console.error('[Dashboard] businesses load failed:', e.code, e.message);
-    window.BUSINESSES = [];
-    window.activeBizId = null;
+    throw e;
   }
 
   // After checkout success, if user hasn't done onboarding yet, send them to the wizard
@@ -672,7 +686,7 @@ onAuthStateChanged(auth, async (user) => {
 
     // ── Section 2: Campaigns (always resolves — never leaves "Loading…") ──
     try {
-      const campSnap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', bizId, 'campaigns'));
+      const campSnap = await dashboardRead(getDocs(collection(db, 'users', currentUser.uid, 'businesses', bizId, 'campaigns')));
       const bizCampaigns = campSnap.docs
         .map(d => ({ ...d.data(), id: d.id })).filter(c=>c.status!=='archived')
         .sort((a, b) => new Date(b.lastUsedAt || b.createdAt || 0) - new Date(a.lastUsedAt || a.createdAt || 0));
@@ -847,8 +861,12 @@ onAuthStateChanged(auth, async (user) => {
     if (!bizId) return;
     await loadBusinessContextFirestore(bizId);
   };
+  } catch (error) {
+    console.error('[Dashboard] startup failed:', error.code || error.message);
+    dashboardLoadFailed();
+  }
 });
-});
+}).catch(dashboardLoadFailed);
 
 const CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
 

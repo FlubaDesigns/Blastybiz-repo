@@ -34,6 +34,29 @@ module.exports=async function verifyLiveNavigation({chromium,origin}){
     await page.locator('#si-email').fill(email);await page.locator('#si-password').fill(password);
     await page.locator('#btn-signin').click();
     await page.waitForURL(url=>!url.pathname.includes('Login'));
+    await page.goto(origin+'/BlastyBiz-Dashboard');
+    await page.waitForFunction(()=>document.getElementById('biz-dd-label')?.textContent==='Navigation acceptance fixture');
+    await page.waitForFunction(()=>document.getElementById('dashboard-campaign-list')?.textContent.includes('Navigation acceptance'));
+    assert.equal(await page.locator('#dashboard-biz-name').innerText(),'Navigation acceptance fixture');
+    // An empty account must explain the identity mismatch above the cards.
+    const emptyUid='empty_navigation_'+randomUUID().replaceAll('-','');
+    try {
+      await auth.createUser({uid:emptyUid,email:emptyUid+'@example.invalid',password,emailVerified:true});
+      await page.evaluate(async()=>{const {auth}=await import('./firebase-init-v2.js');const {signOut}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');await signOut(auth);});
+      await page.goto(origin+'/BlastyBiz-Login?intent=signin');
+      await page.locator('#si-email').fill(emptyUid+'@example.invalid');await page.locator('#si-password').fill(password);await page.locator('#btn-signin').click();
+      await page.waitForURL(url=>!url.pathname.includes('Login'));
+      await page.goto(origin+'/BlastyBiz-Dashboard');
+      await page.waitForFunction(()=>document.getElementById('biz-dd-label')?.textContent==='No businesses on this account');
+      assert.match(await page.locator('#dashboard-load-status').innerText(),/Use another account/);
+      assert.equal(await page.locator('#dashboard-campaign-list').innerText(),'No campaigns on this account.');
+    } finally { await db.recursiveDelete(db.doc('users/'+emptyUid));await auth.deleteUser(emptyUid).catch(()=>{}); }
+    await page.goto(origin+'/BlastyBiz-Login?intent=signin');
+    await page.evaluate(async()=>{const {auth}=await import('./firebase-init-v2.js');const {signOut}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');await signOut(auth);});
+    await page.goto(origin+'/BlastyBiz-Login?intent=signin');
+    await page.locator('#si-email').fill(email);await page.locator('#si-password').fill(password);await page.locator('#btn-signin').click();
+    await page.waitForURL(url=>!url.pathname.includes('Login'));
+    console.log('PASS LIVE AUTHENTICATED dashboard: saved business/campaign and explicit empty-account recovery; no customer data changed.');
     const workspace=origin+'/BlastyBiz?bizId=fixture&cid=fixture&adId=first&tab=create&step=1';
     const ready=()=>page.waitForFunction(()=>window._bbWorkspaceNavigationReady&&window.BBAds?.active?.id==='first');
     await page.goto(workspace);await ready();
