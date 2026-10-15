@@ -78,7 +78,16 @@
       }
     ],
     "cleanUrls": true,
-    "trailingSlash": false
+    "trailingSlash": false,
+    "rewrites": [
+      {
+        "source": "/api/auth/engine/**",
+        "function": {
+          "functionId": "authorizationBrowser",
+          "region": "us-central1"
+        }
+      }
+    ]
   },
   "firestore": {
     "rules": "firestore.rules",
