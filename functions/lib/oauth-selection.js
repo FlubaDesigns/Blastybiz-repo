@@ -101,7 +101,7 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
       if (!fresh.choices.some(c=>c.id===choiceId)) fail(409,'Connection choice changed. Reconnect.');
       const br=business(p); if (!(await tx.get(br)).exists) fail(404,'Business no longer exists.');
       const cr=br.collection('platformConnections').doc(p.platform);
-      const common={uid,businessId:p.businessId,platform:p.platform,status:'connected',expiresAt:p.tokenExpiresAt,connectedAt:admin.firestore.FieldValue.serverTimestamp()};
+      const common={uid,businessId:p.businessId,platform:p.platform,status:'connected',expiresAt:p.platform==='google'?p.tokenExpiresAt:null,...(p.platform==='facebook'?{userTokenExpiresAt:p.tokenExpiresAt}:{}),connectedAt:admin.firestore.FieldValue.serverTimestamp()};
       if(p.platform==='google') {
         tx.set(cr,{...common,accountId:choice.accountId,locationId:choice.locationId,locationName:choice.label},{merge:true});
         tx.set(cr.collection('private').doc('tokens'),{accessToken:p.accessToken,refreshToken:p.refreshToken||''});
@@ -125,3 +125,4 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
   return {googleChoices,facebookChoices,prepare,inspect,confirm,cancel};
 }
 module.exports={createOAuthSelection};
+

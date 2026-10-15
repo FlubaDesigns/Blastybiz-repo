@@ -109,9 +109,9 @@ async function retentionTests(){
 }
 async function refreshTests(){
  const m=database({[B]:{},[C+'facebook']:{platform:'facebook',status:'connected',pageId:'p',expiresAt:new Date(0)},[C+'instagram']:{platform:'instagram',status:'connected',pageId:'p',igUserId:'ig',expiresAt:new Date(0)}}),calls=[];
- const shared={db:m.db,admin,onRequest:(...a)=>a.at(-1),onSchedule:(...a)=>a.at(-1),withAuth:f=>f,_getConnTokens:async()=>({accessToken:'page-old',userAccessToken:'user-old'}),axios:{get:async(url,o)=>{calls.push({url,o});return {data:url.endsWith('/oauth/access_token')?{access_token:'user-new',expires_in:36000000}:{id:'p',access_token:'page-new',instagram_business_account:{id:'ig'}}};}}};
+ const shared={db:m.db,admin,onRequest:(...a)=>a.at(-1),onSchedule:(...a)=>a.at(-1),withAuth:f=>f,_getConnTokens:async()=>({accessToken:'page-old',userAccessToken:'user-old'}),axios:{get:async(url,o)=>{calls.push({url,o});if(o.headers?.Authorization)throw Object.assign(Error('rejected'),{response:{status:400,data:{error:{code:190}}}});return {data:url.endsWith('/oauth/access_token')?{access_token:'user-new',expires_in:36000000}:{id:'p',access_token:'page-new',instagram_business_account:{id:'ig'}}};}}};
  const c=load('functions/modules/oauth.js',shared);await c.exports.checkPlatformTokenExpiry();
- ok(calls[0].o.params.fb_exchange_token==='user-old'&&calls[1].o.params.access_token==='user-new','refresh exchanges user token then reacquires exact Page token');
+ ok(calls.find(c=>c.url.endsWith('/oauth/access_token')).o.params.fb_exchange_token==='user-old'&&calls.find(c=>c.o.params?.access_token==='user-new').o.params.access_token==='user-new','refresh exchanges user token then reacquires exact Page token');
  ok(m.get(C+'facebook/private/tokens').accessToken==='page-new'&&m.get(C+'instagram/private/tokens').accessToken==='page-new','paired refresh saves Page token rather than user token');
  await m.db.doc(C+'facebook').update({expiresAt:new Date(0)});await m.db.doc(C+'instagram').update({igUserId:'old-ig'});await c.exports.checkPlatformTokenExpiry();
  ok(m.get(C+'instagram').status==='disconnected'&&!m.get(C+'instagram/private/tokens'),'changed linked Instagram identity never receives refreshed token');
@@ -131,3 +131,4 @@ async function migrationTests(){
  m.db.projectId='flubadesigns-25482';await rejects(()=>runCli(['--project=blastybiz-9523e','--apply'],sdk),/target mismatch/);
 }
 (async()=>{for(const fn of [oauthTests,publisherTests,deletionTests,retentionTests,refreshTests,migrationTests]){await fn();console.log('PASS '+fn.name);}console.log(checks+' Audit 2 backend regression assertions passed.');})().catch(e=>{console.error(e);process.exitCode=1;});
+

@@ -5,6 +5,7 @@
  */
 'use strict';
 const {sameConnection,saveGoogleRefresh}=require('../lib/connection-state');
+const {checkMetaDestination,saveVerifiedMetaConnection}=require('../lib/meta-connection-health');
 const {metaRevokeToken,revokeMeta}=require('../lib/meta-revoke');
 const { META_GRAPH_VERSION, META_GRAPH_BASE, providerId, googlePostsUrl } = require('../lib/provider-api');
 
@@ -251,7 +252,6 @@ exports.checkPlatformTokenExpiry = onSchedule(
     const abandoned=await db.collection('oauthNonces').where('expiresAt','<=',new Date()).limit(200).get();
     if(!abandoned.empty){const cleanup=db.batch();abandoned.docs.forEach(d=>cleanup.delete(d.ref));await cleanup.commit();}
     const cutoffShort = new Date(Date.now() + 5 * 60 * 1000);
-    const cutoffFb    = new Date(Date.now() + 7 * 24 * 3600 * 1000);
 
     let tmplSubject = null, tmplHtml = null;
     try {
@@ -276,22 +276,27 @@ exports.checkPlatformTokenExpiry = onSchedule(
       // Document fields are historical/client data; paths define ownership/provider.
       const conn = {...docSnap.data(),uid:parts[1],businessId:parts[3],platform:docSnap.id};
 
-      if (!conn.expiresAt) { skipped++; continue; }
-
-      const expiresAt = conn.expiresAt.toDate ? conn.expiresAt.toDate() : new Date(conn.expiresAt);
-      const isFbOrIg  = conn.platform === 'facebook' || conn.platform === 'instagram';
-      const cutoff    = isFbOrIg ? cutoffFb : cutoffShort;
-
-      if (expiresAt > cutoff) { skipped++; continue; }
-
+      const isFbOrIg = conn.platform === 'facebook' || conn.platform === 'instagram';
       const privTokens = await _getConnTokens(docSnap.ref);
-
+      if (isFbOrIg) {
+        const health=await checkMetaDestination({platform:conn.platform,connection:conn,accessToken:privTokens.accessToken,axios});
+        console.log('META_CONNECTION_CHECK '+JSON.stringify({platform:conn.platform,...health}));
+        if(health.state==='valid') {
+          const saved=await saveVerifiedMetaConnection({db,admin,ref:docSnap.ref,expected:conn,accessToken:privTokens.accessToken});
+          if(saved)refreshed++;else skipped++;
+          continue;
+        }
+        if(health.state==='unknown'){skipped++;continue;}
+        // Only an actual invalid binding/provider rejection may reach expiry.
+      } else if (!conn.expiresAt) { skipped++; continue; }
+      const expiresAt = isFbOrIg ? new Date(0) : (conn.expiresAt.toDate ? conn.expiresAt.toDate() : new Date(conn.expiresAt));
+      if (!isFbOrIg && expiresAt > cutoffShort) { skipped++; continue; }
       const igRef = docSnap.ref.parent.parent.collection('platformConnections').doc('instagram');
 
       if (conn.platform === 'facebook' && privTokens.accessToken) {
         try {
           // Exchange the stored USER token, then reacquire the token for this exact Page.
-          // Legacy bindings without a user token require an explicit reconnect.
+          // Only attempt renewal after the existing Page credential was rejected.
           if (!privTokens.userAccessToken || !providerId(conn.pageId)) throw Error('Reconnect Facebook to refresh this Page.');
           const resp=await axios.get(META_GRAPH_BASE+'/oauth/access_token',{params:{grant_type:'fb_exchange_token',client_id:process.env.FACEBOOK_APP_ID,client_secret:process.env.FACEBOOK_APP_SECRET,fb_exchange_token:privTokens.userAccessToken},timeout:20000});
           const userToken=resp.data.access_token;
@@ -303,12 +308,12 @@ exports.checkPlatformTokenExpiry = onSchedule(
             const current=await tx.get(docSnap.ref),igSnap=await tx.get(igRef);
             if(!sameConnection(conn,current.data()))throw Error('Connection changed during refresh.');
             tx.set(docSnap.ref.collection('private').doc('tokens'),{accessToken:page.data.access_token,userAccessToken:userToken});
-            tx.update(docSnap.ref,{expiresAt:newExpiresAt,updatedAt:admin.firestore.FieldValue.serverTimestamp()});
+            tx.update(docSnap.ref,{expiresAt:null,userTokenExpiresAt:newExpiresAt,updatedAt:admin.firestore.FieldValue.serverTimestamp()});
             if(igSnap.exists && igSnap.data().status==='connected') {
               const ig=igSnap.data();
               if(conn.instagramAuthorized!==false && ig.pageId===conn.pageId && ig.igUserId===page.data.instagram_business_account?.id) {
                 tx.set(igRef.collection('private').doc('tokens'),{accessToken:page.data.access_token});
-                tx.update(igRef,{expiresAt:newExpiresAt,updatedAt:admin.firestore.FieldValue.serverTimestamp()});
+                tx.update(igRef,{expiresAt:null,userTokenExpiresAt:newExpiresAt,updatedAt:admin.firestore.FieldValue.serverTimestamp()});
               } else {
                 tx.update(igRef,{status:'disconnected',disconnectedAt:admin.firestore.FieldValue.serverTimestamp()});
                 tx.delete(igRef.collection('private').doc('tokens'));
@@ -354,7 +359,8 @@ exports.checkPlatformTokenExpiry = onSchedule(
         const marked=await db.runTransaction(async tx=>{
           const current=(await tx.get(docSnap.ref)).data();
           const expiry=current?.expiresAt?.toMillis?.() || new Date(current?.expiresAt).getTime();
-          if(!sameConnection(conn,current) || !Number.isFinite(expiry) || expiry>Date.now())return false;
+          const currentTokens=(await tx.get(docSnap.ref.collection('private').doc('tokens'))).data()||{};
+          if(!sameConnection(conn,current) || (isFbOrIg ? currentTokens.accessToken!==privTokens.accessToken : !Number.isFinite(expiry)||expiry>Date.now()))return false;
           tx.update(docSnap.ref,{status:'expired',updatedAt:admin.firestore.FieldValue.serverTimestamp()});
           return true;
         });
@@ -437,3 +443,4 @@ exports.checkPlatformTokenExpiry = onSchedule(
     console.log(`[checkPlatformTokenExpiry] Done — refreshed: ${refreshed}, expired: ${expired}, skipped: ${skipped}`);
   }
 );
+
