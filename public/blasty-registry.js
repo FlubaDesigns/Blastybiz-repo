@@ -53,7 +53,7 @@ window.BBBlastySeed = {
     },
     "onboard.email_return_success": {
       "eventId": "onboard.email_return_success",
-      "message": "There you are, {{ownerName}}! I told you I’d be here.",
+      "message": "Hi, I’m Blasty! Your guiding rocket. Ready to blast off?",
       "behavior": "ONCE",
       "animation": [],
       "enabled": true,
