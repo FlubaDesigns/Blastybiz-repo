@@ -4120,3 +4120,40 @@ body.listing-preview-page .manual-card-header { box-sizing: border-box; }
   }
   body.create-page #step5-existing-blast > .create-wiz-back-btn { margin-top: 0 !important; }
 }
+
+/* WIDTH AND CENTERING HELPERS
+   Percentages are relative to the containing block, including padding/border.
+   Example: class="review-btn w-100 desktop-w-50 center-block"
+   = full width normally, half width from 901px, horizontally centered.
+   Width helpers explicitly override component width/max-width rules.
+   center-block centers a block/flex/grid item without changing its display or visibility.
+   For inline children, use center-content on their parent. text-center already exists.
+*/
+.w-25 { --helper-width: 25%; }
+.w-33 { --helper-width: calc(100% / 3); }
+.w-50 { --helper-width: 50%; }
+.w-66 { --helper-width: calc(200% / 3); }
+.w-75 { --helper-width: 75%; }
+.w-100 { --helper-width: 100%; }
+.w-auto { --helper-width: auto; }
+:is(.w-25,.w-33,.w-50,.w-66,.w-75,.w-100,.w-auto) {
+  box-sizing: border-box;
+  width: var(--helper-width) !important;
+  max-width: 100% !important;
+}
+.center-block { margin-inline: auto !important; align-self: center; justify-self: center; }
+.center-content { display: flex; justify-content: center; align-items: center; }
+@media (min-width: 901px) {
+  .desktop-w-25 { --helper-width: 25%; }
+  .desktop-w-33 { --helper-width: calc(100% / 3); }
+  .desktop-w-50 { --helper-width: 50%; }
+  .desktop-w-66 { --helper-width: calc(200% / 3); }
+  .desktop-w-75 { --helper-width: 75%; }
+  .desktop-w-100 { --helper-width: 100%; }
+  .desktop-w-auto { --helper-width: auto; }
+  :is(.desktop-w-25,.desktop-w-33,.desktop-w-50,.desktop-w-66,.desktop-w-75,.desktop-w-100,.desktop-w-auto) {
+    box-sizing: border-box;
+    width: var(--helper-width) !important;
+    max-width: 100% !important;
+  }
+}
