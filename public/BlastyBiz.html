@@ -5140,21 +5140,15 @@ function renderSwitcherBar() {
   const wbName = document.getElementById('wb-biz-name');
   if (wbName) wbName.textContent = activeName;
 
-  // Tab bar — single biz: name label only; multi: one tab per business
+  // One selector in the header; this card only identifies the managed business.
   const tabBar = document.getElementById('biz-tab-bar');
-  if (!tabBar) return;
-
-  if (bizList.length <= 1) {
-    tabBar.innerHTML = `<span class="biz-solo-name">${window.escHtml(activeName)}</span>`;
-  } else {
-    tabBar.innerHTML = bizList.map(b => {
-      const isActive = b.id === currentId;
-      const name = b.name || b.businessName || '(unnamed)';
-      return isActive
-        ? `<button type="button" class="biz-tab active" disabled>${window.escHtml(name)}</button>`
-        : `<button type="button" class="biz-tab" onclick="switchBusiness('${window.escHtml(String(b.id).replace(/['\\]/g,''))}')">${window.escHtml(name)}</button>`;
-    }).join('');
+  if (tabBar) {
+    const label = document.createElement('span');
+    label.className = 'biz-solo-name';
+    label.textContent = activeName;
+    tabBar.replaceChildren(label);
   }
+  window._bbRenderHeaderBusinesses?.(bizList, currentId);
 }
 
 function renderAgencyBar() {
@@ -5174,7 +5168,7 @@ function renderAgencyBar() {
   }
 }
 
-// Dropdown replaced by tab bar — stubs kept for safety
+// Legacy callers delegate to the canonical workspace switch handler
 function toggleBizDropdown() {}
 function _closeBizDdOutside() {}
 function selectBizOption(bizId) { if (window.switchBusiness) window.switchBusiness(bizId); }

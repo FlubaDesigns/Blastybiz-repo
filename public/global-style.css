@@ -3954,3 +3954,17 @@ body.has-site-header .main-inner section.bb-life { padding: 20px; margin-top: 16
 .qp-photo-share{width:100%;margin:10px 0}.qp-photo-share button{width:100%;background:var(--green,#39ff14);color:#071207;font-weight:700}.qp-photo-share-status,.bb-photo-feedback{font-size:12px;line-height:1.5;margin:6px 0;color:var(--muted,#a2bba5);overflow-wrap:anywhere}.bb-photo-feedback:empty{display:none}.platform-resources:has(.bb-photo-tools){display:block;}
 .pub-plat-row{flex-wrap:wrap}.pub-plat-row .pub-copy-btn{min-height:44px}.pub-action-card #pub-open-schedule{display:block;text-align:center;min-height:44px;margin-top:12px}.pub-action-card [hidden]{display:none!important}.pub-action-card #pub-status-link{display:block;text-align:center;text-decoration:none}.publishing-page .manual-textarea{width:100%;min-height:90px;box-sizing:border-box;}
 .ai-gen-fill.is-waiting{animation:bb-waiting 1.8s ease-in-out infinite alternate}@keyframes bb-waiting{to{transform:translateX(180%)}}@media(prefers-reduced-motion:reduce){.ai-gen-fill.is-waiting{animation:none}}
+
+/* Business picker stays anchored beneath the trigger, including on mobile. */
+.header__business-dropdown { position: relative; width: min(100%, 420px); min-width: 0; color: var(--light, #e6efe7); }
+.header__business-dropdown summary { box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 10px 14px; border: 1px solid var(--green, #00c853); border-radius: 8px; background: #0b180e; cursor: pointer; font: 600 16px/1.4 'DM Sans', sans-serif; list-style: none; overflow-wrap: anywhere; }
+.header__business-dropdown summary::-webkit-details-marker { display: none; }
+.header__business-dropdown summary::after { content: '▾'; flex-shrink: 0; color: var(--green, #00c853); }
+.header__business-dropdown[open] summary::after { content: '▴'; }
+.header__business-options { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 10; max-height: min(280px, 45dvh); overflow-y: auto; overscroll-behavior: contain; border: 1px solid #28783d; border-radius: 8px; padding: 4px; background: #0b180e; box-shadow: 0 8px 24px #0009; }
+.header__business-options button { display: block; width: 100%; min-height: 48px; border: 0; border-radius: 4px; background: transparent; color: inherit; padding: 10px 12px; font: 500 16px/1.4 'DM Sans', sans-serif; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+.header__business-options button[aria-current="true"] { background: #163c20; color: var(--green, #00c853); }
+.header__business-options button:hover, .header__business-options button:focus-visible { background: #214a2b; }
+.header__business-dropdown summary:focus-visible { outline: 2px solid var(--green, #00c853); outline-offset: 2px; }
+.header__business-dropdown summary[aria-busy="true"] { pointer-events: none; opacity: .6; }
+@media (max-width: 767px) { .header__biz-tabs { padding: 6px 16px; } .header__business-dropdown { width: 100%; } }
