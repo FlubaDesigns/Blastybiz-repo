@@ -78,7 +78,7 @@ test('unmapped Google users and the retained owner are never redirected or promo
  for(const googleAliases of [[{uid:'owner',email:alias.email}],[{uid:alias.uid,email:'invalid'}],[alias,alias],[]])assert.equal((await fixture({googleAliases}).request(GOOGLE)).status,404);
 });
 test('login resolves the new Google identity before reading profile data, and suppresses duplicate continuations',async()=>{
- const html=fs.readFileSync('public/BlastyBiz-Login.html','utf8');
+ const html=fs.readFileSync(require.resolve('../public/BlastyBiz-Login.html'),'utf8');
  const block=html.slice(html.indexOf('// Resolve only identities'),html.indexOf('\nfunction showLoginForm()'));
  let reads=[],calls=0,signIns=0;
  const owner={uid:'owner',getIdTokenResult:async()=>({claims:{firebase:{sign_in_provider:'custom'}}})};
