@@ -38,4 +38,6 @@ async function run(mode){
  }else{assert.equal(label.textContent,'Existing Business');assert.match(campaigns.textContent,/Existing Campaign/);assert.equal(w.activeBizId,'b');}
  dom.window.close();
 }
-(async()=>{for(const mode of ['loaded','empty','error','timeout','business-error'])await run(mode);console.log('PASS dashboard: saved data, empty Google account, rejected reads, timed-out reads, stale business selection.');})().catch(e=>{console.error(e);process.exitCode=1;});
+async function verifyDashboard(){for(const mode of ['loaded','empty','error','timeout','business-error'])await run(mode);console.log('PASS dashboard: saved data, empty Google account, rejected reads, timed-out reads, stale business selection.');}
+module.exports=verifyDashboard;
+if(require.main===module)verifyDashboard().catch(e=>{console.error(e);process.exitCode=1;});

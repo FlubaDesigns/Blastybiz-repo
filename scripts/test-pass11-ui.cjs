@@ -81,5 +81,6 @@ const settle=async()=>{for(let i=0;i<20;i++)await new Promise(r=>setImmediate(r)
  card=w.document.querySelector('#sched-campaigns-wrap article');card.querySelector('[data-action=skipNext]').click();await settle();ok(m.get(D).status==='canceled'&&m.get(A).schedule.enabled,'Skip Next preserves recurring rule');
  const unsafe='<img src=x onerror=alert(1)>';await m.db.doc(B+'/campaigns/c').update({name:unsafe});await w.BBLifecycle.dashboard();ok(!w.document.querySelector('#sched-campaigns-wrap img[onerror]'),'stored names rendered safely');
  ok(!w.document.querySelector('[data-field=frequency] option[value=custom]'),'no unimplemented recurrence option');
+ await require('./test-dashboard-loading.cjs')();
  console.log(checks+' Pass 11 DOM integration assertions passed.');dom.window.close();
 })().catch(e=>{console.error(e);dom.window.close();process.exitCode=1;});
