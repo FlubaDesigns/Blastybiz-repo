@@ -4020,3 +4020,66 @@ body.create-page #workspace-help-mascot { width: 44px; flex: 0 0 44px; }
 body.create-page #workspace-help-message { margin: 0; min-width: 0; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
 body.create-page .workspace-help-actions { display: flex; gap: 8px; margin-top: 12px; }
 body.create-page .workspace-help-actions .btn { flex: 1; min-width: 0; }
+
+/* Compact saved-blast preview: consistent cards and mobile actions. */
+body.listing-preview-page .main-inner { padding: 16px; max-width: 1180px; margin-inline: auto; }
+body.listing-preview-page .main-inner .card { box-sizing: border-box; padding: 14px; margin: 0; min-width: 0; border-radius: 12px; }
+body.listing-preview-page .pub-hero { margin-bottom: 12px !important; }
+body.listing-preview-page .pub-flow { display: flex; flex-direction: column; gap: 12px; }
+body.listing-preview-page .pub-layout { gap: 12px; }
+body.listing-preview-page .pub-rail-col { min-width: 0; }
+body.listing-preview-page .card-title { font-size: 22px; line-height: 1.2; margin: 0 0 12px; }
+body.listing-preview-page .pub-details > summary { cursor: pointer; margin: 0; min-height: 36px; align-content: center; }
+body.listing-preview-page .pub-details[open] > summary { margin-bottom: 12px; }
+body.listing-preview-page .pub-summary-grid .pub-row { display: grid; grid-template-columns: 64px minmax(0,1fr); gap: 8px; }
+body.listing-preview-page .pub-row .label { min-width: 0; }
+body.listing-preview-page .pub-plat-row { display: grid; grid-template-columns: 32px minmax(0,1fr); gap: 6px 10px; padding: 10px 0; }
+body.listing-preview-page .pub-plat-icon { width: 32px; height: 32px; grid-row: 1; }
+body.listing-preview-page .pub-plat-row > .badge { display: none; }
+body.listing-preview-page .pub-plat-row > .pub-copy-btn { grid-column: 2; }
+body.listing-preview-page .pub-plat-type { font-size: 12px; }
+body.listing-preview-page .pub-plat-name { overflow-wrap: anywhere; }
+body.listing-preview-page .main-inner :is(.pub-copy-btn,.pub-publish-btn,.copy-platform-btn,.bb-photo-tools button,.qp-photo-share button,.pub-rail-tab) {
+  box-sizing: border-box; min-height: 48px; max-width: 100%; padding: 12px 14px;
+  border: 1px solid var(--border); border-radius: 10px;
+  font: 700 14px/22px 'DM Sans', sans-serif; letter-spacing: 0;
+  text-decoration: none; text-align: center; overflow-wrap: anywhere;
+}
+body.listing-preview-page .pub-copy-btn,
+body.listing-preview-page .copy-platform-btn { display: inline-flex; align-items: center; justify-content: center; background: transparent; color: var(--light); margin-top: 0; }
+body.listing-preview-page .pub-publish-btn { display: inline-flex; align-items: center; justify-content: center; width: 100%; max-width: none; }
+body.listing-preview-page .pub-publish-btn.is-blasted { display: none; }
+body.listing-preview-page #pub-status-row { margin: 8px 0 0; }
+body.listing-preview-page #pub-status-link { width: 100%; display: flex; }
+body.listing-preview-page #pub-next-row { margin-top: 0; }
+body.listing-preview-page #pub-schedule-link { width: 100%; }
+body.listing-preview-page #manual-platform-list { display: flex; flex-direction: column; gap: 12px; }
+body.listing-preview-page #manual-panel .manual-card { padding: 0; margin: 0; border-radius: 10px; }
+body.listing-preview-page .manual-card-header { list-style: none; cursor: pointer; min-height: 64px; padding: 12px; margin: 0; flex-wrap: nowrap; gap: 8px; }
+body.listing-preview-page .manual-card-header::-webkit-details-marker { display: none; }
+body.listing-preview-page .manual-card-header::after { content: '▾'; color: var(--muted); }
+body.listing-preview-page .manual-card[open] > .manual-card-header::after { content: '▴'; }
+body.listing-preview-page .manual-icon { margin: 0; width: 30px; height: 30px; }
+body.listing-preview-page .manual-mode { display: none; }
+body.listing-preview-page .manual-card-body { padding: 0 12px 12px; }
+body.listing-preview-page .manual-card-body > .copy-platform-btn { width: 100%; margin-bottom: 8px; }
+body.listing-preview-page .manual-card .manual-textarea { box-sizing: border-box; min-height: 140px; max-height: 40dvh; font-size: 14px; }
+body.listing-preview-page .bb-photo-grid { gap: 8px; }
+body.listing-preview-page .bb-photo-tools .qp-photo-item { width: 104px; flex-basis: 104px; }
+body.listing-preview-page .bb-photo-tools .platform-photo { min-height: 76px; width: 76px; margin-bottom: 8px; }
+body.listing-preview-page .bb-photo-tools .platform-photo img { width: 74px; height: 74px; }
+body.listing-preview-page .bb-photo-tools .platform-photo span { display: none; }
+body.listing-preview-page .main-inner .bb-photo-tools button { padding-inline: 6px; width: 100%; }
+body.listing-preview-page .pub-post-text { max-height: 240px; overflow-y: auto; }
+body.listing-preview-page .pub-rail-tab { flex: 1 1 120px; border-radius: 10px; justify-content: center; }
+body.listing-preview-page :is(summary,.pub-copy-btn,.pub-publish-btn,.copy-platform-btn):focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+@media (max-width: 599px) {
+  body.listing-preview-page .main-inner { padding: 12px; }
+  body.listing-preview-page .pub-post-photo { max-height: 240px; }
+}
+
+body.listing-preview-page .pub-details > summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; list-style: none; }
+body.listing-preview-page .pub-details > summary::-webkit-details-marker { display: none; }
+body.listing-preview-page .pub-details > summary::after { content: '▾'; color: var(--muted); font: 14px sans-serif; }
+body.listing-preview-page .pub-details[open] > summary::after { content: '▴'; }
+body.listing-preview-page .manual-card-header { box-sizing: border-box; }

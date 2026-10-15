@@ -79,3 +79,5 @@ require('./test-business-dropdown-browser.cjs');
 require('./test-compact-workspace-browser.cjs');
 
 require('./test-review-layout-browser.cjs');
+
+require('./test-preview-layout-browser.cjs');

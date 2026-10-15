@@ -52,8 +52,8 @@
   <div class="pub-flow">
 
   <!-- ── BLAST SUMMARY ──────────────────────────── -->
-  <section class="card section-mt" id="pub-summary-card">
-    <div class="card-title">🧾 Blast Summary</div>
+  <details class="card section-mt pub-details" id="pub-summary-card">
+    <summary class="card-title">Blast details</summary>
     <div class="pub-summary-grid">
       <div class="pub-row"><span class="label">Business</span><span class="val" id="sb-name">—</span></div>
       <div class="pub-row"><span class="label">Category</span><span class="val" id="sb-category">—</span></div>
@@ -61,7 +61,7 @@
       <div class="pub-row"><span class="label">Phone</span><span class="val" id="sb-phone">—</span></div>
       <div class="pub-row"><span class="label">Area</span><span class="val" id="sb-area">—</span></div>
     </div>
-  </section>
+  </details>
 
   <!-- ── PLATFORMS IN THIS BLAST ────────────────── -->
   <section class="card section-mt">
@@ -443,18 +443,19 @@ function renderManualPanel() {
     var meta = PLATFORM_META[k];
     var d    = drafts[k] || {};
     var text = [d.headline, d.text, d.cta].filter(Boolean).join('\n\n');
-    return '<div class="manual-card">'
-      + '<div class="manual-card-header">'
+    return '<details class="manual-card" name="manual-platforms">'
+      + '<summary class="manual-card-header">'
       +   '<div class="manual-identity">'
       +     '<div class="manual-icon">' + meta.icon + '</div>'
       +     '<div><div class="manual-name">' + meta.name + '</div><div class="manual-mode">Copy-paste required</div></div>'
       +   '</div>'
-      +   '<button onclick="copyPlatformText(\'' + k + '\')" class="copy-platform-btn">📋 Copy</button>'
-      + '</div>'
+      + '</summary>'
+      + '<div class="manual-card-body">'
+      + '<button type="button" onclick="copyPlatformText(\'' + k + '\')" class="copy-platform-btn">Copy text</button>'
       + '<textarea id="manual-text-' + k + '" readonly class="manual-textarea">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</textarea>'
       + '<div id="manual-share-'+k+'" class="qp-photo-share"></div><div id="manual-photos-'+k+'"></div>'
       + (meta.manualInstructions ? '<div class="manual-note mt-8">👉 ' + meta.manualInstructions + '</div>' : '')
-      + '</div>';
+      + '</div></details>';
   }).join('');
   manualKeys.forEach(pid=>{
     const photos=(drafts[pid].images||[]).filter(safePhotoUrl).map(url=>({url}));
