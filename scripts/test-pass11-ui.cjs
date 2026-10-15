@@ -44,6 +44,23 @@ const settle=async()=>{for(let i=0;i<20;i++)await new Promise(r=>setImmediate(r)
  host.querySelector('[data-field=date]').value='';ok(w.BBLifecycle.hasUnsavedChanges(),'invalid edit is still protected');
  w.confirm=()=>false;ok(!w.BBLifecycle.canLeave(),'cancel retains invalid schedule edit');w.confirm=()=>true;ok(w.BBLifecycle.canLeave(),'confirmed discard leaves once');
  await m.db.doc(A).update({schedule:admin.firestore.FieldValue.delete()});
+ // A list request that started before editing must not replace later edits.
+ const raceSection=w.document.createElement('section');raceSection.className='section active';
+ raceSection.innerHTML='<div id="schedule-editor"></div>';w.document.body.append(raceSection);
+ const raceHost=raceSection.firstElementChild,normalFetch=w.fetch;
+ w.BBAds={active:{id:'a',campaignId:'c'}};
+ await w.BBLifecycle.scheduleEditor(raceHost,{adId:'a',campaignId:'c'},()=>{},()=>{});
+ let releaseList,listStarted=false;const delayedList=new Promise(resolve=>{releaseList=resolve;});
+ w.fetch=async(url,options)=>{if(JSON.parse(options.body).action==='list'){listStarted=true;await delayedList;}return normalFetch(url,options);};
+ const pendingList=w.BBLifecycle.dashboard();await settle();ok(listStarted,'list refresh is pending before edits');
+ const editedZone=raceHost.querySelector('[data-field=timezone]');editedZone.value='America/New_York';
+ editedZone.dispatchEvent(new w.Event('change',{bubbles:true}));
+ raceHost.querySelector('[data-field=date]').value='2027-10-04T09:00';
+ releaseList();await pendingList;await settle();
+ ok(raceHost.querySelector('[data-field=timezone]')===editedZone,'late list response preserves the active form');
+ ok(editedZone.value==='America/New_York'&&raceHost.querySelector('[data-field=date]').value==='2027-10-04T09:00','late refresh keeps selected zone and local time');
+ ok(w.BBLifecycle.hasUnsavedChanges(),'late refresh keeps unsaved-change protection');
+ w.fetch=normalFetch;delete w.BBAds;raceSection.remove();
  let saved;
  await w.BBLifecycle.scheduleEditor(host,{adId:'a',campaignId:'c'},result=>{saved=result;},()=>{});
  host.querySelector('[data-field=date]').value='';host.dispatchEvent(new w.Event('change',{bubbles:true}));ok(host.querySelector('[data-save]').disabled,'invalid scheduling date disables saving');

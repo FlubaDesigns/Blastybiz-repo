@@ -133,7 +133,9 @@
      const result=await api('list');if(seq!==dashboardEpoch)return;
      const rows=result.schedules,active=rows.filter(r=>r.schedule.enabled).sort((a,b)=>new Date(a.schedule.nextRunAt)-new Date(b.schedule.nextRunAt)),others=rows.filter(r=>!r.schedule.enabled);
      const setup=document.getElementById('schedule-editor'),route=new URLSearchParams(location.search),selected=window.BBAds?.active;
-     if(setup&&!preserveEditor){
+     // The list request may finish after the owner starts editing. Recheck here,
+     // after the await, so a background refresh cannot reset their time or zone.
+     if(setup&&!preserveEditor&&!hasUnsavedChanges()){
        const request=route.get('scheduleAd')&&route.get('scheduleCampaign')&&(!selected||selected.campaignId===route.get('scheduleCampaign'))?{adId:route.get('scheduleAd'),campaignId:route.get('scheduleCampaign'),sourceBlastId:route.get('sourceBlastId')||undefined}:selected?{adId:selected.id,campaignId:selected.campaignId}:null;
        if(request){
          scheduleSetup(setup,request);
