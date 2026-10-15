@@ -4083,3 +4083,40 @@ body.listing-preview-page .pub-details > summary::-webkit-details-marker { displ
 body.listing-preview-page .pub-details > summary::after { content: '▾'; color: var(--muted); font: 14px sans-serif; }
 body.listing-preview-page .pub-details[open] > summary::after { content: '▴'; }
 body.listing-preview-page .manual-card-header { box-sizing: border-box; }
+
+/* Desktop workspace proportions: compact context row and bounded review controls. */
+@media (min-width: 901px) {
+  body.create-page #section-create > .row:has(#create-biz-card) > .col-2-1 {
+    grid-template-columns: minmax(0, 1fr) 180px;
+    align-items: start;
+    gap: 24px;
+    margin-bottom: 12px;
+  }
+  body.create-page #section-create > .row:has(#create-biz-card) > .col-2-1 > .col-right {
+    height: 128px;
+    min-height: 0;
+  }
+  body.create-page #create-wizard:has(#create-slide-5.cwiz-active) {
+    max-width: 880px;
+    margin-inline: auto;
+  }
+  body.create-page #create-wizard .create-wiz-header { width: 100%; }
+  body.create-page #workspace-help-toggle { margin-left: auto; }
+  body.create-page #create-slide-5 > .row > .col-full > button[onclick="openCampaignPhotos()"],
+  body.create-page #create-slide-5 .review-btn,
+  body.create-page #create-slide-5 .create-wiz-back-btn {
+    width: 100%;
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  body.create-page #create-slide-5 > .row > .col-full > button[onclick="openCampaignPhotos()"] { display: flex; }
+  body.create-page #step5-existing-blast:not([hidden]) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    max-width: 728px;
+    margin-inline: auto;
+  }
+  body.create-page #step5-existing-blast > .create-wiz-back-btn { margin-top: 0 !important; }
+}
