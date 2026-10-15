@@ -98,9 +98,9 @@ async function destinationTests(){
   vm.runInNewContext(cut(guard,'function rememberDraftDestination','// Safety valve:'),c);c.rememberDraftDestination();
   ok(JSON.parse(saved.get('bb_draft_return')).params.draftId==='d','auth redirect retains exact draft destination');
   const d={restoreAuthReturn:c.restoreAuthReturn,db:{},doc(){},getDoc:async()=>({exists:()=>true}),localStorage:{removeItem(){}},URLSearchParams,JSON,sessionStorage:{getItem:k=>saved.get(k),removeItem:k=>saved.delete(k)},window:{location:{href:''},showToast(){}},showLoginForm(){}};
-  vm.runInNewContext(cut(read('public/BlastyBiz-Login.html'),'async function afterAuth','function showLoginForm'),d);
-  await d.afterAuth({uid:'other'});ok(!d.window.location.href&&saved.has('bb_draft_return'),'different signed-in account cannot consume draft return');
-  await d.afterAuth({uid:'u'});ok(d.window.location.href==='BlastyBiz.html?bizId=b&ownerUid=u&draftId=d'&&!saved.size,'sign-in resumes exact draft in correct account');
+  vm.runInNewContext(cut(read('public/BlastyBiz-Login.html'),'// Resolve only identities','function showLoginForm'),d);
+  await d.afterAuth({uid:'other',getIdTokenResult:async()=>({claims:{firebase:{sign_in_provider:'password'}}})});ok(!d.window.location.href&&saved.has('bb_draft_return'),'different signed-in account cannot consume draft return');
+  await d.afterAuth({uid:'u',getIdTokenResult:async()=>({claims:{firebase:{sign_in_provider:'password'}}})});ok(d.window.location.href==='BlastyBiz.html?bizId=b&ownerUid=u&draftId=d'&&!saved.size,'sign-in resumes exact draft in correct account');
   const html=read('public/BlastyBiz.html'),e={encodeURIComponent,window:{location:{href:''},activeBizId:'b',_bbLoadDraft:async()=>({campaignId:'c',campaignName:'Original',adaptations:{facebook:'Saved copy'},enabledPlatforms:['facebook'],schedule:{enabled:false}})},campaigns:[{id:'c',name:'Original'}],platforms:[{id:'facebook'},{id:'google'}],selectCampaign:(id)=>e.selected=id,loadQuickSchedFromDraft:s=>e.schedule=s,showToast(){},showTab(){},createWizGoTo(){},console:quiet};
   vm.runInNewContext(cut(html,'async function loadHistoryDraft','function timeAgo'),e);await e.loadHistoryDraft('d');
   ok(e.window.location.href==='BlastyBiz-Listing-Preview.html?bizId=b&draftId=d'&&!e.selected&&!e.platforms[0].adaptedContent,'history opens the saved Blast without overwriting the active Ad');

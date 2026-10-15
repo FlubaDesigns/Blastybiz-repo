@@ -14,9 +14,9 @@ async function returnTests(){
   vm.runInNewContext(cut(read('public/auth-guard.js'),'function rememberDraftDestination','// Safety valve'),c);c.rememberDraftDestination();
   ok(saved.has('bb_draft_return'),'guard stores '+pathname);
   const notes=[],d={...parse,URLSearchParams,localStorage:{removeItem(){}},sessionStorage:{getItem:k=>saved.get(k),removeItem:k=>saved.delete(k)},window:{location:{href:''},showToast:m=>notes.push(m)},showLoginForm(){},db:{},doc:(...parts)=>parts,getDoc:async()=>({exists:()=>true})};
-  vm.runInNewContext(cut(login,'async function afterAuth','function showLoginForm'),d);
-  await d.afterAuth({uid:'other'});ok(!d.window.location.href&&saved.size===1&&notes.length===1,'wrong account retains return and shows actionable message');
-  await d.afterAuth({uid:'u'});const url=new URL(d.window.location.href,'https://example.com');ok(url.searchParams.get('bizId')==='b'&&!saved.size,'correct account returns to initiating business');
+  vm.runInNewContext(cut(login,'// Resolve only identities','function showLoginForm'),d);
+  await d.afterAuth({uid:'other',getIdTokenResult:async()=>({claims:{firebase:{sign_in_provider:'password'}}})});ok(!d.window.location.href&&saved.size===1&&notes.length===1,'wrong account retains return and shows actionable message');
+  await d.afterAuth({uid:'u',getIdTokenResult:async()=>({claims:{firebase:{sign_in_provider:'password'}}})});const url=new URL(d.window.location.href,'https://example.com');ok(url.searchParams.get('bizId')==='b'&&!saved.size,'correct account returns to initiating business');
   for(const key of ['cid','adId','tab','step','draftId','scheduleCampaign','scheduleAd','scheduledBlastId','selection'])if(new URLSearchParams(search).has(key))ok(url.searchParams.get(key)===new URLSearchParams(search).get(key),'retains '+key);
  }
  for(const [p,q]of [['//evil.invalid','bizId=b&draftId=d'],['/BlastyBiz.html','bizId=../b&draftId=d'],['/BlastyBiz.html','bizId=b&tab=schedule&scheduleCampaign=c'],['/BlastyBiz-Connected.html','bizId=b&connected=constructor']])ok(!parse.parseAuthReturn(p,q),'unsafe or incomplete return rejected');
