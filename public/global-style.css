@@ -3968,3 +3968,43 @@ body.has-site-header .main-inner section.bb-life { padding: 20px; margin-top: 16
 .header__business-dropdown summary:focus-visible { outline: 2px solid var(--green, #00c853); outline-offset: 2px; }
 .header__business-dropdown summary[aria-busy="true"] { pointer-events: none; opacity: .6; }
 @media (max-width: 767px) { .header__biz-tabs { padding: 6px 16px; } .header__business-dropdown { width: 100%; } }
+
+/* Consistent controls across both Create workspace steps. */
+body.create-page #section-create :is(#create-biz-card, #create-camp-list-card, #create-wizard) :is(.btn, .btn-camp-save, .btn-camp-cancel, .create-wiz-back-btn, .review-btn, .step5-action-btn, .step5-looks-good-btn, .step5-nav-btn, .workspace-manage > summary, .workspace-campaign-picker > summary) {
+  box-sizing: border-box;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 22px;
+  letter-spacing: 0;
+  text-decoration: none;
+  text-align: center;
+}
+body.create-page #section-create :is(.create-wiz-back-btn, .step5-action-btn, .step5-nav-btn, .compact-new-campaign, .workspace-manage > summary) {
+  color: var(--light);
+  background: transparent;
+  border-color: var(--border);
+}
+body.create-page #section-create :is(.create-wiz-back-btn, .step5-action-btn, .step5-nav-btn, .compact-new-campaign, .workspace-manage > summary):hover {
+  border-color: var(--green);
+}
+body.create-page #section-create :is(.create-wiz-back-btn, .step5-action-btn, .step5-nav-btn, .workspace-manage > summary):focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+body.create-page #section-create .review-btn { border-color: var(--green); }
+body.create-page #section-create .review-btn:disabled { border-color: var(--border); }
+body.create-page #section-create .create-wiz-back-btn { display: flex; align-items: center; justify-content: center; gap: 8px; }
+body.create-page #section-create .workspace-campaign-picker > summary { text-align: left; }
+body.create-page #create-slide-5 > .row > .col-full > button[onclick="openCampaignPhotos()"] { width: 100%; }
+body.create-page #create-slide-5 .review-btn { margin-top: 8px; }
+body.create-page #step5-existing-blast,
+body.create-page #step5-existing-blast > .create-wiz-back-btn,
+body.create-page #create-slide-5 .create-wiz-nav { margin-top: 8px !important; }
+body.create-page #step5-existing-blast > .create-wiz-back-btn:first-child { margin-top: 0 !important; }
+body.create-page .header__business-dropdown > summary { min-height: 48px; border-radius: 10px; font-size: 14px; line-height: 22px; padding: 12px 14px; }
