@@ -29,7 +29,7 @@ async function races(){
   const original=provider==='google'?google:facebook,p=C+provider;
   const f=fixture({[p]:original,[p+'/private/tokens']:{accessToken:'old',refreshToken:'old-refresh',userAccessToken:'old-user'}});
   const reconnect=async()=>{await f.db.doc(p).set({...original,...(provider==='google'?{accountId:'new-account',locationId:'new-location'}:{}),connectedAt:{stamp:2},expiresAt:future()});await f.db.doc(p+'/private/tokens').set({accessToken:'fresh',refreshToken:'fresh-refresh',userAccessToken:'fresh-user'});if(failed)throw Error('provider failed after reconnect');return {data:{access_token:'stale-refresh',expires_in:3600}};};
-  f.shared.axios=provider==='google'?{post:reconnect}:{get:async url=>url.endsWith('access_token')?reconnect():{data:{id:'page',access_token:'stale-page'}}};
+  f.shared.axios=provider==='google'?{post:reconnect}:{get:async url=>{if(url.endsWith('access_token'))return reconnect();throw Object.assign(Error('rejected'),{response:{status:400,data:{error:{code:190}}}});}};
   await f.worker();
   ok(f.get(p+'/private/tokens').accessToken==='fresh'&&f.get(p).connectedAt.stamp===2,provider+' reconnect wins over stale '+(failed?'failed':'successful')+' refresh');
   ok(f.get(p).status==='connected'&&f.emails.length===0,provider+' reconnect not expired/notified by stale sweep');
@@ -50,12 +50,13 @@ async function races(){
  }
 }
 async function expiryAndIdentity(){
- for(const legacy of [true,false])for(const expired of [false,true]){
+ for(const legacy of [true,false])for(const expired of [false,true])for(const rejected of [false,true]){
   const when=expired?new Date(0):future();
-  const f=fixture({[C+'facebook']:{...facebook,expiresAt:when},[C+'instagram']:{status:'connected',pageId:'page',igUserId:'ig',connectedAt:{stamp:1},expiresAt:when},[C+'facebook/private/tokens']:{accessToken:'page',...(legacy?{}:{userAccessToken:'user'})}});
+  const axios={get:async()=>{throw rejected?Object.assign(Error('revoked'),{response:{status:400,data:{error:{code:190}}}}):Error('Graph unavailable');}};
+  const f=fixture({[C+'facebook']:{...facebook,expiresAt:when},[C+'instagram']:{status:'connected',pageId:'page',igUserId:'ig',connectedAt:{stamp:1},expiresAt:when},[C+'facebook/private/tokens']:{accessToken:'page',...(legacy?{}:{userAccessToken:'user'})},[C+'instagram/private/tokens']:{accessToken:'page'}},axios);
   await f.worker();
-  ok(f.get(C+'facebook').status===(expired?'expired':'connected')&&f.get(C+'instagram').status===(expired?'expired':'connected'),(legacy?'legacy':'Graph error')+' respects actual expiry for both providers');
-  ok(expired?f.emails.length===2:f.emails.length===0,'expiry emails occur only at actual expiry');
+  ok(f.get(C+'facebook').status===(rejected?'expired':'connected')&&f.get(C+'instagram').status===(rejected?'expired':'connected'),'Meta rejection, not a user-expiry date or temporary outage, determines connection validity');
+  ok(rejected?f.emails.length===2:f.emails.length===0,'expiry emails require confirmed invalid access');
  }
  const f=fixture({[C+'google']:{...google,uid:'victim',businessId:'victim-business',platform:'facebook'},[C+'google/private/tokens']:{refreshToken:'google-refresh'}}),calls=[];
  f.shared.axios={post:async url=>{calls.push(url);throw Error('unavailable');},get:async()=>{throw Error('Google credential must never reach Meta');}};
@@ -100,8 +101,9 @@ async function refreshLogPrivacy(){
   const axios={get:async()=>{throw error;},post:async()=>{throw error;}},record=provider==='google'?google:facebook;
   const f=fixture({[C+provider]:{...record,expiresAt:new Date(Date.now()+120000)},[C+provider+'/private/tokens']:{accessToken:secret,refreshToken:secret,userAccessToken:secret}},axios),logs=[];
   await load('functions/modules/oauth.js',f.shared,{console:{log:(...a)=>logs.push(a),warn:(...a)=>logs.push(a),error:(...a)=>logs.push(a)}}).exports.checkPlatformTokenExpiry();
-  ok(logs.some(a=>String(a[0]).includes('refresh failed')&&a[1]===401),provider+' refresh failure retains numeric diagnostic status');
+  ok(logs.some(a=>provider==='google'?String(a[0]).includes('refresh failed')&&a[1]===401:String(a[0]).includes('META_CONNECTION_CHECK')&&String(a[0]).includes('401')),provider+' refresh failure retains numeric diagnostic status');
   ok(!JSON.stringify(logs).includes(secret),provider+' refresh failure never logs token-bearing body or error message');
  }
 }
 (async()=>{for(const test of [races,expiryAndIdentity,cancelTests,revocationTests,refreshLogPrivacy]){await test();console.log('PASS '+test.name);}console.log(checks+' Audit 2 correction assertions passed.');})().catch(e=>{console.error(e);process.exitCode=1;});
+

@@ -28,6 +28,8 @@ jobs:
         working-directory: functions
       - name: Authorization Engine browser boundary
         run: node --test scripts/test-authorization-browser.cjs
+      - name: Meta connection health regressions
+        run: node --test scripts/test-meta-connection-health.cjs
       - name: Run release checks
         # Newly added endpoints cannot be live before their first deployment.
         # The Authorization Engine verifies live endpoints after backend deploy.
@@ -103,3 +105,4 @@ jobs:
 # Production deployment uses Fluba's existing Authorization Engine workflow:
 # FlubaDesigns/fluba-designs/.github/workflows/blastybiz-release.yml.
 # Keep this workflow as the exact-source check gate; no second credential path.
+
