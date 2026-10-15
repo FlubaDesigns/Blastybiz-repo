@@ -75,3 +75,5 @@ const widths=[390,767,768,980,1024,1165,1180,1440];
 
 // Keep the shared business dropdown covered by the existing browser gate.
 require('./test-business-dropdown-browser.cjs');
+
+require('./test-compact-workspace-browser.cjs');

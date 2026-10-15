@@ -159,6 +159,34 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 .manposted-no-btn{background:none;border:1px solid var(--border,#333);color:var(--muted,#888);border-radius:7px;padding:7px 12px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;}
 /* ── "posted" badge variant ── */
 .badge-posted{background:rgba(0,200,83,0.12);color:var(--green,#39ff14);font-size:11px;}
+
+/* Compact workspace controls. The Profile / Story / Create tab row stays intact. */
+#create-biz-card.compact-business-row{display:flex;align-items:center;gap:10px;padding:6px 0;margin:0 0 6px;background:transparent;border:0;border-radius:0;min-width:0;overflow:visible;}
+.compact-business-row .agency-bar{order:1;width:auto;flex:1;min-width:0;}
+.compact-business-row .agency-usage-text{font-size:12px;white-space:normal;}
+.compact-business-row .workspace-manage{order:2;}
+.workspace-manage{position:relative;flex-shrink:0;font-size:13px;}
+.workspace-manage>summary{display:flex;align-items:center;gap:6px;min-height:44px;padding:0 10px;cursor:pointer;list-style:none;color:var(--muted);border:1px solid var(--border);border-radius:8px;}
+.workspace-manage>summary::-webkit-details-marker{display:none;}
+.workspace-manage>summary::after{content:'▾';}
+.workspace-manage[open]>summary::after{content:'▴';}
+.workspace-manage-options{position:absolute;right:0;top:calc(100% + 4px);width:230px;max-width:calc(100vw - 40px);z-index:30;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px #0009;}
+.workspace-manage .biz-tab-strip{margin:0;gap:10px;}
+.workspace-manage .biz-tab-bar{flex-basis:100%;overflow-wrap:anywhere;}
+.workspace-manage .biz-tab-actions button{min-width:44px;min-height:44px;}
+#create-camp-list-card.compact-campaign-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:0;margin:0 0 12px;background:transparent;border:0;border-radius:0;overflow:visible;}
+.compact-campaign-row #create-camp-list{order:0;flex:1;min-width:0;}
+.compact-campaign-row .compact-new-campaign{order:1;min-height:48px;flex-shrink:0;padding:10px 14px;margin:0;font-size:14px;}
+.compact-campaign-row #new-campaign-row{order:2;flex-basis:100%;}
+.compact-campaign-row #firstrun-banner{flex-basis:100%;}
+.workspace-campaign-picker{width:100%;}
+.workspace-campaign-picker>summary{min-width:0;}
+.workspace-campaign-picker>summary span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+.workspace-campaign-picker .header__business-options{z-index:25;min-width:min(260px,calc(100vw - 40px));right:auto;width:100%;box-sizing:border-box;}
+.workspace-campaign-manage{padding:4px 8px;border-top:1px solid var(--border);}
+.workspace-campaign-manage>summary{padding:8px 4px;min-height:44px;box-sizing:border-box;cursor:pointer;color:var(--muted);font-size:13px;}
+.workspace-campaign-empty{padding:8px 12px;color:var(--muted);font-size:13px;}
+
 </style>
 <script type="importmap">
 {
@@ -230,14 +258,11 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
         <div class="row">
           <div class="col-full">
             <!-- BUSINESS SELECTOR CARD -->
-            <div class="card pro-locked" id="create-biz-card">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
-                <div class="card-title" style="margin-bottom:0;">🏢 Business</div>
+            <div class="card pro-locked compact-business-row" id="create-biz-card">
                 <div id="workspace-info-bar" style="display:none;align-items:center;flex-shrink:0;font-size:13px;">
                   <span id="wb-biz-name" style="display:none;"></span>
                   <span id="wb-plan-badge" style="display:none;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 8px;border-radius:10px;background:#2a2a2a;color:#aaa;flex-shrink:0;"></span>
                 </div>
-              </div>
               <div class="pro-overlay" data-plan="trial">
                 <div class="pro-overlay-content">
                   <div class="pro-overlay-badge">⚡ Pro</div>
@@ -246,6 +271,9 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
                   <a href="BlastyBiz-Plan-Pro.html" class="pro-overlay-btn">Upgrade to Pro →</a>
                 </div>
               </div>
+              <details class="workspace-manage">
+                <summary>Manage</summary>
+                <div class="workspace-manage-options">
               <div class="biz-tab-strip">
                 <div class="biz-tab-bar" id="biz-tab-bar">Loading…</div>
                 <div class="biz-tab-actions">
@@ -253,10 +281,12 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
                   <button type="button" class="del-biz-btn" onclick="window.deleteBusiness&&window.deleteBusiness(window.activeBizId)" title="Delete selected business" aria-label="Delete selected business">🗑</button>
                 </div>
               </div>
+                </div>
+              </details>
               <select id="biz-select" style="display:none"></select>
               <div class="agency-bar">
                 <span id="agency-usage-text" class="agency-usage-text"></span>
-                <div class="agency-pips" id="agency-pips"></div>
+                <div class="agency-pips" id="agency-pips" style="display:none;"></div>
               </div>
               <div style="display:none">
                 <div id="biz-active-btn"></div><div id="active-avatar"></div><div id="active-name"></div>
@@ -270,8 +300,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
         <div class="row">
           <div class="col-full">
             <!-- CAMPAIGN LIST CARD -->
-            <div class="card pro-locked" id="create-camp-list-card">
-              <div class="card-title">📁 Campaigns</div>
+            <div class="card pro-locked compact-campaign-row" id="create-camp-list-card">
               <div class="pro-overlay" data-plan="trial">
                 <div class="pro-overlay-content">
                   <div class="pro-overlay-badge">⚡ Pro</div>
@@ -280,7 +309,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
                   <a href="BlastyBiz-Plan-Pro.html" class="pro-overlay-btn">Upgrade to Pro →</a>
                 </div>
               </div>
-              <button type="button" onclick="openNewCampaign()" class="btn btn-primary" style="display:block;width:100%;box-sizing:border-box;text-align:center;margin-bottom:12px;">＋ New Campaign</button>
+              <button type="button" onclick="openNewCampaign()" class="btn btn-primary compact-new-campaign" style="box-sizing:border-box;text-align:center;">＋ New</button>
               <div id="new-campaign-row" class="mt-4 hidden" style="margin-bottom:12px;">
                 <input type="text" id="new-campaign-input" placeholder="Campaign name (e.g. Christmas Sale, Grand Reopening)"
                   class="input-campaign" style="width:100%;box-sizing:border-box;margin-bottom:8px;"
@@ -4598,50 +4627,58 @@ function formatPhone(el) {
 function renderCreateCampList() {
   const el = document.getElementById('create-camp-list');
   if (!el) return;
-  const _camps = (typeof campaigns !== 'undefined' && campaigns.length) ? campaigns : (window._bbCampaigns || []);
-  if (!_camps.length) {
-    el.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:4px 0;">No campaigns yet — create your first one above.</div>';
-    return;
+  const list = (typeof campaigns !== 'undefined' && campaigns.length) ? campaigns : (window._bbCampaigns || []);
+  const sorted = [...list].sort((a,b) => new Date(b.lastUsedAt || b.createdAt || 0) - new Date(a.lastUsedAt || a.createdAt || 0));
+  const active = sorted.find(c => c.id === activeCampaignId);
+  el.innerHTML = '<details class="header__business-dropdown workspace-campaign-picker"><summary aria-label="Choose campaign"><span></span></summary><div class="header__business-options"></div></details>';
+  const picker = el.firstElementChild, summary = picker.querySelector('summary'), options = picker.querySelector('.header__business-options');
+  summary.firstElementChild.textContent = active?.name || 'Choose campaign';
+  if (!sorted.length) {
+    const empty = document.createElement('div');
+    empty.className = 'workspace-campaign-empty';
+    empty.textContent = 'No campaigns yet. Tap ＋ New.';
+    options.appendChild(empty);
   }
-  const esc  = s => (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-  const hesc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const sorted = [..._camps].sort((a, b) =>
-    new Date(b.lastUsedAt || b.createdAt || 0) - new Date(a.lastUsedAt || a.createdAt || 0)
-  );
-  const curId = typeof activeCampaignId !== 'undefined' ? activeCampaignId : '';
-
-  if (sorted.length === 1) {
-    const c = sorted[0];
-    const isActive = c.id === curId;
-    // #5 Campaign lifecycle status
-    const sText  = c.offer ? '✍️ In progress' : '📝 New';
-    const sColor = c.offer ? '#4caf50' : '#888';
-    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0 4px;cursor:pointer;" onclick="selectCampaign('${esc(c.id)}','${esc(c.name||'')}')">
-      <div>
-        <div style="font-size:15px;font-weight:700;color:${isActive?'var(--green)':'var(--light)'};">${hesc(c.name||'(unnamed)')}</div>
-        <div style="font-size:11px;color:${sColor};margin-top:2px;">${sText}</div>
-      </div>
-      <button type="button" onclick="deleteCampaign('${esc(c.id)}','${esc(c.name||'')}');event.stopPropagation()" title="Delete"
-        style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;">🗑</button>
-    </div>`;
-  } else {
-    const activeCamp = sorted.find(c => c.id === curId) || sorted[0];
-    const sText  = activeCamp?.offer ? '✍️ In progress' : '📝 New campaign';
-    const sColor = activeCamp?.offer ? '#4caf50' : '#888';
-    const options = sorted.map(c =>
-      `<option value="${hesc(c.id)}"${c.id===curId?' selected':''}>${hesc(c.name||'(unnamed)')}</option>`
-    ).join('');
-    el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:6px 0 2px;">
-      <select id="camp-select-dropdown"
-        onchange="selectCampaign(this.value,this.options[this.selectedIndex].text)"
-        style="flex:1;background:var(--card,#1e1e1e);color:var(--light,#fff);border:1px solid var(--border,#333);border-radius:8px;padding:10px 12px;font-size:14px;font-weight:600;cursor:pointer;">
-        ${options}
-      </select>
-      <button type="button"
-        onclick="var s=document.getElementById('camp-select-dropdown');deleteCampaign(s.value,s.options[s.selectedIndex].text);event.stopPropagation()"
-        title="Delete" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;flex-shrink:0;">🗑</button>
-    </div>
-    <div style="font-size:11px;color:${sColor};padding:0 2px 4px;">${sText}</div>`;
+  for (const campaign of sorted) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = campaign.name || '(unnamed)';
+    button.setAttribute('aria-current', String(campaign.id === activeCampaignId));
+    button.addEventListener('click', async () => {
+      await selectCampaign(campaign.id, campaign.name || '');
+      el.querySelector('.workspace-campaign-picker > summary')?.focus();
+    });
+    options.appendChild(button);
+  }
+  if (active) {
+    const manage = document.createElement('details');
+    manage.className = 'workspace-campaign-manage';
+    const label = document.createElement('summary');
+    label.textContent = 'Manage campaign';
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.textContent = 'Delete current campaign';
+    remove.addEventListener('click', () => deleteCampaign(active.id, active.name || ''));
+    manage.append(label, remove);
+    options.appendChild(manage);
+  }
+  picker.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { picker.open = false; summary.focus(); event.preventDefault(); return; }
+    if (!['ArrowDown','ArrowUp','Home','End'].includes(event.key)) return;
+    event.preventDefault(); picker.open = true;
+    const buttons = [...options.children].filter(node => node.tagName === 'BUTTON');
+    if (!buttons.length) return;
+    const index = buttons.indexOf(document.activeElement);
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : event.key === 'ArrowDown' ? (index + 1) % buttons.length : (index - 1 + buttons.length) % buttons.length;
+    buttons[next].focus();
+  });
+  if (!window._bbWorkspaceMenusBound) {
+    window._bbWorkspaceMenusBound = true;
+    document.addEventListener('click', event => {
+      document.querySelectorAll('.workspace-campaign-picker[open], .workspace-manage[open]').forEach(menu => {
+        if (!menu.contains(event.target)) menu.open = false;
+      });
+    });
   }
 }
 
@@ -5156,7 +5193,7 @@ function renderAgencyBar() {
   const used    = bizList.length;
   const limit   = getBizLimit();
   const usageEl = document.getElementById('agency-usage-text');
-  if (usageEl) usageEl.textContent = `${used} of ${limit} businesses used`;
+  if (usageEl) usageEl.textContent = `${used}/${limit} businesses`;
   const pips = document.getElementById('agency-pips');
   if (!pips) return;
   pips.innerHTML = '';
@@ -7241,4 +7278,5 @@ document.addEventListener('click',function(e){
 </script>
 </body>
 </html>
+
 
