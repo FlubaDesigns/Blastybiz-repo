@@ -8,7 +8,8 @@ const files = fs.readdirSync(publicDir).filter(f => f.endsWith('.html'));
 files.forEach(f => {
   const filePath = path.join(publicDir, f);
   let content    = fs.readFileSync(filePath, 'utf8');
-  const updated  = content.replace(/global-style\.css\?v=\d+/g, `global-style.css?v=${version}`);
+  const updated  = content.replace(/global-style\.css\?v=\d+/g, `global-style.css?v=${version}`)
+    .replace(/blastybiz-menu\.js\?v=[^\"'\s<>]+/g, `blastybiz-menu.js?v=${version}`);
   if (updated !== content) {
     fs.writeFileSync(filePath, updated);
     console.log(`  bumped ${f} → v=${version}`);

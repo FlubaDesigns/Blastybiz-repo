@@ -72,3 +72,6 @@ const widths=[390,767,768,980,1024,1165,1180,1440];
   console.log(`PASS shared header Chromium: ${scenarios} viewport/auth scenarios, single-line labels, alignment, contained overflow, keyboard reachability and mobile menu.`);
  }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});
+
+// Keep the shared business dropdown covered by the existing browser gate.
+require('./test-business-dropdown-browser.cjs');

@@ -1,0 +1,30 @@
+const fs=require('fs'),assert=require('assert/strict'),{chromium}=require(process.env.PLAYWRIGHT_PATH || 'playwright');
+const root=process.cwd()+'/';
+(async()=>{const browser=await chromium.launch({headless:true});try{const page=await browser.newPage();
+const menu=fs.readFileSync(root+'public/blastybiz-menu.js','utf8');
+const workspace=fs.readFileSync(root+'public/BlastyBiz.html','utf8');
+for(const width of [360,390,768,1440]){
+ await page.setViewportSize({width,height:800});
+ await page.setContent('<style>'+fs.readFileSync(root+'public/global-style.css','utf8')+'</style>'+fs.readFileSync(root+'public/blastybiz-header.html','utf8')+'<select id="biz-select" hidden></select><div id="biz-tab-bar"></div><div id="wb-biz-name"></div><button id="outside">Outside</button>');
+ await page.addScriptTag({content:menu.slice(menu.indexOf('// A real in-page dropdown:'))+'\nfunction _applyHeaderOffset() {}'});
+ await page.addScriptTag({content:fs.readFileSync(root+'public/escape-utils.js','utf8')+'\n'+workspace.slice(workspace.indexOf('function renderSwitcherBar()'),workspace.indexOf('function renderAgencyBar()'))});
+ await page.evaluate(()=>{window.BUSINESSES=Array.from({length:8},(_,i)=>({id:String(i),name:i===2?'Kingdom Connects':i===3?'A <script> & business':'Business '+i}));window.activeBizId='2';window.switchBusiness=async id=>{window.selected=id;window.activeBizId=id;renderSwitcherBar();};renderSwitcherBar();});
+ assert.equal(await page.locator('summary').textContent(),'Kingdom Connects');
+ assert.equal(await page.locator('#biz-tab-bar button').count(),0);
+ await page.locator('summary').click();
+ const metrics=await page.evaluate(()=>{const s=document.querySelector('summary').getBoundingClientRect(),l=document.querySelector('.header__business-options').getBoundingClientRect();return {s:s.toJSON(),l:l.toJSON(),scroll:document.documentElement.scrollWidth};});
+ assert(metrics.l.top>=metrics.s.bottom&&metrics.l.top<=metrics.s.bottom+6);
+ assert(metrics.l.left>=0&&metrics.l.right<=width&&metrics.l.height<=300);
+ assert(metrics.s.height>=48);assert(metrics.scroll<=width);
+ await page.locator('.header__business-options button').nth(3).click();
+ assert.equal(await page.evaluate(()=>window.selected),'3');
+ assert.equal(await page.locator('summary').textContent(),'A <script> & business');
+ assert.equal(await page.locator('#wb-biz-name').textContent(),'A <script> & business');
+ assert.equal(await page.locator('.header__business-dropdown').getAttribute('open'),null);
+ await page.locator('summary').click();await page.keyboard.press('Escape');assert.equal(await page.locator('details').getAttribute('open'),null);
+ await page.locator('summary').focus();await page.keyboard.press('ArrowDown');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Business 0');
+ await page.keyboard.press('End');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Business 7');
+ await page.mouse.click(width-2,790);assert.equal(await page.locator('details').getAttribute('open'),null);
+ console.log(width+': anchored bounded dropdown, switching/sync, safe names, keyboard, outside close PASS');
+}
+}finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});
