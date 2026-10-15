@@ -12,6 +12,7 @@
         let display = number;
         if (node.dataset.pricePeriod === 'weekly') display = number * 12 / 52;
         if (node.dataset.pricePeriod === 'annual') display = number * 12;
+        if (node.dataset.pricePeriod === 'monthly-difference') display = Number(node.dataset.comparisonMonthly) - number;
         if (node.dataset.pricePeriod === 'annual-difference') display = Number(node.dataset.comparisonAnnual) - number * 12;
         node.textContent=Number.isFinite(number)&&number>0&&Number.isFinite(display)?money(display):'See checkout';
       });

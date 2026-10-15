@@ -312,7 +312,7 @@ try { require('./test-operate-todos.cjs'); }
 catch (error) { console.error('Operate to-do regression failed:', error); failures++; }
 
 // Production blocker regressions use isolated fixtures; never call providers.
-for (const file of ['test-square-checkout-contract.cjs', 'test-account-oauth-security.cjs', 'test-onboarding-report.cjs']) {
+for (const file of ['test-square-checkout-contract.cjs', 'test-account-oauth-security.cjs', 'test-onboarding-report.cjs', 'test-admin-health.cjs']) {
   const result = require('node:child_process').spawnSync(process.execPath, [path.join(__dirname, file)], {
     stdio: 'inherit', timeout: 60_000,
   });

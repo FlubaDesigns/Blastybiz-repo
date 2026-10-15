@@ -660,7 +660,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 
       <div class="row">
         <div class="col-full">
-          <button type="button" class="btn w-100 desktop-w-50 center-block" onclick="openCampaignPhotos()">📷 Add or change photos</button>
+          <button type="button" class="btn w-100 tablet-w-75 desktop-w-50 center-block" onclick="openCampaignPhotos()">📷 Add or change photos</button>
           <div id="generation-error" role="alert" hidden style="padding:12px;border:1px solid #c44;border-radius:8px;margin:12px 0;">
             <p id="generation-error-message"></p>
             <button type="button" class="btn" onclick="runAdaptation()">Retry generation</button>
@@ -683,7 +683,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
             </button>
           </div>
 
-          <button type="button" class="review-btn w-100 desktop-w-50 center-block" id="step5-final-btn" disabled style="display:none;" onclick="completeBlast()">
+          <button type="button" class="review-btn w-100 tablet-w-75 desktop-w-50 center-block" id="step5-final-btn" disabled style="display:none;" onclick="completeBlast()">
             Approve each platform above to continue →
           </button>
 
@@ -692,7 +692,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
             <button type="button" class="create-wiz-back-btn" style="min-height:48px;margin-top:12px;" onclick="completeBlast(true)">Prepare Another Blast</button>
           </div>
           <div class="create-wiz-nav" style="margin-top:20px;">
-            <button type="button" class="create-wiz-back-btn w-100 desktop-w-50 center-block" onclick="createWizPrev(5)">← Back to Blast</button>
+            <button type="button" class="create-wiz-back-btn w-100 tablet-w-75 desktop-w-50 center-block" onclick="createWizPrev(5)">← Back to Blast</button>
           </div>
           <div class="bottom-safe"></div>
         </div>
@@ -771,7 +771,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
       <div class="platform-grid" id="manual-platforms"></div>
       <div id="dismissed-platforms-fold"></div>
 
-      <a onclick="if(window._bbDraftSavePending){event.preventDefault();showToast('Use Retry save before continuing.');}" id="review-listings-btn" href="BlastyBiz-Listing-Preview.html" class="review-btn">
+      <a onclick="if(window._bbDraftSavePending){event.preventDefault();showToast('Use Retry save before continuing.');}" id="review-listings-btn" href="BlastyBiz-Listing-Preview.html" class="review-btn w-100 tablet-w-75 desktop-w-50 center-block">
         ✅ Review &amp; Approve All Listings →
       </a>
     </div>
@@ -881,11 +881,16 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
         <label for="profile-name">Business Name</label>
         <input type="text" id="profile-name" placeholder="Your business name" oninput="saveProfile()" />
 
+        <div class="form-pair"><div>
         <label for="profile-owner-name">First name</label>
         <input type="text" id="profile-owner-name" placeholder="First name" autocomplete="given-name" oninput="saveProfile()" />
+        </div><div>
         <label for="profile-owner-last-name">Last name (optional)</label>
         <input type="text" id="profile-owner-last-name" placeholder="Leave blank if you prefer" autocomplete="family-name" oninput="saveProfile()" />
 
+        </div></div>
+
+        <div class="form-pair"><div>
         <label for="profile-owner-role">Your Role</label>
         <select id="profile-owner-role" onchange="saveProfile()">
           <option value="owner">Owner</option>
@@ -893,6 +898,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
           <option value="other">Other</option>
         </select>
 
+        </div><div>
         <label for="profile-cat">Category</label>
         <input id="profile-cat" list="profile-cat-list" placeholder="e.g. Home Services, Online Marketing…"
                oninput="saveProfile()" autocomplete="off"
@@ -910,6 +916,9 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
           <option>Other</option>
         </datalist>
 
+        </div></div>
+
+        <div class="form-pair"><div>
         <label for="profile-phone">Phone</label>
         <input type="tel" id="profile-phone" placeholder="555-000-0000"
           oninput="formatPhone(this);saveProfile();var e=document.getElementById('profile-phone-err');if(e)e.textContent='';"
@@ -917,11 +926,14 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
           inputmode="tel" />
         <div id="profile-phone-err" style="color:#ff4c4c;font-size:12px;margin-top:4px;min-height:16px;"></div>
 
+        </div><div>
         <label for="profile-email">Email</label>
         <input type="email" id="profile-email" placeholder="hello@yourbusiness.com"
           oninput="saveProfile();var e=document.getElementById('profile-email-err');if(e)e.textContent='';"
           onblur="(function(inp){var v=inp.value.trim();var e=document.getElementById('profile-email-err');if(e)e.textContent=v&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)?'That doesn\u2019t look like a valid email address':''; })(this)" />
         <div id="profile-email-err" style="color:#ff4c4c;font-size:12px;margin-top:4px;min-height:16px;"></div>
+
+        </div></div>
 
         <label for="profile-street">Location</label>
         <div class="loc-type-toggle">
@@ -1151,45 +1163,48 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
       <div id="story-extract-status" style="margin-top:10px;font-size:13px;color:var(--muted,#888);display:none;"></div>
     </div>
 
+    <div class="story-fields">
     <div class="card">
       <div class="card-title">📖 Your Story</div>
       <p class="helper mb-16">Everything here gets read by the AI <strong>before it writes a single word</strong> of your marketing. Write it once — AI uses it every time.</p>
       <label for="ctx-story">How did you get started?</label>
-      <div class="char-wrap"><textarea id="ctx-story" class="form-textarea" rows="4" placeholder="e.g. We opened our doors in 1987 after my father emigrated from Mexico with nothing but a family recipe and a dream…" oninput="storyFieldInput(this,'cnt-story')"></textarea></div>
+      <div class="char-wrap"><textarea id="ctx-story" class="form-textarea w-100" rows="4" placeholder="e.g. We opened our doors in 1987 after my father emigrated from Mexico with nothing but a family recipe and a dream…" oninput="storyFieldInput(this,'cnt-story')"></textarea></div>
       <div class="char-count"><span id="cnt-story">0</span> characters</div>
     </div>
 
     <div class="card">
       <div class="card-title">✨ What Makes You Different</div>
       <p class="helper mb-8">Why should someone choose you over the competitor down the street?</p>
-      <div class="char-wrap"><textarea id="ctx-different" class="form-textarea" rows="4" placeholder="e.g. We source all produce from local farms within 50 miles. Every item made from scratch daily…" oninput="storyFieldInput(this,'cnt-different')"></textarea></div>
+      <div class="char-wrap"><textarea id="ctx-different" class="form-textarea w-100" rows="4" placeholder="e.g. We source all produce from local farms within 50 miles. Every item made from scratch daily…" oninput="storyFieldInput(this,'cnt-different')"></textarea></div>
       <div class="char-count"><span id="cnt-different">0</span> characters</div>
     </div>
 
     <div class="card">
       <div class="card-title">🏆 Awards &amp; Milestones</div>
       <p class="helper mb-8">Press coverage, awards, certifications, achievements.</p>
-      <div class="char-wrap"><textarea id="ctx-awards" class="form-textarea" rows="3" placeholder="e.g. Best Local Pizza 3 years running. Featured in the Chicago Tribune. 4.9 stars across 600+ Google reviews…" oninput="storyFieldInput(this,'cnt-awards')"></textarea></div>
+      <div class="char-wrap"><textarea id="ctx-awards" class="form-textarea w-100" rows="3" placeholder="e.g. Best Local Pizza 3 years running. Featured in the Chicago Tribune. 4.9 stars across 600+ Google reviews…" oninput="storyFieldInput(this,'cnt-awards')"></textarea></div>
       <div class="char-count"><span id="cnt-awards">0</span> characters</div>
     </div>
 
     <div class="card">
       <div class="card-title">🎯 Your Ideal Customer</div>
       <p class="helper mb-8">Who are you talking to? Who gets the most value from what you do?</p>
-      <div class="char-wrap"><textarea id="ctx-customer" class="form-textarea" rows="3" placeholder="e.g. Homeowners aged 35–60 who want quality work done right the first time…" oninput="storyFieldInput(this,'cnt-customer')"></textarea></div>
+      <div class="char-wrap"><textarea id="ctx-customer" class="form-textarea w-100" rows="3" placeholder="e.g. Homeowners aged 35–60 who want quality work done right the first time…" oninput="storyFieldInput(this,'cnt-customer')"></textarea></div>
       <div class="char-count"><span id="cnt-customer">0</span> characters</div>
     </div>
 
     <div class="card">
       <div class="card-title">💬 Anything Else the AI Should Know</div>
       <p class="helper mb-8">Special services, seasonal offerings, team members, community involvement — anything worth talking about.</p>
-      <div class="char-wrap"><textarea id="ctx-other" class="form-textarea" rows="5" placeholder="e.g. We offer free estimates. Loyalty program — every 10th visit is free. We sponsor the local little league…" oninput="storyFieldInput(this,'cnt-other')"></textarea></div>
+      <div class="char-wrap"><textarea id="ctx-other" class="form-textarea w-100" rows="5" placeholder="e.g. We offer free estimates. Loyalty program — every 10th visit is free. We sponsor the local little league…" oninput="storyFieldInput(this,'cnt-other')"></textarea></div>
       <div class="char-count"><span id="cnt-other">0</span> characters</div>
+    </div>
+
     </div>
 
     <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px;">
       <button type="button" class="btn" onclick="showTab('profile')" style="min-height:48px;">← Profile</button>
-      <button type="button" class="btn btn-primary" id="story-btn-save" onclick="saveStory(true)" style="flex:1;min-height:48px;white-space:nowrap;" disabled>Save &amp; Continue →</button>
+      <button type="button" class="btn btn-primary w-100 tablet-w-75 desktop-w-50" id="story-btn-save" onclick="saveStory(true)" style="min-height:48px;" disabled>Save &amp; Continue →</button>
       <span id="story-save-status" role="status" aria-live="polite" style="flex-basis:100%;font-size:12px;color:var(--green);opacity:0;transition:opacity 0.4s;"></span>
     </div>
 

@@ -30,7 +30,7 @@
   }
 }
 </script>
-  <script type="module" src="./admin-guard.js"></script><script src="blastybiz-menu.js?v=8"></script>
+  <script type="module" src="./admin-guard.js"></script><script src="escape-utils.js"></script><script src="platforms-authority.js"></script><script src="admin-health.js"></script><script src="blastybiz-menu.js?v=8"></script>
 </head><body class="admin-page"><header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Platform Health</span></a><div class="top-actions"><a class="icon-btn hide-mobile " href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile active" href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Logs.html">Logs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Operate.html">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header><main><div class="main"><div class="main-inner">
 
 <section class="hero">
@@ -46,12 +46,12 @@
       <div class="list-item" id="hero-row-score">
         <div class="icon">—</div>
         <div class="row-main"><div class="row-title">Loading…</div><div class="row-sub">Reading live connection data.</div></div>
-        <span class="badge live">Good</span>
+        <span class="badge off">Loading…</span>
       </div>
       <div class="list-item" id="hero-row-attn">
         <div class="icon">—</div>
         <div class="row-main"><div class="row-title">Loading…</div><div class="row-sub">Reading live connection data.</div></div>
-        <span class="badge live">Good</span>
+        <span class="badge off">Loading…</span>
       </div>
     </div>
   </div>
@@ -65,7 +65,7 @@
 </section>
 
 <section class="card">
-  <div class="card-title">⚠️ Broken &amp; Expiring Connections</div>
+  <div class="card-title">⚠️ Connections Needing Attention</div>
   <div class="filter-row">
     <select id="filter-status">
       <option value="">All statuses</option>
@@ -110,15 +110,9 @@ import { auth } from './firebase-init-v2.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
+const escHtml=window.escHtml;
 
-const PLATFORM_META = [
-  { id: 'google',    label: 'Google Business Profile', mode: 'API/OAuth' },
-  { id: 'facebook',  label: 'Facebook Pages',          mode: 'API/OAuth' },
-  { id: 'instagram', label: 'Instagram Business',      mode: 'API/OAuth' },
-  { id: 'yelp',      label: 'Yelp',                    mode: 'Partial'   },
-  { id: 'nextdoor',  label: 'Nextdoor',                mode: 'Manual'    },
-  { id: 'craigslist',label: 'Craigslist',              mode: 'Manual'    },
-];
+const PLATFORM_META = BBPlatforms.records.map(p=>({id:p.id,label:p.name,mode:p.deliveryMode==='manual'?'Manual':'Auto-post'}));
 
 let allBroken = [];
 let currentToken = '';
@@ -177,7 +171,7 @@ function renderBroken() {
       <td>${statusBadge}</td>
       <td style="white-space:nowrap">${_esc(fmtDate(c.expiresAt))}</td>
       <td class="${daysClass}">${daysText}</td>
-      <td><button class="nudge-btn" data-uid="${_esc(c.uid)}" data-bizid="${_esc(c.businessId)}" data-platform="${_esc(c.platform)}" title="Send reconnect email to business owner">Send Nudge</button></td>
+      <td><button class="nudge-btn" data-uid="${_esc(c.uid)}" data-bizid="${_esc(c.businessId)}" ${!c.uid||!c.businessId?'disabled':''} data-platform="${_esc(c.platform)}" title="Send reconnect email to business owner">Send Nudge</button></td>
     </tr>`;
   }).join('');
   tbody.querySelectorAll('.ph-biz-name').forEach((el, i) => { el.textContent = filtered[i]?.businessName || '—'; });
@@ -194,7 +188,7 @@ function renderBroken() {
         const r = await fetch(`${CF}/adminSendReconnectNudge`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
-          body: JSON.stringify({ uid: connUid, bizId: connBizId, platform: connPlatform }),
+          body: JSON.stringify({ uid: connUid, businessId: connBizId, platform: connPlatform }),
         });
         const data = await r.json();
         if (r.ok) {
@@ -214,52 +208,31 @@ function renderBroken() {
   });
 }
 
-function renderPlatformMeta(broken) {
-  const brokenByPlatform = {};
-  broken.forEach(c => {
-    if (!brokenByPlatform[c.platform]) brokenByPlatform[c.platform] = [];
-    brokenByPlatform[c.platform].push(c);
-  });
-
-  const tbody = document.getElementById('platform-meta-tbody');
-  tbody.innerHTML = PLATFORM_META.map(p => {
-    const isManual = p.mode === 'Manual';
-    const platformBroken = brokenByPlatform[p.id] || [];
-    const anyExpired = platformBroken.some(c => c.status === 'expired' || c.status === 'error');
-    let badgeClass, badgeText, commonFail, adminResp;
-    if (isManual) {
-      badgeClass = 'off'; badgeText = 'Manual';
-      commonFail = 'No reliable public posting API';
-      adminResp = 'Copy/paste workflow';
-    } else if (anyExpired) {
-      badgeClass = 'needs'; badgeText = 'Expired Tokens';
-      commonFail = 'OAuth token expired or revoked';
-      adminResp = 'Send reconnect nudge ↑';
-    } else if (platformBroken.length) {
-      badgeClass = 'needs'; badgeText = platformBroken[0].status;
-      commonFail = 'Connection issue';
-      adminResp = 'Send reconnect nudge ↑';
-    } else {
-      badgeClass = 'live'; badgeText = 'Good';
-      commonFail = 'Expired token or permissions';
-      adminResp = 'Reconnect link';
-    }
-    return `<tr>
-      <td>${p.label}</td>
-      <td>${p.mode}</td>
-      <td><span class="badge ${badgeClass}">${badgeText}</span></td>
-      <td class="muted">${commonFail}</td>
-      <td>${adminResp}</td>
-    </tr>`;
-  }).join('');
+function renderPlatformMeta(summary) {
+  document.getElementById('platform-meta-tbody').innerHTML=summary.platforms.map(p=>`<tr>
+    <td>${escHtml(p.name)}</td><td>${escHtml(p.mode)}</td>
+    <td><span class="badge ${p.badge}">${escHtml(p.status)}</span></td>
+    <td>${escHtml(p.description)}</td><td>${p.status==='Needs attention'?'Review connection records above':'—'}</td>
+  </tr>`).join('');
 }
 
 async function loadHealth(token) {
-  const r = await fetch(`${CF}/adminPlatformHealth`, {
-    headers: { 'Authorization': 'Bearer ' + token },
+  const headers={Authorization:'Bearer '+token};
+  const [healthResponse,connectionsResponse]=await Promise.all([
+    fetch(`${CF}/adminPlatformHealth`,{headers}),
+    fetch(`${CF}/adminListPlatformConnections`,{headers})
+  ]);
+  if(!healthResponse.ok||!connectionsResponse.ok)throw Error('Connection data not available');
+  const summary=BBAdminHealth.summarize(await healthResponse.json(),BBPlatforms.records);
+  const data=await connectionsResponse.json();
+  if(!Array.isArray(data.connections))throw Error('Connection records not available');
+  const broken=data.connections.filter(c=>c.status!=='connected').map(c=>{
+    const value=c.expiresAt,seconds=value?._seconds??value?.seconds;
+    const expiresAt=seconds!==undefined?new Date(seconds*1000).toISOString():typeof value==='string'?value:null;
+    const ms=expiresAt?Date.parse(expiresAt):NaN;
+    return {...c,businessId:c.businessId||c.bizId||'',expiresAt,daysSinceExpired:Number.isFinite(ms)?Math.floor((Date.now()-ms)/86400000):null};
   });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  return r.json();
+  return {...summary,broken};
 }
 
 async function refresh(user) {
@@ -267,7 +240,8 @@ async function refresh(user) {
   const btn = document.getElementById('btn-refresh');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Loading…'; }
   try {
-    const { counts, broken } = await loadHealth(currentToken);
+    const summary = await loadHealth(currentToken);
+    const { counts, broken } = summary;
 
     // Update counts
     document.getElementById('cnt-connected').textContent    = counts.connected    ?? '—';
@@ -283,22 +257,28 @@ async function refresh(user) {
     if (rowScore) {
       rowScore.querySelector('.icon').textContent      = total ? Math.round(((counts.connected || 0) / total) * 100) + '%' : '—';
       rowScore.querySelector('.row-title').textContent = total ? `${counts.connected} of ${total} connections active` : 'No connections yet';
-      rowScore.querySelector('.row-sub').textContent   = `${counts.expired || 0} expired, ${counts.disconnected || 0} disconnected`;
+      rowScore.querySelector('.row-sub').textContent=summary.description;
+      rowScore.querySelector('.badge').className='badge '+(total?(needsAttn?'needs':'live'):'off');
+      rowScore.querySelector('.badge').textContent=total?(needsAttn?'Watch':'Connected'):'No data';
     }
     if (rowAttn) {
       rowAttn.querySelector('.icon').textContent      = needsAttn;
-      rowAttn.querySelector('.row-title').textContent = needsAttn ? `${needsAttn} connection${needsAttn !== 1 ? 's' : ''} need attention` : 'All connections healthy';
+      rowAttn.querySelector('.row-title').textContent = needsAttn ? `${needsAttn} connection${needsAttn !== 1 ? 's' : ''} need attention` : total?'No recorded connection issues':'No connections yet';
       rowAttn.querySelector('.row-sub').textContent   = needsAttn
         ? `${counts.expired || 0} expired token${(counts.expired || 0) !== 1 ? 's' : ''}${counts.disconnected ? ', ' + counts.disconnected + ' disconnected' : ''} — use Send Nudge to notify owners`
         : 'No expired or disconnected tokens.';
       const badge = rowAttn.querySelector('.badge');
-      if (badge) { badge.className = 'badge ' + (needsAttn > 0 ? 'needs' : 'live'); badge.textContent = needsAttn > 0 ? 'Watch' : 'Good'; }
+      if (badge) { badge.className = 'badge ' + (needsAttn ? 'needs' : total?'live':'off'); badge.textContent = needsAttn ? 'Watch' : total?'Connected':'No data'; }
     }
 
     allBroken = broken;
     renderBroken();
-    renderPlatformMeta(broken);
+    renderPlatformMeta(summary);
   } catch(e) {
+    allBroken=[];
+    ['cnt-connected','cnt-expired','cnt-disconnected','cnt-other'].forEach(id=>document.getElementById(id).textContent='Not available');
+    ['hero-row-score','hero-row-attn'].forEach(id=>{const row=document.getElementById(id);row.querySelector('.icon').textContent='—';row.querySelector('.row-title').textContent='Not available';row.querySelector('.row-sub').textContent='Could not load connection data. Use Refresh to retry.';row.querySelector('.badge').className='badge off';row.querySelector('.badge').textContent='Not available';});
+    document.getElementById('platform-meta-tbody').innerHTML='<tr><td colspan="5">Not available</td></tr>';
     document.getElementById('broken-tbody').innerHTML = `<tr><td colspan="6" class="empty-state">Error loading data: ${window.escHtml(e.message)}</td></tr>`;
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '🔄 Refresh'; }

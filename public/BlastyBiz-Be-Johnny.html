@@ -9,7 +9,7 @@
 <meta name="description" content="Doing social media for a few local businesses on the side? BlastyBiz Agency lets you handle 10 clients in the time it used to take 3. Same rate. Way more margin."/>
 <meta name="robots" content="index, follow"/>
 <meta property="og:title" content="You're Already Running an Agency. BlastyBiz Makes It Pay."/>
-<meta property="og:description" content="3 clients at $350/month = $1,050. 10 clients at $350/month = $3,500. BlastyBiz Agency is $99/month. The math is right there."/>
+<meta property="og:description" content="3 clients at $350/month = $1,050. 10 clients at $350/month = $3,500. See current BlastyBiz Agency pricing. The math is right there."/>
 <meta property="og:type" content="article"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -123,12 +123,12 @@
           <tr>
             <td class="col-label">BlastyBiz Agency cost</td>
             <td class="col-before">—</td>
-            <td class="col-after">$99/month</td>
+            <td class="col-after"><span data-price="agencyMonthly">See checkout</span>/month</td>
           </tr>
           <tr>
             <td class="col-label">Net difference</td>
             <td class="col-before">—</td>
-            <td class="col-after" style="color:var(--green,#39ff14);font-weight:700;">+$2,351/month</td>
+            <td class="col-after" style="color:var(--green,#39ff14);font-weight:700;"><span data-price="agencyMonthly" data-price-period="monthly-difference" data-comparison-monthly="2450">See checkout</span>/month</td>
           </tr>
         </tbody>
       </table>
@@ -144,7 +144,7 @@
       </div>
 
       <div class="plan-callout">
-        <h3>BlastyBiz Agency — $99/month</h3>
+        <h3>BlastyBiz Agency — <span data-price="agencyMonthly">See checkout</span>/month</h3>
         <p>Built for exactly this: managing multiple businesses without it eating your whole week.</p>
         <ul>
           <li>Up to 10 businesses — your full client roster</li>
@@ -167,7 +167,7 @@
 
       <h2>Start With <span>Your Clients</span></h2>
 
-      <p>You don't have to pitch this to anyone. Just run your existing clients through BlastyBiz first. See how long it actually takes. See what the copy looks like. When you're happy with it, the Agency plan is $99/month — and a single client more than covers it.</p>
+      <p>You don't have to pitch this to anyone. Just run your existing clients through BlastyBiz first. See how long it actually takes. See what the copy looks like. When you're happy with it, the Agency plan is <span data-price="agencyMonthly">See checkout</span>/month — and a single client more than covers it.</p>
 
     </div>
   </div>
@@ -178,7 +178,7 @@
     <div class="story-body">
       <div class="story-cta">
         <h2>Start the Agency Free Trial</h2>
-        <p>Try it on your existing clients first. Agency is $99/month — one extra client covers it.</p>
+        <p>Try it on your existing clients first. Agency is <span data-price="agencyMonthly">See checkout</span>/month — one extra client covers it.</p>
         <a class="btn btn__primary" href="BlastyBiz-Plan-Agency.html">See the Agency Plan →</a>
         <p style="margin-top:16px;font-size:13px;color:var(--muted,#888);">No credit card · 2 minute setup · Cancel anytime</p>
         <p style="margin-top:8px;font-size:13px;color:var(--muted,#888);">
@@ -200,5 +200,6 @@ const observer = new IntersectionObserver((entries) => {
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 </script>
 <script src="header-loader.js?v=1"></script>
+<script src="pricing.js?v=20261015-configured-prices"></script>
 </body>
 </html>

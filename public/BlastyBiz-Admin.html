@@ -3,6 +3,8 @@
 <head>
   <script src="escape-utils.js?v=1"></script>
   <script src="onboarding-report.js?v=1"></script>
+  <script src="platforms-authority.js"></script>
+  <script src="admin-health.js"></script>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
@@ -83,26 +85,26 @@
       </div>
     </div>
     <div class="card">
-      <div class="card-title">🟢 System Health</div>
+      <div class="card-title">📡 Connection Health</div>
       <div class="health-box">
-        <div class="health-main">92%</div>
-        <div class="health-label">Overall operating health. Watch failed jobs, OAuth expirations, AI spend, and payment failures.</div>
+        <div class="health-main" id="admin-health-score">Loading…</div>
+        <div class="health-label" id="admin-health-label">Reading saved connection statuses.</div>
       </div>
     </div>
   </section>
 
   <section class="grid" id="finance">
-    <div class="stat"><div class="stat-num" id="stat-mrr">$0</div><div class="stat-label">MRR</div><div class="stat-note money">Paying subscriptions only</div></div>
-    <div class="stat"><div class="stat-num" id="stat-ai-spend">$0.00</div><div class="stat-label">AI Spend</div><div class="stat-note warn">This month · owner-only</div></div>
-    <div class="stat"><div class="stat-num">~86%</div><div class="stat-label">Margin Target</div><div class="stat-note money">Est. after AI + platform costs</div></div>
-    <div class="stat"><div class="stat-num" id="stat-failed">0</div><div class="stat-label">Failed Jobs</div><div class="stat-note bad">Needs review</div></div>
+    <div class="stat"><div class="stat-num" id="stat-mrr">Loading…</div><div class="stat-label">Estimated MRR</div><div class="stat-note money">Active owners in loaded records · configured monthly prices</div></div>
+    <div class="stat"><div class="stat-num" id="stat-ai-spend">Loading…</div><div class="stat-label">AI Spend</div><div class="stat-note warn">This month · owner-only</div></div>
+    <div class="stat"><div class="stat-num" id="stat-active-share">Loading…</div><div class="stat-label">Active accounts share</div><div class="stat-note money">Active / loaded businesses</div></div>
+    <div class="stat"><div class="stat-num" id="stat-failed">Loading…</div><div class="stat-label">Failed Jobs</div><div class="stat-note bad">Needs review</div></div>
   </section>
 
   <section class="grid">
-    <div class="stat"><div class="stat-num" id="stat-biz">0</div><div class="stat-label">Businesses</div><div class="stat-note" id="stat-biz-note">— active / — trial</div></div>
-    <div class="stat"><div class="stat-num" id="stat-pastdue">0</div><div class="stat-label">Past Due</div><div class="stat-note warn">Square follow-up</div></div>
-    <div class="stat"><div class="stat-num" id="stat-posts">0</div><div class="stat-label">Posts Generated</div><div class="stat-note">This month</div></div>
-    <div class="stat"><div class="stat-num" id="stat-manual">0</div><div class="stat-label">Manual Tasks</div><div class="stat-note blue">Copy/paste platforms</div></div>
+    <div class="stat"><div class="stat-num" id="stat-biz">Loading…</div><div class="stat-label">Businesses</div><div class="stat-note" id="stat-biz-note">— active / — trial</div></div>
+    <div class="stat"><div class="stat-num" id="stat-pastdue">Loading…</div><div class="stat-label">Past Due</div><div class="stat-note warn">Square follow-up</div></div>
+    <div class="stat"><div class="stat-num" id="stat-posts">Loading…</div><div class="stat-label">Successful Posts</div><div class="stat-note">Loaded results · up to 500</div></div>
+    <div class="stat"><div class="stat-num" id="stat-manual">Loading…</div><div class="stat-label">Manual Tasks</div><div class="stat-note blue">Copy/paste platforms</div></div>
   </section>
 
   <!-- ── ONBOARDING FUNNEL WIDGET ── -->
@@ -126,12 +128,8 @@
 
     <div class="card">
       <div class="card-title">📡 Platform Health</div>
-      <div class="list">
-        <div class="list-item"><div class="icon">G</div><div class="row-main"><div class="row-title">Google Business Profile</div><div class="row-sub">API available • 4 token refreshes today</div></div><span class="badge live">Good</span></div>
-        <div class="list-item"><div class="icon">M</div><div class="row-main"><div class="row-title">Meta / Facebook / Instagram</div><div class="row-sub">API available • 1 rate-limit warning</div></div><span class="badge needs">Watch</span></div>
-        <div class="list-item"><div class="icon">Y</div><div class="row-main"><div class="row-title">Yelp</div><div class="row-sub">Partial automation • category review often needed</div></div><span class="badge needs">Partial</span></div>
-        <div class="list-item"><div class="icon">N</div><div class="row-main"><div class="row-title">Nextdoor / Craigslist</div><div class="row-sub">Manual copy-paste workflow only</div></div><span class="badge off">Manual</span></div>
-      </div>
+      <div class="list" id="admin-platform-health">Loading…</div>
+      <a class="btn" href="BlastyBiz-Admin-Platform-Health.html">View connection details →</a>
     </div>
   </section>
 
@@ -229,16 +227,14 @@
     <div class="card">
       <div class="card-title">💳 Billing</div>
       <div class="list">
-        <div class="list-item" id="admin-billing-pastdue"><div class="icon">$</div><div class="row-main"><div class="row-title">0 past due</div><div class="row-sub">Send billing recovery email or downgrade after grace period.</div></div></div>
-        <div class="list-item" id="admin-billing-trials"><div class="icon">↗</div><div class="row-main"><div class="row-title">0 trials active</div><div class="row-sub">Prioritize users with completed profiles and live listings.</div></div></div>
+        <div class="list-item" id="admin-billing-pastdue"><div class="icon">$</div><div class="row-main"><div class="row-title">Loading…</div><div class="row-sub">Send billing recovery email or downgrade after grace period.</div></div></div>
+        <div class="list-item" id="admin-billing-trials"><div class="icon">↗</div><div class="row-main"><div class="row-title">Loading…</div><div class="row-sub">Prioritize users with completed profiles and live listings.</div></div></div>
       </div>
     </div>
     <div class="card">
       <div class="card-title">🧾 Logs</div>
-      <div class="list">
-        <div class="list-item"><div class="icon">🟢</div><div class="row-main"><div class="row-title">System log clean</div><div class="row-sub">No fatal errors in last 24 hours.</div></div></div>
-        <div class="list-item"><div class="icon">⚠️</div><div class="row-main"><div class="row-title">3 warnings</div><div class="row-sub">Mostly platform delay and category matching issues.</div></div></div>
-      </div>
+      <p id="admin-log-summary" role="status">Loading recent activity…</p>
+      <a class="btn" href="BlastyBiz-Admin-Logs.html">View activity logs →</a>
     </div>
     <div class="card">
       <div class="card-title">🧭 Admin Rules</div>
@@ -421,18 +417,49 @@ onAuthStateChanged(auth, async (user) => {
   if (!user) return;
   window._adminUser = user;
   const el = id => document.getElementById(id);
-  // Load live pricing from Firestore (set via adminUpdatePricing)
-  let PRICES = { pro: 19, agency: 99 }; // fallback defaults
-  try {
-    const pricingSnap = await getDoc(doc(db, 'settings', 'pricing'));
-    if (pricingSnap.exists()) {
-      const pd = pricingSnap.data();
-      PRICES = {
-        pro:    pd.proMonthly    || 19,
-        agency: pd.agencyMonthly || 99,
-      };
+  const escHtml = window.escHtml;
+  // The configured price document is the only source for displayed prices.
+  let PRICES = null, latestBusinesses = null;
+  function renderMrr() {
+    if (!latestBusinesses) return;
+    const owners = new Map();
+    for (const business of latestBusinesses) {
+      if (business.subscriptionStatus !== 'active') continue;
+      const key = business.ownerUid || business.uid || business.id;
+      const previous = owners.get(key);
+      if (!previous || business.currentPlan === 'agency') owners.set(key, business);
     }
-  } catch(e) { console.warn('[admin] pricing load failed, using defaults:', e.message); }
+    const paid = [...owners.values()].filter(b => !['starter','free'].includes(String(b.currentPlan || '').toLowerCase()));
+    const known = PRICES && paid.every(b => Number.isFinite(PRICES[String(b.currentPlan || '').toLowerCase()]));
+    el('stat-mrr').textContent = known ? '$' + paid.reduce((sum,b) => sum + PRICES[String(b.currentPlan).toLowerCase()],0).toLocaleString(undefined,{maximumFractionDigits:2}) : 'Not available';
+  }
+  onSnapshot(doc(db, 'settings', 'pricing'), snap => {
+    const pd = snap.exists() ? snap.data() : {};
+    PRICES = [pd.proMonthly,pd.agencyMonthly].every(v=>typeof v==='number'&&Number.isFinite(v)&&v>=0) ? {pro:pd.proMonthly,agency:pd.agencyMonthly} : null;
+    renderMrr();
+  }, () => { PRICES=null; renderMrr(); });
+  async function refreshConnectionHealth() {
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(CF_BASE+'/adminPlatformHealth',{headers:{Authorization:'Bearer '+token}});
+      if (!response.ok) throw Error('Health unavailable');
+      const summary = BBAdminHealth.summarize(await response.json(), BBPlatforms.records);
+      el('admin-health-score').textContent = summary.percent === null ? 'Not available' : summary.percent+'%';
+      el('admin-health-label').textContent = summary.description;
+      el('admin-platform-health').innerHTML = summary.platforms.map(p => '<div class="list-item"><div class="row-main"><div class="row-title">'+escHtml(p.name)+'</div><div class="row-sub">'+escHtml(p.description)+'</div></div><span class="badge '+p.badge+'">'+escHtml(p.status)+'</span></div>').join('');
+    } catch (_) {
+      el('admin-health-score').textContent='Not available';
+      el('admin-health-label').textContent='Connection data could not be loaded. Open connection details to retry.';
+      el('admin-platform-health').textContent='Not available';
+    }
+  }
+  refreshConnectionHealth();
+  onSnapshot(query(collection(db,'activityLogs'),orderBy('createdAt','desc'),limit(50)),snap=>{
+    const logs=snap.docs.map(d=>d.data());
+    const errors=logs.filter(l=>String(l.level).toLowerCase()==='error').length;
+    const warnings=logs.filter(l=>['warning','warn'].includes(String(l.level).toLowerCase())).length;
+    el('admin-log-summary').textContent=logs.length ? errors+' errors and '+warnings+' warnings in the latest '+logs.length+' activity records.' : 'No activity records yet.';
+  },()=>{el('admin-log-summary').textContent='Not available';});
 
   // Canonical plan display names
   const PLAN_DISPLAY = { starter: 'Starter', free: 'Free', pro: 'Pro', agency: 'Agency' };
@@ -511,17 +538,12 @@ onAuthStateChanged(auth, async (user) => {
 
   // Businesses snapshot
   onSnapshot(query(collectionGroup(db, 'businesses'), limit(200)), (snap) => {
-    const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    // Active = explicit 'active' OR no status set (pre-subscription records)
-    const active  = all.filter(b => !b.subscriptionStatus || b.subscriptionStatus === 'active').length;
-    const trial   = all.filter(b => b.subscriptionStatus === 'trial').length;
+    const all = snap.docs.map(d => ({ ...d.data(), id: d.id, ownerUid: d.ref.path.split('/')[1] }));
+    const active = all.filter(b => b.subscriptionStatus === 'active').length;
+    const trial = all.filter(b => b.subscriptionStatus === 'trial').length;
     const pastDue = all.filter(b => b.subscriptionStatus === 'past_due').length;
-    // MRR: only count subscriptions that are paying (active or trial); canceled/past-due excluded
-    const mrr = all
-      .filter(b => ['active', 'trial'].includes(b.subscriptionStatus || ''))
-      .reduce((s, b) => s + (PRICES[(b.currentPlan||'').toLowerCase()] || 0), 0);
-
-    if (el('stat-mrr'))      el('stat-mrr').textContent      = '$' + mrr.toLocaleString();
+    latestBusinesses=all; renderMrr();
+    el('stat-active-share').textContent=all.length ? Math.round(active/all.length*100)+'%' : 'Not available';
     if (el('stat-biz'))      el('stat-biz').textContent      = all.length;
     if (el('stat-biz-note')) el('stat-biz-note').textContent = active + ' active / ' + trial + ' trial';
     if (el('stat-pastdue'))  el('stat-pastdue').textContent  = pastDue;
@@ -579,7 +601,7 @@ onAuthStateChanged(auth, async (user) => {
         });
       });
     }
-  }, (err) => { console.error('[admin] businesses snapshot error:', err.message); });
+  }, (err) => { console.error('[admin] businesses snapshot error:', err.message); latestBusinesses=null; ['stat-mrr','stat-active-share','stat-biz','stat-pastdue'].forEach(id=>el(id).textContent='Not available'); });
 
   // AI usage logs — live cost from Firestore
   const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
@@ -598,7 +620,7 @@ onAuthStateChanged(auth, async (user) => {
         const fmt = n => '$' + n.toFixed(4);
         const fmtK = n => n >= 1000 ? (n/1000).toFixed(1) + 'k' : n.toString();
         const rows = [
-          ['AI spend this month',    fmt(totalCost), '< $50/mo', totalCost > 50 ? 'warn' : 'money'],
+          ['AI spend in loaded records', fmt(totalCost), '—', 'money'],
           ['Total AI calls',         logs.length,       '—'],
           ['Input tokens',           fmtK(totalTokensIn),  '—'],
           ['Output tokens',          fmtK(totalTokensOut), '—'],
@@ -613,7 +635,7 @@ onAuthStateChanged(auth, async (user) => {
           : 'No AI calls logged yet this month — data accumulates as users run the tool';
       }
     },
-    (err) => { console.error('[admin] aiUsageLogs snapshot error:', err.message); }
+    (err) => { console.error('[admin] aiUsageLogs snapshot error:', err.message); el('stat-ai-spend').textContent='Not available'; }
   );
 
   // Failed jobs snapshot
@@ -633,13 +655,13 @@ onAuthStateChanged(auth, async (user) => {
           }).join('')
         : '<div class="list-item"><div class="icon">✓</div><div class="row-main"><div class="row-title">No failed jobs</div><div class="row-sub">All clear.</div></div><span class="badge live">Good</span></div>';
     }
-  }, (err) => { console.error('[admin] publishJobs snapshot error:', err.message); });
+  }, (err) => { console.error('[admin] publishJobs snapshot error:', err.message); ['stat-failed','stat-manual'].forEach(id=>el(id).textContent='Not available'); });
 
   // Successful posts count
   onSnapshot(
     query(collectionGroup(db, 'publishJobs'), where('status','==','success'), limit(500)),
     (snap) => { if (el('stat-posts')) el('stat-posts').textContent = snap.size; },
-    (err) => { console.error('[admin] publishJobs success snapshot error:', err.message); }
+    (err) => { console.error('[admin] publishJobs success snapshot error:', err.message); el('stat-posts').textContent='Not available'; }
   );
 });
 </script>
