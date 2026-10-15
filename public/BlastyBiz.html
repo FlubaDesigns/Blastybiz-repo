@@ -202,12 +202,6 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
   <button class="tabs-arrow tabs-arrow--right" id="tabs-arrow-right" aria-label="Scroll tabs right" onclick="_tabsScroll(1)">&#8250;</button>
 </div>
 
-<!-- ── Persistent workspace info bar: biz name + plan badge (all tabs) ── -->
-<div id="workspace-info-bar" style="display:none;align-items:center;gap:10px;padding:7px 16px;background:var(--card,#1e1e1e);border-bottom:1px solid var(--border,#2a2a2a);font-size:13px;">
-  <span style="color:var(--muted,#888);font-size:12px;flex-shrink:0;">🏢</span>
-  <span id="wb-biz-name" style="font-weight:600;color:var(--light,#f0f0f0);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-  <span id="wb-plan-badge" style="display:none;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 8px;border-radius:10px;background:#2a2a2a;color:#aaa;flex-shrink:0;"></span>
-</div>
 <!-- ── Trial mode banner: visible only when plan === 'trial' ── -->
 <div id="trial-banner" style="display:none;align-items:center;gap:10px;padding:9px 16px;background:#7c2d00;color:#ffcca0;font-size:13px;font-weight:600;">
   <span>⚠️ Trial mode — your changes are not being saved.</span>
@@ -237,7 +231,13 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
           <div class="col-full">
             <!-- BUSINESS SELECTOR CARD -->
             <div class="card pro-locked" id="create-biz-card">
-              <div class="card-title">🏢 Business</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+                <div class="card-title" style="margin-bottom:0;">🏢 Business</div>
+                <div id="workspace-info-bar" style="display:none;align-items:center;flex-shrink:0;font-size:13px;">
+                  <span id="wb-biz-name" style="display:none;"></span>
+                  <span id="wb-plan-badge" style="display:none;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 8px;border-radius:10px;background:#2a2a2a;color:#aaa;flex-shrink:0;"></span>
+                </div>
+              </div>
               <div class="pro-overlay" data-plan="trial">
                 <div class="pro-overlay-content">
                   <div class="pro-overlay-badge">⚡ Pro</div>
