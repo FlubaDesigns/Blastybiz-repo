@@ -160,6 +160,7 @@ auth.authStateReady().then(() => {
     try {
       const userSnap = await getDoc(doc(db, 'users', user.uid));
       const userData = userSnap.exists() ? userSnap.data() : {};
+      document.getElementById('acct-email').textContent = userData.email || user.email || '—';
 
       userPlan = userData.plan || 'starter';
       const planLabel = userPlan.charAt(0).toUpperCase() + userPlan.slice(1);

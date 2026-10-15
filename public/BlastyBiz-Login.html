@@ -839,6 +839,7 @@ import {
   GoogleAuthProvider,
   OAuthProvider,
   signInWithPopup,
+  signInWithCustomToken,
   sendPasswordResetEmail,
   sendEmailVerification,
   verifyPasswordResetCode,
@@ -1066,8 +1067,35 @@ async function resumePersonalSignup(user, userData) {
   return 'BlastyBiz.html?tab=create&newcampaign=1&bizId=' + encodeURIComponent(result.bizId);
 }
 
+// Resolve only identities approved in the existing Main Authorization Engine.
+let googleSignInInProgress = false;
+let authContinuation = null;
+async function resolveOwnerGoogle(user) {
+  const result = await user.getIdTokenResult();
+  if (result.claims.firebase?.sign_in_provider !== 'google.com') return user;
+  const response = await fetch('/api/auth/engine/google', {
+    method: 'POST', headers: { Authorization: 'Bearer ' + result.token },
+    signal: AbortSignal.timeout(20000)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error('Your Google account could not be connected to BB. Please retry.');
+  if (!data.exchanged) return user;
+  if (typeof data.customToken !== 'string' || typeof data.ownerUid !== 'string') throw new Error('Account sign-in response was incomplete. Please retry.');
+  const credential = await signInWithCustomToken(auth, data.customToken);
+  if (credential.user.uid !== data.ownerUid) throw new Error('Account sign-in could not be verified.');
+  // Recover the existing account without resuming the empty account's signup.
+  ['bb_selected_plan', 'bb_start_choice', 'bb_guided_new'].forEach(key => localStorage.removeItem(key));
+  return credential.user;
+}
 async function afterAuth(user) {
+  const googleResolved = arguments[1] === true;
+  if (authContinuation) return authContinuation;
+  authContinuation = continueAfterAuth(user, googleResolved).finally(() => { authContinuation = null; });
+  return authContinuation;
+}
+async function continueAfterAuth(user, googleResolved) {
   try {
+    if (!googleResolved) user = await resolveOwnerGoogle(user);
     const savedDraft = sessionStorage.getItem('bb_draft_return');
     if (savedDraft) {
       const target = restoreAuthReturn(savedDraft);
@@ -1131,6 +1159,7 @@ async function afterAuth(user) {
     }
   } catch (e) {
     localStorage.setItem('bb_auth', '0');
+    showLoginForm();
     window.showToast('Error loading account: ' + (e.code || e.message), true);
   }
 }
@@ -1246,6 +1275,7 @@ window.backFromVerify = async function() {
 };
 
 onAuthStateChanged(auth, async (user) => {
+  if (googleSignInInProgress) return;
   const _mode = new URLSearchParams(window.location.search).get('mode');
   if (_mode === 'resetPassword' || _mode === 'verifyEmail') return;
 
@@ -1394,22 +1424,27 @@ window.handleSignUp = async function() {
 };
 
 window.handleGoogle = async function() {
+  if (googleSignInInProgress) return;
+  googleSignInInProgress = true;
   const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
   try {
     const cred = await signInWithPopup(auth, provider);
-    const snap = await getDoc(doc(db, 'users', cred.user.uid));
+    const user = await resolveOwnerGoogle(cred.user);
+    const snap = await getDoc(doc(db, 'users', user.uid));
     if (!snap.exists()) {
-      await setDoc(doc(db, 'users', cred.user.uid), {
-        ownerName: cred.user.displayName || '', email: cred.user.email,
+      await setDoc(doc(db, 'users', user.uid), {
+        ownerName: user.displayName || '', email: user.email,
         plan: 'starter', onboarded: false, createdAt: serverTimestamp()
       });
     }
-    await afterAuth(cred.user);
+    await afterAuth(user, true);
   } catch (e) {
     if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+      showLoginForm();
       showToast('Google sign-in failed: ' + (e.code || e.message), true);
     }
-  }
+  } finally { googleSignInInProgress = false; }
 };
 
 window.handleFacebook = async function() {

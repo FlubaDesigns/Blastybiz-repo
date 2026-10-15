@@ -26,7 +26,12 @@ function registerAuthorizationEngineAuth(app, dependencies) {
         const value = JSON.parse(dependencies.config || 'null');
         if (value && value.projectId === dependencies.projectId &&
             new URL(value.origin).origin === value.origin && value.origin.startsWith('https://') &&
-            typeof value.principal === 'string' && /^[a-z0-9-]+@[a-z0-9-]+\.iam\.gserviceaccount\.com$/.test(value.principal))
+            typeof value.principal === 'string' && /^[a-z0-9-]+@[a-z0-9-]+\.iam\.gserviceaccount\.com$/.test(value.principal) &&
+            (value.googleAliases === undefined || (Array.isArray(value.googleAliases) && value.googleAliases.length === 1 &&
+                value.googleAliases.every(alias => alias && typeof alias.uid === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(alias.uid) &&
+                    alias.uid !== ownerIds[0] && typeof alias.email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(alias.email)))) &&
+            (value.googleOrigins === undefined || (Array.isArray(value.googleOrigins) && value.googleOrigins.length > 0 && value.googleOrigins.length <= 4 &&
+                value.googleOrigins.every(origin => typeof origin === 'string' && origin.startsWith('https://') && new URL(origin).origin === origin))))
             config = value;
     }
     catch { /* Not configured: the handoff remains unavailable. */ }
@@ -72,6 +77,37 @@ function registerAuthorizationEngineAuth(app, dependencies) {
             throw reject();
         return user.uid;
     };
+    // The Main Authorization Engine may explicitly map a verified Google login
+    // to its existing owner. Never infer ownership from an email alone.
+    app.post('/auth/engine/google', wrap(async (req, res) => {
+        if (!(config.googleOrigins || [config.origin]).includes(req.get('origin'))) throw reject();
+        const match = /^Bearer ([^\s]+)$/.exec(req.get('authorization') || '');
+        if (!match) throw reject(401);
+        let identity;
+        try { identity = await auth.verifyIdToken(match[1], true); }
+        catch { throw reject(401); }
+        const aliases = Array.isArray(config.googleAliases) ? config.googleAliases : [];
+        const alias = aliases.find(item => item.uid === identity.uid);
+        if (!alias) { res.json({ exchanged: false }); return; }
+        if (alias.uid === ownerIds[0] || typeof alias.email !== 'string' ||
+            identity.email !== alias.email || identity.email_verified !== true ||
+            identity.firebase?.sign_in_provider !== 'google.com') throw reject();
+        const source = await auth.getUser(alias.uid);
+        if (source.uid !== alias.uid || source.disabled || !source.emailVerified || source.email !== alias.email ||
+            !source.providerData?.some(provider => provider.providerId === 'google.com' && provider.email === alias.email)) throw reject();
+        const [deletion, businesses] = await Promise.all([
+            db.collection('accountDeletions').doc(alias.uid).get(),
+            db.collection('users/' + alias.uid + '/businesses').limit(1).get(),
+        ]);
+        // Do not hide or merge another account's independently-created businesses.
+        if (deletion.exists || !businesses.empty) throw reject(409);
+        const ownerUid = await requireOwner();
+        const customToken = await auth.createCustomToken(ownerUid, { authorizationEngineGoogle: alias.uid });
+        // Keep the original UID, provider, plan, business paths and recovery access.
+        // The explicitly configured Google login becomes the account contact email.
+        await db.collection('users').doc(ownerUid).set({ email: alias.email }, { merge: true });
+        res.json({ exchanged: true, ownerUid, customToken });
+    }));
     app.post('/auth/engine/session', wrap(async (req, res) => {
         requireBrowser(req);
         const id = node_crypto_1.default.randomUUID(), verifier = node_crypto_1.default.randomBytes(32).toString('hex');
