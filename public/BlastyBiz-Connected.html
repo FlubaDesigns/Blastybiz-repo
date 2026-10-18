@@ -26,7 +26,7 @@
   <script type="module" src="./auth-guard.js?v=20261018-facebook-auth"></script>
 <script src="blastybiz-menu.js?v=8"></script>
 <script src="escape-utils.js"></script>
-<script src="blasty-registry.js"></script>
+<script src="blasty-registry.js?v=20261018-saved-connection"></script>
 <script src="blasty-events.js"></script>
 <script src="blasty-guidance.js"></script>
 <script src="business-form.js"></script>
@@ -77,7 +77,7 @@ const PLATFORM_META = {
     ]
   },
   facebook: {
-    label: 'Facebook Pages',
+    label: 'Facebook Page',
     icon: 'f',
     iconBg: 'rgba(24,119,242,0.12)',
     iconColor: '#1877F2',
@@ -248,7 +248,7 @@ auth.authStateReady().then(() => {
         if (igSnap.exists() && igSnap.data().status === 'connected' && igSnap.data().pageId===connData.pageId && igSnap.data().igUserId) igData = igSnap.data();
       }
     } catch(e) { fail(e.message || 'Could not verify your saved connection. Please try again.'); return; }
-    BBBlasty.fire('platform.connection_success');
+    BBBlasty.fire('platform.connection_success', {platform: meta.label});
 
     const accountName = connData?.[meta.nameField] || connData?.pageName || connData?.accountId || 'Your account';
 
@@ -281,7 +281,7 @@ auth.authStateReady().then(() => {
       <div class="hero mb-28">
         <div class="hero-icon" style="background:${meta.iconBg}">${meta.icon}</div>
         <div class="hero-badge">Successfully connected</div>
-        <h1 class="hero-title">${meta.label} <span>is live.</span></h1>
+        <h1 class="hero-title">${meta.label} <span>is connected.</span></h1>
         <p class="hero-sub">BlastyBiz can now post directly to your ${platform === 'google' ? 'Google Business Profile' : 'Facebook Page'} whenever you approve a listing.</p>
       </div>
 

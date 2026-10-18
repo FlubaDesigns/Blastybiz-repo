@@ -134,7 +134,7 @@ window.BBBlastySeed = {
     },
     "platform.connection_success": {
       "eventId": "platform.connection_success",
-      "message": "Got it — {{platform}} is connected. I’ll keep it selected for this campaign.",
+      "message": "Your {{platform}} connection is saved for this business. You can use it across campaigns without reconnecting for each one.",
       "behavior": "ALWAYS",
       "animation": [],
       "enabled": true,
