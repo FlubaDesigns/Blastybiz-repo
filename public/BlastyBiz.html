@@ -1617,7 +1617,7 @@ function buildPlatformCard(p) {
 
   const actionBtn = p.type === 'api'
       ? `<button type="button" class="btn btn-outline btn-sm" onclick="window._bbOpenConnections()">Manage connection</button>`
-      : `<button type="button" class="btn btn-outline btn-sm" onclick="${p.id === 'facebook' && profile.sellerType === 'personal' ? "copyAndOpen('facebook')" : "copyText('"+p.id+"')"}" ${!p.enabled || !p.adaptedContent ? 'disabled' : ''}>${p.id === 'facebook' && profile.sellerType === 'personal' ? 'Copy & open Facebook' : '📋 Copy text'}</button>`;
+      : `<button type="button" class="btn btn-outline btn-sm" onclick="${p.id === 'facebook' && p.type === 'manual' ? "copyAndOpen('facebook')" : "copyText('"+p.id+"')"}" ${!p.enabled || !p.adaptedContent ? 'disabled' : ''}>${p.id === 'facebook' && p.type === 'manual' ? 'Copy & open Facebook' : '📋 Copy text'}</button>`;
 
   div.innerHTML = `
     <div class="platform-header">
@@ -2771,7 +2771,7 @@ function buildStep5Card(p) {
   const hasContent = !!p.adaptedContent;
   const isPending  = !hasContent && _bbIsGenerating(p.id);
   const isApi = p.type === 'api';
-  const rawHint  = p.id === 'facebook' && profile.sellerType === 'personal' ? 'Your personal Facebook profile link (optional)' : PLATFORM_URL_HINTS[p.id] || '';
+  const rawHint  = p.id === 'facebook' && p.type === 'manual' ? 'Your personal Facebook profile link (optional)' : PLATFORM_URL_HINTS[p.id] || '';
   const needsUrl = !rawHint || !rawHint.startsWith('Leave blank');
   const urlHint  = escHtml(rawHint || 'Paste your ' + p.name + ' page URL');
   const savedUrl = escHtml((window._bbPlatformUrls || {})[p.id] || '');
@@ -2802,7 +2802,7 @@ function buildStep5Card(p) {
       + '<div class="col-left">'
       +   '<div class="step5-copy-actions">'
       +     '<button type="button" class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">' + '↻ Rewrite copy' + '</button>'
-      +     (!isApi ? '<button type="button" class="step5-action-btn" onclick="' + (p.id === 'facebook' && profile.sellerType === 'personal' ? 'copyAndOpen' : 'copyQpText') + '(\'' + escHtml(p.id) + '\')">' + (p.id === 'facebook' && profile.sellerType === 'personal' ? 'Copy & open Facebook' : '📋 Copy text') + '</button>' : '')
+      +     (!isApi ? '<button type="button" class="step5-action-btn" onclick="' + (p.id === 'facebook' && p.type === 'manual' ? 'copyAndOpen' : 'copyQpText') + '(\'' + escHtml(p.id) + '\')">' + (p.id === 'facebook' && p.type === 'manual' ? 'Copy & open Facebook' : '📋 Copy text') + '</button>' : '')
       +   '</div>'
       +   '<div id="qp-copy-text-' + p.id + '" class="step5-copy-text" contenteditable="true">' + safeText + '</div>'
             + '</div>'
@@ -5175,7 +5175,7 @@ init();
 
 // Window setters — module script calls these to push Firestore data into UI
 window._bbSetPlatforms = function(updatedPlatforms) {
-  updatedPlatforms = updatedPlatforms.map(p => BBPlatforms.normalizeSelection(p, profile));
+  updatedPlatforms = updatedPlatforms.map(p => BBPlatforms.normalizeSelection(p, window._bbProfileGlobal || {}));
   // Always apply the admin display overlay (name, icon, type, order, proOnly, globally-disabled).
   // window._bbAdminPlatformConfig is populated by _applyAdminPlatformConfig() / module script.
   const adminMap = window._bbAdminPlatformConfig;
