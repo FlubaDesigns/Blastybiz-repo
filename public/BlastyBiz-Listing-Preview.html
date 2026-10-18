@@ -118,7 +118,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="platforms-authority.js"></script>
+<script src="platforms-authority.js?v=20261018-personal-facebook"></script>
 <script src="photo-handoff.js?v=20261004-flow"></script>
 <script>
 var PLATFORM_META = Object.fromEntries(BBPlatforms.records.map(p => [p.id, {
@@ -452,6 +452,7 @@ function renderManualPanel() {
       + '</summary>'
       + '<div class="manual-card-body">'
       + '<button type="button" onclick="copyPlatformText(\'' + k + '\')" class="copy-platform-btn">Copy text</button>'
+      + (k==='facebook' && window._bbPreviewBusiness?.sellerType==='personal' ? '<a class="copy-platform-btn" href="https://www.facebook.com/" target="_blank" rel="noopener">Open Facebook</a>' : '')
       + '<textarea id="manual-text-' + k + '" readonly class="manual-textarea">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</textarea>'
       + '<div id="manual-share-'+k+'" class="qp-photo-share"></div><div id="manual-photos-'+k+'"></div>'
       + (meta.manualInstructions ? '<div class="manual-note mt-8">👉 ' + meta.manualInstructions + '</div>' : '')
@@ -510,7 +511,7 @@ async function publishBlast() {
 
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
-import { deliveryReadiness } from './platforms-config.js?v=20261018-meta-page';
+import { deliveryReadiness } from './platforms-config.js?v=20261018-personal-facebook';
 import { rememberConnectionReturn } from './auth-return.js?v=20261011-security';
 window._bbDeliveryReadiness=deliveryReadiness;
 window._bbOpenConnections=function(){rememberConnectionReturn(location.pathname,location.search,window.currentUser.uid);location.assign('BlastyBiz-Connect.html?'+new URLSearchParams({bizId:window.businessId}));};
@@ -546,6 +547,8 @@ onAuthStateChanged(auth, async (user) => {
     window._bbConnections={};
     const business=await getDoc(doc(db,'users',user.uid,'businesses',window.businessId));
     window._bbPreviewBusiness=business.exists()?business.data():{};
+    const personalFacebook=BBPlatforms.forBusiness('facebook',window._bbPreviewBusiness);
+    if(personalFacebook.deliveryMode==='manual')PLATFORM_META.facebook={...PLATFORM_META.facebook,...personalFacebook,capabilityLevel:'manual_assisted'};
     await Promise.all(Object.keys(draftData.adaptations||{}).filter(isAutoCapable).map(async pid=>{
       try{const snap=await getDoc(doc(db,'users',user.uid,'businesses',window.businessId,'platformConnections',pid));window._bbConnections[pid]=snap.exists()?snap.data():null;}
       catch(_){window._bbConnections[pid]=undefined;}
@@ -640,3 +643,4 @@ onAuthStateChanged(auth, async (user) => {
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 </body>
 </html>
+

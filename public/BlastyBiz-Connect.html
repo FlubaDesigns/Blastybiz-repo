@@ -298,6 +298,16 @@ function renderPlatform(platformId, conn, bizId, uid) {
   const statusEl  = document.getElementById('status-' + platformId);
   const cardEl    = document.getElementById('card-' + platformId);
   if (!actionsEl) return;
+  const destination=window.BBPlatforms?.forBusiness(platformId,window._bbConnectBusiness||{});
+  if(platformId==='facebook' && destination?.deliveryMode==='manual'){
+    cardEl.classList.remove('connected','error');
+    cardEl.querySelector('.platform-name').textContent=destination.name;
+    cardEl.querySelector('.platform-mode').textContent='You post it · Personal profile';
+    statusEl.textContent=destination.manualInstructions+' No Page connection is needed.';
+    const link=document.createElement('a');link.className='btn-connect';link.textContent='Return to your prepared copy';link.href=document.getElementById('connection-back').href;
+    actionsEl.replaceChildren(link);
+    return;
+  }
   if(conn?.status==='connected'&&window._bbConnectionReadiness?.(platformId,conn).state!=='ready')conn={...conn,status:'expired'};
   if(!conn||conn.status!=='connected')window.BBBlasty?.fire('platform.connection_needed',{needed:true,platformName:platformId});
 
@@ -370,7 +380,7 @@ window.disconnectPlatform = async function(platformId) {
 
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
-import { deliveryReadiness } from './platforms-config.js?v=20261018-meta-page';
+import { deliveryReadiness } from './platforms-config.js?v=20261018-personal-facebook';
 window._bbConnectionReadiness=deliveryReadiness;
 import { renderFacebookAuthorization } from './facebook-authorization.js';
 import { connectionReturn } from './auth-return.js?v=20261018-facebook-auth';
@@ -399,7 +409,10 @@ onAuthStateChanged(auth, async (user) => {
   const userSnap = await getDoc(doc(db, 'users', user.uid));
   const userData = userSnap.exists() ? userSnap.data() : {};
   const bizId = params.get('bizId') || userData.activeBusiness || user.uid;
-  if(!/^[A-Za-z0-9_-]{1,128}$/.test(bizId) || !(await getDoc(doc(db,'users',user.uid,'businesses',bizId))).exists()){showToast('This business is no longer available. Choose one of your businesses.',true);return;}
+  if(!/^[A-Za-z0-9_-]{1,128}$/.test(bizId)){showToast('This business is no longer available. Choose one of your businesses.',true);return;}
+  const business=await getDoc(doc(db,'users',user.uid,'businesses',bizId));
+  if(!business.exists()){showToast('This business is no longer available. Choose one of your businesses.',true);return;}
+  window._bbConnectBusiness=business.data();
 
   const back=document.getElementById('connection-back');
   back.href=connectionReturn(user.uid,bizId)||'BlastyBiz.html?'+new URLSearchParams({bizId,tab:'create'});
@@ -459,4 +472,5 @@ onAuthStateChanged(auth, async (user) => {
 
 </body>
 </html>
+
 

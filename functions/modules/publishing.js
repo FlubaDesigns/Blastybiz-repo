@@ -380,7 +380,10 @@ exports.approveDraft = onRequest({ invoker: 'public', secrets: [] }, withAuth(as
   res.json({ success: true, plan: userPlan, published: publishedCount });
 
   function buildJob(tx, pid, draftAdaptations, imagesFor, campaignId, adId, packet) {
-    const cap = PLATFORM_CAPABILITY_MAP[pid] || { name: pid, capabilityLevel: 'manual_assisted', manualInstructions: '' };
+    const personalFacebook = pid === 'facebook' && bizSnap.data().sellerType === 'personal';
+    const cap = personalFacebook
+      ? {...require('../lib/platforms').forBusiness(pid,bizSnap.data()),capabilityLevel:'manual_assisted'}
+      : PLATFORM_CAPABILITY_MAP[pid] || { name: pid, capabilityLevel: 'manual_assisted', manualInstructions: '' };
     const adaptedContent = draftAdaptations[pid] || '';
     const jobRef = userBizJobsRef(uid, businessId).doc();
     const isManual = cap.capabilityLevel !== 'full_auto';
@@ -442,6 +445,16 @@ exports.dispatchPublishJob = onDocumentCreated(
     if (!job) return;
     let providerReturned = false;
     try {
+      if(job.platform==='facebook'){
+        const business=await userBizRef(_pathUserId,_pathBizId).get();
+        if(business.exists && business.data().sellerType==='personal'){
+          const destination=require('../lib/platforms').forBusiness('facebook',business.data());
+          await jobRef.update({status:'manual_required',capabilityLevel:'manual_assisted',customerLabel:'Ready for you to post',
+            customerVisibleMessage:'Your personal Facebook post is prepared. Copy it and finish posting on Facebook.',
+            manualInstructions:destination.manualInstructions,updatedAt:admin.firestore.FieldValue.serverTimestamp()});
+          return;
+        }
+      }
       const connSnap = await userBizConnsRef(_pathUserId, _pathBizId).doc(job.platform).get();
 
       if (!connSnap.exists || connSnap.data().status !== 'connected') {
@@ -1151,3 +1164,4 @@ exports.businessCreatedTrigger = onDocumentCreated(
     } catch(e) { console.warn('[businessCreatedTrigger] admin alert failed:', e.message); }
   }
 );
+

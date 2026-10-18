@@ -1323,7 +1323,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" integrity="sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e" crossorigin="anonymous"></script>
 <script src="platform-categories.js"></script>
-<script src="platforms-authority.js?v=20261002-online"></script>
+<script src="platforms-authority.js?v=20261018-personal-facebook"></script>
 <script src="photo-handoff.js?v=20261004-flow"></script>
 <script>
 // ══════════════════════════════════════════
@@ -1560,7 +1560,7 @@ function platformEligible(p) {
 }
 
 function applyPlatformEligibility() {
-  platforms = platforms.map(p => platformEligible(p) ? p : { ...p, enabled: false });
+  platforms = platforms.map(p => BBPlatforms.normalizeSelection(p, profile)).map(p => platformEligible(p) ? p : { ...p, enabled: false });
 }
 
 function renderPlatforms() {
@@ -1617,7 +1617,7 @@ function buildPlatformCard(p) {
 
   const actionBtn = p.type === 'api'
       ? `<button type="button" class="btn btn-outline btn-sm" onclick="window._bbOpenConnections()">Manage connection</button>`
-      : `<button type="button" class="btn btn-outline btn-sm" onclick="copyText('${p.id}')" ${!p.enabled || !p.adaptedContent ? 'disabled' : ''}>📋 Copy text</button>`;
+      : `<button type="button" class="btn btn-outline btn-sm" onclick="${p.id === 'facebook' && p.type === 'manual' ? "copyAndOpen('facebook')" : "copyText('"+p.id+"')"}" ${!p.enabled || !p.adaptedContent ? 'disabled' : ''}>${p.id === 'facebook' && p.type === 'manual' ? 'Copy & open Facebook' : '📋 Copy text'}</button>`;
 
   div.innerHTML = `
     <div class="platform-header">
@@ -1816,12 +1816,13 @@ window.openPlatformPage = function(pid) {
 // Copy AI copy to clipboard + open platform page in new tab — one tap
 window.copyAndOpen = async function(pid) {
   const el = document.getElementById('qp-copy-text-' + pid);
-  const text = el?.textContent?.trim() || '';
   const plat = platforms.find(p => p.id === pid);
+  const text = el?.textContent?.trim() || (plat?.adaptedContent || '').replace(/<br\s*\/?\s*>/gi, '\n').trim();
+  if (!text) { showToast('Generate or review your copy first.'); return; }
   const name = plat?.name || pid;
   try {
     await navigator.clipboard.writeText(text);
-  } catch(e) { /* clipboard blocked — still open the tab */ }
+  } catch(e) { showToast('Could not copy your text. Use Copy text and try again.'); return; }
   const saved = (window._bbPlatformUrls || {})[pid];
   const url = (saved && saved.startsWith('http')) ? saved : (PLATFORM_DEFAULT_URLS[pid] || 'https://google.com');
   showToast('📋 Copied! Opening ' + name + '…');
@@ -2770,7 +2771,7 @@ function buildStep5Card(p) {
   const hasContent = !!p.adaptedContent;
   const isPending  = !hasContent && _bbIsGenerating(p.id);
   const isApi = p.type === 'api';
-  const rawHint  = PLATFORM_URL_HINTS[p.id] || '';
+  const rawHint  = p.id === 'facebook' && p.type === 'manual' ? 'Your personal Facebook profile link (optional)' : PLATFORM_URL_HINTS[p.id] || '';
   const needsUrl = !rawHint || !rawHint.startsWith('Leave blank');
   const urlHint  = escHtml(rawHint || 'Paste your ' + p.name + ' page URL');
   const savedUrl = escHtml((window._bbPlatformUrls || {})[p.id] || '');
@@ -2801,7 +2802,7 @@ function buildStep5Card(p) {
       + '<div class="col-left">'
       +   '<div class="step5-copy-actions">'
       +     '<button type="button" class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">' + '↻ Rewrite copy' + '</button>'
-      +     (!isApi ? '<button type="button" class="step5-action-btn" onclick="copyQpText(\'' + escHtml(p.id) + '\')">📋 Copy text</button>' : '')
+      +     (!isApi ? '<button type="button" class="step5-action-btn" onclick="' + (p.id === 'facebook' && p.type === 'manual' ? 'copyAndOpen' : 'copyQpText') + '(\'' + escHtml(p.id) + '\')">' + (p.id === 'facebook' && p.type === 'manual' ? 'Copy & open Facebook' : '📋 Copy text') + '</button>' : '')
       +   '</div>'
       +   '<div id="qp-copy-text-' + p.id + '" class="step5-copy-text" contenteditable="true">' + safeText + '</div>'
             + '</div>'
@@ -5156,7 +5157,7 @@ init();
 // Falls back silently if config/platforms doesn't exist yet.
 (async function _applyAdminPlatformConfig() {
   try {
-    const { PLATFORM_DEFAULTS, loadPlatformsREST } = await import('./platforms-config.js?v=20261018-meta-page');
+    const { PLATFORM_DEFAULTS, loadPlatformsREST } = await import('./platforms-config.js?v=20261018-personal-facebook');
     const activePlatforms = await loadPlatformsREST();
     // Build a complete adminMap: mark all defaults disabled first, then enable the active ones.
     // This ensures admin-disabled platforms are properly excluded by _bbSetPlatforms.
@@ -5174,7 +5175,7 @@ init();
 
 // Window setters — module script calls these to push Firestore data into UI
 window._bbSetPlatforms = function(updatedPlatforms) {
-  updatedPlatforms = updatedPlatforms.map(BBPlatforms.normalizeSelection);
+  updatedPlatforms = updatedPlatforms.map(p => BBPlatforms.normalizeSelection(p, window._bbProfileGlobal || {}));
   // Always apply the admin display overlay (name, icon, type, order, proOnly, globally-disabled).
   // window._bbAdminPlatformConfig is populated by _applyAdminPlatformConfig() / module script.
   const adminMap = window._bbAdminPlatformConfig;
@@ -5440,7 +5441,7 @@ function awaitPaidPlan(uid) {
     }, PAY_CONFIRM_TIMEOUT_MS);
   });
 }
-import { loadPlatforms, PLATFORM_DEFAULTS, deliveryReadiness } from './platforms-config.js?v=20261018-meta-page';
+import { loadPlatforms, PLATFORM_DEFAULTS, deliveryReadiness } from './platforms-config.js?v=20261018-personal-facebook';
 import { rememberConnectionReturn } from './auth-return.js?v=20261011-security';
 window._bbPlatformReadiness = p => deliveryReadiness(p.id, window._bbConnections === undefined ? undefined : window._bbConnections[p.id] || null, {business:profile,images:window.BBAds?.active?.imageRefs});
 window._bbOpenConnections = async function(){
@@ -7364,6 +7365,7 @@ document.addEventListener('click',function(e){
 </script>
 </body>
 </html>
+
 
 
 
