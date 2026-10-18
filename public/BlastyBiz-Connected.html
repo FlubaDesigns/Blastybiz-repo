@@ -216,8 +216,13 @@ auth.authStateReady().then(() => {
             select.value=data.expectedPageId;select.hidden=true;label.hidden=true;updateChoice();
             help.textContent='Facebook granted access to '+data.pageName+'. Confirm below to connect this Page to your business. This does not publish a post.';
           }else{
-            help.textContent='Facebook has not granted BlastyBiz publishing access to '+data.pageName+' (Page '+data.expectedPageId+'). Return to Facebook, review Edit settings, and include this Page while keeping the other Pages selected. If it is missing there too, check that your Facebook profile has access to manage this Page.';
-            select.hidden=true;label.hidden=true;button.hidden=true;restart.hidden=false;restart.textContent='Review Facebook permissions';
+            help.textContent='Facebook did not return a usable publishing connection for '+data.pageName+'. Repeating the same login may return the same Page list. Your access to manage a Page and the Pages shared with BlastyBiz are separate settings.';
+            select.hidden=true;label.hidden=true;button.hidden=true;
+            const permissions=document.createElement('a');permissions.className='btn-primary';permissions.textContent='Open Facebook Business Integrations';
+            permissions.href='https://www.facebook.com/settings?tab=business_tools';permissions.target='_blank';permissions.rel='noopener noreferrer';
+            const steps=document.createElement('p');steps.textContent='In Facebook, use your personal profile. Open BlastyBiz → View and edit. If Page lists are shown, include '+data.pageName+' in the relevant Page permissions and save, keeping your existing Pages selected. Do not remove BlastyBiz. Then return to this tab and restart the connection. If the Page is absent there too, its availability to the app needs investigation; another identical login will not establish why.';
+            content.insertBefore(permissions,restart);content.insertBefore(steps,restart);
+            restart.hidden=false;restart.className='btn-secondary';restart.textContent='Restart after updating permissions';
           }
         }
       }catch(e){fail(e.message);}

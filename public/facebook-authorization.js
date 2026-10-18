@@ -16,7 +16,9 @@ export async function renderFacebookAuthorization({user,businessId,requestId,con
     title.textContent=(request.connected?'Facebook connected: ':'Authorize Facebook for ')+request.pageName;
     if(request.connected){status.textContent='Your requested Facebook Page is connected to this business in BlastyBiz.';return;}
     status.textContent='Continue to Facebook, review the Page permissions, then return here to finish connecting '+request.pageName+'.';
-    const help=element('p','If Facebook offers previous settings, choose Edit settings and include '+request.pageName+'. Keep your other Pages selected.');
+    const help=element('p','If Facebook offers previous settings, choose Edit settings and include '+request.pageName+'. Keep your other Pages selected. If the same Page list keeps returning, review BlastyBiz under Business Integrations using your personal Facebook profile, then return here to continue.');
+    const permissions=element('a','Open Facebook Business Integrations');
+    permissions.href='https://www.facebook.com/settings?tab=business_tools';permissions.target='_blank';permissions.rel='noopener noreferrer';permissions.style.display='block';
     const page=element('a','View '+request.pageName+' on Facebook');
     page.href='https://www.facebook.com/profile.php?id='+request.pageId;page.target='_blank';page.rel='noopener noreferrer';
     const button=element('button','Continue to Facebook');button.type='button';button.className='btn-primary';
@@ -29,6 +31,6 @@ export async function renderFacebookAuthorization({user,businessId,requestId,con
         await window.BBOAuth.begin(url,await user.getIdToken());
       }catch(e){status.textContent=e.message||'Facebook authorization could not start. Please try again.';button.disabled=false;}
     });
-    container.append(help,page,button,note);
+    container.append(help,permissions,page,button,note);
   }catch(e){status.textContent=e.message;}
 }

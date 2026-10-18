@@ -41,7 +41,12 @@ async function connected({secret=entry,hash='#selection=ticket&state=state',pend
  for(const granted of [false,true]){
   const e=await connected({target:true,granted}),button=e.w.document.querySelector('button'),select=e.w.document.querySelector('select'),retry=e.w.document.querySelector('a');
   if(granted)ok(!button.disabled&&button.textContent==='Connect Litigant-ai'&&select.hidden,'requested Page needs one explicit confirmation without a redundant picker');
-  else ok(button.hidden&&select.hidden&&!retry.hidden&&retry.href.includes('authorizationRequest=engine-request')&&e.w.document.body.textContent.includes('has not granted'),'missing Page reports exact issue and retains retry target');
+  else {
+   const restart=[...e.w.document.querySelectorAll('a')].find(a=>a.textContent==='Restart after updating permissions');
+   ok(button.hidden&&select.hidden&&retry.href==='https://www.facebook.com/settings?tab=business_tools'&&retry.target==='_blank'&&retry.rel.includes('noopener'),'missing Page recovery opens actual Facebook app permissions instead of repeating OAuth');
+   ok(restart&&!restart.hidden&&restart.href.includes('authorizationRequest=engine-request')&&restart.href.includes('bizId=b'),'separate restart preserves exact business and engine request after permission changes');
+   ok(e.calls.length===1&&e.w.document.body.textContent.includes('Do not remove BlastyBiz'),'missing Page recovery does not initiate or revoke a connection automatically');
+  }
   e.d.window.close();
  }
  const requestDOM=dom('https://blastybiz.com/BlastyBiz-Connect?bizId=b&authorizationRequest=request'),rw=requestDOM.window,starts=[];
