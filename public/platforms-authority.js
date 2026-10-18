@@ -573,9 +573,17 @@
       order: Number.isFinite(o.order) ? o.order : def.order, enabled: o.enabled !== false,
       proOnly:false, deliveryMode:def.deliveryMode, capabilityLevel:def.capabilityLevel};
   }
-  function normalizeSelection(p) {
-    const canonical = byId[p.id];
-    return {...p, type:canonical && canonical.deliveryMode === 'auto' ? 'api' : 'manual', proOnly:false};
+  function forBusiness(platformId, business = {}) {
+    const platform = byId[platformId];
+    if (!platform || platformId !== 'facebook' || business.sellerType !== 'personal') return platform;
+    return {...platform, name:'Facebook personal profile', deliveryMode:'manual',
+      manualInstructions:'Open Facebook, switch to your main personal profile, create a post, paste your prepared text, add your photos, and tap Post.'};
+  }
+  function normalizeSelection(p, business = {}) {
+    const canonical = forBusiness(p.id, business);
+    const personalFacebook = p.id === 'facebook' && business.sellerType === 'personal';
+    return {...p, ...(personalFacebook ? {name:canonical.name, note:canonical.manualInstructions} : {}),
+      type:canonical && canonical.deliveryMode === 'auto' ? 'api' : 'manual', proOnly:false};
   }
   // Google Business Profile requires an in-person customer presence.
   // This destination is not Google Ads or ordinary Google Search visibility.
@@ -583,5 +591,6 @@
     return !(platformId === 'google' && business.locationType === 'online');
   }
   return {records, byId, labels, PLATFORM_CAPABILITY_MAP, PLATFORM_DOCS, AUTO_POST_PLATFORMS,
-    PLATFORM_DEFAULTS, mergeDisplay, normalizeSelection, eligibleForBusiness, postImageLimit, postImages};
+    PLATFORM_DEFAULTS, mergeDisplay, forBusiness, normalizeSelection, eligibleForBusiness, postImageLimit, postImages};
 });
+

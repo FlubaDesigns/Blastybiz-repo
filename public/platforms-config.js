@@ -1,4 +1,4 @@
-import './platforms-authority.js?v=20261002-online';
+import './platforms-authority.js?v=20261018-personal-facebook';
 export const { PLATFORM_DEFAULTS, mergeDisplay } = globalThis.BBPlatforms;
 
 /**
@@ -71,7 +71,7 @@ export async function loadPlatformsREST() {
 // UI readiness is derived from canonical capability, saved connection and photos.
 // Delivery workers remain the authority at dispatch; no connection is invented here.
 export function deliveryReadiness(platformId, connection, {business={}, images, now=Date.now()} = {}) {
-  const platform=globalThis.BBPlatforms.byId[platformId];
+  const platform=globalThis.BBPlatforms.forBusiness(platformId,business);
   if (!platform) return {state:'unavailable',label:'Unavailable',detail:'Choose another destination.'};
   if (!globalThis.BBPlatforms.eligibleForBusiness(platformId,business)) return {state:'unavailable',label:'Local presence required',detail:'Google Business Profile needs an in-person customer presence.'};
   if (platform.deliveryMode !== 'auto') return {state:'manual',label:'You post it',detail:'Blasty prepares the copy and photos. You finish posting in the app.'};
@@ -86,3 +86,4 @@ export function deliveryReadiness(platformId, connection, {business={}, images, 
   if(platform.doc.images.required && Array.isArray(images) && !images.length) return {state:'photo',label:'Photo required',detail:'Add a photo before sending to '+platform.name+'.'};
   return {state:'ready',label:'Ready to auto-post',detail:'Blasty can send this to your connected account after you approve.'};
 }
+
