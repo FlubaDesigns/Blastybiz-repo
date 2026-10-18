@@ -142,7 +142,8 @@ var pubPlan = 'starter';
 window.setPubPlan = function (p) { pubPlan = p || 'starter'; };
 
 function isAutoCapable(pid) {
-  return BBPlatforms.forBusiness(pid, window._bbPreviewBusiness || {})?.deliveryMode === 'auto';
+  var m = PLATFORM_META[pid];
+  return !!m && m.capabilityLevel !== 'manual_assisted';
 }
 function previewReadiness(pid) {
   return window._bbDeliveryReadiness ? window._bbDeliveryReadiness(pid, window._bbConnections === undefined ? undefined : (Object.hasOwn(window._bbConnections,pid)?window._bbConnections[pid]:null), {business:window._bbPreviewBusiness||{},images:drafts[pid]?.images||[]}) : {state:isAutoCapable(pid)?'checking':'manual',label:isAutoCapable(pid)?'Checking connection':'You post it',detail:''};
