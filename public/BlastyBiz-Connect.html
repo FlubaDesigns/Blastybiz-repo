@@ -26,7 +26,7 @@ body{visibility:hidden}
   }
 }
 </script>
-  <script type="module" src="./auth-guard.js?v=20261011-security"></script>
+  <script type="module" src="./auth-guard.js?v=20261018-facebook-auth"></script>
 <script src="blastybiz-menu.js?v=8"></script>
 <script src="blasty-registry.js"></script>
 <script src="blasty-events.js"></script>
@@ -372,7 +372,8 @@ window.disconnectPlatform = async function(platformId) {
 import { auth, db } from './firebase-init-v2.js';
 import { deliveryReadiness } from './platforms-config.js?v=20261018-meta-page';
 window._bbConnectionReadiness=deliveryReadiness;
-import { connectionReturn } from './auth-return.js?v=20261011-security';
+import { renderFacebookAuthorization } from './facebook-authorization.js';
+import { connectionReturn } from './auth-return.js?v=20261018-facebook-auth';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   collection, query, where, getDocs, getDoc, doc, deleteDoc, updateDoc
@@ -391,6 +392,10 @@ auth.authStateReady().then(() => {
 onAuthStateChanged(auth, async (user) => {
   if (!user) return; // auth-guard.js handles redirect
 
+  if(params.has('authorizationRequest')){
+    await renderFacebookAuthorization({user,businessId:params.get('bizId'),requestId:params.get('authorizationRequest'),container:document.querySelector('.main-inner')});
+    return;
+  }
   const userSnap = await getDoc(doc(db, 'users', user.uid));
   const userData = userSnap.exists() ? userSnap.data() : {};
   const bizId = params.get('bizId') || userData.activeBusiness || user.uid;
@@ -454,3 +459,4 @@ onAuthStateChanged(auth, async (user) => {
 
 </body>
 </html>
+

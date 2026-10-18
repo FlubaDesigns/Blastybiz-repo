@@ -9,16 +9,16 @@ const origin='https://blastybiz.com',secret='a'.repeat(64),otherSecret='b'.repea
 let checks=0;
 const ok=(v,m)=>{assert(v,m);checks++;};
 const res=()=>({code:200,headers:{},set(k,v){this.headers[k]=v;return this;},status(c){this.code=c;return this;},json(v){this.body=v;return this;},send(v){this.body=v;return this;},redirect(...args){this.url=args.at(-1);this.code=args.length===2?args[0]:302;return this;}});
-function fixture(){
+function fixture(pageId='page'){
  const m=database({'users/attacker/businesses/collision':{},'users/victim/businesses/collision':{}}),calls=[];
  const axios={post:async(url)=>{calls.push(url);return {data:{access_token:'google-private',refresh_token:'refresh-private'}};},get:async(url)=>{
   calls.push(url);
   if(url.endsWith('/oauth/access_token'))return {data:{access_token:'meta-private'}};
   if(url.endsWith('/me/permissions'))return {data:{data:['pages_show_list','pages_read_engagement','pages_manage_posts'].map(permission=>({permission,status:'granted'}))}};
-  if(url.endsWith('/me/accounts'))return {data:{data:[{id:'page',name:'Victim page',access_token:'page-private',tasks:['CREATE_CONTENT']}]}};
+  if(url.endsWith('/me/accounts'))return {data:{data:[{id:pageId,name:'Victim page',access_token:'page-private',tasks:['CREATE_CONTENT']}]}};
   if(url.endsWith('/accounts'))return {data:{accounts:[{name:'accounts/account',accountName:'Account'}]}};
   if(url.endsWith('/locations'))return {data:{locations:[{name:'locations/location',title:'Victim location'}]}};
-  return {data:{id:'page'}};
+  return {data:{id:pageId}};
  }};
  const shared={setCors(){},db:m.db,admin,axios,APP_BASE_URL:origin,ALLOWED_ORIGINS:new Set([origin]),onRequest:(...a)=>a.at(-1),onSchedule:(...a)=>a.at(-1),withAuth:fn=>async(req,r)=>req.auth?fn(req,r,req.auth):r.status(401).json({error:'Unauthorized'}),checkUidRateLimit:async()=>true,userBizRef:(uid,id)=>m.db.doc(`users/${uid}/businesses/${id}`)};
  const filename=path.resolve('functions/modules/oauth.js'),realRequire=createRequire(filename),exports={};
@@ -90,6 +90,46 @@ async function oauth(){
   ok(r.body.cancelled&&!f.get('oauthNonces/'+selection),'owner can cancel live or expired selection and erase pending tokens');
  }
 }
+async function targetedFacebook(){
+ const pageId='61595449803443',requestId='engine-request';
+ const request={schema:'facebook-page/v1',phase:'authorization-request',uid:'attacker',businessId:'collision',pageId,pageName:'Litigant-ai',status:'awaiting-consent',expiresAt:new Date(Date.now()+86400000)};
+ for(const granted of [false,true]){
+  const f=fixture(granted?pageId:'other-page');
+  await f.db.doc('oauthNonces/'+requestId).set(request);
+  const protectedPath='users/attacker/businesses/other/platformConnections/facebook';
+  await f.db.doc(protectedPath).set({pageId:'protected',status:'connected'});
+  const inspect=(uid='attacker',businessId='collision')=>f.call('oauthDestination',{method:'POST',auth:uid?{uid}:null,body:{action:'authorizationRequest',requestId,businessId}});
+  ok((await inspect(null)).code===401&&(await inspect('victim')).code===403&&(await inspect('attacker','other')).code===403,'engine request requires its exact signed-in owner and business');
+  ok(!(await inspect()).body.connected,'an issued link is never reported as provider consent');
+  const invalid=await f.call('initiateFacebookOAuth',{auth:{uid:'attacker'},headers:{origin},query:{businessId:'collision',verifierHash:hash(secret),authorizationRequest:'unknown'}});
+  ok(invalid.code===403&&!f.calls.length,'unknown request rejected before provider access');
+  const init=await f.initiate('facebook',{authorizationRequest:requestId,pageId:'forged'}),start=await f.start(init.state);
+  ok(new URL(start.url).searchParams.get('auth_type')==='rerequest','targeted flow re-requests previously declined permissions');
+  const callback=await f.callback('facebook',init.state,start.headers['Set-Cookie'].split(';')[0]);
+  const url=new URL(callback.url),selection=new URLSearchParams(url.hash.slice(1)).get('selection');
+  ok(url.searchParams.get('authorizationRequest')===requestId&&selection,'callback retains noncredential engine request and same-tab selection');
+  const endpoint=body=>f.call('oauthDestination',{method:'POST',auth:{uid:'attacker'},body:{selection,verifier:secret,...body}});
+  const data=(await endpoint({action:'inspect'})).body;
+  ok(data.expectedPageId===pageId&&data.choices.length===(granted?1:0),'only the engine-requested Page is eligible; missing grant remains explicit');
+  ok((await endpoint({choiceId:'other-page'})).code===400,'different granted Page cannot substitute for requested Page');
+  if(granted){
+   const confirmed=await endpoint({choiceId:pageId});
+   ok(confirmed.code===200&&confirmed.body.authorizationRequest===requestId&&(await inspect()).body.connected,'confirmation atomically records requested Page and engine completion');
+   ok(f.get('users/attacker/businesses/collision/platformConnections/facebook').pageId===pageId,'exact requested Page is persisted');
+  }else{
+   ok((await endpoint({choiceId:pageId})).code===400&&!f.get('users/attacker/businesses/collision/platformConnections/facebook'),'missing Page never causes a connection write');
+   await endpoint({cancel:true});
+   ok(f.get('oauthNonces/'+requestId).status==='awaiting-consent','discarding one browser attempt preserves reusable engine request');
+  }
+  ok(f.get(protectedPath).pageId==='protected','other business connection remains unchanged');
+  await f.db.doc('oauthNonces/'+requestId).update({expiresAt:new Date(0)});
+  ok((await inspect()).code===410,'expired request fails closed');
+ }
+ const f=fixture(pageId);await f.db.doc('oauthNonces/'+requestId).set(request);
+ const init=await f.initiate('facebook',{authorizationRequest:requestId}),start=await f.start(init.state);
+ const cancelled=await f.callback('facebook',init.state,start.headers['Set-Cookie'].split(';')[0],'');
+ ok(new URL(cancelled.url).searchParams.get('authorizationRequest')===requestId,'Facebook cancellation retains retry target');
+}
 async function deletion(){
  const m=database({'users/attacker':{},'users/attacker/businesses/collision':{ownerUid:'attacker'},'users/victim':{},'users/victim/businesses/collision':{ownerUid:'victim'},'accountDeletions/attacker':{status:'retry_required',storagePrefixes:['businesses/collision/','photos/victim/','users/victim/images/']}});
  const objects=new Set(['businesses/collision/victim.jpg','businesses/collision/ambiguous.jpg','photos/victim/image.jpg','users/victim/images/old.jpg','photos/attacker/image.jpg','users/attacker/images/old.jpg']);
@@ -105,4 +145,5 @@ async function deletion(){
  ok(objects.has('photos/victim/image.jpg')&&objects.has('users/victim/images/old.jpg')&&m.get('users/victim/businesses/collision'),'other tenant files and business remain intact');
  ok(!objects.has('photos/attacker/image.jpg')&&!m.get('users/attacker'),'verified owner current data deleted');
 }
-(async()=>{await oauth();await deletion();console.log(checks+' account/OAuth security assertions passed (offline mocks).');})().catch(e=>{console.error(e);process.exitCode=1;});
+(async()=>{await oauth();await targetedFacebook();await deletion();console.log(checks+' account/OAuth security assertions passed (offline mocks).');})().catch(e=>{console.error(e);process.exitCode=1;});
+

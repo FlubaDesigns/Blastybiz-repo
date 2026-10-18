@@ -43,6 +43,10 @@ export function parseAuthReturn(pathname, search) {
     }
     if (q.get('returnTo') === 'onboarding') params.returnTo = 'onboarding';
   } else return null;
+  if(q.has('authorizationRequest')&&['BlastyBiz-Connect.html','BlastyBiz-Connected.html'].includes(page)){
+    if(!valid(q.get('authorizationRequest')))return null;
+    params.authorizationRequest=q.get('authorizationRequest');
+  }
   return {page, params};
 }
 export function restoreAuthReturn(raw) {
@@ -65,3 +69,4 @@ export function connectionReturn(ownerUid, bizId) {
   return target && target.params.ownerUid === ownerUid && target.params.bizId === bizId
     ? target.page + '?' + new URLSearchParams(target.params) : null;
 }
+
