@@ -155,7 +155,7 @@ window._bbRenderHeaderBusinesses = function(businesses, activeId) {
   bar.replaceChildren();
   const active = businesses.find(b => b.id === activeId);
   if (!active) { bar.style.display = 'none'; requestAnimationFrame(_applyHeaderOffset); return; }
-  const name = b => b.sellerType === 'personal' ? (b.ownerName || b.name || 'Personal') : (b.name || b.businessName || b.bizName || 'Business');
+  const name = b => b.sellerType === 'personal' ? (b.ownerName || b.name || 'Personal') : (b.businessName || b.name || b.bizName || 'Business');
   const dropdown = document.createElement('details');
   dropdown.className = 'header__business-dropdown';
   const trigger = document.createElement('summary');

@@ -5244,12 +5244,12 @@ function renderSwitcherBar() {
   const bizList   = window.BUSINESSES || [];
   const currentId = window.activeBizId;
   const active    = bizList.find(b => b.id === currentId);
-  const activeName = active ? (active.sellerType === 'personal' ? (active.ownerName || active.name || 'Personal') : (active.name || active.businessName || 'Business')) : 'Select profile';
+  const activeName = active ? (active.sellerType === 'personal' ? (active.ownerName || active.name || 'Personal') : (active.businessName || active.name || 'Business')) : 'Select profile';
 
   // Keep hidden select in sync (used elsewhere)
   const select = document.getElementById('biz-select');
   if (select) select.innerHTML = bizList.map(b =>
-    `<option value="${escHtml(b.id)}"${b.id===currentId?' selected':''}>${escHtml(b.name||b.businessName||'')}</option>`
+    `<option value="${escHtml(b.id)}"${b.id===currentId?' selected':''}>${escHtml(b.businessName||b.name||'')}</option>`
   ).join('');
 
   // Keep workspace info bar in sync
@@ -6519,7 +6519,7 @@ window.saveProfile = function() {
     if (_phoneErr) _phoneErr.textContent = _phoneOk ? '' : 'Please enter at least 7 digits';
     await setDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId), {
       // Never overwrite saved fields with blank — only write a field if it has a value
-      ...(profile.name      ? { businessName: profile.name, ...(profile.sellerType === 'personal' ? { name: profile.name } : {}) } : {}),
+      ...(profile.name      ? { businessName: profile.name, name: profile.name } : {}),
       ...BBSetup.nameParts(profile),
       ownerRole: profile.sellerType==='personal'?'':profile.ownerRole || 'owner',
       ...(profile.category  ? { category:    profile.category }  : {}),
@@ -6537,6 +6537,12 @@ window.saveProfile = function() {
       tone:           profile.tone   || 'friendly',
       updatedAt:      serverTimestamp(),
     }, { merge: true });
+    const savedBusiness = (window.BUSINESSES || []).find(b => b.id === activeBizId);
+    if (savedBusiness && profile.name) {
+      savedBusiness.businessName = profile.name;
+      savedBusiness.name = profile.name;
+      renderSwitcherBar();
+    }
     if (window._showProfileSaved) window._showProfileSaved('Saved ✓');
   } catch(e) {
     console.error('saveProfile Firestore error:', e);
