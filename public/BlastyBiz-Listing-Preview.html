@@ -510,7 +510,7 @@ async function publishBlast() {
 
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
-import { deliveryReadiness } from './platforms-config.js?v=20261004-flow';
+import { deliveryReadiness } from './platforms-config.js?v=20261018-meta-page';
 import { rememberConnectionReturn } from './auth-return.js?v=20261011-security';
 window._bbDeliveryReadiness=deliveryReadiness;
 window._bbOpenConnections=function(){rememberConnectionReturn(location.pathname,location.search,window.currentUser.uid);location.assign('BlastyBiz-Connect.html?'+new URLSearchParams({bizId:window.businessId}));};

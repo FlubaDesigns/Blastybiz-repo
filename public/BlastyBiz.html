@@ -5156,7 +5156,7 @@ init();
 // Falls back silently if config/platforms doesn't exist yet.
 (async function _applyAdminPlatformConfig() {
   try {
-    const { PLATFORM_DEFAULTS, loadPlatformsREST } = await import('./platforms-config.js?v=20261004-flow');
+    const { PLATFORM_DEFAULTS, loadPlatformsREST } = await import('./platforms-config.js?v=20261018-meta-page');
     const activePlatforms = await loadPlatformsREST();
     // Build a complete adminMap: mark all defaults disabled first, then enable the active ones.
     // This ensures admin-disabled platforms are properly excluded by _bbSetPlatforms.
@@ -5440,7 +5440,7 @@ function awaitPaidPlan(uid) {
     }, PAY_CONFIRM_TIMEOUT_MS);
   });
 }
-import { loadPlatforms, PLATFORM_DEFAULTS, deliveryReadiness } from './platforms-config.js?v=20261004-flow';
+import { loadPlatforms, PLATFORM_DEFAULTS, deliveryReadiness } from './platforms-config.js?v=20261018-meta-page';
 import { rememberConnectionReturn } from './auth-return.js?v=20261011-security';
 window._bbPlatformReadiness = p => deliveryReadiness(p.id, window._bbConnections === undefined ? undefined : window._bbConnections[p.id] || null, {business:profile,images:window.BBAds?.active?.imageRefs});
 window._bbOpenConnections = async function(){
