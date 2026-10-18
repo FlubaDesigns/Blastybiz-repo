@@ -9,12 +9,13 @@ const tick=async()=>{for(let i=0;i<6;i++)await new Promise(setImmediate);};
 let checks=0;const ok=(v,m)=>{assert(v,m);checks++;};
 const verifier='a'.repeat(64),entry=JSON.stringify({verifier,expiresAt:Date.now()+600000});
 function dom(url){return new JSDOM('<div id="page-content"></div><p id="oauth-status"></p>',{url,runScripts:'outside-only',virtualConsole:new VirtualConsole()});}
-async function connected({secret=entry,hash='#selection=ticket&state=state',pending='1',cancel=false}={}){
+async function connected({secret=entry,hash='#selection=ticket&state=state',pending='1',cancel=false,failure=0}={}){
  const d=dom('https://blastybiz.com/BlastyBiz-Connected.html?connected=google&bizId=b&ownerUid=u&pending='+pending+hash),w=d.window,calls=[];let finish;
  w.eval(browser);if(secret)w.sessionStorage.setItem('bb-oauth-attempt:state',secret);
  Object.assign(w,{auth:{authStateReady:async()=>{}},db:{},onAuthStateChanged:(_,cb)=>cb({uid:'u',getIdToken:async()=>'fixture'}),doc:()=>{},getDoc:async()=>{throw Error('Unexpected read of old connection');},connectionReturn:()=>null,fetch:async(url,options)=>{
   const body=JSON.parse(options.body);calls.push(body);
   if(body.action==='inspect')return {ok:true,json:async()=>({businessId:'b',platform:'google',choices:[{id:'only',label:'Business location'}]})};
+  if(failure)return {ok:false,status:failure,json:async()=>({error:'This connection request has expired or belongs to another account. Please reconnect.'})};
   return new Promise(resolve=>{finish=()=>resolve({ok:true,json:async()=>body.cancel?{cancelled:true}:{businessId:'b',platform:'google'}});});
  }});
  w.eval(code);await tick();return {d,w,calls,finish:()=>finish()};
@@ -35,13 +36,25 @@ async function connected({secret=entry,hash='#selection=ticket&state=state',pend
  for(const cancel of [false,true]){
   const e=await connected(),select=e.w.document.querySelector('select'),button=e.w.document.querySelector('button');
   ok(select.options.length===2&&button.disabled&&e.calls.length===1,'fragment loads sole choice but still requires explicit selection');
+  ok(button.textContent==='Choose a location first'&&e.w.document.getElementById('destination-help').textContent.includes('does not publish'),'disabled action explains prerequisite and connection is not publishing');
   ok(e.calls[0].selection==='ticket'&&e.calls[0].verifier===verifier&&e.calls[0].action==='inspect','inspection carries ticket and same-tab verifier in POST body');
   select.value='only';select.dispatchEvent(new e.w.Event('change'));
+  ok(!button.disabled&&button.textContent==='Connect Business location','selected destination is named on enabled action');
   const target=cancel?[...e.w.document.querySelectorAll('button')].find(b=>b.textContent==='Cancel'):button;
   target.click();target.click();await tick();
   ok(e.calls.length===2&&target.disabled&&select.disabled,'confirm/cancel locks repeated clicks while pending');
   ok(e.calls[1].verifier===verifier&&(cancel?e.calls[1].cancel:e.calls[1].choiceId==='only'),'confirmed action is authenticated same-tab selection request');
   e.finish();await tick();ok(!e.w.sessionStorage.getItem('bb-oauth-attempt:state'),'successful confirm/cancel destroys local proof, making Back safe');
+  e.d.window.close();
+ }
+ for(const failure of [403,500]){
+  const e=await connected({failure}),select=e.w.document.querySelector('select'),button=e.w.document.querySelector('button');
+  select.value='only';select.dispatchEvent(new e.w.Event('change'));button.click();await tick();
+  const restart=e.w.document.querySelector('a');
+  if(failure===403){
+   ok(button.hidden&&button.disabled&&select.disabled&&!restart.hidden,'expired selection cannot be retried through a green dead-end button');
+   ok(restart.href==='https://blastybiz.com/BlastyBiz-Connect.html?bizId=b','restart keeps business scope without transferring credentials');
+  }else ok(!button.hidden&&!button.disabled&&!select.disabled&&restart.hidden,'transient failure retains selected destination for retry');
   e.d.window.close();
  }
  // The bridge cannot transfer a missing session secret to the callback host.

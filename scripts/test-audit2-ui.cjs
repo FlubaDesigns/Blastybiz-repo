@@ -44,6 +44,12 @@ function readinessTests(){
  ok(w.deliveryReadiness('facebook',undefined).state==='checking','unloaded connection is never claimed ready');
  ok(w.deliveryReadiness('facebook',saved).state==='ready','saved destination and future grant ready');
  ok(w.deliveryReadiness('facebook',{...saved,expiresAt:'2000-01-01'}).state==='connection','expired Meta grant asks for connection');
+ for(const platform of ['facebook','instagram']){
+  ok(w.deliveryReadiness(platform,{...saved,expiresAt:null}).state==='ready','server-confirmed Meta Page token without expiry is ready');
+  for(const expiresAt of [undefined,'invalid'])ok(w.deliveryReadiness(platform,{...saved,expiresAt}).state==='connection','missing or malformed expiry is not a confirmed Page token');
+  ok(w.deliveryReadiness(platform,{...saved,expiresAt:null,status:'expired'}).state==='connection','explicit revoked/expired state remains blocked');
+  ok(w.deliveryReadiness(platform,{...saved,expiresAt:null,pageId:''}).state==='connection','no-expiry token still requires saved Page binding');
+ }
  ok(w.deliveryReadiness('google',{...saved,expiresAt:'2000-01-01'},{business:{locationType:'physical'}}).state==='ready','Google refreshable access expiry does not force reconnection');
  ok(w.deliveryReadiness('instagram',saved,{images:[]}).state==='photo','Instagram exposes missing required photo');
  ok(w.deliveryReadiness('instagram',saved,{images:[{url:'https://example.com/a.jpg'}]}).state==='ready','Instagram with saved destination and photo is ready');

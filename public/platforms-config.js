@@ -78,8 +78,11 @@ export function deliveryReadiness(platformId, connection, {business={}, images, 
   if (connection === undefined) return {state:'checking',label:'Checking connection',detail:'Connection details have not loaded. Try again before sending.'};
   // Google access tokens are refreshed by the existing worker; saved connection status owns revocation.
   const expires=connection?.expiresAt?.toMillis?.() || (connection?.expiresAt?.seconds ? connection.expiresAt.seconds*1000 : Date.parse(connection?.expiresAt));
+  // The server explicitly stores null for provider-verified Meta Page tokens.
+  // An absent/malformed expiry is still unknown; user-grant expiry is separate.
+  const metaPageToken=(platformId==='facebook'||platformId==='instagram')&&connection?.expiresAt===null;
   const destination=platformId==='google' ? connection?.accountId && connection?.locationId : platformId==='instagram' ? connection?.igUserId && connection?.pageId : connection?.pageId;
-  if(connection?.status!=='connected'||!destination||(platformId!=='google'&&(!Number.isFinite(expires)||expires<=now))) return {state:'connection',label:'Connect to auto-post',detail:'Connect or reconnect this account, then return to your blast.'};
+  if(connection?.status!=='connected'||!destination||(platformId!=='google'&&!metaPageToken&&(!Number.isFinite(expires)||expires<=now))) return {state:'connection',label:'Connect to auto-post',detail:'Connect or reconnect this account, then return to your blast.'};
   if(platform.doc.images.required && Array.isArray(images) && !images.length) return {state:'photo',label:'Photo required',detail:'Add a photo before sending to '+platform.name+'.'};
   return {state:'ready',label:'Ready to auto-post',detail:'Blasty can send this to your connected account after you approve.'};
 }

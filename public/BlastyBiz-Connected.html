@@ -156,24 +156,41 @@ auth.authStateReady().then(() => {
         const data=await response.json(); if(!response.ok)throw Error(data.error||'Could not load your destinations.');
         if(data.businessId!==bizId || data.platform!==platform)throw Error('This connection belongs to a different business.');
         content.replaceChildren();
-        const h=document.createElement('h1');h.textContent='Choose where BlastyBiz will post';
+        const h=document.createElement('h1');h.textContent='Connect your business Page';
+        if(platform==='google')h.textContent='Connect your business location';
+        const help=document.createElement('p');help.id='destination-help';help.className='destination-help';
+        help.textContent='Choose the matching business below, then connect it. This step does not publish a post. For security, this request lasts 10 minutes.';
         const label=document.createElement('label');label.htmlFor='destination-choice';label.textContent=platform==='google'?'Google Business Profile':'Facebook Page';
-        const select=document.createElement('select');select.id='destination-choice';select.style.cssText='display:block;width:100%;padding:12px;margin:16px 0';
+        const select=document.createElement('select');select.id='destination-choice';select.className='destination-choice';select.setAttribute('aria-describedby','destination-help destination-feedback');
         const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Choose a destination';select.append(placeholder);
         for(const choice of data.choices){const option=document.createElement('option');option.value=choice.id;option.textContent=choice.label;select.append(option);}
-        const button=document.createElement('button');button.type='button';button.className='btn-primary';button.textContent='Connect this destination';button.disabled=true;
-        const feedback=document.createElement('p');feedback.setAttribute('role','status');
-        select.addEventListener('change',()=>{button.disabled=!select.value;});
+        const button=document.createElement('button');button.type='button';button.className='btn-primary';button.disabled=true;
+        const feedback=document.createElement('p');feedback.id='destination-feedback';feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');
+        const restart=document.createElement('a');restart.className='btn-primary';restart.textContent='Restart connection';restart.hidden=true;
+        restart.href='BlastyBiz-Connect.html?bizId='+encodeURIComponent(bizId);
+        const updateChoice=()=>{
+          button.disabled=!select.value;
+          button.textContent=select.value?'Connect '+select.options[select.selectedIndex].textContent:(platform==='google'?'Choose a location first':'Choose a Page first');
+        };
+        updateChoice();
+        select.addEventListener('change',updateChoice);
         button.addEventListener('click',async()=>{
           button.disabled=true;cancel.disabled=true;select.disabled=true;feedback.textContent='Saving your choice…';
           try {
             const r=await fetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+await user.getIdToken(),'Content-Type':'application/json'},body:JSON.stringify({selection:selectionId,verifier,choiceId:select.value})});
-            const result=await r.json();if(!r.ok)throw Error(result.error||'Your choice was not saved.');
+            const result=await r.json();if(!r.ok)throw Object.assign(Error(result.error||'Your choice was not saved.'),{status:r.status});
             window.BBOAuth.clear(state);
             const next=new URLSearchParams({connected:result.platform,bizId:result.businessId,ownerUid:user.uid});
             if(result.returnTo==='onboarding')next.set('returnTo','onboarding');
             window.location.replace('BlastyBiz-Connected.html?'+next);
-          }catch(e){feedback.textContent=e.message;button.disabled=false;cancel.disabled=false;select.disabled=false;}
+          }catch(e){
+            feedback.textContent=e.message;
+            cancel.disabled=false;
+            if([401,403,404,410].includes(e.status)){
+              feedback.textContent+=' Use Restart connection to try again for this business.';
+              button.hidden=true;restart.hidden=false;select.disabled=true;
+            }else{select.disabled=false;updateChoice();}
+          }
         });
         const cancel=document.createElement('button');cancel.type='button';cancel.className='btn-secondary';cancel.textContent='Cancel';
         cancel.addEventListener('click',async()=>{
@@ -183,9 +200,9 @@ auth.authStateReady().then(() => {
             const result=await r.json();if(!r.ok || !result.cancelled)throw Error(result.error||'Could not discard this choice. Please try Cancel again.');
             window.BBOAuth.clear(state);
             window.location.replace('BlastyBiz-Connect.html?bizId='+encodeURIComponent(bizId));
-          }catch(e){feedback.textContent=e.message;cancel.disabled=false;button.disabled=!select.value;select.disabled=false;}
+          }catch(e){feedback.textContent=e.message;cancel.disabled=false;if(restart.hidden){select.disabled=false;updateChoice();}}
         });
-        content.append(h,label,select,button,feedback,cancel);
+        content.append(h,help,label,select,button,feedback,restart,cancel);
       }catch(e){fail(e.message);}
       return;
     }
