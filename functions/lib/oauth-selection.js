@@ -5,6 +5,7 @@ const { META_GRAPH_BASE, providerId } = require('./provider-api');
 const fail = (status, message) => { throw Object.assign(Error(message), {httpStatus:status}); };
 const millis = value => value?.toMillis?.() || (value instanceof Date ? value.getTime() : Date.parse(value)) || 0;
 function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
+  const requests=require('./facebook-authorization').createFacebookAuthorization({db,clock});
   const nonceRef = id => {
     if (!providerId(id)) fail(400, 'Invalid connection request.');
     return db.collection('oauthNonces').doc(id);
@@ -62,7 +63,12 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
   }
   async function prepare(p) {
     if(!validHash(p.verifierHash)||!providerId(p.state)) fail(400,'Missing browser binding. Please reconnect.');
-    if (!p.choices.length) fail(409, 'No eligible destination was found. Check your provider permissions and reconnect.');
+    if(p.authorizationRequest){
+      const request=await requests.load(p.authorizationRequest,p.uid,p.businessId);
+      if(p.platform!=='facebook')fail(400,'This authorization is for Facebook.');
+      p={...p,expectedPageId:request.pageId,pageName:request.pageName,choices:p.choices.filter(c=>c.id===request.pageId&&c.pageId===request.pageId)};
+    }
+    if (!p.choices.length&&!p.authorizationRequest) fail(409, 'No eligible destination was found. Check your provider permissions and reconnect.');
     if (Buffer.byteLength(JSON.stringify(p))>800000) fail(409,'Too many destinations. Narrow access and reconnect.');
     const id=randomUUID();
     await nonceRef(id).set({...p,phase:'selection',expiresAt:new Date(clock()+10*60*1000)});
@@ -71,7 +77,8 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
   async function inspect(id, uid, verifier) {
     const p=(await nonceRef(id).get()).data(); validate(p,uid,verifier);
     if (!(await business(p).get()).exists) fail(404,'Business no longer exists.');
-    return {businessId:p.businessId,platform:p.platform,returnTo:p.returnTo||'',choices:p.choices.map(c=>({id:c.id,label:c.label}))};
+    if(p.authorizationRequest)await requests.load(p.authorizationRequest,uid,p.businessId);
+    return {businessId:p.businessId,platform:p.platform,returnTo:p.returnTo||'',...(p.authorizationRequest?{authorizationRequest:p.authorizationRequest,expectedPageId:p.expectedPageId,pageName:p.pageName}:{}),choices:p.choices.map(c=>({id:c.id,label:c.label}))};
   }
   async function cancel(id,uid,verifier) {
     const ref=nonceRef(id);
@@ -88,6 +95,10 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
     const ref=nonceRef(id), p=(await ref.get()).data(); validate(p,uid,verifier);
     const choice=p.choices.find(c=>c.id===choiceId);
     if (!choice) fail(400,'Choose one of the available destinations.');
+    if(p.authorizationRequest){
+      const request=await requests.load(p.authorizationRequest,uid,p.businessId);
+      if(p.platform!=='facebook'||choice.pageId!==request.pageId||choice.id!==request.pageId)fail(409,'Facebook has not granted access to the requested Page.');
+    }
     let igUserId='';
     if (p.platform==='facebook') {
       // A failed lookup is not evidence that a Page has no Instagram account.
@@ -100,6 +111,12 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
       const fresh=(await tx.get(ref)).data(); validate(fresh,uid,verifier);
       if (!fresh.choices.some(c=>c.id===choiceId)) fail(409,'Connection choice changed. Reconnect.');
       const br=business(p); if (!(await tx.get(br)).exists) fail(404,'Business no longer exists.');
+      let requestRef;
+      if(p.authorizationRequest){
+        requestRef=requests.ref(p.authorizationRequest);
+        const request=requests.validate((await tx.get(requestRef)).data(),uid,p.businessId);
+        if(choice.pageId!==request.pageId||fresh.authorizationRequest!==p.authorizationRequest)fail(409,'Authorization request changed. Reconnect.');
+      }
       const cr=br.collection('platformConnections').doc(p.platform);
       const common={uid,businessId:p.businessId,platform:p.platform,status:'connected',expiresAt:p.platform==='google'?p.tokenExpiresAt:null,...(p.platform==='facebook'?{userTokenExpiresAt:p.tokenExpiresAt}:{}),connectedAt:admin.firestore.FieldValue.serverTimestamp()};
       if(p.platform==='google') {
@@ -118,11 +135,13 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
         }
       } else fail(400,'Unsupported provider.');
       if(p.platform==='google')tx.create(db.collection('importJobs').doc('google-'+id),{status:'queued',uid,bizId:p.businessId,queuedAt:admin.firestore.FieldValue.serverTimestamp()});
+      if(requestRef)tx.update(requestRef,{status:'connected',connectedAt:admin.firestore.FieldValue.serverTimestamp()});
       tx.delete(ref); // Choice and credentials are consumed atomically.
     });
-    return {businessId:p.businessId,platform:p.platform,returnTo:p.returnTo||''};
+    return {businessId:p.businessId,platform:p.platform,returnTo:p.returnTo||'',...(p.authorizationRequest?{authorizationRequest:p.authorizationRequest}:{})};
   }
   return {googleChoices,facebookChoices,prepare,inspect,confirm,cancel};
 }
 module.exports={createOAuthSelection};
+
 

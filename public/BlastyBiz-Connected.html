@@ -23,7 +23,7 @@
   }
 }
 </script>
-  <script type="module" src="./auth-guard.js?v=20261011-security"></script>
+  <script type="module" src="./auth-guard.js?v=20261018-facebook-auth"></script>
 <script src="blastybiz-menu.js?v=8"></script>
 <script src="escape-utils.js"></script>
 <script src="blasty-registry.js"></script>
@@ -52,7 +52,7 @@
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { deliveryReadiness } from './platforms-config.js?v=20261018-meta-page';
-import { connectionReturn } from './auth-return.js?v=20261011-security';
+import { connectionReturn } from './auth-return.js?v=20261018-facebook-auth';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -121,6 +121,8 @@ auth.authStateReady().then(() => {
       `;
       const businessId=params.get('bizId');
       if(businessId&&/^[A-Za-z0-9_-]{1,128}$/.test(businessId))for(const link of content.querySelectorAll('a'))link.href+='?bizId='+encodeURIComponent(businessId);
+      const request=params.get('authorizationRequest');
+      if(request&&/^[A-Za-z0-9_-]{1,128}$/.test(request)){const retry=content.querySelector('.btn-retry');retry.href+='&authorizationRequest='+encodeURIComponent(request);}
       const back=connectionReturn(user.uid,businessId);if(back){const link=content.querySelector('.btn-secondary');link.href=back;link.textContent='Return to your blast';}
       return}
 
@@ -132,12 +134,16 @@ auth.authStateReady().then(() => {
 
     const bizId = params.get('bizId');
     const ownerUid = params.get('ownerUid');
+    const authorizationRequest=params.get('authorizationRequest');
+    const requestQuery=authorizationRequest&&/^[A-Za-z0-9_-]{1,128}$/.test(authorizationRequest)?'&authorizationRequest='+encodeURIComponent(authorizationRequest):'';
+    const retryUrl='BlastyBiz-Connect.html?bizId='+encodeURIComponent(bizId||'')+requestQuery;
     const fail = message => {
       content.replaceChildren();
       const heading=document.createElement('h1'); heading.textContent='Connection not confirmed';
       const text=document.createElement('p'); text.textContent=message;
       const retry=document.createElement('a'); retry.className='btn-primary'; retry.textContent='Return to connections';
       retry.href='BlastyBiz-Connect.html'+(bizId&&/^[A-Za-z0-9_-]{1,128}$/.test(bizId)?'?bizId='+encodeURIComponent(bizId):'');
+      if(requestQuery)retry.href=retryUrl;
       content.append(heading,text,retry);
     };
     if (!bizId || !/^[A-Za-z0-9_-]{1,128}$/.test(bizId) || (ownerUid && ownerUid!==user.uid)) {
@@ -154,7 +160,7 @@ auth.authStateReady().then(() => {
         const endpoint='https://us-central1-blastybiz-9523e.cloudfunctions.net/oauthDestination';
         const response=await fetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({selection:selectionId,verifier,action:'inspect'})});
         const data=await response.json(); if(!response.ok)throw Error(data.error||'Could not load your destinations.');
-        if(data.businessId!==bizId || data.platform!==platform)throw Error('This connection belongs to a different business.');
+        if(data.businessId!==bizId || data.platform!==platform || (authorizationRequest&&data.authorizationRequest!==authorizationRequest))throw Error('This connection belongs to a different business.');
         content.replaceChildren();
         const h=document.createElement('h1');h.textContent='Connect your business Page';
         if(platform==='google')h.textContent='Connect your business location';
@@ -167,7 +173,7 @@ auth.authStateReady().then(() => {
         const button=document.createElement('button');button.type='button';button.className='btn-primary';button.disabled=true;
         const feedback=document.createElement('p');feedback.id='destination-feedback';feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');
         const restart=document.createElement('a');restart.className='btn-primary';restart.textContent='Restart connection';restart.hidden=true;
-        restart.href='BlastyBiz-Connect.html?bizId='+encodeURIComponent(bizId);
+        restart.href=retryUrl;
         const updateChoice=()=>{
           button.disabled=!select.value;
           button.textContent=select.value?'Connect '+select.options[select.selectedIndex].textContent:(platform==='google'?'Choose a location first':'Choose a Page first');
@@ -181,6 +187,7 @@ auth.authStateReady().then(() => {
             const result=await r.json();if(!r.ok)throw Object.assign(Error(result.error||'Your choice was not saved.'),{status:r.status});
             window.BBOAuth.clear(state);
             const next=new URLSearchParams({connected:result.platform,bizId:result.businessId,ownerUid:user.uid});
+            if(result.authorizationRequest)next.set('authorizationRequest',result.authorizationRequest);
             if(result.returnTo==='onboarding')next.set('returnTo','onboarding');
             window.location.replace('BlastyBiz-Connected.html?'+next);
           }catch(e){
@@ -199,10 +206,20 @@ auth.authStateReady().then(() => {
             const r=await fetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+await user.getIdToken(),'Content-Type':'application/json'},body:JSON.stringify({selection:selectionId,verifier,cancel:true})});
             const result=await r.json();if(!r.ok || !result.cancelled)throw Error(result.error||'Could not discard this choice. Please try Cancel again.');
             window.BBOAuth.clear(state);
-            window.location.replace('BlastyBiz-Connect.html?bizId='+encodeURIComponent(bizId));
+            window.location.replace(retryUrl);
           }catch(e){feedback.textContent=e.message;cancel.disabled=false;if(restart.hidden){select.disabled=false;updateChoice();}}
         });
         content.append(h,help,label,select,button,feedback,restart,cancel);
+        if(data.authorizationRequest){
+          h.textContent='Connect '+data.pageName;
+          if(data.choices.length===1&&data.choices[0].id===data.expectedPageId){
+            select.value=data.expectedPageId;select.hidden=true;label.hidden=true;updateChoice();
+            help.textContent='Facebook granted access to '+data.pageName+'. Confirm below to connect this Page to your business. This does not publish a post.';
+          }else{
+            help.textContent='Facebook has not granted BlastyBiz publishing access to '+data.pageName+' (Page '+data.expectedPageId+'). Return to Facebook, review Edit settings, and include this Page while keeping the other Pages selected. If it is missing there too, check that your Facebook profile has access to manage this Page.';
+            select.hidden=true;label.hidden=true;button.hidden=true;restart.hidden=false;restart.textContent='Review Facebook permissions';
+          }
+        }
       }catch(e){fail(e.message);}
       return;
     }
@@ -215,6 +232,11 @@ auth.authStateReady().then(() => {
       if (connSnap.exists()) connData = connSnap.data();
       if (deliveryReadiness(platform,connData).state!=='ready') {
         throw Error('No usable destination was saved. Check your provider permissions, then reconnect and choose your business.');
+      }
+      if(authorizationRequest){
+        const response=await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/oauthDestination',{method:'POST',headers:{Authorization:'Bearer '+await user.getIdToken(),'Content-Type':'application/json'},body:JSON.stringify({action:'authorizationRequest',businessId:bizId,requestId:authorizationRequest})});
+        const request=await response.json();
+        if(!response.ok||!request.connected||request.pageId!==connData.pageId)throw Error('The requested Facebook Page has not been confirmed. Please resume authorization.');
       }
       if (platform === 'facebook') {
         const igSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', bizId, 'platformConnections', 'instagram'));
@@ -298,3 +320,4 @@ auth.authStateReady().then(() => {
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html});</script>
 </body>
 </html>
+

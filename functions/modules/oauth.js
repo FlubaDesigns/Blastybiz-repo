@@ -21,6 +21,7 @@ const {
 const selection = require('../lib/oauth-selection').createOAuthSelection({db,admin,axios});
 const {createOAuthBinding,validHash,cookieName}=require('../lib/oauth-binding');
 const binding=createOAuthBinding({db});
+const facebookAuthorization=require('../lib/facebook-authorization').createFacebookAuthorization({db});
 function connectionUrl(platform, businessId, uid, returnTo, extra={}, appOrigin=APP_BASE_URL) {
   const {selection,state,...query}=extra;
   return appOrigin + '/BlastyBiz-Connected.html?' + new URLSearchParams({connected:platform,bizId:businessId,ownerUid:uid,...(returnTo==='onboarding'?{returnTo}:{}),...(selection?{pending:'1'}:{}),...query}) + (selection?'#'+new URLSearchParams({selection,state}):'');
@@ -42,7 +43,7 @@ exports.oauthDestination = onRequest({invoker:'public'}, withAuth(async (req,res
   try {
     if (req.method!=='POST') return res.status(405).json({error:'POST only'});
     const input=req.body||{};
-    const result=input.action==='inspect'?await selection.inspect(input.selection,decoded.uid,input.verifier):input.cancel===true?await selection.cancel(input.selection,decoded.uid,input.verifier):await selection.confirm(input.selection,decoded.uid,input.choiceId,input.verifier);
+    const result=input.action==='authorizationRequest'?await facebookAuthorization.inspect(input.requestId,decoded.uid,input.businessId):input.action==='inspect'?await selection.inspect(input.selection,decoded.uid,input.verifier):input.cancel===true?await selection.cancel(input.selection,decoded.uid,input.verifier):await selection.confirm(input.selection,decoded.uid,input.choiceId,input.verifier);
     return res.json(result);
   } catch(e) {
     return res.status(e.httpStatus||502).json({error:e.httpStatus?e.message:'Could not verify the provider destination. Reconnect or try again.'});
@@ -117,7 +118,7 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', region: 'us-central
 exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBOOK_APP_ID'] }, withAuth(async (req, res, decoded) => {
   res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   const uid = decoded.uid;
-  const { businessId, returnTo, verifierHash } = req.query;
+  const { businessId, returnTo, verifierHash, authorizationRequest } = req.query;
   const appOrigin=req.headers?.origin;
   if(!ALLOWED_ORIGINS.has(appOrigin)||!validHash(verifierHash))return res.status(400).json({error:'Start this connection from BlastyBiz in the same browser tab.'});
   if (!providerId(businessId)) { res.status(400).json({ error: 'Invalid businessId' }); return; }
@@ -126,6 +127,10 @@ exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBO
   }
   const bizSnap = await userBizRef(uid, businessId).get();
   if (!bizSnap.exists) { return res.status(403).json({ error: 'Forbidden' }); }
+  if(authorizationRequest!==undefined){
+    try { await facebookAuthorization.load(authorizationRequest,uid,businessId); }
+    catch(e){return res.status(e.httpStatus||503).json({error:e.httpStatus?e.message:'Authorization request is unavailable. Try again.'});}
+  }
   const appId = process.env.FACEBOOK_APP_ID;
   if (!appId) { res.status(503).json({ error: 'Facebook OAuth not configured' }); return; }
   const nonce = require('crypto').randomUUID();
@@ -136,9 +141,11 @@ exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBO
     `?client_id=${encodeURIComponent(appId)}` +
     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
     `&scope=${encodeURIComponent(scope)}` +
+    (authorizationRequest?'&auth_type=rerequest':'') +
     `&state=${encodeURIComponent(nonce)}`;
   await db.collection('oauthNonces').doc(nonce).set({
     uid,businessId,platform:'facebook',phase:'start',appOrigin,verifierHash,authorizationUrl:url,
+    ...(authorizationRequest?{authorizationRequest}:{}),
     returnTo:returnTo==='onboarding'?returnTo:'',expiresAt:new Date(Date.now()+10*60*1000)
   });
   res.set('Cache-Control','no-store');
@@ -147,12 +154,12 @@ exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBO
 
 exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['FACEBOOK_APP_ID', 'FACEBOOK_APP_SECRET'] }, async (req, res) => {
   const { code, state } = req.query;
-  let businessId, uid, returnTo, appOrigin, verifierHash;
+  let businessId, uid, returnTo, appOrigin, verifierHash, authorizationRequest;
   res.set('Cache-Control','no-store');res.set('Referrer-Policy','no-referrer');
-  try { ({businessId,uid,returnTo,appOrigin,verifierHash} = await binding.consume(state, 'facebook',req.headers?.cookie)); }
+  try { ({businessId,uid,returnTo,appOrigin,verifierHash,authorizationRequest} = await binding.consume(state, 'facebook',req.headers?.cookie)); }
   catch(e) { return res.status(400).send('Invalid or expired OAuth state. Please try connecting again.'); }
   res.set('Set-Cookie',`${cookieName(state)}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`);
-  const errorRedirect = connectionUrl('facebook',businessId,uid,returnTo,{error:'facebook'},appOrigin);
+  const errorRedirect = connectionUrl('facebook',businessId,uid,returnTo,{error:'facebook',...(authorizationRequest?{authorizationRequest}:{})},appOrigin);
   if (!code) return res.redirect(errorRedirect);
 
   try {
@@ -180,9 +187,9 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-centr
 
     if (!longLivedToken) throw Error('Facebook did not return an access token.');
     const choices=await selection.facebookChoices(longLivedToken);
-    const selectionId=await selection.prepare({uid,businessId,returnTo,verifierHash,state,platform:'facebook',choices,userAccessToken:longLivedToken,tokenExpiresAt:expiresAt});
+    const selectionId=await selection.prepare({uid,businessId,returnTo,verifierHash,state,...(authorizationRequest?{authorizationRequest}:{}),platform:'facebook',choices,userAccessToken:longLivedToken,tokenExpiresAt:expiresAt});
     // Even one destination requires authenticated, same-tab confirmation.
-    res.redirect(connectionUrl('facebook',businessId,uid,returnTo,{selection:selectionId,state},appOrigin));
+    res.redirect(connectionUrl('facebook',businessId,uid,returnTo,{selection:selectionId,state,...(authorizationRequest?{authorizationRequest}:{})},appOrigin));
   } catch(e) {
     console.error('facebookOAuthCallback failed:', e.response?.status || e.httpStatus || 'provider_error');
     res.redirect(errorRedirect);
@@ -443,4 +450,5 @@ exports.checkPlatformTokenExpiry = onSchedule(
     console.log(`[checkPlatformTokenExpiry] Done — refreshed: ${refreshed}, expired: ${expired}, skipped: ${skipped}`);
   }
 );
+
 
