@@ -114,8 +114,8 @@ async function installRoutes(context,page,uid){
   assert.equal(exchanges.length,1);assert(callbacks[1].headers.cookie.includes(cookie.name+'='),'SameSite=Lax cookie arrives on real cross-site top-level callback GET');
   const connection='users/owner/businesses/business/platformConnections/google';
   assert(!m.get(connection),'sole destination never autoactivates');
-  assert.equal(await page.getByRole('button',{name:'Connect this destination'}).isDisabled(),true);
-  await page.selectOption('#destination-choice','account_location');await page.getByRole('button',{name:'Connect this destination'}).click();
+  assert.equal(await page.getByRole('button',{name:'Choose a location first'}).isDisabled(),true);
+  await page.selectOption('#destination-choice','account_location');await page.getByRole('button',{name:/^Connect Fixture location/}).click();
   await page.waitForURL(url=>url.pathname==='/BlastyBiz-Connected.html'&&!url.hash&&!url.searchParams.has('pending'));
   assert.equal(m.get(connection).locationId,'location');assert(!m.get('users/victim/businesses/business/platformConnections/google'));
   assert.equal(await page.evaluate(state=>sessionStorage.getItem('bb-oauth-attempt:'+state),state),null,'explicit success clears same-tab proof');
