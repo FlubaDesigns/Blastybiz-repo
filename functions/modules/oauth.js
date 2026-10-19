@@ -177,6 +177,7 @@ exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBO
   await db.collection('oauthNonces').doc(nonce).set({
     uid,businessId,platform:'facebook',phase:'start',appOrigin,verifierHash,authorizationUrl:url,
     ...(authorizationRequest?{authorizationRequest}:{}),
+    ...(req.query.requiredPlatform==='instagram'?{requiredPlatform:'instagram'}:{}),
     returnTo:returnTo==='onboarding'?returnTo:'',expiresAt:new Date(Date.now()+10*60*1000)
   });
   res.set('Cache-Control','no-store');
@@ -185,9 +186,9 @@ exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBO
 
 exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-central1', secrets: ['FACEBOOK_APP_ID', 'FACEBOOK_APP_SECRET'] }, async (req, res) => {
   const { code, state } = req.query;
-  let businessId, uid, returnTo, appOrigin, verifierHash, authorizationRequest;
+  let businessId, uid, returnTo, appOrigin, verifierHash, authorizationRequest, requiredPlatform;
   res.set('Cache-Control','no-store');res.set('Referrer-Policy','no-referrer');
-  try { ({businessId,uid,returnTo,appOrigin,verifierHash,authorizationRequest} = await binding.consume(state, 'facebook',req.headers?.cookie)); }
+  try { ({businessId,uid,returnTo,appOrigin,verifierHash,authorizationRequest,requiredPlatform} = await binding.consume(state, 'facebook',req.headers?.cookie)); }
   catch(e) { return res.status(400).send('Invalid or expired OAuth state. Please try connecting again.'); }
   res.set('Set-Cookie',`${cookieName(state)}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`);
   const errorRedirect = connectionUrl('facebook',businessId,uid,returnTo,{error:'facebook',...(authorizationRequest?{authorizationRequest}:{})},appOrigin);
@@ -218,7 +219,7 @@ exports.facebookOAuthCallback = onRequest({ invoker: 'public', region: 'us-centr
 
     if (!longLivedToken) throw Error('Facebook did not return an access token.');
     const choices=await selection.facebookChoices(longLivedToken);
-    const selectionId=await selection.prepare({uid,businessId,returnTo,verifierHash,state,...(authorizationRequest?{authorizationRequest}:{}),platform:'facebook',choices,userAccessToken:longLivedToken,tokenExpiresAt:expiresAt});
+    const selectionId=await selection.prepare({uid,businessId,returnTo,verifierHash,state,...(authorizationRequest?{authorizationRequest}:{}),...(requiredPlatform==='instagram'?{requiredPlatform}:{}),platform:'facebook',choices,userAccessToken:longLivedToken,tokenExpiresAt:expiresAt});
     // Even one destination requires authenticated, same-tab confirmation.
     res.redirect(connectionUrl('facebook',businessId,uid,returnTo,{selection:selectionId,state,...(authorizationRequest?{authorizationRequest}:{})},appOrigin));
   } catch(e) {

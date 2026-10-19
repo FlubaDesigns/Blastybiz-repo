@@ -67,7 +67,7 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
     if(p.authorizationRequest){
       const request=await requests.load(p.authorizationRequest,p.uid,p.businessId);
       if(p.platform!=='facebook')fail(400,'This authorization is for Facebook.');
-      p={...p,expectedPageId:request.pageId,pageName:request.pageName,choices:p.choices.filter(c=>c.id===request.pageId&&c.pageId===request.pageId)};
+      p={...p,...(request.requiredPlatform==='instagram'?{requiredPlatform:'instagram',instagramUsername:request.instagramUsername}:{}),expectedPageId:request.pageId,pageName:request.pageName,choices:p.choices.filter(c=>c.id===request.pageId&&c.pageId===request.pageId)};
     }
     if (!p.choices.length&&!p.authorizationRequest) fail(409, 'No eligible destination was found. Check your provider permissions and reconnect.');
     if (Buffer.byteLength(JSON.stringify(p))>800000) fail(409,'Too many destinations. Narrow access and reconnect.');
@@ -79,7 +79,7 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
     const p=(await nonceRef(id).get()).data(); validate(p,uid,verifier);
     if (!(await business(p).get()).exists) fail(404,'Business no longer exists.');
     if(p.authorizationRequest)await requests.load(p.authorizationRequest,uid,p.businessId);
-    return {businessId:p.businessId,platform:p.platform,returnTo:p.returnTo||'',...(p.authorizationRequest?{authorizationRequest:p.authorizationRequest,expectedPageId:p.expectedPageId,pageName:p.pageName}:{}),choices:p.choices.map(c=>({id:c.id,label:c.label}))};
+    return {businessId:p.businessId,platform:p.platform,returnTo:p.returnTo||'',...(p.requiredPlatform==='instagram'?{requiredPlatform:'instagram',instagramUsername:p.instagramUsername||''}:{}),...(p.authorizationRequest?{authorizationRequest:p.authorizationRequest,expectedPageId:p.expectedPageId,pageName:p.pageName}:{}),choices:p.choices.map(c=>({id:c.id,label:c.label}))};
   }
   async function cancel(id,uid,verifier) {
     const ref=nonceRef(id);
@@ -101,12 +101,16 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
       if(p.platform!=='facebook'||choice.pageId!==request.pageId||choice.id!==request.pageId)fail(409,'Facebook has not granted access to the requested Page.');
     }
     if(p.platform==='linkedin')await linkedin.verify(p.accessToken,choice);
-    let igUserId='';
+    let igUserId='',igUsername='';
     if (p.platform==='facebook') {
+      if(p.requiredPlatform==='instagram'&&!choice.instagramAuthorized)fail(409,'Instagram access was not granted. In Meta, edit previous settings and include your Instagram account before confirming. Your saved Facebook connection is unchanged.');
       // A failed lookup is not evidence that a Page has no Instagram account.
-      const r=await axios.get(META_GRAPH_BASE+'/'+choice.pageId,{params:{fields:choice.instagramAuthorized?'id,instagram_business_account':'id',access_token:choice.accessToken},timeout:20000});
+      const r=await axios.get(META_GRAPH_BASE+'/'+choice.pageId,{params:{fields:choice.instagramAuthorized?(p.requiredPlatform==='instagram'?'id,instagram_business_account{id,username}':'id,instagram_business_account'):'id',access_token:choice.accessToken},timeout:20000});
       if (r.data.id!==choice.pageId) fail(409,'Facebook returned a different Page. Reconnect.');
       igUserId=choice.instagramAuthorized?(r.data.instagram_business_account?.id||''):'';
+      igUsername=String(r.data.instagram_business_account?.username||'').toLowerCase();
+      if(p.requiredPlatform==='instagram'&&!igUserId)fail(409,'Meta has not exposed your Instagram account for this Page. In Instagram, open Edit profile → Facebook and finish linking this Page; in Meta permissions include your Instagram account. Then retry this confirmation. Facebook is already saved.');
+      if(p.requiredPlatform==='instagram'&&p.instagramUsername&&igUsername!==p.instagramUsername)fail(409,'Meta returned a different Instagram account. Select @'+p.instagramUsername+' and this Facebook Page.');
       if (igUserId && !providerId(igUserId)) fail(409,'Invalid linked Instagram account.');
     }
     await db.runTransaction(async tx=>{
@@ -117,7 +121,7 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
       if(p.authorizationRequest){
         requestRef=requests.ref(p.authorizationRequest);
         const request=requests.validate((await tx.get(requestRef)).data(),uid,p.businessId);
-        if(choice.pageId!==request.pageId||fresh.authorizationRequest!==p.authorizationRequest)fail(409,'Authorization request changed. Reconnect.');
+        if(choice.pageId!==request.pageId||fresh.authorizationRequest!==p.authorizationRequest||request.requiredPlatform!==p.requiredPlatform||request.instagramUsername!==p.instagramUsername)fail(409,'Authorization request changed. Reconnect.');
       }
       const cr=br.collection('platformConnections').doc(p.platform);
       const common={uid,businessId:p.businessId,platform:p.platform,status:'connected',expiresAt:p.platform==='google'?p.tokenExpiresAt:null,...(p.platform==='facebook'?{userTokenExpiresAt:p.tokenExpiresAt}:{}),connectedAt:admin.firestore.FieldValue.serverTimestamp()};
@@ -129,7 +133,7 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
         tx.set(cr.collection('private').doc('tokens'),{accessToken:choice.accessToken,userAccessToken:p.userAccessToken});
         const ir=br.collection('platformConnections').doc('instagram');
         if(igUserId) {
-          tx.set(ir,{...common,platform:'instagram',igUserId,pageId:choice.pageId},{merge:true});
+          tx.set(ir,{...common,platform:'instagram',igUserId,pageId:choice.pageId,...(igUsername?{igUsername,username:igUsername,profileUrl:'https://www.instagram.com/'+igUsername+'/'}:{})},{merge:true});
           tx.set(ir.collection('private').doc('tokens'),{accessToken:choice.accessToken});
         } else {
           tx.set(ir,{uid,businessId:p.businessId,platform:'instagram',status:'disconnected',igUserId:'',pageId:choice.pageId,disconnectedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
@@ -143,7 +147,7 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
       if(requestRef)tx.update(requestRef,{status:'connected',connectedAt:admin.firestore.FieldValue.serverTimestamp()});
       tx.delete(ref); // Choice and credentials are consumed atomically.
     });
-    return {businessId:p.businessId,platform:p.platform,returnTo:p.returnTo||'',...(p.authorizationRequest?{authorizationRequest:p.authorizationRequest}:{})};
+    return {businessId:p.businessId,platform:p.requiredPlatform==='instagram'?'instagram':p.platform,returnTo:p.returnTo||'',...(p.authorizationRequest?{authorizationRequest:p.authorizationRequest}:{})};
   }
   return {googleChoices,facebookChoices,prepare,inspect,confirm,cancel};
 }
