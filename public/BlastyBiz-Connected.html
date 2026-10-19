@@ -126,11 +126,11 @@ auth.authStateReady().then(() => {
       const back=connectionReturn(user.uid,businessId);if(back){const link=content.querySelector('.btn-secondary');link.href=back;link.textContent='Return to your blast';}
       return}
 
-    if (!platform || !Object.hasOwn(PLATFORM_META, platform)) {
+    if (!platform || (!Object.hasOwn(PLATFORM_META, platform)&&platform!=='instagram')) {
       window.location.href = 'BlastyBiz-Connect.html';
       return}
 
-    const meta = PLATFORM_META[platform];
+    const meta = platform==='instagram'?{...PLATFORM_META.facebook,label:'Instagram',icon:'◎',nameField:'igUsername',steps:[{title:'You approve the post',desc:'Your Instagram account is saved for this business. Nothing publishes without your approval.'}]}:PLATFORM_META[platform];
 
     const bizId = params.get('bizId');
     const ownerUid = params.get('ownerUid');
@@ -210,11 +210,15 @@ auth.authStateReady().then(() => {
           }catch(e){feedback.textContent=e.message;cancel.disabled=false;if(restart.hidden){select.disabled=false;updateChoice();}}
         });
         content.append(h,help,label,select,button,feedback,restart,cancel);
+        if(data.requiredPlatform==='instagram'){
+          h.textContent='Connect Instagram'+(data.instagramUsername?' @'+data.instagramUsername:'');
+          help.textContent='Select the Facebook Page linked to your Instagram account. Confirmation succeeds only when Meta returns the Instagram account and its permissions.';
+        }
         if(data.authorizationRequest){
-          h.textContent='Connect '+data.pageName;
+          h.textContent=data.requiredPlatform==='instagram'?'Connect Instagram @'+data.instagramUsername:'Connect '+data.pageName;
           if(data.choices.length===1&&data.choices[0].id===data.expectedPageId){
             select.value=data.expectedPageId;select.hidden=true;label.hidden=true;updateChoice();
-            help.textContent='Facebook granted access to '+data.pageName+'. Confirm below to connect this Page to your business. This does not publish a post.';
+            help.textContent=data.requiredPlatform==='instagram'?'Confirm Instagram @'+data.instagramUsername+' through '+data.pageName+'. Facebook alone does not complete this request.':'Facebook granted access to '+data.pageName+'. Confirm below to connect this Page to your business. This does not publish a post.';
           }else{
             help.textContent='Facebook did not return a usable publishing connection for '+data.pageName+'. Repeating the same login may return the same Page list. Your access to manage a Page and the Pages shared with BlastyBiz are separate settings.';
             select.hidden=true;label.hidden=true;button.hidden=true;
@@ -241,7 +245,7 @@ auth.authStateReady().then(() => {
       if(authorizationRequest){
         const response=await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/oauthDestination',{method:'POST',headers:{Authorization:'Bearer '+await user.getIdToken(),'Content-Type':'application/json'},body:JSON.stringify({action:'authorizationRequest',businessId:bizId,requestId:authorizationRequest})});
         const request=await response.json();
-        if(!response.ok||!request.connected||request.pageId!==connData.pageId)throw Error('The requested Facebook Page has not been confirmed. Please resume authorization.');
+        if(!response.ok||!request.connected||request.pageId!==connData.pageId)throw Error(request.requiredPlatform==='instagram'?'Instagram is not connected yet. Facebook was saved, but this request stays open until the requested Instagram account is verified. Resume Instagram authorization.':'The requested Facebook Page has not been confirmed. Please resume authorization.');
       }
       if (platform === 'facebook') {
         const igSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', bizId, 'platformConnections', 'instagram'));
@@ -272,8 +276,8 @@ auth.authStateReady().then(() => {
     ` : (platform === 'facebook' && !igData) ? `
       <div class="ig-pill ig-pill-warn">
         <div class="ig-pill-icon">📸</div>
-        <div class="ig-pill-text">No Instagram Business account was found linked to this Page. To connect Instagram, link it to your Facebook Page in Meta Business Suite first.</div>
-        <div class="ig-pill-badge ig-badge-warn">Not linked</div>
+        <div class="ig-pill-text">Instagram is not connected in BlastyBiz. Meta has not exposed the account under this grant. Finish the Page link or include the Instagram account in Meta permissions.</div>
+        <div class="ig-pill-badge ig-badge-warn">Needs Instagram access</div>
       </div>
     ` : '';
 
@@ -282,7 +286,7 @@ auth.authStateReady().then(() => {
         <div class="hero-icon" style="background:${meta.iconBg}">${meta.icon}</div>
         <div class="hero-badge">Successfully connected</div>
         <h1 class="hero-title">${meta.label} <span>is connected.</span></h1>
-        <p class="hero-sub">BlastyBiz can now post directly to your ${platform === 'google' ? 'Google Business Profile' : 'Facebook Page'} whenever you approve a listing.</p>
+        <p class="hero-sub">BlastyBiz can now post directly to your ${platform === 'google' ? 'Google Business Profile' : platform==='instagram'?'Instagram account':'Facebook Page'} whenever you approve a listing.</p>
       </div>
 
       <div class="account-card">

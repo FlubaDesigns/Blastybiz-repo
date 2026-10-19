@@ -54,8 +54,9 @@ async function connected({secret=entry,hash='#selection=ticket&state=state',pend
  rw.BBOAuth={begin:async(...a)=>starts.push(a)};
  rw.eval(read('public/facebook-authorization.js').replace(/^export /gm,''));
  await rw.renderFacebookAuthorization({user:{getIdToken:async()=>'fixture'},businessId:'b',requestId:'request',container:rw.document.getElementById('page-content')});
+ const authStyle=rw.document.createElement('style');authStyle.textContent=read('public/instagram-authorization.css');rw.document.head.append(authStyle);
  const continueButton=rw.document.querySelector('button');continueButton.click();continueButton.click();await tick();
- ok(starts.length===1&&starts[0][0].includes('authorizationRequest=request')&&continueButton.style.width==='100%','phone action retains target and locks duplicate clicks');
+ ok(starts.length===1&&starts[0][0].includes('authorizationRequest=request')&&rw.getComputedStyle(continueButton).width==='100%','phone action retains target and locks duplicate clicks');
  requestDOM.window.close();
  for(const cancel of [false,true]){
   const e=await connected(),select=e.w.document.querySelector('select'),button=e.w.document.querySelector('button');
