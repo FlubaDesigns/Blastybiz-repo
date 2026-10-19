@@ -6,7 +6,8 @@ module.exports=async function(){
   const setup=read('BlastyBiz-CreateBiz.html'),recover=setup.slice(setup.indexOf("const setupDraftKey="),setup.indexOf('// ── Platform grid'));
   const create=(uid='u',raw=null)=>{
     const dom=new JSDOM(setup,{url:'https://example.invalid/BlastyBiz-CreateBiz?new=1',runScripts:'outside-only'}),w=dom.window;
-    w._cbReady=true;w._cbBlasty={idx:7};
+    w._cbReady=true;w._cbNeedsCampaign=true;w._cbBlasty={idx:7};
+    w.eval(setup.slice(setup.indexOf('function cbWantsCampaign()'),setup.indexOf('function cbConfigureForm()')));
     if(raw)w.localStorage.setItem('bb_setup_draft',raw);
     w.eval(`let currentUser={uid:${JSON.stringify(uid)}},editBizId=null,newBizRef=null,newCampId=null,existingCampaignId=null;const db={},urlP=new URLSearchParams(location.search);const collection=()=>({});const doc=(...args)=>({id:args.length===1?'stable_business':args.at(-1)});function cbConfigureForm(){};`+recover);
     return {dom,w};
@@ -14,13 +15,14 @@ module.exports=async function(){
   let {dom,w}=create();
   w.document.getElementById('f-bizName').value='Saved phone typing';
   w.document.getElementById('pref-phone').checked=false;
+  w.document.getElementById('cb-create-campaign').checked=false;
   // Guided mode moves controls out of cb-form; recovery still reads the actual input.
   w.document.body.append(w.document.getElementById('f-bizName'));
   w.document.getElementById('f-bizName').dispatchEvent(new w.Event('input',{bubbles:true}));
-  const raw=w.localStorage.getItem('bb_setup_draft');assert(raw);
+  const raw=w.localStorage.getItem('bb_setup_draft');assert(raw);assert.equal(JSON.parse(raw).campaignId,null);
   const firstId=JSON.parse(raw).businessId;w.keepSetupDraft();assert.equal(JSON.parse(w.localStorage.getItem('bb_setup_draft')).businessId,firstId);
   dom.window.close();({dom,w}=create('u',raw));w.restoreSetupDraft();
-  assert.equal(w.document.getElementById('f-bizName').value,'Saved phone typing');assert.equal(w.document.getElementById('pref-phone').checked,false);assert.equal(w._cbResumeStep,7);assert.equal(w._cbGuideRequested,true);
+  assert.equal(w.document.getElementById('f-bizName').value,'Saved phone typing');assert.equal(w.document.getElementById('pref-phone').checked,false);assert.equal(w.document.getElementById('cb-create-campaign').checked,false);assert.equal(w._cbResumeStep,7);assert.equal(w._cbGuideRequested,true);
   dom.window.close();({dom,w}=create('other',raw));w.restoreSetupDraft();assert.notEqual(w.document.getElementById('f-bizName').value,'Saved phone typing');dom.window.close();
   ({dom,w}=create('u',JSON.stringify({...JSON.parse(raw),at:Date.now()-8*86400000})));w.restoreSetupDraft();assert.equal(w.localStorage.getItem('bb_setup_draft'),null);dom.window.close();
   ({dom,w}=create('u',raw));w.restoreSetupDraft();w.eval(read('session.js'));w._bbClearStorage();w.dispatchEvent(new w.Event('beforeunload'));w.keepSetupDraft();assert.equal(w.localStorage.getItem('bb_setup_draft'),null);dom.window.close();

@@ -250,6 +250,11 @@
     </div>
 
     <!-- Section 3: First Campaign -->
+    <div id="cb-campaign-choice" class="cb-toggle-row">
+      <label for="cb-create-campaign">Add a first campaign now</label>
+      <input type="checkbox" id="cb-create-campaign" checked onchange="cbConfigureForm()">
+      <p class="cb-hint">You can save your business details now and create a campaign later.</p>
+    </div>
     <div class="cb-section" id="cbs-campaign" data-guide-step="3">
       <button type="button" class="cb-sec-head" onclick="cbToggle('campaign')" aria-expanded="false">
         <span class="cb-sec-title" id="cb-sec3-title">🚀 First Campaign <span class="cb-sec-badge">Required</span></span>
@@ -364,8 +369,12 @@ function cbFieldError(field) {
   if (el.required && !el.value.trim()) return 'Please answer this field.';
   return el.checkValidity() ? '' : el.validationMessage;
 }
+function cbWantsCampaign() {
+  return window._cbNeedsCampaign && document.getElementById('cb-create-campaign').checked;
+}
 function cbConfigureForm() {
-  const initial = window._cbNeedsCampaign;
+  const initial = cbWantsCampaign();
+  document.getElementById('cb-campaign-choice').hidden = !window._cbNeedsCampaign;
   const personal=cbPersonal();
   ['f-bizName','f-role','f-locationType','f-street','f-hasWebsite','f-website','f-category'].forEach(id=>{const el=document.getElementById(id);el.closest('.cb-field').hidden=personal;el.disabled=personal;});
   ['f-bizName','f-role'].forEach(id=>{document.getElementById(id).required=!personal;});
@@ -425,7 +434,7 @@ CB_GUIDE_STEPS.forEach(function(step) {
     Object.defineProperty(step, 'required', { get: function() { return document.getElementById(step.field).required; } });
     step.validate = function() { return cbFieldError(step.field); };
   }
-  if (step.section === 'cbs-campaign') step.skipIf = function() { return !window._cbNeedsCampaign; };
+  if (step.section === 'cbs-campaign') step.skipIf = function() { return !cbWantsCampaign(); };
   if (['f-ownerName','f-ownerLastName','f-bizName','f-role','f-email','f-phone'].includes(step.field)) {
     step.skipIf = function(a) { return window._cbRestoredFields.has(step.field) && !!a[step.field] && !cbFieldError(step.field); };
   }
@@ -512,7 +521,7 @@ editBizId = urlP.get('bizId') || null;
 const setupDraftKey='bb_setup_draft';
 let setupDraftDirty=false;
 function setupValues(){
-  return [...document.querySelectorAll('[id^="f-"],[id^="pref-"],#cb-include-background,.plat-chk input')]
+  return [...document.querySelectorAll('[id^="f-"],[id^="pref-"],#cb-include-background,#cb-create-campaign,.plat-chk input')]
     .filter(el=>['INPUT','TEXTAREA','SELECT'].includes(el.tagName))
     .map(el=>({id:el.id||'platform:'+el.value,value:el.type==='checkbox'?el.checked:el.value}));
 }
@@ -520,7 +529,7 @@ function keepSetupDraft(){
   if(!currentUser||!window._cbReady||!setupDraftDirty)return;
   try{
     if(!editBizId&&!newBizRef)newBizRef=doc(collection(db,'users',currentUser.uid,'businesses'));
-    if(!existingCampaignId&&!newCampId)newCampId='c_'+Date.now();
+    if(cbWantsCampaign()&&!newCampId)newCampId='c_'+Date.now();
     localStorage.setItem(setupDraftKey,JSON.stringify({uid:currentUser.uid,route:urlP.get('bizId')|| (urlP.get('new')==='1'?'new':'setup'),
       businessId:editBizId||newBizRef?.id,campaignId:newCampId,values:setupValues(),step:window._cbBlasty?.idx??0,guided:!!window._cbBlasty,at:Date.now()}));
   }catch(error){document.getElementById('cb-guide-status').textContent='Keep this page open until you save; recovery storage is unavailable.';}
@@ -545,7 +554,7 @@ function restoreSetupDraft(){
   }catch(error){console.warn('Setup recovery unavailable');}
 }
 for(const name of ['input','change'])document.addEventListener(name,event=>{
-  if(!event.target?.matches?.('[id^="f-"],[id^="pref-"],#cb-include-background,.plat-chk input'))return;
+  if(!event.target?.matches?.('[id^="f-"],[id^="pref-"],#cb-include-background,#cb-create-campaign,.plat-chk input'))return;
   setupDraftDirty=true;keepSetupDraft();
 });
 document.addEventListener('click',()=>{if(setupDraftDirty)setTimeout(keepSetupDraft,0);});
@@ -809,7 +818,8 @@ window.cbSubmit = async function() {
       bizRef = newBizRef;
     }
     const bizId  = bizRef.id;
-    const campId = existingCampaignId || (newCampId = newCampId || 'c_' + Date.now());
+    const createCampaign = cbWantsCampaign();
+    const campId = existingCampaignId || (createCampaign ? (newCampId = newCampId || 'c_' + Date.now()) : null);
 
     const locType = personal?'physical':document.getElementById('f-locationType').value;
     const address = locType !== 'online' ? {
@@ -873,7 +883,7 @@ window.cbSubmit = async function() {
       globalMemory, toggles,
       updatedAt: serverTimestamp(),
       onboarded: true, onboardingVersion: 'ob2',
-      ...(existingCampaignId ? {} : { activeCampaign: campId }),
+      ...(createCampaign ? { activeCampaign: campId } : {}),
     };
 
     const campaignStory = [
@@ -902,7 +912,7 @@ window.cbSubmit = async function() {
     try{response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/createBusiness', {
       signal:controller.signal,
       method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
-      body:JSON.stringify({bizId,isNew:!editBizId,profileData:bizData,...(!existingCampaignId?{campaignData:campData,initialAd:{name:campName,offer:personal?'':offer,price:'',cta:personal?offer:'',context:personal?about:'',platforms,mentions:Object.fromEntries(Object.entries(toggles).map(([k,v])=>[k.replace('ynMention','').replace(/^./,c=>c.toLowerCase()),v?'yes':'no']))}}:{})})
+      body:JSON.stringify({bizId,isNew:!editBizId,profileData:bizData,...(createCampaign?{campaignData:campData,initialAd:{name:campName,offer:personal?'':offer,price:'',cta:personal?offer:'',context:personal?about:'',platforms,mentions:Object.fromEntries(Object.entries(toggles).map(([k,v])=>[k.replace('ynMention','').replace(/^./,c=>c.toLowerCase()),v?'yes':'no']))}}:{})})
     });
     }finally{clearTimeout(requestTimer);}
     const result=await response.json().catch(()=>({}));
@@ -919,18 +929,20 @@ window.cbSubmit = async function() {
     // Everything the owner typed is now committed. Only after that do we send
     // them anywhere — a new business goes to the plan step (which forwards
     // paid accounts straight through), editing an existing one does not.
-    const nextUrl = editBizId
+    const nextUrl = !createCampaign && !existingCampaignId
+      ? 'BlastyBiz-Dashboard.html'
+      : editBizId
       ? 'BlastyBiz.html?bizId=' + encodeURIComponent(bizId) + '&cid=' + encodeURIComponent(campId) + (existingCampaignId ? '' : '&autogenerate=1')
       : 'BlastyBiz-Choose-Plan.html?bizId=' + bizId + '&cid=' + campId;
 
     document.getElementById('cb-success-h').textContent = personal?'Seller saved':'Business saved';
-    document.getElementById('cb-success-p').textContent = existingCampaignId ? 'Your business details are saved. Returning to your dashboard…' : 'Your business and first campaign are saved. Opening your campaign…';
-    if (!editBizId) {
+    document.getElementById('cb-success-p').textContent = !createCampaign ? 'Your business details are saved. Returning to your dashboard…' : 'Your business and first campaign are saved. Opening your campaign…';
+    if (!editBizId && createCampaign) {
       const sp = document.getElementById('cb-success-p');
       if (sp) sp.textContent = 'Your business and first campaign are saved. One last thing — how you want to post.';
     }
 
-    if(personal)document.getElementById('cb-success-p').textContent=existingCampaignId?'Your seller details are saved. Returning to your dashboard…':'Your seller profile and item listing are saved. Opening the next step…';
+    if(personal)document.getElementById('cb-success-p').textContent=!createCampaign?'Your seller details are saved. Returning to your dashboard…':'Your seller profile and item listing are saved. Opening the next step…';
     setTimeout(() => { window.location.href = nextUrl; }, 2200);
 
   } catch(e) {
