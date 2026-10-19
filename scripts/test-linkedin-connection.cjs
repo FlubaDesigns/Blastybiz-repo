@@ -24,6 +24,7 @@ function fixture(){
 }
 test('company inventory excludes personal profiles, revoked roles and analytics-only roles',async()=>{
  const f=fixture(),api=createLinkedIn(f);
+ assert.equal(SCOPES,'rw_organization_admin w_organization_social');
  assert(!SCOPES.includes('member_social'));
  const choices=await api.choices('fixture-token');assert.equal(choices.length,1);
  assert.equal(choices[0].organizationUrn,'urn:li:organization:123');assert.equal(choices[0].label,'Company <&> name');

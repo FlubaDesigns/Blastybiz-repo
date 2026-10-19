@@ -2,7 +2,7 @@
 // Company destinations only. Never request w_member_social or accept person URNs.
 const VERSION='202609';
 const REDIRECT_URI='https://us-central1-blastybiz-9523e.cloudfunctions.net/linkedinOAuthCallback';
-const SCOPES='r_organization_admin w_organization_social';
+const SCOPES='rw_organization_admin w_organization_social';
 const organizationId=urn=>typeof urn==='string'&&/^urn:li:organization:([0-9]+)$/.exec(urn)?.[1];
 function createLinkedIn({axios}) {
   async function choices(accessToken) {

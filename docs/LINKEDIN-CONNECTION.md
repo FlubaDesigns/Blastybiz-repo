@@ -16,7 +16,7 @@ Credentials are saved only in the existing server-only private token document.
   browser storage, URL, or public Firestore document.
 - In the app's Auth tab add this exact authorized redirect URL:
   https://us-central1-blastybiz-9523e.cloudfunctions.net/linkedinOAuthCallback
-- Required granted scopes: r_organization_admin and w_organization_social.
+- Required granted scopes: rw_organization_admin and w_organization_social.
   No w_member_social permission is requested.
 
 The reported app's public client ID is 78nz74upx8k6uc. Its company association was
