@@ -1634,7 +1634,7 @@ function buildPlatformCard(p) {
       </label>
     </div>
     <div class="platform-note-text">${escHtml(p.note || '')}</div>
-    ${marketplaceItemsNotice(p)}
+    ${(p.id === 'fbmarket' ? '<p class="helper-sm marketplace-items-notice"><strong>Items only.</strong> Select Marketplace only when this Blast offers eligible physical items for sale. Services, marketing subscriptions and general company promotions do not qualify as ordinary item listings. Businesses selling products can use it. <a href="https://www.facebook.com/help/130910837313345" target="_blank" rel="noopener noreferrer">Check Marketplace item rules</a>.</p>' : '')}
     <div class="platform-actions">
       ${actionBtn}
       ${p.type !== 'api' ? `<button type="button" class="pcard-dismiss-btn" onclick="dismissPlatform('${p.id}')" title="Remove from list">✕ Not using</button>` : ''}
@@ -2660,11 +2660,6 @@ function toggleAboutYouPanel() {
 // ══════════════════════════════════════════
 // STEP 3: CLEAN PLATFORM SELECTION ROWS
 // ══════════════════════════════════════════
-function marketplaceItemsNotice(p) {
-  if (p.id !== 'fbmarket') return '';
-  return '<p class="helper-sm marketplace-items-notice"><strong>Items only.</strong> Select Marketplace only when this Blast offers eligible physical items for sale. Services, marketing subscriptions and general company promotions do not qualify as ordinary item listings. Businesses selling products can use it. <a href="https://www.facebook.com/help/130910837313345" target="_blank" rel="noopener noreferrer">Check Marketplace item rules</a>.</p>';
-}
-
 function renderStep3Platforms() {
   applyPlatformEligibility();
   const el = document.getElementById('quick-platform-list');
@@ -2684,7 +2679,7 @@ function renderStep3Platforms() {
       +   '<div class="s3-plat-badge' + (isApi ? ' api' : '') + '">'
       +     escHtml(window._bbPlatformReadiness?.(p).label || (isApi ? 'Checking connection' : 'You post it'))
       +   '</div>'
-      + marketplaceItemsNotice(p)
+      + (p.id === 'fbmarket' ? '<p class="helper-sm marketplace-items-notice"><strong>Items only.</strong> Select Marketplace only when this Blast offers eligible physical items for sale. Services, marketing subscriptions and general company promotions do not qualify as ordinary item listings. Businesses selling products can use it. <a href="https://www.facebook.com/help/130910837313345" target="_blank" rel="noopener noreferrer">Check Marketplace item rules</a>.</p>' : '')
       + (isApi ? '<button type="button" class="readiness-action" onclick="window._bbOpenConnections()">Manage connection</button>' : '')
       + '</div>'
       + '<label class="toggle" onclick="event.stopPropagation()">'
@@ -2801,7 +2796,7 @@ function buildStep5Card(p) {
     + '<span class="step5-status-pill ' + statusClass + '" id="step5-pill-' + p.id + '">' + statusLabel + '</span>'
     + '</summary>';
 
-  inner += marketplaceItemsNotice(p);
+  inner += (p.id === 'fbmarket' ? '<p class="helper-sm marketplace-items-notice"><strong>Items only.</strong> Select Marketplace only when this Blast offers eligible physical items for sale. Services, marketing subscriptions and general company promotions do not qualify as ordinary item listings. Businesses selling products can use it. <a href="https://www.facebook.com/help/130910837313345" target="_blank" rel="noopener noreferrer">Check Marketplace item rules</a>.</p>' : '');
 
   // ── Row B: col-2-1 — copy left, photos right ──
   if (hasContent) {
