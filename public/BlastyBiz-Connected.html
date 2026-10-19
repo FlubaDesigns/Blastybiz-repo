@@ -76,6 +76,10 @@ const PLATFORM_META = {
       { title: 'BlastyBiz posts it', desc: 'Your Google Business Profile is updated — no copy-paste, no login required.' }
     ]
   },
+  linkedin: {
+    label:'LinkedIn company Page',icon:'in',iconBg:'rgba(10,102,194,0.12)',iconColor:'#0a66c2',
+    nameField:'pageName',steps:[{title:'Company Page connected',desc:'Your personal profile is never a posting destination.'},{title:'Posts remain copy-ready',desc:'Connecting does not publish anything. Automatic LinkedIn publishing is not enabled.'}]
+  },
   facebook: {
     label: 'Facebook Page',
     icon: 'f',
@@ -111,7 +115,7 @@ auth.authStateReady().then(() => {
         <div class="error-card">
           <div class="error-title">What might have happened</div>
           <div class="error-desc">
-            ${errorPlatform === 'facebook'
+            ${errorPlatform === 'linkedin' ? 'LinkedIn Community Management approval and configured app credentials are required. Check your app Products tab and ensure your sign-in administers the company Page.' : errorPlatform === 'facebook'
               ? 'The most common reason is cancelling the Facebook permission screen, or not selecting a Business Page during the sign-in. Make sure you select the right Page when Facebook asks.'
               : 'The most common reason is cancelling the Google permission screen. Make sure to click "Allow" when Google asks for permission to manage your Business Profile.'}
           </div>
@@ -166,7 +170,7 @@ auth.authStateReady().then(() => {
         if(platform==='google')h.textContent='Connect your business location';
         const help=document.createElement('p');help.id='destination-help';help.className='destination-help';
         help.textContent='Choose the matching business below, then connect it. This step does not publish a post. For security, this request lasts 10 minutes.';
-        const label=document.createElement('label');label.htmlFor='destination-choice';label.textContent=platform==='google'?'Google Business Profile':'Facebook Page';
+        const label=document.createElement('label');label.htmlFor='destination-choice';label.textContent=platform==='google'?'Google Business Profile':platform==='linkedin'?'LinkedIn company Page':'Facebook Page';
         const select=document.createElement('select');select.id='destination-choice';select.className='destination-choice';select.setAttribute('aria-describedby','destination-help destination-feedback');
         const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Choose a destination';select.append(placeholder);
         for(const choice of data.choices){const option=document.createElement('option');option.value=choice.id;option.textContent=choice.label;select.append(option);}
@@ -235,7 +239,9 @@ auth.authStateReady().then(() => {
       if(!bizSnap.exists())throw Error('This business is no longer available.');
       const connSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', bizId, 'platformConnections', platform));
       if (connSnap.exists()) connData = connSnap.data();
-      if (deliveryReadiness(platform,connData).state!=='ready') {
+      const linkedInExpiry=connData?.expiresAt?.toMillis?.() || connData?.expiresAt?.seconds*1000;
+      const linkedInConnected=connData?.status==='connected'&&/^urn:li:organization:[0-9]+$/.test(connData?.organizationUrn||'')&&linkedInExpiry>Date.now();
+      if (platform==='linkedin'?!linkedInConnected:deliveryReadiness(platform,connData).state!=='ready') {
         throw Error('No usable destination was saved. Check your provider permissions, then reconnect and choose your business.');
       }
       if(authorizationRequest){
