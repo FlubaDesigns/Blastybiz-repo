@@ -115,6 +115,37 @@ exports.googleOAuthCallback = onRequest({ invoker: 'public', region: 'us-central
   }
 });
 
+// LinkedIn uses the same owner, browser verifier, callback cookie and one-time selection.
+exports.initiateLinkedinOAuth = onRequest({invoker:'public',secrets:['LINKEDIN_CLIENT_ID']},withAuth(async(req,res,decoded)=>{
+  res.set('Cache-Control','no-store');
+  const {businessId,returnTo,verifierHash}=req.query,appOrigin=req.headers?.origin,uid=decoded.uid;
+  if(!ALLOWED_ORIGINS.has(appOrigin)||!validHash(verifierHash)||!providerId(businessId))return res.status(400).json({error:'Start this connection from your business in BlastyBiz.'});
+  if(!(await userBizRef(uid,businessId).get()).exists)return res.status(403).json({error:'Forbidden'});
+  if(!(await checkUidRateLimit('oauthInitRateLimit',uid,20,3600000)))return res.status(429).json({error:'Too many connection attempts.'});
+  if(!process.env.LINKEDIN_CLIENT_ID)return res.status(503).json({error:'LinkedIn app setup is not complete.'});
+  const {REDIRECT_URI,SCOPES}=require('../lib/linkedin');
+  const state=require('crypto').randomUUID();
+  const authorizationUrl='https://www.linkedin.com/oauth/v2/authorization?'+new URLSearchParams({response_type:'code',client_id:process.env.LINKEDIN_CLIENT_ID,redirect_uri:REDIRECT_URI,state,scope:SCOPES});
+  await db.collection('oauthNonces').doc(state).set({uid,businessId,platform:'linkedin',phase:'start',appOrigin,verifierHash,authorizationUrl,returnTo:returnTo==='onboarding'?returnTo:'',expiresAt:new Date(Date.now()+600000)});
+  return res.json({state,url:appOrigin+'/BlastyBiz-OAuth-Start.html?state='+encodeURIComponent(state)});
+}));
+exports.linkedinOAuthCallback=onRequest({invoker:'public',region:'us-central1',secrets:['LINKEDIN_CLIENT_ID','LINKEDIN_CLIENT_SECRET']},async(req,res)=>{
+  res.set('Cache-Control','no-store');res.set('Referrer-Policy','no-referrer');
+  const {state,code}=req.query;let p;
+  try{p=await binding.consume(state,'linkedin',req.headers?.cookie);}catch(e){return res.status(400).send('Invalid or expired connection. Return to BlastyBiz and reconnect.');}
+  res.set('Set-Cookie',`${cookieName(state)}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`);
+  const errorUrl=connectionUrl('linkedin',p.businessId,p.uid,p.returnTo,{error:'linkedin'},p.appOrigin);
+  if(typeof code!=='string'||!code)return res.redirect(errorUrl);
+  try{
+    const {REDIRECT_URI,createLinkedIn}=require('../lib/linkedin');
+    const {data}=await axios.post('https://www.linkedin.com/oauth/v2/accessToken',new URLSearchParams({grant_type:'authorization_code',code,redirect_uri:REDIRECT_URI,client_id:process.env.LINKEDIN_CLIENT_ID,client_secret:process.env.LINKEDIN_CLIENT_SECRET}).toString(),{headers:{'Content-Type':'application/x-www-form-urlencoded'},timeout:20000});
+    if(!data.access_token||!Number.isFinite(data.expires_in)||data.expires_in<=0)throw Error('Invalid LinkedIn token.');
+    const choices=await createLinkedIn({axios}).choices(data.access_token);
+    const selectionId=await selection.prepare({uid:p.uid,businessId:p.businessId,returnTo:p.returnTo,verifierHash:p.verifierHash,state,platform:'linkedin',choices,accessToken:data.access_token,tokenExpiresAt:new Date(Date.now()+data.expires_in*1000)});
+    return res.redirect(connectionUrl('linkedin',p.businessId,p.uid,p.returnTo,{selection:selectionId,state},p.appOrigin));
+  }catch(e){console.error('linkedinOAuthCallback failed:',e.response?.status||e.httpStatus||'provider_error');return res.redirect(errorUrl);}
+});
+
 exports.initiateFacebookOAuth = onRequest({ invoker: 'public', secrets: ['FACEBOOK_APP_ID'] }, withAuth(async (req, res, decoded) => {
   res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   const uid = decoded.uid;
@@ -204,7 +235,7 @@ exports.disconnectPlatform = onRequest(async (req, res) => {
     const decoded = await verifyBearer(req);
     const { bizId, platformId } = req.body;
     if (!providerId(bizId) || !platformId) return res.status(400).json({ error: 'Missing bizId or platformId' });
-    if (!['google', 'facebook', 'instagram'].includes(platformId)) {
+    if (!['google', 'facebook', 'instagram', 'linkedin'].includes(platformId)) {
       return res.status(400).json({ error: 'Invalid platformId' });
     }
 

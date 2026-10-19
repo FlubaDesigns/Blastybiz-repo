@@ -104,11 +104,27 @@ body{visibility:hidden}
     </div>
   </div>
 
+  <div class="platform-card" id="card-linkedin">
+    <div class="platform-icon">in</div>
+    <div class="platform-info">
+      <div class="platform-name">LinkedIn company Page</div>
+      <div class="platform-mode">Connection setup · Publishing remains copy-ready</div>
+      <div class="platform-status" id="status-linkedin">Checking saved connection…</div>
+      <p>Your LinkedIn sign-in verifies that you administer the company Page. Your personal profile is never a posting destination.</p>
+      <details><summary>LinkedIn setup progress</summary>
+        <p>Company verification, API approval and app credentials are separate steps. A verified company does not mean the API is approved. If the access form reports completed or expired, check your existing support case before submitting again.</p>
+        <a href="https://www.linkedin.com/developers/apps" target="_blank" rel="noopener">Open LinkedIn developer apps</a>
+        <p>Once LinkedIn grants Community Management access and app setup is complete, connect below and select a company Page. Connecting does not publish anything. LinkedIn posts stay copy-ready until automatic publishing is enabled.</p>
+      </details>
+    </div>
+    <div class="platform-actions" id="actions-linkedin"><span class="status-badge badge-none">Loading…</span></div>
+  </div>
+
   <div class="divider">Copy-Ready Platforms</div>
 
   <div class="setup-note">
-    <strong>Their rule, not ours.</strong>
-    These platforms have chosen not to let any app post on your behalf — not BlastyBiz, not anyone. It's a deliberate decision by each platform. So we do the next best thing: BlastyBiz writes the perfectly formatted text for each one, you paste it in under 2 minutes.
+    <strong>Copy-ready posting</strong>
+    For destinations without an active automatic publishing integration, BlastyBiz prepares the text and you finish posting on the platform.
     <br/><br/>
     <strong>Wondering exactly what's automatic vs. copy-paste — and why?</strong> <a href="BlastyBiz-Stop-Paying-Johnny.html" style="color:var(--green,#39ff14);text-decoration:none;font-weight:500;">See what BlastyBiz actually handles →</a>
   </div>
@@ -309,6 +325,19 @@ function renderPlatform(platformId, conn, bizId, uid) {
     actionsEl.replaceChildren(link);
     return;
   }
+  if(platformId==='linkedin'){
+    const expiry=conn?.expiresAt?.toMillis?.() || conn?.expiresAt?.seconds*1000;
+    const connected=conn?.status==='connected'&&/^urn:li:organization:[0-9]+$/.test(conn.organizationUrn||'')&&expiry>Date.now();
+    statusEl.textContent=connected?'Company Page '+conn.organizationId+' connected. Posting remains copy-ready.':conn?.status==='connected'?'LinkedIn access expired. Reconnect your company Page.':'Ready for app setup and LinkedIn API approval. No company Page connected yet.';
+    const button=document.createElement('button');button.className=connected?'btn-disconnect':'btn-connect';
+    button.textContent=connected?'Disconnect':'Connect company Page';
+    button.onclick=connected?()=>disconnectPlatform('linkedin'):async()=>{
+      button.disabled=true;
+      try{await window.BBOAuth.begin(CF+'/initiateLinkedinOAuth?businessId='+encodeURIComponent(bizId),await window._bbGetToken());}
+      catch(e){statusEl.textContent=e.message?.includes('JSON')||e.message?.includes('Unexpected token')?'LinkedIn app setup is not ready. Please try again after setup.':e.message||'Could not start LinkedIn connection.';button.disabled=false;}
+    };
+    actionsEl.replaceChildren(button);return;
+  }
   if(conn?.status==='connected'&&window._bbConnectionReadiness?.(platformId,conn).state!=='ready')conn={...conn,status:'expired'};
   if(!conn||conn.status!=='connected')window.BBBlasty?.fire('platform.connection_needed',{needed:true,platformName:platformId});
 
@@ -423,7 +452,7 @@ onAuthStateChanged(auth, async (user) => {
   const connMap = {};
   snap.docs.forEach(d => { connMap[d.id] = { ...d.data(), _id: d.id }});
 
-  ['google', 'facebook', 'instagram'].forEach(pid => {
+  ['google', 'facebook', 'instagram', 'linkedin'].forEach(pid => {
     renderPlatform(pid, connMap[pid] || null, bizId, user.uid)});
 
   const hasOAuthCreds = true;

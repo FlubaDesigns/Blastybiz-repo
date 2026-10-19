@@ -5,6 +5,7 @@ const { META_GRAPH_BASE, providerId } = require('./provider-api');
 const fail = (status, message) => { throw Object.assign(Error(message), {httpStatus:status}); };
 const millis = value => value?.toMillis?.() || (value instanceof Date ? value.getTime() : Date.parse(value)) || 0;
 function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
+  const linkedin=require('./linkedin').createLinkedIn({axios});
   const requests=require('./facebook-authorization').createFacebookAuthorization({db,clock});
   const nonceRef = id => {
     if (!providerId(id)) fail(400, 'Invalid connection request.');
@@ -99,6 +100,7 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
       const request=await requests.load(p.authorizationRequest,uid,p.businessId);
       if(p.platform!=='facebook'||choice.pageId!==request.pageId||choice.id!==request.pageId)fail(409,'Facebook has not granted access to the requested Page.');
     }
+    if(p.platform==='linkedin')await linkedin.verify(p.accessToken,choice);
     let igUserId='',igUsername='';
     if (p.platform==='facebook') {
       if(p.requiredPlatform==='instagram'&&!choice.instagramAuthorized)fail(409,'Instagram access was not granted. In Meta, edit previous settings and include your Instagram account before confirming. Your saved Facebook connection is unchanged.');
@@ -137,6 +139,9 @@ function createOAuthSelection({db, admin, axios, clock=()=>Date.now()}) {
           tx.set(ir,{uid,businessId:p.businessId,platform:'instagram',status:'disconnected',igUserId:'',pageId:choice.pageId,disconnectedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
           tx.delete(ir.collection('private').doc('tokens'));
         }
+      } else if(p.platform==='linkedin') {
+        tx.set(cr,{...common,organizationId:choice.organizationId,organizationUrn:choice.organizationUrn,pageName:choice.label,expiresAt:p.tokenExpiresAt},{merge:true});
+        tx.set(cr.collection('private').doc('tokens'),{accessToken:p.accessToken});
       } else fail(400,'Unsupported provider.');
       if(p.platform==='google')tx.create(db.collection('importJobs').doc('google-'+id),{status:'queued',uid,bizId:p.businessId,queuedAt:admin.firestore.FieldValue.serverTimestamp()});
       if(requestRef)tx.update(requestRef,{status:'connected',connectedAt:admin.firestore.FieldValue.serverTimestamp()});
