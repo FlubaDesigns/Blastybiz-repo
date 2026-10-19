@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <link rel="stylesheet" href="global-style.css?v=20261015-setup" />
+<link rel="stylesheet" href="instagram-authorization.css?v=20261019-instagram-intent"/>
 <title>BlastyBiz — Connect Platforms</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -276,7 +277,7 @@ window.fbGateNo = function() {
   document.getElementById('fb-gate-step2').classList.add('open')};
 
 window.reconnectPlatform = async function(platformId) {
-  const url = platformId === 'google' ? _googleConnectUrl : _fbConnectUrl;
+  const url = platformId === 'google' ? _googleConnectUrl : _fbConnectUrl + (platformId==='instagram'?'&requiredPlatform=instagram':'');
   if (!url || !window._bbGetToken) {
     showToast('Please wait and try again.', true);
     return;
@@ -318,7 +319,7 @@ function renderPlatform(platformId, conn, bizId, uid) {
       actionsEl.innerHTML = '<span class="status-badge badge-live">Connected</span>';
     } else {
       statusEl.textContent = 'Connect an existing Instagram professional account through its linked Facebook Page. Creating a Facebook Page does not create an Instagram account.';
-      actionsEl.innerHTML = '<span class="status-badge badge-none">Via Facebook</span>';
+      actionsEl.innerHTML = '<button class="btn-connect" onclick="reconnectPlatform(\'instagram\')">Connect Instagram</button>';
     }
     return;
   }
@@ -382,7 +383,7 @@ window.disconnectPlatform = async function(platformId) {
 import { auth, db } from './firebase-init-v2.js';
 import { deliveryReadiness } from './platforms-config.js?v=20261018-personal-facebook';
 window._bbConnectionReadiness=deliveryReadiness;
-import { renderFacebookAuthorization } from './facebook-authorization.js';
+import { renderFacebookAuthorization } from './facebook-authorization.js?v=20261019-instagram-intent';
 import { connectionReturn } from './auth-return.js?v=20261018-facebook-auth';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
