@@ -1634,6 +1634,7 @@ function buildPlatformCard(p) {
       </label>
     </div>
     <div class="platform-note-text">${escHtml(p.note || '')}</div>
+    ${p.id === 'yelp' ? '<p class="helper-sm yelp-eligibility-notice"><strong>Local businesses and services.</strong> Yelp is for places customers can visit and businesses offering local services, including mobile providers. Online-only businesses and e-commerce-only stores do not qualify for ordinary business listings. Some remote professional services can qualify when they have local customer interaction. <a href="https://docs.developer.yelp.com/docs/yelp-data-quality-guidelines" target="_blank" rel="noopener noreferrer">Check Yelp eligibility</a>.</p>' : ''}
     ${(p.id === 'fbmarket' ? '<p class="helper-sm marketplace-items-notice"><strong>Items only.</strong> Select Marketplace only when this Blast offers eligible physical items for sale. Services, marketing subscriptions and general company promotions do not qualify as ordinary item listings. Businesses selling products can use it. <a href="https://www.facebook.com/help/130910837313345" target="_blank" rel="noopener noreferrer">Check Marketplace item rules</a>.</p>' : '')}
     <div class="platform-actions">
       ${actionBtn}
@@ -1718,7 +1719,7 @@ const PLATFORM_SETUP = {
   yelp: {
     signup: { url: 'https://biz.yelp.com/signup',                     label: 'Claim Your Yelp Business →' },
     signin: { url: 'https://biz.yelp.com/login',                      label: 'Log In to Yelp for Business' },
-    tip: 'Claim your free Yelp Business page so customers can find you, leave reviews, and contact you directly.',
+    tip: 'Yelp lists local businesses customers can visit and local service providers, including mobile businesses. Online-only businesses and e-commerce-only stores do not qualify for ordinary listings. Remote professional services need local customer interaction. Check eligibility before creating or claiming a page.',
   },
   alignable: {
     signup: { url: 'https://www.alignable.com/signup',                label: 'Join Alignable →' },
@@ -2680,6 +2681,7 @@ function renderStep3Platforms() {
       +     escHtml(window._bbPlatformReadiness?.(p).label || (isApi ? 'Checking connection' : 'You post it'))
       +   '</div>'
       + (p.id === 'fbmarket' ? '<p class="helper-sm marketplace-items-notice"><strong>Items only.</strong> Select Marketplace only when this Blast offers eligible physical items for sale. Services, marketing subscriptions and general company promotions do not qualify as ordinary item listings. Businesses selling products can use it. <a href="https://www.facebook.com/help/130910837313345" target="_blank" rel="noopener noreferrer">Check Marketplace item rules</a>.</p>' : '')
+      + (p.id === 'yelp' ? '<p class="helper-sm yelp-eligibility-notice"><strong>Local businesses and services.</strong> Yelp is for places customers can visit and businesses offering local services, including mobile providers. Online-only businesses and e-commerce-only stores do not qualify for ordinary business listings. Some remote professional services can qualify when they have local customer interaction. <a href="https://docs.developer.yelp.com/docs/yelp-data-quality-guidelines" target="_blank" rel="noopener noreferrer">Check Yelp eligibility</a>.</p>' : '')
       + (isApi ? '<button type="button" class="readiness-action" onclick="window._bbOpenConnections()">Manage connection</button>' : '')
       + '</div>'
       + '<label class="toggle" onclick="event.stopPropagation()">'
@@ -2797,6 +2799,8 @@ function buildStep5Card(p) {
     + '</summary>';
 
   inner += (p.id === 'fbmarket' ? '<p class="helper-sm marketplace-items-notice"><strong>Items only.</strong> Select Marketplace only when this Blast offers eligible physical items for sale. Services, marketing subscriptions and general company promotions do not qualify as ordinary item listings. Businesses selling products can use it. <a href="https://www.facebook.com/help/130910837313345" target="_blank" rel="noopener noreferrer">Check Marketplace item rules</a>.</p>' : '');
+
+  inner += (p.id === 'yelp' ? '<p class="helper-sm yelp-eligibility-notice"><strong>Local businesses and services.</strong> Yelp is for places customers can visit and businesses offering local services, including mobile providers. Online-only businesses and e-commerce-only stores do not qualify for ordinary business listings. Some remote professional services can qualify when they have local customer interaction. <a href="https://docs.developer.yelp.com/docs/yelp-data-quality-guidelines" target="_blank" rel="noopener noreferrer">Check Yelp eligibility</a>.</p>' : '');
 
   // ── Row B: col-2-1 — copy left, photos right ──
   if (hasContent) {
