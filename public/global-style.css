@@ -4367,3 +4367,56 @@ body.login-page .signup-seller-type { padding: 12px; }
 body.business-setup-page #cb-include-background { appearance: auto; width: 16px; min-width: 16px; padding: 0; margin-right: 6px; }
 body.business-setup-page .cb-hint:has(#cb-include-background) { letter-spacing: normal; text-transform: none; }
 body.business-setup-page .cb-label.mb-8 { margin-bottom: 8px; }
+
+/* Connection cards use the phone's full width instead of three narrow columns. */
+@media (max-width: 768px) {
+  body.connect-page .platform-card,
+  body.connect-page .manual-card {
+    display: block;
+    padding: 20px;
+  }
+  body.connect-page .platform-card > .platform-icon,
+  body.connect-page .manual-card > .platform-icon {
+    margin-bottom: 12px;
+  }
+  body.connect-page .platform-info {
+    width: 100%;
+    min-width: 0;
+  }
+  body.connect-page .platform-name { font-size: 18px; }
+  body.connect-page .platform-mode,
+  body.connect-page .platform-status,
+  body.connect-page .manual-instructions {
+    font-size: 14px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+  }
+  body.connect-page .platform-actions {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    max-width: none;
+    margin-top: 16px;
+    gap: 10px;
+  }
+  body.connect-page .platform-actions > button,
+  body.connect-page .platform-actions > a {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 16px;
+    font-size: 15px;
+    white-space: normal;
+    text-align: center;
+  }
+  body.connect-page .platform-actions > .status-badge,
+  body.connect-page .manual-card > .status-badge {
+    display: inline-block;
+    align-self: flex-start;
+    max-width: 100%;
+    box-sizing: border-box;
+    white-space: normal;
+  }
+  body.connect-page .manual-card > .status-badge { margin-top: 16px; }
+}
