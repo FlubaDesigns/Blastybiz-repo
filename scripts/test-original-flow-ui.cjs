@@ -123,6 +123,7 @@ const turn=()=>new Promise(r=>setImmediate(r));
   assert.equal(w.BBAds.active.platformStatus.facebook,'needs-review');
   Object.assign(w,{profile:{name:'Seller'},bizInsights:[],campaigns:[],showToast(){},savePlatforms(){},updateStep5UI(){},_getAIMemory:()=>({}),_afterAdaptation:async()=> 'working-draft'});
   w.eval(cut('let generatedDraftSaving = false;','async function runAdaptation'));
+  w.flushCampaignMemoryEdits=async()=>{};
   w.eval(cut('async function regeneratePlatformCopy','function saveStepCat'));
   await w.regeneratePlatformCopy('facebook');
   assert.equal(aiCalls,1);assert.equal(w.platforms[0].adaptedContent,'New AI copy','failed save retains paid copy');

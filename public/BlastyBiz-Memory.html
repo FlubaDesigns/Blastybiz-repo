@@ -91,12 +91,12 @@
 
   <!-- Global / Campaign toggle -->
   <div class="mem-toggle">
-    <button type="button" id="mem-btn-global" class="mem-toggle-btn active" onclick="switchMemScope('global')">🌐 Global Facts</button>
-    <button type="button" id="mem-btn-campaign" class="mem-toggle-btn" onclick="switchMemScope('campaign')">🎯 Campaign Facts</button>
+    <button type="button" id="mem-btn-global" class="mem-toggle-btn" onclick="switchMemScope('global')">🌐 Global Facts</button>
+    <button type="button" id="mem-btn-campaign" class="mem-toggle-btn active" onclick="switchMemScope('campaign')">🎯 Campaign Facts</button>
   </div>
 
   <!-- Campaign picker -->
-  <div id="mem-camp-wrap" style="display:none;">
+  <div id="mem-camp-wrap">
     <select id="mem-camp-select" class="mem-select" onchange="onCampChange()">
       <option value="">— Select a campaign —</option>
     </select>
@@ -137,7 +137,7 @@ let currentUser = null;
 let businesses  = [];
 let activeBizId = null;
 let activeCampId = null;
-let memScope    = 'global';
+let memScope    = 'campaign';
 let facts       = [];
 let campaigns   = [];
 
@@ -242,14 +242,15 @@ async function loadCampaigns() {
   if (!currentUser || !activeBizId) return;
   try {
     const bizDoc = await getDoc(doc(db, 'users', currentUser.uid, 'businesses', activeBizId));
-    campaigns = bizDoc.exists() ? (bizDoc.data().campaigns || []) : [];
+    const campaignSnap = await getDocs(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns'));
+    campaigns = campaignSnap.docs.map(d => ({ ...d.data(), id: d.id })).filter(c => c.status !== 'archived');
     campaigns.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.id;
       opt.textContent = c.name || c.id;
       campSel.appendChild(opt);
     });
-    const urlCamp = new URLSearchParams(window.location.search).get('camp');
+    const urlCamp = new URLSearchParams(window.location.search).get('camp') || (bizDoc.exists() ? bizDoc.data().activeCampaign : null);
     if (urlCamp && campaigns.find(c => c.id === urlCamp)) {
       campSel.value = urlCamp;
       activeCampId = urlCamp;
@@ -282,18 +283,20 @@ window.addMemFact = async function() {
   const btn = document.getElementById('mem-add-btn');
   btn.disabled = true;
   btn.textContent = 'Saving…';
+  const target = { scope: memScope, bizId: activeBizId, campId: activeCampId, uid: currentUser.uid };
+  if (target.scope === 'global' && !window.confirm('Use this fact across every campaign for this business?\n\n' + text)) { btn.disabled = false; btn.textContent = 'Save'; return; }
   const entry = { text, addedAt: new Date().toISOString() };
   try {
     let ref;
-    if (memScope === 'global') {
+    if (target.scope === 'global') {
       ref = await addDoc(
-        collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'facts'),
-        { ...entry, uid: currentUser.uid, bizId: activeBizId, createdAt: serverTimestamp() }
+        collection(db, 'users', target.uid, 'businesses', target.bizId, 'facts'),
+        { ...entry, uid: target.uid, bizId: target.bizId, createdAt: serverTimestamp() }
       );
     } else {
       ref = await addDoc(
-        collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', activeCampId, 'facts'),
-        { ...entry, uid: currentUser.uid, bizId: activeBizId, campaignId: activeCampId, createdAt: serverTimestamp() }
+        collection(db, 'users', target.uid, 'businesses', target.bizId, 'campaigns', target.campId, 'facts'),
+        { ...entry, uid: target.uid, bizId: target.bizId, campaignId: target.campId, createdAt: serverTimestamp() }
       );
     }
     const newFact = { ...entry, id: ref.id, importance: null };
@@ -313,9 +316,9 @@ window.addMemFact = async function() {
       if (resp.ok) {
         const { score } = await resp.json();
         if (score != null) {
-          const docPath = memScope === 'global'
-            ? doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'facts', ref.id)
-            : doc(db, 'users', currentUser.uid, 'businesses', activeBizId, 'campaigns', activeCampId, 'facts', ref.id);
+          const docPath = target.scope === 'global'
+            ? doc(db, 'users', target.uid, 'businesses', target.bizId, 'facts', ref.id)
+            : doc(db, 'users', target.uid, 'businesses', target.bizId, 'campaigns', target.campId, 'facts', ref.id);
           await updateDoc(docPath, { importance: score });
           const f = facts.find(x => x.id === ref.id);
           if (f) { f.importance = score; renderFacts(); }
@@ -367,11 +370,7 @@ onAuthStateChanged(auth, async (user) => {
   await loadCampaigns();
 
   const urlScope = new URLSearchParams(window.location.search).get('scope');
-  if (urlScope === 'campaign') {
-    window.switchMemScope('campaign');
-  } else {
-    loadFacts();
-  }
+  window.switchMemScope(urlScope === 'global' ? 'global' : 'campaign');
 });
 </script>
 </body>

@@ -126,10 +126,6 @@ exports.suggestCategory = onRequest({ invoker: 'public', secrets: [], timeoutSec
     different    && `What makes it different: ${different}`,
     awards       && `Awards / recognition: ${awards}`,
     customer     && `Ideal customer: ${customer}`,
-    campaignName && `Current campaign: ${campaignName}`,
-    campaignAbout&& `Campaign focus: ${campaignAbout}`,
-    campaignAudience && `Target audience: ${campaignAudience}`,
-    offer        && `Current offer / CTA: ${offer}`,
   ].filter(Boolean).join('\n');
 
   // ── Call 1: synthesize a rich globalMemory brief ──────────────────────────
@@ -144,7 +140,7 @@ Write a comprehensive 2–3 paragraph business briefing in third person that cap
 - Who their ideal customer is
 - Their personality, tone, and brand voice
 - Any awards, achievements, or notable facts
-- Their current campaign focus and offer
+Exclude campaign-specific offers, commission rates, target audiences, deadlines, promotions, and experiments. Do not turn a current campaign into a permanent business fact.
 
 Be specific and vivid. Preserve anything quirky or unusual — that is what makes the copy distinctive. Do NOT use generic filler. This briefing must be good enough that an AI reading it cold can write compelling, on-brand marketing copy with no other information.`;
 
@@ -616,11 +612,11 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: [], timeoutSecond
   const { aiContext, globalMemory, campaignMemory } = listing;
 
   const globalMemoryBlock = globalMemory
-    ? '\n📋 GLOBAL BUSINESS MEMORY — Read this first. This is the authoritative briefing about this business. Weave these facts, story, personality, and differentiators naturally into every platform\'s copy. Never contradict anything stated here:\n' + globalMemory + '\n'
+    ? '\n📋 GLOBAL BUSINESS MEMORY — Read this first. Use established company identity and factual background when relevant. The selected campaign and Ad control the audience, offer, and call to action. Do not carry an old promotion, audience, deadline, or commission from business background into a different campaign. Never invent or change factual company identity:\n' + globalMemory + '\n'
     : '';
 
   const campaignMemoryBlock = campaignMemory
-    ? '\n🎯 CAMPAIGN MEMORY — Full brief for this campaign. Use the hook, specific items, urgency, and audience details to make copy feel fresh and specific — not generic:\n' + campaignMemory + '\n'
+    ? '\n🎯 CAMPAIGN MEMORY — This selected campaign controls its audience, offer, and message. Its terms apply only here and must not become company-wide promises. Use the hook, specific items, urgency, and audience details to make copy feel fresh and specific — not generic:\n' + campaignMemory + '\n'
     : '';
 
   const aiContextBlock = (() => {
@@ -995,7 +991,7 @@ WHEN TO STOP: Stop when you have the hook, at least one specific detail, and any
 
 Return ONLY valid JSON. No markdown.
 If continuing: {"done":false,"message":"your next conversational question"}
-If finished: {"done":true,"message":"brief warm wrap-up line","campaignMemory":"rich paragraph(s) capturing everything specific to this campaign — the hook, featured items, atmosphere or experience, story or tradition, urgency, target audience, and what makes it feel unique. Written as a briefing for a copywriter who will write platform-specific posts."}`;
+If finished: {"done":true,"message":"brief warm wrap-up line","campaignMemory":"rich paragraph(s) capturing everything specific to this campaign — the hook, featured items, atmosphere or experience, story or tradition, urgency, target audience, and what makes it feel unique. Written as a briefing for a copywriter who will write platform-specific posts. Include campaign facts only; do not rewrite, expand, or return business-wide memory."}`;
 
   const messages = conversationHistory.length ? conversationHistory
     : [{ role: 'user', content: `Start the campaign brief for "${cd.campaignName || 'this campaign'}".` }];

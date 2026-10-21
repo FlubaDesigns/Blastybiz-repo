@@ -528,11 +528,13 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
               </button>
               <p class="helper-sm" style="margin-top:0;margin-bottom:12px;">Feed the AI facts it uses when writing copy for this campaign</p>
               <div id="create-teach-ai-body" class="teach-inner hidden" onclick="event.stopPropagation()">
+                <p id="create-memory-working" class="memory-working" aria-live="polite">Choose a campaign first.</p>
                 <textarea id="create-camp-memory-text" class="form-textarea" rows="5"
                   placeholder="e.g. Hook: 'Back to school, back to savings.' Target: parents with kids 5–12. Urgency: ends Aug 31. Feature our new backpack bundle…"
                   oninput="debounceCreateCampMemorySave()"></textarea>
                 <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
                   <button type="button" onclick="saveCreateCampMemoryNow()" style="padding:9px 18px;border-radius:8px;border:none;background:var(--green);color:#000;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Save</button>
+                  <button type="button" class="memory-share-action" onclick="openBusinessMemoryReview('create-camp-memory-text')">Use across all campaigns</button>
                   <span id="create-camp-memory-status" style="font-size:12px;color:var(--green);opacity:0;transition:opacity 0.4s;"></span>
                 </div>
               </div>
@@ -1018,26 +1020,19 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
             <span class="teach-icon">🧠</span>
             <div>
               <div class="teach-title">Teach AI to know you better</div>
-              <div class="teach-sub" id="right-teach-ai-sub">Business knowledge Blasty uses across all your campaigns</div>
+              <div class="teach-sub" id="right-teach-ai-sub">Details for the campaign you are working on</div>
             </div>
           </div>
           <span id="right-teach-ai-chevron" class="chevron">›</span>
         </button>
         <div id="right-teach-ai-body" class="teach-inner hidden">
-          <!-- scope toggle -->
-          <div style="display:flex;gap:8px;margin-bottom:14px;">
-            <button type="button" id="tai-scope-global" onclick="switchAIMemoryScope('global')" class="sched-chip active" style="flex:1;">🌐 Global</button>
-            <button type="button" id="tai-scope-campaign" onclick="switchAIMemoryScope('campaign')" class="sched-chip" style="flex:1;">🎯 This Campaign</button>
-          </div>
-          <p id="tai-global-label" class="helper-sm" style="margin-bottom:10px;">Always true about your business — AI uses this across every campaign.</p>
-          <div id="tai-campaign-scope" class="hidden">
-            <p class="helper-sm" style="margin-bottom:8px;">Pick a campaign to write memory for that campaign only.</p>
-            <select id="tai-campaign-select" onchange="loadAIMemoryForCampaign(this.value)" style="margin-bottom:12px;"></select>
-          </div>
-          <textarea id="tai-memory-text" class="form-textarea" rows="4" placeholder="e.g. We're a family-run business since 1987. Our customers love the personal touch. We always lead with warmth and community…" oninput="debounceAIMemorySave()"></textarea>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
-            <button type="button" onclick="saveAIMemoryNow()" style="padding:9px 18px;border-radius:8px;border:none;background:var(--green);color:#000;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Save</button>
-            <span id="tai-save-status" style="font-size:12px;color:var(--green);opacity:0;transition:opacity 0.4s;"></span>
+          <p id="tai-memory-working" class="memory-working" aria-live="polite">Choose a campaign first.</p>
+          <p class="helper-sm">What should AI know for this campaign? Your audience, offer, and ideas stay here.</p>
+          <textarea id="tai-memory-text" class="form-textarea" rows="4" placeholder="Who are you reaching, and what do you want to offer them?" oninput="debounceAIMemorySave()"></textarea>
+          <div class="memory-actions">
+            <button type="button" class="memory-save-action" onclick="saveAIMemoryNow()">Save</button>
+            <button type="button" class="memory-share-action" onclick="openBusinessMemoryReview('tai-memory-text')">Use across all campaigns</button>
+            <span id="tai-save-status" class="memory-save-status" role="status"></span>
           </div>
           <!-- factoid quick-look -->
           <div id="tai-fact-quicklook" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border,#333);"></div>
@@ -1321,6 +1316,19 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
   </div>
 </div>
 
+<dialog id="business-memory-dialog" class="business-memory-dialog" aria-labelledby="business-memory-title">
+  <button type="button" class="memory-dialog-close" aria-label="Close" onclick="document.getElementById('business-memory-dialog').close()">×</button>
+  <h2 id="business-memory-title">Use across all campaigns</h2>
+  <p>Review the exact fact below. It will be added to what AI knows about this business for every campaign.</p>
+  <p>Keep individual campaign offers, audiences, and deadlines in their campaign.</p>
+  <label for="business-memory-fact">Business fact to share</label>
+  <textarea id="business-memory-fact" class="form-textarea" rows="5" maxlength="4000" placeholder="A fact about the business that applies across campaigns"></textarea>
+  <p id="business-memory-error" role="alert"></p>
+  <div class="memory-actions">
+    <button type="button" class="memory-save-action" id="business-memory-confirm" onclick="confirmBusinessMemoryReview()">Use across all campaigns</button>
+    <button type="button" class="memory-share-action" onclick="document.getElementById('business-memory-dialog').close()">Cancel</button>
+  </div>
+</dialog>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" integrity="sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e" crossorigin="anonymous"></script>
 <script src="platform-categories.js"></script>
 <script src="platforms-authority.js?v=20261018-personal-facebook"></script>
@@ -1486,17 +1494,6 @@ function showTab(name, options = {}) {
     createWizGoTo(createWizStep, false, {record:false, scroll:false});
     if (activeCampaignId) {
       document.getElementById('campaign-content')?.classList.remove('hidden');
-    }
-  }
-  // Profile = global business knowledge only; campaign scope only available on Create
-  const campaignScopeBtn = document.getElementById('tai-scope-campaign');
-  if (campaignScopeBtn) {
-    if (name === 'profile') {
-      campaignScopeBtn.style.display = 'none';
-      // If the user was on campaign scope, switch back to global
-      if (typeof switchAIMemoryScope === 'function') switchAIMemoryScope('global');
-    } else {
-      campaignScopeBtn.style.display = '';
     }
   }
   if (options.record !== false) window._bbRecordWorkspaceRoute?.();
@@ -2222,7 +2219,7 @@ async function deleteLibraryItem(docId) {
 async function regeneratePlatformCopy(pid) {
   if(window._bbAdaptationBusy)return;
   window._bbAdaptationBusy=true;
-  try { await window.BBAds.ready(); await window.BBAds.save(); }
+  try { await flushCampaignMemoryEdits(); await window.BBAds.ready(); await window.BBAds.save(); }
   catch(e){window._bbAdaptationBusy=false;showToast(e.message || 'Save your Ad before trying again.');return;}
   const platform = platforms.find(p => p.id === pid);
   if (!platform) {window._bbAdaptationBusy=false;return;}
@@ -3229,6 +3226,7 @@ async function runAdaptation() {
   const errorBox = document.getElementById('generation-error');
   if (errorBox) errorBox.hidden = true;
   try {
+  await flushCampaignMemoryEdits();
   await window.BBAds.ready();
   clearTimeout(_campaignSaveTimer);
   await window.BBAds.save();
@@ -4068,107 +4066,136 @@ function toggleRightAccordion(bodyId, chevronId, onOpenCallback) {
   if (!nowHidden && typeof onOpenCallback === 'function') onOpenCallback();
 }
 
-// ── Teach AI accordion init ───────────────────────────────────────────────────
-var _aiMemoryScope       = 'global';
-var _aiMemoryCampaignId  = null;
-var _aiMemorySaveTimer   = null;
-
+// ── Campaign memory: edits retain their original business and campaign. ──────
+const _campaignMemoryEdits = new Map();
+let _businessMemoryReview = null;
+const _memoryEditorIds = ['tai-memory-text', 'create-camp-memory-text'];
 function initTeachAIAccordion() {
-  switchAIMemoryScope('global');
+  syncCampaignMemoryEditors();
   renderFactoidQuickLook();
 }
-
-function switchAIMemoryScope(scope) {
-  _aiMemoryScope = scope;
-  document.getElementById('tai-scope-global').classList.toggle('active', scope === 'global');
-  document.getElementById('tai-scope-campaign').classList.toggle('active', scope === 'campaign');
-  document.getElementById('tai-global-label').classList.toggle('hidden', scope !== 'global');
-  document.getElementById('tai-campaign-scope').classList.toggle('hidden', scope !== 'campaign');
-  if (scope === 'global') {
-    document.getElementById('tai-memory-text').value = window._globalMemory || profile.globalMemory || '';
-  } else {
-    populateTAICampaignDropdown();
-    const sel = document.getElementById('tai-campaign-select');
-    _aiMemoryCampaignId = sel.value || null;
-    if (_aiMemoryCampaignId) loadAIMemoryForCampaign(_aiMemoryCampaignId);
-    else document.getElementById('tai-memory-text').value = '';
-  }
-}
-
-function populateTAICampaignDropdown() {
-  const sel = document.getElementById('tai-campaign-select');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">— Pick a campaign —</option>' +
-    campaigns.map(c => `<option value="${escHtml(c.id)}"${c.id === activeCampaignId ? ' selected' : ''}>${escHtml(c.name || 'Untitled campaign')}</option>`).join('');
-  if (activeCampaignId) sel.value = activeCampaignId;
-}
-
-function loadAIMemoryForCampaign(campaignId) {
-  _aiMemoryCampaignId = campaignId;
-  const cam = campaigns.find(c => c.id === campaignId);
-  document.getElementById('tai-memory-text').value = (cam && cam.campaignMemory) || '';
-}
-
-function debounceAIMemorySave() {
-  clearTimeout(_aiMemorySaveTimer);
-  _aiMemorySaveTimer = setTimeout(saveAIMemoryNow, 1500);
-}
-
-async function saveAIMemoryNow() {
-  clearTimeout(_aiMemorySaveTimer);
-  const text = document.getElementById('tai-memory-text')?.value || '';
-  if (_aiMemoryScope === 'global') {
-    window._globalMemory = text;
-    profile.globalMemory  = text;
-    if (window._bbSaveGlobalMemory) {
-      try { await window._bbSaveGlobalMemory(text); _showTAISaved('Global memory saved ✓'); }
-      catch(e) { console.warn('saveGlobalMemory failed:', e); }
-    } else {
-      _showTAISaved('Saved locally ✓');
+function syncCampaignMemoryEditors() {
+  const cam = campaigns.find(c => c.id === activeCampaignId);
+  const businessId = window.activeBizId || '';
+  for (const id of _memoryEditorIds) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    if (el.dataset.businessId !== businessId || el.dataset.campaignId !== (cam?.id || '')) {
+      el.dataset.businessId = businessId;
+      el.dataset.campaignId = cam?.id || '';
+      el.value = cam?.campaignMemory || '';
     }
-  } else {
-    if (!_aiMemoryCampaignId) return;
-    const cam = campaigns.find(c => c.id === _aiMemoryCampaignId);
-    if (!cam) return;
-    cam.campaignMemory = text;
-    if (window._bbSaveCampaigns) {
-      try { await window._bbSaveCampaigns(campaigns); _showTAISaved('Campaign memory saved ✓'); }
-      catch(e) { console.warn('saveCampaignMemory failed:', e); }
-    } else {
-      _showTAISaved('Saved locally ✓');
-    }
+    el.disabled = !cam;
   }
+  for (const id of ['tai-memory-working', 'create-memory-working']) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = cam ? 'Working on: ' + cam.name : 'Choose a campaign first.';
+  }
+  for (const el of document.querySelectorAll('.memory-share-action')) el.disabled = !cam;
 }
-
+function memoryEditStatus(id, text) {
+  if (id === 'tai-memory-text') _showTAISaved(text);
+  else _showCreateCampMemorySaved(text);
+}
+function captureCampaignMemory(id) {
+  const el = document.getElementById(id);
+  if (!el?.dataset.campaignId || !window.currentUser?.uid) throw new Error('Choose a campaign first.');
+  const edit = { id, businessId: el.dataset.businessId, campaignId: el.dataset.campaignId,
+    uid: window.currentUser.uid, text: el.value };
+  const key = JSON.stringify([edit.uid, edit.businessId, edit.campaignId]);
+  const previous = _campaignMemoryEdits.get(key);
+  clearTimeout(previous?.timer);
+  edit.key = key;
+  edit.previous = previous?.promise || previous?.previous;
+  _campaignMemoryEdits.set(key, edit);
+  // Both editors show the same campaign brief. Only the field being edited supplies a write.
+  for (const otherId of _memoryEditorIds) {
+    const other = document.getElementById(otherId);
+    if (other && other !== el && other.dataset.businessId === edit.businessId && other.dataset.campaignId === edit.campaignId) other.value = edit.text;
+  }
+  return edit;
+}
+async function persistCampaignMemory(edit) {
+  clearTimeout(edit.timer);
+  if (edit.promise) return edit.promise;
+  edit.promise = (async () => {
+    await edit.previous?.catch(() => {});
+    try {
+      if (!window._bbSaveCampaignMemory) throw new Error('Saving is not ready yet.');
+      await window._bbSaveCampaignMemory(edit.campaignId, edit.text, edit);
+      if (_campaignMemoryEdits.get(edit.key) === edit) {
+        _campaignMemoryEdits.delete(edit.key);
+        if (window.activeBizId === edit.businessId) {
+          const cam = campaigns.find(c => c.id === edit.campaignId);
+          if (cam) cam.campaignMemory = edit.text;
+        }
+        const el = document.getElementById(edit.id);
+        if (el?.dataset.businessId === edit.businessId && el.dataset.campaignId === edit.campaignId) memoryEditStatus(edit.id, 'Saved for this campaign ✓');
+      }
+    } catch (error) {
+      memoryEditStatus(edit.id, 'Could not save. Tap Save to retry.');
+      throw error;
+    }
+  })();
+  try { return await edit.promise; }
+  finally { edit.promise = null; }
+}
+function queueCampaignMemory(id) {
+  try {
+    const edit = captureCampaignMemory(id);
+    memoryEditStatus(id, 'Saving…');
+    edit.timer = setTimeout(() => void persistCampaignMemory(edit).catch(() => {}), 1500);
+  } catch (error) { showToast(error.message); }
+}
+async function saveCampaignMemoryEditor(id) {
+  try { await persistCampaignMemory(captureCampaignMemory(id)); }
+  catch (error) { showToast(error.message); }
+}
+async function flushCampaignMemoryEdits() {
+  await Promise.all([..._campaignMemoryEdits.values()].map(persistCampaignMemory));
+}
+function debounceAIMemorySave() { queueCampaignMemory('tai-memory-text'); }
+function saveAIMemoryNow() { return saveCampaignMemoryEditor('tai-memory-text'); }
+function debounceCreateCampMemorySave() { queueCampaignMemory('create-camp-memory-text'); }
+function saveCreateCampMemoryNow() { return saveCampaignMemoryEditor('create-camp-memory-text'); }
 function _showTAISaved(msg) {
   const el = document.getElementById('tai-save-status');
-  if (!el) return;
-  el.textContent = msg;
-  el.style.opacity = '1';
-  clearTimeout(el._timer);
-  el._timer = setTimeout(() => { el.style.opacity = '0'; }, 2500);
+  if (el) { el.textContent = msg; el.style.opacity = '1'; }
+}
+function openBusinessMemoryReview(editorId) {
+  if (!window.activeBizId || !window.currentUser?.uid || !activeCampaignId) { showToast('Choose a campaign first.'); return; }
+  const el = document.getElementById(editorId);
+  const selected = el ? el.value.slice(el.selectionStart, el.selectionEnd).trim() : '';
+  _businessMemoryReview = { businessId: window.activeBizId, uid: window.currentUser.uid };
+  const businessName = profile.businessName || profile.name || 'this business';
+  document.getElementById('business-memory-title').textContent = 'Use across all ' + businessName + ' campaigns';
+  document.getElementById('business-memory-fact').value = selected;
+  document.getElementById('business-memory-error').textContent = '';
+  document.getElementById('business-memory-dialog').showModal();
+  document.getElementById('business-memory-fact').focus();
+}
+async function confirmBusinessMemoryReview() {
+  const fact = document.getElementById('business-memory-fact').value.trim();
+  const error = document.getElementById('business-memory-error');
+  if (!fact) { error.textContent = 'Enter the fact you want to use across all campaigns.'; return; }
+  const target = _businessMemoryReview;
+  if (!target || target.businessId !== window.activeBizId || target.uid !== window.currentUser?.uid) {
+    error.textContent = 'The business changed. Close this and try again.'; return;
+  }
+  const button = document.getElementById('business-memory-confirm');
+  button.disabled = true;
+  try {
+    const memory = await window._bbAppendBusinessMemory(fact, target);
+    if (target.businessId === window.activeBizId && target.uid === window.currentUser?.uid) {
+      window._globalMemory = memory;
+      profile.globalMemory = memory;
+    }
+    document.getElementById('business-memory-dialog').close();
+    showToast('Saved across this business’s campaigns.');
+  } catch (e) { error.textContent = 'Could not save. Your fact is still here. Please retry.'; }
+  finally { button.disabled = false; }
 }
 
-// ── Create-tab campaign Teach AI ─────────────────────────────────────────────
-let _createCampMemoryTimer = null;
-function debounceCreateCampMemorySave() {
-  clearTimeout(_createCampMemoryTimer);
-  _createCampMemoryTimer = setTimeout(saveCreateCampMemoryNow, 1500);
-}
-async function saveCreateCampMemoryNow() {
-  clearTimeout(_createCampMemoryTimer);
-  if (!activeCampaignId) return;
-  const text = document.getElementById('create-camp-memory-text')?.value || '';
-  const cam = campaigns.find(c => c.id === activeCampaignId);
-  if (!cam) return;
-  cam.campaignMemory = text;
-  if (window._bbSaveCampaigns) {
-    try { await window._bbSaveCampaigns(campaigns); _showCreateCampMemorySaved('Saved ✓'); }
-    catch(e) { console.warn('saveCreateCampMemory failed:', e); }
-  } else {
-    _showCreateCampMemorySaved('Saved locally ✓');
-  }
-}
 function _showCreateCampMemorySaved(msg) {
   const el = document.getElementById('create-camp-memory-status');
   if (!el) return;
@@ -4771,6 +4798,7 @@ function renderCreateCampList() {
 }
 
 function renderCampaignChips() {
+  syncCampaignMemoryEditors();
   renderCreateCampList();
   if (typeof renderRecentActivity === 'function') renderRecentActivity();
 }
@@ -4780,6 +4808,7 @@ async function selectCampaign(id, name, options = {}) {
   if(window._bbAdaptationBusy || (window.BBAds?.operationBusy ?? window.BBAds?.busy)){showToast('Wait for the current save or generation to finish.');return;}
   if(window.BBAds?.dirty||window.BBAds?.busy){try{await window.BBAds.save();}catch(e){showToast('Could not save your changes. Please retry before switching.');return;}}
   if (window._bbDraftSavePending) { showToast('Use Retry save before switching campaigns.'); return; }
+  try { await flushCampaignMemoryEdits(); } catch { showToast('Save your campaign details before switching.'); return; }
   clearTimeout(_campaignSaveTimer);
   activeCampaignId   = id;
   activeCampaignName = name;
@@ -5607,6 +5636,23 @@ window._bbDeleteLibraryItem = async function(docId) {
   await deleteDoc(doc(db, 'copyLibrary', docId));
 };
 
+window._bbSaveCampaignMemory = async function(campId, text, target) {
+  if (!currentUser || currentUser.uid !== target.uid || !target.businessId || !campId) throw new Error('Please sign in again.');
+  await updateDoc(doc(db, 'users', target.uid, 'businesses', target.businessId, 'campaigns', campId), { campaignMemory: text });
+};
+window._bbAppendBusinessMemory = async function(fact, target) {
+  if (!currentUser || currentUser.uid !== target.uid || activeBizId !== target.businessId) throw new Error('The business changed.');
+  const ref = doc(db, 'users', target.uid, 'businesses', target.businessId);
+  return runTransaction(db, async tx => {
+    const snap = await tx.get(ref);
+    if (!snap.exists()) throw new Error('Business not found.');
+    const existing = snap.data().globalMemory || '';
+    const memory = ('\n' + existing + '\n').includes('\n' + fact + '\n') ? existing : [existing, fact].filter(Boolean).join('\n');
+    tx.update(ref, { globalMemory: memory });
+    return memory;
+  });
+};
+
 // ── Global business facts (facts subcollection) ───────────────────────────────
 window._bbSaveGlobalMemory = async function(text) {
   if (!activeBizId || !currentUser) return;
@@ -5822,6 +5868,7 @@ onAuthStateChanged(auth, async (user) => {
     if (window._bbAdaptationBusy || (window.BBAds?.operationBusy ?? window.BBAds?.busy)) { showToast('Wait for the current save or generation to finish.'); return; }
     try { if (window.BBAds?.active) await window.BBAds.save(); }
     catch (e) { showToast('Could not save your changes. Please retry before switching.'); return; }
+    try { await flushCampaignMemoryEdits(); } catch { showToast('Save your campaign details before switching.'); return; }
     await setDoc(doc(db, 'users', user.uid), { activeBusiness: bizId }, { merge: true });
     activeBizId = bizId;
     window.activeBizId = bizId;
