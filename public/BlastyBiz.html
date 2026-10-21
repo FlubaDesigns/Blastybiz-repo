@@ -532,7 +532,7 @@ body.personal-seller a[href*="BlastyBiz-BizContext"],body.personal-seller a[href
                 <textarea id="create-camp-memory-text" class="form-textarea" rows="5"
                   placeholder="e.g. Hook: 'Back to school, back to savings.' Target: parents with kids 5–12. Urgency: ends Aug 31. Feature our new backpack bundle…"
                   oninput="debounceCreateCampMemorySave()"></textarea>
-                <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+                <div class="memory-actions">
                   <button type="button" onclick="saveCreateCampMemoryNow()" style="padding:9px 18px;border-radius:8px;border:none;background:var(--green);color:#000;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">Save</button>
                   <button type="button" class="memory-share-action" onclick="openBusinessMemoryReview('create-camp-memory-text')">Use across all campaigns</button>
                   <span id="create-camp-memory-status" style="font-size:12px;color:var(--green);opacity:0;transition:opacity 0.4s;"></span>

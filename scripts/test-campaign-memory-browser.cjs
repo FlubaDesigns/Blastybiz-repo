@@ -14,6 +14,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
   await page.addScriptTag({content:`var campaigns=[{id:'creators',name:'Creator earnings — turn your own ideas into income',campaignMemory:'Earn 25% of profit from your own ideas'}];var activeCampaignId='creators';var profile={name:'QR Gear'};window.activeBizId='qrgear';window.currentUser={uid:'fixture'};function renderFactoidQuickLook(){}function _showCreateCampMemorySaved(){}function showToast(){};window.sharedFacts=[];window._bbAppendBusinessMemory=async text=>{sharedFacts.push(text);return text;};${controller}\nsyncCampaignMemoryEditors();`});
   for(const width of [320,360,390,768,1440]){
    await page.setViewportSize({width,height:740});
+   const share=page.locator('#create-teach-ai-body .memory-share-action');
+   const shareBox=await share.boundingBox();assert(shareBox&&shareBox.height>=44&&shareBox.x>=0&&shareBox.x+shareBox.width<=width+1,'campaign action fits '+width);
    await page.evaluate(()=>openBusinessMemoryReview('create-camp-memory-text'));
    const dialog=page.locator('#business-memory-dialog');assert(await dialog.isVisible());
    assert.equal(await page.locator('#business-memory-fact').inputValue(),'','no whole-campaign promotion');
