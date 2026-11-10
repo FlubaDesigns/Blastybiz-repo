@@ -70,6 +70,7 @@ jobs:
       - name: Review regression checks
         if: steps.scope.outputs.mode != 'layout'
         run: |
+          node --test scripts/test-ai-reliability.cjs scripts/test-ai-generation-browser.cjs scripts/test-subscription-management.cjs scripts/test-writing-guides.cjs
           node scripts/test-review-regressions.cjs
           node scripts/test-photo-regressions.cjs
           node scripts/test-setup-regressions.cjs
@@ -107,6 +108,7 @@ jobs:
         if: steps.scope.outputs.mode != 'layout'
         run: |
           npm install --prefix "$RUNNER_TEMP/blasty-dom" --no-audit --no-fund jsdom@26.1.0
+          JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-billing-account.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-pass10-ui.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-photo-handoff.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-blast-button.cjs
@@ -130,6 +132,14 @@ jobs:
           PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-oauth-playwright-security.cjs
           PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-campaign-memory-browser.cjs
           PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-header-navigation-browser.cjs
+          PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-publishing-mobile.cjs
+          PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-reliability-mobile.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reliability-mobile
+          path: test-artifacts/*.png
+          if-no-files-found: ignore
       - uses: actions/setup-java@v4
         if: steps.scope.outputs.mode != 'layout'
         with:

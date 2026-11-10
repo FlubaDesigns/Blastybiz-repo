@@ -1,7 +1,7 @@
 'use strict';
 // Include the publishing view in the existing DOM gate without changing release infrastructure.
 require('node:child_process').execFileSync(process.execPath,['scripts/test-publishing-workspace.cjs'],{stdio:'inherit'});
-const fs=require('node:fs'),assert=require('node:assert/strict');
+const fs=require('./lib/workspace-source.cjs'),assert=require('node:assert/strict');
 const {JSDOM,VirtualConsole}=require(process.env.JSDOM_PATH||'jsdom');
 const {database,admin}=require('./lib/test-firestore.cjs');
 const {createAdService}=require('../functions/lib/ads');

@@ -10,7 +10,7 @@ const {
   onRequest, onSchedule, admin, db, axios, crypto,
   APP_BASE_URL, sendResendEmail,
   userBizRef, userBizCol, userBizPostsRef, userBizConnsRef, userBizJobsRef, PLATFORM_CAPABILITY_MAP,
-  _getConnTokens,
+  _getConnTokens, settleAiAction,
   makeUnsubSig, _unsubSecret,
   makeActionSig, _actionSecret, computeNextRunAt, normalizeSchedule,
 } = require('../lib/shared');
@@ -619,6 +619,13 @@ exports.scheduledFirestoreExport = onSchedule(
 exports.cleanupAbandonedSignups = onSchedule(
   { schedule: 'every 24 hours', region: 'us-central1' },
   async () => {
+    // Recover abandoned reservations through the same settlement transaction.
+    // A concurrent replacement or completion wins via its token/state check.
+    const stale = await db.collection('aiRequestDedup').where('leaseExpiresAt','<',admin.firestore.Timestamp.fromMillis(Date.now())).limit(500).get();
+    for(const item of stale.docs) {
+      const value=item.data();
+      if(value.state==='pending')await settleAiAction(value.uid,{requestPath:item.ref.path,token:value.token},null);
+    }
     const cutoff = admin.firestore.Timestamp.fromMillis(Date.now() - 30 * 24 * 60 * 60 * 1000);
     try {
       const dedupSnap = await db.collection('aiRequestDedup')

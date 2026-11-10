@@ -1,6 +1,6 @@
 'use strict';
 // Exercise production handlers with isolated persistence and provider doubles.
-const fs = require('node:fs'), vm = require('node:vm'), assert = require('node:assert/strict');
+const fs = require('./lib/workspace-source.cjs'), vm = require('node:vm'), assert = require('node:assert/strict');
 let checks = 0;
 const ok = (value, message) => { assert(value, message); checks++; };
 const read = p => fs.readFileSync(p, 'utf8');

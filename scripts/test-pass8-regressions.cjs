@@ -1,5 +1,5 @@
 'use strict';
-const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+const fs=require('./lib/workspace-source.cjs'),vm=require('node:vm'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const {database,admin}=require('./lib/test-firestore.cjs');
 const read=p=>fs.readFileSync(p,'utf8'),cut=(s,a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));
 const quiet={log(){},error(){},warn(){}};let checks=0;

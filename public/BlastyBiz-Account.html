@@ -37,8 +37,8 @@ body{visibility:hidden}
 <div class="layout__split-2-1">
 <div>
 
-  <h1 class="page-title" style="margin-bottom:4px;">Account <span>Settings</span></h1>
-  <p class="page-sub" style="margin-bottom:24px;">Manage your plan, billing, and account.</p>
+  <h1 class="page-title bb-style-d982937d">Account <span>Settings</span></h1>
+  <p class="page-sub bb-style-8b9688e6">Manage your plan, billing, and account.</p>
   <p id="acct-deletion-status" role="status" hidden></p>
 
   <!-- ── Plan & Billing ── -->
@@ -48,29 +48,31 @@ body{visibility:hidden}
     <div class="cost-line"><span>Plan</span><strong id="acct-plan-label">—</strong></div>
     <div class="cost-line hidden" id="acct-retention-row"><span>Data kept until</span><strong id="acct-retention-val">—</strong></div>
     <p class="helper acct-retention-note hidden" id="acct-retention-note"></p>
-    <div class="btn-row" style="margin-top:12px;">
-      <p id="acct-billing-help">Plan changes and cancellations are handled by email. Your subscription stays active until the change is confirmed.</p>
-      <a class="btn btn-primary" id="acct-billing-btn" href="#" onclick="handleBilling(event)">Contact Billing Support</a>
+    <div class="btn-row bb-style-9374e842">
+      <p id="acct-billing-help">Review your subscription, change plans, or cancel renewal here. Your current access remains available through the confirmed billing period.</p>
+      <a class="btn btn-primary" id="acct-billing-btn" href="#" onclick="handleBilling(event)">Manage Subscription</a>
     </div>
   </div>
 
+  <section id="acct-billing-panel" class="card" hidden></section>
+
   <!-- ── Admin (only shown if user is admin) ── -->
-  <div class="card" id="acct-admin-card" style="display:none;">
+  <div class="card bb-style-c8be1ccb" id="acct-admin-card">
     <div class="card-title">🛡 Admin</div>
-    <p class="helper" style="margin-bottom:12px;">You have admin access to this BlastyBiz installation.</p>
+    <p class="helper bb-style-3ef1fa1a">You have admin access to this BlastyBiz installation.</p>
     <a class="btn" href="BlastyBiz-Admin.html">Open Admin Panel →</a>
   </div>
 
   <!-- ── Danger Zone ── -->
   <div class="card">
-    <div class="card-title" style="color:var(--danger,#e53935);">⚠️ Danger Zone</div>
-    <p class="helper" style="margin-bottom:12px;">Deleting your account is permanent and cannot be undone. All businesses, campaigns, and data will be removed.</p>
+    <div class="card-title bb-style-5b497b58">⚠️ Danger Zone</div>
+    <p class="helper bb-style-3ef1fa1a">Deleting your account is permanent and cannot be undone. All businesses, campaigns, and data will be removed.</p>
     <button type="button" onclick="openDeleteModal()" class="delete-account-btn">Delete account</button>
   </div>
 
 </div><!-- left col -->
 <div class="dash-img-col">
-  <img src="account-hero.png" alt="Account settings" style="width:100%;height:100%;object-fit:cover;border-radius:12px;display:block;" />
+  <img src="account-hero.png" alt="Account settings" class="bb-style-8f898ba1" />
 </div>
 </div><!-- /.layout__split-2-1 -->
 
@@ -100,23 +102,23 @@ body{visibility:hidden}
 
 <!-- UPGRADE PLAN MODAL -->
 <div id="upgrade-overlay" onclick="closeUpgradeModal()">
-  <div class="delete-modal" onclick="event.stopPropagation()" style="max-width:480px">
+  <div class="delete-modal bb-style-d2a26356" onclick="event.stopPropagation()">
     <h3>📈 Upgrade Your Plan</h3>
     <p id="upgrade-modal-msg">Upgrade to unlock more businesses and AI requests.</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0">
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center">
-        <div style="font-size:22px;font-weight:800;color:var(--light);margin-bottom:2px">Pro</div>
-        <div style="font-size:13px;color:var(--silver);margin-bottom:14px">3 businesses · 100 AI/mo</div>
-        <button type="button" onclick="closeUpgradeModal();startCheckout('pro')" style="width:100%;background:#00C853;color:#0d1a0d;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">Upgrade to Pro</button>
+    <div class="bb-style-5a98adf5">
+      <div class="bb-style-5f929cf5">
+        <div class="bb-style-84492c01">Pro</div>
+        <div class="bb-style-379cecbb">3 businesses · 100 AI/mo</div>
+        <button type="button" onclick="closeUpgradeModal();startCheckout('pro')" class="bb-style-c87aaa48">Upgrade to Pro</button>
       </div>
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center">
-        <div style="font-size:22px;font-weight:800;color:var(--light);margin-bottom:2px">Agency</div>
-        <div style="font-size:13px;color:var(--silver);margin-bottom:14px">10 businesses · 500 AI/mo</div>
-        <button type="button" onclick="closeUpgradeModal();startCheckout('agency')" style="width:100%;background:#00C853;color:#0d1a0d;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">Upgrade to Agency</button>
+      <div class="bb-style-5f929cf5">
+        <div class="bb-style-84492c01">Agency</div>
+        <div class="bb-style-379cecbb">10 businesses · 500 AI/mo</div>
+        <button type="button" onclick="closeUpgradeModal();startCheckout('agency')" class="bb-style-c87aaa48">Upgrade to Agency</button>
       </div>
     </div>
-    <div style="text-align:center">
-      <button type="button" onclick="closeUpgradeModal()" class="delete-cancel" style="max-width:160px">Not now</button>
+    <div class="bb-style-91a87015">
+      <button type="button" onclick="closeUpgradeModal()" class="delete-cancel bb-style-21e8bb66">Not now</button>
     </div>
   </div>
 </div>
@@ -124,6 +126,7 @@ body{visibility:hidden}
 <div id="site-footer-inject"></div>
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 
+<script src="billing-account.js?v=20261110"></script>
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -153,7 +156,7 @@ auth.authStateReady().then(() => {
     try {
       const tokenResult = await user.getIdTokenResult();
       if (tokenResult.claims.admin) {
-        document.getElementById('acct-admin-card').style.display = '';
+        document.getElementById('acct-admin-card').style.display = 'block';
       }
     } catch(e) { /* admin card stays hidden if claim check fails */ }
 
@@ -167,7 +170,7 @@ auth.authStateReady().then(() => {
       document.getElementById('acct-plan-label').textContent = planLabel;
 
       const billingBtn = document.getElementById('acct-billing-btn');
-      billingBtn.textContent = ['starter','trial'].includes(userPlan) ? 'View Plans' : 'Contact Billing Support';
+      billingBtn.textContent = ['starter','trial'].includes(userPlan) ? 'View Plans' : 'Manage Subscription';
       document.getElementById('acct-billing-help').hidden=['starter','trial'].includes(userPlan);
 
       // ── Data retention (free plans only) ──────────────────────────────────
@@ -199,6 +202,7 @@ auth.authStateReady().then(() => {
 
       // Activation toast
       const urlParams = new URLSearchParams(window.location.search);
+      if(urlParams.has('billing')||urlParams.get('success')==='1')await window.BBBilling.mount(document.getElementById('acct-billing-panel'),user);
       if (urlParams.get('success') === '1') {
         showToast(['pro','agency'].includes(userPlan)?'Your '+planLabel+' plan is active.':'Payment confirmation is pending. Your current plan is unchanged.');
         window.history.replaceState({}, '', window.location.pathname);
@@ -229,7 +233,7 @@ async function startCheckout(plan) {
     const r = await fetch(`${CF}/createCheckoutSession`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-      body: JSON.stringify({ plan })
+      body: JSON.stringify({ plan,returnPath:'/BlastyBiz-Account.html?success=1&billing=1' })
     });
     const data = await r.json();
     if (data.code === 'EXISTING_SUBSCRIPTION') { showToast(data.error, true); return; }
@@ -250,20 +254,12 @@ window.handleBilling = async function(e) {
     if (['starter','trial'].includes(userPlan)) {
       window.location.href='BlastyBiz-Choose-Plan.html';
     } else {
-      const idToken = await currentUser.getIdToken();
-      const r = await fetch(`${CF}/createPortalSession`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-        body: JSON.stringify({})
-      });
-      const data = await r.json();
-      if (r.ok && data.url) { window.location.href = data.url; showToast('Your email app will open. Request your billing change there.'); }
-      else showToast('Billing support unavailable. Email info@blastybiz.com.', true);
+      await window.BBBilling.mount(document.getElementById('acct-billing-panel'),currentUser);
     }
   } catch(e) {
     showToast('Billing unavailable', true);
   } finally {
-    if (btn) { btn.textContent = ['starter','trial'].includes(userPlan) ? 'View Plans' : 'Contact Billing Support'; btn.style.pointerEvents = ''; }
+    if (btn) { btn.textContent = ['starter','trial'].includes(userPlan) ? 'View Plans' : 'Manage Subscription'; btn.style.pointerEvents = ''; }
   }
 };
 

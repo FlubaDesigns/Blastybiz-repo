@@ -1,24 +1,30 @@
 'use strict';
-const {onRequest,withAuth,requireAdmin,db,admin,callAI,trackAiUsage,reserveAiAction,AI_DEFAULTS,sendResendEmail,APP_BASE_URL,buildPlatformBlock,PLATFORM_DOCS}=require('../lib/shared');
+const {onRequest,withAuth,requireAdmin,db,admin,callAI,trackAiUsage,reserveAiAction,settleAiAction,AI_DEFAULTS,sendResendEmail,APP_BASE_URL,buildPlatformBlock,PLATFORM_DOCS}=require('../lib/shared');
 const {onDocumentWritten}=require('firebase-functions/v2/firestore');
 const {createLifecycle,remindersEligible,manual}=require('../lib/lifecycle');
 const {rollupCosts}=require('../lib/ai-rollups');
 async function refreshCopy({uid,b,c,ad,business,campaign,packet,ref}) {
  const context={businessId:b,campaignId:c,adId:ad.id,occurrenceId:ref.id,scheduleId:ad.id,purpose:'scheduled_refresh',copyBehavior:'refresh',wasFreeToUser:true};
- await reserveAiAction(uid);
+ const hash=require('node:crypto').createHash('sha256').update(JSON.stringify({path:ref.path,packet})).digest('hex');
+ const receipt=await reserveAiAction(uid,{request:{id:'refresh_'+hash,fingerprint:hash}});
+ if(receipt.cached)return receipt.result.adaptations;
  const start=Date.now();let result;
  try {
    const guides=require('./ai')._writingGuides,overrides=await guides.get();
-   const rules=packet.enabledPlatforms.map(p=>buildPlatformBlock({id:p,name:p,doc:guides.merge(PLATFORM_DOCS[p]||{},overrides[p]||{})})).join('\n');
-   result=await callAI('Refresh the approved advertising wording without inventing facts, offers, prices, contact details or claims. Business facts supply company identity and background. The selected campaign and Ad control the audience, offer and call to action; never import an unrelated promotion, audience, deadline or commission from business background. Campaign terms apply only to that campaign. Return ONLY a JSON object mapping exactly these platform IDs to plain text strings: '+packet.enabledPlatforms.join(', ')+'.\nPlatform writing rules:\n'+rules+'\nBusiness facts: '+JSON.stringify(business.globalMemory||business.businessDescription||'')+'\nCampaign facts: '+JSON.stringify(campaign.campaignMemory||campaign.context||'')+'\nAd facts: '+JSON.stringify({offer:ad.offer,price:ad.price,cta:ad.cta,context:ad.context,pickupArea:ad.pickupArea,pickupZip:ad.pickupZip})+'\nApproved copy: '+JSON.stringify(packet.adaptations),{tier:'smart',maxTokens:6000});
-   const text=result.text.replace(/^```(?:json)?\s*|\s*```$/g,'').trim();
-   const value=JSON.parse(text);
-   if(!value||packet.enabledPlatforms.some(p=>typeof value[p]!=='string'||!value[p].trim()||value[p].length>12000))throw Error('Invalid refreshed copy');
-   await trackAiUsage(uid,'scheduledRefresh',result.model,result.usage,{context,timing:{aiElapsedMs:Date.now()-start}});
-   return Object.fromEntries(packet.enabledPlatforms.map(p=>[p,value[p].trim()]));
+   const platforms=packet.enabledPlatforms.map(p=>({id:p,name:p,doc:guides.merge(PLATFORM_DOCS[p]||{},overrides[p]||{})}));
+   const rules=platforms.map(buildPlatformBlock).join('\n');
+   const prompt='Refresh the approved advertising wording without inventing facts, offers, prices, contact details or claims. Business facts supply company identity and background. The selected campaign and Ad control the audience, offer and call to action; never import an unrelated promotion, audience, deadline or commission from business background. Campaign terms apply only to that campaign. Return ONLY JSON {\"adaptations\":{platformId:\"plain text\"}} for exactly these platform IDs: '+packet.enabledPlatforms.join(', ')+'.\nPlatform writing rules:\n'+rules+'\nBusiness facts: '+JSON.stringify(business.globalMemory||business.businessDescription||'')+'\nCampaign facts: '+JSON.stringify(campaign.campaignMemory||campaign.context||'')+'\nAd facts: '+JSON.stringify({offer:ad.offer,price:ad.price,cta:ad.cta,context:ad.context,pickupArea:ad.pickupArea,pickupZip:ad.pickupZip})+'\nApproved copy: '+JSON.stringify(packet.adaptations);
+   result=await require('../lib/platform-copy').generatePlatformCopy({platforms,prompt,requireAll:true,generate:async(text,options)=>{
+     const runStart=Date.now();let response;
+     try {response=await callAI(text,{tier:'smart',...options});await trackAiUsage(uid,'scheduledRefresh',response.model,response.usage,{context,timing:{aiElapsedMs:Date.now()-runStart}});return response;}
+     catch(e){await trackAiUsage(uid,'scheduledRefresh',response?.model||AI_DEFAULTS.smartModel,response?.usage||null,{context,failureType:'scheduled_refresh_failed',timing:{aiElapsedMs:Date.now()-runStart}});throw e;}
+   }});
+
  } catch(e) {
-   await trackAiUsage(uid,'scheduledRefresh',result?.model||AI_DEFAULTS.smartModel,result?.usage||null,{context,failureType:'scheduled_refresh_failed',timing:{aiElapsedMs:Date.now()-start}});throw e;
+   await settleAiAction(uid,receipt,null);throw e;
  }
+ if(!await settleAiAction(uid,receipt,result))throw Error('Generation recovery pending');
+ return result.adaptations;
 }
 const generateImage=require('../lib/schedule-image').createImageGenerator({db,admin,reserveAiAction,trackAiUsage});
 const lifecycle=createLifecycle({db,admin,refreshCopy,generateImage,sendEmail:payload=>sendResendEmail({...payload,strict:true,dailyLimited:true}),appUrl:APP_BASE_URL});

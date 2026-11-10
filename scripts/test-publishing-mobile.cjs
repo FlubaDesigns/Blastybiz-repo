@@ -1,4 +1,4 @@
-const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');const fs=require('fs'),path=require('path'),assert=require('assert/strict');
+const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');const fs=require('./lib/workspace-source.cjs'),path=require('path'),assert=require('assert/strict');
 const root=path.resolve(__dirname,'../public');
 const origin=process.env.LIVE_ORIGIN;
 (async()=>{const browser=await chromium.launch({headless:true,args:['--no-sandbox']});const page=await browser.newPage({viewport:{width:384,height:832},deviceScaleFactor:1});
@@ -31,9 +31,11 @@ for(const [file,id] of [['BlastyBiz-Connect.html','connection-back'],['BlastyBiz
  assert(await page.locator('#'+id).isVisible(),'resolved return link is available');
  await page.unroute('https://fixture.test/loading-return');
 }
-const workspace=await source('BlastyBiz.html');
+const workspace=await fs.expandAsync(await source('BlastyBiz.html'),source);
 await page.route('https://fixture.test/workspace*',route=>route.fulfill({contentType:'text/html',body:workspace.replace(/<script[\s\S]*?<\/script>/g,'').replace('workspace-loading','').replace('body{visibility:hidden}','body{visibility:visible}')}));
 await page.goto('https://fixture.test/workspace?tab=schedule&scheduleAd=a&scheduleCampaign=c&sourceBlastId=d');
+await page.addStyleTag({content:'body{visibility:visible!important}'});
+await page.locator('#workspace-settings > summary').click();
 await page.addScriptTag({content:await source('schedule-utils.js')});
 await page.addScriptTag({content:await source('lifecycle-ui.js')});
 await page.addScriptTag({content:workspace.slice(workspace.indexOf('function showTab('),workspace.indexOf('function platformEligible('))});
@@ -75,7 +77,7 @@ await page.evaluate(()=>{
 });
 const reviewUrl=page.url();assert.equal(new URL(reviewUrl).searchParams.get('step'),'5');
 assert.equal(new URL(reviewUrl).searchParams.get('cid'),'c');assert.equal(new URL(reviewUrl).searchParams.get('adId'),'a');
-await page.locator('#tab-platforms').click();await page.locator('#tab-create').click();
+await page.locator('#workspace-settings > summary').click();await page.locator('#tab-platforms').click();await page.locator('#tab-create').click();
 assert.equal(await page.locator('.create-slide.cwiz-active').getAttribute('id'),'create-slide-5','Create retains Review after another tab');
 await page.goBack();await page.waitForFunction(()=>document.querySelector('.section.active')?.id==='section-platforms');
 await page.goBack();await page.waitForFunction(()=>document.querySelector('.section.active')?.id==='section-create');

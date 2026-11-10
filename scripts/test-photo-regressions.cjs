@@ -1,4 +1,4 @@
-const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');const s=fs.readFileSync('public/BlastyBiz.html','utf8');
+const fs=require('./lib/workspace-source.cjs'),vm=require('vm'),assert=require('assert/strict');const s=fs.readFileSync('public/BlastyBiz.html','utf8');
 const part=(a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));
 const code=[part('function photoUploadMatchesView','function photoCap'),part('function refreshPhotoGridForScope','function setPhotoScope'),fs.readFileSync('public/photo-preparation.js','utf8').split('  async function _bbDecodePhoto')[0],part('  window._bbSelectPhoto =','  // Live-listen for pending posts')].join('\n');
 let checks=0;function ok(v,m){assert(v,m);checks++}function defer(){let resolve,reject;let promise=new Promise((a,b)=>{resolve=a;reject=b});return{promise,resolve,reject}}

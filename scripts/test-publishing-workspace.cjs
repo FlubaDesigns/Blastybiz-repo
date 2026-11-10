@@ -1,5 +1,5 @@
 'use strict';
-const fs=require('node:fs'),assert=require('node:assert/strict');
+const fs=require('./lib/workspace-source.cjs'),assert=require('node:assert/strict');
 const {JSDOM}=require(process.env.JSDOM_PATH||'jsdom');
 const html=fs.readFileSync('public/BlastyBiz.html','utf8');
 const source=fs.readFileSync('public/publishing-workspace.js','utf8');

@@ -158,7 +158,7 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
         mayRestart=!current.errors?.length&&current.subscription?.id===existingSubscription.squareSubscriptionId&&paidPeriodEnded(current.subscription);
       }catch(_){return res.status(503).json({error:'We could not confirm your subscription status. Please try again or contact support@blastybiz.com.'});}
     }
-    if(!mayRestart)return res.status(409).json({error:'To change your plan or billing period, contact support@blastybiz.com.',code:'EXISTING_SUBSCRIPTION'});
+    if(!mayRestart)return res.status(409).json({error:'Manage your existing subscription from Account before starting another checkout. support@blastybiz.com can help if needed.',code:'EXISTING_SUBSCRIPTION',url:APP_BASE_URL+'/BlastyBiz-Account.html?billing=1'});
   }
 
   const pricing = await loadPricing();
@@ -221,11 +221,13 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
   res.json({ url: response.paymentLink.url });
 }));
 
-exports.createPortalSession = onRequest({ invoker: 'public' }, withAuth(async (req, res, decoded) => {
-  const uid = decoded.uid;
-  const subSnap = await db.collection('subscriptions').doc(uid).get();
-  if (!subSnap.exists) return res.json({ hasSubscription: false, url: null });
-  res.json({ hasSubscription: true, url: 'mailto:info@blastybiz.com?subject=Manage%20BlastyBiz%20Subscription' });
+exports.createPortalSession = onRequest({ invoker: 'public', timeoutSeconds:120 }, withAuth(async (req, res, decoded) => {
+  if(req.method!=='POST')return res.status(405).json({error:'Use POST for account billing.'});
+  if(!(await checkUidRateLimit('billingRateLimit',decoded.uid,60,60*60*1000)))return res.status(429).json({error:'Too many billing requests. Try again shortly.'});
+  try {
+    const manage=require('../lib/subscription-management').createSubscriptionManagement({db,admin,getSquare,loadPricing,checkoutVariationId,priceCents,appUrl:APP_BASE_URL});
+    res.json(await manage(decoded.uid,req.body||{}));
+  }catch(e){console.error('[billing]',e.message);res.status(e.httpStatus||503).json({error:e.httpStatus?e.message:'Billing is temporarily unavailable. Please refresh.'});}
 }));
 
 // Complete the event and its account effects in the same transaction. Customer
@@ -325,11 +327,18 @@ async function applySquareEvent(event) {
       const mayLink=!!linked?.exists && planMatches && belongsToCheckout && (!current.squareSubscriptionId ||
         (!canceled && event.type==='subscription.created' && record.createdAt && record.createdAt>(current.squareSubscriptionCreatedAt || '')));
       const revoke=!!linked?.exists && canceled && (same || (!current.squareSubscriptionId && mayLink));
-      const businesses=revoke?await tx.get(userBizCol(uid)):null;
+      const pendingChange=current.billingChange;
+      const applyChange=same&&record.status==='ACTIVE'&&pendingChange?.action==='change'&&pendingChange.targetVariationId===record.planVariationId&&['pro','agency'].includes(pendingChange.plan);
+      const businesses=(revoke||applyChange)?await tx.get(userBizCol(uid)):null;
       // No writes occur before all reads above, including the legacy linkage query.
       tx.set(summaryRef,record,{merge:true});
       tx.set(customerRef,{recordType:'customer',...(uid?{uid}:{}),updatedAt:stamp},{merge:true});
-      if(subscriptionRef && (same || mayLink))tx.set(subscriptionRef,{squareSubscriptionId:sub.id,squareSubscriptionCreatedAt:record.createdAt,updatedAt:stamp},{merge:true});
+      if(subscriptionRef && (same || mayLink))tx.set(subscriptionRef,{squareSubscriptionId:sub.id,squareSubscriptionCreatedAt:record.createdAt,status:record.status.toLowerCase(),updatedAt:stamp},{merge:true});
+      if(applyChange){
+        tx.set(db.collection('users').doc(uid),{plan:pendingChange.plan,planActive:true,billingPeriod:pendingChange.billingPeriod},{merge:true});
+        tx.update(subscriptionRef,{plan:pendingChange.plan,billingPeriod:pendingChange.billingPeriod,squareCheckoutPlanId:record.planVariationId,'billingChange.state':'applied'});
+        for(const biz of businesses.docs)tx.update(biz.ref,{currentPlan:pendingChange.plan,subscriptionStatus:'active'});
+      }
       if(revoke) {
         tx.set(db.collection('users').doc(uid),{plan:'starter',planActive:false},{merge:true});
         tx.update(subscriptionRef,{status:'canceled',updatedAt:stamp});

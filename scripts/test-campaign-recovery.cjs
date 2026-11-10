@@ -1,5 +1,5 @@
 'use strict';
-const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const assert=require('node:assert/strict'),fs=require('./lib/workspace-source.cjs'),vm=require('node:vm');
 const {database,admin}=require('./lib/test-firestore.cjs');
 const {createAdService}=require('../functions/lib/ads');
 const root='users/u/businesses/b',camp=root+'/campaigns/c',drafts=root+'/listingDrafts/';

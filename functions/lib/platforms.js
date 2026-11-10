@@ -18,18 +18,18 @@
     "doc": {
       "name": "Google Business Profile",
       "purpose": "Local search — customers finding you via Google Maps and Search",
-      "maxChars": 750,
-      "format": "Business description. Plain text only. No markdown, no links.",
+      "maxChars": 1500,
+      "format": "Google Business Profile update post (STANDARD), not the permanent business description. Write about the selected campaign offer with a clear next step. Plain text only.",
       "tone": "Professional, informative, keyword-aware but natural",
       "dos": [
         "Include primary service keywords in the first sentence",
         "Mention your city or neighborhood for local SEO",
-        "State what makes you different from competitors",
-        "Include specialty, experience level, or credentials"
+        "Lead with the current campaign offer and customer benefit",
+        "Include relevant supplied details and a specific call to action"
       ],
       "donts": [
         "No \"best in town\" or superlatives — Google may suppress",
-        "No URLs or phone numbers — they are stripped from descriptions",
+        "Do not invent a link, phone number, offer deadline, or eligibility claim",
         "No emoji",
         "No all-caps",
         "No competitor names"
@@ -562,6 +562,32 @@
     name: p.name, deliveryMode: p.deliveryMode, capabilityLevel: capabilityLevel(p), manualInstructions: p.manualInstructions
   }]));
   const PLATFORM_DOCS = Object.fromEntries(records.map(p => [p.id, p.doc]));
+function mergeWritingDoc(baseDoc, fsDoc) {
+  if (!fsDoc || !Object.keys(fsDoc).length) return baseDoc;
+  const merged = Object.assign({}, baseDoc);
+  if (fsDoc.purpose)   merged.purpose   = fsDoc.purpose;
+  if (fsDoc.maxChars)  merged.maxChars  = Number(fsDoc.maxChars) || baseDoc.maxChars;
+  if (fsDoc.format)    merged.format    = fsDoc.format;
+  if (fsDoc.tone)      merged.tone      = fsDoc.tone;
+  if (fsDoc.dos != null) {
+    merged.dos = typeof fsDoc.dos === 'string'
+      ? fsDoc.dos.split('\n').map(s => s.trim()).filter(Boolean)
+      : (Array.isArray(fsDoc.dos) ? fsDoc.dos : baseDoc.dos);
+  }
+  if (fsDoc.donts != null) {
+    merged.donts = typeof fsDoc.donts === 'string'
+      ? fsDoc.donts.split('\n').map(s => s.trim()).filter(Boolean)
+      : (Array.isArray(fsDoc.donts) ? fsDoc.donts : baseDoc.donts);
+  }
+  if (fsDoc.imageRequired != null || fsDoc.imageNotes != null) {
+    const base = baseDoc.images || {};
+    merged.images = Object.assign({}, base, {
+      required: fsDoc.imageRequired != null ? fsDoc.imageRequired : base.required,
+      notes:    fsDoc.imageNotes    != null ? fsDoc.imageNotes    : base.notes,
+    });
+  }
+  return merged;
+}
   const AUTO_POST_PLATFORMS = records.filter(p => p.deliveryMode === 'auto').map(p => p.id);
   const PLATFORM_DEFAULTS = records.map(p => ({slug:p.id, name:p.name, icon:p.icon, order:p.order,
     enabled:true, proOnly:false, deliveryMode:p.deliveryMode, capabilityLevel:capabilityLevel(p)}));
@@ -590,7 +616,7 @@
   function eligibleForBusiness(platformId, business = {}) {
     return !(platformId === 'google' && business.locationType === 'online');
   }
-  return {records, byId, labels, PLATFORM_CAPABILITY_MAP, PLATFORM_DOCS, AUTO_POST_PLATFORMS,
+  return {records, byId, labels, mergeWritingDoc, PLATFORM_CAPABILITY_MAP, PLATFORM_DOCS, AUTO_POST_PLATFORMS,
     PLATFORM_DEFAULTS, mergeDisplay, forBusiness, normalizeSelection, eligibleForBusiness, postImageLimit, postImages};
 });
 

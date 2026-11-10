@@ -10,12 +10,15 @@ const assert = require('node:assert/strict');
     assert.equal((await response.json()).commit, process.env.GITHUB_SHA, `${host}: wrong deployed commit`);
     for (const [page, text] of [
       ['BlastyBiz', 'lifecycle-ui.js'],
+      ['BlastyBiz', 'workspace-editor.js?v=20261110'],
+      ['ai-generation.js', 'GENERATION_PENDING'],
+      ['billing-account.js', 'Review plan change'],
       ['BlastyBiz-Listing-Preview', 'Review My Blast'],
       ['BlastyBiz-Publishing-Status', 'lifecycle-status.js'],
       ['BlastyBiz-Admin', 'ai-cost-rollups.js'],
-      ['BlastyBiz', 'async function deletePhotoRecords'],
-      ['BlastyBiz', 'async function retryGeneratedDraftSave'],
-      ['BlastyBiz', '_bbUpdateDraftSchedule'],
+      ['workspace-editor.js', 'async function deletePhotoRecords'],
+      ['workspace-editor.js', 'async function retryGeneratedDraftSave'],
+      ['workspace-data.js', '_bbUpdateDraftSchedule'],
       ['BlastyBiz-Admin-OnboardSteps', 'blasty-admin.js'],
       ['BlastyBiz-Profile', 'BlastyBiz-CreateBiz.html'],
       ['BlastyBiz-Story', 'BlastyBiz-CreateBiz.html'],

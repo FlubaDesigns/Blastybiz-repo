@@ -1,5 +1,5 @@
 'use strict';
-const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+const fs=require('./lib/workspace-source.cjs'),vm=require('node:vm'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const A=require('../functions/lib/platforms'),{database,admin}=require('./lib/test-firestore.cjs');
 const read=p=>fs.readFileSync(p,'utf8'),cut=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i);assert(i>=0&&j>i,'test source boundaries exist');return s.slice(i,j)};
 let checks=0;const ok=(v,m)=>{assert(v,m);checks++};

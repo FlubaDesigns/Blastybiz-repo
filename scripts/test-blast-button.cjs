@@ -1,7 +1,7 @@
 // Boot the actual preview page and click its action. Provider calls stay mocked.
 'use strict';
 const {JSDOM,VirtualConsole}=require(process.env.JSDOM_PATH||'jsdom');
-const fs=require('node:fs'),assert=require('node:assert/strict');
+const fs=require('./lib/workspace-source.cjs'),assert=require('node:assert/strict');
 const html=fs.readFileSync('public/BlastyBiz-Listing-Preview.html','utf8');
 const scripts=[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)];
 const main=scripts.find(m=>m[2].includes('var PLATFORM_META'))[2];

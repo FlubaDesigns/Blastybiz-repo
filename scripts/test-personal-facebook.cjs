@@ -1,6 +1,6 @@
 'use strict';
 // Execute the actual delivery rules and handlers. No provider or live database calls.
-const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const assert=require('node:assert/strict'),fs=require('./lib/workspace-source.cjs'),vm=require('node:vm'),path=require('node:path');
 const {createRequire}=require('node:module');
 const platforms=require('../functions/lib/platforms');
 const {database,admin}=require('./lib/test-firestore.cjs');

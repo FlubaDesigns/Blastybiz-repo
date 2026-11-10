@@ -1,5 +1,5 @@
 'use strict';
-const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const fs=require('./lib/workspace-source.cjs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
 const {createRequire}=require('node:module');
 const {JSDOM,VirtualConsole}=require(process.env.JSDOM_PATH||'jsdom');
 const read=p=>fs.readFileSync(p,'utf8');
@@ -39,7 +39,7 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  w._bbProfileGlobal={sellerType:'business'};steps=w.BBBlasty.campaignSteps(w.ccCol);assert.match(steps[0].msg(),/offer or message/);
  dom.window.close();
  // Execute the real dashboard profile functions: a later edit must retain type.
- const app=read('public/BlastyBiz.html');dom=new JSDOM(app,{runScripts:'outside-only',virtualConsole:new VirtualConsole()});w=dom.window;
+ const app=read('public/BlastyBiz.html').replace('</head>','<style>'+read('public/global-style.css')+'</style></head>');dom=new JSDOM(app,{runScripts:'outside-only',virtualConsole:new VirtualConsole()});w=dom.window;
  Object.assign(w,{profile:{sellerType:'personal',name:'David',ownerName:'David'},profileLocationType:'physical',locationType:'physical',renderPlatformCats(){},renderPlatforms(){},renderQuickSelect(){},updateCopyPreview(){},setProfileLocationType(){}});
  w.eval(read('public/business-form.js'));w.eval(app.slice(app.indexOf('function saveProfile() {'),app.indexOf('function setYN(field, val)')));
  w.loadProfile();assert.equal(w.document.querySelector('label[for="profile-name"]').textContent,'Seller name');assert(w.document.getElementById('profile-hours').hidden);
@@ -132,7 +132,7 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  const file=path.resolve('functions/modules/ai.js'),req=createRequire(file);let captured=[];
  let storedType='personal';
  const ref={collection:()=>ref,doc:()=>ref,get:async()=>({exists:true,data:()=>({sellerType:storedType,ownerFirstName:'David',ownerLastName:'Percey',ownerName:'David Percey'})}),onSnapshot:cb=>cb({exists:false})};
- const shared={db:ref,PLATFORM_DOCS:{},buildPlatformBlock:()=>'',onRequest:(_,f)=>f,withAuth:f=>f,reserveAiAction:async()=>{},trackAiUsage:async()=>{},callAI:async(prompt,options)=>{captured.push({prompt,options});return {text:'{"done":false,"message":"What condition is it in?","questions":[]}',usage:{},model:'fixture'};}};
+ const shared={db:ref,PLATFORM_DOCS:{fbmarket:{name:'Facebook Marketplace',maxChars:1000}},buildPlatformBlock:()=>'',onRequest:(_,f)=>f,withAuth:f=>f,reserveAiAction:async()=>({}),settleAiAction:async()=>true,trackAiUsage:async()=>{},callAI:async(prompt,options)=>{captured.push({prompt,options});return {text:'{"adaptations":{"fbmarket":"Fixture copy"},"done":false,"message":"What condition is it in?","questions":[]}',usage:{},model:'fixture'};}};
  const c={exports:{},require:p=>p==='../lib/shared'?shared:req(p),console,Date,process:{env:{}},setTimeout,clearTimeout};vm.runInNewContext(read(file),c);
  const res=()=>({status(){return this},json(v){this.body=v;return this}});
  for(const type of ['personal','business']){
@@ -145,19 +145,19 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  }
  for(const type of ['personal','business']){
   storedType=type;const result=res();
-  await c.exports.adaptListing({body:{listing:{businessId:'b',sellerType:type==='personal'?'business':'personal',name:'David',adContext:'Used GEM vehicle; needs batteries',hours:'9 to 5',aiContext:{story:'Old business story'}},platforms:[],tone:'friendly'}},result,{uid:'u'});
+  await c.exports.adaptListing({body:{listing:{businessId:'b',sellerType:type==='personal'?'business':'personal',name:'David',adContext:'Used GEM vehicle; needs batteries',hours:'9 to 5',aiContext:{story:'Old business story'}},platforms:[{id:'fbmarket',name:'Facebook Marketplace'}],tone:'friendly'}},result,{uid:'u'});
   assert.match(captured.at(-1).prompt,type==='personal'?/private individual/:/local business marketing expert/);
   if(type==='personal'){assert(!captured.at(-1).prompt.includes('Old business story'));assert(!captured.at(-1).prompt.includes('9 to 5'));assert.match(captured.at(-1).prompt,/needs batteries/);}
  }
  for(const region of ['Downtown, 01234','']){
   storedType='personal';
-  await c.exports.adaptListing({body:{listing:{businessId:'b',region,address:'Old profile street',locationType:'physical'},platforms:[],tone:'friendly'}},res(),{uid:'u'});
+  await c.exports.adaptListing({body:{listing:{businessId:'b',region,address:'Old profile street',locationType:'physical'},platforms:[{id:'fbmarket',name:'Facebook Marketplace'}],tone:'friendly'}},res(),{uid:'u'});
   assert(captured.at(-1).prompt.includes('- Address/Area: '+(region||'not provided — omit pickup area')));
   assert(!captured.at(-1).prompt.includes('Old profile street'));
  }
  for(const firstName of ['yes','no'])for(const lastName of ['yes','no'])for(const isRegeneration of [false,true]){
   storedType='personal';
-  await c.exports.adaptListing({body:{isRegeneration,draftId:isRegeneration?'draft':undefined,listing:{businessId:'b',name:'David Percey',ownerName:'David Percey',mentions:{firstName,lastName},globalMemory:'Owner: David Percey'},platforms:[],tone:'friendly'}},res(),{uid:'u'});
+  await c.exports.adaptListing({body:{isRegeneration,draftId:isRegeneration?'draft':undefined,listing:{businessId:'b',name:'David Percey',ownerName:'David Percey',mentions:{firstName,lastName},globalMemory:'Owner: David Percey'},platforms:[{id:'fbmarket',name:'Facebook Marketplace'}],tone:'friendly'}},res(),{uid:'u'});
   const expected=[firstName==='yes'?'David':'',lastName==='yes'?'Percey':''].filter(Boolean).join(' ');
   assert(captured.at(-1).prompt.includes('- Owner name: '+(expected||'omit owner name')));
   assert(captured.at(-1).prompt.includes('Only use this owner/seller name: '+(expected||'[none — do not name the owner/seller]')));

@@ -1,5 +1,5 @@
 'use strict';
-const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const fs=require('./lib/workspace-source.cjs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const {database}=require('./lib/test-firestore.cjs');
 const {migrate,migrateHeldJobs}=require('./migrate-platform-config.cjs');
 const read=p=>fs.readFileSync(p,'utf8'),cut=(s,a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));

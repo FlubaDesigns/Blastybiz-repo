@@ -9,7 +9,7 @@ const {readFlubaProviderKey}=require('../lib/fluba-provider-keys');
 
 const {
   onRequest, admin, db, axios,
-  AI_DEFAULTS, trackAiUsage, callAI, reserveAiAction, classifyAiError,
+  AI_DEFAULTS, trackAiUsage, callAI, reserveAiAction, settleAiAction, classifyAiError,
   checkUidRateLimit, withAuth, setCors, bbLog, verifyBearer,
   resetAiSettingsCache, PLATFORM_DOCS, buildPlatformBlock,
   safeFetchUrl, _getConnTokens, userBizConnsRef,
@@ -512,30 +512,7 @@ async function _getAdminPlatformDocs() {
 // The admin UI stores dos/donts as newline-separated strings — convert to arrays here.
 // The admin UI stores imageRequired + imageNotes separately — map to the images object.
 function _mergeAdminPlatformDoc(baseDoc, fsDoc) {
-  if (!fsDoc || !Object.keys(fsDoc).length) return baseDoc;
-  const merged = Object.assign({}, baseDoc);
-  if (fsDoc.purpose)   merged.purpose   = fsDoc.purpose;
-  if (fsDoc.maxChars)  merged.maxChars  = Number(fsDoc.maxChars) || baseDoc.maxChars;
-  if (fsDoc.format)    merged.format    = fsDoc.format;
-  if (fsDoc.tone)      merged.tone      = fsDoc.tone;
-  if (fsDoc.dos != null) {
-    merged.dos = typeof fsDoc.dos === 'string'
-      ? fsDoc.dos.split('\n').map(s => s.trim()).filter(Boolean)
-      : (Array.isArray(fsDoc.dos) ? fsDoc.dos : baseDoc.dos);
-  }
-  if (fsDoc.donts != null) {
-    merged.donts = typeof fsDoc.donts === 'string'
-      ? fsDoc.donts.split('\n').map(s => s.trim()).filter(Boolean)
-      : (Array.isArray(fsDoc.donts) ? fsDoc.donts : baseDoc.donts);
-  }
-  if (fsDoc.imageRequired != null || fsDoc.imageNotes != null) {
-    const base = baseDoc.images || {};
-    merged.images = Object.assign({}, base, {
-      required: fsDoc.imageRequired != null ? fsDoc.imageRequired : base.required,
-      notes:    fsDoc.imageNotes    != null ? fsDoc.imageNotes    : base.notes,
-    });
-  }
-  return merged;
+  return platformAuthority.mergeWritingDoc(baseDoc, fsDoc);
 }
 
 exports.adaptListing = onRequest({ invoker: 'public', secrets: [], timeoutSeconds: 120 }, withAuth(async (req, res, decoded) => {
@@ -555,14 +532,9 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: [], timeoutSecond
   const regenDraftId   = req.body.draftId || null;
   const now = new Date();
 
-  // Dedup — fall back from listing.requestId to top-level fields so both old and new clients work
-  const requestId = listing?.requestId || req.body.requestId || req.body.generationAttemptId;
-  if (requestId) {
-    try {
-      const dedupSnap = await db.collection('aiRequestDedup').doc(`${decoded.uid}_${requestId}`).get();
-      if (dedupSnap.exists) return res.json(dedupSnap.data().result);
-    } catch(e) { console.warn('[adaptListing] dedup read failed:', e.message); }
-  }
+  const requestId = listing.requestId || req.body.requestId || req.body.generationAttemptId || crypto.randomUUID();
+  const fingerprint = crypto.createHash('sha256').update(JSON.stringify({...req.body,listing:{...listing,requestId:undefined},requestId:undefined,generationAttemptId:undefined})).digest('hex');
+  if (!Array.isArray(platforms) || !platforms.length || platforms.length > 30 || platforms.some(p=>!p || !platformAuthority.byId[p.id]) || new Set(platforms.map(p=>p.id)).size!==platforms.length) return res.status(400).json({error:'Choose supported destinations.'});
 
   // Build draftRef for the free-regen transaction check.
   // Both draftId and businessId are required for regeneration; without them we
@@ -578,7 +550,7 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: [], timeoutSecond
     personalSeller=owned.data().sellerType==='personal';
     ownerProfile=owned.data();
   }
-  let draftRef = null;
+  let draftRef = regenDraftId && regenBizId ? db.collection('users').doc(decoded.uid).collection('businesses').doc(regenBizId).collection('listingDrafts').doc(regenDraftId) : null;
   if (isRegeneration) {
     if (!regenDraftId || !regenBizId) {
       // Malformed regen — treat as a normal (credit-burning) generation rather than
@@ -591,14 +563,6 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: [], timeoutSecond
     }
   }
 
-  let _reserveResult;
-  try {
-    _reserveResult = await reserveAiAction(decoded.uid, { draftRef, isRegeneration });
-  } catch(e) {
-    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is unavailable for the rest of this month. Your saved copy and Run As-Is are still available.' });
-    console.error('[reserveAiAction] adaptListing transaction failed:', e.message);
-    return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
-  }
   // Fetch admin writing-guide overrides and merge with hardcoded defaults.
   // Admin values win; missing fields fall back to PLATFORM_DOCS.
   const adminPlatformDocs = await _getAdminPlatformDocs();
@@ -687,44 +651,32 @@ ${platformList.map(p => `    "${p.id}": "adapted text for ${p.name}"`).join(',\n
   }
 }`;
 
-  let parsed;
-  let _adaptModel;
-  const aiStartMs = Date.now();
+  let _reserveResult;
   try {
-    const { text: aiText, usage: aiUsage, model } = await loggedAI(decoded.uid, 'adaptListing', req.body, prompt, { tier: 'smart', maxTokens: 4096, timeoutMs: 110000 });
-    _adaptModel = model;
-    parsed = JSON.parse(aiText.replace(/```json|```/g, '').trim());
-    const aiElapsedMs = Date.now() - aiStartMs;
-
+    _reserveResult = await reserveAiAction(decoded.uid, { draftRef, isRegeneration, request:{id:requestId,fingerprint} });
+    if (_reserveResult.cached) return res.json(_reserveResult.result);
   } catch(e) {
-    const failureType = classifyAiError(e);
-    if (failureType === 'anthropic_timeout') console.warn('[AI_TIMEOUT] adaptListing timed out after 110s — uid:', decoded.uid);
-
-    console.error('adaptListing AI error [' + failureType + ']:', e.message);
-    return res.status(500).json({ error: 'AI adaptation failed: ' + e.message });
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is unavailable for the rest of this month. Your saved copy and Run As-Is are still available.' });
+    if (e.httpStatus) return res.status(e.httpStatus).json({error:e.message,code:e.code});
+    console.error('[reserveAiAction] adaptListing transaction failed:', e.message);
+    return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
   }
-
-  if (requestId) {
-    try {
-      await db.collection('aiRequestDedup').doc(`${decoded.uid}_${requestId}`).set({
-        result: parsed,
-        uid: decoded.uid,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 30 * 60 * 1000),
-      });
-    } catch(e) { console.warn('[adaptListing] dedup write failed:', e.message); }
+  let parsed;
+  try {
+    parsed = await require('../lib/platform-copy').generatePlatformCopy({platforms:platformList,prompt,
+      generate:(text,options)=>loggedAI(decoded.uid,'adaptListing',req.body,text,{tier:'smart',...options})});
+    parsed.freeRegenApplied = _reserveResult.freeRegen === true;
+  } catch(e) {
+    try { await settleAiAction(decoded.uid,_reserveResult,null); }
+    catch(settlementError) { return res.status(503).json({error:'Generation recovery is pending. Retry this request shortly.',code:'GENERATION_PENDING'}); }
+    console.error('adaptListing failed:',e.code || 'GENERATION_FAILED');
+    return res.status(502).json({error:'Copy could not be completed. Your allowance has been restored; please retry.',code:'GENERATION_FAILED'});
   }
-
-  if (!isRegeneration && regenDraftId && regenBizId) {
-    const grantRef = db.collection('users').doc(decoded.uid).collection('businesses').doc(regenBizId)
-      .collection('listingDrafts').doc(regenDraftId).collection('private').doc('aiAllowance');
-    try {
-      await db.runTransaction(async tx => {
-        const grant = await tx.get(grantRef);
-        if (!grant.exists) tx.create(grantRef, {uid:decoded.uid, freeRegenUsed:false, createdAt:admin.firestore.FieldValue.serverTimestamp()});
-      });
-    } catch(e) { console.error('[adaptListing] regeneration grant not saved:', e.message); }
-  }
+  // Persist usable copy before replying. An uncertain database response must
+  // never refund a result that may already have committed.
+  try {
+    if (!await settleAiAction(decoded.uid,_reserveResult,parsed)) return res.status(409).json({error:'Retry to load the saved generation.',code:'GENERATION_PENDING'});
+  } catch(e) { return res.status(503).json({error:'Your result is being saved. Retry this request shortly.',code:'GENERATION_PENDING'}); }
 
   // Signal to the client whether the free-regen credit was applied so labels stay accurate
   if (isRegeneration) parsed.freeRegenApplied = _reserveResult?.freeRegen === true;

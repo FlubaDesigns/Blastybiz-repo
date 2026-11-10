@@ -1,7 +1,7 @@
 // DOM integration; install jsdom@26 in a temporary directory and set JSDOM_PATH.
 'use strict';
 const {JSDOM}=require(process.env.JSDOM_PATH||'jsdom');
-const fs=require('node:fs'),assert=require('node:assert/strict');
+const fs=require('./lib/workspace-source.cjs'),assert=require('node:assert/strict');
 const {database,admin}=require('./lib/test-firestore.cjs');
 const {createAdService,freezePacket}=require('../functions/lib/ads');
 const base='users/u/businesses/b',camp=base+'/campaigns/c';

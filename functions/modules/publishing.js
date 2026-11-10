@@ -95,18 +95,22 @@ async function _publishFacebookJob(job, conn) {
   try {
     if(images.length===1) {
       const r=await _publicationPost(base+'/photos',{url:images[0],caption:content,published:true,access_token:conn.accessToken});
-      return {postId:r.data.post_id || r.data.id};
+      const postId=r.data?.post_id || r.data?.id;
+      if(!providerId(postId))throw Object.assign(Error('Facebook returned no post confirmation. Check your Page before retrying.'),{publicationUncertain:true});
+      return {postId};
     }
     const attached=[];
     for(const url of images) {
       // Unpublished staging is not a visible post. Only the final feed request
       // is classified as potentially published when its response is lost.
       const r=await axios.post(base+'/photos',{url,published:false,access_token:conn.accessToken},{timeout:30000});
+      if(!providerId(r.data?.id))throw Error('Facebook did not create an image attachment.');
       attached.push({media_fbid:r.data.id});
     }
     const r = await _publicationPost(base+'/feed', {
       message:content,access_token:conn.accessToken,...(attached.length?{attached_media:attached}:{}),
     });
+    if(!providerId(r.data?.id))throw Object.assign(Error('Facebook returned no post confirmation. Check your Page before retrying.'),{publicationUncertain:true});
     return { postId: r.data.id };
   } catch(e) { throw _publisherError('Facebook',e); }
 }
@@ -137,6 +141,7 @@ async function _publishInstagramJob(job, conn) {
       `${META_GRAPH_BASE}/${conn.igUserId}/media_publish`,
       { creation_id: media.data.id, access_token: conn.accessToken }
     );
+    if(!providerId(pub.data?.id))throw Object.assign(Error('Instagram returned no post confirmation. Check your profile before retrying.'),{publicationUncertain:true});
     return { postId: pub.data.id };
   } catch(e) {
     throw _publisherError('Instagram', e);

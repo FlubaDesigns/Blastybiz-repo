@@ -1,4 +1,4 @@
-import './platforms-authority.js?v=20261018-personal-facebook';
+import './platforms-authority.js?v=20261110-reliability';
 export const { PLATFORM_DEFAULTS, mergeDisplay } = globalThis.BBPlatforms;
 
 /**

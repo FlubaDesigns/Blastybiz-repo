@@ -1,7 +1,7 @@
 // Exercise the real review controls with native sharing/clipboard boundaries stubbed.
 'use strict';
 const {JSDOM}=require(process.env.JSDOM_PATH||'jsdom');
-const fs=require('node:fs'),assert=require('node:assert/strict');
+const fs=require('./lib/workspace-source.cjs'),assert=require('node:assert/strict');
 const dom=new JSDOM('<!doctype html><body><div id="step5-review-container"></div>',{url:'https://example.com',runScripts:'outside-only'});
 const w=dom.window,html=fs.readFileSync('public/BlastyBiz.html','utf8');
 let calls=[],fetches=[],downloads=[],clipboard=[],notices=[],shareError=null,failUrl='',supported=true,checks=0;

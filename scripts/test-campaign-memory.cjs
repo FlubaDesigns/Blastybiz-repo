@@ -1,6 +1,6 @@
 'use strict';
 // Exercise production editor functions, narrow Firestore writers and AI handlers.
-const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const assert=require('node:assert/strict'),fs=require('./lib/workspace-source.cjs'),vm=require('node:vm');
 const {JSDOM,VirtualConsole}=require(process.env.JSDOM_PATH||'jsdom');
 const html=fs.readFileSync('public/BlastyBiz.html','utf8');
 const controller=html.slice(html.indexOf('// ── Campaign memory:'),html.indexOf('function _showCreateCampMemorySaved'));
@@ -78,11 +78,11 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
  dom.window.close();
  // Prompt capture exercises actual production endpoints without provider calls.
  const ai=fs.readFileSync('functions/modules/ai.js','utf8'),prompts=[];
- const common={exports:{},require:require('node:module').createRequire(require('node:path').resolve('functions/modules/ai.js')),onRequest:(_,fn)=>fn,withAuth:fn=>fn,console,bbLog(){},reserveAiAction:async()=>{},AI_DEFAULTS:{},
+ const common={exports:{},require:require('node:module').createRequire(require('node:path').resolve('functions/modules/ai.js')),onRequest:(_,fn)=>fn,withAuth:fn=>fn,console,bbLog(){},crypto:require('node:crypto'),reserveAiAction:async()=>({}),settleAiAction:async()=>true,AI_DEFAULTS:{},
   loggedAI:async(uid,fn,body,prompt,options)=>{prompts.push({fn,prompt,options});return {text:JSON.stringify(fn==='chatCampaign'?{done:true,campaignMemory:'Creator-only details'}:{adaptations:{facebook:'Fixture'}})};},
-  _getAdminPlatformDocs:async()=>({}),PLATFORM_DOCS:{},platformAuthority:{byId:{}},buildPlatformBlock:()=>'',db:{},admin:{}};
+  _getAdminPlatformDocs:async()=>({}),_mergeAdminPlatformDoc:(base,override)=>({...base,...override}),PLATFORM_DOCS:{facebook:{maxChars:1000}},platformAuthority:{byId:{facebook:{id:'facebook',name:'Facebook'}}},buildPlatformBlock:()=>'',db:{},admin:{}};
  vm.runInNewContext(ai.slice(ai.indexOf('exports.adaptListing ='),ai.indexOf('exports.resolveCategories =')),common);
- const res=response();await common.exports.adaptListing({body:{listing:{globalMemory:'Company facts',campaignMemory:'Creator campaign, 25% of profit',campaignContext:'People seeking income'},platforms:[],tone:'friendly'}},res,{uid:'owner'});
+ const res=response();await common.exports.adaptListing({body:{listing:{globalMemory:'Company facts',campaignMemory:'Creator campaign, 25% of profit',campaignContext:'People seeking income'},platforms:[{id:'facebook',name:'Facebook'}],tone:'friendly'}},res,{uid:'owner'});
  assert(res.body?.adaptations);assert.match(prompts[0].prompt,/selected campaign controls its audience, offer, and message/i);assert.match(prompts[0].prompt,/Do not carry an old promotion/);assert.match(prompts[0].prompt,/Creator campaign, 25%/);
  vm.runInNewContext(ai.slice(ai.indexOf('exports.chatCampaign ='),ai.indexOf('exports.scoreFact =')),common);
  await common.exports.chatCampaign({method:'POST',body:{conversationHistory:[{role:'user',content:'For creators'}],businessProfile:{globalMemory:'Company identity'},collectedData:{campaignName:'Creators'}}},response(),{uid:'owner'});

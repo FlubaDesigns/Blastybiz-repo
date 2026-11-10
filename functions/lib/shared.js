@@ -243,60 +243,10 @@ async function callAI(content, { system = '', maxTokens = 1024, tier = 'smart', 
 // opts.draftRef    — Firestore DocumentReference for the listing draft (optional)
 // opts.isRegeneration — when true, the first regen of a draft is free (doesn't burn a credit)
 async function reserveAiAction(uid, opts = {}) {
-  const { draftRef, isRegeneration } = opts;
-  return db.runTransaction(async (tx) => {
-    const userRef = db.collection('users').doc(uid);
-
-    // Read user doc + draft doc (if free-regen path) in one round-trip
-    const deletion=await tx.get(db.collection('accountDeletions').doc(uid));
-    if(deletion.exists)throw Error('ACCOUNT_DELETING');
-    const reads = [tx.get(userRef)];
-    const grantRef = isRegeneration && draftRef ? draftRef.collection('private').doc('aiAllowance') : null;
-    if (grantRef) reads.push(tx.get(draftRef), tx.get(grantRef));
-    const [snap, draftSnap, grantSnap] = await Promise.all(reads);
-
-    const data    = snap.exists ? snap.data() : {};
-    const plan    = data.plan || 'starter';
-    const cfg     = await getPlanConfig();
-    const cap     = cfg.aiLimits[plan] || cfg.aiLimits.starter;
-    const resetAt = data.aiActionsResetAt?.toDate?.() || null;
-    const now     = new Date();
-    const needsReset = !resetAt || now > resetAt;
-    const used    = needsReset ? 0 : (data.aiActionsUsed || 0);
-
-    // Free first-regeneration: skip the credit counter for the first regen per draft.
-    // draftSnap.exists must be true — a non-existent or fabricated draftId gets no free regen.
-    // Atomically mark freeRegenUsed on the draft so concurrent calls can't both get free.
-    if (grantRef && draftSnap?.exists && grantSnap?.exists && grantSnap.data().uid === uid && grantSnap.data().freeRegenUsed === false) {
-      tx.update(grantRef, { freeRegenUsed: true, usedAt: admin.firestore.FieldValue.serverTimestamp() });
-      tx.set(draftRef, { freeRegenUsed: true }, { merge: true });
-      return { plan, used, cap, freeRegen: true };
-    }
-
-    if (used >= cap) {
-      throw Object.assign(new Error('LIMIT_REACHED'), { used, cap, plan });
-    }
-
-    // Use set+merge (not update) so this works even when users/{uid} doc is absent.
-    // tx.update() throws NOT_FOUND (code 5) on a missing document; tx.set({merge:true})
-    // creates it. FieldValue.increment works correctly with set+merge on missing fields.
-    if (needsReset) {
-      tx.set(userRef, {
-        aiActionsUsed: 1,
-        aiActionsResetAt: admin.firestore.Timestamp.fromDate(
-          new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()+1,1))
-        ),
-      }, { merge: true });
-    } else {
-      tx.set(userRef, {
-        aiActionsUsed: admin.firestore.FieldValue.increment(1),
-      }, { merge: true });
-    }
-
-    if(used+1>=Math.ceil(cap*.8))tx.set(userRef,{aiAllowanceNotice:'Fresh wording is nearly at this month’s allowance. Saved copy and Run As-Is stay available.'},{merge:true});
-    else if(needsReset)tx.set(userRef,{aiAllowanceNotice:null},{merge:true});
-    return { plan, used: used + 1, cap, freeRegen: false };
-  });
+  return require('./ai-allowance').createAiAllowance({db,admin,getPlanConfig}).reserve(uid,opts);
+}
+async function settleAiAction(uid, receipt, result) {
+  return require('./ai-allowance').createAiAllowance({db,admin,getPlanConfig}).settle(uid,receipt,result);
 }
 
 // ── fetchWithTimeout ──────────────────────────────────────────────────────────
@@ -809,7 +759,7 @@ module.exports = {
   _getConnTokens, _setConnTokens,
   // AI
   AI_COSTS, AI_DEFAULTS, trackAiUsage, getAiSettings, resetAiSettingsCache, callAI,
-  reserveAiAction, fetchWithTimeout, safeFetchUrl, classifyAiError,
+  reserveAiAction, settleAiAction, fetchWithTimeout, safeFetchUrl, classifyAiError,
   // CORS / auth
   ALLOWED_ORIGINS, checkUidRateLimit, setCors, withAuth,
   bbLog, verifyBearer,

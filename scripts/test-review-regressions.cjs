@@ -1,6 +1,6 @@
 'use strict';
 // Executes actual changed code with isolated services; no live publishing or customer writes.
-const fs = require('node:fs'), vm = require('node:vm'), assert = require('node:assert/strict');
+const fs = require('./lib/workspace-source.cjs'), vm = require('node:vm'), assert = require('node:assert/strict');
 let checks = 0;
 function ok(value, message) { assert(value, message); checks++; }
 const adminSource = fs.readFileSync('functions/modules/admin.js', 'utf8');

@@ -1,4 +1,4 @@
-const fs=require('node:fs'),assert=require('node:assert/strict');
+const fs=require('./lib/workspace-source.cjs'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
 (async()=>{
  const html=fs.readFileSync('public/BlastyBiz.html','utf8'),css=fs.readFileSync('public/global-style.css','utf8');

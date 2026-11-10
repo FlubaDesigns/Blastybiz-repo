@@ -1,6 +1,6 @@
 'use strict';
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
+const fs = require('./lib/workspace-source.cjs');
 const vm = require('node:vm');
 
 async function run() {

@@ -1,5 +1,5 @@
 'use strict';
-const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const assert=require('node:assert/strict'),fs=require('./lib/workspace-source.cjs'),vm=require('node:vm');
 const {JSDOM,VirtualConsole}=require(process.env.JSDOM_PATH||'jsdom');
 let checks=0;const ok=(v,m)=>{assert(v,m);checks++;};
 const read=p=>fs.readFileSync(p,'utf8'),cut=(s,a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));

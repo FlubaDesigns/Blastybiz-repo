@@ -1,5 +1,5 @@
 'use strict';
-const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+const fs=require('./lib/workspace-source.cjs'),vm=require('node:vm'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const read=p=>fs.readFileSync(p,'utf8'),cut=(s,a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));
 let checks=0;const ok=(v,m)=>{assert(v,m);checks++;};const quiet={error(){},warn(){},log(){}};
 const schedule=require('../functions/lib/schedule');
@@ -57,6 +57,11 @@ async function publisherTests(){
   await assert.rejects(c._publishFacebookJob({payload:{adaptedContent:'copy'}},{pageId:'p'}),e=>e.publicationUncertain===true);checks++;
   reject=Object.assign(Error('rejected'),{response:{status:400,data:{}}});await assert.rejects(c._publishFacebookJob({},{pageId:'p'}),e=>e.publicationUncertain===false);checks++;
   reject=Object.assign(Error('server error'),{response:{status:503,data:{}}});await assert.rejects(c._publicationPost('url',{}),e=>e.publicationUncertain===true);checks++;
+  c.axios.post=async()=>({data:{}});
+  await assert.rejects(c._publishFacebookJob({payload:{adaptedContent:'copy'}},{pageId:'p'}),e=>e.publicationUncertain===true);checks++;
+  await assert.rejects(c._publishFacebookJob({payload:{adaptedContent:'copy',imageUrls:['https://example.invalid/photo.jpg']}},{pageId:'p'}),e=>e.publicationUncertain===true);checks++;
+  c.axios.get=async()=>({data:{status_code:'FINISHED'}});c.axios.post=async url=>({data:url.endsWith('/media')?{id:'container'}:{}});
+  await assert.rejects(c._publishInstagramJob({payload:{adaptedContent:'copy',imageUrls:['https://example.invalid/photo.jpg']}},{pageId:'p',igUserId:'ig'}),e=>e.publicationUncertain===true);checks++;
   let state={status:'pending',platform:'facebook'},calls=0;
   const ref={get:async()=>({data:()=>state}),update:async patch=>Object.assign(state,patch)};
   const d={exports:{},console:quiet,onDocumentCreated:(_,f)=>f,onDocumentUpdated:(_,f)=>f,admin:{firestore:{FieldValue:{serverTimestamp:()=>1}}},db:{runTransaction:async fn=>fn({get:async()=>({exists:true,data:()=>state}),update:(_,p)=>Object.assign(state,p)})},userBizRef:()=>({get:async()=>({exists:true,data:()=>({sellerType:'business'})})}),userBizConnsRef:()=>({doc:()=>({get:async()=>({exists:true,data:()=>({status:'connected'}),ref:{}})})}),_getConnTokens:async()=>({}),_publishFacebookJob:async()=>{calls++;throw Object.assign(Error('timeout'),{publicationUncertain:true})}};
@@ -68,7 +73,7 @@ async function allowanceTests(){
   const source=read('functions/lib/shared.js');
   function env(grant){let used=0,lock=Promise.resolve();const user={kind:'user'},privateRef={kind:'private'},draft={kind:'draft',collection:()=>({doc:()=>privateRef})};
     const c={Date,db:{collection:name=>({doc:()=>name==='accountDeletions'?{kind:'deletion'}:user}),runTransaction(fn){const next=lock.then(()=>fn({get:async r=>({exists:r.kind==='deletion'?false:r===privateRef?!!grant:true,data:()=>r===privateRef?grant:r===draft?{freeRegenUsed:false}:{plan:'pro',aiActionsUsed:used,aiActionsResetAt:{toDate:()=>new Date(Date.now()+86400000)}}}),set:(r,data)=>{if(r===user)used+=1;},update:(_,data)=>Object.assign(grant,data)}));lock=next.catch(()=>{});return next;}},getPlanConfig:async()=>({aiLimits:{pro:100}}),admin:{firestore:{FieldValue:{increment:n=>n,serverTimestamp:()=>1}}}};
-    vm.runInNewContext(cut(source,'async function reserveAiAction','// ── fetchWithTimeout'),c);return {run:()=>c.reserveAiAction('u',{draftRef:draft,isRegeneration:true}),get used(){return used}};
+    c.require=p=>p==='./ai-allowance'?require('../functions/lib/ai-allowance'):require(p);c.admin.firestore.Timestamp={fromMillis:ms=>({toMillis:()=>ms})};vm.runInNewContext(cut(source,'async function reserveAiAction','// ── fetchWithTimeout'),c);return {run:()=>c.reserveAiAction('u',{draftRef:draft,isRegeneration:true}),get used(){return used}};
   }
   let e=env(null);ok(!(await e.run()).freeRegen&&e.used===1,'client-created draft/false marker cannot fabricate free eligibility');
   e=env({uid:'other',freeRegenUsed:false});ok(!(await e.run()).freeRegen&&e.used===1,'grant must belong to requesting user');

@@ -66,7 +66,7 @@ module.exports=async function verifyLiveNavigation({chromium,origin}){
     await page.waitForFunction(()=>!window.BBAds.busy&&document.querySelector('.create-slide.cwiz-active')?.id==='create-slide-5');
     assert.equal((await ad.get()).data().offer,'Current edited offer','Continue persists current edits');
     assert.deepEqual((await old.get()).data(),oldData,'Continue preserves sent records');
-    await page.locator('#tab-platforms').click();assert.equal(new URL(page.url()).searchParams.get('tab'),'platforms','Platforms records its route');
+    await page.locator('#workspace-settings > summary').click();await page.locator('#tab-platforms').click();assert.equal(new URL(page.url()).searchParams.get('tab'),'platforms','Platforms records its route');
     await page.locator('#tab-create').click();assert.equal(new URL(page.url()).searchParams.get('tab'),'create','Create records its route');
     console.log('PASS LIVE current edits and tab routes.');
     assert.equal(await page.locator('.create-slide.cwiz-active').getAttribute('id'),'create-slide-5');
@@ -103,7 +103,7 @@ module.exports=async function verifyLiveNavigation({chromium,origin}){
     await page.locator('#tab-preview').click();await page.waitForURL(url=>url.pathname.includes('Listing-Preview'));
     assert.equal(new URL(page.url()).searchParams.get('draftId'),blastId,'Unchanged current work reuses its prepared Blast');
     await page.locator('#pub-back-to-ad').click();await ready();
-    await page.locator('#tab-schedule').click();
+    if(!await page.locator('#workspace-settings').evaluate(e=>e.open))await page.locator('#workspace-settings > summary').click();await page.locator('#tab-schedule').click();
     const schedule=page.locator('#schedule-editor');await schedule.locator('[data-save]').waitFor({state:'visible'});
     await schedule.locator('.bb-timezone summary').click();
     await schedule.locator('[data-field=timezone]').selectOption('America/New_York');
@@ -155,8 +155,10 @@ module.exports=async function verifyLiveNavigation({chromium,origin}){
     assert.match(await page.locator('#history-list').textContent(),/Action Needed/);
     assert.equal(await page.locator('#stat-total-posts').textContent(),'0','manual-ready is not a successful post');
     await page.goto(origin+'/BlastyBiz-Account');
-    await page.waitForFunction(()=>document.getElementById('acct-billing-btn')?.textContent==='Contact Billing Support');
-    assert.match(await page.locator('#acct-billing-help').textContent(),/handled by email/);
+    await page.waitForFunction(()=>document.getElementById('acct-billing-btn')?.textContent==='Manage Subscription');
+    await page.locator('#acct-billing-btn').click();
+    await page.waitForFunction(()=>document.getElementById('billing-message')?.textContent.includes('Choose a plan'));
+    assert.equal(await page.locator('#billing-change').isVisible(),false,'a fixture without a Square subscription cannot change billing');
     const billing=await page.evaluate(async()=>{
       const {auth}=await import('/firebase-init-v2.js');await auth.authStateReady();
       const response=await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/getPlanOptions',{headers:{Authorization:'Bearer '+await auth.currentUser.getIdToken()}});
@@ -168,7 +170,7 @@ module.exports=async function verifyLiveNavigation({chromium,origin}){
     const livePrice=Number((await page.locator('[data-price="proMonthly"]').first().textContent()).replace(/[^0-9.]/g,''));
     assert.equal(livePrice,Number(billing.data.prices.proMonthly),'public price equals authenticated checkout options');
     await page.evaluate(()=>localStorage.removeItem('bb_setup_draft'));
-    console.log('PASS LIVE COMMERCIAL: setup reload recovery without writes, History distinguishes manual work, billing support is explicit, public price matches checkout configuration. No card charged or provider post dispatched.');
+    console.log('PASS LIVE COMMERCIAL: setup reload recovery without writes, History distinguishes manual work, subscription management reads the signed-in account, public price matches checkout configuration. No card charged or provider post dispatched.');
     console.log('PASS LIVE AUTHENTICATED follow-through: saved-copy primary action, same-blast connection return, sign-in recovery, Schedule save/timezone/unsaved protection, real manual posting photo tools; paused isolated business, no provider dispatch.');
     console.log('PASS LIVE AUTHENTICATED mobile navigation: persisted current edits, Review/tab/Back/Forward/reload continuity, correct prepared preview and return, duplicate prevention, business switch, immutable sent Blast; no post dispatched.');
   }catch(error){

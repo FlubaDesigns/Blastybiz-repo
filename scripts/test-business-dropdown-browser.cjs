@@ -1,4 +1,4 @@
-const fs=require('fs'),assert=require('assert/strict'),{chromium}=require(process.env.PLAYWRIGHT_PATH || 'playwright');
+const fs=require('./lib/workspace-source.cjs'),assert=require('assert/strict'),{chromium}=require(process.env.PLAYWRIGHT_PATH || 'playwright');
 const root=process.cwd()+'/';
 (async()=>{const browser=await chromium.launch({headless:true});try{const page=await browser.newPage();
 const menu=fs.readFileSync(root+'public/blastybiz-menu.js','utf8');

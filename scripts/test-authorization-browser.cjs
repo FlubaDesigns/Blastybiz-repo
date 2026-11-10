@@ -1,5 +1,5 @@
 'use strict';
-const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('./lib/workspace-source.cjs'),vm=require('node:vm');
 function fixture(overrides={}) {
  let clock=Date.now(),rows=new Map(),routes=new Map(),calls=[],tail=Promise.resolve();
  let user={uid:'owner',email:'owner@example.test',emailVerified:true,disabled:false};
