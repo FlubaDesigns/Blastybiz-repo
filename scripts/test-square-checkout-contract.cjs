@@ -15,7 +15,7 @@ function fixture({pricing={squareProMonthlyPlanId:'variation'}, location='locati
     catalogCalls.push(req); if(catalogCalls.length===failAt)return {errors:[{code:'FAILED'}]};
     return {catalogObject:{...req.object,id:'catalog-'+catalogCalls.length}};
   }}},checkout:{paymentLinks:{create:async req=>{calls.push(req);return badLink?{paymentLink:{url:'https://example.invalid'}}:{paymentLink:{url:'https://example.invalid',orderId:'order'}};}}}};
-  const c={exports:{},console:{error(){},warn(){}},process:{env:{SQUARE_LOCATION_ID:location}},Date,Intl,Buffer,require:p=>{assert.equal(p,'../lib/shared');return {onRequest:(_,f)=>f,withAuth:f=>f,db:m.db,admin,crypto,getSquare:()=>square,checkUidRateLimit:async()=>true,APP_BASE_URL:'https://blastybiz.com',getPlanConfig:async()=>({retention:{}})};}};
+  const c={exports:{},console:{error(){},warn(){}},process:{env:{SQUARE_LOCATION_ID:location}},Date,Intl,Buffer,require:p=>{if(p==='../lib/subscription-catalog')return require('../functions/lib/subscription-catalog');assert.equal(p,'../lib/shared');return {onRequest:(_,f)=>f,withAuth:f=>f,db:m.db,admin,crypto,getSquare:()=>square,checkUidRateLimit:async()=>true,APP_BASE_URL:'https://blastybiz.com',getPlanConfig:async()=>({retention:{}})};}};
   vm.runInNewContext(source,c);
   return {m,c,calls,catalogCalls,gets,square,run:async(body={plan:'pro'},endpoint='createCheckoutSession')=>{const r=response();await c.exports[endpoint]({body},r,{uid:'user',email:'user@example.invalid'});return r;}};
 }
@@ -43,7 +43,16 @@ async function test(name,fn){await fn();count++;console.log('PASS '+name);}
   await test('actual Square SDK serializes required checkout and catalog fields',async()=>{
     const wire=[];const sdk=new SquareClient({token:'test-only',fetcher:async args=>{wire.push(args);return {ok:true,body:args.url.includes('payment-links')?{payment_link:{id:'link',order_id:'order',url:'https://example.invalid'}}:{catalog_object:{...args.body.object,id:'catalog'}},headers:{}};}});
     const f=fixture();await f.run();await sdk.checkout.paymentLinks.create(f.calls[0]);assert.equal(wire[0].body.quick_pay.location_id,'location');assert.equal(String(wire[0].body.quick_pay.price_money.amount),'1900');assert.equal(wire[0].body.checkout_options.subscription_plan_id,'variation');
-    await f.run(defaults,'adminUpdatePricing');await sdk.catalog.object.upsert(f.catalogCalls[1]);assert.equal(wire[1].body.object.type,'SUBSCRIPTION_PLAN_VARIATION');assert.equal(wire[1].body.object.subscription_plan_variation_data.phases[0].pricing.type,'STATIC');
+    await f.run(defaults,'adminUpdatePricing');await sdk.catalog.object.upsert(f.catalogCalls[1]);assert.equal(wire[1].body.object.type,'SUBSCRIPTION_PLAN_VARIATION');assert.equal(wire[1].body.object.subscription_plan_variation_data.phases[0].pricing.type,'STATIC');assert.equal(String(wire[1].body.object.subscription_plan_variation_data.phases[0].pricing.price_money.amount),'1900');
+  });
+  await test('shared variation writer uses supplied idempotency key and validates every result',async()=>{
+    const {createSubscriptionVariation}=require('../functions/lib/subscription-catalog');
+    let request;const catalog={object:{upsert:async r=>{request=r;return {catalogObject:{type:'SUBSCRIPTION_PLAN_VARIATION',id:'v'}};}}};
+    assert.equal(await createSubscriptionVariation(catalog,{key:'proAnnual',cents:19900,planId:'parent',idempotencyKey:'stable'}),'v');
+    assert.equal(request.idempotencyKey,'stable');assert.equal(request.object.subscriptionPlanVariationData.subscriptionPlanId,'parent');
+    assert.equal(request.object.subscriptionPlanVariationData.phases[0].cadence,'ANNUAL');
+    for(const patch of [{key:'unknown'},{cents:0},{cents:1.5},{planId:''},{idempotencyKey:''}])await assert.rejects(createSubscriptionVariation(catalog,{key:'proAnnual',cents:19900,planId:'parent',idempotencyKey:'stable',...patch}));
+    await assert.rejects(createSubscriptionVariation({object:{upsert:async()=>({errors:[{code:'FAILED'}]})}},{key:'proAnnual',cents:19900,planId:'parent',idempotencyKey:'stable'}));
   });
   console.log(`${count} Square checkout contract tests passed (offline).`);
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -619,21 +619,12 @@ exports.adminUpdatePricing = onRequest({ invoker: 'public', secrets: [] }, withA
         object: { type: 'SUBSCRIPTION_PLAN', id: `#${key}_plan`, subscriptionPlanData: { name } },
       });
       if (plan.errors?.length || plan.catalogObject?.type !== 'SUBSCRIPTION_PLAN' || !plan.catalogObject.id) throw Error('Square did not return a subscription plan');
-      const variation = await catalog.object.upsert({
-        idempotencyKey: `bb-${key}-variation-${ts}`,
-        object: {
-          type: 'SUBSCRIPTION_PLAN_VARIATION', id: `#${key}_variation`,
-          subscriptionPlanVariationData: {
-            name, subscriptionPlanId: plan.catalogObject.id,
-            phases: [{ cadence: key.endsWith('Annual') ? 'ANNUAL' : 'MONTHLY', ordinal: BigInt(0),
-              pricing: { type: 'STATIC', priceMoney: { amount: BigInt(priceCents(value)), currency: 'USD' } } }],
-          },
-        },
+      const variationId = await require('../lib/subscription-catalog').createSubscriptionVariation(catalog, {
+        key, cents:priceCents(value), planId:plan.catalogObject.id, idempotencyKey:`bb-${key}-variation-${ts}`,
       });
-      if (variation.errors?.length || variation.catalogObject?.type !== 'SUBSCRIPTION_PLAN_VARIATION' || !variation.catalogObject.id) throw Error('Square did not return a subscription variation');
-      update[`square${field}PlanVariationId`] = variation.catalogObject.id;
+      update[`square${field}PlanVariationId`] = variationId;
       // Keep old readers compatible; both keys now identify the checkout variation.
-      update[`square${field}PlanId`] = variation.catalogObject.id;
+      update[`square${field}PlanId`] = variationId;
     }
   } catch (e) {
     console.error('[adminUpdatePricing] Square plan creation failed:', e.message);
