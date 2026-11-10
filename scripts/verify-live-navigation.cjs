@@ -155,7 +155,10 @@ module.exports=async function verifyLiveNavigation({chromium,origin}){
     assert.match(await page.locator('#history-list').textContent(),/Action Needed/);
     assert.equal(await page.locator('#stat-total-posts').textContent(),'0','manual-ready is not a successful post');
     await page.goto(origin+'/BlastyBiz-Account');
-    await page.waitForFunction(()=>document.getElementById('acct-billing-btn')?.textContent==='Manage Subscription');
+    await page.waitForFunction(()=>{
+      const button=document.getElementById('acct-billing-btn');
+      return button&&!button.disabled&&button.textContent==='Manage Subscription'&&document.getElementById('acct-plan-label')?.textContent==='Pro';
+    });
     await page.locator('#acct-billing-btn').click();
     await page.waitForFunction(()=>document.getElementById('billing-message')?.textContent.includes('Choose a plan'));
     assert.equal(await page.locator('#billing-change').isVisible(),false,'a fixture without a Square subscription cannot change billing');

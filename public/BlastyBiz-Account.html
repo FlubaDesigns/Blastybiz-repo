@@ -50,7 +50,7 @@ body{visibility:hidden}
     <p class="helper acct-retention-note hidden" id="acct-retention-note"></p>
     <div class="btn-row bb-style-9374e842">
       <p id="acct-billing-help">Review your subscription, change plans, or cancel renewal here. Your current access remains available through the confirmed billing period.</p>
-      <a class="btn btn-primary" id="acct-billing-btn" href="#" onclick="handleBilling(event)">Manage Subscription</a>
+      <button type="button" class="btn btn-primary" id="acct-billing-btn" onclick="handleBilling(event)" disabled>Loading account…</button>
     </div>
   </div>
 
@@ -135,6 +135,7 @@ import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase
 const CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
 let currentUser = null;
 let userPlan = 'starter';
+let accountReady = false;
 
 function showToast(msg, isErr) {
   const t = document.getElementById('toast');
@@ -147,8 +148,12 @@ function showToast(msg, isErr) {
 
 auth.authStateReady().then(() => {
   onAuthStateChanged(auth, async (user) => {
-    if (!user) return;
     currentUser = user;
+    accountReady = false;
+    const billingBtn = document.getElementById('acct-billing-btn');
+    billingBtn.disabled = true;
+    billingBtn.textContent = 'Loading account…';
+    if (!user) return;
 
     document.getElementById('acct-email').textContent = user.email || '—';
 
@@ -162,6 +167,7 @@ auth.authStateReady().then(() => {
 
     try {
       const userSnap = await getDoc(doc(db, 'users', user.uid));
+      if (currentUser !== user) return;
       const userData = userSnap.exists() ? userSnap.data() : {};
       document.getElementById('acct-email').textContent = userData.email || user.email || '—';
 
@@ -169,9 +175,10 @@ auth.authStateReady().then(() => {
       const planLabel = userPlan.charAt(0).toUpperCase() + userPlan.slice(1);
       document.getElementById('acct-plan-label').textContent = planLabel;
 
-      const billingBtn = document.getElementById('acct-billing-btn');
       billingBtn.textContent = ['starter','trial'].includes(userPlan) ? 'View Plans' : 'Manage Subscription';
       document.getElementById('acct-billing-help').hidden=['starter','trial'].includes(userPlan);
+      accountReady = true;
+      billingBtn.disabled = false;
 
       // ── Data retention (free plans only) ──────────────────────────────────
       // Free accounts are deleted after a long dormancy. Owners should be able
@@ -208,6 +215,10 @@ auth.authStateReady().then(() => {
         window.history.replaceState({}, '', window.location.pathname);
       }
     } catch(e) {
+      if (currentUser !== user) return;
+      accountReady = false;
+      billingBtn.disabled = true;
+      billingBtn.textContent = 'Account unavailable';
       console.error('[Account] load failed:', e);
       const status = document.getElementById('acct-deletion-status');
       status.hidden = false;
@@ -247,9 +258,11 @@ async function startCheckout(plan) {
 window.startCheckout = startCheckout;
 window.handleBilling = async function(e) {
   e && e.preventDefault();
-  if (!currentUser) return;
+  if (!currentUser || !accountReady) return;
   const btn = document.getElementById('acct-billing-btn');
-  if (btn) { btn.textContent = 'Loading…'; btn.style.pointerEvents = 'none'; }
+  if (btn.disabled) return;
+  btn.textContent = 'Loading…';
+  btn.disabled = true;
   try {
     if (['starter','trial'].includes(userPlan)) {
       window.location.href='BlastyBiz-Choose-Plan.html';
@@ -259,7 +272,8 @@ window.handleBilling = async function(e) {
   } catch(e) {
     showToast('Billing unavailable', true);
   } finally {
-    if (btn) { btn.textContent = ['starter','trial'].includes(userPlan) ? 'View Plans' : 'Manage Subscription'; btn.style.pointerEvents = ''; }
+    btn.disabled = !accountReady;
+    if (accountReady) btn.textContent = ['starter','trial'].includes(userPlan) ? 'View Plans' : 'Manage Subscription';
   }
 };
 
