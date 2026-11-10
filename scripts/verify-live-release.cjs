@@ -16,7 +16,7 @@ const assert = require('node:assert/strict');
       ['BlastyBiz-Listing-Preview', 'Review My Blast'],
       ['BlastyBiz-Publishing-Status', 'lifecycle-status.js'],
       ['BlastyBiz-Admin', 'ai-cost-rollups.js'],
-      ['workspace-editor.js', 'async function deletePhotoRecords'],
+      ['workspace-data.js', 'async function deletePhotoRecords'],
       ['workspace-editor.js', 'async function retryGeneratedDraftSave'],
       ['workspace-data.js', '_bbUpdateDraftSchedule'],
       ['BlastyBiz-Admin-OnboardSteps', 'blasty-admin.js'],

@@ -19,7 +19,7 @@ module.exports=async function verifyLiveScheduler(){
  }
  try{
    await auth.createUser({uid,email,password,emailVerified:true});created=true;
-   await user.set({plan:'starter',acceptanceFixture:true,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+   await user.set({plan:'starter',aiActionsUsed:0,acceptanceFixture:true,createdAt:admin.firestore.FieldValue.serverTimestamp()});
    await br.set({name:'Scheduler acceptance fixture',schedulingPaused:true});
    await cr.set({name:'Scheduler acceptance fixture'});
    const image={id:'original',url:'https://blastybiz.com/img/hero-blast.png',path:'',alt:'Acceptance photo'};
@@ -47,6 +47,10 @@ module.exports=async function verifyLiveScheduler(){
    const prepared=br.collection('listingDrafts').doc(saved.schedule.preparedBlastId),next=(await prepared.get()).data();
    assert.equal(next.status,'scheduled');assert.equal(next.approvalStatus,'approved');assert.equal(next.packet.adaptations.craigslist,sent.payload.adaptedContent);assert.deepEqual(next.packet.imagesByPlatform.craigslist,sent.payload.imageUrls);
    const requestId='acceptance_image';
+   // A completed image receipt exercises the real handler's cached replay and
+   // selection path without requesting a paid model generation.
+   await cr.collection('images').doc('ai_'+requestId).set({uid,bizId:'fixture',campaignId:'fixture',scope:'campaign',
+     generationState:'ready',retired:false,url:image.url,path:'',alt:'Previously generated acceptance image'});
    const generated=await api('generateImage',{requestId,prompt:'A simple square illustration of a blue ceramic vase on a white table. No text.'});
    assert(generated.image?.url&&generated.image.id==='ai_'+requestId);
    const repeated=await api('generateImage',{requestId,prompt:'A simple square illustration of a blue ceramic vase on a white table. No text.'});assert.equal(repeated.image.id,generated.image.id);
@@ -59,7 +63,9 @@ module.exports=async function verifyLiveScheduler(){
    assert.equal((await br.collection('publishJobs').get()).size,1,'Acceptance must not publish');
    assert.deepEqual((await job.get()).data().payload,sent.payload);
    assert.equal((await source.get()).data().packet,undefined,'Original records stay in their existing format');
-   console.log('PASS live authenticated scheduler: original-format source, exact sent payload, keep photo, persisted save, duplicate-save protection, AI image creation/retry/selection, cancellation, authentication boundary; no post dispatched.');
+   assert.equal((await user.get()).data().aiActionsUsed,0,'Cached image replay cannot spend allowance');
+   assert.equal((await db.collection('aiUsageLogs').where('uid','==',uid).get()).size,0,'No paid model request');
+   console.log('PASS live authenticated scheduler: original-format source, exact sent payload, keep photo, persisted save, duplicate-save protection, cached image replay/selection, cancellation, authentication boundary; no paid generation or post dispatched.');
  }finally{
    const images=await cr.collection('images').get();
    for(const row of images.docs){const path=row.data().path;if(path?.startsWith('photos/'+uid+'/'))await app.storage().bucket().file(path).delete({ignoreNotFound:true});}
