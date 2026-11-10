@@ -66,8 +66,16 @@ function createSubscriptionManagement({db,admin,getSquare,loadPricing,checkoutVa
    if(!claimed)return {...summary(),pending:true,message:'This billing request is already recorded. Refresh for confirmation.'};
    try {
      const request={subscriptionId:owned.squareSubscriptionId};
-     const result=action==='cancel'?await square.subscriptions.cancel(request,apiOptions):action==='undo'?await square.subscriptions.deleteAction({...request,actionId:intent.actionId},apiOptions):
-       await square.subscriptions.swapPlan({...request,newPlanVariationId:intent.targetVariationId},apiOptions);
+     let result;
+     try {
+       result=action==='cancel'?await square.subscriptions.cancel(request,apiOptions):action==='undo'?await square.subscriptions.deleteAction({...request,actionId:intent.actionId},apiOptions):
+         await square.subscriptions.swapPlan({...request,newPlanVariationId:intent.targetVariationId},apiOptions);
+     }catch(e){
+       // The SDK throws on HTTP rejection. Only a rejected mutation is definite;
+       // a failed status read after acceptance must remain uncertain.
+       if([400,401,403,404,422,429].includes(e.statusCode))e.definite=true;
+       throw e;
+     }
      if(result.errors?.length)throw Object.assign(Error('Provider rejected the billing change.'),{definite:true});
      current=await retrieve();
      if(!matches(intent,current))throw Error('Provider confirmation pending.');

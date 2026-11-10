@@ -49,3 +49,13 @@ test('installed Square SDK serializes static plan swap and action deletion',asyn
  await client.subscriptions.swapPlan({subscriptionId:'subscription',newPlanVariationId:'agency-monthly'},{maxRetries:0});await client.subscriptions.deleteAction({subscriptionId:'subscription',actionId:'change'},{maxRetries:0});
  assert.equal(wire[0].body.new_plan_variation_id,'agency-monthly');assert(wire[1].url.endsWith('/subscriptions/subscription/actions/change'));
 });
+
+test('SDK rejection remains retryable; read failure after acceptance stays uncertain',async()=>{
+ const rejected=fixture();rejected.square.subscriptions.cancel=async()=>{throw Object.assign(Error('Rejected'),{statusCode:400});};
+ await assert.rejects(()=>rejected.run({action:'cancel'}),e=>e.httpStatus===502);
+ assert.equal(rejected.data.get('subscriptions/u').billingChange.state,'failed');assert.equal((await rejected.run({action:'status'})).pending,false);
+ const accepted=fixture(),get=accepted.square.subscriptions.get;let reads=0;
+ accepted.square.subscriptions.get=async()=>{if(++reads>1)throw Object.assign(Error('Status unavailable'),{statusCode:403});return get();};
+ await assert.rejects(()=>accepted.run({action:'cancel'}),e=>e.httpStatus===503);
+ assert.equal(accepted.data.get('subscriptions/u').billingChange.state,'uncertain');
+});
