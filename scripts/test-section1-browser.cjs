@@ -13,9 +13,13 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
     await page.setContent('<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body class="admin-page">'+header+'<main class="main"><div class="main-inner">'+card+'</div></main></body></html>');
     await page.addStyleTag({content:fs.readFileSync('public/global-style.css','utf8')});
     await page.addStyleTag({content:fs.readFileSync('public/Buttons.css','utf8')});
+    // The isolated fixture omits the real dashboard's other panels. Keep its
+    // body viewport-height so root overflow rules do not clip the open menu.
+    await page.addStyleTag({content:'body { min-height: 100vh; }'});
     await page.addScriptTag({content:fs.readFileSync('public/blastybiz-menu.js','utf8').split('function _revealAdminNav')[0]});
     assert.equal(await page.locator('#ai-settings-card').isVisible(),false);
     await page.getByLabel('Admin options',{exact:true}).click();
+    fs.mkdirSync('test-artifacts',{recursive:true});await page.screenshot({path:'test-artifacts/section1-admin-menu-'+width+'.png',fullPage:true});
     await page.getByRole('button',{name:'AI settings',exact:true}).click();
     assert.equal(await page.locator('#ai-settings-card').isVisible(),true);
     await page.addScriptTag({content:fs.readFileSync('public/admin-ai-settings.js','utf8')});
