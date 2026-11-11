@@ -509,17 +509,14 @@
 ══════════════════════════════════════════ -->
 <div class="section" id="section-publishing">
   <div class="row"><div class="col-full">
-    <h1 id="publishing-title">Publishing</h1>
-    <p>Review your proposed blast, choose destinations, and follow its results.</p>
+    <div class="flex-row bb-list-heading"><h1 id="publishing-title">Publishing</h1><details class="bb-more"><summary aria-label="More options" title="More options">⋯</summary><div class="bb-more-list"><button type="button" class="btn btn-secondary" id="publishing-refresh">Refresh publishing</button><button type="button" data-more-target="publishing-destination-settings">Destination settings</button></div></details></div>
     <p id="publishing-message" role="status" aria-live="polite">Loading saved business…</p>
     <label for="publishing-campaign">Campaign</label>
     <select id="publishing-campaign" class="form-select" disabled></select>
-    <button type="button" class="btn btn-secondary" id="publishing-refresh">Refresh publishing</button>
     <div id="publishing-proposal"></div>
-    <h2>Publishing destinations</h2>
+    <div id="publishing-destination-settings" hidden><h2>Publishing destinations</h2>
     <p>These are this business’s destination controls. Review the selected destinations on the proposed blast before sending.</p>
-    <div id="publishing-platforms"></div>
-    <h2>Timing and prepared blasts</h2>
+    <div id="publishing-platforms"></div></div>
     <div id="publishing-timing" aria-live="polite"></div>
     <h2>Results and attention needed</h2>
     <div id="publishing-results" aria-live="polite"></div>
@@ -1216,12 +1213,11 @@
 <script>BBBlasty.fire('campaign.first_open_explain');</script>
 
 
-<script src="lifecycle-ui.js?v=20261015-preserve-edits"></script>
+<script src="lifecycle-ui.js?v=20261110-section4"></script>
 <script src="lifecycle-status.js?v=20261013-email-cadence"></script>
 <script src="ad-workspace.js?v=20261004-commercial"></script>
 <script src="workspace-help.js"></script>
-<script src="publishing-workspace.js?v=20261014"></script>
-<link rel="stylesheet" href="publishing-workspace.css?v=20261014">
+<script src="publishing-workspace.js?v=20261110-section4"></script>
 <script>
 document.addEventListener('click',function(e){
  const a=e.target.closest('a[href*="BlastyBiz-Listing-Preview.html"]');

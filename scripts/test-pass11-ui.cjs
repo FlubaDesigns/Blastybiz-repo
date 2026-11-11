@@ -10,6 +10,8 @@ const m=database({'users/u':{email:'u@example.com'},[B]:{approvalCount:0},[B+'/c
 let ai=0;const service=createLifecycle({db:m.db,admin,refreshCopy:async()=>{ai++;return {craigslist:'Refreshed wording'};},sendEmail:async()=>{}});
 const dom=new JSDOM('<!doctype html><head></head><body><div id="v1-publish-schedule"></div><button id="publish-btn"></button><div id="sched-campaigns-wrap"></div><div id="sched-upcoming-card"></div><div id="sched-no-campaigns"></div></body>',{url:'https://blastybiz.com/BlastyBiz-Listing-Preview.html',runScripts:'outside-only'});
 const w=dom.window;let published=0,offline=false;w.confirm=()=>true;w._firestoreApprove=async()=>{published++;};w.fetch=async(url,o)=>{if(offline)throw Error('Offline');try{const d=await service.manage('u',JSON.parse(o.body));return {ok:true,json:async()=>d};}catch(e){return {ok:false,json:async()=>({error:e.message})};}};
+w.eval(fs.readFileSync('public/blastybiz-menu.js','utf8').split('function _revealAdminNav')[0]);
+w.eval(fs.readFileSync('public/platforms-authority.js','utf8'));
 w.eval(fs.readFileSync('public/schedule-utils.js','utf8'));
 w.eval(fs.readFileSync('public/lifecycle-ui.js','utf8'));w.BBLifecycle.configure({businessId:'b',token:async()=>''});
 const settle=async()=>{for(let i=0;i<20;i++)await new Promise(r=>setImmediate(r));};
@@ -70,7 +72,7 @@ const settle=async()=>{for(let i=0;i<20;i++)await new Promise(r=>setImmediate(r)
  offline=true;await host.querySelector('[data-save]').onclick();ok(!m.get(A).schedule,'failed save does not claim a schedule');offline=false;
  await host.querySelector('[data-save]').onclick();ok(m.get(A).schedule.frequency==='biweekly'&&published===1,'Schedule saves Ad rule without immediate publication');D=B+'/listingDrafts/'+saved.schedule.preparedBlastId;ok(m.get(D).status==='scheduled','canonical prepared Blast becomes scheduled occurrence');ok(ai===0,'reused copy stays zero-AI');
  await service.manage('u',{action:'pause',businessId:'b',campaignId:'c',adId:'a'});await service.manage('u',{action:'resume',businessId:'b',campaignId:'c',adId:'a'});
- await w.BBLifecycle.dashboard();let card=w.document.querySelector('#sched-campaigns-wrap article');ok(card.textContent.includes('Campaign / Ad')&&card.textContent.includes('WAITING FOR APPROVAL'),'Schedule card identifies both owners and real approval state');
+ await w.BBLifecycle.dashboard();let card=w.document.querySelector('#sched-campaigns-wrap article');ok(card.textContent.includes('Campaign / Ad')&&card.textContent.includes('Awaiting approval'),'Schedule card identifies both owners and real approval state');
  card.querySelector('[data-action=approveNext]').click();await settle();ok(card.querySelector(':scope > [role=status]').textContent.includes('confirmation'),'approval requires reviewed confirmation');
  card.querySelector('[data-copy]').value='Changed for next run';card.querySelector('[data-reviewed]').checked=true;card.querySelector('[data-action=approveNext]').click();await settle();ok(card.querySelector(':scope > [role=status]').textContent.includes('Save This Run Only'),'unsaved edits cannot be accidentally approved');
  card.querySelector('[data-action=editNext]').click();await settle();ok(m.get(D).packet.adaptations.craigslist==='Changed for next run'&&m.get(A).adaptations.craigslist==='Approved manual copy','next-post editor changes only packet');

@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<style>body{visibility:hidden}</style>
+
 <script type="importmap">
 {
   "integrity": {
@@ -42,7 +42,7 @@
 
 <main class="main w-mid">
 <div class="main-inner">
-  <div class="page-title">Publishing Status</div>
+  <div class="flex-row bb-list-heading"><div class="page-title">Publishing Status</div><details class="bb-more"><summary aria-label="More options" title="More options">⋯</summary><div class="bb-more-list" id="status-more-options"><button type="button" data-more-target="status-time-saved">Estimated time saved</button><a href="BlastyBiz.html?tab=history" data-status-workspace="history">See All My Blasts</a><a href="BlastyBiz.html?tab=schedule" data-status-workspace="schedule">Scheduled Posts</a><a href="BlastyBiz.html" data-status-workspace="create">Create Another Listing</a></div></details></div>
   <div class="page-sub" id="page-sub">Your posts and next steps, all in one place.</div>
 
   <div id="loading-state" class="page-loading">
@@ -62,7 +62,7 @@
       <div class="platform-list" id="platform-list"></div>
     </div>
 
-    <div class="stat-card">
+    <div class="stat-card" id="status-time-saved" hidden>
       <div class="stat-num" id="hours-saved">0</div>
       <div class="stat-label">
         <strong>Estimated Time Saved</strong>
@@ -70,10 +70,7 @@
       </div>
     </div>
 
-    <a href="BlastyBiz.html?tab=history" class="dash-btn">📜 See All My Blasts</a>
-    <a href="BlastyBiz.html?tab=schedule" class="dash-btn dash-btn-ghost">🗓 Scheduled Posts</a>
     <section class="card" id="future-blast-schedule" hidden></section>
-    <a href="BlastyBiz.html" class="dash-btn-outline">＋ Create Another Listing</a>
   </div>
 </div><!-- /.main-inner -->
 </main>
@@ -83,10 +80,10 @@
 
 
 <script src="schedule-utils.js"></script>
-<script src="lifecycle-ui.js?v=20261015-preserve-edits"></script>
+<script src="lifecycle-ui.js?v=20261110-section4"></script>
 <script src="platforms-authority.js"></script>
-<script src="photo-handoff.js?v=20261004-flow"></script>
-<script src="lifecycle-status.js?v=20261013-email-cadence"></script>
+<script src="photo-handoff.js?v=20261110-section4"></script>
+<script src="lifecycle-status.js?v=20261110-section4"></script>
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { rememberConnectionReturn } from './auth-return.js?v=20261011-security';

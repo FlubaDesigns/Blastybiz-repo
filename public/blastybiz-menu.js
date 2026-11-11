@@ -1,3 +1,33 @@
+// Shared secondary-action menu. Native details supplies keyboard activation.
+window.BBMore = {
+  create(label = 'More options') {
+    const menu = document.createElement('details'); menu.className = 'bb-more';
+    const trigger = document.createElement('summary'); trigger.textContent = '⋯';
+    trigger.setAttribute('aria-label', label); trigger.title = label;
+    const body = document.createElement('div'); body.className = 'bb-more-list';
+    menu.append(trigger, body); return {menu, body};
+  },
+  html(content, label) {
+    const {menu, body} = this.create(label); body.innerHTML = content; return menu.outerHTML;
+  }
+};
+document.addEventListener('click', event => {
+  document.querySelectorAll('.bb-more[open]').forEach(menu => {
+    if (!menu.contains(event.target)) menu.open = false;
+  });
+  const button = event.target.closest('[data-more-target]');
+  if (!button) return;
+  const target = document.getElementById(button.dataset.moreTarget);
+  if (!target) return;
+  target.hidden = !target.hidden; button.setAttribute('aria-expanded', String(!target.hidden));
+  button.closest('.bb-more').open = false;
+  if (!target.hidden) { target.scrollIntoView?.({block:'nearest'}); target.focus?.(); }
+});
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape') return;
+  document.querySelectorAll('.bb-more[open]').forEach(menu => {menu.open = false; menu.querySelector('summary').focus();});
+});
+
 function _revealAdminNav() {
   (async function() {
     try {

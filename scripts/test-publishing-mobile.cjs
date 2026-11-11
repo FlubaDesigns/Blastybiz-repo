@@ -4,28 +4,36 @@ const origin=process.env.LIVE_ORIGIN;
 (async()=>{const browser=await chromium.launch({headless:true,args:['--no-sandbox']});const page=await browser.newPage({viewport:{width:384,height:832},deviceScaleFactor:1});
 async function source(file){if(!origin)return fs.readFileSync(root+'/'+file,'utf8');const r=await fetch(origin+'/'+file,{cache:'no-store'});assert(r.ok,'live asset '+file);return r.text();}
 const html=await source('BlastyBiz-Publishing-Status.html');
-const assets={};for(const file of ['global-style.css','escape-utils.js','lifecycle-status.js','platforms-authority.js','photo-handoff.js'])assets[file]=await source(file);
+const assets={};for(const file of ['global-style.css','blastybiz-menu.js','escape-utils.js','lifecycle-status.js','platforms-authority.js','photo-handoff.js'])assets[file]=await source(file);
 await page.route('**/*',async route=>{const url=new URL(route.request().url());if(url.hostname==='example.com')return route.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1kAAAAASUVORK5CYII=','base64')});if(url.pathname==='/test')return route.fulfill({contentType:'text/html',body:html.replace(/<script[\s\S]*?<\/script>/g,'').replace('body{visibility:hidden}','body{visibility:visible}')});const file=url.pathname.slice(1);if(url.hostname==='fixture.test'&&assets[file])return route.fulfill({contentType:file.endsWith('.css')?'text/css':'text/javascript',body:assets[file]});return route.abort();});
-await page.goto('https://fixture.test/test');await page.addScriptTag({content:assets['escape-utils.js']});await page.addScriptTag({content:assets['platforms-authority.js']});await page.addScriptTag({content:assets['photo-handoff.js']});await page.addScriptTag({content:'window.BBLifecycle={api:async()=>({summary:{complete:false,delivered:2,manual:3,total:5,terminal:2}})};'});await page.addScriptTag({content:assets['lifecycle-status.js']});
+await page.goto('https://fixture.test/test');await page.addStyleTag({content:'body{visibility:visible!important}'});await page.addScriptTag({content:assets['blastybiz-menu.js'].split('function _revealAdminNav')[0]});await page.addScriptTag({content:assets['escape-utils.js']});await page.addScriptTag({content:assets['platforms-authority.js']});await page.addScriptTag({content:assets['photo-handoff.js']});await page.addScriptTag({content:'window.BBLifecycle={api:async()=>({summary:{complete:false,delivered:2,manual:3,total:5,terminal:2}})};'});await page.addScriptTag({content:assets['lifecycle-status.js']});
 const jobs=[['yelp','manual_required'],['instagram','success'],['facebook','success'],['craigslist','manual_required'],['fbmarket','manual_required']].map(([platform,status],i)=>({jobId:String(i),platform,status,payload:{adaptedContent:'Your listing',imageUrls:['https://example.com/one.jpg','https://example.com/two.jpg']}}));
 await page.evaluate(jobs=>renderJobs(jobs),jobs);
-assert.equal(await page.locator('details.platform-row').count(),5);
-assert.equal(await page.locator('details.platform-row[open]').count(),0,'all accordions closed initially');
-assert((await page.locator('#platform-list').boundingBox()).height<450,'closed list stays compact');
-await page.locator('details.platform-row').first().locator('> summary').click();
-const photos=page.locator('details.platform-row[open] .platform-photo img');
-assert.equal(await photos.count(),2,'both photo thumbnails are present');
-assert.equal(await page.locator('details[open] .qp-photo-tools button').count(),4,'posting has Copy photo and Save photo for each frozen image');
+assert.equal(await page.locator('article.platform-row').count(),5);
+assert.equal(await page.locator('.platform-row .bb-more[open]').count(),0,'secondary menus closed initially');
+const first=page.locator('.platform-row').first(),photos=first.locator('.platform-photo img');
+assert.equal(await photos.count(),2,'both frozen photo thumbnails retained');
+assert.equal(await first.locator('.qp-photo-tools button').count(),2,'Save photo remains primary for each photo');
+assert.equal(await first.locator('.bb-more-list button[aria-label^="Copy photo"]').count(),2,'Copy photo retained in menu');
 await photos.first().scrollIntoViewIfNeeded();
-await page.waitForFunction(()=>[...document.querySelectorAll('details[open] .platform-photo img')].every(img=>img.complete&&img.naturalWidth>0));
-assert.equal((await photos.first().boundingBox()).width,74,'thumbnail keeps a visible 72px image plus border');
-for(const width of [320,384,430,1024]){await page.setViewportSize({width,height:832});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'no horizontal overflow '+width);const metrics=await page.locator('#platform-list').evaluate(el=>({height:el.getBoundingClientRect().height,buttons:[...el.querySelector('details[open]').querySelectorAll('.action-btns > *')].map(b=>b.getBoundingClientRect().height)}));assert(metrics.buttons.every(h=>h>=44));assert(metrics.height<1000,'one expanded platform includes copy and usable photo controls; others stay compact');console.log(width,metrics);}
-await page.setViewportSize({width:384,height:832});if(process.env.STATUS_SCREENSHOT)await page.locator('.progress-card').screenshot({path:process.env.STATUS_SCREENSHOT});await page.locator('details.platform-row').last().locator('> summary').click();assert(await page.locator('details.platform-row').last().evaluate(el=>el.open));assert.equal(await page.locator('details.platform-row[open]').count(),1,'opening another platform closes the previous one');await page.evaluate(jobs=>renderJobs(jobs),jobs);assert(await page.locator('details.platform-row').last().evaluate(el=>el.open),'live updates keep chosen accordion open');console.log((origin?'LIVE ASSETS '+origin+': ':'LOCAL ASSETS: ')+'PASS mobile: closed accordions, rendered photo thumbnails, one open platform, no overflow, 44px actions');
+await page.waitForFunction(()=>[...document.querySelectorAll('.platform-row:first-child .platform-photo img')].every(img=>img.complete&&img.naturalWidth>0));
+assert.equal((await photos.first().boundingBox()).width,74,'existing photo size retained');
+for(const width of [320,384,430,1024]){
+ await page.setViewportSize({width,height:832});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'no horizontal overflow '+width);
+ const buttons=await first.locator('.action-btns > *').evaluateAll(es=>es.map(b=>b.getBoundingClientRect().height));assert(buttons.every(h=>h>=44));
+ await first.locator('.bb-more > summary').click();const menu=await first.locator('.bb-more-list').boundingBox();assert(menu.x>=0&&menu.x+menu.width<=width,'menu within phone '+width);
+ await page.keyboard.press('Escape');assert.equal(await first.locator('.bb-more').evaluate(e=>e.open),false);
+}
+await page.setViewportSize({width:384,height:832});
+if(process.env.STATUS_SCREENSHOT)await page.locator('.progress-card').screenshot({path:process.env.STATUS_SCREENSHOT});
+const last=page.locator('.platform-row').last();await last.locator('.bb-more > summary').click();await page.evaluate(jobs=>renderJobs(jobs),jobs);assert(await last.locator('.bb-more').evaluate(e=>e.open),'live updates keep selected menu open');
+await page.keyboard.press('Escape');fs.mkdirSync('test-artifacts',{recursive:true});await page.screenshot({path:'test-artifacts/section4-status.png',fullPage:true});
+console.log('PASS manual destinations: primary tools, all photo bytes, normal right-side menu, live snapshot continuity and no overflow.');
 // Return links must stay hidden while their authenticated destinations load.
 for(const [file,id] of [['BlastyBiz-Connect.html','connection-back'],['BlastyBiz-Listing-Preview.html','pub-back-to-ad']]){
  const markup=await source(file);
  await page.route('https://fixture.test/loading-return',route=>route.fulfill({contentType:'text/html',body:markup.replace(/<script[\s\S]*?<\/script>/g,'').replace('body{visibility:hidden}','body{visibility:visible}')}));
- await page.goto('https://fixture.test/loading-return');
+ await page.goto('https://fixture.test/loading-return');await page.addStyleTag({content:'body{visibility:visible!important}'});
  assert.equal(await page.locator('#'+id).isVisible(),false,'button styling cannot override loading state: '+id);
  await page.evaluate(id=>{const link=document.getElementById(id);link.href='BlastyBiz.html?bizId=b&tab=create&step=5';link.hidden=false;link.classList.remove('hidden');},id);
  assert(await page.locator('#'+id).isVisible(),'resolved return link is available');
@@ -36,7 +44,7 @@ await page.route('https://fixture.test/workspace*',route=>route.fulfill({content
 await page.goto('https://fixture.test/workspace?tab=schedule&scheduleAd=a&scheduleCampaign=c&sourceBlastId=d');
 await page.addStyleTag({content:'body{visibility:visible!important}'});
 await page.locator('#workspace-settings > summary').click();
-await page.addScriptTag({content:await source('schedule-utils.js')});
+await page.addScriptTag({content:assets['blastybiz-menu.js'].split('function _revealAdminNav')[0]});await page.addScriptTag({content:await source('schedule-utils.js')});
 await page.addScriptTag({content:await source('lifecycle-ui.js')});
 await page.addScriptTag({content:workspace.slice(workspace.indexOf('function showTab('),workspace.indexOf('function platformEligible('))});
 await page.evaluate(()=>{

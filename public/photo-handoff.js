@@ -62,7 +62,7 @@
     document.body.appendChild(link); link.click(); link.remove();
     setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
   }
-  function renderPhotos(host, pid, photos, displayOnly = false) {
+  function renderPhotos(host, pid, photos, displayOnly = false, secondaryHost = null) {
     host.replaceChildren(); host.classList.add('bb-photo-tools');
     const feedback = document.createElement('p'); feedback.className='bb-photo-feedback'; feedback.setAttribute('role','status');
     const grid = document.createElement('div'); grid.className='bb-photo-grid'; host.append(grid,feedback);
@@ -80,7 +80,9 @@
           const button=document.createElement('button');button.type='button';button.textContent=label;
           button.onclick=()=>{button.disabled=true;feedback.textContent=label+'…';
             action().then(()=>{feedback.textContent=done;}).catch(()=>{feedback.textContent='Use Share photos, or open the photo above and hold it to save.';}).finally(()=>{button.disabled=false;});};
-          actions.append(button);
+          if (secondaryHost && label === 'Copy photo') {
+            button.setAttribute('aria-label','Copy photo '+(index+1)); secondaryHost.append(button);
+          } else actions.append(button);
         }
         item.append(actions);
       }

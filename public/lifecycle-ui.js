@@ -9,7 +9,7 @@
    const token=await ctx.token();const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);let r;try{r=await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/manageBlast',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({businessId:ctx.businessId,action,...values})});}catch(error){if(error.name==='AbortError')throw Error('This request took too long. Your edits are kept here; try again.');throw error;}finally{clearTimeout(timer);}
    const data=await r.json();if(!r.ok)throw Error(data.error||'Your choice could not be saved.');return data;
  }
- function configure(c){context=c;}
+ function configure(c){if(context?.businessId!==c.businessId)dashboardEpoch++;context=c;}
  const date=(v,zone)=>v?new Date(v).toLocaleString(undefined,{timeZone:zone||undefined,timeZoneName:'short'}):'—';
  const localValue=(v,zone)=>{const p=BBSchedule.localParts(new Date(v),zone);return p.year+'-'+String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0')+'T'+String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0');};
  function fromLocal(raw,zone){if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(raw))throw Error('Choose a future date and time.');const [ymd,hm]=raw.split('T'),[y,m,d]=ymd.split('-').map(Number),[h,min]=hm.split(':').map(Number);const value=BBSchedule.wallTime(y,m-1,d,h,zone,min);if(!Number.isFinite(value.getTime())||value<=new Date())throw Error('Choose a future date and time.');return value;}
@@ -141,48 +141,76 @@
          scheduleSetup(setup,request);
        }else{setup.innerHTML='<p>Select your campaign in Create, then return here to schedule its next blast.</p>';}
      }
-     const next=active[0];wrap.innerHTML='<h2>Next Up</h2><p>'+esc(next?next.campaignName+' / '+next.adName+' — '+scheduleSummary(next.schedule):'Nothing scheduled. You can still Send Now.')+'</p><p role="status" id="bb-schedule-message"></p><div data-active></div><details><summary>Paused and completed ('+others.length+')</summary><div data-others></div></details>';
-     if(result.businessPaused){const resume=document.createElement('button');resume.textContent='Business scheduling is paused — Resume';resume.onclick=async()=>{try{await api('resumeBusiness');await dashboard();}catch(e){wrap.querySelector('#bb-schedule-message').textContent=e.message;}};wrap.prepend(resume);}
-     const message=t=>{wrap.querySelector('#bb-schedule-message').textContent=t;};
-     for(const row of rows) {
-       const {schedule:s,upcoming:u}=row,card=document.createElement('article'),status=u?.approvalStatus==='required'&&s.enabled?'WAITING FOR APPROVAL':s.status||'active';
-       const request={adId:row.adId,campaignId:row.campaignId,expectedRevision:s.revision};
-       card.innerHTML='<h3>'+esc(row.campaignName)+' / '+esc(row.adName)+'</h3><strong>'+esc(status.toUpperCase())+'</strong>'+(s.pauseReason?'<p>'+esc(s.pauseReason)+'</p>':'')+'<p>Next: '+esc(scheduleSummary(s))+'</p><p>Copy: '+esc({reuse:'Keep approved wording',refresh:'Fresh wording for review',ask:'Ask each time'}[s.copyBehavior]||'Keep approved wording')+' · Photos: '+esc({reuse:'Keep approved photos',remind:'Remind me to change',ask:'Ask each time'}[s.imageBehavior]||'Keep approved photos')+' · Approval: '+esc({automatic:'Use approved post',always:'Ask every time',attention:'Ask when needed'}[s.approvalBehavior]||'Ask when needed')+'</p>'+(row.last?'<p>Last run: '+esc(date(row.last.startedAt,s.timezone))+' · '+(row.last.completion?.delivered||0)+' delivered · '+(row.last.completion?.manual||0)+' need you. <a href="'+esc(statusLink(context.businessId,row.last.id))+'">View status</a></p>':'')+'<button data-action="'+(s.enabled?'pause':'resume')+'" '+(s.status==='completed'?'hidden':'')+'>'+(s.enabled?'Pause':'Resume')+'</button><button data-action="skipNext" '+(!s.nextRunAt?'hidden':'')+'>Skip Next</button><button data-action="edit">Edit Schedule &amp; Photos</button><button data-action="cancel" '+(!s.enabled?'hidden':'')+'>Cancel Schedule</button><details><summary>Move only the next post</summary><p>'+esc(s.timezone||'Local time')+'</p><label>New date and time<input type="datetime-local" data-next value="'+esc(s.nextRunAt?localValue(s.nextRunAt,s.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone):'')+'"></label><button data-action="changeNext" '+(!s.nextRunAt?'hidden':'')+'>Change Next Time</button></details><div data-edit hidden></div><div data-review></div><p role="status"></p>';
-       const review=card.querySelector('[data-review]');
-       if(u){review.innerHTML='<details><summary>Review / Change Next Post</summary><p>'+esc(u.preparationState==='working'?'Preparing fresh copy…':u.copyFallbackReason==='allowance_ceiling'?'Fresh wording is unavailable this month. Saved approved copy is ready to reuse.':u.copyFallbackReason?'Refresh was unavailable. Saved copy is ready to review.':'Review these exact copy and image selections.')+'</p>'+Object.entries(u.packet.adaptations).map(([p,text])=>'<label>'+esc(p)+'<textarea data-copy="'+esc(p)+'">'+esc(text)+'</textarea></label>').join('')+'<div>'+row.imagePool.map(i=>'<label><input type="checkbox" data-image="'+esc(i.id)+'" '+(u.packet.imageRefs.some(x=>x.id===i.id)?'checked':'')+'><img src="'+esc(i.url)+'" alt="'+esc(i.alt||'Campaign image')+'">Use this image</label>').join('')+'</div><p>Changes below apply only to this Blast. <a href="BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,cid:row.campaignId,adId:row.adId})+'">Update the reusable Ad</a></p><button data-action="editNext">Save This Run Only</button><button data-action="refreshNext">Refresh Wording</button><label><input type="checkbox" data-reviewed> I reviewed this copy and want to keep these images</label><button data-action="approveNext">'+(s.copyBehavior==='ask'?'Approve — Reuse This Copy':'Approve This Blast')+'</button></details>';}
-       if(!u&&s.nextRunAt){const prepare=document.createElement('button');prepare.dataset.action='prepareNext';prepare.textContent='Prepare / Review Next Post';review.append(prepare);}
-       const route=new URLSearchParams(location.search);if(route.get('scheduleAd')===row.adId&&route.get('scheduleCampaign')===row.campaignId){const details=review.querySelector('details');if(details)details.open=true;if(route.get('scheduledBlastId')&&route.get('scheduledBlastId')!==u?.id)card.querySelector(':scope > [role=status]').textContent='That email preview is no longer current. Review the current next Blast before choosing an action.';}
-       let editor=null;
-       card.addEventListener('click',async e=>{
-         const button=e.target.closest('[data-action]');if(!button)return;const action=button.dataset.action,local=card.querySelector(':scope > [role=status]');
-         if(action==='edit'){if(!canLeave())return;const box=document.getElementById('schedule-editor')||card.querySelector('[data-edit]');scheduleSetup(box,request);box.scrollIntoView?.({block:'start',behavior:'smooth'});return;}
-         if(action==='approveNext'&&!card.querySelector('[data-reviewed]')?.checked){local.textContent='Review the copy and images, then check the confirmation.';return;}
-         if(['skipNext','save','cancel'].includes(action)&&!confirm(action==='cancel'?'Cancel this future schedule?':action==='save'?'Replace this schedule and any unsent prepared Blast? The stop-after count starts again.':'Skip only the next occurrence?'))return;
-         const extras={};
-         try {
-           if(action==='save')Object.assign(extras,{schedule:editor.value(),requestId:editor.requestId(),replacePrepared:true});
-           if(action==='changeNext'){const d=fromLocal(card.querySelector('[data-next]').value,s.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone);extras.nextRunAt=d.toISOString();}
-           if(action==='approveNext')Object.assign(extras,{packetRevision:u.revision,keepImages:true,copyChoice:u.packet.copyBehavior==='refresh'?'refresh':'reuse'});
-           if(action==='editNext')Object.assign(extras,{packetRevision:u.revision,adaptations:Object.fromEntries([...card.querySelectorAll('[data-copy]')].map(x=>[x.dataset.copy,x.value])),imageIds:[...card.querySelectorAll('[data-image]:checked')].map(x=>x.dataset.image)});
-           if(action==='approveNext') {
-             const changed=[...card.querySelectorAll('[data-copy]')].some(x=>x.value!==u.packet.adaptations[x.dataset.copy])||JSON.stringify([...card.querySelectorAll('[data-image]:checked')].map(x=>x.dataset.image).sort())!==JSON.stringify(u.packet.imageRefs.map(x=>x.id).sort());
-             if(changed)throw Error('Save This Run Only before approving your changes.');
-           }
-           card.querySelectorAll('button').forEach(x=>x.disabled=true);local.textContent='Saving…';
-           const saved=await api(action,{...request,...extras});if(action==='pause')fire('schedule.paused');
-           await dashboard();const msg=document.getElementById('bb-schedule-message');if(msg)msg.textContent='Saved.'+(saved.overlaps?.length?' Overlap within one hour: '+saved.overlaps.map(o=>o.campaignName+' / '+o.adName).join(', '):'');
-         }catch(err){local.textContent=err.message;card.querySelectorAll('button').forEach(x=>x.disabled=false);}
-       });
-       wrap.querySelector(s.enabled?'[data-active]':'[data-others]').append(card);
-     }
-     for(const old of result.legacy||[]) {
-       const legacy=document.createElement('article');legacy.innerHTML='<h3>'+esc(old.campaignName)+' — Earlier schedule</h3><p>Next: '+esc(date(old.nextRunAt))+'</p><p>This earlier schedule can be paused here. Open the campaign to create and schedule an Ad.</p><a class="bb-button" href="BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,cid:old.campaignId})+'">Open campaign</a><button>Pause schedule</button>';
-       legacy.querySelector('button').onclick=async()=>{try{await api('pauseLegacy',{blastId:old.id});await dashboard();}catch(e){message(e.message);}};wrap.append(legacy);
-     }
-     fire('schedule.next_up_summary',{summary:next?next.campaignName+' / '+next.adName+' — '+scheduleSummary(next.schedule):'Nothing scheduled right now.'});
+     renderSchedules(wrap,result);
    }catch(e){if(seq===dashboardEpoch)wrap.textContent=e.message;}
  }
+
+ function renderSchedules(wrap,result,{onChange=()=>dashboard(),onEdit}={}) {
+   const businessId=context.businessId;
+   const current=()=>context?.businessId===businessId&&wrap.isConnected;
+   const rows=result.schedules||[],active=rows.filter(r=>r.schedule.enabled),others=rows.filter(r=>!r.schedule.enabled),next=active[0];
+   let working=false;
+   wrap.classList.add('bb-life');
+   wrap.innerHTML='<div class="flex-row bb-list-heading"><h2>Upcoming posts</h2>'+BBMore.html('<button type="button" data-show-others>Paused and completed ('+others.length+')</button>')+'</div><p role="status" class="bb-schedule-message"></p><div data-active></div><div data-others hidden></div>';
+   const message=t=>{if(current())wrap.querySelector('.bb-schedule-message').textContent=t;};
+   wrap.querySelector('[data-show-others]').onclick=e=>{const panel=wrap.querySelector('[data-others]');panel.hidden=!panel.hidden;e.target.closest('.bb-more').open=false;};
+   if(!active.length)wrap.querySelector('[data-active]').textContent='Nothing scheduled. Your draft stays unsent.';
+   if(result.businessPaused){const resume=document.createElement('button');resume.type='button';resume.textContent='Business scheduling is paused — Resume';resume.onclick=async()=>{if(working||!current())return;working=true;resume.disabled=true;try{await api('resumeBusiness');if(current())await onChange();}catch(e){message(e.message);}finally{working=false;resume.disabled=false;}};wrap.prepend(resume);}
+   for(const row of rows){
+     const {schedule:s,upcoming:u}=row,card=document.createElement('article');
+     card.className='bb-schedule-card';card.dataset.adId=row.adId;card.dataset.campaignId=row.campaignId;
+     const status=u?.approvalStatus==='required'&&s.enabled?'Awaiting approval':s.enabled?(s.status||'Active'):(s.status||'Paused');
+     const request={adId:row.adId,campaignId:row.campaignId,expectedRevision:s.revision};
+     const image=u?.packet?.imageRefs?.[0],platformIds=u?.packet?.enabledPlatforms||u?.packet?.platforms||row.platforms||[];
+     const icons=platformIds.map(id=>{const p=window.BBPlatforms?.byId[id];return '<span class="bb-destination" title="'+esc(p?.name||id)+'" aria-label="'+esc(p?.name||id)+'">'+esc(p?.icon||id)+'</span>';}).join('');
+     const secondary='<button type="button" data-action="edit">Edit Schedule &amp; Photos</button><button type="button" data-action="skipNext" '+(!s.nextRunAt?'hidden':'')+'>Skip Next</button><button type="button" data-view="move" '+(!s.nextRunAt?'hidden':'')+'>Move only the next post</button><button type="button" data-view="info">Schedule details</button><button type="button" data-action="cancel" '+(!s.enabled?'hidden':'')+'>Cancel Schedule</button>';
+     card.innerHTML='<div class="flex-row bb-list-heading"><h3>'+esc(row.campaignName)+' / '+esc(row.adName)+'</h3>'+BBMore.html(secondary)+'</div><div class="row"><div class="col-1-2"><div class="col-left">'+(image&&/^https:\/\//.test(image.url)?'<img class="bb-upcoming-photo" src="'+esc(image.url)+'" alt="'+esc(image.alt||'Next post photo')+'" loading="lazy">':'<span class="muted">'+(u?'Text-only post':'Not prepared yet')+'</span>')+'</div><div class="col-right"><strong class="bb-upcoming-status">'+esc(status)+'</strong><p class="bb-upcoming-time">'+esc(scheduleSummary(s))+'</p><div class="flex-row bb-destinations">'+icons+'</div>'+(s.pauseReason?'<p>'+esc(s.pauseReason)+'</p>':'')+'<div class="flex-row bb-upcoming-actions"><button type="button" data-action="'+(s.enabled?'pause':'resume')+'" '+(s.status==='completed'?'hidden':'')+'>'+(s.enabled?'Pause':'Resume')+'</button>'+(u?'<button type="button" data-view="review">'+(u.approvalStatus==='required'?'Review &amp; approve':'Review post')+'</button>':s.nextRunAt?'<button type="button" data-action="prepareNext">Prepare / Review Next Post</button>':'')+'</div></div></div></div>'
+       +'<div data-info hidden><p>Copy: '+esc({reuse:'Keep approved wording',refresh:'Fresh wording for review',ask:'Ask each time'}[s.copyBehavior]||'Keep approved wording')+' · Photos: '+esc({reuse:'Keep approved photos',remind:'Remind me to change',ask:'Ask each time'}[s.imageBehavior]||'Keep approved photos')+' · Approval: '+esc({automatic:'Use approved post',always:'Ask every time',attention:'Ask when needed'}[s.approvalBehavior]||'Ask when needed')+'</p>'+(row.last?'<p>Last run: '+esc(date(row.last.startedAt,s.timezone))+' · '+(row.last.completion?.delivered||0)+' delivered · '+(row.last.completion?.manual||0)+' need you. <a href="'+esc(statusLink(businessId,row.last.id))+'">View status</a></p>':'')+'</div>'
+       +'<div data-move hidden><p>'+esc(s.timezone||'Local time')+'</p><label>New date and time<input type="datetime-local" data-next value="'+esc(s.nextRunAt?localValue(s.nextRunAt,s.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone):'')+'"></label><button type="button" data-action="changeNext" '+(!s.nextRunAt?'hidden':'')+'>Change Next Time</button></div><div data-edit hidden></div><div data-review hidden></div><p role="status"></p>';
+     const review=card.querySelector('[data-review]');
+     if(u){review.innerHTML='<p>'+esc(u.preparationState==='working'?'Preparing fresh copy…':u.copyFallbackReason==='allowance_ceiling'?'Fresh wording is unavailable this month. Saved approved copy is ready to reuse.':u.copyFallbackReason?'Refresh was unavailable. Saved copy is ready to review.':'Review these exact copy and image selections.')+'</p>'+Object.entries(u.packet.adaptations).map(([p,text])=>'<label>'+esc(window.BBPlatforms?.byId[p]?.name||p)+'<textarea data-copy="'+esc(p)+'">'+esc(text)+'</textarea></label>').join('')+'<div>'+ (row.imagePool||[]).map(i=>'<label><input type="checkbox" data-image="'+esc(i.id)+'" '+(u.packet.imageRefs.some(x=>x.id===i.id)?'checked':'')+'><img src="'+esc(i.url)+'" alt="'+esc(i.alt||'Campaign image')+'">Use this image</label>').join('')+'</div><p>Changes below apply only to this Blast. <a href="BlastyBiz.html?'+new URLSearchParams({bizId:businessId,cid:row.campaignId,adId:row.adId})+'">Update the reusable Ad</a></p><button type="button" data-action="editNext">Save This Run Only</button><button type="button" data-action="refreshNext">Refresh Wording</button><label><input type="checkbox" data-reviewed> I reviewed this copy and want to keep these images</label><button type="button" data-action="approveNext">'+(s.copyBehavior==='ask'?'Approve — Reuse This Copy':'Approve This Blast')+'</button>';}
+     const route=new URLSearchParams(location.search);if(route.get('scheduleAd')===row.adId&&route.get('scheduleCampaign')===row.campaignId){review.hidden=false;if(route.get('scheduledBlastId')&&route.get('scheduledBlastId')!==u?.id)card.querySelector(':scope > [role=status]').textContent='That email preview is no longer current. Review the current next Blast before choosing an action.';}
+     card.addEventListener('click',async e=>{
+       if(working||!current()||!card.isConnected)return;
+       const view=e.target.closest('[data-view]');if(view){const panel=card.querySelector('[data-'+view.dataset.view+']');panel.hidden=!panel.hidden;view.setAttribute('aria-expanded',String(!panel.hidden));card.querySelector('.bb-more').open=false;if(!panel.hidden)panel.scrollIntoView?.({block:'nearest'});return;}
+       const button=e.target.closest('[data-action]');if(!button)return;const action=button.dataset.action,local=card.querySelector(':scope > [role=status]');
+       card.querySelector('.bb-more').open=false;
+       if(action==='edit'){if(!canLeave())return;if(onEdit){onEdit(request,row);return;}const box=document.getElementById('schedule-editor')||card.querySelector('[data-edit]');box.hidden=false;scheduleSetup(box,request);box.scrollIntoView?.({block:'start',behavior:'smooth'});return;}
+       if(action==='approveNext'&&!card.querySelector('[data-reviewed]')?.checked){local.textContent='Review the copy and images, then check the confirmation.';return;}
+       if(['skipNext','cancel'].includes(action)&&!confirm(action==='cancel'?'Cancel this future schedule?':'Skip only the next occurrence?'))return;
+       const extras={};
+       try{
+         if(action==='changeNext')extras.nextRunAt=fromLocal(card.querySelector('[data-next]').value,s.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone).toISOString();
+         if(action==='approveNext')Object.assign(extras,{packetRevision:u.revision,keepImages:true,copyChoice:u.packet.copyBehavior==='refresh'?'refresh':'reuse'});
+         if(action==='editNext')Object.assign(extras,{packetRevision:u.revision,adaptations:Object.fromEntries([...card.querySelectorAll('[data-copy]')].map(x=>[x.dataset.copy,x.value])),imageIds:[...card.querySelectorAll('[data-image]:checked')].map(x=>x.dataset.image)});
+         if(action==='approveNext'){
+           const changed=[...card.querySelectorAll('[data-copy]')].some(x=>x.value!==u.packet.adaptations[x.dataset.copy])||JSON.stringify([...card.querySelectorAll('[data-image]:checked')].map(x=>x.dataset.image).sort())!==JSON.stringify(u.packet.imageRefs.map(x=>x.id).sort());
+           if(changed)throw Error('Save This Run Only before approving your changes.');
+         }
+         working=true;card.querySelectorAll('button').forEach(x=>x.disabled=true);local.textContent='Saving…';
+         const saved=await api(action,{...request,...extras});if(action==='pause')fire('schedule.paused');
+         if(current()){await onChange();message('Saved.'+(saved.overlaps?.length?' Overlap within one hour: '+saved.overlaps.map(o=>o.campaignName+' / '+o.adName).join(', '):''));}
+       }catch(err){if(current()&&card.isConnected){local.textContent=err.message;card.querySelectorAll('button').forEach(x=>x.disabled=false);}}finally{working=false;}
+     });
+     wrap.querySelector(s.enabled?'[data-active]':'[data-others]').append(card);
+     // An occurrence is prepared near its due time. Read earlier previews from
+     // the existing schedule editor, which owns source-Blast and repeat photos.
+     if(!u&&s.nextRunAt)api('editor',request).then(state=>{
+       if(!current()||!card.isConnected)return;
+       const image=state.packet?.imageRefs?.[0],media=card.querySelector('.col-left');
+       media.replaceChildren();
+       if(image&&/^https:\/\//.test(image.url)){const photo=document.createElement('img');photo.className='bb-upcoming-photo';photo.src=image.url;photo.alt=image.alt||'Saved post photo';photo.loading='lazy';media.append(photo);}
+       else media.textContent='Text-only post';
+       const destinations=card.querySelector('.bb-destinations');destinations.replaceChildren();
+       for(const id of state.packet?.enabledPlatforms||[]){const p=window.BBPlatforms?.byId[id],icon=document.createElement('span');icon.className='bb-destination';icon.title=p?.name||id;icon.setAttribute('aria-label',p?.name||id);icon.textContent=p?.icon||id;destinations.append(icon);}
+     }).catch(()=>{/* Keep the unprepared label; the editor presents the error. */});
+
+   }
+   for(const old of result.legacy||[]){const legacy=document.createElement('article');legacy.innerHTML='<h3>'+esc(old.campaignName)+' — Earlier schedule</h3><p>Next: '+esc(date(old.nextRunAt))+'</p><p>This earlier schedule can be paused here. Open the campaign to create and schedule an Ad.</p><a class="bb-button" href="BlastyBiz.html?'+new URLSearchParams({bizId:businessId,cid:old.campaignId})+'">Open campaign</a><button type="button">Pause schedule</button>';legacy.querySelector('button').onclick=async e=>{if(working||!current())return;working=true;e.target.disabled=true;try{await api('pauseLegacy',{blastId:old.id});if(current())await onChange();}catch(e){message(e.message);}finally{working=false;e.target.disabled=false;}};wrap.append(legacy);}
+   fire('schedule.next_up_summary',{summary:next?next.campaignName+' / '+next.adName+' — '+scheduleSummary(next.schedule):'Nothing scheduled right now.'});
+ }
+
  function statusLink(b,d){return 'BlastyBiz-Publishing-Status.html?'+new URLSearchParams({bizId:b,draftId:d});}
- window.BBLifecycle={configure,api,preview,futureSchedule,dashboard,statusLink,form,photoPicker,scheduleEditor,hasUnsavedChanges,canLeave};
+ window.BBLifecycle={configure,api,renderSchedules,scheduleSummary,preview,futureSchedule,dashboard,statusLink,form,photoPicker,scheduleEditor,hasUnsavedChanges,canLeave};
 })();
 

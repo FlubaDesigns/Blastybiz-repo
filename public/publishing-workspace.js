@@ -19,7 +19,7 @@
   function packet(copy, images, selected) {
     return photos(images) + (selected || Object.keys(copy || {})).map(id => {
       const meta = window.PLATFORMS?.find(p => p.id === id);
-      return `<details class="publishing-copy" open><summary>${esc(meta?.name || id)}</summary><p>${esc(copy?.[id] || 'Copy has not been generated for this destination yet.')}</p></details>`;
+      return `<section class="publishing-copy"><h3>${esc(meta?.name || id)}</h3><p>${esc(copy?.[id] || 'Copy has not been generated for this destination yet.')}</p></section>`;
     }).join('');
   }
   // Move the existing live platform controls; never clone controls or state.
@@ -44,9 +44,7 @@
     }
     const included = (ad.platforms || []).filter(id => ad.platformStatus?.[id] !== 'excluded');
     const approved = included.length && included.every(id => ad.adaptations?.[id]?.trim() && ad.platformStatus?.[id] === 'approved');
-    host.innerHTML = `<h2>Proposed blast · ${esc(ad.name || 'Untitled ad')}</h2><p>${approved ? 'Copy approved — review the final blast before sending.' : 'Draft — needs review.'} Editing this ad does not replace an already-prepared blast.</p>` +
-      packet(ad.adaptations, ad.imageRefs, included) + (!included.length ? '<p>No destinations included in this ad.</p>' : '') +
-      `<div class="publishing-actions">${action('Edit copy & images', 'edit')}${action('Review / regenerate / approve', 'review')}${action('Final blast preview', 'preview')}${action('Schedule or hold', 'schedule')}</div><p class="muted">An unscheduled draft stays unsent. Scheduled blasts have their own approval and pause controls below.</p>`;
+    host.innerHTML = '<div class="flex-row bb-list-heading"><h2>'+esc(ad.name||'Proposed blast')+'</h2>'+BBMore.html(action('Edit copy &amp; images','edit')+action('Review / regenerate / approve','review')+action('Schedule or hold','schedule')+'<button type="button" data-more-target="publishing-packet">View saved copy &amp; photos</button>')+'</div><p>'+(approved?'Copy approved — ready for final review.':'Draft — needs review.')+'</p><div id="publishing-packet" hidden>'+packet(ad.adaptations,ad.imageRefs,included)+'<p>Editing this Ad does not replace an already-prepared Blast.</p></div>'+(!included.length?'<p>No destinations included in this Ad.</p>':'')+action('Final blast preview','preview');
   }
   async function timing(seq, identity) {
     const host = el('publishing-timing'); host.textContent = 'Loading schedules…';
@@ -54,18 +52,9 @@
       window.BBLifecycle.configure({businessId:window.activeBizId, token:window._bbGetToken});
       const data = await window.BBLifecycle.api('list');
       if (seq !== epoch || identity !== current()) return;
-      host.innerHTML = data.businessPaused ? '<p>Business scheduling is paused.</p>' : '';
-      if (!(data.schedules || []).length && !(data.legacy || []).length) host.innerHTML += '<p>Nothing scheduled. Your draft stays unsent until you choose to publish or schedule it.</p>';
-      for (const row of data.schedules || []) {
-        const s = row.schedule, u = row.upcoming;
-        const stamp = s.nextRunAt || s.firstRunAtUtc;
-        const time = stamp ? new Date(stamp).toLocaleString(undefined, {timeZone:s.timezone || undefined,timeZoneName:'short'}) : 'No next run';
-        const url = link('schedule', {cid:row.campaignId,adId:row.adId,scheduleAd:row.adId,scheduleCampaign:row.campaignId,...(u?.id ? {scheduledBlastId:u.id} : {})});
-        host.innerHTML += `<article class="publishing-schedule"><h3>${esc(row.campaignName)} · ${esc(row.adName)}</h3><p>${esc(s.enabled ? s.status || 'Active' : 'Paused / inactive')} · ${esc(time)}</p>${s.pauseReason ? `<p>${esc(s.pauseReason)}</p>` : ''}` +
-          (u ? `<h4>Prepared blast · ${esc(u.approvalStatus === 'required' ? 'Awaiting approval' : u.approvalStatus || 'Review status unavailable')}</h4>${packet(u.packet?.adaptations, u.packet?.imageRefs, u.packet?.platforms)}<p>These are the prepared blast’s saved copy and photos.</p>` : '<p>No prepared blast is available yet.</p>') +
-          `<a class="btn btn-secondary" href="${esc(url)}">Review, approve or hold this scheduled blast</a></article>`;
-      }
-      if (data.legacy?.length) host.innerHTML += `<p>${data.legacy.length} earlier schedule(s).</p><a class="btn btn-secondary" href="${esc(link('schedule'))}">Review earlier schedules</a>`;
+      window.BBLifecycle.renderSchedules(host,data,{onChange:refresh,onEdit:(request,row)=>{
+        location.href=link('schedule',{cid:request.campaignId,adId:request.adId,scheduleAd:request.adId,scheduleCampaign:request.campaignId,...(row.upcoming?.id?{scheduledBlastId:row.upcoming.id}:{})});
+      }});
     } catch (_) {
       if (seq === epoch && identity === current()) host.textContent = 'Schedules could not be loaded. Use Refresh publishing to retry.';
     }

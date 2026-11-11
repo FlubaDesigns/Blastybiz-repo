@@ -67,40 +67,42 @@ function focusFutureSchedule() {
 
 function renderPlatformRows(jobs) {
   const list = document.getElementById('platform-list');
-  const expanded = new Set([...list.querySelectorAll('details.platform-row[open]')].map(row => row.dataset.jobid));
+  const expanded = new Set([...list.querySelectorAll('.bb-more[open]')].map(menu => menu.closest('[data-jobid]').dataset.jobid));
+  const visibleCopy = new Set([...list.querySelectorAll('textarea:not([hidden])')].map(copy => copy.closest('[data-jobid]').dataset.jobid));
   list.replaceChildren();
   jobs.forEach(job => {
     const meta = PLATFORM_META[job.platform] || { name: job.platform, icon: '●' };
     const status = STATUS_CONFIG[job.status] || { label: job.status, cls: 'pill-pending', rowCls: '' };
     const manual = ['manual_required', 'manual_followup', 'manual_ready'].includes(job.status);
-    const row = document.createElement('details');
+    const row = document.createElement('article');
     row.className = 'platform-row ' + status.rowCls;
     row.dataset.jobid = job.jobId;
-    row.setAttribute('name', 'publishing-platforms');
-    row.open = expanded.has(job.jobId);
-    const header = document.createElement('summary');
-    header.className = 'platform-heading';
+    const header = document.createElement('div');
+    header.className = 'platform-heading flex-row';
     const icon = document.createElement('span');
     icon.className = 'platform-icon ' + (meta.piClass || 'pi-default'); icon.setAttribute('aria-hidden','true'); icon.textContent = meta.icon;
     const info = document.createElement('span'); info.className = 'platform-info';
     const name = document.createElement('span'); name.className = 'platform-name'; name.textContent = meta.name;
     const pill = document.createElement('span'); pill.className = 'status-pill ' + status.cls; pill.textContent = status.label;
     info.append(name,pill); header.append(icon,info);
-    { const expand = document.createElement('span'); expand.className = 'platform-expand'; expand.setAttribute('aria-hidden','true'); expand.textContent = '⌄'; header.append(expand); }
+    const options=BBMore.create('More options for '+meta.name); options.menu.open=expanded.has(job.jobId);header.append(options.menu);
     row.append(header);
     {
       const content = document.createElement('div');
-      content.className = 'platform-content';
+      content.className = 'platform-content row';
+      content.id='delivery-details-'+encodeURIComponent(job.jobId);
+      content.hidden=terminal.has(job.status);
+      const detail=button('Details',()=>{content.hidden=!content.hidden;});options.body.append(detail);
       const message = document.createElement('p');
       message.className = 'platform-msg';
       message.textContent = manual ? 'Copy your listing, then open the platform to post it.' : (job.status==='manual_lapsed'?'Expired — not posted. The manual posting deadline passed without a posting confirmation.'+(job.lapsedAt?' Closed '+new Date(job.lapsedAt).toLocaleDateString()+'.':''):(job.customerVisibleMessage || status.label));
       content.append(message);
-      if(manual){const copyText=document.createElement('textarea');copyText.readOnly=true;copyText.value=job.payload?.adaptedContent||'';copyText.className='manual-textarea';copyText.setAttribute('aria-label','Post text for '+meta.name);content.append(copyText);}
+      if(manual){const copyText=document.createElement('textarea');copyText.readOnly=true;copyText.value=job.payload?.adaptedContent||'';copyText.className='manual-textarea';copyText.setAttribute('aria-label','Post text for '+meta.name);copyText.hidden=!visibleCopy.has(job.jobId);content.append(copyText);options.body.append(button('View copy',()=>{copyText.hidden=!copyText.hidden;if(!copyText.hidden)copyText.focus();}));}
       const actions = document.createElement('div');
       actions.className = 'action-btns';
       if (manual) {
         const copy = document.createElement('button');
-        copy.type = 'button'; copy.className = 'btn-copy'; copy.textContent = 'Copy Listing';
+        copy.type = 'button'; copy.className = 'btn-copy'; copy.textContent = 'Copy text';
         copy.onclick = () => copyListing(job.jobId, job.payload?.adaptedContent || '',message);
         actions.append(copy);
       }
@@ -121,8 +123,9 @@ function renderPlatformRows(jobs) {
 
 function copyListing(jobId, text,feedback) {
   const message=t=>{if(feedback)feedback.textContent=t;else showToast(t);};
-  if(!navigator.clipboard?.writeText){message('Select and copy the text above, then open the platform.');return;}
-  navigator.clipboard.writeText(text).then(()=>message('Text copied. Share or save the photos, then open the platform.')).catch(()=>message('Select and copy the text above, then open the platform.'));
+  const fallback=()=>{const row=[...document.querySelectorAll('[data-jobid]')].find(e=>e.dataset.jobid===jobId),copy=row?.querySelector('textarea');if(copy){copy.hidden=false;copy.focus();copy.select();}message('Select and copy the text, then open the platform.');};
+  if(!navigator.clipboard?.writeText){fallback();return;}
+  navigator.clipboard.writeText(text).then(()=>message('Text copied. Share or save the photos, then open the platform.')).catch(fallback);
 }
 
 function showEmptyState(msg) {
@@ -139,7 +142,7 @@ function showEmptyState(msg) {
 window.showToast=showToast;window.showEmptyState=showEmptyState;window.focusFutureSchedule=focusFutureSchedule;
 
  let userInfo={},currentJobs=[],working=false,context=null,claiming=false;
- function button(label,action){const b=document.createElement('button');b.type='button';b.className='btn-copy';b.textContent=label;b.onclick=action;return b;}
+ function button(label,action){const b=document.createElement('button');b.type='button';b.className='btn-copy';b.textContent=label;b.onclick=()=>{const menu=b.closest('.bb-more');if(menu)menu.open=false;return action();};return b;}
  async function act(action,job) {
    if(working)return;
    if(action!=='retry'&&!confirm(action==='posted'?'Confirm you posted this copy and its images on '+job.platform+'?':action==='skipRemaining'?'Skip all remaining manual destinations for this Blast?':'Skip '+job.platform+' for this Blast only?'))return;
@@ -152,7 +155,7 @@ window.showToast=showToast;window.showEmptyState=showEmptyState;window.focusFutu
      let panel=document.getElementById('blast-truth');if(!panel){panel=document.createElement('section');panel.id='blast-truth';panel.className='blast-summary';document.querySelector('.progress-card').insertBefore(panel,document.getElementById('platform-list'));}
      panel.replaceChildren();const text=document.createElement('p');text.textContent=summary.complete?(summary.delivered===summary.total?'All destinations were posted.':'This Blast is closed. '+outcomes(currentJobs)+'.'):summary.delivered+' posted · '+summary.manual+' ready for you · '+(summary.total-summary.terminal-summary.manual)+' still in progress or needing attention.';panel.append(text);
      if(summary.manual){const deadline=document.createElement('p');deadline.textContent=summary.manualExpiresAt?'Unconfirmed manual posts expire '+new Date(summary.manualExpiresAt).toLocaleString()+'.':'Unconfirmed manual posts expire '+summary.manualLapseDays+' days after the final reminder.';panel.append(deadline);}
-     if(summary.manual)panel.append(button('Skip Remaining',()=>act('skipRemaining',{draftId:context.blastId})));
+     if(summary.manual){const options=BBMore.create('Blast options');options.body.append(button('Skip Remaining',()=>act('skipRemaining',{draftId:context.blastId})));panel.classList.add('flex-row','bb-list-heading');panel.append(options.menu);}
      if(!summary.launched)return;
      const result=await BBLifecycle.api('acknowledge',{blastId:context.blastId});
      if(summary.complete&&summary.delivered>0){const celebration=await BBLifecycle.api('acknowledge',{blastId:context.blastId,phase:'complete'});if(celebration.show)window.BBBlasty?.fire('onboard.ready_to_blast');}
@@ -173,33 +176,31 @@ window.showToast=showToast;window.showEmptyState=showEmptyState;window.focusFutu
    document.getElementById('progress-count').textContent=outcomes(jobs)+(done<jobs.length?' · '+(jobs.length-done)+' remaining':'');document.getElementById('progress-bar').style.width=(jobs.length?posted/jobs.length*100:0)+'%';document.getElementById('hours-saved').textContent=(jobs.filter(j=>j.status==='success').length*.8).toFixed(1);
    document.querySelectorAll('#platform-list .platform-row').forEach(row=>{
      const job=jobs.find(j=>j.jobId===row.dataset.jobid);if(!job)return;
-     const actions=row.querySelector('.action-btns');if(!actions)return;
+     const actions=row.querySelector('.action-btns'),options=row.querySelector('.bb-more-list');if(!actions)return;
      if(ready.has(job.status)){
-       const match=(job.manualInstructions||'').match(/(?:Go to|Visit|Open) (?:https?:\/\/)?([a-z0-9.-]+\.[a-z]{2,}(?:\/[^\s→]*)?)/i);
-       const destinations={yelp:'https://biz.yelp.com/',craigslist:'https://www.craigslist.org/',fbmarket:'https://www.facebook.com/marketplace/',nextdoor:'https://nextdoor.com/',applemaps:'https://businessconnect.apple.com/',bing:'https://www.bingplaces.com/'};
-       const destination=match?'https://'+match[1]:destinations[job.platform];
+       const destination=BBPlatforms.destinationUrl(job.platform,job.manualInstructions);
        if(destination){const a=document.createElement('a');a.href=destination;a.target='_blank';a.rel='noopener';a.textContent='Open Platform';a.className='btn-copy';actions.append(a);}
-       actions.append(button('Mark as Posted',()=>act('posted',job)),button('Skip This One',()=>act('skipPlatform',job)));
-       const help=document.createElement('details');help.className='platform-instructions';
-       const summary=document.createElement('summary');summary.textContent='Instructions';
+       actions.append(button('Mark as Posted',()=>act('posted',job)));options.append(button('Skip This One',()=>act('skipPlatform',job)));
+       const help=document.createElement('div');help.className='platform-instructions';
        const copy=document.createElement('p');copy.textContent=job.manualInstructions||'Copy your listing, open the platform, add your photos, and publish. Then return here and mark it as posted.';
-       help.append(summary,copy);row.querySelector('.platform-content').append(help);
+       help.append(copy);options.append(help);
      }else if(['failed','needs_connection'].includes(job.status)){
        if(job.status==='failed'&&!job.publicationUncertain)actions.append(button('Retry',()=>act('retry',job)));
-       actions.append(button('Skip This One',()=>act('skipPlatform',job)));
+       options.append(button('Skip This One',()=>act('skipPlatform',job)));
      }
      const resources=document.createElement('div');resources.className='platform-resources';
      const photos=(job.payload?.imageUrls||[]).filter(url=>/^https:\/\//.test(url)).map(url=>({url}));
      if(photos.length){
-       const share=document.createElement('div');share.className='qp-photo-share';resources.append(share);
+       const share=document.createElement('div');share.className='qp-photo-share';options.append(share);
        const media=document.createElement('div');resources.append(media);
-       BBPhotoHandoff.renderPhotos(media,job.platform,photos,!ready.has(job.status));
+       BBPhotoHandoff.renderPhotos(media,job.platform,photos,!ready.has(job.status),options);
        if(ready.has(job.status))BBPhotoHandoff.renderShare(share,job.platform,photos,()=>job.payload?.adaptedContent||'');
      }
-     if(resources.childElementCount){const content=row.querySelector('.platform-content');content.insertBefore(resources,content.querySelector('.platform-instructions'));}
+     if(resources.childElementCount){const content=row.querySelector('.platform-content');content.append(resources);}
    });
    void completion();
  };
- window.BBLifecycleStatus={historyRows,initialize(ctx,user){context=ctx;userInfo=user;BBLifecycle.configure(ctx);const host=document.getElementById('content-state'),label=document.createElement('label');label.className='bb-reminder';const input=document.createElement('input');input.type='checkbox';input.checked=user.manualRemindersEnabled!==false;label.append(input,document.createTextNode('Remind me to finish manual posts (at most one email every 24 hours)'));host.append(label);input.onchange=async()=>{input.disabled=true;try{await BBLifecycle.api('reminders',{enabled:input.checked});window.BBBlasty?.fire('reminder.manual_explain');}catch(e){input.checked=!input.checked;window.showToast(e.message);}finally{input.disabled=false;}};}};
+ window.BBLifecycleStatus={historyRows,initialize(ctx,user){context=ctx;userInfo=user;BBLifecycle.configure(ctx);const host=document.getElementById('status-more-options'),label=document.createElement('label');
+ document.querySelectorAll('[data-status-workspace]').forEach(link=>{link.href='BlastyBiz.html?'+new URLSearchParams({bizId:ctx.businessId,tab:link.dataset.statusWorkspace});});label.className='bb-reminder';const input=document.createElement('input');input.type='checkbox';input.checked=user.manualRemindersEnabled!==false;label.append(input,document.createTextNode('Remind me to finish manual posts (at most one email every 24 hours)'));host.append(label);input.onchange=async()=>{input.disabled=true;try{await BBLifecycle.api('reminders',{enabled:input.checked});window.BBBlasty?.fire('reminder.manual_explain');}catch(e){input.checked=!input.checked;window.showToast(e.message);}finally{input.disabled=false;}};}};
 })();
 

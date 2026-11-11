@@ -322,23 +322,7 @@ function renderQuickSelect() {
 }
 
 // Default URLs to open for each platform (fallback when user hasn't saved their own)
-const PLATFORM_DEFAULT_URLS = {
-  google:     'https://business.google.com/',
-  facebook:   'https://www.facebook.com/',
-  instagram:  'https://www.instagram.com/',
-  bing:       'https://www.bingplaces.com/',
-  nextdoor:   'https://nextdoor.com/',
-  fbmarket:   'https://www.facebook.com/marketplace/create/item',
-  craigslist: 'https://post.craigslist.org/',
-  yelp:       'https://biz.yelp.com/',
-  alignable:  'https://www.alignable.com/',
-  thumbtack:  'https://www.thumbtack.com/pro',
-  angi:       'https://pro.angi.com/',
-  applemaps:  'https://businessconnect.apple.com/',
-  linkedin:   'https://www.linkedin.com/feed/',
-  x:          'https://x.com/compose/post',
-  pinterest:  'https://www.pinterest.com/pin-builder/',
-};
+const PLATFORM_DEFAULT_URLS = BBPlatforms.defaultUrls;
 
 // Per-platform setup info shown when a platform accordion is open but not yet enabled
 // Per-platform setup info. signup = primary action (always shown). signin = optional second

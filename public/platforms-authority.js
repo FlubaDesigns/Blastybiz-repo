@@ -4,6 +4,27 @@
   else root.BBPlatforms = factory();
 })(typeof globalThis !== 'undefined' ? globalThis : this, function() {
   'use strict';
+  const defaultUrls = {
+  google:     'https://business.google.com/',
+  facebook:   'https://www.facebook.com/',
+  instagram:  'https://www.instagram.com/',
+  bing:       'https://www.bingplaces.com/',
+  nextdoor:   'https://nextdoor.com/',
+  fbmarket:   'https://www.facebook.com/marketplace/create/item',
+  craigslist: 'https://post.craigslist.org/',
+  yelp:       'https://biz.yelp.com/',
+  alignable:  'https://www.alignable.com/',
+  thumbtack:  'https://www.thumbtack.com/pro',
+  angi:       'https://pro.angi.com/',
+  applemaps:  'https://businessconnect.apple.com/',
+  linkedin:   'https://www.linkedin.com/feed/',
+  x:          'https://x.com/compose/post',
+  pinterest:  'https://www.pinterest.com/pin-builder/',
+};
+  function destinationUrl(platformId, instructions = "") {
+    const match = String(instructions).match(/(?:Go to|Visit|Open) (?:https?:\/\/)?([a-z0-9.-]+\.[a-z]{2,}(?:\/[^\s→]*)?)/i);
+    return match ? "https://" + match[1] : defaultUrls[platformId] || "";
+  }
   const records = [
   {
     "id": "google",
@@ -616,7 +637,7 @@ function mergeWritingDoc(baseDoc, fsDoc) {
   function eligibleForBusiness(platformId, business = {}) {
     return !(platformId === 'google' && business.locationType === 'online');
   }
-  return {records, byId, labels, mergeWritingDoc, PLATFORM_CAPABILITY_MAP, PLATFORM_DOCS, AUTO_POST_PLATFORMS,
+  return {records, byId, labels, defaultUrls, destinationUrl, mergeWritingDoc, PLATFORM_CAPABILITY_MAP, PLATFORM_DOCS, AUTO_POST_PLATFORMS,
     PLATFORM_DEFAULTS, mergeDisplay, forBusiness, normalizeSelection, eligibleForBusiness, postImageLimit, postImages};
 });
 
