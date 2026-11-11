@@ -71,9 +71,13 @@ async function publisherTests(){
 }
 async function allowanceTests(){
   const source=read('functions/lib/shared.js');
-  function env(grant){let used=0,lock=Promise.resolve();const user={kind:'user'},privateRef={kind:'private'},draft={kind:'draft',collection:()=>({doc:()=>privateRef})};
-    const c={Date,db:{collection:name=>({doc:()=>name==='accountDeletions'?{kind:'deletion'}:user}),runTransaction(fn){const next=lock.then(()=>fn({get:async r=>({exists:r.kind==='deletion'?false:r===privateRef?!!grant:true,data:()=>r===privateRef?grant:r===draft?{freeRegenUsed:false}:{plan:'pro',aiActionsUsed:used,aiActionsResetAt:{toDate:()=>new Date(Date.now()+86400000)}}}),set:(r,data)=>{if(r===user)used+=1;},update:(_,data)=>Object.assign(grant,data)}));lock=next.catch(()=>{});return next;}},getPlanConfig:async()=>({aiLimits:{pro:100}}),admin:{firestore:{FieldValue:{increment:n=>n,serverTimestamp:()=>1}}}};
-    c.require=p=>p==='./ai-allowance'?require('../functions/lib/ai-allowance'):require(p);c.admin.firestore.Timestamp={fromMillis:ms=>({toMillis:()=>ms})};vm.runInNewContext(cut(source,'async function reserveAiAction','// ── fetchWithTimeout'),c);return {run:()=>c.reserveAiAction('u',{draftRef:draft,isRegeneration:true}),get used(){return used}};
+  function env(grant){
+    const {database,admin}=require('./lib/test-firestore.cjs'),path='users/u/businesses/b/listingDrafts/d';
+    const data=database({'users/u':{plan:'pro'},'config/aiAllowanceStorage':{version:2},[path]:{freeRegenUsed:false},...(grant?{[path+'/private/aiAllowance']:grant}:{})});
+    admin.firestore.Timestamp={fromMillis:stamp=>({stamp})};
+    const c={db:data.db,admin,getPlanConfig:async()=>({aiLimits:{pro:100}}),require:p=>p==='./ai-allowance'?require('../functions/lib/ai-allowance'):require(p)};
+    vm.runInNewContext(cut(source,'async function reserveAiAction','// ── fetchWithTimeout'),c);
+    return {run:()=>c.reserveAiAction('u',{draftRef:data.db.doc(path),isRegeneration:true}),get used(){return data.get('users/u/private/aiAllowance')?.aiActionsUsed||0;}};
   }
   let e=env(null);ok(!(await e.run()).freeRegen&&e.used===1,'client-created draft/false marker cannot fabricate free eligibility');
   e=env({uid:'other',freeRegenUsed:false});ok(!(await e.run()).freeRegen&&e.used===1,'grant must belong to requesting user');

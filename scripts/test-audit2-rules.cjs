@@ -9,6 +9,7 @@ const {doc,getDoc,setDoc,deleteDoc,writeBatch}=firestore;
  try {
   await env.withSecurityRulesDisabled(async c=>{const db=c.firestore();await Promise.all([
    setDoc(doc(db,'users/owner'),{email:'owner@example.com',plan:'pro'}),
+   setDoc(doc(db,'users/owner/private/aiAllowance'),{aiActionsUsed:2}),
    setDoc(doc(db,'users/owner/businesses/business'),{businessName:'Test'}),
    setDoc(doc(db,'config/admins'),{emails:['listed@example.com']}),
    setDoc(doc(db,'config/plans'),{aiLimits:{pro:1000}}),
@@ -21,12 +22,16 @@ const {doc,getDoc,setDoc,deleteDoc,writeBatch}=firestore;
    await expect(getDoc(doc(db,'config/operateTodos')));checks++;
    await expect(setDoc(doc(db,'config/operateTodos'),{version:1,tasks:{fixture:{id:'fixture',title:'Task',notes:'',done:false}}}));checks++;
    await expect(getDoc(doc(db,'users/owner')));checks++;
+   await expect(getDoc(doc(db,'users/owner/private/aiAllowance')));checks++;
+   await testing.assertFails(setDoc(doc(db,'users/owner/private/aiAllowance'),{aiActionsUsed:0}));checks++;
    await expect(setDoc(doc(db,'config/plans'),{aiLimits:{pro:1000}}));checks++;
    await testing.assertFails(getDoc(doc(db,'oauthNonces/secret-choice')));checks++;
    await testing.assertFails(getDoc(doc(db,'users/owner/businesses/business/platformConnections/facebook/private/tokens')));checks++;
   }
   const owner=env.authenticatedContext('owner',{email:'owner@example.com',email_verified:true}).firestore();
   await testing.assertSucceeds(getDoc(doc(owner,'users/owner/businesses/business')));checks++;
+  await testing.assertFails(getDoc(doc(owner,'users/owner/private/aiAllowance')));checks++;
+  await testing.assertFails(setDoc(doc(owner,'users/owner/private/aiAllowance'),{aiActionsUsed:0}));checks++;
   await testing.assertFails(setDoc(doc(owner,'users/owner'),{plan:'agency'},{merge:true}));checks++;
   await testing.assertFails(setDoc(doc(owner,'users/owner'),{dormancyWarningPending:{key:'fake'}},{merge:true}));checks++;
   await testing.assertFails(getDoc(doc(owner,'oauthNonces/secret-choice')));checks++;
@@ -36,6 +41,8 @@ const {doc,getDoc,setDoc,deleteDoc,writeBatch}=firestore;
   }
   const other=env.authenticatedContext('other',{email:'other@example.com',email_verified:true}).firestore();
   await testing.assertFails(getDoc(doc(other,'users/owner')));checks++;
+  await testing.assertFails(getDoc(doc(other,'users/owner/private/aiAllowance')));checks++;
+  await testing.assertFails(getDoc(doc(env.unauthenticatedContext().firestore(),'users/owner/private/aiAllowance')));checks++;
   await testing.assertFails(getDoc(doc(other,'users/owner/businesses/business')));checks++;
   await testing.assertFails(getDoc(doc(env.unauthenticatedContext().firestore(),'users/owner')));checks++;
   await testing.assertFails(setDoc(doc(owner,'users/owner/businesses/business/platformConnections/google'),{status:'connected',accountId:'forged',locationId:'forged'}));checks++;
@@ -70,7 +77,7 @@ const {doc,getDoc,setDoc,deleteDoc,writeBatch}=firestore;
   await testing.assertFails(getDoc(doc(owner,'accountDeletions/owner')));checks++;
   await env.withSecurityRulesDisabled(c=>deleteDoc(doc(c.firestore(),'users/owner')));
   await testing.assertFails(setDoc(doc(owner,'users/owner'),{plan:'starter'}));checks++;
-  // Original 61 plus 12 admin-variant and 4 nonadmin/guest to-do assertions.
-  assert.equal(checks, 77);console.log(checks+' actual Firestore emulator authorization assertions passed.');
+  // Includes private allowance reads for the real membership variants and rejected client writes.
+  assert.equal(checks, 93);console.log(checks+' actual Firestore emulator authorization assertions passed.');
  } finally {await env.cleanup();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

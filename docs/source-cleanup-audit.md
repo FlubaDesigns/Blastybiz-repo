@@ -40,3 +40,11 @@ The Account page's unreachable upgrade popup and its alternate `startCheckout` /
 - Imported photographs/design documents, mascot source and historical rollback archives need provenance checks before deletion; they are not obsolete executable code merely because they sit outside Hosting.
 
 Implement cleanup in small batches with the owner identified above. For each batch, trace callers, remove or redirect the old path, retain the user action, run focused behavior checks and verify through the existing release path. Do not create a second completion checklist alongside #38.
+
+## Authorized cleanup batch
+
+The first cleanup batch replaces the competing business-limit readers and editor, removes the detached Dashboard usage renderer and unused upgrade popup, shares Firebase initialization and canonical admin membership, removes the unused API workspace and obsolete deploy/generator/archive tooling, and moves the Admin button rules into Buttons.css. The removed ZIP assets were compared by content hash against the maintained artwork; no unique artwork was found. Current checkout links and every Admin action remain available.
+
+AI quota storage uses a staged migration: deploy every reservation/refund writer, verify the deployed source and drain older invocations, then move existing counters and periods transactionally into admin-readable/server-written private records. The temporary transition is removed only after migration and live boundary verification. This document records implementation intent; issue #38 carries the actual release evidence and completion state.
+
+Revenue displays have different loaded-record scopes and unknown-price handling, so their existing semantics are retained pending a separate small consolidation. Saved draft/schedule compatibility remains until a read-only live inventory establishes what still depends on it. Broader inline-style cleanup and historical Engine adapter consolidation are not claimed complete by this batch.

@@ -540,6 +540,7 @@ main.home                { width: 100%; }
 .layout__split-2-1 { display: grid; grid-template-columns: 2fr 1fr;           gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 .layout__split-1-2 { display: grid; grid-template-columns: 1fr 2fr;           gap: var(--gap-lg); margin-bottom: var(--gap-lg); }
 /* Grid items default to min-width:auto which lets content overflow its track */
+.layout__split > *,
 .layout__split-3 > *,
 .layout__split-4 > *,
 .layout__split-wide > *,
@@ -2990,12 +2991,6 @@ body.admin-page .badge { font-size: 11px; text-transform: uppercase; letter-spac
 .badge.posting     { background: #1a0a2a; color: #c084fc;       border: 1px solid #7c3aed; }
 .badge.failed      { background: #2A0A0A; color: #f87171;       border: 1px solid #dc2626; }
 .badge.manual      { background: #2A1A00; color: #e6b84a;       border: 1px solid #7a5500; }
-
-/* ── Admin buttons ── */
-body.admin-page .btn            { border-radius: 12px; padding: 11px 14px; text-decoration: none; font-weight: 800; font-size: 13px; border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: var(--light); background: transparent; cursor: pointer; font-family: 'DM Sans', sans-serif; }
-body.admin-page .btn:hover      { border-color: var(--green); color: var(--green); }
-body.admin-page .btn-primary    { background: var(--green); color: var(--dark); border-color: var(--green); }
-body.admin-page .btn-primary:hover { color: var(--dark); background: #00b84c; }
 
 /* ── Admin table ── */
 body.admin-page table  { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }

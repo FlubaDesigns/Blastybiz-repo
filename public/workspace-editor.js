@@ -3912,7 +3912,7 @@ window._bbSetProfile = function(p) {
 // ══════════════════════════════════════════
 // BUSINESS SWITCHER BAR (regular scope)
 // ══════════════════════════════════════════
-function getBizLimit() { return window._bizLimit || 1; }
+function getBizLimit() { return window._bizLimit ?? null; }
 
 function renderSwitcherBar() {
   const bizList   = window.BUSINESSES || [];
@@ -3946,7 +3946,7 @@ function renderAgencyBar() {
   const used    = bizList.length;
   const limit   = getBizLimit();
   const usageEl = document.getElementById('agency-usage-text');
-  if (usageEl) usageEl.textContent = `${used}/${limit} businesses`;
+  if (usageEl) usageEl.textContent = limit===null ? `${used} businesses · capacity unavailable` : `${used}/${limit} businesses`;
   const pips = document.getElementById('agency-pips');
   if (!pips) return;
   pips.innerHTML = '';

@@ -1,6 +1,6 @@
 import { saveCampaignImage } from './photo-library.js?v=20261002';
 import { compressImage } from './photo-preparation.js?v=20261002';
-import { auth, db, storage } from './firebase-init-v2.js';
+import { auth, db, storage } from './firebase-init-v2.js?v=20261111-cleanup';
 import { onAuthStateChanged, signOut, isSignInWithEmailLink, signInWithEmailLink } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   doc, getDoc, setDoc, addDoc, collection, serverTimestamp, writeBatch, deleteDoc,
@@ -25,21 +25,21 @@ function awaitPaidPlan(uid) {
     let unsub = null;
     let timer = null;
 
-    const applyPlan = (plan) => {
+    const applyPlan = async (plan) => {
       userPlan = plan;
       window.userPlan = plan;
       window._bbUserPlan = plan;
-      const defLimits = { starter: 1, pro: 3, agency: 10 };
-      window._bizLimit = defLimits[plan] || window._bizLimit || 1;
+      window._bizLimit = await BBPlans.businessLimit(plan);
+      if (typeof renderAgencyBar === 'function') renderAgencyBar();
       if (typeof window._applyPlanOverlays === 'function') window._applyPlanOverlays();
     };
 
-    const finish = (plan) => {
+    const finish = async (plan) => {
       if (settled) return;
       settled = true;
       if (timer) clearTimeout(timer);
       if (unsub) { try { unsub(); } catch (_) {} }
-      if (plan) applyPlan(plan);
+      if (plan) await applyPlan(plan);
       if (el) el.hidden = true;
       resolve(plan || null);
     };
@@ -440,17 +440,7 @@ onAuthStateChanged(auth, async (user) => {
   userPlan = userData.plan || 'starter';
   window._bbUserPlan = userPlan;
   window.activeBizId = activeBizId;
-  // Fetch effective business limit from server (settings/bizLimits is public-readable in Firestore rules)
-  try {
-    const limSnap = await getDoc(doc(db, 'settings', 'bizLimits'));
-    const limData = limSnap.exists() ? limSnap.data() : {};
-    const _defLimits = { starter: 1, pro: 3, agency: 10 };
-    window._bizLimit = limData[userPlan + 'Max'] != null
-      ? Number(limData[userPlan + 'Max'])
-      : (_defLimits[userPlan] || 1);
-  } catch (_) {
-    window._bizLimit = { starter: 1, pro: 3, agency: 10 }[userPlan] || 1;
-  }
+  window._bizLimit = await BBPlans.businessLimit(userPlan);
   if (typeof window._applyPlanOverlays === 'function') window._applyPlanOverlays();
   renderPlatforms();
 
@@ -478,8 +468,8 @@ onAuthStateChanged(auth, async (user) => {
   window.addBusiness = async function() {
     if (!currentUser) return;
     const bizList = window.BUSINESSES || [];
-    const limit = window._bizLimit || 1;
-    if (bizList.length >= limit) {
+    const limit = window._bizLimit;
+    if (limit != null && bizList.length >= limit) {
       const msg = `You've reached your ${limit}-business limit. Upgrade your plan to add more.`;
       if (window.showToast) window.showToast(msg); else alert(msg);
       return;

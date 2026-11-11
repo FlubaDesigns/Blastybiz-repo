@@ -16,3 +16,16 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+// Display eligibility and page guards use the same server membership check.
+// This does not grant access; every protected endpoint still checks membership.
+export async function isAdmin(user = auth.currentUser) {
+  if (!user?.emailVerified) return false;
+  try {
+    const response = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/adminGetAdminEmails', {
+      headers: { Authorization: 'Bearer ' + await user.getIdToken() },
+      signal: AbortSignal.timeout(15000),
+    });
+    return response.ok;
+  } catch (_) { return false; }
+}

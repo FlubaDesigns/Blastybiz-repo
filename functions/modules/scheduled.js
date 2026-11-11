@@ -392,7 +392,7 @@ exports.scheduledUpgradeNudge = onSchedule(
   </div>
   <div style="padding:32px">
     <h1 style="font-size:20px;font-weight:800;color:#0d1a0d;margin:0 0 12px">Hey ${mergeData.name} — you\'re one upgrade away from full auto.</h1>
-    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">BlastyBiz Pro adds business capacity and a larger AI budget. Automatic publishing to connected Google, Facebook and Instagram accounts is available on every plan.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 24px">BlastyBiz Pro adds business capacity and shared publishing tools. Automatic publishing to connected Google, Facebook and Instagram accounts is available on every plan.</p>
     <a href="${mergeData.upgradeUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px">Upgrade to Pro &#8594;</a>
   </div>
   <div style="background:#f7f7f7;padding:16px 32px;border-top:1px solid #e8e8e8">

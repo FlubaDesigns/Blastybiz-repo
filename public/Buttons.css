@@ -11,3 +11,9 @@ details.bb-more > summary:focus-visible { outline: 2px solid var(--green); outli
 
 /* Shared buttons within compact saved-post cards. */
 .bb-return-copy .btn { white-space:normal; max-width:100%; box-sizing:border-box; }
+
+/* ── Admin buttons ── */
+body.admin-page .btn            { border-radius: 12px; padding: 11px 14px; text-decoration: none; font-weight: 800; font-size: 13px; border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: var(--light); background: transparent; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+body.admin-page .btn:hover      { border-color: var(--green); color: var(--green); }
+body.admin-page .btn-primary    { background: var(--green); color: var(--dark); border-color: var(--green); }
+body.admin-page .btn-primary:hover { color: var(--dark); background: #00b84c; }

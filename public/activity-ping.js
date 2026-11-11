@@ -8,7 +8,7 @@
  *
  * Throttled to once a day per browser so it costs one write, not one per page.
  */
-import { db } from './firebase-init-v2.js';
+import { db } from './firebase-init-v2.js?v=20261111-cleanup';
 import { doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const PING_KEY = 'bb_last_active_ping';

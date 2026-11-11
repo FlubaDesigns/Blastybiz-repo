@@ -37,7 +37,7 @@ function createImageGenerator({db,admin,reserveAiAction,trackAiUsage,fetchImpl=f
      await log(null);return {image:{id:imageId,url,alt}};
    }catch(e){
      await ref.update({generationState:'failed'});await log(e.message==='LIMIT_REACHED'?'allowance_ceiling':'image_generation_failed');
-     if(e.message==='LIMIT_REACHED'||e.code==='LIMIT_REACHED')throw error(429,'You have used your AI allowance for this month. Choose an existing photo or upload one.');
+     if(e.message==='LIMIT_REACHED'||e.code==='LIMIT_REACHED')throw error(429,'Image creation is temporarily unavailable. Choose an existing photo or upload one.');
      if(e.httpStatus)throw e;
      throw error(503,'Image creation did not finish. Your current photo is unchanged.');
    }

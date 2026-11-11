@@ -7,7 +7,7 @@ async function run(mode){
  const dom=new JSDOM(html,{url:'https://blastybiz.com/BlastyBiz-Dashboard',runScripts:'outside-only'}),w=dom.window,context=dom.getInternalVMContext();
  let complete;const finished=new Promise(resolve=>complete=resolve);
  w.fetch=async()=>({text:async()=>''});w.console.error=()=>{};
- w.auth={authStateReady:async()=>{}};w.db={};
+ w.BBPlans={businessLimit:async()=>7};w.auth={authStateReady:async()=>{}};w.db={};
  w.onAuthStateChanged=(_,callback)=>callback({uid:'fixture',email:'fixture@example.invalid'}).then(complete,complete);
  w.waitForPendingWrites=async()=>{};w.BBLifecycle={configure(){},api:async()=>({schedules:[]}),renderSchedules(){}};w.BBReturnVisits={renderDraft(){}};w.BBLifecycleStatus={historyRows:()=>[],renderHistory(){}};
  w.doc=w.collection=(_, ...parts)=>parts.join('/');w.query=p=>p;w.orderBy=w.limit=()=>{};w.setDoc=async()=>{};

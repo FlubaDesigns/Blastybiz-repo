@@ -47,6 +47,12 @@ service cloud.firestore {
             'onboardingCompleted', 'lastActiveAt', 'setupHandoff', 'blastySeen', 'loginGuideDone'
           ]);
 
+      // Monthly AI usage is private to the administrator; only the server writes it.
+      match /private/aiAllowance {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+
       // Businesses — nested under users/{uid}/businesses/{bizId}
       // Owner check: uid field matches the parent user doc path segment.
       //

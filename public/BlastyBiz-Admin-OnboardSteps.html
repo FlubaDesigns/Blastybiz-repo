@@ -128,6 +128,7 @@
 <script src="blasty-guidance.js"></script>
 <script src="business-form.js"></script>
 <script type="module" src="blasty-runtime.js"></script>
+<link rel="stylesheet" href="Buttons.css?v=20261110-section5">
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
@@ -329,7 +330,7 @@
 </div></div></main>
 
 <script type="module">
-import { auth } from './firebase-init-v2.js';
+import { auth } from './firebase-init-v2.js?v=20261111-cleanup';
 import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, doc, getDoc, setDoc, deleteField } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -391,7 +392,7 @@ const LOGIN_STEP_DEFS = [
   { idx:4,  key:'signupWelcomeForms',   label:'Create Account — Welcome (from Start, forms)',  defaultMsg:"Fast lane it is! 📋 Pick a plan, fill in your details, and you'll be in the app in under a minute.", defaultMood:'s-happy' },
   { idx:5,  key:'billing',         label:'Create Account — Billing Toggle', defaultMsg:"Annual saves you two months free and locks in your rate. Switch anytime.",               defaultMood:'s-wave'  },
   { idx:6,  key:'planStarter',     label:'Create Account — Plan: Starter',  defaultMsg:"Starter is free forever — great for getting your first location blasting.",             defaultMood:'s-ask'   },
-  { idx:7,  key:'planPro',         label:'Create Account — Plan: Pro',      defaultMsg:"Smart choice! 🔥 Pro gives you room for more businesses and a larger AI budget!", defaultMood:'s-happy' },
+  { idx:7,  key:'planPro',         label:'Create Account — Plan: Pro',      defaultMsg:"Smart choice! 🔥 Pro gives you room for more businesses and shared publishing tools!", defaultMood:'s-happy' },
   { idx:8,  key:'planAgency',      label:'Create Account — Plan: Agency',   defaultMsg:"Agency lets you manage multiple businesses from one dashboard. Built for franchises and multi-location brands. 💼", defaultMood:'s-happy' },
   { idx:9,  key:'name',            label:'Create Account — Your Name',      defaultMsg:"What's your name? We'll use it to personalize your experience.",                         defaultMood:'s-ask'   },
   { idx:7,  key:'email',           label:'Create Account — Email',        defaultMsg:"Use your business email — we'll send your login link here.",             defaultMood:'s-ask'       },

@@ -382,7 +382,6 @@ window.BBBlastySeed = {
       "purpose": "Later Campaign Publish Shorthand",
       "note": "Use after first-use teaching is complete."
     },
-    "ai.allowance_near": {"eventId":"ai.allowance_near","message":"Fresh wording is nearly at this month’s allowance. Saved copy and Run As-Is stay available.","behavior":"WHEN NEEDED","animation":[],"enabled":true,"source":"11C.4"},
     "schedule.intent_choice": {
       "eventId": "schedule.intent_choice",
       "message": "Everything looks good. Want me to send it now, or should we schedule it?",

@@ -22,7 +22,7 @@ async function generatePlatformCopy({platforms,prompt,generate,requireAll=false,
      const checked=validateCopy(parsed?.adaptations,selected);Object.assign(adaptations,checked.good);missing=missing.filter(p=>!Object.hasOwn(adaptations,p));
    } catch(_) { /* Retry once within the same reservation; never invent copy. */ }
  }
- if(!Object.keys(adaptations).length||(requireAll&&missing.length))throw Object.assign(Error('Copy could not be completed. Your allowance has been restored; please retry.'),{code:'GENERATION_FAILED'});
+ if(!Object.keys(adaptations).length||(requireAll&&missing.length))throw Object.assign(Error('Copy could not be completed. Your saved copy is unchanged; please retry.'),{code:'GENERATION_FAILED'});
  return {adaptations,failedPlatforms:missing,status:missing.length?'partial':'complete'};
 }
 module.exports={validateCopy,generatePlatformCopy};

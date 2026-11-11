@@ -1,0 +1,27 @@
+'use strict';
+const assert=require('node:assert/strict');
+assert(process.env.FIRESTORE_EMULATOR_HOST,'Requires the isolated emulator');
+const admin=require('../functions/node_modules/firebase-admin');
+const app=admin.initializeApp({projectId:'demo-blastybiz-audit2'}),db=app.firestore();
+const {createAiAllowance,USAGE_FIELDS}=require('../functions/lib/ai-allowance');
+(async()=>{
+ const uid='allowance-migration-emulator',user=db.doc('users/'+uid),ledger=user.collection('private').doc('aiAllowance'),mode=db.doc('config/aiAllowanceStorage');
+ const config=db.doc('config/plans');await config.set({bizLimits:{trial:1,starter:2,pro:7,agency:19},aiLimits:{pro:8},other:'keep'});await config.set({bizLimits:{starter:2,pro:8,agency:19}},{merge:true});assert.deepEqual((await config.get()).data(),{bizLimits:{trial:1,starter:2,pro:8,agency:19},aiLimits:{pro:8},other:'keep'});
+ const end=admin.firestore.Timestamp.fromDate(new Date('2026-12-01T00:00:00Z'));
+ await mode.delete();await user.set({plan:'pro',displayName:'Keep profile',aiActionsUsed:2,aiActionsResetAt:end,aiAllowanceNotice:'Keep notice'});
+ const service=createAiAllowance({db,admin,getPlanConfig:async()=>({aiLimits:{pro:8}}),clock:()=>new Date('2026-11-11T12:00:00Z')});
+ const old=await service.reserve(uid,{request:{id:'before-cutover',fingerprint:'a'.repeat(64)}});
+ assert.equal((await user.get()).data().aiActionsUsed,3);assert.equal((await ledger.get()).exists,false);
+ await mode.set({version:2});await service.migrateUser(uid);await service.migrateUser(uid);
+ assert.equal((await ledger.get()).data().aiActionsUsed,3);assert((await ledger.get()).data().aiActionsResetAt.isEqual(end));
+ for(const key of USAGE_FIELDS)assert(!Object.hasOwn((await user.get()).data(),key));assert.equal((await user.get()).data().displayName,'Keep profile');
+ const results=await Promise.all([service.reserve(uid,{request:{id:'after-1',fingerprint:'b'.repeat(64)}}),service.reserve(uid,{request:{id:'after-2',fingerprint:'c'.repeat(64)}}),service.settle(uid,old,null)]);
+ assert.equal((await ledger.get()).data().aiActionsUsed,4);await service.settle(uid,old,null);assert.equal((await ledger.get()).data().aiActionsUsed,4);
+ await service.settle(uid,results[0],{status:'complete',adaptations:{facebook:'Saved'}});
+ assert.equal((await service.reserve(uid,{request:{id:'after-1',fingerprint:'b'.repeat(64)}})).cached,true);
+ assert.equal((await ledger.get()).data().aiActionsUsed,4);for(const key of USAGE_FIELDS)assert(!Object.hasOwn((await user.get()).data(),key));
+ await user.update({aiActionsUsed:99});await assert.rejects(()=>service.migrateUser(uid),e=>e.code==='ALLOWANCE_MIGRATION_CONFLICT');assert.equal((await ledger.get()).data().aiActionsUsed,4);
+ await db.recursiveDelete(user);await mode.delete();await config.delete();
+ for(const r of (await db.collection('aiRequestDedup').where('uid','==',uid).get()).docs)await r.ref.delete();
+ console.log('PASS actual Firestore: staged cutover preserves counters, period and profile; concurrent reservations/refund stay exact; stale receipt cannot refund twice; replay stays idempotent; conflicting old writes are not discarded.');
+})().finally(()=>app.delete()).catch(e=>{console.error(e);process.exitCode=1;});

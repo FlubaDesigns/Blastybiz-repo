@@ -8,7 +8,7 @@ const settle=async()=>{for(let i=0;i<6;i++)await new Promise(setImmediate);};
  for(const pending of [true,false]){
   const dom=new JSDOM(html,{url:'https://example.invalid/BlastyBiz-Account.html',runScripts:'outside-only',virtualConsole:new VirtualConsole()}),w=dom.window;
   const user={uid:'u',email:'test@example.invalid',getIdToken:async()=>'fixture',getIdTokenResult:async()=>({claims:{}})};
-  Object.assign(w,{auth:{authStateReady:async()=>{}},db:{},waitForPendingWrites:async()=>{},collection:()=>{},getDocsFromServer:async()=>({size:2}),onAuthStateChanged:(_,cb)=>cb(user),doc:()=>{},getDocFromServer:async()=>{throw Error('permission-denied');},fetch:async url=>({status:409,ok:false,json:async()=>url.includes('createCheckoutSession')?{code:'EXISTING_SUBSCRIPTION',error:'To change your plan or billing period, contact support@blastybiz.com.'}:{code:pending?'ACCOUNT_DELETION_PENDING':'OTHER'}})});
+  Object.assign(w,{isAdmin:async()=>false,auth:{authStateReady:async()=>{}},db:{},waitForPendingWrites:async()=>{},collection:()=>{},getDocsFromServer:async()=>({size:2}),onAuthStateChanged:(_,cb)=>cb(user),doc:()=>{},getDocFromServer:async()=>{throw Error('permission-denied');},fetch:async url=>({status:409,ok:false,json:async()=>url.includes('createCheckoutSession')?{code:'EXISTING_SUBSCRIPTION',error:'To change your plan or billing period, contact support@blastybiz.com.'}:{code:pending?'ACCOUNT_DELETION_PENDING':'OTHER'}})});
   w.eval(code);await settle();
   const status=w.document.getElementById('acct-deletion-status');assert.equal(status.hidden,false);
   assert.match(status.textContent,pending?/Deletion in progress/:/could not be loaded/);
@@ -25,7 +25,7 @@ const settle=async()=>{for(let i=0;i<6;i++)await new Promise(setImmediate);};
   let resolveProfile,resolveBilling,authChanged,mounts=0;
   const profile=new Promise(resolve=>{resolveProfile=resolve;});
   const user={uid:'u',email:'test@example.invalid',getIdToken:async()=>'fixture',getIdTokenResult:async()=>({claims:{}})};
-  Object.assign(w,{auth:{authStateReady:async()=>{}},db:{},waitForPendingWrites:async()=>{},collection:()=>{},getDocsFromServer:async()=>({size:2}),onAuthStateChanged:(_,cb)=>{authChanged=cb;cb(user);},doc:()=>{},getDocFromServer:()=>profile,
+  Object.assign(w,{isAdmin:async()=>false,auth:{authStateReady:async()=>{}},db:{},waitForPendingWrites:async()=>{},collection:()=>{},getDocsFromServer:async()=>({size:2}),onAuthStateChanged:(_,cb)=>{authChanged=cb;cb(user);},doc:()=>{},getDocFromServer:()=>profile,
    fetch:async()=>({ok:true,json:async()=>({bizLimits:{starter:1,pro:7}})}),BBBilling:{mount:()=>{mounts++;return new Promise(resolve=>{resolveBilling=resolve;});}}});
   w.eval(code);await settle();
   const button=w.document.getElementById('acct-billing-btn');

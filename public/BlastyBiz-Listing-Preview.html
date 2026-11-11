@@ -118,7 +118,7 @@
 <script src="platforms-authority.js?v=20261110-section4"></script>
 <script src="post-preview.js?v=20261111-section2"></script>
 <script src="photo-handoff.js?v=20261110-section4"></script>
-<script src="lifecycle-ui.js?v=20261110-section5"></script>
+<script src="lifecycle-ui.js?v=20261111-cleanup"></script>
 <script>
 var PLATFORM_META = Object.fromEntries(BBPlatforms.records.map(p => [p.id, {
   ...BBPlatforms.PLATFORM_CAPABILITY_MAP[p.id], icon:p.icon, name:p.name,
@@ -459,7 +459,7 @@ async function publishBlast() {
 </script>
 
 <script type="module">
-import { auth, db } from './firebase-init-v2.js';
+import { auth, db } from './firebase-init-v2.js?v=20261111-cleanup';
 import { deliveryReadiness } from './platforms-config.js?v=20261018-personal-facebook';
 import { rememberConnectionReturn } from './auth-return.js?v=20261011-security';
 window._bbDeliveryReadiness=deliveryReadiness;

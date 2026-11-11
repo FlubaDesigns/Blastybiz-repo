@@ -1,12 +1,33 @@
 'use strict';
-// The existing user allowance and aiRequestDedup ledger own all generation
-// reservations. No second credit balance or generation queue is introduced.
+// One allowance record and the existing aiRequestDedup ledger own reservations.
+// The temporary storage cutover is removed after all deployed writers migrate.
 const {randomUUID}=require('node:crypto');
 const millis=v=>v?.toMillis?.()??v?.toDate?.()?.getTime()??v?.stamp??0;
 const error=(code,message,status=409)=>Object.assign(Error(message),{code,httpStatus:status});
+const USAGE_FIELDS=Object.freeze(['aiActionsUsed','aiActionsResetAt','aiAllowanceNotice']);
 function createAiAllowance({db,admin,getPlanConfig,clock=()=>new Date()}) {
  const stamp=()=>admin.firestore.FieldValue.serverTimestamp();
  const timestamp=ms=>admin.firestore.Timestamp.fromMillis(ms);
+ async function readState(tx,user) {
+   const mode=await tx.get(db.collection('config').doc('aiAllowanceStorage'));
+   if(mode.data()?.version!==2)return {ref:user.ref,data:user.data()||{},migrate(){}};
+   const ref=user.ref.collection('private').doc('aiAllowance'),snap=await tx.get(ref);
+   const legacy=Object.fromEntries(USAGE_FIELDS.filter(key=>Object.hasOwn(user.data()||{},key)).map(key=>[key,user.data()[key]]));
+   if(snap.exists&&Object.keys(legacy).length)throw error('ALLOWANCE_MIGRATION_CONFLICT','AI availability needs an administrator review.',503);
+   const data=snap.exists?snap.data():legacy;
+   return {ref,data,migrate(){
+     if(!snap.exists)tx.set(ref,{...data,schemaVersion:2});
+     if(Object.keys(legacy).length)tx.update(user.ref,Object.fromEntries(Object.keys(legacy).map(key=>[key,admin.firestore.FieldValue.delete()])));
+   }};
+ }
+ async function migrateUser(uid){
+   return db.runTransaction(async tx=>{
+     const user=await tx.get(db.collection('users').doc(uid));if(!user.exists)return false;
+     const state=await readState(tx,user);
+     if(state.ref.path===user.ref.path)throw error('ALLOWANCE_CUTOVER_REQUIRED','Private allowance cutover has not been activated.');
+     state.migrate();return true;
+   });
+ }
  function restored(data,receipt,grant) {
    const patch={};
    if(receipt?.kind==='monthly'&&millis(data.aiActionsResetAt)===receipt.periodEnd) {
@@ -28,7 +49,7 @@ function createAiAllowance({db,admin,getPlanConfig,clock=()=>new Date()}) {
      if(previous?.fingerprint&&previous.fingerprint!==request.fingerprint)throw error('REQUEST_CONFLICT','This request belongs to different content. Start a new generation.');
      if(previous?.result&&previous.state!=='failed')return {cached:true,result:previous.result};
      if(previous?.state==='pending'&&millis(previous.leaseExpiresAt)>now.getTime())throw error('GENERATION_PENDING','Your copy is still being prepared.');
-     const user=await tx.get(userRef),data=user.data()||{},plan=data.plan||'starter',cap=cfg.aiLimits[plan]??cfg.aiLimits.starter;
+     const user=await tx.get(userRef),state=await readState(tx,user),data=state.data,plan=user.data()?.plan||'starter',cap=cfg.aiLimits[plan]??cfg.aiLimits.starter;
      const draftRef=opts.draftRef,grantRef=opts.isRegeneration&&draftRef?draftRef.collection('private').doc('aiAllowance'):null;
      const draft=grantRef?await tx.get(draftRef):null,grant=grantRef?await tx.get(grantRef):null;
      const oldGrantRef=previous?.reservation?.grantPath?db.doc(previous.reservation.grantPath):null;
@@ -41,17 +62,18 @@ function createAiAllowance({db,admin,getPlanConfig,clock=()=>new Date()}) {
      const used=needsReset?0:(current.aiActionsUsed||0);
      const free=grant?.exists&&draft?.exists&&grant.data().uid===uid&&(grant.data().freeRegenUsed===false||(restore.releaseFree&&oldGrantRef.path===grantRef.path));
      if(!free&&used>=cap)throw Object.assign(Error('LIMIT_REACHED'),{used,cap,plan});
+     state.migrate();
      if(restore.releaseFree) {
        tx.update(oldGrantRef,{freeRegenUsed:false,reservationToken:null});
        if(oldDraft?.exists)tx.update(oldDraft.ref,{freeRegenUsed:false});
      }
-     if(Object.keys(restore.patch).length)tx.set(userRef,restore.patch,{merge:true});
+     if(Object.keys(restore.patch).length)tx.set(state.ref,restore.patch,{merge:true});
      const reservation={...(!opts.isRegeneration&&draftRef?{eligibilityPath:draftRef.path}:{}),kind:free?'free':'monthly',token,periodEnd:needsReset?periodEnd:millis(current.aiActionsResetAt),...(free?{grantPath:grantRef.path,draftPath:draftRef.path}:{})};
      if(free) {
        tx.update(grantRef,{freeRegenUsed:true,reservationToken:token,usedAt:stamp()});
        tx.set(draftRef,{freeRegenUsed:true},{merge:true});
      } else {
-       tx.set(userRef,{aiActionsUsed:used+1,...(needsReset?{aiActionsResetAt:timestamp(periodEnd)}:{}),aiAllowanceNotice:used+1>=Math.ceil(cap*.8)?'Fresh wording is nearly at this month’s allowance. Saved copy and Run As-Is stay available.':null},{merge:true});
+       tx.set(state.ref,{aiActionsUsed:used+1,...(needsReset?{aiActionsResetAt:timestamp(periodEnd)}:{}),aiAllowanceNotice:used+1>=Math.ceil(cap*.8)?'Fresh wording is nearly at this month’s allowance. Saved copy and Run As-Is stay available.':null},{merge:true});
      }
      if(requestRef)tx.set(requestRef,{uid,fingerprint:request.fingerprint,state:'pending',token,reservation,result:null,leaseExpiresAt:timestamp(now.getTime()+5*60000),expiresAt:timestamp(now.getTime()+48*3600000),createdAt:stamp(),updatedAt:stamp()});
      return {plan,used:free?used:used+1,cap,freeRegen:free,reservation,...(requestRef?{requestPath:requestRef.path,token}:{})};
@@ -66,7 +88,7 @@ function createAiAllowance({db,admin,getPlanConfig,clock=()=>new Date()}) {
    return db.runTransaction(async tx=>{
      const snap=await tx.get(ref),record=snap.data();
      if(!record||record.uid!==uid||record.token!==receipt.token||record.state!=='pending')return false;
-     const userRef=db.collection('users').doc(uid),user=await tx.get(userRef);
+     const userRef=db.collection('users').doc(uid),user=await tx.get(userRef),state=await readState(tx,user);
      const grantRef=record.reservation.grantPath?db.doc(record.reservation.grantPath):null;
      const grant=grantRef?await tx.get(grantRef):null;
      const draft=record.reservation.draftPath?await tx.get(db.doc(record.reservation.draftPath)):null;
@@ -74,10 +96,11 @@ function createAiAllowance({db,admin,getPlanConfig,clock=()=>new Date()}) {
      const eligible=eligibleRef?await tx.get(eligibleRef):null;
      const newGrantRef=eligibleRef?.collection('private').doc('aiAllowance');
      const newGrant=newGrantRef?await tx.get(newGrantRef):null;
+     if(user.exists)state.migrate();
      if(eligible?.exists&&!newGrant.exists)tx.create(newGrantRef,{uid,freeRegenUsed:false,createdAt:stamp()});
      if(!result) {
-       const restore=restored(user.data()||{},record.reservation,grant?.data());
-       if(user.exists&&Object.keys(restore.patch).length)tx.set(userRef,restore.patch,{merge:true});
+       const restore=restored(state.data,record.reservation,grant?.data());
+       if(user.exists&&Object.keys(restore.patch).length)tx.set(state.ref,restore.patch,{merge:true});
        if(restore.releaseFree) {
          tx.update(grantRef,{freeRegenUsed:false,reservationToken:null});
          if(draft?.exists)tx.update(draft.ref,{freeRegenUsed:false});
@@ -87,6 +110,6 @@ function createAiAllowance({db,admin,getPlanConfig,clock=()=>new Date()}) {
      return true;
    });
  }
- return {reserve,settle};
+ return {reserve,settle,migrateUser};
 }
-module.exports={createAiAllowance};
+module.exports={createAiAllowance,USAGE_FIELDS};

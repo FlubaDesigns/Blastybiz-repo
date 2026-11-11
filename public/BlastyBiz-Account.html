@@ -104,7 +104,7 @@ body{visibility:hidden}
 
 <script src="billing-account.js?v=20261110"></script>
 <script type="module">
-import { auth, db } from './firebase-init-v2.js';
+import { auth, db, isAdmin } from './firebase-init-v2.js?v=20261111-cleanup';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getDocFromServer, getDocsFromServer, collection, waitForPendingWrites, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -134,13 +134,9 @@ auth.authStateReady().then(() => {
 
     document.getElementById('acct-email').textContent = user.email || '—';
 
-    // Show admin card based on custom claim — no hardcoded email list
-    try {
-      const tokenResult = await user.getIdTokenResult();
-      if (tokenResult.claims.admin) {
-        document.getElementById('acct-admin-card').style.display = 'block';
-      }
-    } catch(e) { /* admin card stays hidden if claim check fails */ }
+    const adminCard = document.getElementById('acct-admin-card');
+    adminCard.style.display = 'none';
+    isAdmin(user).then(allowed => { if (auth.currentUser?.uid === user.uid) adminCard.style.display = allowed ? 'block' : 'none'; });
 
     try {
       await waitForPendingWrites(db);

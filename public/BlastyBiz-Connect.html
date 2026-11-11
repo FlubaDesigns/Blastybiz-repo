@@ -412,7 +412,7 @@ window.disconnectPlatform = async function(platformId) {
 </script>
 
 <script type="module">
-import { auth, db } from './firebase-init-v2.js';
+import { auth, db } from './firebase-init-v2.js?v=20261111-cleanup';
 import { deliveryReadiness } from './platforms-config.js?v=20261018-personal-facebook';
 window._bbConnectionReadiness=deliveryReadiness;
 import { renderFacebookAuthorization } from './facebook-authorization.js?v=20261019-instagram-intent';

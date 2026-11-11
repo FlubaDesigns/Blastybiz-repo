@@ -538,8 +538,9 @@ window._bbLoadAccount = async function() {
     if (emailEl) emailEl.textContent = currentUser.email || '—';
 
     try {
-      const tok = await currentUser.getIdTokenResult();
-      if (tok.claims.admin) { const c = document.getElementById('acct-admin-card'); if (c) c.style.display = 'block'; }
+      const {isAdmin} = await import('./firebase-init-v2.js?v=20261111-cleanup');
+      const c = document.getElementById('acct-admin-card');
+      if (c) c.style.display = await isAdmin(currentUser) ? 'block' : 'none';
     } catch(_) {}
 
     const userSnap = await getDoc(doc(db, 'users', currentUser.uid));

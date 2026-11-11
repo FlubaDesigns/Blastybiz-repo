@@ -1,4 +1,4 @@
-import {auth,db,storage} from './firebase-init-v2.js';
+import {auth,db,storage} from './firebase-init-v2.js?v=20261111-cleanup';
 import {collection,addDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import {ref,uploadBytesResumable,getDownloadURL} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 import {compressImage} from './photo-preparation.js?v=20261002';

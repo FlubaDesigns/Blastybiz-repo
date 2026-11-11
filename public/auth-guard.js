@@ -1,4 +1,4 @@
-import { auth } from './firebase-init-v2.js';
+import { auth } from './firebase-init-v2.js?v=20261111-cleanup';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { pingActivity } from './activity-ping.js';
 

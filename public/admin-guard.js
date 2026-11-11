@@ -1,7 +1,5 @@
-import { auth } from './firebase-init-v2.js';
+import { auth, isAdmin } from './firebase-init-v2.js?v=20261111-cleanup';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-
-const CF_BASE = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
 
 // Safety valve: if auth never resolves, redirect to login — never reveal admin content.
 const _safetyTimer = setTimeout(() => {
@@ -31,11 +29,7 @@ auth.authStateReady()
         return;
       }
       try {
-        const token = await user.getIdToken();
-        const resp = await fetch(`${CF_BASE}/adminGetAdminEmails`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (resp.ok) {
+        if (await isAdmin(user)) {
           document.body.style.visibility = 'visible';
         } else {
           window.location.href = 'BlastyBiz-Dashboard.html';

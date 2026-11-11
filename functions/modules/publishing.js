@@ -1083,7 +1083,7 @@ exports.businessCreatedTrigger = onDocumentCreated(
   </div>
   <div style="padding:32px">
     <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re Agency, ${mergeData.name}. Full power unlocked.</h1>
-    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> has an advertising profile saved in your BlastyBiz Agency account. You can manage up to ${bizLimits.agency} businesses with a larger AI budget and shared publishing tools.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> has an advertising profile saved in your BlastyBiz Agency account. You can manage up to ${bizLimits.agency} businesses with shared publishing tools.</p>
     <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">Add your first client from the dashboard and start blasting.</p>
     <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Open Dashboard &#8594;</a>
   </div>
@@ -1102,7 +1102,7 @@ exports.businessCreatedTrigger = onDocumentCreated(
   </div>
   <div style="padding:32px">
     <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re Pro, ${mergeData.name}. Room to grow.</h1>
-    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> has an advertising profile saved in your BlastyBiz Pro account. You have capacity for up to ${bizLimits.pro} businesses, a larger AI budget, and shared publishing tools.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> has an advertising profile saved in your BlastyBiz Pro account. You have capacity for up to ${bizLimits.pro} businesses and shared publishing tools.</p>
     <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">Head to your dashboard and fire off your first blast — it takes about 5 minutes.</p>
     <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px">Go to Dashboard &#8594;</a>
   </div>
@@ -1122,7 +1122,7 @@ exports.businessCreatedTrigger = onDocumentCreated(
   <div style="padding:32px">
     <h1 style="font-size:22px;font-weight:800;color:#0d1a0d;margin:0 0 12px">You&#39;re in, ${mergeData.name}. Let&#39;s blast.</h1>
     <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 12px"><strong>${mergeData.businessName}</strong> has an advertising profile saved in your BlastyBiz account. Fill out your profile once — BlastyBiz writes the copy for every platform automatically.</p>
-    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">You&#39;re on the free Starter plan. Connect Google, Facebook or Instagram to publish after approval. Pro adds business capacity and a larger AI budget.</p>
+    <p style="font-size:15px;color:#333;line-height:1.75;margin:0 0 20px">You&#39;re on the free Starter plan. Connect Google, Facebook or Instagram to publish after approval. Pro adds business capacity and shared publishing tools.</p>
     <a href="${mergeData.dashboardUrl}" style="display:inline-block;background:#00C853;color:#0d1a0d;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:800;font-size:15px">Go to Dashboard &#8594;</a>
     <div style="margin-top:20px">
       <a href="${mergeData.upgradeUrl}" style="font-size:13px;color:#00873a;font-weight:700;text-decoration:none">Upgrade to Pro &#8594;</a>

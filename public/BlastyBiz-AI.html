@@ -167,10 +167,8 @@
 }
 </script>
   <script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-const app = initializeApp({ apiKey:"AIzaSyCyEwA6jGHp0xjAJO3NOXHblYfpajtFXGM",authDomain:"blastybiz-9523e.firebaseapp.com",projectId:"blastybiz-9523e" });
-const auth = getAuth(app);
+import { auth, db } from './firebase-init-v2.js?v=20261111-cleanup';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 function setAuthUI(loggedIn) {
   ['header__nav-login','header__mobile-login'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'none':''; });
   ['header__nav-logout','header__mobile-logout'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=loggedIn?'':'none'; });
@@ -187,6 +185,6 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 </script>
 <script src="header-loader.js?v=1"></script>
 <script src="session.js?v=20261004-commercial"></script>
-<script src="pricing.js?v=20261111-section6"></script>
+<script src="pricing.js?v=20261111-cleanup"></script>
 </body>
 </html>

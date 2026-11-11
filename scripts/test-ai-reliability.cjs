@@ -6,21 +6,21 @@ const {generatePlatformCopy}=require('../functions/lib/platform-copy');
 const admin={firestore:{...baseAdmin.firestore,Timestamp:{fromMillis:stamp=>({stamp})}}};
 const fingerprint='a'.repeat(64),request={id:'attempt',fingerprint};
 function fixture(seed={}) {
- let now=new Date('2026-11-10T12:00:00Z');const data=database({'users/u':{plan:'starter'},...seed});
+ let now=new Date('2026-11-10T12:00:00Z');const data=database({'users/u':{plan:'starter'},'config/aiAllowanceStorage':{version:2},...seed});
  const service=createAiAllowance({db:data.db,admin,getPlanConfig:async()=>({aiLimits:{starter:3}}),clock:()=>now});
  return {data,...service,advance:ms=>{now=new Date(+now+ms);}};
 }
 test('simultaneous identical requests reserve once; completed result replays',async()=>{
  const f=fixture(),results=await Promise.allSettled([f.reserve('u',{request}),f.reserve('u',{request})]);
  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(results.find(r=>r.status==='rejected').reason.code,'GENERATION_PENDING');
- assert.equal(f.data.get('users/u').aiActionsUsed,1);const receipt=results.find(r=>r.status==='fulfilled').value;
+ assert.equal(f.data.get('users/u/private/aiAllowance').aiActionsUsed,1);const receipt=results.find(r=>r.status==='fulfilled').value;
  await f.settle('u',receipt,{adaptations:{facebook:'Ready'},status:'complete'});
- assert.equal((await f.reserve('u',{request})).result.adaptations.facebook,'Ready');assert.equal(f.data.get('users/u').aiActionsUsed,1);
+ assert.equal((await f.reserve('u',{request})).result.adaptations.facebook,'Ready');assert.equal(f.data.get('users/u/private/aiAllowance').aiActionsUsed,1);
  await assert.rejects(()=>f.reserve('u',{request:{...request,fingerprint:'b'.repeat(64)}}),e=>e.code==='REQUEST_CONFLICT');
 });
 test('failed generation returns the reservation exactly once',async()=>{
  const f=fixture(),r=await f.reserve('u',{request});await f.settle('u',r,null);await f.settle('u',r,null);
- assert.equal(f.data.get('users/u').aiActionsUsed,0);await f.reserve('u',{request});assert.equal(f.data.get('users/u').aiActionsUsed,1);
+ assert.equal(f.data.get('users/u/private/aiAllowance').aiActionsUsed,0);await f.reserve('u',{request});assert.equal(f.data.get('users/u/private/aiAllowance').aiActionsUsed,1);
 });
 test('free rewrite failure restores its grant; unrelated consumption is protected',async()=>{
  const path='users/u/businesses/b/listingDrafts/d',grant=path+'/private/aiAllowance';
@@ -30,12 +30,12 @@ test('free rewrite failure restores its grant; unrelated consumption is protecte
 });
 test('expired lease restores old reservation; stale worker cannot settle replacement',async()=>{
  const f=fixture(),old=await f.reserve('u',{request});f.advance(6*60000);const next=await f.reserve('u',{request});
- assert.equal(f.data.get('users/u').aiActionsUsed,1);assert.equal(await f.settle('u',old,null),false);
- await f.settle('u',next,{status:'complete'});assert.equal(f.data.get('users/u').aiActionsUsed,1);
+ assert.equal(f.data.get('users/u/private/aiAllowance').aiActionsUsed,1);assert.equal(await f.settle('u',old,null),false);
+ await f.settle('u',next,{status:'complete'});assert.equal(f.data.get('users/u/private/aiAllowance').aiActionsUsed,1);
 });
 test('refund from previous month cannot decrement current allowance',async()=>{
  const f=fixture(),old=await f.reserve('u',{request});f.advance(32*86400000);
- await f.reserve('u',{request:{id:'new-month',fingerprint}});await f.settle('u',old,null);assert.equal(f.data.get('users/u').aiActionsUsed,1);
+ await f.reserve('u',{request:{id:'new-month',fingerprint}});await f.settle('u',old,null);assert.equal(f.data.get('users/u/private/aiAllowance').aiActionsUsed,1);
 });
 test('allowance and deletion restrictions remain enforced',async()=>{
  const f=fixture();for(let i=0;i<3;i++)await f.reserve('u',{request:{id:'r'+i,fingerprint}});
@@ -65,7 +65,7 @@ test('actual generation handler refunds provider failure and validates response'
    reserveAiAction:f.reserve,settleAiAction:f.settle,platformAuthority:require('../functions/lib/platforms'),PLATFORM_DOCS:{},buildPlatformBlock:()=>'',
    _getAdminPlatformDocs:async()=>({}),_mergeAdminPlatformDoc:b=>b,console:{error(){},warn(){}},loggedAI:async()=>{calls++;if(bad)throw Error('Provider offline');return {text:'{"adaptations":{"facebook":"Ready"}}'};}};
  vm.runInNewContext(handler,c);const run=async()=>{const res={code:200,status(n){this.code=n;return this},json(body){this.body=body;return this}};await c.exports.adaptListing({body:{listing:{name:'Example',offer:'Offer',requestId:'attempt'},platforms:[{id:'facebook'}]}},res,{uid:'u'});return res;};
- assert.equal((await run()).code,502);assert.equal(f.data.get('users/u').aiActionsUsed,0);bad=false;assert.equal((await run()).body.status,'complete');assert.equal(f.data.get('users/u').aiActionsUsed,1);
+ assert.equal((await run()).code,502);assert.equal(f.data.get('users/u/private/aiAllowance').aiActionsUsed,0);bad=false;assert.equal((await run()).body.status,'complete');assert.equal(f.data.get('users/u/private/aiAllowance').aiActionsUsed,1);
  const before=calls;assert.equal((await run()).body.adaptations.facebook,'Ready');assert.equal(calls,before);
 });
 

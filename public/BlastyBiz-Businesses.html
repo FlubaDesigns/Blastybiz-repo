@@ -146,6 +146,7 @@
     #bb-denied h2 { color:#ff6060; margin-bottom:8px; }
     #bb-denied p  { color:var(--muted,#888); font-size:14px; }
   </style>
+<script src="pricing.js?v=20261111-cleanup"></script>
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
@@ -211,8 +212,8 @@ window._bbSwitchTo = async function(bizId, btn) {
 
 window._bbAddBusiness = function() {
   const list  = window._bbBizList || [];
-  const limit = window._bbBizLimit || 1;
-  if (list.length >= limit) {
+  const limit = window._bbBizLimit;
+  if (limit != null && list.length >= limit) {
     alert('You\'ve reached your ' + limit + '-business limit. Upgrade your plan to add more.');
     return;
   }
@@ -223,7 +224,7 @@ window._bbAddBusiness = function() {
 </script>
 
 <script type="module">
-import { auth, db } from './firebase-init-v2.js';
+import { auth, db } from './firebase-init-v2.js?v=20261111-cleanup';
 import { doc, getDoc, setDoc, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 await auth.authStateReady();
@@ -234,14 +235,7 @@ if (!user || !user.emailVerified) {
   const ud = await getDoc(doc(db, 'users', user.uid)).catch(() => null);
   const plan = ud?.data()?.plan || 'starter';
   const activeBizId = ud?.data()?.activeBusiness || null;
-  // Fetch effective limit from Firestore (admin can override in settings/bizLimits)
-  const _defLimits = { starter: 1, pro: 3, agency: 10 };
-  let _bizLimit = _defLimits[plan] || 1;
-  try {
-    const limSnap = await getDoc(doc(db, 'settings', 'bizLimits')).catch(() => null);
-    const limData = limSnap?.data() || {};
-    if (limData[plan + 'Max'] != null) _bizLimit = Number(limData[plan + 'Max']);
-  } catch (_) {}
+  const _bizLimit = await BBPlans.businessLimit(plan);
 
   { // Existing businesses remain accessible on every plan; creation enforces capacity.
     // Load businesses
@@ -255,21 +249,19 @@ if (!user || !user.emailVerified) {
       window.location.href = 'BlastyBiz.html';
     } else {
 
-    // Use the limit resolved from Firestore above (falls back to _defLimits)
+    // Display the same capacity used by server enforcement.
     const limit = _bizLimit;
     window._bbBizList  = bizzes;
     window._bbBizLimit = limit;
 
     const activeIdx = bizzes.findIndex(b => b.id === activeBizId);
-    document.getElementById('bb-usage-text').textContent = `${bizzes.length} of ${limit} businesses`;
+    document.getElementById('bb-usage-text').textContent = limit===null ? `${bizzes.length} businesses · capacity unavailable` : `${bizzes.length} of ${limit} businesses`;
     _bbRenderPips(bizzes.length, limit, activeIdx);
-    document.getElementById('bb-sub').textContent = plan === 'agency'
-      ? `Agency — ${bizzes.length} of ${limit} businesses`
-      : `${plan === 'pro' ? 'Pro' : 'Starter'} — ${bizzes.length} of ${limit} businesses`;
+    document.getElementById('bb-sub').textContent = (plan === 'agency' ? 'Agency' : plan === 'pro' ? 'Pro' : 'Starter') + ' — ' + document.getElementById('bb-usage-text').textContent;
 
     // Add button state
     const addBtn = document.getElementById('bb-add-btn');
-    if (bizzes.length >= limit) {
+    if (limit != null && bizzes.length >= limit) {
       addBtn.classList.add('at-limit');
       addBtn.textContent = `At limit (${limit}/${limit})`;
     }

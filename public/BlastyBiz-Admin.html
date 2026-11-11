@@ -45,7 +45,7 @@
 
 
 
-  <section class="hero">
+  <section class="row"><div class="layout__split">
     <div class="card">
       <div class="eyebrow">Owner/admin dashboard</div>
       <h1 class="big-title">Run the business. <span>Keep it clean.</span></h1>
@@ -63,10 +63,10 @@
         <div class="health-label" id="admin-health-label">Reading saved connection statuses.</div>
       </div>
     </div>
-  </section>
+  </div></section>
 
 <h2 id="needs-attention">Needs attention</h2>
-  <section class="row"><div class="layout__split-2">
+  <section class="row"><div class="layout__split">
     <div class="card" id="failed">
       <div class="card-title">⚠️ Failed Job Queue</div>
       <div class="list" id="admin-failed-list"><div class="list-item"><div class="icon">…</div><div class="row-main"><div class="row-title">Loading…</div></div></div></div>
@@ -79,7 +79,7 @@
       <a class="btn" href="BlastyBiz-Admin-Platform-Health.html">View connection details →</a>
     </div>
   </div></section>
-  <section class="row"><div class="layout__split-2">
+  <section class="row"><div class="layout__split">
     <div class="card" id="accounts-attention">
       <div class="card-title">⚠️ Accounts To Watch</div>
       <table>
@@ -98,19 +98,19 @@
     </div>
   </div></section>
 
-  <section class="grid" id="finance">
+  <section class="row" id="finance"><div class="layout__split-4">
     <div class="stat"><div class="stat-num" id="stat-mrr">Loading…</div><div class="stat-label">Estimated MRR</div><div class="stat-note money">Active owners in loaded records · configured monthly prices</div></div>
     <div class="stat"><div class="stat-num" id="stat-ai-spend">Loading…</div><div class="stat-label">AI Spend</div><div class="stat-note warn">This month · owner-only</div></div>
     <div class="stat"><div class="stat-num" id="stat-active-share">Loading…</div><div class="stat-label">Active accounts share</div><div class="stat-note money">Active / loaded businesses</div></div>
     <div class="stat"><div class="stat-num" id="stat-failed">Loading…</div><div class="stat-label">Failed Jobs</div><div class="stat-note bad">Needs review</div></div>
-  </section>
+  </div></section>
 
-  <section class="grid">
+  <section class="row"><div class="layout__split-4">
     <div class="stat"><div class="stat-num" id="stat-biz">Loading…</div><div class="stat-label">Businesses</div><div class="stat-note" id="stat-biz-note">— active / — trial</div></div>
     <div class="stat"><div class="stat-num" id="stat-pastdue">Loading…</div><div class="stat-label">Past Due</div><div class="stat-note warn">Square follow-up</div></div>
     <div class="stat"><div class="stat-num" id="stat-posts">Loading…</div><div class="stat-label">Successful Posts</div><div class="stat-note">Loaded results · up to 500</div></div>
     <div class="stat"><div class="stat-num" id="stat-manual">Loading…</div><div class="stat-label">Manual Tasks</div><div class="stat-note blue">Copy/paste platforms</div></div>
-  </section>
+  </div></section>
 
   <!-- ── ONBOARDING FUNNEL WIDGET ── -->
   <section class="card mb-16" id="onboarding-funnel-widget" style="border-left:4px solid #FF6D00;">
@@ -135,7 +135,7 @@
     </table>
   </section>
 
-  <section class="two-col">
+  <section class="row"><div class="col-full">
 
 
     <div class="card">
@@ -148,7 +148,7 @@
       </table>
       <div class="ai-note-text" id="admin-ai-note">Tracking live AI calls. Historical data available once calls are logged.</div>
     </div>
-  </section>
+  </div></section>
 
   <section class="card mb-16" id="ai-cost-rollups" hidden tabindex="-1"><h2>Monthly AI cost rollups</h2></section>
   <script src="ai-cost-rollups.js"></script>
@@ -197,7 +197,7 @@
     </div>
   </section>
 
-  <section class="three-col">
+  <section class="row"><div class="layout__split">
 
     <div class="card">
       <div class="card-title">🧾 Logs</div>
@@ -211,7 +211,7 @@
         <div class="list-item"><div class="icon">2</div><div class="row-main"><div class="row-title">Admin sees the machine</div><div class="row-sub">Costs, failures, margins, logs, retries, and customer risk.</div></div></div>
       </div>
     </div>
-  </section>
+  </div></section>
   <!-- ── PLAN SWITCHER ── -->
   <section class="card" id="plan-switcher" hidden tabindex="-1" style="margin-bottom:20px;border-left:4px solid #00C853;">
     <div class="card-title" style="margin-bottom:6px;">⚙️ My Plan Override</div>
@@ -234,7 +234,7 @@
 </nav>
 <script src="admin-ai-settings.js?v=20261110-section1"></script>
 <script type="module">
-import { auth, db } from './firebase-init-v2.js';
+import { auth, db } from './firebase-init-v2.js?v=20261111-cleanup';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, collectionGroup, query, where, orderBy, limit, onSnapshot, deleteDoc, getDocs, getDoc, setDoc, doc, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 

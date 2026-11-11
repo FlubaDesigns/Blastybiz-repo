@@ -81,12 +81,12 @@
 
 
 <script src="schedule-utils.js"></script>
-<script src="lifecycle-ui.js?v=20261110-section5"></script>
+<script src="lifecycle-ui.js?v=20261111-cleanup"></script>
 <script src="platforms-authority.js?v=20261110-section4"></script>
 <script src="photo-handoff.js?v=20261110-section4"></script>
 <script src="lifecycle-status.js?v=20261110-section5"></script>
 <script type="module">
-import { auth, db } from './firebase-init-v2.js';
+import { auth, db } from './firebase-init-v2.js?v=20261111-cleanup';
 import { rememberConnectionReturn } from './auth-return.js?v=20261011-security';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, query, where, orderBy, limit, onSnapshot, getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';

@@ -47,9 +47,9 @@ exports.generateEnrichmentQuestions = onRequest({ invoker: 'public', secrets: []
   try {
     await reserveAiAction(decoded.uid);
   } catch(e) {
-    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is unavailable for the rest of this month. Your saved copy and Run As-Is are still available.' });
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is temporarily unavailable. Your saved copy and Run As-Is are still available.' });
     console.error('[reserveAiAction] generateEnrichmentQuestions transaction failed:', e.message);
-    return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
+    return res.status(500).json({ error: 'Could not check AI availability. Please try again.' });
   }
 
   const { businessName, category, address, locationType, region, existingInsights, sellerType, itemDetails } = req.body;
@@ -429,9 +429,9 @@ exports.extractBizContext = onRequest({ invoker: 'public', secrets: [], timeoutS
   try {
     await reserveAiAction(decoded.uid);
   } catch(e) {
-    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is unavailable for the rest of this month. Your saved copy and Run As-Is are still available.' });
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is temporarily unavailable. Your saved copy and Run As-Is are still available.' });
     console.error('[reserveAiAction] extractBizContext failed:', e.message);
-    return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
+    return res.status(500).json({ error: 'Could not check AI availability. Please try again.' });
   }
 
   const prompt = `You are extracting business context to improve ad copy quality.
@@ -678,10 +678,10 @@ ${platformList.map(p => `    "${p.id}": "adapted text for ${p.name}"`).join(',\n
     _reserveResult = await reserveAiAction(decoded.uid, { draftRef, isRegeneration, request:{id:requestId,fingerprint} });
     if (_reserveResult.cached) return res.json(_reserveResult.result);
   } catch(e) {
-    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is unavailable for the rest of this month. Your saved copy and Run As-Is are still available.' });
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is temporarily unavailable. Your saved copy and Run As-Is are still available.' });
     if (e.httpStatus) return res.status(e.httpStatus).json({error:e.message,code:e.code});
     console.error('[reserveAiAction] adaptListing transaction failed:', e.message);
-    return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
+    return res.status(500).json({ error: 'Could not check AI availability. Please try again.' });
   }
   let parsed;
   try {
@@ -692,7 +692,7 @@ ${platformList.map(p => `    "${p.id}": "adapted text for ${p.name}"`).join(',\n
     try { await settleAiAction(decoded.uid,_reserveResult,null); }
     catch(settlementError) { return res.status(503).json({error:'Generation recovery is pending. Retry this request shortly.',code:'GENERATION_PENDING'}); }
     console.error('adaptListing failed:',e.code || 'GENERATION_FAILED');
-    return res.status(502).json({error:'Copy could not be completed. Your allowance has been restored; please retry.',code:'GENERATION_FAILED'});
+    return res.status(502).json({error:'Copy could not be completed. Your saved copy is unchanged; please retry.',code:'GENERATION_FAILED'});
   }
   // Persist usable copy before replying. An uncertain database response must
   // never refund a result that may already have committed.
@@ -732,9 +732,9 @@ exports.resolveCategories = onRequest({ invoker: 'public', secrets: [] }, withAu
   try {
     await reserveAiAction(decoded.uid);
   } catch(e) {
-    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is unavailable for the rest of this month. Your saved copy and Run As-Is are still available.' });
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is temporarily unavailable. Your saved copy and Run As-Is are still available.' });
     console.error('[reserveAiAction] resolveCategories transaction failed:', e.message);
-    return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
+    return res.status(500).json({ error: 'Could not check AI availability. Please try again.' });
   }
 
   const now = new Date();
@@ -854,9 +854,9 @@ exports.suggestPlatforms = onRequest({ invoker: 'public', secrets: [] }, withAut
   try {
     await reserveAiAction(decoded.uid);
   } catch(e) {
-    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is unavailable for the rest of this month. Your saved copy and Run As-Is are still available.' });
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is temporarily unavailable. Your saved copy and Run As-Is are still available.' });
     console.error('[reserveAiAction] suggestPlatforms transaction failed:', e.message);
-    return res.status(500).json({ error: 'Could not verify AI usage limit. Please try again.' });
+    return res.status(500).json({ error: 'Could not check AI availability. Please try again.' });
   }
   const fnStartMs = Date.now();
 

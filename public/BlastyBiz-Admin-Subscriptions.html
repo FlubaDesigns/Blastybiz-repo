@@ -15,6 +15,8 @@
 }
 </script>
   <script type="module" src="./admin-guard.js"></script><script src="blastybiz-menu.js?v=8"></script>
+<script src="pricing.js?v=20261111-cleanup"></script>
+<link rel="stylesheet" href="Buttons.css?v=20261110-section5">
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
@@ -46,26 +48,26 @@
 <span id="pricing-status" class="pricing-status"></span>
 </section>
 <section class="card"><div class="card-title">📦 Business Limits per Plan</div>
-<p class="desc-text">Max number of businesses a user can create under each plan. Takes effect immediately — no redeploy needed.</p>
+<p class="desc-text">Max number of businesses a user can create under each plan. Updates may take up to five minutes.</p>
 <div class="pricing-grid">
   <div>
     <label class="pricing-field-label">Starter max businesses</label>
-    <input id="inp-lim-starter" type="number" min="1" step="1" value="1" class="admin-num-input"/>
+    <input id="inp-lim-starter" type="number" min="1" step="1" disabled class="admin-num-input"/>
   </div>
   <div>
     <label class="pricing-field-label">Pro max businesses</label>
-    <input id="inp-lim-pro" type="number" min="1" step="1" value="3" class="admin-num-input"/>
+    <input id="inp-lim-pro" type="number" min="1" step="1" disabled class="admin-num-input"/>
   </div>
   <div>
     <label class="pricing-field-label">Agency max businesses</label>
-    <input id="inp-lim-agency" type="number" min="1" step="1" value="10" class="admin-num-input"/>
+    <input id="inp-lim-agency" type="number" min="1" step="1" disabled class="admin-num-input"/>
   </div>
 </div>
-<button id="btn-save-lim" class="btn btn-primary btn-min-140" onclick="saveBizLimits()">Save Limits</button>
+<button id="btn-save-lim" disabled class="btn btn-primary btn-min-140" onclick="saveBizLimits()">Save Limits</button>
 <span id="lim-status" class="pricing-status"></span>
 </section>
 <section class="card"><div class="card-title">🧠 Billing rules</div><div class="list"><div class="list-item"><div class="icon">1</div><div class="row-main"><div class="row-title">Square is source of truth for billing</div><div class="row-sub">Firestore can cache currentPlan, squareCustomerId, subscriptionStatus, trialEndsAt, and currentPeriodEnd.</div></div></div><div class="list-item"><div class="icon">2</div><div class="row-main"><div class="row-title">Do not delete customer data when subscription lapses</div><div class="row-sub">Downgrade features, keep profile/listing data, and allow reactivation.</div></div></div><div class="list-item"><div class="icon">3</div><div class="row-main"><div class="row-title">AI usage must be capped by plan</div><div class="row-sub">Track monthly aiActionsUsed and generatedPostsUsed so margins stay safe.</div></div></div></div></section></div></div></main><nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Queue-Manager.html">📋<br>Queue</a><a class="" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="active" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a><a class="" href="BlastyBiz-Admin-Operate.html">⚙️<br>Operate</a></nav><script type="module">
-import { auth, db } from './firebase-init-v2.js';
+import { auth, db } from './firebase-init-v2.js?v=20261111-cleanup';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, collectionGroup, query, orderBy, limit, where, onSnapshot, Timestamp, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -201,9 +203,8 @@ window.exportBillingCsv = function() {
 };
 </script>
 <script type="module">
-import { auth } from './firebase-init-v2.js';
-import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-const db2 = getFirestore();
+import { auth, db as db2 } from './firebase-init-v2.js?v=20261111-cleanup';
+import { doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 // Load current prices into editor fields
 getDoc(doc(db2, 'settings', 'pricing')).then(snap => {
   if (!snap.exists()) return;
@@ -214,27 +215,29 @@ getDoc(doc(db2, 'settings', 'pricing')).then(snap => {
   if (agencyAnnual)  document.getElementById('inp-agency-annual').value = agencyAnnual;
 }).catch(() => {});
 
-// Load current biz limits
-getDoc(doc(db2, 'settings', 'bizLimits')).then(snap => {
-  if (!snap.exists()) return;
-  const d = snap.data();
-  if (d.starterMax != null) document.getElementById('inp-lim-starter').value = d.starterMax;
-  if (d.proMax     != null) document.getElementById('inp-lim-pro').value     = d.proMax;
-  if (d.agencyMax  != null) document.getElementById('inp-lim-agency').value  = d.agencyMax;
-}).catch(() => {});
+// Read effective capacities from the same projection as every customer page.
+BBPlans.get().then(({bizLimits}) => {
+  for (const plan of ['starter','pro','agency']) {
+    const value=bizLimits?.[plan];
+    if (!Number.isSafeInteger(value) || value < 1) throw Error('Capacity unavailable');
+    document.getElementById('inp-lim-'+plan).value=value;
+  }
+  for (const plan of ['starter','pro','agency']) document.getElementById('inp-lim-'+plan).disabled=false;
+  document.getElementById('btn-save-lim').disabled=false;
+}).catch(() => {document.getElementById('lim-status').textContent='Could not load limits. Reload to try again.';});
 
 window.saveBizLimits = async function() {
   const btn    = document.getElementById('btn-save-lim');
   const status = document.getElementById('lim-status');
-  const starter = parseInt(document.getElementById('inp-lim-starter').value);
-  const pro     = parseInt(document.getElementById('inp-lim-pro').value);
-  const agency  = parseInt(document.getElementById('inp-lim-agency').value);
-  if ([starter, pro, agency].some(isNaN)) { status.textContent = '⚠️ Enter valid numbers'; return; }
+  const starter = Number(document.getElementById('inp-lim-starter').value);
+  const pro     = Number(document.getElementById('inp-lim-pro').value);
+  const agency  = Number(document.getElementById('inp-lim-agency').value);
+  if ([starter, pro, agency].some(value=>!Number.isSafeInteger(value)||value<1)) { status.textContent = '⚠️ Enter valid numbers'; return; }
   btn.disabled = true; btn.textContent = 'Saving…';
   try {
-    await setDoc(doc(db2, 'settings', 'bizLimits'), { starterMax: starter, proMax: pro, agencyMax: agency }, { merge: true });
+    await setDoc(doc(db2, 'config', 'plans'), { bizLimits: { starter, pro, agency } }, { merge: true });
     status.style.color = '#00C853';
-    status.textContent = '✔ Saved — limits active immediately';
+    status.textContent = '✔ Saved — updates may take up to five minutes';
   } catch(e) {
     status.style.color = '#e53935';
     status.textContent = '✖ ' + e.message;

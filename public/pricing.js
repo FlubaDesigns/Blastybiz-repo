@@ -1,12 +1,24 @@
 /* Display only: settings/pricing remains the checkout price authority. */
 (function(){
   const money=value=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(value).replace(/\.00$/,'');
-  async function load(){
+  let pending;
+  function get({refresh=false}={}){
+    if(refresh)pending=null;
+    if(pending)return pending;
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+    pending=fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/getPublicPlanOptions',{signal:controller.signal})
+      .then(response=>{if(!response.ok)throw Error('Plans unavailable');return response.json();})
+      .catch(error=>{pending=null;throw error;}).finally(()=>clearTimeout(timer));
+    return pending;
+  }
+  async function businessLimit(plan){
+    try{const value=(await get()).bizLimits?.[plan];return Number.isSafeInteger(value)&&value>=0?value:null;}
+    catch(_){return null;}
+  }
+  globalThis.BBPlans={get,businessLimit};
+  async function load(){
     try{
-      const response=await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/getPublicPlanOptions',{signal:controller.signal});
-      if(!response.ok)throw Error('Pricing unavailable');
-      const {prices={},bizLimits={}}=await response.json();
+      const {prices={},bizLimits={}}=await get();
       document.querySelectorAll('[data-price]').forEach(node=>{
         const number=Number(prices[node.dataset.price]);
         let display = number;
@@ -24,7 +36,6 @@
       document.querySelectorAll('[data-price]').forEach(node=>node.textContent='See checkout');
       document.querySelectorAll('[data-biz-limit]').forEach(node=>node.textContent='See plans');
     }
-    finally{clearTimeout(timer);}
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load);else load();
 })();

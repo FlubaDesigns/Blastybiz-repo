@@ -41,7 +41,7 @@ document.addEventListener('keydown', event => {
 function _revealAdminNav() {
   (async function() {
     try {
-      const { auth, db } = await import('./firebase-init-v2.js');
+      const { auth, db } = await import('./firebase-init-v2.js?v=20261111-cleanup');
       const { doc, getDoc, collection, getDocs, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
       await auth.authStateReady();
       const user = auth.currentUser;
@@ -113,7 +113,7 @@ function _revealAdminNav() {
 // the page's own module script also defines one.
 window.doSignOut = function() {
   Promise.all([
-    import('./firebase-init-v2.js'),
+    import('./firebase-init-v2.js?v=20261111-cleanup'),
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js')
   ]).then(function(mods) {
     var auth   = mods[0].auth;

@@ -25,6 +25,7 @@
   <script type="module" src="./admin-guard.js"></script>
 <script src="blastybiz-menu.js?v=8"></script>
 <script src="escape-utils.js?v=1"></script>
+<link rel="stylesheet" href="Buttons.css?v=20261110-section5">
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
@@ -145,7 +146,7 @@
 </nav>
 
 <script type="module">
-import { auth, db } from './firebase-init-v2.js';
+import { auth, db, isAdmin } from './firebase-init-v2.js?v=20261111-cleanup';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, query, where, orderBy, getDocs, addDoc, updateDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 const escHtml = window.escHtml; // escape-utils.js
@@ -448,8 +449,7 @@ window.copyTag = function(tag) {
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) return;
-  const tokenResult = await user.getIdTokenResult();
-  if (!tokenResult.claims.admin) {
+  if (!await isAdmin(user)) {
     document.body.style.visibility = 'visible';
     document.body.innerHTML = '<p style="padding:40px;color:red">Access denied.</p>';
     return;

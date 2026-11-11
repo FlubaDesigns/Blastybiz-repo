@@ -40,7 +40,7 @@ function browser(html='<div id="history"></div>'){
 })().catch(e=>{console.error(e);process.exitCode=1;});
 async function dashboard(){
  const html=fs.readFileSync('public/BlastyBiz-Dashboard.html','utf8'),dom=browser(html),w=dom.window;let finish,blocked,release;const done=new Promise(r=>finish=r);let pendingWaits=0,serverReads=[],releaseConnections=[];let holdConnections=true;
- w.auth={authStateReady:async()=>{}};w.db={};w.onAuthStateChanged=(_,cb)=>cb({uid:'u',email:'fixture@example.invalid',getIdToken:async()=> 'fixture'}).then(finish,finish);
+ w.BBPlans={businessLimit:async()=>7};w.auth={authStateReady:async()=>{}};w.db={};w.onAuthStateChanged=(_,cb)=>cb({uid:'u',email:'fixture@example.invalid',getIdToken:async()=> 'fixture'}).then(finish,finish);
  w.doc=w.collection=(_, ...p)=>p.join('/');w.query=p=>p;w.orderBy=w.limit=()=>{};w.setDoc=async()=>{};w.waitForPendingWrites=async()=>{pendingWaits++;};
  const snap=data=>({exists:()=>true,data:()=>data});let accountReads=0;w.getDoc=async p=>{if(holdConnections&&p.includes('/platformConnections/'))await new Promise(r=>releaseConnections.push(r));return snap({});};w.getDocFromServer=async()=>++accountReads===1?{...snap({lastActiveAt:'pending',activeBusiness:'other'}),metadata:{hasPendingWrites:true}}:snap({plan:'pro',activeBusiness:'b'});
  const records=p=>p.endsWith('/businesses')?[{id:'b',name:'First business'},{id:'other',name:'Second business'}]:p.endsWith('/campaigns')?[{id:'c',name:'Campaign'}]:p.endsWith('/ads')?[{id:'a',status:'draft',name:p.includes('/other/')?'Other draft':'Saved draft',updatedAt:'2026-11-11',adaptations:{google:'Server copy'},imageRefs:[]}]:[];
