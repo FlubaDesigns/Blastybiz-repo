@@ -4,17 +4,16 @@
 const assert=require('node:assert/strict'),fs=require('node:fs');
 const {JSDOM}=require(process.env.JSDOM_PATH||'jsdom');
 const {isPublic,canonical,ORIGIN}=require('./public-site.cjs');
-(async()=>{
+async function run({idToken,ownerUid}) {
  assert.equal(process.env.GITHUB_ACTIONS,'true');assert.equal(process.env.GITHUB_REF,'refs/heads/main');assert(process.env.GOOGLE_APPLICATION_CREDENTIALS);assert.match(process.env.RELEASE_SHA||'',/^[a-f0-9]{40}$/);
  const admin=require('../functions/node_modules/firebase-admin');const app=admin.initializeApp({credential:admin.credential.applicationDefault(),projectId:'blastybiz-9523e'},'section1-readonly'),db=app.firestore();
  try {
   const before=(await db.doc('config/aiSettings').get()).data()||{};
   const adminConfig=(await db.doc('config/admins').get()).data();assert(adminConfig?.emails?.includes('info@blastybiz.com'),'Existing canonical admin configuration required; acceptance must not seed or repair access.');
-  let owner;for(const email of adminConfig.emails){try{const u=await app.auth().getUserByEmail(email);if(u.emailVerified&&!u.disabled){owner=u;break;}}catch(e){if(e.code!=='auth/user-not-found')throw e;}}
-  assert(owner,'Existing verified admin required');
-  const customToken=await app.auth().createCustomToken(owner.uid);
-  const apiKey=fs.readFileSync('public/firebase-init-v2.js','utf8').match(/apiKey:\s*["']([^"']+)/)?.[1];assert(apiKey);
-  const signed=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key='+encodeURIComponent(apiKey),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:customToken,returnSecureToken:true}),signal:AbortSignal.timeout(30000)});assert(signed.ok,'Existing administrator authentication');const {idToken}=await signed.json();assert(idToken);
+  assert(idToken&&ownerUid,'The existing Authorization Engine owner handoff is required');
+  const identity=await app.auth().verifyIdToken(idToken,true);
+  assert.equal(identity.uid,ownerUid);assert.equal(identity.email_verified,true);
+  assert(adminConfig.emails.includes(identity.email),'Existing administrator membership required');
   const base='https://us-central1-blastybiz-9523e.cloudfunctions.net/';
   for(const name of ['adminGetAiSettings','adminSetAiSettings']){const r=await fetch(base+name,{method:'POST',headers:{'Content-Type':'application/json',Origin:ORIGIN},body:'{}',signal:AbortSignal.timeout(30000)});assert.equal(r.status,401,name+' rejects unsigned requests');}
   const response=await fetch(base+'adminGetAiSettings',{headers:{Authorization:'Bearer '+idToken,Origin:ORIGIN},signal:AbortSignal.timeout(30000)});assert(response.ok,'Authenticated settings read');const data=await response.json();
@@ -32,4 +31,7 @@ const {isPublic,canonical,ORIGIN}=require('./public-site.cjs');
   assert.deepEqual((await db.doc('config/aiSettings').get()).data()||{},before,'Saved provider/models unchanged');
   console.log('PASS LIVE section 1: exact Main on three hosts; all canonical public routes and legacy redirects; authenticated admin capabilities with saved models preserved; unauthenticated admin calls rejected; live controls rendered with actual settings. No configuration save, paid AI, email, payment or publishing.');
  } finally {await app.delete();}
-})().catch(e=>{console.error(e.message);process.exitCode=1;});
+}
+module.exports={run};
+if(require.main===module){console.error('Run through the existing Authorization Engine owner handoff.');process.exitCode=1;}
+
