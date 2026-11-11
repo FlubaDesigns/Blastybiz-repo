@@ -48,6 +48,7 @@ function context(m){return {exports:{},require:req,console,Date,Set,admin,db:m.d
  ui.window.open=url=>{ui.opened=url;};
  ui.platforms=[platforms.normalizeSelection({id:'facebook',enabled:true,adaptedContent:'Line one<br/>Line two'},personal)];
  ui.PLATFORM_DEFAULT_URLS={facebook:'https://www.facebook.com/'};
+ vm.runInNewContext(app.slice(app.indexOf('function postPlainText('),app.indexOf('function postRewriteKey(')),ui);
  vm.runInNewContext(app.slice(app.indexOf('function buildPlatformCard(p)'),app.indexOf('function renderQuickSelect()')),ui);
  const card=ui.buildPlatformCard(ui.platforms[0]);assert.match(card.innerHTML,/Copy & open Facebook/);assert.doesNotMatch(card.innerHTML,/Manage connection/);
  vm.runInNewContext(app.slice(app.indexOf('window.copyAndOpen = async function(pid)'),app.indexOf('// ── Manual-posted prompt helpers')),ui);
