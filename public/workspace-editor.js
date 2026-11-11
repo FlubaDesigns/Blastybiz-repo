@@ -2152,7 +2152,8 @@ function renderHistory() {
   if(!rows.length){el.innerHTML='<p>No posting activity loaded yet.</p>';return;}
   const businessId=window.activeBizId,userId=window._bbUid;
   window.BBLifecycleStatus.renderHistory(el,rows,{businessId,userId,token:window._bbGetToken,isCurrent:()=>window.activeBizId===businessId&&window._bbUid===userId,
-    navigate:url=>{if(window.BBAds?.dirty||window.BBAds?.busy||window._bbDraftSavePending){showToast('Save your current changes before opening the new draft. It is saved in this campaign.');return;}window.location.href=url;}});
+    beforeReuse:async()=>{if(window.BBAds?.busy||window._bbDraftSavePending)throw Error('Finish saving your current changes, then use this post again.');if(window.BBAds?.dirty)await window.BBAds.save();},
+    navigate:url=>{if(window.BBAds?.dirty||window.BBAds?.busy||window._bbDraftSavePending)return false;window.location.href=url;}});
 }
 
 async function loadHistoryDraft(draftId) {

@@ -99,7 +99,11 @@ function renderHistory(host,rows,ctx) {
       const message=document.createElement('p');message.setAttribute('role','status');
       button.onclick=async()=>{
         if(button.disabled||!ctx.isCurrent())return;button.disabled=true;message.textContent='Creating your draft…';
-        try{const ad=await reusePost(row,ctx);if(ctx.isCurrent())ctx.navigate('BlastyBiz.html?'+new URLSearchParams({bizId:ctx.businessId,cid:row.campaignId,adId:ad.id,tab:'create'}));}
+        try{
+          await ctx.beforeReuse?.();if(!ctx.isCurrent())return;
+          const ad=await reusePost(row,ctx);
+          if(ctx.isCurrent()&&ctx.navigate('BlastyBiz.html?'+new URLSearchParams({bizId:ctx.businessId,cid:row.campaignId,adId:ad.id,tab:'create'}))===false){button.disabled=false;message.textContent='Your new draft is saved. Finish saving your current edits, then open it with Use again.';}
+        }
         catch(error){if(ctx.isCurrent()){message.textContent=error.name==='AbortError'?'Still waiting for confirmation. Try again to open the same draft.':error.message;button.disabled=false;}}
       };
       actions.append(button);content.append(message);

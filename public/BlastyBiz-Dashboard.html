@@ -45,14 +45,14 @@
 
   <!-- BUSINESS SWITCHER BAR -->
   <div class="biz-bar">
-    <div class="flex-row bb-list-heading"><div class="biz-bar-title">⚙ Dashboard</div><details class="bb-more"><summary aria-label="Dashboard options" title="Dashboard options">⋯</summary><div class="bb-more-list">
+    <div class="row"><div class="flex-row bb-list-heading"><div class="biz-bar-title">⚙ Dashboard</div><details class="bb-more"><summary aria-label="Dashboard options" title="Dashboard options">⋯</summary><div class="bb-more-list">
       <button type="button" id="dashboard-refresh">Refresh dashboard</button>
       <button type="button" onclick="editActiveBusiness()">Edit business info</button>
       <a href="BlastyBiz-Connect.html">Connect platforms</a>
       <a href="BlastyBiz-BizContext.html">Business story</a>
       <a href="BlastyBiz-Account.html">Account settings</a>
       <button type="button" onclick="window.deleteBusiness && window.deleteBusiness(window.activeBizId || activeBizId)">Delete selected business</button>
-    </div></details></div>
+    </div></details></div></div>
     <div class="biz-select-row">
       <!-- Custom on-screen dropdown replaces native <select> -->
       <div class="biz-custom-dd" id="biz-custom-dd">

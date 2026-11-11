@@ -19,6 +19,7 @@ const fs=require('node:fs'),assert=require('node:assert/strict'),{chromium}=requ
    await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'dashboard fits '+width);
    assert(await page.getByRole('link',{name:'Continue your draft',exact:true}).isVisible());assert.equal(await page.locator('#dashboard-draft img').count(),1);assert(await page.getByRole('heading',{name:'Next scheduled post',exact:true}).isVisible());
    assert(await page.locator('#dashboard-next').getByRole('button',{name:'Pause',exact:true}).isVisible());assert(await page.getByRole('button',{name:'Use again',exact:true}).isVisible());
+   fs.mkdirSync('test-artifacts',{recursive:true});await page.screenshot({path:'test-artifacts/section5-before-menus-'+width+'.png',fullPage:true});
    for(const menu of await page.locator('#dashboard-return .bb-more, .biz-bar .bb-more, #dashboard-campaign-list .bb-more').all()){
      await menu.locator(':scope > summary').click();const rect=await menu.locator(':scope > .bb-more-list').boundingBox();assert(rect.x>=0&&rect.x+rect.width<=width,'menu bounds '+width);const icon=await menu.locator(':scope > summary').boundingBox();assert(icon.width<=40&&icon.height<=40);await page.keyboard.press('Escape');
    }
