@@ -22,7 +22,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
    populateFromDraftData({status:'completed',name:'BlastyBiz',offer:'Long offer copy. '.repeat(60),phone:'941-375-1504',campaignId:'fixture-campaign',adId:'fixture-ad',adaptations:Object.fromEntries(BBPlatforms.records.filter(p=>['facebook','instagram','craigslist','fbmarket','nextdoor','yelp'].includes(p.id)).map(p=>[p.id,p.name+' full copy. '.repeat(80)])),imagesByPlatform:Object.fromEntries(BBPlatforms.records.filter(p=>['facebook','instagram','craigslist','fbmarket','nextdoor','yelp'].includes(p.id)).map(p=>[p.id,['https://example.test/photo1.png','https://example.test/photo2.png']]))});markBlastSubmitted();
   });
   for(const width of [320,360,390,768,1440]){
-   await page.setViewportSize({width,height:900});
+   await page.setViewportSize({width,height:900});fs.mkdirSync('test-artifacts',{recursive:true});await page.screenshot({path:'test-artifacts/section4-preview-'+width+'.png',fullPage:true});
    assert(!await page.locator('#pub-summary-card').isVisible(),'details start hidden');
    assert.equal(await page.locator('.pub-destination .bb-more[open]').count(),0,'secondary menus start closed');
    assert(!await page.locator('#publish-btn').isVisible(),'submitted status is not a duplicate button');
@@ -39,7 +39,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
    await destination.locator('.bb-more > summary').click();
    assert.equal(await destination.locator('.bb-more-list button[aria-label^="Copy photo"]').count(),2,'secondary photo copy retained');
    const menu=await destination.locator('.bb-more-list').boundingBox();assert(menu.x>=0&&menu.x+menu.width<=width,'right-side menu fits');
-   await destination.getByRole('button',{name:'View copy',exact:true}).click();assert(await destination.locator('textarea').isVisible());
+   await destination.getByRole('button',{name:'View copy',exact:true}).click();assert(await destination.locator('textarea').isVisible());await destination.locator('.bb-more > summary').click();await destination.getByRole('button',{name:'View copy',exact:true}).click();assert(!await destination.locator('textarea').isVisible());
    await page.locator('.pub-hero .bb-more > summary').click();await page.getByRole('button',{name:'Blast details',exact:true}).click();assert(await page.locator('#sb-offer').isVisible());
    await page.locator('.pub-hero .bb-more > summary').click();await page.getByRole('button',{name:'Blast details',exact:true}).click();
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'no page overflow');
