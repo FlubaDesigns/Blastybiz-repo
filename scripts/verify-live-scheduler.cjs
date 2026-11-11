@@ -19,7 +19,8 @@ module.exports=async function verifyLiveScheduler(){
  }
  try{
    await auth.createUser({uid,email,password,emailVerified:true});created=true;
-   await user.set({plan:'starter',aiActionsUsed:0,acceptanceFixture:true,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+   await user.set({plan:'starter',acceptanceFixture:true,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+   await user.collection('private').doc('aiAllowance').set({schemaVersion:2,aiActionsUsed:0});
    await br.set({name:'Scheduler acceptance fixture',schedulingPaused:true});
    await cr.set({name:'Scheduler acceptance fixture'});
    const image={id:'original',url:'https://blastybiz.com/img/hero-blast.png',path:'',alt:'Acceptance photo'};
@@ -63,7 +64,7 @@ module.exports=async function verifyLiveScheduler(){
    assert.equal((await br.collection('publishJobs').get()).size,1,'Acceptance must not publish');
    assert.deepEqual((await job.get()).data().payload,sent.payload);
    assert.equal((await source.get()).data().packet,undefined,'Original records stay in their existing format');
-   assert.equal((await user.get()).data().aiActionsUsed,0,'Cached image replay cannot spend allowance');
+   assert.equal((await user.collection('private').doc('aiAllowance').get()).data().aiActionsUsed,0,'Cached image replay cannot spend allowance');
    assert.equal((await db.collection('aiUsageLogs').where('uid','==',uid).get()).size,0,'No paid model request');
    console.log('PASS live authenticated scheduler: original-format source, exact sent payload, keep photo, persisted save, duplicate-save protection, cached image replay/selection, cancellation, authentication boundary; no paid generation or post dispatched.');
  }finally{

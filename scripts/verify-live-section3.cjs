@@ -14,7 +14,8 @@ async function run({chromium}){
  let created=false,browser,page,stage='seed',rewriteCount=0;
  try{
   await auth.createUser({uid,email,password,emailVerified:true});created=true;
-  await user.set({plan:'pro',activeBusiness:'fixture',acceptanceFixture:true,aiActionsUsed:0,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+  await user.set({plan:'pro',activeBusiness:'fixture',acceptanceFixture:true,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+   await user.collection('private').doc('aiAllowance').set({schemaVersion:2,aiActionsUsed:0});
   await business.set({name:'Post editor acceptance',sellerType:'business',locationType:'online',schedulingPaused:true,enabledPlatforms:['facebook']});
   await campaign.set({name:'Post editor acceptance',createdAt:new Date().toISOString()});
   await campaign.collection('images').doc('photo').set({url:origin+'/img/storefront.jpg',alt:'Selected acceptance photo',createdAt:new Date().toISOString()});
@@ -46,7 +47,7 @@ async function run({chromium}){
   stage='manual edit';await page.locator('#qp-copy-text-facebook').fill('Final edited post\nWeekend plants');await page.locator('#step5-lgtm-facebook').click();await page.waitForFunction(()=>window.BBAds.active.platformStatus.facebook==='approved'&&!window.BBAds.busy);assert.equal((await ad.get()).data().adaptations.facebook,'Final edited post\nWeekend plants');
   stage='reload';await page.reload();await ready();assert.equal(await page.locator('#qp-copy-text-facebook').innerText(),'Final edited post\nWeekend plants');assert.equal(await page.locator('#qp-undo-facebook').isVisible(),false);
   for(const width of [320,384,430,1280]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'live no overflow '+width);}
-  assert.deepEqual((await old.get()).data(),oldData,'sent Blast unchanged');assert.equal((await business.collection('publishJobs').get()).size,0);assert.equal((await user.get()).data().aiActionsUsed,0);assert.equal((await db.collection('aiUsageLogs').where('uid','==',uid).get()).size,0);
+  assert.deepEqual((await old.get()).data(),oldData,'sent Blast unchanged');assert.equal((await business.collection('publishJobs').get()).size,0);assert.equal((await user.collection('private').doc('aiAllowance').get()).data().aiActionsUsed,0);assert.equal((await db.collection('aiUsageLogs').where('uid','==',uid).get()).size,0);
   const token=await page.evaluate(async()=>{const {auth}=await import('./firebase-init-v2.js');return auth.currentUser.getIdToken();});
   for(const [body,authorized,status] of [[{},false,401],[{listing:{businessId:'not-owned'},platforms:[{id:'facebook'}],isRegeneration:true,rewrite:{source:'Copy',direction:'Shorter'}},true,404],[{listing:{businessId:'fixture'},platforms:[{id:'facebook'}],isRegeneration:true,rewrite:{source:'Copy',direction:''}},true,400]]){
    const res=await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/adaptListing',{method:'POST',headers:{'Content-Type':'application/json',Origin:origin,...(authorized?{Authorization:'Bearer '+token}:{})},body:JSON.stringify(body),signal:AbortSignal.timeout(30000)});assert.equal(res.status,status);

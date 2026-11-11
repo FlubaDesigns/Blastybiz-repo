@@ -6,7 +6,7 @@ const {generatePlatformCopy}=require('../functions/lib/platform-copy');
 const admin={firestore:{...baseAdmin.firestore,Timestamp:{fromMillis:stamp=>({stamp})}}};
 const fingerprint='a'.repeat(64),request={id:'attempt',fingerprint};
 function fixture(seed={}) {
- let now=new Date('2026-11-10T12:00:00Z');const data=database({'users/u':{plan:'starter'},'config/aiAllowanceStorage':{version:2},...seed});
+ let now=new Date('2026-11-10T12:00:00Z');const data=database({'users/u':{plan:'starter'},...seed});
  const service=createAiAllowance({db:data.db,admin,getPlanConfig:async()=>({aiLimits:{starter:3}}),clock:()=>now});
  return {data,...service,advance:ms=>{now=new Date(+now+ms);}};
 }

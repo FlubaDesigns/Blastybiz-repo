@@ -1,6 +1,6 @@
 'use strict';
 // One allowance record and the existing aiRequestDedup ledger own reservations.
-// The temporary storage cutover is removed after all deployed writers migrate.
+// Usage is server-owned and stored only in the private per-user ledger.
 const {randomUUID}=require('node:crypto');
 const millis=v=>v?.toMillis?.()??v?.toDate?.()?.getTime()??v?.stamp??0;
 const error=(code,message,status=409)=>Object.assign(Error(message),{code,httpStatus:status});
@@ -9,24 +9,8 @@ function createAiAllowance({db,admin,getPlanConfig,clock=()=>new Date()}) {
  const stamp=()=>admin.firestore.FieldValue.serverTimestamp();
  const timestamp=ms=>admin.firestore.Timestamp.fromMillis(ms);
  async function readState(tx,user) {
-   const mode=await tx.get(db.collection('config').doc('aiAllowanceStorage'));
-   if(mode.data()?.version!==2)return {ref:user.ref,data:user.data()||{},migrate(){}};
    const ref=user.ref.collection('private').doc('aiAllowance'),snap=await tx.get(ref);
-   const legacy=Object.fromEntries(USAGE_FIELDS.filter(key=>Object.hasOwn(user.data()||{},key)).map(key=>[key,user.data()[key]]));
-   if(snap.exists&&Object.keys(legacy).length)throw error('ALLOWANCE_MIGRATION_CONFLICT','AI availability needs an administrator review.',503);
-   const data=snap.exists?snap.data():legacy;
-   return {ref,data,migrate(){
-     if(!snap.exists)tx.set(ref,{...data,schemaVersion:2});
-     if(Object.keys(legacy).length)tx.update(user.ref,Object.fromEntries(Object.keys(legacy).map(key=>[key,admin.firestore.FieldValue.delete()])));
-   }};
- }
- async function migrateUser(uid){
-   return db.runTransaction(async tx=>{
-     const user=await tx.get(db.collection('users').doc(uid));if(!user.exists)return false;
-     const state=await readState(tx,user);
-     if(state.ref.path===user.ref.path)throw error('ALLOWANCE_CUTOVER_REQUIRED','Private allowance cutover has not been activated.');
-     state.migrate();return true;
-   });
+   return {ref,data:snap.data()||{}};
  }
  function restored(data,receipt,grant) {
    const patch={};
@@ -62,7 +46,6 @@ function createAiAllowance({db,admin,getPlanConfig,clock=()=>new Date()}) {
      const used=needsReset?0:(current.aiActionsUsed||0);
      const free=grant?.exists&&draft?.exists&&grant.data().uid===uid&&(grant.data().freeRegenUsed===false||(restore.releaseFree&&oldGrantRef.path===grantRef.path));
      if(!free&&used>=cap)throw Object.assign(Error('LIMIT_REACHED'),{used,cap,plan});
-     state.migrate();
      if(restore.releaseFree) {
        tx.update(oldGrantRef,{freeRegenUsed:false,reservationToken:null});
        if(oldDraft?.exists)tx.update(oldDraft.ref,{freeRegenUsed:false});
@@ -96,7 +79,6 @@ function createAiAllowance({db,admin,getPlanConfig,clock=()=>new Date()}) {
      const eligible=eligibleRef?await tx.get(eligibleRef):null;
      const newGrantRef=eligibleRef?.collection('private').doc('aiAllowance');
      const newGrant=newGrantRef?await tx.get(newGrantRef):null;
-     if(user.exists)state.migrate();
      if(eligible?.exists&&!newGrant.exists)tx.create(newGrantRef,{uid,freeRegenUsed:false,createdAt:stamp()});
      if(!result) {
        const restore=restored(state.data,record.reservation,grant?.data());
@@ -110,6 +92,6 @@ function createAiAllowance({db,admin,getPlanConfig,clock=()=>new Date()}) {
      return true;
    });
  }
- return {reserve,settle,migrateUser};
+ return {reserve,settle};
 }
 module.exports={createAiAllowance,USAGE_FIELDS};

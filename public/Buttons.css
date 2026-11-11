@@ -17,3 +17,4 @@ body.admin-page .btn            { border-radius: 12px; padding: 11px 14px; text-
 body.admin-page .btn:hover      { border-color: var(--green); color: var(--green); }
 body.admin-page .btn-primary    { background: var(--green); color: var(--dark); border-color: var(--green); }
 body.admin-page .btn-primary:hover { color: var(--dark); background: #00b84c; }
+body.admin-page .btn-danger { background: #dc2626; color: white; }

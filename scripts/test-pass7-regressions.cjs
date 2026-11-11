@@ -73,7 +73,7 @@ async function allowanceTests(){
   const source=read('functions/lib/shared.js');
   function env(grant){
     const {database,admin}=require('./lib/test-firestore.cjs'),path='users/u/businesses/b/listingDrafts/d';
-    const data=database({'users/u':{plan:'pro'},'config/aiAllowanceStorage':{version:2},[path]:{freeRegenUsed:false},...(grant?{[path+'/private/aiAllowance']:grant}:{})});
+    const data=database({'users/u':{plan:'pro'},[path]:{freeRegenUsed:false},...(grant?{[path+'/private/aiAllowance']:grant}:{})});
     admin.firestore.Timestamp={fromMillis:stamp=>({stamp})};
     const c={db:data.db,admin,getPlanConfig:async()=>({aiLimits:{pro:100}}),require:p=>p==='./ai-allowance'?require('../functions/lib/ai-allowance'):require(p)};
     vm.runInNewContext(cut(source,'async function reserveAiAction','// ── fetchWithTimeout'),c);

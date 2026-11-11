@@ -48,3 +48,9 @@ The first cleanup batch replaces the competing business-limit readers and editor
 AI quota storage uses a staged migration: deploy every reservation/refund writer, verify the deployed source and drain older invocations, then move existing counters and periods transactionally into admin-readable/server-written private records. The temporary transition is removed only after migration and live boundary verification. This document records implementation intent; issue #38 carries the actual release evidence and completion state.
 
 Revenue displays have different loaded-record scopes and unknown-price handling, so their existing semantics are retained pending a separate small consolidation. Saved draft/schedule compatibility remains until a read-only live inventory establishes what still depends on it. Broader inline-style cleanup and historical Engine adapter consolidation are not claimed complete by this batch.
+
+### Private-only follow-through
+
+After the staged cutover, the runtime reads and writes only `users/{uid}/private/aiAllowance`; no marker check or root-user fallback remains. The one-time migration command becomes a read-only inventory, while the reviewed bridge implementation remains in Git history. Existing live fixtures also use private counters so later verification cannot recreate the old public fields. Ten fixed `bb-style-*` declarations with no remaining consumers are removed, and the remaining Admin danger-button rule moves unchanged into Buttons.css.
+
+Retained deliberately: saved draft/schedule compatibility; distinct Admin reporting scopes; active page layouts requiring the section 7 presentation work; historical release manifests and unique source artwork. Three old generated CSS declarations still contain literal JavaScript fragments (`bb-style-1c28b7a8`, `bb-style-5d1cafe9`, `bb-style-1fdd5485`); their classes have active consumers, so they belong to that presentation repair rather than blind deletion.

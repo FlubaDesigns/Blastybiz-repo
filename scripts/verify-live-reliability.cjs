@@ -13,7 +13,8 @@ const {randomUUID,createHash}=require('node:crypto');
  try{
    const email=uid+'@example.invalid',password=randomUUID()+randomUUID();
    await auth.createUser({uid,email,password,emailVerified:true});created=true;
-   await user.set({plan:'starter',acceptanceFixture:true,aiActionsUsed:0});
+   await user.set({plan:'starter',acceptanceFixture:true});
+   await user.collection('private').doc('aiAllowance').set({schemaVersion:2,aiActionsUsed:0});
    await user.collection('businesses').doc('fixture').set({name:'Reliability acceptance fixture',schedulingPaused:true,sellerType:'business'});
    const apiKey=fs.readFileSync('public/firebase-init-v2.js','utf8').match(/apiKey:\s*["']([^"']+)/)?.[1];assert(apiKey);
    const signed=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+encodeURIComponent(apiKey),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,returnSecureToken:true}),signal:AbortSignal.timeout(30000)});
@@ -34,7 +35,7 @@ const {randomUUID,createHash}=require('node:crypto');
    assert.equal((await api('adaptListing',body,409)).code,'GENERATION_PENDING');
    await api('adaptListing',{...body,platforms:[{id:'not-a-platform'}]},400);
    const billing=await api('createPortalSession',{action:'status'});assert.equal(billing.hasSubscription,false);
-   assert.equal((await user.get()).data().aiActionsUsed,0,'cache/conflict/pending calls do not spend allowance');
+   assert.equal((await user.collection('private').doc('aiAllowance').get()).data().aiActionsUsed,0,'cache/conflict/pending calls do not spend allowance');
    assert.equal((await db.collection('aiUsageLogs').where('uid','==',uid).get()).size,0,'no model call');
    assert.equal((await user.collection('businesses').doc('fixture').collection('publishJobs').get()).size,0,'no publication');
    console.log('PASS LIVE: authenticated cached generation, concurrent replay, changed-input rejection, pending recovery, platform validation and account-scoped billing status. No AI purchase, card charge, subscription change or publication.');
