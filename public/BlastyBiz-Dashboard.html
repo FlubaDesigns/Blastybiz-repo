@@ -7,15 +7,13 @@
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="stylesheet" href="global-style.css?v=20261110-section1" />
+<link rel="stylesheet" href="Buttons.css?v=20261110-section5" />
 <title>BlastyBiz — Command Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-<style>
-body{visibility:hidden}
-@media (max-width:768px){.dash-img-col{display:none}}
-</style>
+
 <script type="importmap">
 {
   "integrity": {
@@ -28,22 +26,33 @@ body{visibility:hidden}
 </script>
   <script type="module" src="./auth-guard.js?v=20261011-security"></script>
 <script src="blastybiz-menu.js?v=8"></script>
-<script src="escape-utils.js"></script>
+<script src="platforms-authority.js?v=20261110-section4"></script>
+<script src="schedule-utils.js"></script>
+<script src="lifecycle-ui.js?v=20261110-section5"></script>
+<script src="lifecycle-status.js?v=20261110-section5"></script>
+<script src="dashboard-posts.js?v=20261110-section5"></script>
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
 </head>
-<body class="has-site-header">
+<body class="has-site-header dashboard-page">
 <div id="header__inject"></div>
 
 <!-- MAIN CONTENT -->
 <div class="main"><div class="main-inner w-xl">
-<h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">BlastyBiz Dashboard</h1>
+<h1 class="sr-only">BlastyBiz Dashboard</h1>
 
 
   <!-- BUSINESS SWITCHER BAR -->
   <div class="biz-bar">
-    <div class="biz-bar-title">⚙ Dashboard</div>
+    <div class="flex-row bb-list-heading"><div class="biz-bar-title">⚙ Dashboard</div><details class="bb-more"><summary aria-label="Dashboard options" title="Dashboard options">⋯</summary><div class="bb-more-list">
+      <button type="button" id="dashboard-refresh">Refresh dashboard</button>
+      <button type="button" onclick="editActiveBusiness()">Edit business info</button>
+      <a href="BlastyBiz-Connect.html">Connect platforms</a>
+      <a href="BlastyBiz-BizContext.html">Business story</a>
+      <a href="BlastyBiz-Account.html">Account settings</a>
+      <button type="button" onclick="window.deleteBusiness && window.deleteBusiness(window.activeBizId || activeBizId)">Delete selected business</button>
+    </div></details></div>
     <div class="biz-select-row">
       <!-- Custom on-screen dropdown replaces native <select> -->
       <div class="biz-custom-dd" id="biz-custom-dd">
@@ -54,7 +63,6 @@ body{visibility:hidden}
         <div class="biz-dd-list" id="biz-dd-list"></div>
       </div>
       <button type="button" class="add-biz-btn" onclick="addBusiness()" title="Add business">＋</button>
-      <button type="button" class="del-biz-btn" onclick="window.deleteBusiness && window.deleteBusiness(window.activeBizId || activeBizId)" title="Delete selected business">🗑</button>
     </div>
     <!-- hidden select kept for any legacy JS that reads its value -->
     <select id="biz-select" style="display:none"></select>
@@ -76,7 +84,13 @@ body{visibility:hidden}
   </div>
 
   <div id="dashboard-load-status" role="status" class="card hidden"></div>
-  <p class="sub" id="dashboard-data-label" style="margin-bottom:16px;">Showing data for <strong id="dashboard-biz-name"></strong></p>
+  <p class="sub mb-16" id="dashboard-data-label">Showing data for <strong id="dashboard-biz-name"></strong></p>
+
+  <section id="dashboard-return" aria-label="Your saved posts">
+    <div id="dashboard-draft" class="card" aria-live="polite"><p>Loading your saved draft…</p></div>
+    <div id="dashboard-next" class="card" aria-live="polite"><p>Loading your next post…</p></div>
+    <div class="card"><div class="flex-row bb-list-heading"><h2>Recent posts</h2><details class="bb-more"><summary aria-label="Recent post options" title="Recent post options">⋯</summary><div class="bb-more-list"><a id="dashboard-all-history">All results</a></div></details></div><div id="dashboard-recent" aria-live="polite"><p>Loading recent posts…</p></div></div>
+  </section>
 
   <div class="layout__split-2-1">
 
@@ -85,30 +99,16 @@ body{visibility:hidden}
       <!-- ── Campaigns — primary content ── -->
       <div class="card">
         <div class="card-title">📁 Campaigns</div>
-        <a class="btn btn-primary w-100 tablet-w-75 desktop-w-50 center-block" href="BlastyBiz.html?newcampaign=1" style="display:block;width:100%;box-sizing:border-box;text-align:center;margin-bottom:12px;">＋ New Campaign</a>
+        <a class="btn btn-primary w-100 tablet-w-75 desktop-w-50 center-block" id="dashboard-new-campaign" href="BlastyBiz.html?newcampaign=1">＋ New Campaign</a>
         <div id="dashboard-campaign-list"><div class="loading-text">Loading…</div></div>
       </div>
 
-      <!-- ── Tools ── -->
-      <div class="card">
-        <div class="card-title">⚙️ Tools</div>
-        <div class="row">
-          <div class="layout__split" style="margin-bottom:0;">
-            <div style="display:flex;flex-direction:column;gap:10px;">
-              <button type="button" class="btn" style="width:100%;box-sizing:border-box;text-align:left;justify-content:flex-start;padding:14px 16px;font-size:15px;" onclick="editActiveBusiness()">✏️ Edit Business Info</button>
-              <a class="btn" style="width:100%;box-sizing:border-box;text-align:left;padding:14px 16px;font-size:15px;text-decoration:none;display:block;" href="BlastyBiz-Connect.html">🔗 Connect Platforms</a>
-              <a class="btn" style="width:100%;box-sizing:border-box;text-align:left;padding:14px 16px;font-size:15px;text-decoration:none;display:block;" href="BlastyBiz-BizContext.html">📖 Business Story</a>
-              <a class="btn" style="width:100%;box-sizing:border-box;text-align:left;padding:14px 16px;font-size:15px;text-decoration:none;display:block;" href="BlastyBiz-Account.html">💼 Account Settings</a>
-            </div>
-            <div></div>
-          </div>
-        </div>
-      </div>
+
     </div>
 
     <!-- ── Right column: hero image — desktop only ── -->
     <div class="dash-img-col">
-      <img src="dashboard-hero.png" alt="Business owner reviewing marketing results" style="width:100%;height:100%;object-fit:cover;border-radius:12px;display:block;" />
+      <img src="dashboard-hero.png" alt="Business owner reviewing marketing results" class="dashboard-decoration" loading="lazy" />
     </div>
 
   </div>
@@ -216,8 +216,8 @@ function init() {
   if (!BUSINESSES.length) { renderNoBusinessState(); return; }
   renderSwitcherBar();
   renderAgencyBar();
-  loadBusinessContext(activeBizId);
 }
+
 
 // ══════════════════════════════════════════
 // EMPTY STATE — no businesses on this account yet
@@ -225,6 +225,7 @@ function init() {
 function renderNoBusinessState() {
   document.getElementById('biz-dd-label').textContent = 'No businesses on this account';
   document.getElementById('dashboard-data-label').classList.add('hidden');
+  document.getElementById('dashboard-return').hidden=true;
   document.getElementById('dashboard-campaign-list').innerHTML = '<div class="activity-empty">No campaigns on this account.</div>';
   const status = document.getElementById('dashboard-load-status');
   status.classList.remove('hidden');
@@ -323,18 +324,21 @@ function renderDashboardCampaigns(campaigns) {
     const preview  = latest ? (latest.copy||'').replace(/<br\/?>/gi,' ').replace(/\n/g,' ').slice(0,80) + '…' : '';
     const lastUsed = fmtDate(c.lastUsedAt);
     const created  = fmtDate(c.createdAt);
-    return `<div style="position:relative;border-bottom:1px solid var(--border,#333);">
-      <a href="BlastyBiz.html?cid=${escHtml(encodeURIComponent(c.id))}" style="display:block;padding:14px 52px 14px 0;text-decoration:none;-webkit-tap-highlight-color:rgba(0,200,83,0.12);">
-        <div style="font-size:16px;font-weight:700;color:var(--light,#fff);line-height:1.3;">${escHtml(c.name || '(unnamed)')}</div>
-        <div style="font-size:12px;color:var(--muted,#888);margin-top:4px;">Created ${created} · Last used ${lastUsed}</div>
-        ${preview ? `<div style="font-size:12px;color:var(--muted,#888);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(preview)}</div>` : ''}
+    return `<div class="bb-dashboard-campaign flex-row bb-list-heading">
+      <a class="bb-return-copy" href="BlastyBiz.html?${escHtml(new URLSearchParams({bizId:window.activeBizId,cid:c.id}).toString())}">
+        <h3>${escHtml(c.name || '(unnamed)')}</h3>
+        <p class="muted">Created ${created} · Last used ${lastUsed}</p>
+        ${preview ? `<p class="bb-return-excerpt">${escHtml(preview)}</p>` : ''}
       </a>
-      <button type="button" class="del-camp-btn" onclick="event.preventDefault();window.deleteCampaign&&window.deleteCampaign('${escHtml(String(c.id).replace(/['\\]/g,''))}')" title="Delete campaign" style="position:absolute;right:0;top:50%;transform:translateY(-50%);">🗑</button>
+      ${BBMore.html('<button type="button" data-delete-campaign="'+escHtml(c.id)+'">Delete campaign</button>')}
     </div>`;
   }).join('');
 }
 
 const escHtml = window.escHtml; // escape-utils.js
+ document.getElementById('dashboard-campaign-list').addEventListener('click',event=>{
+   const button=event.target.closest('[data-delete-campaign]');if(button){button.closest('.bb-more').open=false;window.deleteCampaign?.(button.dataset.deleteCampaign);}
+ });
 
 // ══════════════════════════════════════════
 // RENDER AGENCY LIMIT BAR
@@ -433,7 +437,7 @@ function showToast(msg) {
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-  collection, query, where, getDocs, getDoc, setDoc, deleteDoc, doc, serverTimestamp, orderBy, limit
+  collection, query, where, getDocs, getDoc, getDocsFromServer, getDocFromServer, waitForPendingWrites, setDoc, deleteDoc, doc, serverTimestamp, orderBy, limit
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 window.doSignOut = () => window._bbSignOut(auth, signOut);
@@ -514,6 +518,7 @@ function dashboardRead(request) {
 function dashboardLoadFailed() {
   document.getElementById('biz-dd-label').textContent = 'Could not load businesses';
   document.getElementById('dashboard-data-label').classList.add('hidden');
+  document.getElementById('dashboard-return').hidden=true;
   document.getElementById('dashboard-campaign-list').textContent = 'Your saved campaigns could not be loaded.';
   const status = document.getElementById('dashboard-load-status');
   status.classList.remove('hidden');
@@ -522,6 +527,7 @@ function dashboardLoadFailed() {
 }
 
 let currentUser = null;
+let contextRequest=0;
 let allBusinesses = [];
 let userPlan = 'starter';
 
@@ -532,7 +538,8 @@ onAuthStateChanged(auth, async (user) => {
   window._bbDashboardEmail = user.email || '';
   try {
 
-  const userSnap = await dashboardRead(getDoc(doc(db, 'users', user.uid)));
+  await dashboardRead(waitForPendingWrites(db));
+  const userSnap = await dashboardRead(getDocFromServer(doc(db, 'users', user.uid)));
   const userData = userSnap.exists() ? userSnap.data() : {};
 
   userPlan = userData.plan || 'starter';
@@ -564,7 +571,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   try {
-    const snap = await dashboardRead(getDocs(collection(db, 'users', user.uid, 'businesses')));
+    const snap = await dashboardRead(getDocsFromServer(collection(db, 'users', user.uid, 'businesses')));
 
     if (!snap.empty) {
       allBusinesses = snap.docs.map(d => ({
@@ -610,11 +617,13 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   window.switchBusiness = async function(bizId) {
-    window.activeBizId = bizId;
-    await setDoc(doc(db, 'users', user.uid), { activeBusiness: bizId }, { merge: true });
+    if(!window.BUSINESSES.some(b=>b.id===bizId))return;
+    window.activeBizId = bizId;activeBizId=bizId;
     renderSwitcherBar();
     renderAgencyBar();
-    await loadBusinessContextFirestore(bizId);
+    const refresh=loadBusinessContextFirestore(bizId);
+    try{await setDoc(doc(db, 'users', user.uid), { activeBusiness: bizId }, { merge: true });}catch(_){if(window.activeBizId===bizId)showToast('Business selection could not be saved. Try again.');}
+    await refresh;if(window.activeBizId!==bizId)return;
     const biz = window.BUSINESSES.find(b => b.id === bizId);
     showToast(`Switched to ${biz?.name || bizId}`);
   };
@@ -672,8 +681,20 @@ onAuthStateChanged(auth, async (user) => {
     }
   };
 
+  document.getElementById('dashboard-refresh').onclick=()=>loadBusinessContextFirestore(window.activeBizId);
+  window.addEventListener('pageshow',event=>{if(event.persisted&&window.activeBizId)loadBusinessContextFirestore(window.activeBizId);});
   async function loadBusinessContextFirestore(bizId) {
     if (!bizId || !currentUser) return;
+    const seq=++contextRequest,uid=currentUser.uid;
+    const current=()=>seq===contextRequest&&bizId===window.activeBizId&&uid===currentUser?.uid;
+    const token=()=>currentUser.getIdToken();
+    BBLifecycle.configure({businessId:bizId,token});
+    const returnHost=document.getElementById('dashboard-return');returnHost.hidden=false;
+    for(const id of ['dashboard-draft','dashboard-next','dashboard-recent'])document.getElementById(id).textContent='Loading saved posts…';
+    document.getElementById('dashboard-campaign-list').textContent='Loading campaigns…';
+    document.getElementById('dashboard-new-campaign').href='BlastyBiz.html?'+new URLSearchParams({bizId,newcampaign:'1'});
+    document.getElementById('dashboard-all-history').href='BlastyBiz.html?'+new URLSearchParams({bizId,tab:'history'});
+    const base=['users',uid,'businesses',bizId];
 
     // ── Section 1: Business name — set immediately from in-memory list (same
     //    source as the dropdown) so there is no async race. ────────────────
@@ -689,12 +710,34 @@ onAuthStateChanged(auth, async (user) => {
 
     // ── Section 2: Campaigns (always resolves — never leaves "Loading…") ──
     try {
-      const campSnap = await dashboardRead(getDocs(collection(db, 'users', currentUser.uid, 'businesses', bizId, 'campaigns')));
+      await dashboardRead(waitForPendingWrites(db));if(!current())return;
+      const campSnap = await dashboardRead(getDocsFromServer(collection(db,...base,'campaigns')));if(!current())return;
       const bizCampaigns = campSnap.docs
         .map(d => ({ ...d.data(), id: d.id })).filter(c=>c.status!=='archived')
         .sort((a, b) => new Date(b.lastUsedAt || b.createdAt || 0) - new Date(a.lastUsedAt || a.createdAt || 0));
       renderDashboardCampaigns(bizCampaigns);
+      const reads=await Promise.allSettled([
+        Promise.all(bizCampaigns.map(async campaign=>{
+          const snap=await dashboardRead(getDocsFromServer(collection(db,...base,'campaigns',campaign.id,'ads')));
+          return snap.docs.map(d=>({...d.data(),id:d.id,campaignId:campaign.id}));
+        })),
+        dashboardRead(getDocsFromServer(query(collection(db,...base,'listingDrafts'),orderBy('createdAt','desc'),limit(100)))),
+        dashboardRead(getDocsFromServer(query(collection(db,...base,'publishJobs'),orderBy('createdAt','desc'),limit(100)))),
+        BBLifecycle.api('list')
+      ]);if(!current())return;
+      const [ads,drafts,jobs,schedules]=reads;
+      const error=id=>{document.getElementById(id).textContent='Could not refresh saved posts. Use Refresh dashboard in the three-dot menu.';};
+      const saved=drafts.status==='fulfilled'?drafts.value.docs.map(d=>({...d.data(),id:d.id})):null;
+      if(ads.status==='fulfilled'&&saved)BBReturnVisits.renderDraft(document.getElementById('dashboard-draft'),ads.value.flat(),saved,bizId);else error('dashboard-draft');
+      if(saved&&jobs.status==='fulfilled'){
+        const rows=BBLifecycleStatus.historyRows(saved,jobs.value.docs.map(d=>({...d.data(),jobId:d.id})));
+        for(const row of rows)row.reusable=row.reusable&&bizCampaigns.some(c=>c.id===row.campaignId);
+        BBLifecycleStatus.renderHistory(document.getElementById('dashboard-recent'),rows.slice(0,5),{businessId:bizId,userId:uid,token,isCurrent:current,navigate:url=>{location.href=url;}});
+      }else error('dashboard-recent');
+      if(schedules.status==='fulfilled')BBLifecycle.renderSchedules(document.getElementById('dashboard-next'),schedules.value,{compact:true,onChange:()=>loadBusinessContextFirestore(bizId),onEdit:request=>{location.href='BlastyBiz.html?'+new URLSearchParams({bizId,tab:'schedule',cid:request.campaignId,adId:request.adId,scheduleCampaign:request.campaignId,scheduleAd:request.adId});}});else error('dashboard-next');
     } catch(e2) {
+      if(!current())return;
+      for(const id of ['dashboard-draft','dashboard-next','dashboard-recent'])document.getElementById(id).textContent='Could not load saved posts. Use Refresh dashboard to retry.';
       const el = document.getElementById('dashboard-campaign-list');
       if (el) el.innerHTML = '<div class="activity-empty">Unable to load campaigns.</div>';
     }
@@ -707,6 +750,7 @@ onAuthStateChanged(auth, async (user) => {
         getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'platformConnections', 'facebook')),
         getDoc(doc(db, 'users', currentUser.uid, 'businesses', bizId, 'platformConnections', 'instagram')),
       ]);
+      if(!current())return;
       const google    = googleSnap.exists()    ? googleSnap.data()    : null;
       const facebook  = facebookSnap.exists()  ? facebookSnap.data()  : null;
       const instagram = instagramSnap.exists() ? instagramSnap.data() : null;
@@ -758,6 +802,7 @@ onAuthStateChanged(auth, async (user) => {
         limit(20)
       );
       const jobsSnap = await getDocs(jobsQ);
+      if(!current())return;
       const jobs = jobsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
       const now = new Date();

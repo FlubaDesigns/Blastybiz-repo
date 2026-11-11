@@ -33,8 +33,11 @@ function historyRows(drafts,jobs){
     const key=job.draftId||job.blastId||job.jobId;
     if(!key)continue;
     const draft=byId.get(job.draftId)||{},packet=draft.packet||draft;
-    if(!groups.has(key))groups.set(key,{draftId:job.draftId||null,key,listing:packet.adName||draft.blastName||job.adName||job.listingName||draft.businessName||'Blast',jobs:[],time:null});
+    if(!groups.has(key))groups.set(key,{draftId:job.draftId||null,key,campaignId:draft.campaignId||job.campaignId,adId:draft.adId||job.adId,
+      reusable:draft.status==='approved',image:null,listing:packet.adName||draft.blastName||job.adName||job.listingName||draft.businessName||'Blast',jobs:[],time:null});
     const group=groups.get(key);group.jobs.push(job);
+    const url=job.payload?.imageUrls?.[0]||packet.imageRefs?.[0]?.url;
+    if(!group.image&&typeof url==='string'&&/^https:\/\//.test(url))group.image=url;
     const stamp=time(job.publishedAt||job.manualConfirmedAt||job.updatedAt||job.createdAt);
     if(stamp&&(!group.time||Date.parse(stamp)>Date.parse(group.time)))group.time=stamp;
   }
@@ -46,7 +49,59 @@ function historyRows(drafts,jobs){
     summary:group.jobs.map(j=>(j.platformName||PLATFORM_META[j.platform]?.name||j.platform)+': '+(STATUS_CONFIG[j.status]?.label||'Unknown status')).join(' · ')
   })).sort((a,b)=>(Date.parse(b.time)||0)-(Date.parse(a.time)||0));
 }
-window.BBLifecycleStatus={historyRows};
+const reuseRequests=new Map();
+async function reusePost(row,ctx) {
+  const key='bb-reuse:'+JSON.stringify([ctx.userId,ctx.businessId,row.campaignId,row.adId,row.draftId]);
+  let pending=reuseRequests.get(key);
+  if(!pending){
+    try{const saved=JSON.parse(sessionStorage.getItem(key));if(/^[a-f0-9-]{36}$/.test(saved?.adId)&&/^[a-f0-9-]{36}$/.test(saved?.requestId))pending={adId:saved.adId,requestId:saved.requestId};}catch(_){}
+    pending ||= {adId:crypto.randomUUID(),requestId:crypto.randomUUID()};reuseRequests.set(key,pending);
+    try{sessionStorage.setItem(key,JSON.stringify(pending));}catch(_){}
+  }
+  if(pending.result)return pending.result;
+  if(pending.promise)return pending.promise;
+  pending.promise=(async()=>{
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);
+    try{
+      const response=await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/manageAd',{method:'POST',signal:controller.signal,
+        headers:{'Content-Type':'application/json',Authorization:'Bearer '+await ctx.token()},
+        body:JSON.stringify({action:'derive',businessId:ctx.businessId,campaignId:row.campaignId,sourceAdId:row.adId,sourceBlastId:row.draftId,adId:pending.adId,requestId:pending.requestId})});
+      const data=await response.json();if(!response.ok)throw Error(data.error||'Could not reuse this post. Try again.');
+      pending.result=data.ad;try{sessionStorage.removeItem(key);}catch(_){}return data.ad;
+    }finally{clearTimeout(timer);pending.promise=null;}
+  })();
+  return pending.promise;
+}
+function renderHistory(host,rows,ctx) {
+  host.replaceChildren();
+  if(!rows.length){host.textContent='No recent posts yet.';return;}
+  const link=(text,href)=>{const a=document.createElement('a');a.className='btn';a.textContent=text;a.href=href;return a;};
+  for(const row of rows){
+    const card=document.createElement('article');card.className='bb-return-post';
+    if(row.image){const image=document.createElement('img');image.src=row.image;image.alt='Photo from '+row.listing;image.loading='lazy';card.append(image);}
+    const content=document.createElement('div');content.className='bb-return-copy';
+    const title=document.createElement('h3');title.textContent=row.listing;content.append(title);
+    const summary=document.createElement('p');summary.textContent=row.summary;content.append(summary);
+    const time=document.createElement('p');time.className='muted';time.textContent=row.time?new Date(row.time).toLocaleString():'Date unavailable';content.append(time);
+    const actions=document.createElement('div');actions.className='flex-row';
+    if(row.draftId){
+      actions.append(link('Results','BlastyBiz-Publishing-Status.html?'+new URLSearchParams({bizId:ctx.businessId,draftId:row.draftId})));
+      const more=BBMore.create('Post options');more.body.append(link('View saved post','BlastyBiz-Listing-Preview.html?'+new URLSearchParams({bizId:ctx.businessId,draftId:row.draftId})));card.append(more.menu);
+    }
+    if(row.reusable&&row.campaignId&&row.adId){
+      const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Use again';
+      const message=document.createElement('p');message.setAttribute('role','status');
+      button.onclick=async()=>{
+        if(button.disabled||!ctx.isCurrent())return;button.disabled=true;message.textContent='Creating your draft…';
+        try{const ad=await reusePost(row,ctx);if(ctx.isCurrent())ctx.navigate('BlastyBiz.html?'+new URLSearchParams({bizId:ctx.businessId,cid:row.campaignId,adId:ad.id,tab:'create'}));}
+        catch(error){if(ctx.isCurrent()){message.textContent=error.name==='AbortError'?'Still waiting for confirmation. Try again to open the same draft.':error.message;button.disabled=false;}}
+      };
+      actions.append(button);content.append(message);
+    }
+    content.append(actions);card.prepend(content);host.append(card);
+  }
+}
+window.BBLifecycleStatus={historyRows,renderHistory};
 // The workspace uses the same delivery-state definitions, without installing status-page UI.
 if(!document.getElementById('progress-count'))return;
 
@@ -200,7 +255,7 @@ window.showToast=showToast;window.showEmptyState=showEmptyState;window.focusFutu
    });
    void completion();
  };
- window.BBLifecycleStatus={historyRows,initialize(ctx,user){context=ctx;userInfo=user;BBLifecycle.configure(ctx);const host=document.getElementById('status-more-options'),label=document.createElement('label');
+ window.BBLifecycleStatus={historyRows,renderHistory,initialize(ctx,user){context=ctx;userInfo=user;BBLifecycle.configure(ctx);const host=document.getElementById('status-more-options'),label=document.createElement('label');
  document.querySelectorAll('[data-status-workspace]').forEach(link=>{link.href='BlastyBiz.html?'+new URLSearchParams({bizId:ctx.businessId,tab:link.dataset.statusWorkspace});});label.className='bb-reminder';const input=document.createElement('input');input.type='checkbox';input.checked=user.manualRemindersEnabled!==false;label.append(input,document.createTextNode('Remind me to finish manual posts (at most one email every 24 hours)'));host.append(label);input.onchange=async()=>{input.disabled=true;try{await BBLifecycle.api('reminders',{enabled:input.checked});window.BBBlasty?.fire('reminder.manual_explain');}catch(e){input.checked=!input.checked;window.showToast(e.message);}finally{input.disabled=false;}};}};
 })();
 

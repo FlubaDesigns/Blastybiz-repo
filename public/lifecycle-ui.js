@@ -151,18 +151,18 @@
    }catch(e){if(seq===dashboardEpoch)wrap.textContent=e.message;}
  }
 
- function renderSchedules(wrap,result,{onChange=()=>dashboard(),onEdit}={}) {
+ function renderSchedules(wrap,result,{onChange=()=>dashboard(),onEdit,compact=false}={}) {
    const businessId=context.businessId;
    const current=()=>context?.businessId===businessId&&wrap.isConnected;
    const rows=result.schedules||[],active=rows.filter(r=>r.schedule.enabled),others=rows.filter(r=>!r.schedule.enabled),next=active[0];
    let working=false;
    wrap.classList.add('bb-life');
-   wrap.innerHTML='<div class="flex-row bb-list-heading"><h2>Upcoming posts</h2>'+BBMore.html('<button type="button" data-show-others>Paused and completed ('+others.length+')</button>')+'</div><p role="status" class="bb-schedule-message"></p><div data-active></div><div data-others hidden></div>';
+   wrap.innerHTML='<div class="flex-row bb-list-heading"><h2>'+(compact?'Next scheduled post':'Upcoming posts')+'</h2>'+BBMore.html((compact?'<a href="BlastyBiz.html?'+new URLSearchParams({bizId:businessId,tab:'schedule'})+'">All schedules</a>':'')+'<button type="button" data-show-others>Paused and completed ('+others.length+')</button>')+'</div><p role="status" class="bb-schedule-message"></p><div data-active></div><div data-others hidden></div>';
    const message=t=>{if(current())wrap.querySelector('.bb-schedule-message').textContent=t;};
    wrap.querySelector('[data-show-others]').onclick=e=>{const panel=wrap.querySelector('[data-others]');panel.hidden=!panel.hidden;e.target.closest('.bb-more').open=false;};
    if(!active.length)wrap.querySelector('[data-active]').textContent='Nothing scheduled. Your draft stays unsent.';
    if(result.businessPaused){const resume=document.createElement('button');resume.type='button';resume.textContent='Business scheduling is paused — Resume';resume.onclick=async()=>{if(working||!current())return;working=true;resume.disabled=true;try{await api('resumeBusiness');if(current())await onChange();}catch(e){message(e.message);}finally{working=false;resume.disabled=false;}};wrap.prepend(resume);}
-   for(const row of rows){
+   for(const row of compact?[...active.slice(0,1),...others]:rows){
      const {schedule:s,upcoming:u}=row,card=document.createElement('article');
      card.className='bb-schedule-card';card.dataset.adId=row.adId;card.dataset.campaignId=row.campaignId;
      const status=u?.approvalStatus==='required'&&s.enabled?'Awaiting approval':s.enabled?(s.status||'Active'):(s.status||'Paused');

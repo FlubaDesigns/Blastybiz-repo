@@ -1,3 +1,4 @@
+require('node:child_process').execFileSync(process.execPath,['scripts/test-section5-browser.cjs'],{stdio:'inherit'});
 require('node:child_process').execFileSync(process.execPath,['scripts/test-section4-browser.cjs'],{stdio:'inherit'});
 require('node:child_process').execFileSync(process.execPath,['scripts/test-section3-browser.cjs'],{stdio:'inherit'});
 'use strict';

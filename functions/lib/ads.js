@@ -85,6 +85,7 @@ function createAdService(db,admin) {
   return async function manage(uid,body) {
     const {action}=body;
     if(!['list','get','create','derive','save','prepare','updatePrepared'].includes(action))fail(400,'Unknown Ad action.');
+    if(body.sourceBlastId!==undefined&&(action!=='derive'||!body.sourceBlastId))fail(400,'A source Blast can only create a derived Ad.');
     if(body.recoverCampaign!==undefined && typeof body.recoverCampaign!=='boolean')fail(400,'Invalid campaign recovery.');
     if(body.recoverCampaign && (action!=='create'||body.adId!=='first'||body.requestId!=='first'))fail(400,'Invalid campaign recovery.');
     const businessId=id(body.businessId),campaignId=id(body.campaignId);
@@ -147,13 +148,30 @@ function createAdService(db,admin) {
           if(!sourceSnap.exists)fail(404,'Source Ad not found.');
           source=sourceSnap.data();
         }
+        let reusedImages=[];
+        if(action==='derive'&&body.sourceBlastId) {
+          const packet=await require('./blast-source').readSourcePacket(tx,biz,campaign,{...source,id:body.sourceAdId,campaignId},body.sourceBlastId);
+          const pool=await tx.get(camp.collection('images'));
+          const photos=pool.docs.map(d=>({...d.data(),id:d.id}));
+          const images=(packet.imageRefs||[]).map(image=>{
+            const saved=photos.find(p=>p.url===image.url&&!p.retired);
+            if(saved)return {id:saved.id,url:saved.url,path:saved.path||'',alt:saved.alt||''};
+            // Reuse the frozen, server-owned photo without reviving a retired item.
+            const imageId='reuse_'+require('node:crypto').createHash('sha256').update(adId+'\0'+image.id+'\0'+image.url).digest('hex').slice(0,32);
+            const copy={id:imageId,url:image.url,path:image.path||'',alt:image.alt||'',sourceImageId:image.id};
+            reusedImages.push(copy);return copy;
+          });
+          source={...packet,name:packet.adName,platforms:packet.enabledPlatforms,imageRefs:images,
+            knownImageIds:[...new Set([...photos.map(p=>p.id),...images.map(p=>p.id)])]};
+        }
         const base=source?Object.fromEntries(allowed.filter(k=>source[k]!==undefined).map(k=>[k,clone(source[k])])):
           {name:'New Ad',offer:'',price:'',cta:'',context:'',mentions:require('./business-form').profileMentions(bs.data()),platforms:campaign.platformsEnabled||[],imageRefs:[],adaptations:{},platformStatus:{}};
-        const creative=cleanCreative(recovered||body.creative||{},base);
-        await resolveImages(tx,camp,creative,!!body.creative?.imageRefs);
+        const creative=cleanCreative(recovered||(body.sourceBlastId?{}:body.creative)||{},base);
+        await resolveImages(tx,camp,creative,!body.sourceBlastId&&!!body.creative?.imageRefs);
         creative.platformStatus=Object.fromEntries((creative.platforms||[]).map(p=>[p,'needs-review']));
         const made={...creative,id:adId,campaignId,businessId,uid,requestId,revision:1,status:'draft',
-          ...(source?{sourceAdId:body.sourceAdId}:{}),events:[event(requestId,source?'derived_from':'created',Object.keys(creative),source?body.sourceAdId:undefined)]};
+          ...(source?{sourceAdId:body.sourceAdId}:{}),...(body.sourceBlastId?{sourceBlastId:body.sourceBlastId}:{}),events:[event(requestId,source?'derived_from':'created',Object.keys(creative),source?body.sourceAdId:undefined)]};
+        for(const image of reusedImages)tx.create(camp.collection('images').doc(image.id),{...image,createdAt:stamp()});
         tx.create(ref,{...made,createdAt:stamp(),updatedAt:stamp()});return {ad:made};
       }
       if(!ad) fail(404,'Ad not found.');

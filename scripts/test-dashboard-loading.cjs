@@ -9,6 +9,7 @@ async function run(mode){
  w.fetch=async()=>({text:async()=>''});w.console.error=()=>{};
  w.auth={authStateReady:async()=>{}};w.db={};
  w.onAuthStateChanged=(_,callback)=>callback({uid:'fixture',email:'fixture@example.invalid'}).then(complete,complete);
+ w.waitForPendingWrites=async()=>{};w.BBLifecycle={configure(){},api:async()=>({schedules:[]}),renderSchedules(){}};w.BBReturnVisits={renderDraft(){}};w.BBLifecycleStatus={historyRows:()=>[],renderHistory(){}};
  w.doc=w.collection=(_, ...parts)=>parts.join('/');w.query=p=>p;w.orderBy=w.limit=()=>{};w.setDoc=async()=>{};
  w.getDoc=async p=>{
   if(p==='users/fixture'&&mode==='error')throw Error('permission-denied');
@@ -20,8 +21,10 @@ async function run(mode){
   const docs=p.endsWith('businesses')?(mode==='empty'?[]:[{id:'b',data:()=>({name:'Existing Business'})}]):p.endsWith('campaigns')?[{id:'c',data:()=>({name:'Existing Campaign'})}]:[];
   return {empty:docs.length===0,docs};
  };
+ w.getDocFromServer=w.getDoc;w.getDocsFromServer=w.getDocs;
  const realTimeout=w.setTimeout.bind(w);w.setTimeout=(fn,ms)=>realTimeout(fn,ms===15000?5:ms);
  vm.runInContext(fs.readFileSync('public/escape-utils.js','utf8'),context);
+ vm.runInContext(fs.readFileSync('public/blastybiz-menu.js','utf8').split('function _revealAdminNav')[0],context);
  for(const script of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)){
   if(/src=|importmap/.test(script[1]))continue;
   let code=script[2];if(script[1].includes('module'))code='(function(){'+code.replace(/import\s+[\s\S]*?\sfrom\s*['"][^'"]+['"];?/g,'')+'})()';

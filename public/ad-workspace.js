@@ -65,6 +65,7 @@
       try{
         const rows=await list();if(seq!==epoch)return;
         const wanted=wantedAdId===undefined?new URLSearchParams(location.search).get('adId'):wantedAdId;
+        if(wanted&&!rows.some(a=>a.id===wanted))throw Error('This saved Ad is unavailable. Return to your dashboard to choose another.');
         let selected=rows.find(a=>a.id===wanted)||rows.find(a=>a.id==='first')||rows[0];
         if(!selected){
           tell('Opening your campaign details…');

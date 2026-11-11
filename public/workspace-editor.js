@@ -2150,7 +2150,9 @@ function renderHistory() {
   document.getElementById('stat-platforms-hit').textContent=new Set(rows.flatMap(row=>row.postedPlatforms||[])).size;
   document.getElementById('stat-this-month').textContent=posted.filter(row=>row.postedTimes?.some(value=>{const date=new Date(value);return date.getFullYear()===now.getFullYear()&&date.getMonth()===now.getMonth();})).length;
   if(!rows.length){el.innerHTML='<p>No posting activity loaded yet.</p>';return;}
-  el.innerHTML=rows.map(row=>'<div class="history-item"><div class="bb-style-59eddc67"><div class="history-title">'+escHtml(row.listing)+'</div><div class="history-meta">'+escHtml(row.summary)+' · '+escHtml(row.time?timeAgo(row.time):'Date unavailable')+'</div></div>'+(row.draftId?'<a class="history-reload bb-style-bf928261" href="BlastyBiz-Publishing-Status.html?'+new URLSearchParams({bizId:window.activeBizId,draftId:row.draftId})+'">Results →</a>':'')+'</div>').join('');
+  const businessId=window.activeBizId,userId=window._bbUid;
+  window.BBLifecycleStatus.renderHistory(el,rows,{businessId,userId,token:window._bbGetToken,isCurrent:()=>window.activeBizId===businessId&&window._bbUid===userId,
+    navigate:url=>{if(window.BBAds?.dirty||window.BBAds?.busy||window._bbDraftSavePending){showToast('Save your current changes before opening the new draft. It is saved in this campaign.');return;}window.location.href=url;}});
 }
 
 async function loadHistoryDraft(draftId) {

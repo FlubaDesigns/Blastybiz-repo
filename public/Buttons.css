@@ -8,3 +8,6 @@ details.bb-more > summary:focus-visible { outline: 2px solid var(--green); outli
 .bb-more-list > :is(button,a), .bb-more-list .qp-photo-share > button { display: block; width: 100%; box-sizing: border-box; text-align: left; color: var(--light); background: transparent; border: 0; border-radius: 4px; margin: 0; padding: 10px; font: 14px/1.4 'DM Sans',sans-serif; white-space: normal; text-decoration: none; }
 .bb-more-list :is(button,a):hover { background: #ffffff0d; }
 .bb-more-list :is(p,label,.qp-photo-share-status) { font-size: 13px; line-height: 1.5; white-space: normal; overflow-wrap: anywhere; }
+
+/* Shared buttons within compact saved-post cards. */
+.bb-return-copy .btn { white-space:normal; max-width:100%; box-sizing:border-box; }
