@@ -128,6 +128,7 @@ w.BBAds={active:reviewAd};
 w.platforms=reviewAd.platforms.map(id=>({id,name:id,type:['google','facebook','instagram'].includes(id)?'api':'manual',adaptedContent:'Saved copy'}));
 Object.assign(w,{_step5PlatIdx:0,getStep5Platforms:()=>w.platforms,updateStep5UI(){},_bbIsGenerating:()=>false,PLATFORM_URL_HINTS:{}});
 w.eval(html.slice(html.indexOf('function renderPlatformPhotoStrip('),html.indexOf('// Open a platform page')));
+w.eval(html.slice(html.indexOf('async function regeneratePlatformCopy'),html.indexOf('function saveStepCat')));
 w.eval(html.slice(html.indexOf('function renderStep5Review()'),html.indexOf('function updateStep5UI()')));
 w.renderStep5Review();
 const packet=freezePacket(reviewAd,{name:'Photos'});

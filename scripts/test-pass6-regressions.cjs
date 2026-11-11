@@ -92,6 +92,7 @@ async function draftTests() {
   ok(writes.every(w=>w.data.pickupZip==='01234'&&w.data.pickupArea==='Downtown'),'new and existing draft saves preserve the canonical pickup area through retries');
   const nodes={},messages=[];let saved=false;
   const d={window:{activeBizId:'b',_afterAdaptation:async()=>{if(!saved)throw Error('offline');return 'd';}},platforms,console:quiet,showToast:m=>messages.push(m),document:{getElementById:id=>nodes[id]||(nodes[id]={hidden:true,disabled:true,classList:{remove(){},add(){}}})}};
+  d.activeCampaignId='c';vm.runInNewContext(section(html,'function postRewriteKey()', 'function resetPostRewriteState()'),d);
   vm.runInNewContext(section(html,'let generatedDraftSaving =','async function runAdaptation()'),d);
   await d.retryGeneratedDraftSave();ok(d.window._bbDraftSavePending&&!nodes['draft-save-error'].hidden,'draft UI exposes failed save and blocks continuation');
   saved=true;await d.retryGeneratedDraftSave();ok(!d.window._bbDraftSavePending&&nodes['draft-save-error'].hidden&&!nodes['review-output-btn'].disabled&&nodes['review-listings-btn'].href.includes('draftId=d'),'successful retry restores review navigation');

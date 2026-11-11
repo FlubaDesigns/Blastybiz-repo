@@ -18,6 +18,7 @@ const nativeTimer=w.setTimeout.bind(w);w.setTimeout=(fn,ms)=>ms===60000?0:native
 Object.assign(w,{showToast:v=>notices.push(v),_step5PlatIdx:0,updateStep5UI(){},_bbIsGenerating:()=>false,PLATFORM_URL_HINTS:{},escHtml:s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')});
 w.eval(fs.readFileSync('public/platforms-authority.js','utf8'));w.eval(fs.readFileSync('public/photo-handoff.js','utf8'));
 w.eval(html.slice(html.indexOf('function renderPlatformPhotoStrip('),html.indexOf('// Open a platform page')));
+w.eval(html.slice(html.indexOf('async function regeneratePlatformCopy'),html.indexOf('function saveStepCat')));
 w.eval(html.slice(html.indexOf('function renderStep5Review()'),html.indexOf('function updateStep5UI()')));
 const photos=Array.from({length:6},(_,i)=>({id:'p'+i,url:'https://example.com/photo'+i+'.png'}));
 w.BBAds={active:{imageRefs:photos,platformStatus:{x:'approved'}}};

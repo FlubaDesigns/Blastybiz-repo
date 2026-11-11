@@ -6,7 +6,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
 <link rel="stylesheet" href="global-style.css?v=20261110-section1" />
 <title>BlastyBiz — Lock. Load. Blast.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -463,13 +463,13 @@
 
       <div class="row">
         <div class="col-full">
-          <button type="button" class="btn w-100 tablet-w-75 desktop-w-50 center-block" onclick="openCampaignPhotos()">📷 Add or change photos</button>
           <div id="generation-error" role="alert" hidden class="bb-style-ba7d4da5">
             <p id="generation-error-message"></p>
             <button type="button" class="btn" onclick="runAdaptation()">Retry generation</button>
             <button type="button" class="btn" onclick="createWizGoTo(1)">Back to details</button>
           </div>
           <!-- Compact platform review accordions — populated by renderStep5Review() -->
+          <nav id="step5-destinations" class="flex-row step5-destinations" aria-label="Post destinations"></nav>
           <div id="step5-review-container"></div>
 
           <div id="draft-save-error" role="alert" hidden class="bb-style-6a7e00e5">
@@ -477,14 +477,12 @@
             <button type="button" id="draft-save-retry" onclick="retryGeneratedDraftSave()">Retry save</button>
           </div>
           <!-- Rewrite + Clear — visible after generation -->
-          <div id="rewrite-row" class="hidden">
-            <button type="button" class="btn btn-rewrite" onclick="runAdaptation()">
-              🔄 Rewrite with Direction
-            </button>
+          <details id="rewrite-row" class="hidden"><summary>More options</summary>
+            <button type="button" class="btn" onclick="openCampaignPhotos()">Add or change photos</button>
             <button type="button" class="btn btn-clear" onclick="clearAndStartOver()">
               🗑️ Clear & Start Over
             </button>
-          </div>
+          </details>
 
           <button type="button" class="review-btn w-100 tablet-w-75 desktop-w-50 center-block bb-style-c8be1ccb" id="step5-final-btn" disabled onclick="completeBlast()">
             Approve each platform above to continue →

@@ -538,6 +538,17 @@ exports.adaptListing = onRequest({ invoker: 'public', secrets: [], timeoutSecond
     return res.status(400).json({ error: 'Missing required field: listing (must be an object)' });
   }
 
+  const rewrite = req.body.rewrite;
+  if (rewrite !== undefined && (!rewrite || typeof rewrite !== 'object' || Array.isArray(rewrite)
+      || typeof rewrite.direction !== 'string' || !rewrite.direction.trim() || rewrite.direction.length > 1000
+      || typeof rewrite.source !== 'string' || !rewrite.source.trim() || rewrite.source.length > 15000
+      || req.body.isRegeneration !== true || !Array.isArray(platforms) || platforms.length !== 1)) {
+    return res.status(400).json({error:'Provide one post and a rewrite direction of up to 1,000 characters.'});
+  }
+  const rewriteBlock = rewrite ? '\nREWRITE THIS EXISTING POST:\n' + JSON.stringify(rewrite.source)
+    + '\nREQUESTED CHANGE:\n' + JSON.stringify(rewrite.direction.trim())
+    + '\nApply the requested wording change to this post. Keep its factual meaning, price, offer, links and contact details. Never invent a location, local claim, discount or other fact. For “More local”, use only the supplied area; omit local references when no area is supplied. Privacy and platform rules below still apply.\n' : '';
+
   const isRegeneration = req.body.isRegeneration === true;
   const regenDraftId   = req.body.draftId || null;
   const now = new Date();
@@ -649,6 +660,7 @@ ${personalSeller?'':'- Hours: '+(listing.hours || 'not provided')}
 - Images attached: ${listing.imageCount > 0 ? listing.imageCount + ' photo(s)' : 'none'}
 - Preferred tone: ${tone}
 ${personalSeller?(globalMemory?'\nSELLER DETAILS (use only facts relevant to this item):\n'+globalMemory+'\n':''):globalMemoryBlock}${campaignMemoryBlock}${personalSeller?'':aiContextBlock}${libraryDocsBlock}${campaignContextBlock}${(listing.bizInsights||[]).length ? '\n⚠️ CAMPAIGN-SPECIFIC AI FACTS — MANDATORY. These answers are specific to this campaign. Reference them directly — do NOT write generic filler:\n' + listing.bizInsights.map(i=>`- ${i.question}: ${i.answer}`).join('\n') : ''}${(listing.globalFactoids||[]).length ? '\n📌 BUSINESS FACTS — Use selectively. Include a fact only when it genuinely strengthens this specific post. Do NOT force every fact into every piece. Higher score = stronger brand signal:\n' + [...listing.globalFactoids].sort((a,b)=>(b.importance!=null?b.importance:5)-(a.importance!=null?a.importance:5)).map(f=>`- [${f.importance!=null?f.importance:5}/10] ${f.text}`).join('\n') : ''}${(listing.campaignFactoids||[]).length ? '\n📌 CAMPAIGN FACTS — Use selectively. Include only when it fits naturally for this campaign. Higher score = more likely to strengthen this copy:\n' + [...listing.campaignFactoids].sort((a,b)=>(b.importance!=null?b.importance:5)-(a.importance!=null?a.importance:5)).map(f=>`- [${f.importance!=null?f.importance:5}/10] ${f.text}`).join('\n') : ''}
+${rewriteBlock}
 NAME PRIVACY — overrides all memories, documents, facts and context above:
 Only use this owner/seller name: ${publicOwnerName || '[none — do not name the owner/seller]'}. First name permission: ${namePrefs.firstName}. Last name permission: ${namePrefs.lastName}. Never add any unapproved name part, initials, full-name signoff or personal-name hashtag, even if it appears in older context. Business names may be used as business names.
 PLATFORMS TO ADAPT FOR:

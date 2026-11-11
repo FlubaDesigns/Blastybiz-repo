@@ -78,3 +78,18 @@ test('initial copy and its free rewrite grant commit together; deleted drafts ar
  await f.data.db.doc(path).delete();f.advance(6*60000);await f.reserve('u',{request:{id:'rewrite',fingerprint}});
  assert.equal(f.data.get(path),undefined);assert.equal(await f.settle('u',next,null),false);
 });
+
+test('rewrite direction reaches the real prompt; malformed requests never reserve allowance',async()=>{
+ const fs=require('node:fs'),vm=require('node:vm'),file=require('node:path').resolve('functions/modules/ai.js'),source=fs.readFileSync(file,'utf8');
+ let prompt='',reserved=0;
+ const c={exports:{},require:require('node:module').createRequire(file),crypto:require('node:crypto'),onRequest:(_,fn)=>fn,withAuth:fn=>fn,db:fixture().data.db,admin,
+  reserveAiAction:async()=>{reserved++;return{};},settleAiAction:async()=>true,platformAuthority:require('../functions/lib/platforms'),PLATFORM_DOCS:{},buildPlatformBlock:()=>'',_getAdminPlatformDocs:async()=>({}),_mergeAdminPlatformDoc:b=>b,console,loggedAI:async(_u,_fn,_body,text)=>{prompt=text;return {text:'{"adaptations":{"facebook":"Valid rewritten copy"}}'};}};
+ vm.runInNewContext(source.slice(source.indexOf('exports.adaptListing ='),source.indexOf('exports.resolveCategories =')),c);
+ const run=async rewrite=>{const res={code:200,status(n){this.code=n;return this;},json(b){this.body=b;return this;}};await c.exports.adaptListing({body:{listing:{name:'Example',offer:'Weekend offer'},platforms:[{id:'facebook'}],isRegeneration:true,rewrite}},res,{uid:'u'});return res;};
+ c.bbLog=()=>{};
+ for(const direction of ['Shorter','More local','More upbeat','Keep the price. Mention weekend pickup.']){
+  assert.equal((await run({source:'Existing offer $25',direction})).code,200);assert(prompt.includes(direction));assert(prompt.includes('Existing offer $25'));assert.match(prompt,/Never invent a location/);assert.match(prompt,/NAME PRIVACY/);
+ }
+ const before=reserved;for(const rewrite of [null,[],{source:'copy',direction:''},{source:'copy',direction:'x'.repeat(1001)},{source:42,direction:'Shorter'},{source:'x'.repeat(15001),direction:'Shorter'}])assert.equal((await run(rewrite)).code,400);
+ assert.equal(reserved,before);
+});

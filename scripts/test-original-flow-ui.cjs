@@ -1,3 +1,4 @@
+require('node:child_process').execFileSync(process.execPath,['scripts/test-section3.cjs'],{stdio:'inherit'});
 'use strict';
 require('node:child_process').execFileSync(process.execPath,['scripts/test-section2.cjs'],{stdio:'inherit'});
 // Include the publishing view in the existing DOM gate without changing release infrastructure.
@@ -122,7 +123,7 @@ const turn=()=>new Promise(r=>setImmediate(r));
   await w.BBAds.save();await w.BBAds.open();
   assert.equal(w.BBAds.active.adaptations.facebook,'Edited generated copy');
   assert.equal(w.BBAds.active.platformStatus.facebook,'needs-review');
-  Object.assign(w,{profile:{name:'Seller'},bizInsights:[],campaigns:[],showToast(){},savePlatforms(){},updateStep5UI(){},_getAIMemory:()=>({}),_afterAdaptation:async()=> 'working-draft'});
+  Object.assign(w,{profile:{name:'Seller'},bizInsights:[],campaigns:[],showToast(){},savePlatforms(){},renderStep5Review(){},getStep5Platforms:()=>w.platforms,updateStep5UI(){},_getAIMemory:()=>({}),_afterAdaptation:async()=> 'working-draft'});
   w.eval(cut('let generatedDraftSaving = false;','async function runAdaptation'));
   w.flushCampaignMemoryEdits=async()=>{};
   w.eval(cut('async function regeneratePlatformCopy','function saveStepCat'));

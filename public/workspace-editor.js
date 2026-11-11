@@ -659,6 +659,7 @@ async function saveCopyToLibrary(pid) {
 }
 
 async function approvePlatformCopy(pid) {
+  if (window._bbAdaptationBusy || generatedDraftSaving) return;
   if (window._bbDraftSavePending) { showToast('Save your generated copy with Retry save first.'); return; }
   const el = document.getElementById('qp-copy-text-' + pid);
   const copy = (el?.innerText || el?.textContent || '').replace(/[ \t]+/g, ' ').trim();
@@ -678,17 +679,17 @@ async function approvePlatformCopy(pid) {
 
   // 2. Persist to Firestore draft — must succeed before advancing
   const draftId = window._currentDraftId;
-  if (draftId && window._bbUpdateDraft) {
+  if (window.BBAds?.active || (draftId && window._bbUpdateDraft)) {
     try {
       const adaptKey = 'adaptations.' + pid;
       if (window.BBAds?.active) await window.BBAds.save();
-      await window._bbUpdateDraft(draftId, { [adaptKey]: copy, ['platformStatus.' + pid]: 'approved' });
+      if (draftId && window._bbUpdateDraft) await window._bbUpdateDraft(draftId, { [adaptKey]: copy, ['platformStatus.' + pid]: 'approved' });
     } catch(e) {
       showToast('⚠️ Could not save draft — try again');
       platforms = platforms.map(p => p.id === pid
         ? { ...p, _reviewStatus: undefined }
         : p);
-      if (lgtmBtn) { delete lgtmBtn.dataset.saving; lgtmBtn.disabled = false; lgtmBtn.textContent = '✓ Looks Good'; }
+      if (lgtmBtn) { delete lgtmBtn.dataset.saving; lgtmBtn.disabled = false; lgtmBtn.textContent = '✓ Looks good — next'; }
       return;
     }
   }
@@ -737,7 +738,7 @@ async function excludePlatform(pid) {
 
   // Await the Firestore write — navigation is blocked until it resolves
   const draftId = window._currentDraftId;
-  if (draftId && window._bbUpdateDraft) {
+  if (window.BBAds?.active || (draftId && window._bbUpdateDraft)) {
     try {
       if (window.BBAds?.active) await window.BBAds.save();
       await window._bbUpdateDraft(draftId, { ['platformStatus.' + pid]: 'excluded' });
@@ -882,28 +883,23 @@ async function deleteLibraryItem(docId) {
   }
 }
 
-async function regeneratePlatformCopy(pid) {
-  if(window._bbAdaptationBusy)return;
-  window._bbAdaptationBusy=true;
-  try { await flushCampaignMemoryEdits(); await window.BBAds.ready(); await window.BBAds.save(); }
-  catch(e){window._bbAdaptationBusy=false;showToast(e.message || 'Save your Ad before trying again.');return;}
-  const platform = platforms.find(p => p.id === pid);
-  if (!platform) {window._bbAdaptationBusy=false;return;}
-  const previousContent = platform.adaptedContent || '';
-  const startedEmpty = !previousContent;
-
-  // Retrying an empty card: swap to the writing state so the failure block and its
-  // Retry button aren't left on screen during the call.
-  if (startedEmpty) { _bbMarkGenerating([pid]); renderStep5Review(); }
-
-  const regenBtn  = document.getElementById('qp-regen-' + pid);
-  const copyTextEl = document.getElementById('qp-copy-text-' + pid);
-  if (!copyTextEl) {window._bbAdaptationBusy=false;return;}
-
-  // Loading state
-  if (regenBtn) { regenBtn.disabled = true; regenBtn.textContent = '⏳ Regenerating…'; }
-  copyTextEl.style.opacity = '0.4';
-
+async function regeneratePlatformCopy(pid, direction = 'Rewrite this post while preserving its facts and meaning.') {
+  if (window._bbAdaptationBusy || window._bbDraftSavePending) return;
+  direction = String(direction || '').trim();
+  if (!direction || direction.length > 1000) { showToast('Add a direction of up to 1,000 characters.'); return; }
+  const selection = postRewriteKey();
+  window._bbAdaptationBusy = true;
+  let startedEmpty = false;
+  try {
+    await flushCampaignMemoryEdits(); await window.BBAds.ready(); await window.BBAds.save();
+    if (selection !== postRewriteKey()) return;
+    const platform = platforms.find(p => p.id === pid && p.enabled);
+    if (!platform) return;
+    const previousContent = platform.adaptedContent || '';
+    startedEmpty = !previousContent;
+    if (startedEmpty) { _bbMarkGenerating([pid]); renderStep5Review(); }
+    setPostRewriteBusy(pid, true);
+    updateStep5UI();
   // Build full dossier — same context as runAdaptation
   const name        = profile.sellerType==='personal'?BBSetup.mentionedName(profile,ynState):(profile.name||'');
   const category    = profile.category || '';
@@ -923,7 +919,6 @@ async function regeneratePlatformCopy(pid) {
   const featuredPhotoUrl = (window._bbSelectedPhotoIndex !== null && window._bbPhotoItems)
     ? (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || '') : '';
 
-  try {
     const idToken = window._bbGetToken ? await window._bbGetToken() : null;
     const authHeaders = idToken
       ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken }
@@ -955,6 +950,7 @@ async function regeneratePlatformCopy(pid) {
         tone,
         platformCats: profile.platformCats || {},
         isRegeneration: true,
+        rewrite: previousContent ? { source: postPlainText(previousContent), direction } : undefined,
         draftId: window._currentDraftId || '',
         ownerMention: (includeName || includeRole)
           ? [includeName || null,
@@ -964,107 +960,67 @@ async function regeneratePlatformCopy(pid) {
       })
     });
 
-    if (!response.ok) {const failure=await response.json().catch(()=>({}));throw new Error(failure.error || 'Generation unavailable. Please retry.');}
+
+    if (!response.ok) { const failure = await response.json().catch(()=>({})); throw new Error(failure.error || 'Rewrite unavailable. Try again.'); }
     const parsed = await response.json();
     const newText = (parsed.adaptations || {})[pid];
-    if (!newText) throw new Error('No content returned');
-
-    // Update in place
-    copyTextEl.textContent = newText;
-
-    // Update platforms array + save; clear prior approval — regenerated copy invalidates it
-    platforms = platforms.map(p => p.id === pid
-      ? { ...p, adaptedContent: newText, status: 'ready', _reviewStatus: undefined }
-      : p);
-    savePlatforms();
-
-    // If the card was a no-copy layout (no Looks Good button), rebuild it now that copy exists.
-    // Also handles the normal case: reset Looks Good + pill to Needs Review.
-    const existingLgtm = document.getElementById('step5-lgtm-' + pid);
-    const oldCard = document.getElementById('step5-card-' + pid);
-    if (!existingLgtm && oldCard) {
-      // No-copy card → rebuild to editable copy card
-      const updatedPlatform = platforms.find(p => p.id === pid);
-      if (updatedPlatform) {
-        const wasVisible = getComputedStyle(oldCard).display !== 'none';
-        const newCard = buildStep5Card(updatedPlatform);
-        newCard.open = oldCard.open;
-        if (!wasVisible) newCard.style.display = 'none';
-        oldCard.parentNode.replaceChild(newCard, oldCard);
-        // Repopulate photo strip for the rebuilt card (renderStep5Review doesn't re-run for inline rebuilds)
-        renderAdPostPhotos(updatedPlatform);
-      }
-    } else {
-      // Already had copy — just reset the Looks Good button + pill
-      if (existingLgtm) { existingLgtm.textContent = '✓ Looks Good'; existingLgtm.classList.remove('approved'); delete existingLgtm.dataset.saving; existingLgtm.disabled = false; }
-      const pill = document.getElementById('step5-pill-' + pid);
-      if (pill) { pill.textContent = 'Needs Review'; pill.className = 'step5-status-pill needs-review'; }
-      // Show image link if photo present
-      const imgEl = document.getElementById('qp-copy-img-' + pid);
-      if (imgEl && featuredPhotoUrl) {
-        imgEl.innerHTML = '🖼️ Image: <a href="' + escHtml(featuredPhotoUrl) + '" target="_blank" class="link-green">' + escHtml(featuredPhotoUrl) + '</a>';
-        imgEl.style.display = 'block';
-      }
+    if (typeof newText !== 'string' || !newText.trim()) throw new Error('No copy returned. Try again.');
+    if (selection !== postRewriteKey()) return;
+    if (postPlainText(platforms.find(p=>p.id===pid)?.adaptedContent) !== postPlainText(previousContent)) {
+      showToast('Your copy changed while rewriting. Your latest edits were kept.'); return;
     }
-    updateStep5UI();
-
-    // Keep paid-for copy on screen if persistence fails; Retry save does not call AI.
+    // Temporary Undo belongs to this selected Ad, never to a second content store.
+    if (previousContent) _bbRewriteUndo.set(pid, { selection, before: previousContent, after: newText });
+    applyPostCopy(pid, newText);
     window.BBAds.markDirty();
+    renderStep5Review();
     if (!await retryGeneratedDraftSave()) return;
-
-    // Use server signal to determine whether the free regen was actually applied.
-    // This ensures labels and toasts reflect real billing outcome, not a local assumption.
-    const freeRegenApplied = parsed.freeRegenApplied === true;
-    showToast(freeRegenApplied
-      ? '✅ Copy regenerated for ' + platform.name + ' (free!)'
-      : '✅ Copy regenerated for ' + platform.name);
-    // Mark free regen as used (either it was just used, or it was already gone)
-    window._bbDraftFreeRegenUsed = true;
-    document.querySelectorAll('[id^="qp-regen-"]').forEach(btn => {
-      if (btn.id !== 'qp-regen-' + pid && !btn.disabled) btn.textContent = '↻ Rewrite copy';
-    });
-    // #6 Show restore-previous button so user can revert without re-running AI
-    if (previousContent) {
-      const freshRegen = document.getElementById('qp-regen-' + pid);
-      if (freshRegen && freshRegen.parentNode) {
-        freshRegen.parentNode.querySelector('.qp-restore-btn')?.remove();
-        const restoreBtn = document.createElement('button');
-        restoreBtn.type = 'button';
-        restoreBtn.className = 'qp-restore-btn';
-        restoreBtn.textContent = '↩ Restore previous';
-        restoreBtn.style.cssText = 'background:none;border:1px solid var(--border,#333);color:var(--muted,#888);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;margin-left:6px;';
-        restoreBtn.addEventListener('click', async () => {
-          const textEl = document.getElementById('qp-copy-text-' + pid);
-          if (textEl) textEl.textContent = previousContent;
-          platforms = platforms.map(p => p.id === pid ? { ...p, adaptedContent: previousContent, _reviewStatus: undefined } : p);
-          savePlatforms();
-          window.BBAds.markDirty();
-          restoreBtn.remove();
-          if (await retryGeneratedDraftSave()) showToast('↩ Restored previous copy');
-        });
-        freshRegen.parentNode.insertBefore(restoreBtn, freshRegen.nextSibling);
-      }
-    }
+    if (selection === postRewriteKey()) showToast('Copy updated for ' + platform.name + (parsed.freeRegenApplied === true ? ' (free).' : '.'));
   } catch (err) {
-    console.error('regeneratePlatformCopy error:', err);
-    showToast(err && err._isTimeout
-      ? '⏱️ That took too long — try again'
-      : '❌ Regenerate failed — try again');
+    showToast(err.message || 'Rewrite failed. Try again.');
   } finally {
-    window._bbAdaptationBusy=false;
-    // Use fresh element refs — card may have been rebuilt
-    const freshRegenBtn = document.getElementById('qp-regen-' + pid);
-    if (freshRegenBtn) { freshRegenBtn.disabled = false; freshRegenBtn.textContent = '↻ Rewrite copy'; }
-    const freshCopyEl = document.getElementById('qp-copy-text-' + pid);
-    if (freshCopyEl) freshCopyEl.style.opacity = '1';
-    // A retry that produced nothing must fall back to the failure card, or the
-    // owner is left watching a spinner that will never resolve.
-    if (startedEmpty) {
-      _bbClearGenerating([pid]);
-      const settled = platforms.find(p => p.id === pid);
-      if (!settled || !settled.adaptedContent) renderStep5Review();
-    }
+    window._bbAdaptationBusy = false;
+    if (startedEmpty) _bbClearGenerating([pid]);
+    getStep5Platforms().forEach(p=>setPostRewriteBusy(p.id, false));
+    if (startedEmpty && selection === postRewriteKey()) renderStep5Review();
+    updateStep5UI();
   }
+}
+
+var _bbRewriteUndo = new Map();
+function postPlainText(value) { return String(value || '').replace(/<br\s*\/?\s*>/gi, '\n'); }
+function postRewriteKey() { return JSON.stringify([window.activeBizId, activeCampaignId, window.BBAds?.active?.id, window.BBAds?.selectionKey]); }
+function resetPostRewriteState() { _bbRewriteUndo.clear(); }
+function invalidatePostRewriteUndo(pid) { _bbRewriteUndo.delete(pid); document.getElementById('qp-undo-'+pid)?.setAttribute('hidden',''); }
+function postUndoAvailable(pid) {
+  const previous = _bbRewriteUndo.get(pid);
+  return previous && previous.selection === postRewriteKey() && postPlainText(previous.after) === postPlainText(platforms.find(p=>p.id===pid)?.adaptedContent);
+}
+function applyPostCopy(pid, text) {
+  platforms = platforms.map(p=>p.id===pid ? {...p, adaptedContent:text, status:'ready', _reviewStatus:'needs-review'} : p);
+  const copy = document.getElementById('qp-copy-text-'+pid); if (copy) copy.textContent = postPlainText(text);
+  savePlatforms();
+}
+async function undoPlatformCopy(pid) {
+  if (window._bbAdaptationBusy || generatedDraftSaving || !postUndoAvailable(pid)) return;
+  const previous = _bbRewriteUndo.get(pid);
+  _bbRewriteUndo.delete(pid);
+  applyPostCopy(pid, previous.before);
+  window.BBAds.markDirty();
+  renderStep5Review();
+  if (await retryGeneratedDraftSave()) showToast('Previous copy restored.');
+}
+function rewriteWithDirection(pid) {
+  return regeneratePlatformCopy(pid, document.getElementById('qp-direction-'+pid)?.value);
+}
+function setPostRewriteBusy(pid, busy) {
+  const card = document.getElementById('step5-card-'+pid);
+  card?.classList.toggle('is-rewriting',busy);
+  card?.setAttribute('aria-busy',String(busy));
+  card?.querySelectorAll('button,textarea').forEach(button=>button.disabled=busy);
+  const copy=document.getElementById('qp-copy-text-'+pid);
+  if(copy)copy.contentEditable=busy?'false':'true';
+  const status=document.getElementById('qp-rewrite-status-'+pid);if(status)status.textContent=busy?'Rewriting…':'';
 }
 
 function saveStepCat(pid, val) {
@@ -1412,11 +1368,14 @@ function renderStep5Review() {
   if (_step5PlatIdx >= enabled.length) _step5PlatIdx = 0;
   const openId = container.querySelector('details.step5-review-card[open]')?.id;
   const firstRender = !container.children.length;
+  const directions = new Map([...container.querySelectorAll('.s5-rewrite-details')].map(el=>[el.querySelector('textarea')?.id,{open:el.open,value:el.querySelector('textarea')?.value}]));
   container.innerHTML = '';
   enabled.forEach(p => {
     const card = buildStep5Card(p);
     container.appendChild(card);
     if (card.id === openId) card.open = true;
+    const input=card.querySelector('.s5-rewrite-details textarea'),prior=directions.get(input?.id);
+    if(prior){input.value=prior.value;input.closest('details').open=prior.open;}
   });
   if (firstRender) {
     const next = enabled.find(p => p.adaptedContent && p._reviewStatus !== 'approved' && p._reviewStatus !== 'skipped');
@@ -1424,6 +1383,7 @@ function renderStep5Review() {
   }
   // Use the same photo selection as the prepared publishing packet.
   enabled.filter(p => p.adaptedContent).forEach(renderAdPostPhotos);
+  if(window._bbAdaptationBusy) enabled.forEach(p=>setPostRewriteBusy(p.id,true));
   updateStep5UI();
 }
 
@@ -1432,6 +1392,7 @@ function buildStep5Card(p) {
   card.name = 'platform-review';
   card.addEventListener('toggle', () => {
     if (card.open) _step5PlatIdx = getStep5Platforms().findIndex(item => item.id === p.id);
+    syncPostDestinationChips();
   });
   card.className = 'step5-review-card';
   card.id = 'step5-card-' + p.id;
@@ -1468,29 +1429,31 @@ function buildStep5Card(p) {
   // ── Row B: col-2-1 — copy left, photos right ──
   if (hasContent) {
     const safeText = escHtml(p.adaptedContent.replace(/<br\/?>/gi, '\n'));
-    inner += '<div class="col-2-1 s5-card-body">'
-      // Left — copy
+    inner += '<div class="row s5-card-body"><div class="col-1-2">'
       + '<div class="col-left">'
-      +   '<div class="step5-copy-actions">'
-      +     '<button type="button" class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="regeneratePlatformCopy(\'' + escHtml(p.id) + '\')">' + '↻ Rewrite copy' + '</button>'
-      +     (!isApi ? '<button type="button" class="step5-action-btn" onclick="' + (p.id === 'facebook' && p.type === 'manual' ? 'copyAndOpen' : 'copyQpText') + '(\'' + escHtml(p.id) + '\')">' + (p.id === 'facebook' && p.type === 'manual' ? 'Copy & open Facebook' : '📋 Copy text') + '</button>' : '')
-      +   '</div>'
-      +   '<div id="qp-copy-text-' + p.id + '" class="step5-copy-text" contenteditable="true">' + safeText + '</div>'
-            + '</div>'
-      // Right — photos (shown for all platforms; tappable only for copy-paste)
-      + '<div class="col-right">'
-      +   '<div id="qp-copy-img-' + p.id + '" class="qp-copy-img-note"></div>'
       +   '<div id="qp-photos-' + p.id + '" class="qp-photos-section">'
-      +     '<div class="qp-photos-label">📷 Photos for this post</div>'
-      +     '<details class="s5-photo-help"><summary>Photo details</summary><div class="s5-photo-note">' + photoNote + '</div></details>'
-      +     (!isApi ? '<div id="qp-share-' + p.id + '" class="qp-photo-share"></div>' : '')
+      +     '<div class="qp-photos-label">Photo for this post</div>'
       +     '<div id="qp-photo-strip-' + p.id + '" class="qp-photo-strip"></div>'
+      +     '<button type="button" class="step5-action-btn w-100" onclick="openCampaignPhotos()">Change photo</button>'
+      +     '<details class="s5-photo-help"><summary>Photo options</summary><div class="s5-photo-note">' + photoNote + '</div>'
+      +     (!isApi ? '<div id="qp-share-' + p.id + '" class="qp-photo-share"></div>' : '') + '</details>'
       +   '</div>'
-      + '</div>'
-      + '</div>'
-      +   '<button type="button" class="step5-looks-good-btn' + (p._reviewStatus === 'approved' ? ' approved' : '') + '" id="step5-lgtm-' + p.id + '" onclick="approvePlatformCopy(\'' + escHtml(p.id) + '\')">'
-      +     (p._reviewStatus === 'approved' ? '✓ Approved' : '✓ Looks Good')
-      +   '</button>';
+      + '</div><div class="col-right">'
+      +   '<label id="qp-copy-label-' + p.id + '" class="helper-sm">Your ' + escHtml(p.name) + ' post</label>'
+      +   '<div id="qp-copy-text-' + p.id + '" class="step5-copy-text" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="qp-copy-label-' + p.id + '">' + safeText + '</div>'
+      +   '<div class="flex-row step5-copy-actions" aria-label="Rewrite options">'
+      +     ['Shorter','More local','More upbeat'].map(label => '<button type="button" class="step5-action-btn" onclick="regeneratePlatformCopy(\'' + p.id + '\',\'' + label + '\')">' + label + '</button>').join('')
+      +     '<button type="button" id="qp-undo-' + p.id + '" class="step5-action-btn qp-restore-btn" onclick="undoPlatformCopy(\'' + p.id + '\')"' + (postUndoAvailable(p.id) ? '' : ' hidden') + '>Undo</button>'
+      +   '</div><p class="helper-sm" id="qp-rewrite-status-' + p.id + '" role="status" aria-live="polite"></p>'
+      +   '<details class="s5-rewrite-details"><summary>Give a direction</summary>'
+      +     '<label for="qp-direction-' + p.id + '">What should change?</label>'
+      +     '<textarea id="qp-direction-' + p.id + '" maxlength="1000" rows="2" placeholder="Keep the price; focus on weekend pickup."></textarea>'
+      +     '<button type="button" class="step5-action-btn" id="qp-regen-' + p.id + '" onclick="rewriteWithDirection(\'' + p.id + '\')">Rewrite</button>'
+      +   '</details>'
+      +   (!isApi ? '<button type="button" class="step5-action-btn" onclick="copyQpText(\'' + p.id + '\')">Copy text</button>' : '')
+      + '</div></div></div>'
+      + '<button type="button" class="step5-looks-good-btn' + (p._reviewStatus === 'approved' ? ' approved' : '') + '" id="step5-lgtm-' + p.id + '" onclick="approvePlatformCopy(\'' + p.id + '\')">'
+      +   (p._reviewStatus === 'approved' ? '✓ Approved' : '✓ Looks good — next') + '</button>';
   } else if (isWriting) {
     // Still writing — no retry/exclude yet, those would only invite the owner to
     // interrupt a generation that is about to succeed.
@@ -1532,14 +1495,27 @@ function buildStep5Card(p) {
   return card;
 }
 
+function syncPostDestinationChips() {
+  const host=document.getElementById('step5-destinations');if(!host)return;
+  const enabled=getStep5Platforms();
+  host.replaceChildren(...enabled.map((p,index)=>{
+    const chip=document.createElement('button');chip.type='button';chip.className='step5-action-btn';
+    chip.textContent=(p._reviewStatus==='approved'?'✓ ':'')+p.name;
+    chip.setAttribute('aria-controls','step5-card-'+p.id);
+    chip.setAttribute('aria-pressed',String(!!document.getElementById('step5-card-'+p.id)?.open));
+    chip.addEventListener('click',()=>step5GoTo(index));return chip;
+  }));
+}
+
 function updateStep5UI() {
+  syncPostDestinationChips();
   const enabled = getStep5Platforms();
   enabled.filter(p => p.adaptedContent).forEach(p => {
     const approved = p._reviewStatus === 'approved';
     const button = document.getElementById('step5-lgtm-' + p.id);
     if (button && button.dataset.saving !== '1') {
       button.classList.toggle('approved', approved);
-      button.textContent = approved ? '✓ Approved' : '✓ Looks Good';
+      button.textContent = approved ? '✓ Approved' : '✓ Looks good — next';
     }
     const pill = document.getElementById('step5-pill-' + p.id);
     if (pill) { pill.className = 'step5-status-pill ' + (approved ? 'approved' : 'needs-review'); pill.textContent = approved ? '✓ Approved' : 'Needs Review'; }
@@ -1556,7 +1532,7 @@ function updateStep5UI() {
   const wasHidden   = getComputedStyle(finalBtn).display === 'none';
   const wasDisabled = finalBtn.disabled;
 
-  if (!anyDone) {
+  if (!allDone || window._bbAdaptationBusy || window._bbDraftSavePending) {
     // Nothing approved yet — keep button hidden
     finalBtn.style.display = 'none';
     return;
@@ -1854,7 +1830,7 @@ async function retryGeneratedDraftSave() {
   if (generatedDraftSaving) return false;
   generatedDraftSaving = true;
   window._bbDraftSavePending = true;
-  const bizId = window.activeBizId;
+  const selection = postRewriteKey();
   const errorBox = document.getElementById('draft-save-error');
   const retry = document.getElementById('draft-save-retry');
   const review = document.getElementById('review-listings-btn');
@@ -1863,9 +1839,10 @@ async function retryGeneratedDraftSave() {
   try {
     if (!window._afterAdaptation) throw new Error('Saving is not ready yet');
     if (window.BBAds?.active) await window.BBAds.save();
+    if (selection !== postRewriteKey()) return false;
     const draftId = await window._afterAdaptation(platforms);
     if (!draftId) throw new Error('Draft was not saved');
-    if (window.activeBizId !== bizId) return false;
+    if (selection !== postRewriteKey()) return false;
     window._bbDraftSavePending = false;
     if (errorBox) errorBox.hidden = true;
     const output = document.getElementById('review-output-btn');
@@ -1874,7 +1851,7 @@ async function retryGeneratedDraftSave() {
     return true;
   } catch(e) {
     console.warn('Draft save failed:', e);
-    if (window.activeBizId === bizId) {
+    if (selection === postRewriteKey()) {
       if (errorBox) errorBox.hidden = false;
       showToast('Generated copy was not saved. Use Retry save; you do not need to generate it again.');
     }

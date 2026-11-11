@@ -26,7 +26,7 @@
     box.innerHTML='<p id="ad-message" role="status" aria-live="polite"></p><button type="button" id="ad-save-retry" data-action="save" hidden>Retry save</button><div id="ad-current" hidden><div id="ad-location-fields" hidden><label>ZIP code (optional)<input id="ad-zip" type="text" inputmode="numeric" maxlength="10" placeholder="ZIP code"></label><label>Area / pickup location (optional)<input id="ad-area" type="text" maxlength="300" placeholder="City, neighborhood, or pickup area"></label></div><label>Call to action (optional)<input id="ad-cta" type="text" maxlength="12000"></label><label>Extra details (optional)<textarea id="ad-context" rows="3"></textarea></label><div id="ad-prepared"></div></div>';
     const anchor=el('ad-form-anchor');
     if(anchor)anchor.parentNode.appendChild(box);else host.prepend(box);
-    const style=document.createElement('style');style.textContent='#ad-workspace{padding:18px;margin-bottom:16px}#ad-workspace button{min-height:44px;margin:4px;padding:8px 12px}#ad-workspace label{display:block;margin:12px 0}#ad-workspace input,#ad-workspace textarea,#ad-workspace select{display:block;width:100%;box-sizing:border-box}.ad-copy{width:100%;min-height:100px}';document.head.appendChild(style);
+
     const handleAction=e=>{const b=e.target.closest('[data-action]');if(b)task(()=>act(b.dataset.action,b.dataset.id));};
     box.addEventListener('click',handleAction);
     const status=el('workspace-save-state');
@@ -53,6 +53,8 @@
     mount();if(!el('ad-workspace'))return Promise.resolve();
     clearTimeout(autoSaveTimer);el('ad-save-retry').hidden=true;el('ad-save-retry').textContent='Retry save';
     if(el('step5-existing-blast'))el('step5-existing-blast').hidden=true;
+    window.resetPostRewriteState?.();
+    window._bbDraftSavePending=false;
     const seq=++epoch;campaign=activeCampaignId;business=window.activeBizId;ad=null;dirty=false;pending=null;loadError=null;conflict=null;window._bbActiveAd=null;
     const host=el('campaign-content');host.inert=true;
     el('ad-current').hidden=true;tell('Loading saved details…');
@@ -283,6 +285,7 @@
     const copy=e.target.closest('[contenteditable][id^="qp-copy-text-"]');
     if(copy){
       const id=copy.id.slice('qp-copy-text-'.length);
+      window.invalidatePostRewriteUndo?.(id);
       platforms=platforms.map(p=>p.id===id?{...p,adaptedContent:(copy.innerText||copy.textContent||'').replace(/\n/g,'<br/>'),_reviewStatus:'needs-review'}:p);
       markDirty();
       if(typeof updateStep5UI==='function')updateStep5UI();
@@ -302,5 +305,5 @@
     if(!dirty&&!saving&&!pendingPhotoCount&&!window._bbDraftSavePending&&!window._bbAdaptationBusy&&!window.BBLifecycle?.hasUnsavedChanges?.())return;
     flushSave();e.preventDefault();e.returnValue='';
   });
-  window.BBAds={continueCurrent,choosePhoto,markDirty,open,ready,refreshImages:images,save,creative,prepareCurrent:()=>task(()=>prepare('this_run')),get active(){return ad;},get dirty(){return dirty;},get busy(){return busy||!!saving||pendingPhotoCount>0;},get operationBusy(){return busy||pendingPhotoCount>0;},api};
+  window.BBAds={continueCurrent,choosePhoto,markDirty,open,ready,refreshImages:images,save,creative,prepareCurrent:()=>task(()=>prepare('this_run')),get selectionKey(){return JSON.stringify([business,campaign,ad?.id,epoch]);},get active(){return ad;},get dirty(){return dirty;},get busy(){return busy||!!saving||pendingPhotoCount>0;},get operationBusy(){return busy||pendingPhotoCount>0;},api};
 })();
