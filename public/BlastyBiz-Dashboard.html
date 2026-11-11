@@ -628,6 +628,9 @@ onAuthStateChanged(auth, async (user) => {
     showToast(`Switched to ${biz?.name || bizId}`);
   };
 
+  document.getElementById('dashboard-refresh').onclick=()=>loadBusinessContextFirestore(window.activeBizId);
+  window.addEventListener('pageshow',event=>{if(event.persisted&&window.activeBizId)loadBusinessContextFirestore(window.activeBizId);});
+
   window.addBusiness = function() {
     window.location.href = 'BlastyBiz-Onboard2.html';
   };
@@ -681,8 +684,6 @@ onAuthStateChanged(auth, async (user) => {
     }
   };
 
-  document.getElementById('dashboard-refresh').onclick=()=>loadBusinessContextFirestore(window.activeBizId);
-  window.addEventListener('pageshow',event=>{if(event.persisted&&window.activeBizId)loadBusinessContextFirestore(window.activeBizId);});
   async function loadBusinessContextFirestore(bizId) {
     if (!bizId || !currentUser) return;
     const seq=++contextRequest,uid=currentUser.uid;

@@ -4982,10 +4982,10 @@ body.publishing-page .bb-reminder { display: block; }
 .dashboard-page { visibility: hidden; }
 .dashboard-decoration { width:100%; height:100%; object-fit:cover; border-radius:12px; display:block; }
 #dashboard-new-campaign { display:block; box-sizing:border-box; text-align:center; margin-bottom:12px; }
-.bb-return-post { display:flex; flex-wrap:nowrap; align-items:flex-start; gap:14px; padding:14px 0; border-bottom:1px solid var(--border); }
-.bb-return-post > img { order:-1; width:96px; height:96px; object-fit:cover; border-radius:8px; }
-.bb-return-copy { flex:1 1 0; min-width:0; text-decoration:none; color:inherit; }
-.bb-return-copy h3 { margin:0 0 8px; overflow-wrap:anywhere; }
+.bb-return-post { padding:14px 0; border-bottom:1px solid var(--border); }
+.bb-return-photo { width:96px; height:96px; max-width:100%; object-fit:cover; border-radius:8px; }
+.bb-return-copy { text-decoration:none; color:inherit; }
+.bb-return-post h3 { margin:0 0 8px; overflow-wrap:anywhere; }
 .bb-return-copy p { margin:6px 0 12px; overflow-wrap:anywhere; }
 .bb-return-copy .flex-row { flex-wrap:wrap; }
 .bb-return-excerpt { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; }
@@ -4993,4 +4993,4 @@ body.publishing-page .bb-reminder { display: block; }
 #dashboard-return h2 { margin-top:0; }
 #dashboard-return .bb-life { padding:0; }
 #dashboard-return .bb-schedule-card { margin-bottom:0; }
-@media (max-width:768px) { .dashboard-page .dash-img-col { display:none; } .bb-return-post > img { width:72px; height:72px; } }
+@media (max-width:768px) { .dashboard-page .dash-img-col { display:none; } }

@@ -72,21 +72,27 @@ async function reusePost(row,ctx) {
   })();
   return pending.promise;
 }
+function postCard({title,image,alt}) {
+  const card=document.createElement('article');card.className='bb-return-post row';
+  const heading=document.createElement('div');heading.className='flex-row bb-list-heading';
+  const name=document.createElement('h3');name.textContent=title;heading.append(name);card.append(heading);
+  const columns=document.createElement('div');columns.className=image?'col-1-2':'col-full';
+  if(image){const media=document.createElement('div');media.className='col-left';const img=document.createElement('img');img.className='bb-return-photo';img.src=image;img.alt=alt||'Saved post photo';img.loading='lazy';media.append(img);columns.append(media);}
+  const content=document.createElement('div');content.className='col-right bb-return-copy';columns.append(content);card.append(columns);
+  return {card,heading,content};
+}
 function renderHistory(host,rows,ctx) {
   host.replaceChildren();
   if(!rows.length){host.textContent='No recent posts yet.';return;}
   const link=(text,href)=>{const a=document.createElement('a');a.className='btn';a.textContent=text;a.href=href;return a;};
   for(const row of rows){
-    const card=document.createElement('article');card.className='bb-return-post';
-    if(row.image){const image=document.createElement('img');image.src=row.image;image.alt='Photo from '+row.listing;image.loading='lazy';card.append(image);}
-    const content=document.createElement('div');content.className='bb-return-copy';
-    const title=document.createElement('h3');title.textContent=row.listing;content.append(title);
+    const {card,heading,content}=postCard({title:row.listing,image:row.image,alt:'Photo from '+row.listing});
     const summary=document.createElement('p');summary.textContent=row.summary;content.append(summary);
     const time=document.createElement('p');time.className='muted';time.textContent=row.time?new Date(row.time).toLocaleString():'Date unavailable';content.append(time);
     const actions=document.createElement('div');actions.className='flex-row';
     if(row.draftId){
       actions.append(link('Results','BlastyBiz-Publishing-Status.html?'+new URLSearchParams({bizId:ctx.businessId,draftId:row.draftId})));
-      const more=BBMore.create('Post options');more.body.append(link('View saved post','BlastyBiz-Listing-Preview.html?'+new URLSearchParams({bizId:ctx.businessId,draftId:row.draftId})));card.append(more.menu);
+      const more=BBMore.create('Post options');more.body.append(link('View saved post','BlastyBiz-Listing-Preview.html?'+new URLSearchParams({bizId:ctx.businessId,draftId:row.draftId})));heading.append(more.menu);
     }
     if(row.reusable&&row.campaignId&&row.adId){
       const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Use again';
@@ -98,10 +104,10 @@ function renderHistory(host,rows,ctx) {
       };
       actions.append(button);content.append(message);
     }
-    content.append(actions);card.prepend(content);host.append(card);
+    content.append(actions);host.append(card);
   }
 }
-window.BBLifecycleStatus={historyRows,renderHistory};
+window.BBLifecycleStatus={historyRows,renderHistory,postCard};
 // The workspace uses the same delivery-state definitions, without installing status-page UI.
 if(!document.getElementById('progress-count'))return;
 
@@ -255,7 +261,7 @@ window.showToast=showToast;window.showEmptyState=showEmptyState;window.focusFutu
    });
    void completion();
  };
- window.BBLifecycleStatus={historyRows,renderHistory,initialize(ctx,user){context=ctx;userInfo=user;BBLifecycle.configure(ctx);const host=document.getElementById('status-more-options'),label=document.createElement('label');
+ window.BBLifecycleStatus={historyRows,renderHistory,postCard,initialize(ctx,user){context=ctx;userInfo=user;BBLifecycle.configure(ctx);const host=document.getElementById('status-more-options'),label=document.createElement('label');
  document.querySelectorAll('[data-status-workspace]').forEach(link=>{link.href='BlastyBiz.html?'+new URLSearchParams({bizId:ctx.businessId,tab:link.dataset.statusWorkspace});});label.className='bb-reminder';const input=document.createElement('input');input.type='checkbox';input.checked=user.manualRemindersEnabled!==false;label.append(input,document.createTextNode('Remind me to finish manual posts (at most one email every 24 hours)'));host.append(label);input.onchange=async()=>{input.disabled=true;try{await BBLifecycle.api('reminders',{enabled:input.checked});window.BBBlasty?.fire('reminder.manual_explain');}catch(e){input.checked=!input.checked;window.showToast(e.message);}finally{input.disabled=false;}};}};
 })();
 
