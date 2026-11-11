@@ -131,5 +131,12 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
  assert.equal((await categoryCall()).code,500);assert.equal(requests.length,before+1,'failed briefing prevents matching call');
  assert.equal(logs.length,loggedBefore+1,'provider failure logged once');assert.equal(logs.at(-1)[4].failureType,'provider_failure');
  providerFailure=false;emptyReply=true;assert.equal((await categoryCall()).code,500,'empty provider output cannot succeed');
+ const liveCategory=require('./verify-live-category.cjs'),release={target:'blastybiz',action:'deploy-providers',functions:['suggestCategory'],commit:'a'.repeat(40),retireLegacy:false,repairBackend:false};
+ const engineEnv={GITHUB_ACTIONS:'true',GITHUB_REF:'refs/heads/main',GOOGLE_APPLICATION_CREDENTIALS:'fixture'};
+ liveCategory.validate(release,engineEnv,release.commit);
+ assert(!liveCategory.selected({...release,functions:['manageAd']}));assert(!liveCategory.selected({...release,action:'deploy-hosting'}));
+ for(const invalid of [{...release,target:'other'},{...release,retireLegacy:true},{...release,repairBackend:true},{...release,commit:'b'.repeat(40)}])assert.throws(()=>liveCategory.validate(invalid,engineEnv,release.commit));
+ assert.throws(()=>liveCategory.validate(release,{...engineEnv,GITHUB_REF:'refs/heads/preview'},release.commit));
+ assert.throws(()=>liveCategory.validate(release,{...engineEnv,GOOGLE_APPLICATION_CREDENTIALS:''},release.commit));
  console.log('PASS campaign memory: default scope, campaign/business/owner isolation, empty saves, failures/retry, ordered autosaves, explicit sharing, exact Firestore writes and AI prompt boundaries.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
