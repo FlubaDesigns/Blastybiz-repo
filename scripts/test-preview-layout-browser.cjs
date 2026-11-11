@@ -10,6 +10,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
   await page.addStyleTag({content:fs.readFileSync('public/global-style.css','utf8')+'\nbody{visibility:visible!important}'});
   await page.addScriptTag({content:fs.readFileSync('public/escape-utils.js','utf8')});
   await page.addScriptTag({content:fs.readFileSync('public/photo-handoff.js','utf8')});
+  await page.addScriptTag({content:fs.readFileSync('public/post-preview.js','utf8')});
   await page.evaluate(()=>{
    const names={facebook:'Facebook Page',instagram:'Instagram',craigslist:'Craigslist',fbmarket:'Facebook Marketplace',nextdoor:'Nextdoor',yelp:'Yelp'};
    window.BBPlatforms={records:Object.entries(names).map(([id,name])=>({id,name,icon:'•',deliveryMode:'manual',doc:{tone:''}})),labels:{manual:'You post it'},PLATFORM_CAPABILITY_MAP:Object.fromEntries(Object.keys(names).map(id=>[id,{capabilityLevel:['facebook','instagram'].includes(id)?'auto':'manual_assisted',manualInstructions:'Open the platform and paste your text.'}]))};

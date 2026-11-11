@@ -35,7 +35,7 @@ async function run({chromium}){
   await page.route('**/BlastyBiz-Choose-Plan*',r=>r.abort());
   const savedResponse=page.waitForResponse(r=>r.url().endsWith('/createBusiness')&&r.request().method()==='POST');await page.locator('#cb-submit').click();const saved=await savedResponse;assert.equal(saved.status(),200);const {bizId}=await saved.json();assert(bizId);
   const business=user.collection('businesses').doc(bizId),biz=(await business.get()).data();assert.equal(biz.businessName,'Section two acceptance');
-  const campaigns=await business.collection('campaigns').get();assert.equal(campaigns.size,1);const campaign=campaigns.docs[0];assert.equal(campaign.data().story,'Keep this exact draft after reloading.');
+  const campaigns=await business.collection('campaigns').get();assert.equal(campaigns.size,1);const campaign=campaigns.docs[0];assert.equal(campaign.data().story,'About this campaign: Keep this exact draft after reloading.');
   const ads=await campaign.ref.collection('ads').get();assert.equal(ads.size,1);assert.equal(ads.docs[0].data().status,'draft');assert.equal(ads.docs[0].data().name,'First saved post');assert.equal((await business.collection('publishJobs').get()).size,0);
   await page.goto(origin+'/BlastyBiz-CreateBiz?bizId='+encodeURIComponent(bizId));await page.waitForFunction(()=>window._cbReady===true);assert.equal(await page.locator('#f-bizName').inputValue(),'Section two acceptance');
   const usage=await db.collection('aiUsageLogs').where('uid','==',uid).get();assert.equal(usage.size,0,'no paid AI call');
