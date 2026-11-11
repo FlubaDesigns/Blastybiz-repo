@@ -54,73 +54,38 @@
 <header class="hero">
   <div class="hero-glow"></div>
   <div class="row">
-  <div class="layout__split-2-1">
+  <div class="layout__split">
     <div class="hero-text">
       <h1>
         Fill It Once.
         <span>Blast Everywhere.</span>
       </h1>
-      <p class="hero-kw-sub" style="font-size:16px;color:var(--muted,#aaa);margin-top:-8px;margin-bottom:4px;font-weight:400;">AI-Written Social Media &amp; Business Listing Posts for Local Businesses</p>
-      <p><strong>Stop spending hours posting your business to <span class="text--green">every major platform.</span></strong></p>
-      <p><!-- public-copy:home-intro:start -->Write it once — AI adapts it for every surface. Auto-post to connected Google Business Profile, Facebook Page, and Instagram accounts. Copy and paste your prepared text into the other 12 supported destinations.<!-- public-copy:home-intro:end --></p>
+      <p>One photo. A post for each platform.</p>
       <div class="hero-actions center">
-        <a class="btn btn__primary" href="BlastyBiz-Start.html">🚀 Start Posting Free</a>
-        <a class="btn btn__ghost" href="#how">See how it works ↓</a>
+        <a class="btn btn__primary" href="BlastyBiz-Login.html?start=forms">Create my post</a>
       </div>
-      <small class="center" style="display:block;margin:10px 12px 0">No credit card required &nbsp;·&nbsp; Setup in 2 minutes &nbsp;·&nbsp; Cancel anytime</small>
-      <small class="center muted" style="display:block;margin:4px 12px 0">BlastyBiz is an online software platform — no physical location.</small>
-      <div class="hero-stats reveal">
-        <div class="hero-stat">
-          <strong class="hero-stat-big">15</strong>
-          <p class="hero-stat-lbl">Platforms</p>
-        </div>
-        <div class="hero-stat">
-          <strong class="hero-stat-big">2<span class="hero-stat-unit">min</span></strong>
-          <p class="hero-stat-lbl">To Get Started</p>
-        </div>
-        <div class="hero-stat">
-          <strong class="hero-stat-big">$0</strong>
-          <p class="hero-stat-lbl">To Start</p>
-        </div>
-      </div>
+      <p class="text-sm muted">Start free · No credit card</p>
     </div>
-    <div class="hero-img-col" id="hero-publishing-summary">
-      <div class="row">
-        <div class="card">
-          <h2 class="card-title"><!-- public-copy:auto-count:start -->3 auto-post platforms<!-- public-copy:auto-count:end --></h2>
-          <p><!-- public-copy:auto-names:start -->Google Business Profile, Facebook Page, and Instagram.<!-- public-copy:auto-names:end --></p>
-          <p class="text-sm muted">Review your post first. Automatic posting requires eligible connected accounts and provider permissions.</p>
-        </div>
-        <div class="card">
-          <h2 class="card-title"><!-- public-copy:manual-count:start -->12 manual destinations<!-- public-copy:manual-count:end --></h2>
-          <p>AI prepares your copy. You copy, paste, and publish it yourself.</p>
-        </div>
-      </div>
+    <div class="home-post-demo" id="home-post-demo">
+      <p class="text-sm muted">Example post · Fictional business</p>
+      <div class="row"><div class="layout__split-3" id="home-demo-tabs" aria-label="Example platform">
+        <button type="button" class="btn btn__ghost" data-demo-platform="facebook" aria-pressed="true">Facebook</button>
+        <button type="button" class="btn btn__ghost" data-demo-platform="instagram" aria-pressed="false">Instagram</button>
+        <button type="button" class="btn btn__ghost" data-demo-platform="google" aria-pressed="false">Google</button>
+      </div></div>
+      <div id="home-demo-post" aria-live="polite"></div>
+      <noscript><img src="img/storefront.jpg" alt="A shop owner opening a plant-filled storefront" width="612" height="408"/><p>Come in and find a little green for your home. — Example post</p></noscript>
+      <p class="text-sm muted"><!-- public-copy:counts:start -->3 auto-post platforms when connected · 12 copy-and-paste destinations<!-- public-copy:counts:end --></p>
+      <details class="home-delivery-detail"><summary>How publishing works</summary><p><!-- public-copy:home-intro:start -->Write it once — AI adapts it for every surface. Auto-post to connected Google Business Profile, Facebook Page, and Instagram accounts. Copy and paste your prepared text into the other 12 supported destinations.<!-- public-copy:home-intro:end --></p><p>Automatic posting requires eligible connected accounts and provider permissions. Review before publishing.</p></details>
     </div>
   </div>
   </div>
 </header>
 
-<section class="reveal">
-  <div class="row">
-    <h2>You Don't Have <span>Time</span> For This</h2>
-    <h3>You're running a business.</h3>
-    <p>You don't have time to log into every major platform, rewrite your listing a different way for each one, and do it all over again next week.</p>
-  </div>
-  <div class="row">
-    <ul class="problem__list problem__list--grid">
-      <li><span class="problem__list-icon">⏰</span><div><strong class="text--lime">Hours wasted every week</strong><br/>Posting to Facebook, Google, Craigslist, Nextdoor — each one different, each one manual.</div></li>
-      <li><span class="problem__list-icon">💸</span><div><strong class="text--lime">Hiring help is expensive</strong><br/>A social media manager costs $300–$800/month. That money should stay in your business.</div></li>
-      <li><span class="problem__list-icon">😤</span><div><strong class="text--lime">Every platform is different</strong><br/>Instagram wants hashtags. Craigslist wants plain text. Google wants keywords. It never ends.</div></li>
-      <li><span class="problem__list-icon">📉</span><div><strong class="text--lime">Not posting loses customers</strong><br/>Your competitor is showing up everywhere. You're not. That's customers walking past you.</div></li>
-    </ul>
-  </div>
-</section>
-
 <section class="how reveal">
   <div class="row">
-    <h2 id="how" style="scroll-margin-top:65px;">Three Steps. <span>Done</span>.</h2>
-    <p>No learning curve. No tech skills needed. If you can fill out a form, you can use BlastyBiz.</p>
+    <h2 id="how" style="scroll-margin-top:65px;">Your photo. <span>Your post.</span></h2>
+
   </div>
   <div class="row">
     <div class="layout__split-3">
@@ -128,14 +93,14 @@
         <div class="how__step-num">1</div>
         <div class="how__step-content">
           <strong>Tell us about your business</strong>
-          <p>Fill out one simple form. Your name, what you offer, your price, your hours. Takes about 2 minutes. Add photos straight from your phone.</p>
+          <p>Import your website or add the basics. Keep the details you want.</p>
         </div>
       </div>
       <div class="how__block">
         <div class="how__step-num">2</div>
         <div class="how__step-content">
           <strong>AI adapts it for every platform</strong>
-          <p>Our AI knows exactly how each platform works — the right tone, the right length, the right keywords. It rewrites your listing perfectly for each one automatically.</p>
+          <p>Add a photo and what you want to promote. Review the wording for each destination.</p>
         </div>
       </div>
       <div class="how__block">
@@ -303,8 +268,8 @@
       <div class="cta__text">
         <h2>Stop Hiding.<br/><span>Get Loud.</span></h2>
         <p>Your next customer is searching right now.<br/>Make sure they find you.</p>
-        <a class="btn btn__primary" href="BlastyBiz-Start.html">🚀 Start Posting Free</a>
-        <p class="hero-note">No credit card · 2 minute setup · Cancel anytime</p>
+        <a class="btn btn__primary" href="BlastyBiz-Login.html?start=forms">Create my post</a>
+        <p class="hero-note">Start free · No credit card</p>
       </div>
       <div class="cta__img-wrap">
         <img src="images/cta-worker.png" alt="Local business owner using BlastyBiz on their phone" class="cta__img" width="896" height="1280" />
@@ -357,6 +322,10 @@ onAuthStateChanged(auth, user => { document.body.classList.toggle('logged-in',!!
 window.doSignOut = () => window._bbSignOut(auth, signOut);
 
 </script>
+<script src="escape-utils.js?v=1"></script>
+<script src="post-preview.js?v=20261111-section2"></script>
+<script src="platforms-authority.js?v=20261110-reliability"></script>
+<script src="home-demo.js?v=20261111-section2"></script>
 <script src="header-loader.js?v=1"></script>
 <script src="session.js?v=20261004-commercial"></script>
 <script src="pricing.js?v=20261011-production"></script>

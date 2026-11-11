@@ -44,6 +44,7 @@
             <div class="auth-card">
               <h1 class="sr-only">Sign In or Create a BlastyBiz Account</h1>
 
+              <button type="button" class="btn btn__ghost login-help" id="login-help" aria-pressed="false">Help me fill this in</button>
               <!-- TABS -->
               <div class="auth-tabs">
                 <button type="button" class="auth-tab active" id="tab-signin" onclick="switchTab('signin')">Sign In</button>
@@ -437,6 +438,27 @@ function handleGoogle() {}
 function handleReset() {}
 function handleSetPassword() {}
 
+// Entry intent is synchronous; guidance and auth readiness cannot choose a tab.
+const loginIntent = new URLSearchParams(location.search);
+const loginStart = ['guided','forms'].includes(loginIntent.get('start')) ? loginIntent.get('start') : null;
+window._loginGuideEnabled = loginIntent.get('intent') !== 'signin' && loginStart === 'guided';
+try {
+  if (loginIntent.get('intent') === 'signin') localStorage.removeItem('bb_start_choice');
+  else if (loginStart || loginIntent.get('intent') === 'create') localStorage.setItem('bb_start_choice', loginStart || 'forms');
+  else localStorage.removeItem('bb_start_choice');
+} catch (_) {}
+switchTab(loginIntent.get('intent') !== 'signin' && (loginStart || loginIntent.get('intent') === 'create') ? 'signup' : 'signin');
+document.getElementById('login-help').setAttribute('aria-pressed', String(window._loginGuideEnabled));
+document.getElementById('login-help').addEventListener('click', function() {
+  window._loginGuideEnabled = !window._loginGuideEnabled;
+  this.setAttribute('aria-pressed', String(window._loginGuideEnabled));
+  this.textContent = window._loginGuideEnabled ? 'Hide help' : 'Help me fill this in';
+  try { localStorage.setItem('bb_start_choice', window._loginGuideEnabled ? 'guided' : 'forms'); } catch (_) {}
+  document.querySelectorAll('.bb-field-blur,.bb-field-done,.pb-spotlight').forEach(el=>el.classList.remove('bb-field-blur','bb-field-done','pb-spotlight'));
+  document.getElementById('login-blasty-float')?.classList.remove('visible');
+  if (window._loginGuideEnabled) document.querySelector('.auth-form.active input,.auth-form.active select')?.focus();
+});
+
 // ── Login Blasty Guide ─────────────────────────────────────────────────────
 (function () {
   'use strict';
@@ -534,6 +556,7 @@ function handleSetPassword() {}
   var _fieldKeys = new Map();  // fieldEl → step key, for auto-advance lookup
 
   function showGuide(key, anchorEl) {
+    if (!window._loginGuideEnabled) return;
     var bubble = document.getElementById('login-bubble');
     if (!bubble) return;
     if(anchorEl?.hidden)return;
@@ -623,6 +646,7 @@ function handleSetPassword() {}
 
   // Blur all fields in the active set
   function blurAllFields() {
+    if (!window._loginGuideEnabled) return;
     _fieldEls.forEach(function(f) { f.classList.add('bb-field-blur'); });
   }
 
@@ -702,7 +726,7 @@ function handleSetPassword() {}
 
     function addTabPrompt()    { [tabSI, tabSU].forEach(function(b){ if(b) b.classList.add('bb-tab-prompt'); }); }
     function removeTabPrompt() { [tabSI, tabSU].forEach(function(b){ if(b) b.classList.remove('bb-tab-prompt'); }); }
-    addTabPrompt(); // pulse both buttons until the user picks
+    // The explicit entry intent already selected a usable form.
 
     // Tab click handlers fire AFTER switchTab; stop pulsing, reveal form, advance Blasty
     function unpick() {
@@ -761,49 +785,14 @@ function handleSetPassword() {}
       }, 150);
     }, true);
 
-    // Once auth card is ready: check if this user has been through the guide before.
-    // If yes (localStorage flag), skip the gate and show Sign In form directly.
-    // If no, put the card in unpicked state and let Blasty prompt the choice.
-    var wrap = document.getElementById('auth-card-wrap');
-    if (wrap) {
-      new MutationObserver(function(_, obs) {
-        if (!wrap.classList.contains('ready')) return;
-        obs.disconnect();
-        var intent = new URLSearchParams(window.location.search);
-        var startChoice = ['guided', 'forms'].includes(intent.get('start')) ? intent.get('start') : null;
-        if (intent.get('intent') === 'signin') startChoice = null;
-        if (startChoice) localStorage.setItem('bb_start_choice', startChoice);
-        else localStorage.removeItem('bb_start_choice');
-        if (intent.get('intent') === 'signin') {
-          removeTabPrompt();
-          if (tabsRow) tabsRow.style.display = '';
-          window.switchTab('signin');
-          return;
-        }
+    _fieldEls = document.getElementById('form-signup').classList.contains('active') ? _suFields : _siFields;
+    const startHelp = () => { if (window._loginGuideEnabled && _fieldEls[0]) showGuide(_fieldKeys.get(_fieldEls[0]), _fieldEls[0]); };
+    const wrap = document.getElementById('auth-card-wrap');
+    if (wrap.classList.contains('ready')) startHelp();
+    else new MutationObserver((_, obs) => {
+      if (wrap.classList.contains('ready')) { obs.disconnect(); startHelp(); }
+    }).observe(wrap, {attributes:true, attributeFilter:['class']});
 
-        if (localStorage.getItem('bb_guide_done') && !startChoice) {
-          // Returning user who didn't come from the Start page — skip guide entirely.
-          return;
-        }
-
-        if (startChoice) {
-          // Visitor already picked their path on the Start page — don't gate them again.
-          // Start with signup while keeping Sign In available.
-          removeTabPrompt();
-          if (tabsRow) tabsRow.style.display = ''; // Keep returning sign-in accessible.
-          if (typeof window.switchTab === 'function') window.switchTab('signup');
-          _fieldEls = _suFields;
-          // Defer so the card has painted before measuring field positions
-          setTimeout(function() {
-            if (sellerField) showGuide('sellerType', sellerField);
-          }, 120);
-        } else {
-          // First-time visitor — guided gate
-          wrap.classList.add('bb-unpicked');
-          showGuide('pickTab', tabsRow);
-        }
-      }).observe(wrap, { attributes: true, attributeFilter: ['class'] });
-    }
   }
 
   // Expose a hook so the module script can trigger Blasty steps after it overwrites window.showVerifyView
@@ -1152,7 +1141,7 @@ async function continueAfterAuth(user, googleResolved) {
       const startChoice = localStorage.getItem('bb_start_choice');
       if (startChoice === 'guided') localStorage.setItem('bb_guided_new', '1');
       localStorage.removeItem('bb_start_choice');
-      if (startChoice === 'forms') {
+      if (startChoice !== 'guided') {
         // Skip the wizard — go straight to the quick-form onboarding
         window.location.href = 'BlastyBiz-CreateBiz.html';
       } else {
@@ -1346,7 +1335,7 @@ window.handleSignUp = async function() {
   if (pass.length < 8)     valid = showErr('su-password', 'Password must be at least 8 characters');
   if (pass !== pass2)      valid = showErr('su-password2', "Passwords don't match");
   const setupHandoff=BBSetup.collect('signup');
-  for(const problem of BBSetup.validate(setupHandoff)){showErr(problem.field.signup,problem.error);valid=false;}
+  for(const problem of BBSetup.validate(setupHandoff).filter(p=>!document.getElementById(p.field.signup).disabled)){showErr(problem.field.signup,problem.error);valid=false;}
   if (!valid) {
     const firstError = document.querySelector('#form-signup .field-error.visible');
     setSignupStatus(firstError?.textContent || 'Please check the highlighted field.', true);
@@ -1494,7 +1483,8 @@ window.handleReset = async function() {
 function bbSignupSellerType(){
  const business=document.getElementById('su-sellerType').value==='business';
  clearErr('su-sellerType');
- ['su-business','su-role'].forEach(id=>{const el=document.getElementById(id);el.required=business;el.disabled=!business;el.closest('.field').hidden=!business;clearErr(id);});
+ // Business details are collected once in setup, where website import can fill them.
+ ['su-business','su-role','su-phone'].forEach(id=>{const el=document.getElementById(id);const deferred=id!=='su-phone'||business;el.required=!deferred;el.disabled=deferred;el.closest('.field').hidden=deferred;clearErr(id);});
 }
 bbSignupSellerType();
 </script>

@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <script src="website-utils.js"></script>
+<script src="business-import.js?v=20261111-section2"></script>
+<script src="setup-import.js?v=20261111-section2"></script>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta charset="UTF-8"/>
   <meta name="theme-color" content="#000000"/>
@@ -92,12 +94,12 @@
 
 <div class="cb-main w-100 tablet-w-75 desktop-w-66 center-block">
   <div class="cb-page-title">Create Business</div>
-  <p class="cb-page-sub">Fill it in yourself, or let Blasty walk you through it one question at a time.</p>
+  <p class="cb-page-sub">Your basics, then your first post.</p>
   <div id="cb-guide-start" class="cb-guide-start">
     <button type="button" class="cb-guide-start-btn" onclick="window._cbStartGuide()">
       💬 Walk me through it
     </button>
-    <label class="cb-hint"><input type="checkbox" id="cb-include-background"> Include optional business background in the guided setup</label>
+    <details class="setup-disclosure"><summary>Help options</summary><label class="cb-hint"><input type="checkbox" id="cb-include-background"> Include optional background</label></details>
     <p id="cb-guide-status" role="status" aria-live="polite"></p>
   </div>
 
@@ -114,6 +116,14 @@
     <div class="cb-field"><label class="cb-label" for="f-sellerType">How will you use BlastyBiz?</label>
       <select class="cb-select" id="f-sellerType" onchange="cbConfigureForm()"><option value="business">Business</option><option value="personal">Personal seller</option></select>
     </div>
+    <section class="card setup-import" id="setup-import">
+      <label class="cb-label" for="setup-import-url">Start with your website <span class="muted">(optional)</span></label>
+      <div class="row"><input class="cb-input" id="setup-import-url" type="url" autocomplete="url" placeholder="yourbusiness.com"/>
+        <button type="button" class="btn btn__primary" id="setup-import-button">Import details</button></div>
+      <p class="cb-hint">Uses your AI allowance. Review before adding.</p>
+      <p id="setup-import-status" role="status"></p>
+      <div id="setup-import-review" hidden></div>
+    </section>
     <!-- Section 1: Business Info -->
     <div class="cb-section open" id="cbs-info" data-guide-step="1">
       <button type="button" class="cb-sec-head" onclick="cbToggle('info')" aria-expanded="true">
@@ -135,6 +145,7 @@
             <input class="cb-input" id="f-website" type="url" placeholder="https://yoursite.com" autocomplete="url"/>
           </div>
         </div>
+        <details class="setup-disclosure" id="setup-contact" open><summary>Contact details</summary>
         <div class="cb-row">
           <div class="cb-field">
             <label class="cb-label" for="f-ownerName">First name *</label>
@@ -159,6 +170,7 @@
             <input class="cb-input" id="f-email" required type="email" placeholder="you@yourbusiness.com" autocomplete="email"/>
           </div>
         </div>
+        </details>
         <div class="cb-row">
           <div class="cb-field">
             <label class="cb-label">Location type</label>
@@ -221,7 +233,7 @@
     <!-- Section 2: Your Story -->
     <div class="cb-section" id="cbs-story" data-guide-step="2">
       <button type="button" class="cb-sec-head" onclick="cbToggle('story')" aria-expanded="false">
-        <span class="cb-sec-title" id="cb-sec2-title">📖 Your Story <span class="cb-sec-badge">Required for initial setup</span></span>
+        <span class="cb-sec-title" id="cb-sec2-title">📖 Your Story <span class="cb-sec-badge">Optional — add later</span></span>
         <span class="cb-sec-ic">▾</span>
       </button>
       <div class="cb-sec-body">
@@ -253,9 +265,9 @@
     </div>
 
     <!-- Section 3: First Campaign -->
-    <div class="cb-section" id="cbs-campaign" data-guide-step="3">
-      <button type="button" class="cb-sec-head" onclick="cbToggle('campaign')" aria-expanded="false">
-        <span class="cb-sec-title" id="cb-sec3-title">🚀 First Campaign <span class="cb-sec-badge">Required</span></span>
+    <div class="cb-section open" id="cbs-campaign" data-guide-step="3">
+      <button type="button" class="cb-sec-head" onclick="cbToggle('campaign')" aria-expanded="true">
+        <span class="cb-sec-title" id="cb-sec3-title">🚀 Your first post <span class="cb-sec-badge">Required</span></span>
         <span class="cb-sec-ic">▾</span>
       </button>
       <div class="cb-sec-body">
@@ -370,6 +382,7 @@ function cbFieldError(field) {
 function cbConfigureForm() {
   const initial = window._cbNeedsCampaign;
   const personal=cbPersonal();
+  document.getElementById('setup-import').hidden=personal;
   ['f-bizName','f-role','f-locationType','f-street','f-hasWebsite','f-website','f-category'].forEach(id=>{const el=document.getElementById(id);el.closest('.cb-field').hidden=personal;el.disabled=personal;});
   ['f-bizName','f-role'].forEach(id=>{document.getElementById(id).required=!personal;});
   document.getElementById('cbs-story').hidden=personal;
@@ -386,7 +399,7 @@ function cbConfigureForm() {
   ['story','different','awards','customer','other','campName','about'].forEach(key => {
     document.getElementById('f-' + key).required = initial && (key==='campName' || (!personal && key==='about'));
   });
-  document.getElementById('cb-submit').textContent = personal ? (initial?'Save Seller & Listing':'Save Seller') : (initial ? 'Save Business & Campaign' : 'Save Business');
+  document.getElementById('cb-submit').textContent = personal ? (initial?'Save my first post':'Save Seller') : (initial ? 'Save my first post' : 'Save Business');
   const storyBadge = document.querySelector('#cb-sec2-title .cb-sec-badge');
   if (storyBadge) storyBadge.textContent = 'Optional — add later';
   cbSyncLocation();
@@ -507,6 +520,7 @@ let saving = false;
 let setupLoaded = false;
 let newBizRef = null;
 let newCampId = null;
+mountSetupImport({getToken:()=>currentUser?.getIdToken(),getBizId:()=>editBizId});
 
 const urlP = new URLSearchParams(window.location.search);
 editBizId = urlP.get('bizId') || null;
@@ -666,6 +680,9 @@ onAuthStateChanged(auth, async user => {
     window._cbRestoredFields = new Set(['f-ownerName','f-ownerLastName','f-bizName','f-role','f-email','f-phone'].filter(id =>
       document.getElementById(id).value.trim() && !cbFieldError(id)));
     restoreSetupDraft();
+    const contactIds=['f-ownerName','f-role','f-phone','f-email'].filter(id=>!document.getElementById(id).disabled);
+    document.getElementById('setup-contact').open=contactIds.some(id=>cbFieldError(id));
+    document.getElementById('setup-import-url').value=document.getElementById('f-website').value;
     window._cbReady = true;
     if(urlP.get('section')==='story'){cbOpenSection('cbs-story');document.getElementById('cbs-story').scrollIntoView({block:'start'});}
     BBBlasty.fire('onboard.email_return_success');
@@ -781,6 +798,7 @@ window.cbSubmit = async function() {
       cbOpenSection(step.section);
       err.textContent = message;
       const target = document.getElementById(step.field || step.group);
+      target?.closest('details')?.setAttribute('open','');
       (step.field ? target : target?.querySelector('input,button,select'))?.focus();
       return;
     }

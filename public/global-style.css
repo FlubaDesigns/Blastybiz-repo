@@ -2307,25 +2307,25 @@ body.listing-preview-page .pub-rail-tab.active { border-color: var(--green); col
 body.listing-preview-page .pub-rail-tab-icon   { width: 18px; height: 18px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 11px; background: rgba(255,255,255,0.08); flex-shrink: 0; }
 
 /* ── Post mock — the blast rendered the way it will appear once live ────── */
-body.listing-preview-page .pub-post              { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: rgba(255,255,255,0.02); }
-body.listing-preview-page .pub-post-hdr          { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
-body.listing-preview-page .pub-post-hdr-body     { min-width: 0; }
-body.listing-preview-page .pub-post-avatar       { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; background: rgba(255,255,255,0.08); color: var(--light); flex-shrink: 0; }
-body.listing-preview-page .pub-post-biz          { font-size: 14px; font-weight: 700; color: var(--light); line-height: 1.2; word-break: break-word; }
-body.listing-preview-page .pub-post-meta         { font-size: 11px; color: var(--muted); margin-top: 2px; }
-body.listing-preview-page .pub-post-photo        { display: block; width: 100%; aspect-ratio: 4 / 3; background: rgba(255,255,255,0.04); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-body.listing-preview-page .pub-post-photo img    { width: 100%; height: 100%; object-fit: cover; display: block; }
-body.listing-preview-page .pub-post-nophoto      { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; padding: 26px 18px; border-top: 1px dashed var(--border); border-bottom: 1px dashed var(--border); background: rgba(255,255,255,0.02); }
-body.listing-preview-page .pub-post-nophoto-icon { font-size: 24px; opacity: 0.7; }
-body.listing-preview-page .pub-post-nophoto-title{ font-size: 13px; font-weight: 700; color: var(--light); }
-body.listing-preview-page .pub-post-nophoto-sub  { font-size: 12px; color: var(--muted); line-height: 1.5; max-width: 240px; }
-body.listing-preview-page .pub-post-text         { font-size: 13px; color: var(--text); line-height: 1.65; padding: 12px 14px; white-space: pre-wrap; word-break: break-word; }
-body.listing-preview-page .pub-post-thumbs       { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 14px 12px; }
-body.listing-preview-page .pub-post-thumb        { width: 46px; height: 46px; border-radius: 7px; overflow: hidden; border: 1px solid var(--border); display: block; text-decoration: none; }
-body.listing-preview-page .pub-post-thumb img    { width: 100%; height: 100%; object-fit: cover; display: block; }
-body.listing-preview-page .pub-post-foot         { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--border); flex-wrap: wrap; }
-body.listing-preview-page .pub-post-foot .pub-copy-btn { margin-top: 0; }
-body.listing-preview-page .pub-post-count        { font-size: 11px; color: var(--muted); }
+.pub-post              { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: rgba(255,255,255,0.02); }
+.pub-post-hdr          { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
+.pub-post-hdr-body     { min-width: 0; }
+.pub-post-avatar       { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; background: rgba(255,255,255,0.08); color: var(--light); flex-shrink: 0; }
+.pub-post-biz          { font-size: 14px; font-weight: 700; color: var(--light); line-height: 1.2; word-break: break-word; }
+.pub-post-meta         { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.pub-post-photo        { display: block; width: 100%; aspect-ratio: 4 / 3; background: rgba(255,255,255,0.04); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.pub-post-photo img    { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pub-post-nophoto      { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; padding: 26px 18px; border-top: 1px dashed var(--border); border-bottom: 1px dashed var(--border); background: rgba(255,255,255,0.02); }
+.pub-post-nophoto-icon { font-size: 24px; opacity: 0.7; }
+.pub-post-nophoto-title{ font-size: 13px; font-weight: 700; color: var(--light); }
+.pub-post-nophoto-sub  { font-size: 12px; color: var(--muted); line-height: 1.5; max-width: 240px; }
+.pub-post-text         { font-size: 13px; color: var(--text); line-height: 1.65; padding: 12px 14px; white-space: pre-wrap; word-break: break-word; }
+.pub-post-thumbs       { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 14px 12px; }
+.pub-post-thumb        { width: 46px; height: 46px; border-radius: 7px; overflow: hidden; border: 1px solid var(--border); display: block; text-decoration: none; }
+.pub-post-thumb img    { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pub-post-foot         { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.pub-post-foot .pub-copy-btn { margin-top: 0; }
+.pub-post-count        { font-size: 11px; color: var(--muted); }
 
 /* Hero copy — .big-title margin-bottom: 10px comes from global .big-title rule */
 body.listing-preview-page .big-title span { color: var(--green); }
@@ -4074,12 +4074,12 @@ body.listing-preview-page .bb-photo-tools .platform-photo { min-height: 76px; wi
 body.listing-preview-page .bb-photo-tools .platform-photo img { width: 74px; height: 74px; }
 body.listing-preview-page .bb-photo-tools .platform-photo span { display: none; }
 body.listing-preview-page .main-inner .bb-photo-tools button { padding-inline: 6px; width: 100%; }
-body.listing-preview-page .pub-post-text { max-height: 240px; overflow-y: auto; }
+.pub-post-text { max-height: 240px; overflow-y: auto; }
 body.listing-preview-page .pub-rail-tab { flex: 1 1 120px; border-radius: 10px; justify-content: center; }
 body.listing-preview-page :is(summary,.pub-copy-btn,.pub-publish-btn,.copy-platform-btn):focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 @media (max-width: 599px) {
   body.listing-preview-page .main-inner { padding: 12px; }
-  body.listing-preview-page .pub-post-photo { max-height: 240px; }
+  .pub-post-photo { max-height: 240px; }
 }
 
 body.listing-preview-page .pub-details > summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; list-style: none; }
@@ -4891,3 +4891,20 @@ body.blasty-workspace .step5-action-btn,body.blasty-workspace .scope-btn,body.bl
 .plat-hub-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;font-size:13px;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,.12);color:var(--light,#e8e8e8);background:rgba(255,255,255,.04);transition:border-color .15s}
 .plat-hub-pill:hover{border-color:var(--green,#39ff14);color:#fff}
 .plat-hub-pill.auto{border-color:rgba(57,255,20,.3);color:var(--green,#39ff14)}
+
+/* Shared preview and entry surfaces, section 2. Structure uses canonical rows/columns. */
+.home-post-demo { min-width: 0; text-align: left; }
+.home-post-demo .pub-post { margin-top: 12px; }
+.home-post-demo .pub-post-photo { aspect-ratio: 3 / 2; }
+.home-post-demo .pub-post-text { font-size: 16px; }
+.home-post-demo [aria-pressed="true"] { border-color: var(--green); color: var(--green); }
+.home-post-demo summary, .setup-disclosure summary { cursor: pointer; padding: 14px 0; }
+.home-post-demo button, .login-help, .setup-import button { min-height: 48px; }
+.home-post-demo .layout__split-3 { gap: 8px; }
+.login-help { margin-bottom: 12px; }
+.setup-import { margin-bottom: 20px; }
+.setup-import [hidden] { display: none !important; }
+.setup-import label { display: block; margin-top: 12px; }
+.setup-import input { width: 100%; }
+.setup-import #setup-import-review { margin-top: 12px; }
+.setup-disclosure { margin-bottom: 16px; }

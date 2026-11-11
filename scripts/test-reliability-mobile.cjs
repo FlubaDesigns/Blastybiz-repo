@@ -1,4 +1,5 @@
 'use strict';
+require('node:child_process').execFileSync(process.execPath,['scripts/test-section2-browser.cjs'],{stdio:'inherit'});
 // Actual shipped markup/CSS and billing controller; all network calls are fixtures.
 const fs=require('node:fs'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');

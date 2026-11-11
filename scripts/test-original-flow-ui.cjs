@@ -1,4 +1,5 @@
 'use strict';
+require('node:child_process').execFileSync(process.execPath,['scripts/test-section2.cjs'],{stdio:'inherit'});
 // Include the publishing view in the existing DOM gate without changing release infrastructure.
 require('node:child_process').execFileSync(process.execPath,['scripts/test-publishing-workspace.cjs'],{stdio:'inherit'});
 const fs=require('./lib/workspace-source.cjs'),assert=require('node:assert/strict');

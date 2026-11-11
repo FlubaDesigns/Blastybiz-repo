@@ -41,6 +41,7 @@ const tick=()=>new Promise(r=>setImmediate(r));
   const e=env({blockedStorage});assert(e.form.noValidate);e.click();await tick();
   assert.equal(e.calls.filter(c=>c==='auth').length,1);assert.equal(e.calls.find(c=>c.setupHandoff)?.setupHandoff.sellerType,'personal');assert(e.calls.includes('verify:seller@example.invalid'));e.dom.window.close();
  }
+ {const e=env();e.w.document.getElementById('su-sellerType').value='business';e.w.document.getElementById('su-phone').value='';e.w.bbSignupSellerType();e.click();await tick();assert(e.calls.includes('auth'),'Business signup defers business facts to import/setup');assert.equal(e.calls.find(c=>c.setupHandoff)?.setupHandoff.sellerType,'business');e.dom.window.close();}
  let e=env();e.w.document.getElementById('su-sellerType').value='';e.click();await tick();assert.equal(e.calls.length,0);assert.match(e.status().textContent,/Business or Personal/);assert.equal(e.w.document.activeElement.id,'su-sellerType');e.dom.window.close();
  e=env();e.w.document.getElementById('su-password2').value='different';e.click();await tick();assert.equal(e.calls.length,0);assert.match(e.status().textContent,/match/);assert.equal(e.w.document.activeElement.id,'su-password2');e.dom.window.close();
  e=env();e.w.document.getElementById('su-phone').value='';e.click();await tick();assert.equal(e.calls.length,0);assert.match(e.status().textContent,/phone/);assert.equal(e.w.document.activeElement.id,'su-phone');e.dom.window.close();
@@ -59,11 +60,11 @@ const tick=()=>new Promise(r=>setImmediate(r));
   assert.equal(w.document.querySelector('#form-signup form > .field'),field);assert.equal(seller.value,'');
   if(start){w.document.getElementById('auth-card-wrap').classList.add('ready');await tick();timers.filter(t=>t.ms===120).forEach(t=>t.fn());}
   else tab.click();
-  assert(!field.classList.contains('bb-field-blur'), 'Seller choice must be first for '+(start||'tab')+'; '+w.document.getElementById('login-bubble').textContent);assert(picker.classList.contains('bb-field-blur'));
-  timers.filter(t=>t.ms===100).forEach(t=>t.fn());assert.match(w.document.getElementById('login-bubble').textContent,/Business or Personal/);
+  assert(!field.classList.contains('bb-field-blur'), 'Seller choice must be first for '+(start||'tab')+'; '+w.document.getElementById('login-bubble').textContent);assert.equal(picker.classList.contains('bb-field-blur'),start==='guided');
+  timers.filter(t=>t.ms===100).forEach(t=>t.fn());if(start==='guided')assert.match(w.document.getElementById('login-bubble').textContent,/Business or Personal/);else assert.equal(w.document.querySelectorAll('.bb-field-blur').length,0);
   for(const type of ['personal','business']){
    seller.value=type;w.bbSignupSellerType();seller.dispatchEvent(new w.Event('change'));seller.dispatchEvent(new w.Event('blur'));
-   assert(!picker.classList.contains('bb-field-blur'));assert.equal(w.document.getElementById('su-business').closest('.field').hidden,type==='personal');
+   assert(!picker.classList.contains('bb-field-blur'));assert(w.document.getElementById('su-business').closest('.field').hidden);
    w.selectPlan('starter');timers.filter(t=>t.ms===3000).forEach(t=>t.fn());assert(!w.document.getElementById('su-name').closest('.field').classList.contains('bb-field-blur'));
   }
   dom.window.close();

@@ -15,102 +15,18 @@
 <!-- public-site:end -->
 </head>
 <body class="start-page">
-
-  <div class="start-logo">
-    <img src="img/blastybiz-title.png" alt="BlastyBiz"/>
-  </div>
-
-  <div class="mascot-wrap">
-    <div class="speech-bubble" id="start-bubble">Hey! How do you want to start?</div>
-    <div class="pb-mascot" id="pb-mascot"></div>
-  </div>
-
-  <h1 class="start-heading" id="start-heading">Let's Get You <span>Blasting</span></h1>
-  <p class="start-sub" id="start-subheading">Your first post takes about 2 minutes. Pick how you want to do it.</p>
-
-  <div class="choice-grid w-100 tablet-w-75 desktop-w-50 center-block">
-    <button class="choice-card choice-card--primary" onclick="choose(true)" tabindex="0">
-      <span class="choice-icon" id="start-guided-icon">🚀</span>
-      <div class="choice-title" id="start-guided-title">Show me how</div>
-      <p class="choice-desc" id="start-guided-desc">Blasty walks you through setup step by step. Recommended if this is your first time.</p>
-    </button>
-    <button class="choice-card" onclick="choose(false)" tabindex="0">
-      <span class="choice-icon" id="start-forms-icon">📋</span>
-      <div class="choice-title" id="start-forms-title">Just the forms</div>
-      <p class="choice-desc" id="start-forms-desc">Fill in your business details yourself and jump straight to the app.</p>
-    </button>
-  </div>
-
-  <p class="start-signin"><span id="start-signin-text">Already have an account?</span> <a href="BlastyBiz-Login.html?intent=signin">Sign in</a></p>
-
+  <main class="main"><div class="main-inner"><div class="row">
+    <h1>Create your first post</h1>
+    <a class="btn btn__primary" id="start-continue" href="BlastyBiz-Login.html?start=forms">Create my post</a>
+    <a href="BlastyBiz-Login.html?intent=signin">Sign in</a>
+  </div></div></main>
   <script>
-    function choose(guided) {
-      localStorage.setItem('bb_start_choice', guided ? 'guided' : 'forms');
-      window.location.href = 'BlastyBiz-Login.html?start=' + (guided ? 'guided' : 'forms');
-    }
+    // Preserve old guided links and return-to-work parameters without another choice screen.
+    const params = new URLSearchParams(location.search);
+    if (params.get('intent') !== 'signin' && !['guided','forms'].includes(params.get('start'))) params.set('start','forms');
+    const next = 'BlastyBiz-Login.html?' + params;
+    document.getElementById('start-continue').href = next;
+    location.replace(next);
   </script>
-
-  <script type="module">
-    import { getApp }      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    import './firebase-init-v2.js';
-
-    const db = getFirestore(getApp());
-
-    const DEFAULTS = {
-      speechBubble:  'Hey! How do you want to start?',
-      heading:       "Let's Get You <span>Blasting</span>",
-      subheading:    'Your first post takes about 2 minutes. Pick how you want to do it.',
-      guidedIcon:    '🚀',
-      guidedTitle:   'Show me how',
-      guidedDesc:    'Blasty walks you through setup step by step. Recommended if this is your first time.',
-      formsIcon:     '📋',
-      formsTitle:    'Just the forms',
-      formsDesc:     'Fill in your business details yourself and jump straight to the app.',
-      signinText:    'Already have an account?',
-      animLoad:      { mood: 's-ask' },
-    };
-
-    function applyText(id, val, isHtml) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      if (isHtml) el.innerHTML = val; else el.textContent = val;
-    }
-
-    (async () => {
-      let cfg = {};
-      try {
-        const snap = await getDoc(doc(db, 'config', 'startPage'));
-        if (snap.exists()) cfg = snap.data();
-      } catch(_) { /* non-fatal — use defaults */ }
-
-      const v = k => cfg[k] || DEFAULTS[k];
-
-      applyText('start-bubble',       v('speechBubble'));
-      applyText('start-heading',      v('heading'), true);
-      applyText('start-subheading',   v('subheading'));
-      applyText('start-guided-icon',  v('guidedIcon'));
-      applyText('start-guided-title', v('guidedTitle'));
-      applyText('start-guided-desc',  v('guidedDesc'));
-      applyText('start-forms-icon',   v('formsIcon'));
-      applyText('start-forms-title',  v('formsTitle'));
-      applyText('start-forms-desc',   v('formsDesc'));
-      applyText('start-signin-text',  v('signinText'));
-
-      // Apply Blasty animation
-      if (window.PBMascot) {
-        const anim = v('animLoad');
-        window.PBMascot.setMood(typeof anim === 'object' ? anim : { mood: anim });
-      } else {
-        window.addEventListener('load', () => {
-          if (window.PBMascot) {
-            const anim = v('animLoad');
-            window.PBMascot.setMood(typeof anim === 'object' ? anim : { mood: anim });
-          }
-        });
-      }
-    })();
-  </script>
-
 </body>
 </html>

@@ -10,8 +10,8 @@ const scripts=html=>[...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].f
  w.clearErr=()=>{};w.eval(read('public/business-form.js'));w.eval(scripts(login).find(m=>m[2].includes('function bbSignupSellerType'))[2]);
  for(const type of ['personal','business','personal']){
   w.document.getElementById('su-sellerType').value=type;w.bbSignupSellerType();
-  assert.equal(w.document.getElementById('su-business').closest('.field').hidden,type==='personal');
-  assert.equal(w.document.getElementById('su-role').required,type==='business');
+  assert(w.document.getElementById('su-business').closest('.field').hidden,'business details deferred to setup');
+  assert(!w.document.getElementById('su-role').required);assert.equal(w.document.getElementById('su-phone').disabled,type==='business');
   const values={sellerType:type,ownerName:'David',email:'d@example.com',phone:'9413751504'};
   assert.equal(w.BBSetup.validate(values).length,type==='personal'?0:2);
   assert.equal(w.BBSetup.collect('signup').sellerType,type);

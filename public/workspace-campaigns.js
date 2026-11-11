@@ -340,26 +340,7 @@ window._bbExtractBizContext = async function(source) {
   if (googleBtn)  { googleBtn.disabled = true; }
 
   try {
-    const idToken = window._bbGetToken ? await window._bbGetToken() : null;
-    const resp = await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/extractBizContext', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(idToken ? { Authorization: 'Bearer ' + idToken } : {}) },
-      body: JSON.stringify({ bizId: activeBizId, sourceUrl: source === 'url' ? sourceUrl : undefined, source: source === 'google' ? 'google' : undefined }),
-    });
-    const data = await resp.json();
-
-    if (!resp.ok) {
-      setStatus('❌ ' + (data.error || 'Extraction failed — try again'), 'var(--red,#e05)');
-      return;
-    }
-    if (data.thin) {
-      setStatus('⚠️ ' + data.message, 'var(--yellow,#fa0)');
-      return;
-    }
-    if (!data.aiContext) {
-      setStatus('❌ No content extracted — try a different URL', 'var(--red,#e05)');
-      return;
-    }
+    const data = await BBBusinessImport.extract({getToken:()=>window._bbGetToken?.(),bizId:activeBizId,sourceUrl:source==='url'?sourceUrl:undefined,source:source==='google'?'google':undefined});
 
     // Pre-fill only fields that AI returned a value for; preserve existing content otherwise
     let filled = 0;
@@ -383,7 +364,7 @@ window._bbExtractBizContext = async function(source) {
     setStatus(`✅ AI drafted ${filled} field${filled !== 1 ? 's' : ''} from ${data.source || 'the source'}. Review and edit before saving.`, 'var(--green,#0c6)');
   } catch(e) {
     console.error('extractBizContext error:', e);
-    setStatus('❌ Network error — check connection and try again', 'var(--red,#e05)');
+    setStatus('❌ ' + (e.message || 'Network error — try again'), 'var(--red,#e05)');
   } finally {
     if (extractBtn) { extractBtn.disabled = !urlInput?.value?.trim(); extractBtn.textContent = 'Extract ✨'; }
     if (googleBtn)  { googleBtn.disabled = false; }
