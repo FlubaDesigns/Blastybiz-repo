@@ -130,9 +130,10 @@ module.exports=async function verifyLiveNavigation({chromium,origin}){
     await manual.set({uid,businessId:'fixture',status:'approved',campaignId:'fixture',adId:'first',createdAt:new Date().toISOString()});
     await business.collection('publishJobs').doc('manual_fixture').set({uid,businessId:'fixture',draftId:'manual_fixture',platform:'craigslist',status:'manual_required',payload:{adaptedContent:'Isolated acceptance copy',imageUrls:[origin+'/img/hero-blast.jpg']},createdAt:new Date().toISOString()});
     await page.goto(origin+'/BlastyBiz-Publishing-Status?bizId=fixture&draftId=manual_fixture');
-    await page.locator('details.platform-row > summary').click();
+    await page.locator('article.platform-row').waitFor({state:'visible'});
     await page.waitForFunction(()=>{const image=document.querySelector('.platform-photo img');return image?.complete&&image.naturalWidth>0;});
-    assert.equal(await page.locator('.qp-photo-tools button').count(),2,'actual posting accordion includes Copy and Save photo');
+    assert.equal(await page.locator('.qp-photo-tools button').count(),1,'Save photo remains a primary action');
+    assert.equal(await page.locator('.bb-more-list button[aria-label="Copy photo 1"]').count(),1,'Copy photo remains available in the existing options menu');
     assert.equal(await page.locator('.manual-textarea').inputValue(),'Isolated acceptance copy');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'live status fits Galaxy phone width');
     assert.equal((await business.collection('publishJobs').doc('manual_fixture').get()).data().status,'manual_required','viewing photos never claims posted');
