@@ -2,6 +2,7 @@
 const fs=require('node:fs'),assert=require('node:assert/strict'),{chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
 (async()=>{const browser=await chromium.launch({headless:true,args:['--no-sandbox']});try{
  const page=await browser.newPage();await page.route('**/*',r=>r.request().url().includes('/photo.jpg')?r.fulfill({contentType:'image/jpeg',body:fs.readFileSync('public/img/storefront.jpg')}):r.abort());
+ await page.route('https://example.test/',r=>r.fulfill({contentType:'text/html',body:'<html></html>'}));await page.goto('https://example.test/');
  const html=fs.readFileSync('public/BlastyBiz-Dashboard.html','utf8');await page.setContent(html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'').replace(/<link[^>]*>/g,''));
  for(const file of ['global-style.css','Buttons.css'])await page.addStyleTag({content:fs.readFileSync('public/'+file,'utf8')});
  for(const file of ['escape-utils.js','blastybiz-menu.js','platforms-authority.js','schedule-utils.js','lifecycle-ui.js','lifecycle-status.js','dashboard-posts.js'])await page.addScriptTag({content:fs.readFileSync('public/'+file,'utf8').split('function _revealAdminNav')[0]});

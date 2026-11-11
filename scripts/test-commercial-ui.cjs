@@ -25,7 +25,7 @@ module.exports=async function(){
   ({dom,w}=create('u',JSON.stringify({...JSON.parse(raw),at:Date.now()-8*86400000})));w.restoreSetupDraft();assert.equal(w.localStorage.getItem('bb_setup_draft'),null);dom.window.close();
   ({dom,w}=create('u',raw));w.restoreSetupDraft();w.eval(read('session.js'));w._bbClearStorage();w.dispatchEvent(new w.Event('beforeunload'));w.keepSetupDraft();assert.equal(w.localStorage.getItem('bb_setup_draft'),null);dom.window.close();
   dom=new JSDOM('<div id="history-list"></div><div id="stat-total-posts"></div><div id="stat-platforms-hit"></div><div id="stat-this-month"></div><span data-price="proMonthly"></span>',{url:'https://example.invalid',runScripts:'outside-only'});w=dom.window;
-  w.BBPlatforms={records:[{id:'facebook',name:'Facebook'},{id:'craigslist',name:'Craigslist'}]};w.eval(read('lifecycle-status.js'));
+  w.eval(read('blastybiz-menu.js').split('function _revealAdminNav')[0]);w.BBPlatforms={records:[{id:'facebook',name:'Facebook'},{id:'craigslist',name:'Craigslist'}]};w.eval(read('lifecycle-status.js'));
   const now=new Date(),old=new Date(now);old.setFullYear(old.getFullYear()-1);
   const rows=w.BBLifecycleStatus.historyRows([{id:'one',packet:{adName:'Real blast'}}],[
     {jobId:'1',draftId:'one',platform:'facebook',status:'success',publishedAt:now.toISOString()},
