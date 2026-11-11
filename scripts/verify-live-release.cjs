@@ -2,6 +2,7 @@
 // Public release checks plus isolated authenticated scheduler acceptance in Main.
 // Never publishes a post, sends mail, or changes customer data.
 const assert = require('node:assert/strict');
+const editorAsset = require('node:fs').readFileSync('public/BlastyBiz.html', 'utf8').match(/workspace-editor\.js\?v=[^"'\s<>]+/)[0];
 (async () => {
   assert(process.env.GITHUB_SHA, 'GITHUB_SHA is required');
   for (const host of ['https://blastybiz-9523e.web.app', 'https://blastybiz.com']) {
@@ -10,7 +11,7 @@ const assert = require('node:assert/strict');
     assert.equal((await response.json()).commit, process.env.GITHUB_SHA, `${host}: wrong deployed commit`);
     for (const [page, text] of [
       ['BlastyBiz', 'lifecycle-ui.js'],
-      ['BlastyBiz', 'workspace-editor.js?v=20261110'],
+      ['BlastyBiz', editorAsset],
       ['ai-generation.js', 'GENERATION_PENDING'],
       ['billing-account.js', 'Review plan change'],
       ['BlastyBiz-Listing-Preview', 'Review My Blast'],
