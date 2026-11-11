@@ -51,5 +51,25 @@ const read=file=>new Promise((resolve,reject)=>{const r=new w.FileReader();r.onl
  ok(calls.length===previousShares&&button().textContent==='Share 1 photo','retry prepares successfully and waits for a fresh share gesture');
  button().click();await tick();ok(calls.at(-1).files.length===1,'retry hands off the newly selected photo');
  w.BBAds.active.imageRefs=[];w.renderStep5Review();await tick();ok(!button(),'empty selections have no misleading share button');
+ // Platform cards copy the same post content, never labels/buttons or legacy HTML breaks.
+ w.eval(html.slice(html.indexOf('function buildPlatformCard('),html.indexOf('function renderQuickSelect(')));
+ w.eval(html.slice(html.indexOf('function copyText('),html.indexOf('function setPlatformStatus(')));
+ const copiedPosts=[];
+ w.navigator.clipboard.writeText=async text=>copiedPosts.push(text);
+ const caption='Copy this offer<br/>Second line<BR >Third<br />Fourth\n<img src=x onerror="bad()"> & details';
+ const expected='Copy this offer\nSecond line\nThird\nFourth\n<img src=x onerror="bad()"> & details';
+ w.platforms[0].adaptedContent=caption;
+ const platformCard=w.buildPlatformCard(w.platforms[0]);w.document.body.append(platformCard);
+ ok(platformCard.querySelector('.copy-box-text').textContent===expected,'display preserves newlines and literal user text');
+ ok(!platformCard.querySelector('.copy-box img'),'post markup remains escaped');
+ await w.copyText('x');await w.copyText('x');
+ ok(copiedPosts.length===2&&copiedPosts.every(text=>text===expected),'repeat Copy contains only normalized content, including the word Copy');
+ w.platforms[0].adaptedContent='Latest saved copy\nNext line';await w.copyText('x');
+ ok(copiedPosts.at(-1)==='Latest saved copy\nNext line','Copy reads current platform content instead of stale card text');
+ const beforeEmpty=copiedPosts.length;w.platforms[0].adaptedContent='';await w.copyText('x');await w.copyText('missing');
+ ok(copiedPosts.length===beforeEmpty,'empty or missing posts do not copy card labels');
+ w.platforms[0].adaptedContent=caption;w.navigator.clipboard.writeText=async()=>{throw Error('denied');};
+ await w.copyText('x');ok(notices.at(-1)==='❌ Copy failed','clipboard denial shows failure instead of success');
+ ok(w.platforms[0].adaptedContent===caption&&w.BBAds.active.platformStatus.x==='approved','copy preserves stored-format content and approval');
  console.log('PASS: '+checks+' photo handoff assertions.');
 })().catch(error=>{console.error(error);process.exitCode=1;}).finally(()=>dom.window.close());

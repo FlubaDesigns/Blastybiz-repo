@@ -273,7 +273,7 @@ function buildPlatformCard(p) {
     ? `<div class="copy-box visible" id="copy-${p.id}">
          <span class="copy-box-label">⚡ AI-Generated Copy</span>
          <button type="button" class="copy-btn-float" onclick="copyText('${p.id}')">Copy</button>
-         ${escHtml(p.adaptedContent)}
+         <div class="copy-box-text">${escHtml(postPlainText(p.adaptedContent))}</div>
        </div>`
     : `<div class="copy-box" id="copy-${p.id}"></div>`;
 
@@ -2117,13 +2117,13 @@ function deployPlatform(id) {
 
 function copyText(id) {
   const box = document.getElementById('copy-' + id);
-  if (!box) return;
-  const text = box.innerText.replace('Copy', '').trim();
-  navigator.clipboard.writeText(text).then(() => {
+  const text = postPlainText(platforms.find(p => p.id === id)?.adaptedContent);
+  if (!box || !text.trim()) return;
+  return navigator.clipboard.writeText(text).then(() => {
     const btn = box.querySelector('.copy-btn-float');
     if (btn) { btn.textContent = '✓ Copied'; btn.classList.add('copied'); setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000); }
     showToast('📋 Copied to clipboard');
-  });
+  }).catch(() => showToast('❌ Copy failed'));
 }
 
 function setPlatformStatus(id, status) {
