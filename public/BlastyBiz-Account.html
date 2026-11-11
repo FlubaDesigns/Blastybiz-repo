@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="stylesheet" href="global-style.css?v=20261110-section1" />
+<link rel="stylesheet" href="Buttons.css?v=20261110-section5" />
 <title>BlastyBiz — Account Settings</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -40,7 +41,7 @@ body{visibility:hidden}
 <div class="layout__split-2-1">
 <div>
 
-  <h1 class="page-title bb-style-d982937d">Account <span>Settings</span></h1>
+  <div class="row"><div class="flex-row bb-list-heading"><h1 class="page-title bb-style-d982937d">Account <span>Settings</span></h1><details class="bb-more"><summary aria-label="Account options" title="Account options">⋯</summary><div class="bb-more-list"><button type="button" onclick="this.closest('details').open=false;openDeleteModal()" class="delete-account-btn">Delete account</button></div></details></div></div>
   <p class="page-sub bb-style-8b9688e6">Manage your plan, billing, and account.</p>
   <p id="acct-deletion-status" role="status" hidden></p>
 
@@ -49,6 +50,7 @@ body{visibility:hidden}
     <div class="card-title">💼 Plan &amp; Billing</div>
     <div class="cost-line"><span>Email</span><strong id="acct-email">—</strong></div>
     <div class="cost-line"><span>Plan</span><strong id="acct-plan-label">—</strong></div>
+    <div class="cost-line"><span>Businesses used / allowed</span><strong id="acct-businesses" role="status">Loading…</strong></div>
     <div class="cost-line hidden" id="acct-retention-row"><span>Data kept until</span><strong id="acct-retention-val">—</strong></div>
     <p class="helper acct-retention-note hidden" id="acct-retention-note"></p>
     <div class="btn-row bb-style-9374e842">
@@ -66,12 +68,6 @@ body{visibility:hidden}
     <a class="btn" href="BlastyBiz-Admin.html">Open Admin Panel →</a>
   </div>
 
-  <!-- ── Danger Zone ── -->
-  <div class="card">
-    <div class="card-title bb-style-5b497b58">⚠️ Danger Zone</div>
-    <p class="helper bb-style-3ef1fa1a">Deleting your account is permanent and cannot be undone. All businesses, campaigns, and data will be removed.</p>
-    <button type="button" onclick="openDeleteModal()" class="delete-account-btn">Delete account</button>
-  </div>
 
 </div><!-- left col -->
 <div class="dash-img-col">
@@ -103,29 +99,6 @@ body{visibility:hidden}
   </div>
 </div>
 
-<!-- UPGRADE PLAN MODAL -->
-<div id="upgrade-overlay" onclick="closeUpgradeModal()">
-  <div class="delete-modal bb-style-d2a26356" onclick="event.stopPropagation()">
-    <h3>📈 Upgrade Your Plan</h3>
-    <p id="upgrade-modal-msg">Upgrade to unlock more businesses and AI requests.</p>
-    <div class="bb-style-5a98adf5">
-      <div class="bb-style-5f929cf5">
-        <div class="bb-style-84492c01">Pro</div>
-        <div class="bb-style-379cecbb">3 businesses · 100 AI/mo</div>
-        <button type="button" onclick="closeUpgradeModal();startCheckout('pro')" class="bb-style-c87aaa48">Upgrade to Pro</button>
-      </div>
-      <div class="bb-style-5f929cf5">
-        <div class="bb-style-84492c01">Agency</div>
-        <div class="bb-style-379cecbb">10 businesses · 500 AI/mo</div>
-        <button type="button" onclick="closeUpgradeModal();startCheckout('agency')" class="bb-style-c87aaa48">Upgrade to Agency</button>
-      </div>
-    </div>
-    <div class="bb-style-91a87015">
-      <button type="button" onclick="closeUpgradeModal()" class="delete-cancel bb-style-21e8bb66">Not now</button>
-    </div>
-  </div>
-</div>
-
 <div id="site-footer-inject"></div>
 <script>fetch('blastybiz-footer.html').then(r=>r.text()).then(function(html){document.getElementById('site-footer-inject').innerHTML=html;});</script>
 
@@ -133,7 +106,7 @@ body{visibility:hidden}
 <script type="module">
 import { auth, db } from './firebase-init-v2.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getDocFromServer, getDocsFromServer, collection, waitForPendingWrites, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
 let currentUser = null;
@@ -153,6 +126,7 @@ auth.authStateReady().then(() => {
   onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     accountReady = false;
+    document.getElementById('acct-businesses').textContent = 'Loading…';
     const billingBtn = document.getElementById('acct-billing-btn');
     billingBtn.disabled = true;
     billingBtn.textContent = 'Loading account…';
@@ -169,7 +143,10 @@ auth.authStateReady().then(() => {
     } catch(e) { /* admin card stays hidden if claim check fails */ }
 
     try {
-      const userSnap = await getDoc(doc(db, 'users', user.uid));
+      await waitForPendingWrites(db);
+      const userRef = doc(db, 'users', user.uid);
+      let userSnap = await getDocFromServer(userRef);
+      while (userSnap.metadata?.hasPendingWrites) { await waitForPendingWrites(db); userSnap = await getDocFromServer(userRef); }
       if (currentUser !== user) return;
       const userData = userSnap.exists() ? userSnap.data() : {};
       document.getElementById('acct-email').textContent = userData.email || user.email || '—';
@@ -183,14 +160,30 @@ auth.authStateReady().then(() => {
       accountReady = true;
       billingBtn.disabled = false;
 
+      let opts = null;
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch(CF + '/getPlanOptions', { headers: { Authorization: 'Bearer ' + token } });
+        if (!response.ok) throw Error('Plan details unavailable');
+        opts = await response.json();
+      } catch (e) { console.warn('[Account] plan details unavailable', e); }
+      // Optional capacity failure must not disable existing subscription controls.
+      try {
+        const businesses = await getDocsFromServer(collection(db, 'users', user.uid, 'businesses'));
+        if (currentUser !== user) return;
+        const allowed = opts?.bizLimits?.[userPlan];
+        if (!Number.isSafeInteger(allowed) || allowed < 0) throw Error('Capacity unavailable');
+        document.getElementById('acct-businesses').textContent = businesses.size + ' / ' + allowed;
+      } catch (e) {
+        if (currentUser !== user) return;
+        document.getElementById('acct-businesses').textContent = 'Not available';
+      }
+
       // ── Data retention (free plans only) ──────────────────────────────────
       // Free accounts are deleted after a long dormancy. Owners should be able
       // to see that here rather than only finding out in a warning email.
       if (userPlan === 'starter' || userPlan === 'trial') {
         try {
-          const idToken = await user.getIdToken();
-          const r = await fetch(CF + '/getPlanOptions', { headers: { 'Authorization': 'Bearer ' + idToken } });
-          const opts = r.ok ? await r.json() : null;
           const dormantDays = opts?.retention?.dormantDays;
           if (dormantDays) {
             const lastActive = userData.lastActiveAt?.toDate?.() || userData.createdAt?.toDate?.() || new Date();
@@ -220,6 +213,7 @@ auth.authStateReady().then(() => {
     } catch(e) {
       if (currentUser !== user) return;
       accountReady = false;
+      document.getElementById('acct-businesses').textContent = 'Not available';
       billingBtn.disabled = true;
       billingBtn.textContent = 'Account unavailable';
       console.error('[Account] load failed:', e);
@@ -240,25 +234,6 @@ auth.authStateReady().then(() => {
   });
 });
 
-async function startCheckout(plan) {
-  showToast('Setting up checkout…');
-  try {
-    const idToken = await currentUser.getIdToken();
-    const r = await fetch(`${CF}/createCheckoutSession`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-      body: JSON.stringify({ plan,returnPath:'/BlastyBiz-Account.html?success=1&billing=1' })
-    });
-    const data = await r.json();
-    if (data.code === 'EXISTING_SUBSCRIPTION') { showToast(data.error, true); return; }
-    if (r.ok && data.url) { window.location.href = data.url; }
-    else showToast(data.error || 'Checkout setup failed', true);
-  } catch(e) {
-    showToast('Checkout unavailable', true);
-  }
-}
-
-window.startCheckout = startCheckout;
 window.handleBilling = async function(e) {
   e && e.preventDefault();
   if (!currentUser || !accountReady) return;
@@ -326,9 +301,6 @@ window.confirmDeleteAccount = async function() {
   }
 };
 
-window.closeUpgradeModal = function() {
-  document.getElementById('upgrade-overlay').style.display = 'none';
-};
 </script>
 </body>
 </html>

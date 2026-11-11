@@ -9,7 +9,7 @@ BBBlasty.loginDefaults = {
     signupWelcomeForms:  { text: "Fast lane it is! 📋 Create your account — or use Google / Facebook below to jump straight in.",                  mood: 's-happy'     },
     billing:         { text: "Annual saves you two months free and locks in your rate. Switch anytime.",               mood: 's-wave'  },
     planStarter:     { text: "Starter is free forever — great for getting your first location blasting.",              mood: 's-ask'   },
-    planPro:         { text: "Smart choice! 🔥 Pro gives you room for more businesses and a larger AI budget!",  mood: 's-happy' },
+    planPro:         { text: "Smart choice! 🔥 Pro gives you room for more businesses!",  mood: 's-happy' },
     planAgency:      { text: "Agency lets you manage multiple businesses from one dashboard. Built for franchises and multi-location brands. 💼", mood: 's-happy' },
     name:            { text: "What's your name? We'll personalize your experience.",               mood: 's-ask'       },
     lastName:        { text: "Would you like to save your last name? You can leave it blank.", mood: 's-ask' },

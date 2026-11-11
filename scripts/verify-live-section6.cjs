@@ -1,0 +1,44 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),{randomUUID}=require('node:crypto');
+async function run({chromium}){
+ assert.equal(process.env.GITHUB_ACTIONS,'true');assert.equal(process.env.GITHUB_REF,'refs/heads/main');assert(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+ const origin='https://blastybiz.com',cf='https://us-central1-blastybiz-9523e.cloudfunctions.net';
+ const get=async file=>{const r=await fetch(origin+'/'+file+'?verify='+Date.now(),{signal:AbortSignal.timeout(30000)});assert(r.ok,file);return r.text();};
+ assert.equal(JSON.parse(await get('release.json')).commit,process.env.DEPLOYED_SHA||process.env.RELEASE_SHA);
+ for(const file of ['BlastyBiz-Account.html','BlastyBiz-Choose-Plan.html','BlastyBiz-Admin.html','BlastyBiz-Home.html','BlastyBiz-Plan-Free.html','BlastyBiz-Plan-Pro.html','BlastyBiz-Plan-Agency.html','pricing.js','global-style.css','Buttons.css','blastybiz-menu.js'])assert.equal(await get(file),fs.readFileSync('public/'+file,'utf8'),'exact live '+file);
+ const admin=require('../functions/node_modules/firebase-admin'),app=admin.initializeApp({credential:admin.credential.applicationDefault(),projectId:'blastybiz-9523e'},'section6-acceptance'),db=app.firestore(),auth=app.auth();
+ const uid='section6_check_'+randomUUID().replaceAll('-',''),user=db.doc('users/'+uid),email=uid+'@example.invalid',password=randomUUID()+randomUUID();
+ let created=false,browser,page,stage='seed',mutations=[];
+ const request=async(endpoint,token)=>{const r=await fetch(cf+'/'+endpoint,{headers:token?{Authorization:'Bearer '+token}:{},signal:AbortSignal.timeout(30000)});return {status:r.status,data:await r.json()};};
+ const shot=async name=>{fs.mkdirSync('test-artifacts',{recursive:true});await page.screenshot({path:'test-artifacts/section6-live-'+name+'.png',fullPage:true});};
+ try{
+   const beforePricing=(await db.doc('settings/pricing').get()).data(),beforeConfig=(await db.doc('config/plans').get()).data();
+   const defaults=require('../functions/lib/lifecycle-policy').aiLimits;assert(defaults); // Do not mutate configuration to test display.
+   const publicOptions=await request('getPublicPlanOptions');assert.equal(publicOptions.status,200);assert.deepEqual(Object.keys(publicOptions.data).sort(),['bizLimits','prices']);
+   for(const key of ['proMonthly','proAnnual','agencyMonthly','agencyAnnual'])assert.equal(publicOptions.data.prices[key],beforePricing[key]);
+   for(const [key,value] of Object.entries(beforeConfig.bizLimits||{}))if(key in publicOptions.data.bizLimits)assert.equal(publicOptions.data.bizLimits[key],value);
+   assert.equal((await request('getPlanOptions')).status,401);
+   await auth.createUser({uid,email,password,emailVerified:true});created=true;
+   // No root email: the existing profile-created trigger returns without sending mail.
+   await user.set({plan:'pro',activeBusiness:'fixture',acceptanceFixture:true,manualRemindersEnabled:false,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+   const batch=db.batch();for(const id of ['fixture','other'])batch.set(user.collection('businesses').doc(id),{businessName:'Section 6 acceptance '+id,subscriptionStatus:'past_due',currentPlan:'pro',schedulingPaused:true,createdAt:admin.firestore.FieldValue.serverTimestamp()});await batch.commit();
+   browser=await chromium.launch({headless:true,args:['--no-sandbox']});page=await browser.newPage({viewport:{width:384,height:900}});page.setDefaultTimeout(45000);
+   page.on('request',r=>{if(r.url().startsWith(cf)&&r.method()==='POST'&&/createCheckoutSession|createPortalSession|adminRetryJob|adminDelete|adminUpdatePricing|setPlan|adaptListing/.test(r.url()))mutations.push(r.url().split('/').pop());});
+   stage='sign in';await page.goto(origin+'/BlastyBiz-Login?intent=signin');await page.locator('#si-email').fill(email);await page.locator('#si-password').fill(password);await page.locator('#btn-signin').click();await page.waitForURL(url=>!url.pathname.includes('Login'));
+   let token=await page.evaluate(async()=>{const {auth}=await import('./firebase-init-v2.js');await auth.authStateReady();return auth.currentUser.getIdToken();});
+   const options=await request('getPlanOptions',token);assert.equal(options.status,200);assert.equal(options.data.aiLimits,undefined);assert.deepEqual(options.data.bizLimits,publicOptions.data.bizLimits);assert.equal((await request('adminAiCostRollups',token)).status,403);
+   stage='account';await page.goto(origin+'/BlastyBiz-Account');await page.waitForFunction(()=>/^2 \/ \d+$/.test(document.getElementById('acct-businesses')?.textContent));assert.equal(await page.locator('#acct-businesses').innerText(),'2 / '+options.data.bizLimits.pro);assert.equal(await page.locator('#acct-plan-label').innerText(),'Pro');assert.equal(await page.locator('#acct-billing-btn').innerText(),'Manage Subscription');assert.equal(await page.locator('#acct-admin-card').isVisible(),false);
+   await page.getByLabel('Account options',{exact:true}).click();await page.getByRole('button',{name:'Delete account',exact:true}).click();await page.locator('#delete-overlay').waitFor({state:'visible'});await page.getByRole('button',{name:'Cancel',exact:true}).click();assert.equal(await page.locator('#delete-overlay').isVisible(),false);
+   for(const width of [320,384,430,1280]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Account fits '+width);if([384,1280].includes(width))await shot('account-'+width);}
+   stage='public capacities';await page.goto(origin+'/BlastyBiz-Home');await page.waitForFunction(()=>document.querySelector('[data-biz-limit="pro"]')?.textContent!=='…');for(const [key,value] of Object.entries(publicOptions.data.bizLimits)){const spans=page.locator('[data-biz-limit="'+key+'"]');if(await spans.count())assert.equal(await spans.first().innerText(),String(value));}
+   stage='choose plan';await page.goto(origin+'/BlastyBiz-Choose-Plan');await page.locator('#cp-plans .pricing__card').first().waitFor();const plans=await page.locator('#cp-plans').innerText();assert(!/AI credits|AI budget|AI allowance/.test(plans));assert(plans.includes(options.data.bizLimits.pro+' businesses'));assert(plans.includes('$'+publicOptions.data.prices.proMonthly));
+   stage='admin';await auth.setCustomUserClaims(uid,{admin:true});await page.evaluate(async()=>{const {auth}=await import('./firebase-init-v2.js');await auth.currentUser.getIdToken(true);});await page.goto(origin+'/BlastyBiz-Admin');await page.waitForFunction(()=>document.getElementById('admin-accounts-tbody')?.textContent.includes('Section 6 acceptance'));
+   for(const width of [320,384,430,1280]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Admin fits '+width);if([384,1280].includes(width))await shot('admin-'+width);}
+   await page.getByLabel('Admin options',{exact:true}).click();await page.getByRole('button',{name:'My Plan Override',exact:true}).click();assert.equal(await page.locator('#plan-switcher').isVisible(),true);assert.equal(await page.locator('#plan-btn-pro').count(),1);
+   assert.equal(await page.locator('a[href="BlastyBiz-Admin-Failed-Jobs.html"]').count()>0,true);assert.equal(await page.locator('#accounts-attention a[href="BlastyBiz-Admin-Users.html"]').count(),1);assert.equal(await page.locator('#billing-attention a[href="BlastyBiz-Admin-Subscriptions.html"]').count(),1);
+   assert.deepEqual(mutations,[]);assert.deepEqual((await db.doc('settings/pricing').get()).data(),beforePricing);assert.deepEqual((await db.doc('config/plans').get()).data(),beforeConfig);assert.equal((await db.collection('subscriptions').doc(uid).get()).exists,false);assert.equal((await db.collection('aiUsageLogs').where('uid','==',uid).get()).size,0);assert.equal((await user.collection('businesses').doc('fixture').collection('publishJobs').get()).size,0);
+   console.log('PASS LIVE section 6: exact assets, public canonical prices/business capacity, authenticated customer plan without AI quotas, non-admin AI cost rejection, Account saved business count/current plan/preserved subscription and deletion controls, responsive Account/Admin, existing attention panels and all admin tools, unchanged pricing/configuration, no billing mutations, AI calls, posts or emails.');
+ }catch(e){if(page)await shot('failure').catch(()=>{});throw Error(stage+': '+e.message);}
+ finally{if(browser)await browser.close();await db.recursiveDelete(user);for(const name of ['activityLogs','aiUsageLogs']){const rows=await db.collection(name).where('uid','==',uid).get();for(const row of rows.docs)await row.ref.delete();}await db.doc('setupNudges/'+uid).delete();if(created)await auth.deleteUser(uid);await app.delete();}
+}
+module.exports={run};

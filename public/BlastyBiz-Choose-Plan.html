@@ -110,7 +110,7 @@ function money(n) {
 }
 
 // ── Personalised platform breakdown ─────────────────────────────────────────
-// Delivery is shared across plans; business capacity and AI budget differ.
+// Delivery is shared across plans; business capacity differ.
 function renderPlatforms() {
   const card = document.getElementById('cp-plat-card');
   const list = document.getElementById('cp-plat-list');
@@ -118,7 +118,7 @@ function renderPlatforms() {
   const sub  = document.getElementById('cp-sub');
   if (!picked.length) {
     card.classList.add('hidden');
-    sub.textContent = 'Choose the business capacity and AI budget that fit your work.';
+    sub.textContent = 'Choose the business capacity that fit your work.';
     return;
   }
   card.classList.remove('hidden');
@@ -161,8 +161,8 @@ function renderPlans() {
   const wrap = document.getElementById('cp-plans');
   if (!planOptions) return;
 
-  const ai   = planOptions.aiLimits  || {};
   const biz  = planOptions.bizLimits || {};
+  const capacity = key => Number.isSafeInteger(biz[key]) && biz[key] >= 0 ? biz[key] + (biz[key] === 1 ? ' business' : ' businesses') : 'Business capacity unavailable';
   const pr   = planOptions.prices    || {};
   const rdy  = planOptions.checkoutReady || {};
   document.querySelector('.cp-billing-save').textContent='Annual pricing';
@@ -204,12 +204,11 @@ function renderPlans() {
   wrap.innerHTML =
     planCard('free', {
       tier: 'Free', price: '$0', per: '/mo',
-      line: 'All shared features for one business.',
+      line: 'Start with the shared publishing features.',
       cta: 'Continue free →',
       features: [
         { text: freeAutoLine },
-        { text: (ai.starter ?? 100) + ' AI credits a month (writing and images)' },
-        { text: (biz.starter ?? 1) + ' business' },
+        { text: capacity('starter') },
         { text: 'Auto-posting to Google, Facebook & Instagram' },
         { text: 'Copy Library & AI business memory' },
       ],
@@ -217,11 +216,10 @@ function renderPlans() {
     + planCard('pro', {
       tier: 'Pro', featured: true, badge: 'Most popular',
       price: money(billingPeriod === 'annual' ? pr.proAnnual : pr.proMonthly), per,
-      line: billingPeriod==='annual' && pr.proMonthly*12>pr.proAnnual ? 'Save '+money(pr.proMonthly*12-pr.proAnnual)+' per year compared with monthly billing.' : 'More business capacity and a larger AI budget.',
+      line: billingPeriod==='annual' && pr.proMonthly*12>pr.proAnnual ? 'Save '+money(pr.proMonthly*12-pr.proAnnual)+' per year compared with monthly billing.' : 'More business capacity.',
       cta: 'Go Pro →',
       features: [
-        { text: (ai.pro ?? 1000) + ' AI credits a month (writing and images)' },
-        { text: (biz.pro ?? 3) + ' businesses' },
+        { text: capacity('pro') },
         { text: 'Auto-posting to Google, Facebook & Instagram on every plan' },
         { text: 'Copy Library & AI business memory' },
         { text: 'Scheduling and posting history' },
@@ -234,8 +232,7 @@ function renderPlans() {
       cta: 'Go Agency →',
       features: [
         { text: 'Everything in Pro' },
-        { text: (ai.agency ?? 5000) + ' AI credits a month (writing and images)' },
-        { text: (biz.agency ?? 10) + ' businesses' },
+        { text: capacity('agency') },
         { text: 'Shared publishing, library and history features' },
       ],
     });

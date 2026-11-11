@@ -18,8 +18,8 @@ const copy={
  counts:`${auto.length} auto-post platforms when connected · ${manual.length} copy-and-paste destinations`,
  'google-limit':`Google Business Profile update posts support up to ${authority.byId.google.doc.maxChars.toLocaleString('en-US')} characters. Keep your offer and next step easy to scan.`,
  'plan-cards':`<div class="row"><div class="layout__split-3">
-      <div class="plat-plan-card"><div class="plat-plan-name">Free</div><p>Try the writing and review workflow with the account allowance shown in the app.</p><a href="BlastyBiz-Plan-Free.html" class="plat-plan-link">See Free Plan &rarr;</a></div>
-      <div class="plat-plan-card plat-plan-card--featured"><div class="plat-plan-name">Pro</div><p>Review the current AI allowance, business limits, and price before choosing your plan.</p><a href="BlastyBiz-Plan-Pro.html" class="plat-plan-link">See Pro Plan &rarr;</a></div>
+      <div class="plat-plan-card"><div class="plat-plan-name">Free</div><p>Try the shared writing, review and publishing tools.</p><a href="BlastyBiz-Plan-Free.html" class="plat-plan-link">See Free Plan &rarr;</a></div>
+      <div class="plat-plan-card plat-plan-card--featured"><div class="plat-plan-name">Pro</div><p>Compare current business capacity and prices before choosing your plan.</p><a href="BlastyBiz-Plan-Pro.html" class="plat-plan-link">See Pro Plan &rarr;</a></div>
       <div class="plat-plan-card"><div class="plat-plan-name">Agency</div><p>Manage multiple businesses under one login. Current limits and prices are shown in the app.</p><a href="BlastyBiz-Plan-Agency.html" class="plat-plan-link">See Agency Plan &rarr;</a></div>
     </div></div>`
 };

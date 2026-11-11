@@ -90,20 +90,33 @@ function safeReturnPath(p) {
 }
 
 // ── getPlanOptions — what the in-app plan step renders ────────────────────────
-// Prices come from settings/pricing and the AI / business caps come from
-// getPlanConfig(), the same call reserveAiAction() enforces against. Nothing
-// about plan entitlements is hardcoded in the page.
-exports.getPlanOptions = onRequest({ invoker: 'public', region: 'us-central1' }, withAuth(async (req, res) => {
+// Display prices and business capacity from the same authorities as enforcement.
+// AI allowances and Square catalog identifiers are never part of public copy.
+async function planDisplayOptions() {
   const [pricing, planCfg] = await Promise.all([loadPricing(), getPlanConfig()]);
-  res.json({
+  return { pricing, planCfg, display: {
     prices: {
       proMonthly:    pricing.proMonthly,
       proAnnual:     pricing.proAnnual,
       agencyMonthly: pricing.agencyMonthly,
       agencyAnnual:  pricing.agencyAnnual,
     },
-    aiLimits:  planCfg.aiLimits,
-    bizLimits: planCfg.bizLimits,
+    bizLimits: Object.fromEntries(['trial', 'starter', 'pro', 'agency'].map(key => [key, planCfg.bizLimits[key]])),
+  } };
+}
+
+exports.getPublicPlanOptions = onRequest({ invoker: 'public', region: 'us-central1' }, withAuth(async (req, res) => {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Use GET' });
+  try {
+    const { display } = await planDisplayOptions();
+    res.json(display);
+  } catch (_) { res.status(503).json({ error: 'Plan details unavailable' }); }
+}, { public: true }));
+
+exports.getPlanOptions = onRequest({ invoker: 'public', region: 'us-central1' }, withAuth(async (req, res) => {
+  const { pricing, planCfg, display } = await planDisplayOptions();
+  res.json({
+    ...display,
     // The plan step sells auto-posting, so it must promise exactly what
     // approveDraft will do — not what client-side platform metadata (which an
     // admin can override in config/platforms) happens to say.

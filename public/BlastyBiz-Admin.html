@@ -9,6 +9,7 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="Buttons.css?v=20261110-section5">
 <title>BlastyBiz — Admin Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -37,44 +38,12 @@
 <body class="admin-page">
 <header>
   <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Admin Command</span></a>
-  <div class="top-actions">
-    <a class="icon-btn hide-mobile" href="BlastyBiz-Dashboard.html">Customer View</a>
-    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue Manager</a>
-    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a>
-    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Users.html">Users</a>
-    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Subscriptions.html">Money</a>
-    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platform-Health.html">Health</a>
-    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Logs.html">Logs</a>
-    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a>
-    <a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Operate.html">⚙️ Operate</a>
-    <a class="icon-btn hide-mobile" href="BlastyBiz-TestBlasty.html">🧪 Test Blasty</a>
-    <a class="icon-btn" href="BlastyBiz-Login.html">👤</a>
-  </div>
+  <div class="top-actions"><details class="bb-more"><summary aria-label="Admin options" title="Admin options">⋯</summary><div class="bb-more-list"><a href="BlastyBiz-Dashboard.html">Customer View</a><a href="BlastyBiz-Admin-Queue-Manager.html">Queue Manager</a><a href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a href="BlastyBiz-Admin-Users.html">Users</a><a href="BlastyBiz-Admin-Subscriptions.html">Money</a><a href="BlastyBiz-Admin-Platform-Health.html">Health</a><a href="BlastyBiz-Admin-Logs.html">Logs</a><a href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a href="BlastyBiz-Admin-Operate.html">⚙️ Operate</a><a href="BlastyBiz-TestBlasty.html">🧪 Test Blasty</a><a href="BlastyBiz-Login.html">👤</a><button type="button" data-more-target="plan-switcher" aria-expanded="false">My Plan Override</button><a href="#ai-settings-card">AI settings</a><a href="#platform-cats-card">Platform categories</a><a href="#ai-cost-rollups">AI cost rollups</a></div></details></div>
 </header>
 
 <main><div class="main"><div class="main-inner">
 
-  <!-- ── OPERATE QUICK ACCESS ── -->
-  <a href="BlastyBiz-Admin-Operate.html" class="card" style="display:flex;align-items:center;gap:14px;margin-bottom:20px;border-left:4px solid #00C853;text-decoration:none;color:inherit;">
-    <div style="font-size:28px;line-height:1;">⚙️</div>
-    <div style="flex:1;">
-      <div style="font-weight:700;font-size:16px;">Operate — To-Do List</div>
-      <div class="row-sub" style="opacity:.75;">Daily admin checklist &amp; setup tasks</div>
-    </div>
-    <div style="font-size:20px;opacity:.6;">›</div>
-  </a>
 
-  <!-- ── PLAN SWITCHER ── -->
-  <section class="card" id="plan-switcher" style="margin-bottom:20px;border-left:4px solid #00C853;">
-    <div class="card-title" style="margin-bottom:6px;">⚙️ My Plan Override</div>
-    <p style="font-size:13px;color:#666;margin:0 0 14px;">Switch your account between tiers for testing. A real Square payment event will overwrite this.</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <button id="plan-btn-starter" onclick="window.setPlan('starter')" class="btn">Starter</button>
-      <button id="plan-btn-pro"     onclick="window.setPlan('pro')"     class="btn">Pro</button>
-      <button id="plan-btn-agency"  onclick="window.setPlan('agency')"  class="btn">Agency</button>
-      <span id="plan-current" style="font-size:13px;color:#888;margin-left:6px;"></span>
-    </div>
-  </section>
 
   <section class="hero">
     <div class="card">
@@ -95,6 +64,39 @@
       </div>
     </div>
   </section>
+
+<h2 id="needs-attention">Needs attention</h2>
+  <section class="row"><div class="layout__split-2">
+    <div class="card" id="failed">
+      <div class="card-title">⚠️ Failed Job Queue</div>
+      <div class="list" id="admin-failed-list"><div class="list-item"><div class="icon">…</div><div class="row-main"><div class="row-title">Loading…</div></div></div></div>
+      <a class="btn" href="BlastyBiz-Admin-Failed-Jobs.html">Review failed jobs →</a>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📡 Platform Health</div>
+      <div class="list" id="admin-platform-health">Loading…</div>
+      <a class="btn" href="BlastyBiz-Admin-Platform-Health.html">View connection details →</a>
+    </div>
+  </div></section>
+  <section class="row"><div class="layout__split-2">
+    <div class="card" id="accounts-attention">
+      <div class="card-title">⚠️ Accounts To Watch</div>
+      <table>
+        <thead><tr><th>Business</th><th>Plan</th><th>Status</th><th>Issue</th><th></th></tr></thead>
+        <tbody id="admin-accounts-tbody"><tr><td colspan="5" class="td-empty">Loading…</td></tr></tbody>
+      </table>
+      <a class="btn" href="BlastyBiz-Admin-Users.html">Review accounts →</a>
+    </div>
+    <div class="card" id="billing-attention">
+      <div class="card-title">💳 Billing</div>
+      <div class="list">
+        <div class="list-item" id="admin-billing-pastdue"><div class="icon">$</div><div class="row-main"><div class="row-title">Loading…</div><div class="row-sub">Review the existing subscription details before taking action.</div></div></div>
+        <div class="list-item" id="admin-billing-trials"><div class="icon">↗</div><div class="row-main"><div class="row-title">Loading…</div><div class="row-sub">Prioritize users with completed profiles and live listings.</div></div></div>
+      </div>
+      <a class="btn" href="BlastyBiz-Admin-Subscriptions.html">Review subscriptions →</a>
+    </div>
+  </div></section>
 
   <section class="grid" id="finance">
     <div class="stat"><div class="stat-num" id="stat-mrr">Loading…</div><div class="stat-label">Estimated MRR</div><div class="stat-note money">Active owners in loaded records · configured monthly prices</div></div>
@@ -123,18 +125,7 @@
     <p id="funnel-widget-meta" style="font-size:12px;color:#666;"></p>
   </section>
 
-  <section class="two-col">
-    <div class="card" id="failed">
-      <div class="card-title">⚠️ Failed Job Queue</div>
-      <div class="list" id="admin-failed-list"><div class="list-item"><div class="icon">…</div><div class="row-main"><div class="row-title">Loading…</div></div></div></div>
-    </div>
 
-    <div class="card">
-      <div class="card-title">📡 Platform Health</div>
-      <div class="list" id="admin-platform-health">Loading…</div>
-      <a class="btn" href="BlastyBiz-Admin-Platform-Health.html">View connection details →</a>
-    </div>
-  </section>
 
   <section class="card mb-16" id="users">
     <div class="card-title">👥 All Accounts</div>
@@ -145,13 +136,7 @@
   </section>
 
   <section class="two-col">
-    <div class="card">
-      <div class="card-title">⚠️ Accounts To Watch</div>
-      <table>
-        <thead><tr><th>Business</th><th>Plan</th><th>Status</th><th>Issue</th><th></th></tr></thead>
-        <tbody id="admin-accounts-tbody"><tr><td colspan="5" class="td-empty">Loading…</td></tr></tbody>
-      </table>
-    </div>
+
 
     <div class="card">
       <div class="card-title">🤖 AI Usage / Margin</div>
@@ -213,13 +198,7 @@
   </section>
 
   <section class="three-col">
-    <div class="card">
-      <div class="card-title">💳 Billing</div>
-      <div class="list">
-        <div class="list-item" id="admin-billing-pastdue"><div class="icon">$</div><div class="row-main"><div class="row-title">Loading…</div><div class="row-sub">Send billing recovery email or downgrade after grace period.</div></div></div>
-        <div class="list-item" id="admin-billing-trials"><div class="icon">↗</div><div class="row-main"><div class="row-title">Loading…</div><div class="row-sub">Prioritize users with completed profiles and live listings.</div></div></div>
-      </div>
-    </div>
+
     <div class="card">
       <div class="card-title">🧾 Logs</div>
       <p id="admin-log-summary" role="status">Loading recent activity…</p>
@@ -231,6 +210,17 @@
         <div class="list-item"><div class="icon">1</div><div class="row-main"><div class="row-title">Customer pages stay simple</div><div class="row-sub">No backend language. No AI cost. No confusing metrics.</div></div></div>
         <div class="list-item"><div class="icon">2</div><div class="row-main"><div class="row-title">Admin sees the machine</div><div class="row-sub">Costs, failures, margins, logs, retries, and customer risk.</div></div></div>
       </div>
+    </div>
+  </section>
+  <!-- ── PLAN SWITCHER ── -->
+  <section class="card" id="plan-switcher" hidden tabindex="-1" style="margin-bottom:20px;border-left:4px solid #00C853;">
+    <div class="card-title" style="margin-bottom:6px;">⚙️ My Plan Override</div>
+    <p style="font-size:13px;color:#666;margin:0 0 14px;">Switch your account between tiers for testing. A real Square payment event will overwrite this.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <button id="plan-btn-starter" onclick="window.setPlan('starter')" class="btn">Starter</button>
+      <button id="plan-btn-pro"     onclick="window.setPlan('pro')"     class="btn">Pro</button>
+      <button id="plan-btn-agency"  onclick="window.setPlan('agency')"  class="btn">Agency</button>
+      <span id="plan-current" style="font-size:13px;color:#888;margin-left:6px;"></span>
     </div>
   </section>
 </div></div></main>
@@ -496,7 +486,7 @@ onAuthStateChanged(auth, async (user) => {
     // A business is considered onboarded if it has a businessName — the flag is unreliable
     const isOnboarded = b => !!(b.onboarded || b.businessName);
     // Show all accounts needing attention, including ghost docs (no name = empty signup)
-    const attn = all.filter(b => ['past_due','canceled','trial'].includes(b.subscriptionStatus) || !isOnboarded(b));
+    const attn = all.filter(b => ['past_due','canceled'].includes(b.subscriptionStatus) || !isOnboarded(b));
     const tbody = el('admin-accounts-tbody');
     if (tbody) {
       tbody.innerHTML = attn.length
@@ -504,10 +494,9 @@ onAuthStateChanged(auth, async (user) => {
             const s = b.subscriptionStatus || 'unknown';
             const plan = PLAN_DISPLAY[(b.currentPlan||'').toLowerCase()] || 'Free';
             const issue = !isOnboarded(b) ? 'Empty signup — no profile'
-              : s === 'past_due' ? 'Square payment failed'
-              : s === 'trial'    ? 'Trial — needs upgrade'
+              : s === 'past_due' ? 'Past due — review subscription'
               : s === 'canceled' ? 'Canceled' : '—';
-            return '<tr><td class="attn-name-cell" data-id="' + b.id + '"></td><td>' + _esc(plan) + '</td><td><span class="badge ' + (SUB_BADGE[s]||'live') + '">' + _esc(s) + '</span></td><td class="muted">' + _esc(issue) + '</td><td><button class="del-btn" data-id="' + b.id + '" data-uid="' + _esc(b.uid) + '" title="Delete">🗑</button></td></tr>';
+            return '<tr><td class="attn-name-cell" data-id="' + b.id + '"></td><td>' + _esc(plan) + '</td><td><span class="badge ' + (SUB_BADGE[s]||'live') + '">' + _esc(s) + '</span></td><td class="muted">' + _esc(issue) + '</td><td><button type="button" class="del-btn" data-id="' + _esc(b.id) + '" data-uid="' + _esc(b.uid) + '" title="Delete business">🗑</button></td></tr>';
           }).join('')
         : '<tr><td colspan="5" class="td-empty">All accounts healthy.</td></tr>';
       tbody.querySelectorAll('.attn-name-cell').forEach(td => {

@@ -4,11 +4,11 @@
   async function load(){
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
     try{
-      const response=await fetch('https://firestore.googleapis.com/v1/projects/blastybiz-9523e/databases/(default)/documents/settings/pricing',{signal:controller.signal});
+      const response=await fetch('https://us-central1-blastybiz-9523e.cloudfunctions.net/getPublicPlanOptions',{signal:controller.signal});
       if(!response.ok)throw Error('Pricing unavailable');
-      const {fields={}}=await response.json();
+      const {prices={},bizLimits={}}=await response.json();
       document.querySelectorAll('[data-price]').forEach(node=>{
-        const value=fields[node.dataset.price],number=Number(value?.doubleValue??value?.integerValue??value?.stringValue);
+        const number=Number(prices[node.dataset.price]);
         let display = number;
         if (node.dataset.pricePeriod === 'weekly') display = number * 12 / 52;
         if (node.dataset.pricePeriod === 'annual') display = number * 12;
@@ -16,7 +16,14 @@
         if (node.dataset.pricePeriod === 'annual-difference') display = Number(node.dataset.comparisonAnnual) - number * 12;
         node.textContent=Number.isFinite(number)&&number>0&&Number.isFinite(display)?money(display):'See checkout';
       });
-    }catch(error){document.querySelectorAll('[data-price]').forEach(node=>node.textContent='See checkout');}
+      document.querySelectorAll('[data-biz-limit]').forEach(node=>{
+        const value=bizLimits[node.dataset.bizLimit];
+        node.textContent=Number.isSafeInteger(value)&&value>=0?String(value):'See plans';
+      });
+    }catch(error){
+      document.querySelectorAll('[data-price]').forEach(node=>node.textContent='See checkout');
+      document.querySelectorAll('[data-biz-limit]').forEach(node=>node.textContent='See plans');
+    }
     finally{clearTimeout(timer);}
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load);else load();

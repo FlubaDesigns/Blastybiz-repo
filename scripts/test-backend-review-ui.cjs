@@ -8,14 +8,15 @@ const settle=async()=>{for(let i=0;i<6;i++)await new Promise(setImmediate);};
  for(const pending of [true,false]){
   const dom=new JSDOM(html,{url:'https://example.invalid/BlastyBiz-Account.html',runScripts:'outside-only',virtualConsole:new VirtualConsole()}),w=dom.window;
   const user={uid:'u',email:'test@example.invalid',getIdToken:async()=>'fixture',getIdTokenResult:async()=>({claims:{}})};
-  Object.assign(w,{auth:{authStateReady:async()=>{}},db:{},onAuthStateChanged:(_,cb)=>cb(user),doc:()=>{},getDoc:async()=>{throw Error('permission-denied');},fetch:async url=>({status:409,ok:false,json:async()=>url.includes('createCheckoutSession')?{code:'EXISTING_SUBSCRIPTION',error:'To change your plan or billing period, contact support@blastybiz.com.'}:{code:pending?'ACCOUNT_DELETION_PENDING':'OTHER'}})});
+  Object.assign(w,{auth:{authStateReady:async()=>{}},db:{},waitForPendingWrites:async()=>{},collection:()=>{},getDocsFromServer:async()=>({size:2}),onAuthStateChanged:(_,cb)=>cb(user),doc:()=>{},getDocFromServer:async()=>{throw Error('permission-denied');},fetch:async url=>({status:409,ok:false,json:async()=>url.includes('createCheckoutSession')?{code:'EXISTING_SUBSCRIPTION',error:'To change your plan or billing period, contact support@blastybiz.com.'}:{code:pending?'ACCOUNT_DELETION_PENDING':'OTHER'}})});
   w.eval(code);await settle();
   const status=w.document.getElementById('acct-deletion-status');assert.equal(status.hidden,false);
   assert.match(status.textContent,pending?/Deletion in progress/:/could not be loaded/);
   assert.equal(w.document.getElementById('acct-billing-btn').disabled,true,'billing stays disabled when the account cannot load');
   if(pending){assert.equal(w.document.querySelector('.delete-account-btn').textContent,'Retry Delete Account');assert.equal(w.document.getElementById('acct-billing-btn').style.display,'none');}
   w.openDeleteModal();assert.equal(w.document.getElementById('delete-overlay').style.display,'flex');
-  await w.startCheckout('agency');const toast=w.document.getElementById('toast');assert.match(toast.textContent,/support@blastybiz.com/);assert(toast.classList.contains('show'));assert.equal(toast.style.whiteSpace,'normal');
+  assert.equal(w.startCheckout,undefined,'obsolete alternate checkout route removed');
+  assert.equal(w.document.getElementById('acct-businesses').textContent,'Not available');
   dom.window.close();
  }
  for(const plan of ['pro','starter']){
@@ -24,8 +25,8 @@ const settle=async()=>{for(let i=0;i<6;i++)await new Promise(setImmediate);};
   let resolveProfile,resolveBilling,authChanged,mounts=0;
   const profile=new Promise(resolve=>{resolveProfile=resolve;});
   const user={uid:'u',email:'test@example.invalid',getIdToken:async()=>'fixture',getIdTokenResult:async()=>({claims:{}})};
-  Object.assign(w,{auth:{authStateReady:async()=>{}},db:{},onAuthStateChanged:(_,cb)=>{authChanged=cb;cb(user);},doc:()=>{},getDoc:()=>profile,
-   fetch:async()=>({ok:true,json:async()=>({})}),BBBilling:{mount:()=>{mounts++;return new Promise(resolve=>{resolveBilling=resolve;});}}});
+  Object.assign(w,{auth:{authStateReady:async()=>{}},db:{},waitForPendingWrites:async()=>{},collection:()=>{},getDocsFromServer:async()=>({size:2}),onAuthStateChanged:(_,cb)=>{authChanged=cb;cb(user);},doc:()=>{},getDocFromServer:()=>profile,
+   fetch:async()=>({ok:true,json:async()=>({bizLimits:{starter:1,pro:7}})}),BBBilling:{mount:()=>{mounts++;return new Promise(resolve=>{resolveBilling=resolve;});}}});
   w.eval(code);await settle();
   const button=w.document.getElementById('acct-billing-btn');
   assert.equal(button.tagName,'BUTTON');assert.equal(button.disabled,true);assert.equal(button.textContent,'Loading account…');
@@ -34,6 +35,7 @@ const settle=async()=>{for(let i=0;i<6;i++)await new Promise(setImmediate);};
   assert.equal(errors.length,0,'an early billing action must not attempt a checkout redirect');
   resolveProfile({exists:()=>true,data:()=>({plan})});await settle();
   assert.equal(button.disabled,false);assert.equal(button.textContent,plan==='pro'?'Manage Subscription':'View Plans');
+  assert.equal(w.document.getElementById('acct-businesses').textContent,'2 / '+(plan==='pro'?7:1));
   if(plan==='pro'){
    const opening=w.handleBilling({preventDefault(){}});
    assert.equal(mounts,1);assert.equal(button.disabled,true);
@@ -45,5 +47,5 @@ const settle=async()=>{for(let i=0;i<6;i++)await new Promise(setImmediate);};
   assert.equal(errors.length,0);dom.window.close();
  }
  require('./test-operate-todos-ui.cjs');
- console.log('PASS actual Account DOM: billing waits for the loaded plan, blocks repeat activation and sign-out, and stays disabled on load failure; deletion retry and mobile checkout messages remain available.');
+ console.log('PASS actual Account DOM: billing waits for the loaded plan, blocks repeat activation and sign-out, and stays disabled on load failure; deletion retry and canonical business capacity remain available.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

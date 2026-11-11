@@ -38,7 +38,7 @@ module.exports=async function(){
   const main=read('BlastyBiz.html');w.eval('let history=window.testRows;'+main.slice(main.indexOf('function renderHistory()'),main.indexOf('async function loadHistoryDraft')));w.renderHistory();
   assert.equal(w.document.getElementById('stat-total-posts').textContent,'2');assert.equal(w.document.getElementById('stat-this-month').textContent,'1');
   assert.match(w.document.getElementById('history-list').textContent,/Failed/);
-  w.fetch=async()=>({ok:true,json:async()=>({fields:{proMonthly:{integerValue:'27'}}})});w.eval(read('pricing.js'));w.document.dispatchEvent(new w.Event('DOMContentLoaded'));await new Promise(r=>setImmediate(r));assert.equal(w.document.querySelector('[data-price]').textContent,'$27');
+  w.fetch=async()=>({ok:true,json:async()=>({prices:{proMonthly:27}})});w.eval(read('pricing.js'));w.document.dispatchEvent(new w.Event('DOMContentLoaded'));await new Promise(r=>setImmediate(r));assert.equal(w.document.querySelector('[data-price]').textContent,'$27');
   dom.window.close();
   console.log('PASS commercial UI: setup reload/identity/expiry/sign-out, canonical history outcomes/year counts, configurable public pricing.');
 };
