@@ -357,32 +357,6 @@ function renderAgencyBar() {
 }
 
 // ══════════════════════════════════════════
-// SWITCH BUSINESS
-// ══════════════════════════════════════════
-function switchBusiness(bizId) {
-  activeBizId = bizId;
-  renderSwitcherBar();
-  renderAgencyBar();
-  loadBusinessContext(bizId);
-  const biz = BUSINESSES.find(b => b.id === bizId);
-  showToast(`Switched to ${biz.name}`);
-}
-
-// ══════════════════════════════════════════
-// LOAD BUSINESS CONTEXT
-// Prototype: updates visible text only
-// Firebase: query Firestore for this businessId's data
-// ══════════════════════════════════════════
-function loadBusinessContext(bizId) {
-  const biz = BUSINESSES.find(b => b.id === bizId) || BUSINESSES[0];
-  document.getElementById('dashboard-biz-name').textContent = biz.name;
-  document.getElementById('visibility-score').textContent = biz.score;
-  document.getElementById('score-bar').style.width = biz.score + '%';
-  // Firebase: load businesses/{bizId}, platformConnections, publishJobs, listingDrafts
-  // and re-render all dashboard sections with real data
-}
-
-// ══════════════════════════════════════════
 // EDIT ACTIVE BUSINESS
 // Routes to BlastyBiz.html — Firestore already loads saved data on that page
 // ══════════════════════════════════════════
@@ -605,13 +579,6 @@ onAuthStateChanged(auth, async (user) => {
 
   // Re-render Control Panel now that businesses are loaded from Firestore.
   // init() syncs the non-module BUSINESSES variable from window.BUSINESSES and
-  // calls renderSwitcherBar() + renderAgencyBar(). loadBusinessContextFirestore()
-  // then fills in campaigns, platform status, activity feed, etc.
-  try { if (typeof init === 'function') init(); } catch(initErr) { console.error('[Dashboard] init error:', initErr); }
-  if (window.BUSINESSES && window.BUSINESSES.length && window.activeBizId) {
-    await loadBusinessContextFirestore(window.activeBizId);
-  }
-
   // Clean up login param from URL
   const urlParams2 = new URLSearchParams(window.location.search);
   if (urlParams2.get('from') === 'login') {
@@ -912,6 +879,16 @@ onAuthStateChanged(auth, async (user) => {
     if (!bizId) return;
     await loadBusinessContextFirestore(bizId);
   };
+
+  // Bind every real action before displaying businesses or awaiting dashboard reads.
+  // calls renderSwitcherBar() + renderAgencyBar(). loadBusinessContextFirestore()
+  // then fills in campaigns, platform status, activity feed, etc.
+  try { if (typeof init === 'function') init(); } catch(initErr) { console.error('[Dashboard] init error:', initErr); }
+  if (window.BUSINESSES && window.BUSINESSES.length && window.activeBizId) {
+    await loadBusinessContextFirestore(window.activeBizId);
+  }
+
+
   } catch (error) {
     console.error('[Dashboard] startup failed:', error.code || error.message);
     dashboardLoadFailed();

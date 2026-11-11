@@ -4995,3 +4995,5 @@ body.publishing-page .bb-reminder { display: block; }
 #dashboard-return .bb-life { padding:0; }
 #dashboard-return .bb-schedule-card { margin-bottom:0; }
 @media (max-width:768px) { .dashboard-page .dash-img-col { display:none; } }
+
+.dashboard-page .biz-sheet:not(.open) { visibility:hidden; }
