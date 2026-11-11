@@ -72,7 +72,7 @@ async function save(extra={}){const state=await editor();return life.manage('u',
  const generated=await gen(job);assert.equal(generated.image.id,'ai_image_one');assert.equal(m.get(C+'/images/ai_image_one').retired,false);await gen(job);assert.equal(provider,1);assert.equal(credits,1);assert.equal(files,1);assert.equal(logs[0][3].image_tokens,1120);
  assert.equal(m.get(A).imageRefs[0].id,'old','AI preview never silently selects or publishes');
  const limited=createImageGenerator({db:m.db,admin:fakeAdmin,reserveAiAction:async()=>{throw Error('LIMIT_REACHED');},trackAiUsage:async()=>{},key:()=> 'fixture',fetchImpl:async()=>{throw Error('must not call provider');}});
- await assert.rejects(limited({...job,requestId:'limited'}),/allowance/);
+ await assert.rejects(limited({...job,requestId:'limited'}),e=>e.httpStatus===429&&/temporarily unavailable/.test(e.message)&&!/allowance|reset|remaining/.test(e.message));
  assert.equal(m.get(C+'/images/ai_limited').retired,true,'failed preview is absent from library');
  console.log('PASS scheduling photo scope, save approval, zero-count automatic reuse, stale edits, cancel, duplicate saves/workers, image generation retry and allowance boundaries.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

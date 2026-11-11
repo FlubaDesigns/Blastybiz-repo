@@ -72,7 +72,8 @@ async function main(){
  ok(JSON.stringify(setup.collect('signup',dom('signup')))===JSON.stringify(setup.collect('setup',dom('setup'))),'pre-email and setup collect identical canonical values');
  const c={window:{},module:{},console,document:{},};c.window=c;vm.createContext(c);
  for(const file of ['blasty-registry.js','blasty-events.js'])vm.runInContext(fs.readFileSync('public/'+file,'utf8'),c);
- ok(Object.keys(c.BBBlasty.events).length===77&&Object.keys(c.BBBlasty.fields).length===27,'77 guidance events after removing premature existing-Ad prompt; 27 fields');
+ ok(Object.keys(c.BBBlasty.events).length===76&&Object.keys(c.BBBlasty.fields).length===27,'76 guidance events after removing customer quota guidance; 27 fields');
+ ok(!c.BBBlasty.events['ai.allowance_near'],'Customer quota guidance is removed');
  ok(!c.BBBlasty.events['ad.existing_campaign_open'],'premature existing-Ad prompt is removed');
  ok(!c.BBBlasty.events['activity.context_summary']&&!!c.BBBlasty.events['activity.historical_override_choice'],'latest Activity replacement applied');
  c.BBBlasty.configure({events:{'ad.run_again_scope':{message:'Run {{adName}}?',enabled:false}}});
