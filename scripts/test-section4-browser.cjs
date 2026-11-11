@@ -10,7 +10,7 @@ const fs=require('node:fs'),assert=require('node:assert/strict'),{chromium}=requ
   await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'compact schedule fits '+width);
   assert(await card.locator('.bb-upcoming-photo').isVisible());assert.equal(await card.locator('.bb-destination').count(),2);assert((await card.locator('.bb-upcoming-time').innerText()).includes('9:00'));
   assert(await card.getByRole('button',{name:'Pause',exact:true}).isVisible());assert(await card.getByRole('button',{name:'Review & approve',exact:true}).isVisible());
-  await card.locator('.bb-more > summary').click();const menu=await card.locator('.bb-more-list').boundingBox();assert(menu.x>=0&&menu.x+menu.width<=width,'right menu fits '+width);
+  await card.locator('.bb-more > summary').click();fs.mkdirSync('test-artifacts',{recursive:true});await page.screenshot({path:'test-artifacts/section4-menu-'+width+'.png',fullPage:true});const menu=await card.locator('.bb-more-list').boundingBox();assert(menu.x>=0&&menu.x+menu.width<=width,'right menu fits '+width);
   const icon=await card.locator('.bb-more > summary').boundingBox();assert(icon.width<=40&&icon.height<=40,'normal three-dot icon');
   for(const label of ['Edit Schedule & Photos','Skip Next','Move only the next post','Schedule details','Cancel Schedule'])assert(await card.getByRole('button',{name:label,exact:true}).isVisible(),label);
   await page.keyboard.press('Escape');fs.mkdirSync('test-artifacts',{recursive:true});await page.screenshot({path:'test-artifacts/section4-schedule-'+width+'.png',fullPage:true});

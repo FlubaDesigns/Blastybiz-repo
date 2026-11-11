@@ -11,6 +11,16 @@ window.BBMore = {
     const {menu, body} = this.create(label); body.innerHTML = content; return menu.outerHTML;
   }
 };
+// Keep the anchored menu inside the viewport even in a nested schedule card.
+function fitMoreMenu(menu) {
+  if(!menu.open)return;
+  menu.style.setProperty('--bb-more-shift','0px');
+  const box=menu.querySelector('.bb-more-list')?.getBoundingClientRect();if(!box)return;
+  const shift=box.left<8?8-box.left:box.right>innerWidth-8?innerWidth-8-box.right:0;
+  menu.style.setProperty('--bb-more-shift',shift+'px');
+}
+document.addEventListener('toggle',event=>{if(event.target.matches?.('.bb-more'))fitMoreMenu(event.target);},true);
+window.addEventListener('resize',()=>document.querySelectorAll('.bb-more[open]').forEach(fitMoreMenu));
 document.addEventListener('click', event => {
   document.querySelectorAll('.bb-more[open]').forEach(menu => {
     if (!menu.contains(event.target)) menu.open = false;
