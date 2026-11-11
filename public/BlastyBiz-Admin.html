@@ -38,7 +38,7 @@
 <body class="admin-page">
 <header>
   <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Admin Command</span></a>
-  <div class="top-actions"><details class="bb-more"><summary aria-label="Admin options" title="Admin options">⋯</summary><div class="bb-more-list"><a href="BlastyBiz-Dashboard.html">Customer View</a><a href="BlastyBiz-Admin-Queue-Manager.html">Queue Manager</a><a href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a href="BlastyBiz-Admin-Users.html">Users</a><a href="BlastyBiz-Admin-Subscriptions.html">Money</a><a href="BlastyBiz-Admin-Platform-Health.html">Health</a><a href="BlastyBiz-Admin-Logs.html">Logs</a><a href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a href="BlastyBiz-Admin-Operate.html">⚙️ Operate</a><a href="BlastyBiz-TestBlasty.html">🧪 Test Blasty</a><a href="BlastyBiz-Login.html">👤</a><button type="button" data-more-target="plan-switcher" aria-expanded="false">My Plan Override</button><a href="#ai-settings-card">AI settings</a><a href="#platform-cats-card">Platform categories</a><a href="#ai-cost-rollups">AI cost rollups</a></div></details></div>
+  <div class="top-actions"><details class="bb-more"><summary aria-label="Admin options" title="Admin options">⋯</summary><div class="bb-more-list"><a href="BlastyBiz-Dashboard.html">Customer View</a><a href="BlastyBiz-Admin-Queue-Manager.html">Queue Manager</a><a href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a href="BlastyBiz-Admin-Users.html">Users</a><a href="BlastyBiz-Admin-Subscriptions.html">Money</a><a href="BlastyBiz-Admin-Platform-Health.html">Health</a><a href="BlastyBiz-Admin-Logs.html">Logs</a><a href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a href="BlastyBiz-Admin-Operate.html">⚙️ Operate</a><a href="BlastyBiz-TestBlasty.html">🧪 Test Blasty</a><a href="BlastyBiz-Login.html">👤</a><button type="button" data-more-target="plan-switcher" aria-expanded="false">My Plan Override</button><button type="button" data-more-target="ai-settings-card" aria-expanded="false">AI settings</button><button type="button" data-more-target="platform-cats-card" aria-expanded="false">Platform categories</button><button type="button" data-more-target="ai-cost-rollups" aria-expanded="false">AI cost rollups</button></div></details></div>
 </header>
 
 <main><div class="main"><div class="main-inner">
@@ -150,11 +150,11 @@
     </div>
   </section>
 
-  <section class="card mb-16" id="ai-cost-rollups"><h2>Monthly AI cost rollups</h2></section>
+  <section class="card mb-16" id="ai-cost-rollups" hidden tabindex="-1"><h2>Monthly AI cost rollups</h2></section>
   <script src="ai-cost-rollups.js"></script>
 
   <!-- ── AI SETTINGS ── -->
-  <section class="card mb-16" id="ai-settings-card">
+  <section class="card mb-16" id="ai-settings-card" hidden tabindex="-1">
     <h2 class="card-title">AI provider &amp; models</h2>
     <p class="ai-settings-note">Text AI settings. Saved changes take effect within 60 seconds.</p>
     <p id="ai-settings-status" role="status">Loading current settings…</p>
@@ -172,7 +172,7 @@
   </section>
 
   <!-- ── PLATFORM CATEGORY LIST (manual) ── -->
-  <section class="card mb-16" id="platform-cats-card" style="border-left:4px solid #1a73e8;">
+  <section class="card mb-16" id="platform-cats-card" hidden tabindex="-1" style="border-left:4px solid #1a73e8;">
     <div class="card-title">📋 Platform Category List</div>
     <p style="font-size:13px;color:#666;margin:0 0 10px;">Paste the official category table for any platform. Each row should be <em>alias [tab] title</em>. For platforms without aliases (e.g. Angi, Nextdoor), one column works too — the alias will be auto-generated from the title.</p>
     <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">

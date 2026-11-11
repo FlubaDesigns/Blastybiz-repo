@@ -22,7 +22,7 @@ async function run(){
  for(const id of ['admin-failed-list','admin-platform-health','admin-accounts-tbody','admin-billing-pastdue','admin-ai-tbody','ai-settings-card','platform-cats-card','plan-switcher'])assert.equal(d.querySelectorAll('#'+id).length,1,id+' keeps one existing binding');
  assert(d.getElementById('failed').compareDocumentPosition(d.getElementById('finance'))&4,'failures precede statistics');assert(d.getElementById('accounts-attention').compareDocumentPosition(d.getElementById('finance'))&4,'account follow-up precedes statistics');
  for(const file of ['Queue-Manager','Failed-Jobs','Users','Subscriptions','Platform-Health','Logs','Emails','Platforms','Operate'])assert(d.querySelector('header .bb-more a[href="BlastyBiz-Admin-'+file+'.html"]'),file+' remains available');
- assert(d.getElementById('plan-switcher').hidden);adminDom.window.close();
+ for(const id of ['plan-switcher','ai-settings-card','platform-cats-card','ai-cost-rollups']){assert(d.getElementById(id).hidden);assert(d.querySelector('header [data-more-target="'+id+'"]'));}adminDom.window.close();
  console.log('PASS plan display: canonical prices/capacity, minimal public projection, authenticated account contract, no AI/catalog disclosure, unavailable states and preserved admin controls.');
 }
 module.exports=run;if(require.main===module)run().catch(e=>{console.error(e);process.exitCode=1;});
