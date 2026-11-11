@@ -101,13 +101,19 @@
    }catch(error){host.innerHTML='<p role="status">'+esc(error.message)+'</p><button type="button" data-reload>Try Again</button>';host.querySelector('button').onclick=()=>scheduleEditor(host,request,onSaved,onCancel);}
  }
  async function preview(data,blastId) {
-   const host=document.getElementById('v1-publish-schedule');if(!host)return;
+   const scheduled=data?.status==='scheduled'||!!data?.scheduleAdPath;
+   if(scheduled){
+     const button=document.getElementById('publish-btn');if(button){button.hidden=true;button.disabled=true;}
+     const title=document.getElementById('pub-action-title'),sub=document.getElementById('pub-action-sub');
+     if(title)title.textContent='Scheduled post';if(sub)sub.textContent='Review or change it in Schedule.';
+   }
+   const host=document.getElementById('v1-publish-schedule');if(!host)return !scheduled;
    host.classList.add('bb-life');
    if(!data?.adId){host.innerHTML='<h2>Scheduling</h2><p>Open the campaign and create an Ad before setting a schedule.</p>';return;}
-   if(data.scheduleAdPath){host.innerHTML='<h2>'+esc(data.campaignName)+' / '+esc(data.adName)+'</h2><p>This is a scheduled Blast. Review or change it in Schedule.</p><a class="bb-button" href="BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,tab:'schedule'})+'">Open Schedule</a>';document.getElementById('publish-btn').hidden=true;return;}
+   if(scheduled){host.innerHTML='<h2>'+esc(data.campaignName)+' / '+esc(data.adName)+'</h2><p>This is a scheduled Blast. Review or change it in Schedule.</p><a class="bb-button" href="BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,tab:'schedule'})+'">Open Schedule</a>';document.getElementById('publish-btn').hidden=true;return false;}
    host.innerHTML='<h2>Send later</h2><p>Choose a time and review your photos in Schedule.</p>';
    const link=document.createElement('a');link.className='bb-button';link.textContent='Open Schedule';
-   link.href='BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,tab:'schedule',cid:data.campaignId,adId:data.adId,scheduleAd:data.adId,scheduleCampaign:data.campaignId});host.append(link);
+   link.href='BlastyBiz.html?'+new URLSearchParams({bizId:context.businessId,tab:'schedule',cid:data.campaignId,adId:data.adId,scheduleAd:data.adId,scheduleCampaign:data.campaignId});host.append(link);return true;
 
  }
  function futureSchedule(host,data) {
