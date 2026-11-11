@@ -4932,3 +4932,5 @@ body.blasty-workspace .step5-action-btn,body.blasty-workspace .scope-btn,body.bl
 :where(body.blasty-workspace) .step5-destinations [aria-pressed="true"] { border-color: var(--green); color: var(--green); }
 
 :where(body.blasty-workspace) .s5-card-body .bb-photo-grid { width: 100%; }
+/* Keep the document as the scroll container for the existing review actions. */
+body.create-page, body.create-page .main { overflow-x: clip; }

@@ -661,6 +661,7 @@ async function saveCopyToLibrary(pid) {
 async function approvePlatformCopy(pid) {
   if (window._bbAdaptationBusy || generatedDraftSaving) return;
   if (window._bbDraftSavePending) { showToast('Save your generated copy with Retry save first.'); return; }
+  const selection = postRewriteKey();
   const el = document.getElementById('qp-copy-text-' + pid);
   const copy = (el?.innerText || el?.textContent || '').replace(/[ \t]+/g, ' ').trim();
   if (!copy) { showToast('Copy cannot be blank — edit it first'); return; }
@@ -683,8 +684,10 @@ async function approvePlatformCopy(pid) {
     try {
       const adaptKey = 'adaptations.' + pid;
       if (window.BBAds?.active) await window.BBAds.save();
+      if (selection !== postRewriteKey()) return;
       if (draftId && window._bbUpdateDraft) await window._bbUpdateDraft(draftId, { [adaptKey]: copy, ['platformStatus.' + pid]: 'approved' });
     } catch(e) {
+      if (selection !== postRewriteKey()) return;
       showToast('⚠️ Could not save draft — try again');
       platforms = platforms.map(p => p.id === pid
         ? { ...p, _reviewStatus: undefined }
@@ -694,6 +697,7 @@ async function approvePlatformCopy(pid) {
     }
   }
 
+  if (selection !== postRewriteKey()) return;
   // 3. Archive to Copy Library on every plan — non-blocking, failure warns but doesn't block approval
   const plan = window._bbUserPlan || 'starter';
   if (window._bbSaveLibraryItem) {
@@ -920,6 +924,7 @@ async function regeneratePlatformCopy(pid, direction = 'Rewrite this post while 
     ? (window._bbPhotoItems[window._bbSelectedPhotoIndex]?.url || '') : '';
 
     const idToken = window._bbGetToken ? await window._bbGetToken() : null;
+    if (selection !== postRewriteKey()) return;
     const authHeaders = idToken
       ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken }
       : { 'Content-Type': 'application/json' };

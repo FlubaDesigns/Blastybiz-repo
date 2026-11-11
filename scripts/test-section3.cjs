@@ -66,6 +66,14 @@ async function run({source=p=>fs.readFileSync(p,'utf8')}={}){
   assert.equal(w.document.querySelector('.is-rewriting'),null);
   delayAI=false;w.activeCampaignId='c';await w.BBAds.open();assert.equal(w.document.getElementById('qp-undo-facebook').hidden,true,'no Undo survives reopening');
   assert.equal((await w.BBAds.api('list')).ads.length,1,'no parallel Ad or draft created by Undo');
+  // Changing the Ad while its token is loading cannot send old content under new identity.
+  await w.BBAds.api('create',{campaignId:'c',adId:'second',requestId:'second',creative:{name:'Second',platforms:['facebook'],adaptations:{facebook:'Second Ad copy'}}});
+  let releaseToken;const token=w._bbGetToken;w._bbGetToken=()=>new Promise(r=>releaseToken=r);
+  // Avoid intercepting the prerequisite save token: delay only generation's token.
+  const realSave=w.BBAds.save;w.BBAds.save=async()=>{};
+  const beforeToken=requests.length,tokenPending=w.regeneratePlatformCopy('facebook','Shorter');while(!releaseToken)await turn();
+  w._bbGetToken=token;await w.BBAds.open('second');releaseToken('fixture');await tokenPending;w.BBAds.save=realSave;
+  assert.equal(requests.length,beforeToken);assert.equal(w.BBAds.active.adaptations.facebook,'Second Ad copy');
   console.log('PASS section 3: actual Ad service + editor, original text, directions, single request on double tap, save/retry without AI, Undo, approval invalidation, manual-edit preservation and stale campaign response isolation.');
  }finally{dom.window.close();}
 }
