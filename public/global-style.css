@@ -4619,7 +4619,7 @@ body.blasty-workspace.personal-seller #tab-profile,body.blasty-workspace.persona
 :where(body.blasty-workspace) .step5-review-card .step5-plat-icon{width:30px;height:30px;font-size:18px;border-radius:8px;}
 :where(body.blasty-workspace) .step5-review-card .step5-plat-name{font-size:14px;overflow-wrap:anywhere;}
 :where(body.blasty-workspace) .step5-review-card .step5-status-pill{padding:3px 6px;font-size:10px;}
-:where(body.blasty-workspace) .step5-review-card>.s5-card-body{padding:0 12px;margin:0;}
+:where(body.blasty-workspace) .step5-review-card>.s5-card-body{padding:0 12px;margin:0;box-sizing:border-box;}
 :where(body.blasty-workspace) .step5-review-card .step5-copy-actions{margin:0 0 8px;}
 :where(body.blasty-workspace) .step5-review-card .step5-action-btn{min-height:44px;}
 :where(body.blasty-workspace) .step5-review-card .step5-copy-text{min-height:100px;max-height:40dvh;overflow-y:auto;overflow-wrap:anywhere;padding:10px;line-height:1.5;}
@@ -4917,7 +4917,7 @@ body.blasty-workspace .step5-action-btn,body.blasty-workspace .scope-btn,body.bl
 :where(body.blasty-workspace) .s5-card-body .step5-action-btn { min-height: 48px; white-space: normal; font-size: 14px; }
 :where(body.blasty-workspace) .s5-card-body .qp-photos-section { margin: 0; }
 :where(body.blasty-workspace) .s5-card-body .bb-photo-tools .qp-photo-item { width: 100%; flex-basis: 100%; }
-:where(body.blasty-workspace) .s5-card-body .bb-photo-tools .platform-photo.qp-thumb { width: 100%; }
+:where(body.blasty-workspace) .s5-card-body .bb-photo-tools .platform-photo.qp-thumb { width: 100%; box-sizing: border-box; }
 :where(body.blasty-workspace) .s5-card-body .bb-photo-tools .platform-photo img { width: 100%; height: auto; max-height: 240px; object-fit: contain; }
 :where(body.blasty-workspace) .s5-card-body .s5-rewrite-details summary,
 :where(body.blasty-workspace) .s5-card-body .s5-photo-help summary { min-height: 44px; cursor: pointer; }

@@ -23,6 +23,10 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),{chromium}=requ
    fs.mkdirSync('test-artifacts',{recursive:true});await page.screenshot({path:'test-artifacts/section3-'+width+'.png',fullPage:true});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'no overflow '+width);
    const image=await page.locator('#qp-photo-strip-facebook img').boundingBox();assert(image&&image.width>=100&&image.height>=75,'actual photo visible '+width);
+   const card=await page.locator('#step5-card-facebook').boundingBox();
+   for(const selector of ['#qp-copy-text-facebook','#qp-photo-strip-facebook img']){
+    const box=await page.locator(selector).boundingBox();assert(box.x>=card.x&&box.x+box.width<=card.x+card.width-8,'post stays inside card '+width+' '+selector);
+   }
    for(const b of await page.locator('#step5-card-facebook button:visible,#step5-destinations button').all())assert((await b.boundingBox()).height>=44,'touch target '+width);
    assert.equal((await page.locator('#qp-copy-text-facebook').innerText()).trimEnd(),'Your saved post. '.repeat(25).trimEnd());
    assert.equal(await page.locator('#qp-direction-facebook').isVisible(),false);
