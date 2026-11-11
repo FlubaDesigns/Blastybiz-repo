@@ -12,7 +12,7 @@ async function run({chromium}){
  let created=false,browser,page;
  try{
   browser=await chromium.launch({headless:true,args:['--no-sandbox']});page=await browser.newPage({viewport:{width:384,height:900}});page.setDefaultTimeout(45000);
-  await page.goto(origin+'/BlastyBiz-Home');await page.locator('[data-demo-platform="instagram"]').click();assert.match(await page.locator('.pub-post-text').innerText(),/#PlantShop/);assert(await page.locator('.pub-post-photo img').isVisible());
+  await page.goto(origin+'/BlastyBiz-Home');await page.locator('[data-demo-platform="instagram"]').click();assert.match(await page.locator('.pub-post-text').innerText(),/#PlantShop/);await page.locator('.pub-post-photo img').waitFor({state:'visible'});await page.waitForFunction(()=>document.querySelector('.pub-post-photo img')?.naturalWidth>0);
   await page.locator('.hero-actions a').click();await page.waitForURL(/BlastyBiz-Login/);await page.locator('#auth-card-wrap.ready').waitFor();assert(await page.locator('#form-signup').isVisible());
   for(const returning of [false,true])for(const start of ['guided','forms']){
    if(returning)await page.evaluate(()=>localStorage.setItem('bb_guide_done','1'));
