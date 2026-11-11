@@ -4997,3 +4997,9 @@ body.publishing-page .bb-reminder { display: block; }
 @media (max-width:768px) { .dashboard-page .dash-img-col { display:none; } }
 
 .dashboard-page .biz-sheet:not(.open) { visibility:hidden; }
+
+/* Account values must remain readable inside the existing rows on phones. */
+.account-page .cost-line { gap: 12px; align-items: flex-start; }
+.account-page .cost-line > span { flex-shrink: 0; }
+.account-page .cost-line > strong { min-width: 0; overflow-wrap: anywhere; text-align: right; }
+.account-page .cost-line.hidden { display: none; }
