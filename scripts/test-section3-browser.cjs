@@ -20,10 +20,11 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),{chromium}=requ
   for(const width of [320,384,430,1280]){
    await page.setViewportSize({width,height:850});await page.locator('#step5-card-facebook').evaluate(e=>e.open=true);
    await page.locator('#step5-card-facebook').scrollIntoViewIfNeeded();
+   fs.mkdirSync('test-artifacts',{recursive:true});await page.screenshot({path:'test-artifacts/section3-'+width+'.png',fullPage:true});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'no overflow '+width);
    const image=await page.locator('#qp-photo-strip-facebook img').boundingBox();assert(image&&image.width>=100&&image.height>=75,'actual photo visible '+width);
    for(const b of await page.locator('#step5-card-facebook button:visible,#step5-destinations button').all())assert((await b.boundingBox()).height>=44,'touch target '+width);
-   assert.equal(await page.locator('#qp-copy-text-facebook').innerText(),'Your saved post. '.repeat(25).trimEnd());
+   assert.equal((await page.locator('#qp-copy-text-facebook').innerText()).trimEnd(),'Your saved post. '.repeat(25).trimEnd());
    assert.equal(await page.locator('#qp-direction-facebook').isVisible(),false);
    await page.locator('#step5-destinations button').nth(1).click();assert(await page.locator('#step5-card-instagram').evaluate(e=>e.open));
    await page.locator('#step5-destinations button').first().click();

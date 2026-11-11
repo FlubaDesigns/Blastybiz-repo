@@ -4930,3 +4930,5 @@ body.blasty-workspace .step5-action-btn,body.blasty-workspace .scope-btn,body.bl
 :where(body.blasty-workspace) .step5-destinations { flex-wrap: wrap; margin-bottom: 12px; }
 :where(body.blasty-workspace) .step5-destinations button { min-height: 48px; font-size: 14px; white-space: normal; }
 :where(body.blasty-workspace) .step5-destinations [aria-pressed="true"] { border-color: var(--green); color: var(--green); }
+
+:where(body.blasty-workspace) .s5-card-body .bb-photo-grid { width: 100%; }

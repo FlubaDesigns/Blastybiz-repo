@@ -22,7 +22,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
   await page.locator('#step5-card-facebook > summary').click();
   assert(!await page.locator('#step5-lgtm-facebook').isVisible(),'approval not repeated');
   const photos=await page.locator('#qp-photo-strip-facebook .platform-photo').evaluateAll(links=>links.map(link=>({image:link.querySelector('img').getBoundingClientRect().toJSON(),labelDisplay:getComputedStyle(link.querySelector('span')).display})));
-  assert(photos.every(p=>p.labelDisplay==='none'&&p.image.width>=76),'selected photos without numbered labels '+width);
+  assert(photos.every(p=>p.labelDisplay==='none'&&p.image.width>=76),'selected photos without numbered labels '+width+' '+JSON.stringify(photos));
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'no overflow '+width);
   await page.locator('#step5-card-instagram > summary').click();assert.equal(await page.locator('.step5-review-card[open]').count(),1,'one platform open');
   await page.evaluate(()=>renderStep5Review());assert(await page.locator('#step5-card-instagram').evaluate(e=>e.open),'rerender keeps chosen platform');
