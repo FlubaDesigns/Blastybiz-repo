@@ -87,11 +87,49 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
  vm.runInNewContext(ai.slice(ai.indexOf('exports.chatCampaign ='),ai.indexOf('exports.scoreFact =')),common);
  await common.exports.chatCampaign({method:'POST',body:{conversationHistory:[{role:'user',content:'For creators'}],businessProfile:{globalMemory:'Company identity'},collectedData:{campaignName:'Creators'}}},response(),{uid:'owner'});
  assert.match(prompts.at(-1).options.system,/do not rewrite, expand, or return business-wide memory/);
- // Category briefing must not even receive campaign values as company context.
- const cat={exports:{},require:common.require,onRequest:(_,fn)=>fn,setCors(){},crypto:require('node:crypto'),checkUidRateLimit:async()=>true,readFlubaProviderKey:async()=>'fixture-key',trackAiUsage:async()=>{},bbLog(){},classifyAiError:()=>'',aiRequestContext:()=>({}),
-  fetch:async(url,opts)=>{const text=JSON.parse(opts.body).contents[0].parts[0].text;prompts.push({prompt:text});return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:'Retail'}]}}]})};}};
+ // Exercise the category endpoint with the actual shared auth, provider and logging wrappers.
+ const categoryShared=fs.readFileSync('functions/lib/shared.js','utf8'),requests=[],logs=[],reservations=[];
+ let allowanceFailure=null,providerFailure=false,emptyReply=false,provider='gemini';
+ const cat={exports:{},require:common.require,onRequest:(_,fn)=>fn,console,Date,AI_DEFAULTS:{fastModel:'fallback'},
+  setCors(){},bbLog(){},touchLastActive:async()=>{},
+  verifyBearer:async req=>{if(req.headers.authorization!=='Bearer fixture')throw Error('Invalid token');return {uid:'owner'};},
+  reserveAiAction:async uid=>{reservations.push(uid);if(allowanceFailure)throw Error(allowanceFailure);},
+  trackAiUsage:async(...args)=>logs.push(args),classifyAiError:()=> 'provider_failure',
+  getAiSettings:async()=>({provider,fastModel:provider+'-reviewed-model'}),
+  _OAI_BASES:{gemini:'https://fixture.invalid/gemini',openai:'https://fixture.invalid/openai'},
+  _OAI_KEY_VARS:{gemini:'GEMINI_API_KEY',openai:'OPENAI_API_KEY'},readFlubaProviderKey:async()=> 'fixture-key',recordAiFailure(){},
+  fetchWithTimeout:async(url,opts)=>{const body=JSON.parse(opts.body);requests.push({url,body});
+   if(providerFailure)return {ok:false,status:503,text:async()=> 'Provider unavailable'};
+   return {ok:true,json:async()=>({choices:[{message:{content:emptyReply?'   ':body.max_tokens===400?'Company briefing':'"Retail"'}}],usage:{prompt_tokens:12,completion_tokens:8}})};}};
+ vm.runInNewContext(categoryShared.slice(categoryShared.indexOf('function withAuth('),categoryShared.indexOf('// ── bbLog')),cat);
+ vm.runInNewContext(categoryShared.slice(categoryShared.indexOf('async function callAI('),categoryShared.indexOf('// ── reserveAiAction')),cat);
+ vm.runInNewContext(ai.slice(ai.indexOf('function aiRequestContext'),ai.indexOf('exports.generateEnrichmentQuestions')),cat);
  vm.runInNewContext(ai.slice(ai.indexOf('exports.suggestCategory ='),ai.indexOf('// ── previewAds')),cat);
- await cat.exports.suggestCategory({method:'POST',headers:{},ip:'fixture',body:{bizName:'QR Gear',story:'Custom merchandise',campaignName:'PRIVATE_CAMPAIGN',campaignAbout:'PRIVATE_ABOUT',campaignAudience:'PRIVATE_AUDIENCE',offer:'PRIVATE_OFFER'}},response());
- const brief=prompts.at(-2).prompt;assert.match(brief,/Exclude campaign-specific offers/);assert(!brief.includes('PRIVATE_'));
+ const categoryBody={bizName:'QR Gear',story:'Custom merchandise',campaignName:'PRIVATE_CAMPAIGN',campaignAbout:'PRIVATE_ABOUT',campaignAudience:'PRIVATE_AUDIENCE',offer:'PRIVATE_OFFER'};
+ const categoryCall=async(body=categoryBody,authorization='Bearer fixture',method='POST')=>{
+  const res=response();res.code=200;res.sendStatus=n=>{res.code=n;return res;};
+  await cat.exports.suggestCategory({method,headers:{authorization},body},res);return res;
+ };
+ assert.equal((await categoryCall(categoryBody,'')).code,401);
+ assert.equal((await categoryCall(categoryBody,'Bearer invalid')).code,401);
+ assert.equal((await categoryCall(null,'','OPTIONS')).code,204);
+ assert.equal(requests.length,0);assert.equal(reservations.length,0);
+ for(const body of [null,[],{}, {bizName:' '},{bizName:4}])assert.equal((await categoryCall(body)).code,400);
+ assert.equal((await categoryCall(categoryBody,'Bearer fixture','GET')).code,405);
+ assert.equal(reservations.length,0,'invalid input never consumes allowance');
+ allowanceFailure='LIMIT_REACHED';assert.equal((await categoryCall()).code,429);
+ allowanceFailure='storage unavailable';assert.equal((await categoryCall()).code,500);
+ assert.equal(requests.length,0,'allowance failure blocks all provider calls');allowanceFailure=null;
+ const categoryResult=await categoryCall();assert.equal(categoryResult.code,200);
+ assert.deepEqual(JSON.parse(JSON.stringify(categoryResult.body)),{category:'Retail',globalMemory:'Company briefing'});
+ assert(reservations.every(uid=>uid==='owner'));assert.equal(reservations.length,3,'one shared reservation for the two-call operation');
+ assert.equal(requests.length,2);assert(requests.every(r=>r.body.model==='gemini-reviewed-model'));
+ const brief=requests[0].body.messages[0].content;assert.match(brief,/Exclude campaign-specific offers/);assert(!brief.includes('PRIVATE_'));
+ assert.equal(logs.length,2);assert(logs.every(l=>l[0]==='owner'&&l[1]==='suggestCategory'&&l[2]==='gemini-reviewed-model'&&l[3].input_tokens===12));
+ provider='openai';await categoryCall();assert(requests.slice(-2).every(r=>r.url==='https://fixture.invalid/openai/chat/completions'&&r.body.model==='openai-reviewed-model'),'both calls follow existing provider/model settings');
+ providerFailure=true;const before=requests.length,loggedBefore=logs.length;
+ assert.equal((await categoryCall()).code,500);assert.equal(requests.length,before+1,'failed briefing prevents matching call');
+ assert.equal(logs.length,loggedBefore+1,'provider failure logged once');assert.equal(logs.at(-1)[4].failureType,'provider_failure');
+ providerFailure=false;emptyReply=true;assert.equal((await categoryCall()).code,500,'empty provider output cannot succeed');
  console.log('PASS campaign memory: default scope, campaign/business/owner isolation, empty saves, failures/retry, ordered autosaves, explicit sharing, exact Firestore writes and AI prompt boundaries.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

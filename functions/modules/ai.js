@@ -106,19 +106,21 @@ Return ONLY valid JSON: { "questions": ["...", "...", "..."] }`;
   }
 }));
 
-exports.suggestCategory = onRequest({ invoker: 'public', secrets: [], timeoutSeconds: 120 }, async (req, res) => {
-  setCors(req, res);
-  if (req.method === 'OPTIONS') return res.status(204).end();
+exports.suggestCategory = onRequest({ invoker: 'public', secrets: [], timeoutSeconds: 120 }, withAuth(async (req, res, decoded) => {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Use POST' });
+  if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+    return res.status(400).json({ error: 'Request body must be a JSON object' });
+  }
+  const { bizName, ownerName, role, story, different, awards, customer, locationType } = req.body;
+  if (typeof bizName !== 'string' || !bizName.trim()) return res.status(400).json({ error: 'bizName required' });
   const { ALL_CATEGORIES } = require('../lib/platform-cats');
-  const rawIp  = ((req.headers['x-forwarded-for'] || '').split(',')[0].trim()) || req.ip || 'unknown';
-  const ipHash = crypto.createHash('sha256').update(rawIp).digest('hex');
-  // Fail-open: if Firestore rate-limit write errors, let the request through
-  let withinLimit = true;
-  try { withinLimit = await checkUidRateLimit('suggestCategoryRateLimit', ipHash, 10, 60 * 60 * 1000); } catch {}
-  if (withinLimit === false) return res.status(429).json({ error: 'Rate limit exceeded' });
-  const { bizName, ownerName, role, story, different, awards, customer, locationType,
-          campaignName, campaignAbout, campaignAudience, offer } = req.body;
-  if (!bizName) return res.status(400).json({ error: 'bizName required' });
+  try {
+    await reserveAiAction(decoded.uid);
+  } catch (e) {
+    if (e.message === 'LIMIT_REACHED') return res.status(429).json({ error: 'Fresh wording is temporarily unavailable. Your saved copy and Run As-Is are still available.' });
+    bbLog('ERROR', 'suggestCategory', { event: 'allowance_failed', msg: e.message });
+    return res.status(500).json({ error: 'Could not check AI availability. Please try again.' });
+  }
 
   const contextLines = [
     ownerName    && `Owner: ${ownerName}${role ? ' (' + role + ')' : ''}`,
@@ -145,32 +147,11 @@ Exclude campaign-specific offers, commission rates, target audiences, deadlines,
 
 Be specific and vivid. Preserve anything quirky or unusual — that is what makes the copy distinctive. Do NOT use generic filler. This briefing must be good enough that an AI reading it cold can write compelling, on-brand marketing copy with no other information.`;
 
-  // Direct Gemini native call — uses ?key= param (not Authorization: Bearer)
-  async function _gem(prompt, maxTok) {
-    const key = await readFlubaProviderKey('GEMINI_API_KEY');
-    if (!key) throw new Error('GEMINI_API_KEY not set');
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${key}`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: maxTok }
-        }) }
-    );
-    if (!r.ok) throw new Error(`Gemini ${r.status}: ${(await r.text()).slice(0, 300)}`);
-    const j = await r.json();
-    await trackAiUsage(null, 'suggestCategory', 'gemini-flash-lite-latest', {
-      input_tokens: j.usageMetadata?.promptTokenCount || 0,
-      output_tokens: j.usageMetadata?.candidatesTokenCount || 0,
-    }, { context: aiRequestContext(req.body) });
-    const text = j.candidates?.[0]?.content?.parts?.find(p => p.text)?.text;
-    if (!text) throw new Error(`Gemini empty response: ${JSON.stringify(j).slice(0, 200)}`);
-    return text.trim();
-  }
-
   try {
     // Call 1 — build a rich globalMemory brief from all gathered info
-    const globalMemory = await _gem(describePrompt, 400);
+    const { text: brief } = await loggedAI(decoded.uid, 'suggestCategory', req.body, describePrompt, { tier: 'fast', maxTokens: 400 });
+    const globalMemory = brief.trim();
+    if (!globalMemory) throw Error('AI returned an empty business briefing');
 
     // Call 2 — match that brief to the real platform category list
     const catList = ALL_CATEGORIES.join(', ');
@@ -186,14 +167,15 @@ Rules:
 - Pick the closest match even if none is perfect.
 - Reply with ONLY the category name. No punctuation, no explanation.`;
 
-    const category = (await _gem(matchPrompt, 20)).replace(/^["']+|["']+$/g, '');
+    const { text: matched } = await loggedAI(decoded.uid, 'suggestCategory', req.body, matchPrompt, { tier: 'fast', maxTokens: 20 });
+    const category = matched.trim().replace(/^["']+|["']+$/g, '');
+    if (!category) throw Error('AI returned an empty category');
     res.json({ category, globalMemory });
   } catch (e) {
-    await trackAiUsage(null, 'suggestCategory', 'gemini-flash-lite-latest', null, {failureType:classifyAiError(e),context:aiRequestContext(req.body)});
     bbLog('ERROR', 'suggestCategory', { event: 'failed', msg: e.message });
     res.status(500).json({ error: e.message });
   }
-});
+}));
 
 // ── previewAds ────────────────────────────────────────────────────────────────
 // Unauthenticated: generates 3-platform sample ad copy from a business name and
