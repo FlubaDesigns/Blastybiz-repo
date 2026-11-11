@@ -539,7 +539,9 @@ onAuthStateChanged(auth, async (user) => {
   try {
 
   await dashboardRead(waitForPendingWrites(db));
-  const userSnap = await dashboardRead(getDocFromServer(doc(db, 'users', user.uid)));
+  const userRef=doc(db,'users',user.uid);
+  let userSnap = await dashboardRead(getDocFromServer(userRef));
+  while(userSnap.metadata?.hasPendingWrites){await dashboardRead(waitForPendingWrites(db));userSnap=await dashboardRead(getDocFromServer(userRef));}
   const userData = userSnap.exists() ? userSnap.data() : {};
 
   userPlan = userData.plan || 'starter';

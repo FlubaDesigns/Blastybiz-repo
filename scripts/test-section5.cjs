@@ -42,7 +42,7 @@ async function dashboard(){
  const html=fs.readFileSync('public/BlastyBiz-Dashboard.html','utf8'),dom=browser(html),w=dom.window;let finish,blocked,release;const done=new Promise(r=>finish=r);let pendingWaits=0,serverReads=[];
  w.auth={authStateReady:async()=>{}};w.db={};w.onAuthStateChanged=(_,cb)=>cb({uid:'u',email:'fixture@example.invalid',getIdToken:async()=> 'fixture'}).then(finish,finish);
  w.doc=w.collection=(_, ...p)=>p.join('/');w.query=p=>p;w.orderBy=w.limit=()=>{};w.setDoc=async()=>{};w.waitForPendingWrites=async()=>{pendingWaits++;};
- const snap=data=>({exists:()=>true,data:()=>data});w.getDoc=async()=>snap({});w.getDocFromServer=async()=>snap({plan:'pro',activeBusiness:'b'});
+ const snap=data=>({exists:()=>true,data:()=>data});let accountReads=0;w.getDoc=async()=>snap({});w.getDocFromServer=async()=>++accountReads===1?{...snap({lastActiveAt:'pending',activeBusiness:'other'}),metadata:{hasPendingWrites:true}}:snap({plan:'pro',activeBusiness:'b'});
  const records=p=>p.endsWith('/businesses')?[{id:'b',name:'First business'},{id:'other',name:'Second business'}]:p.endsWith('/campaigns')?[{id:'c',name:'Campaign'}]:p.endsWith('/ads')?[{id:'a',status:'draft',name:p.includes('/other/')?'Other draft':'Saved draft',updatedAt:'2026-11-11',adaptations:{google:'Server copy'},imageRefs:[]}]:[];
  w.getDocs=async()=>({docs:[],empty:true});w.getDocsFromServer=async p=>{serverReads.push(p);if(blocked===p)await new Promise(r=>release=r);const docs=records(p).map(({id,...d})=>({id,data:()=>d}));return {docs,empty:!docs.length};};
  w.fetch=async()=>({text:async()=>'',ok:true,json:async()=>({schedules:[],legacy:[]})});
