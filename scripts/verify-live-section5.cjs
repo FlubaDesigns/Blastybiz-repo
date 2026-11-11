@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),{randomUUID}=re
 async function run({chromium}){
  assert.equal(process.env.GITHUB_ACTIONS,'true');assert.equal(process.env.GITHUB_REF,'refs/heads/main');assert(process.env.GOOGLE_APPLICATION_CREDENTIALS);
  const origin='https://blastybiz.com',get=async file=>{const r=await fetch(origin+'/'+file+'?verify='+Date.now(),{signal:AbortSignal.timeout(30000)});assert(r.ok,file);return r.text();};
- assert.equal(JSON.parse(await get('release.json')).commit,process.env.RELEASE_SHA);
+ assert.equal(JSON.parse(await get('release.json')).commit,(process.env.DEPLOYED_SHA||process.env.RELEASE_SHA));
  for(const file of ['BlastyBiz-Dashboard.html','BlastyBiz.html','global-style.css','Buttons.css','dashboard-posts.js','lifecycle-status.js','lifecycle-ui.js','ad-workspace.js','workspace-editor.js'])assert.equal(await get(file),fs.readFileSync('public/'+file,'utf8'),'exact live '+file);
  const admin=require('../functions/node_modules/firebase-admin'),app=admin.initializeApp({credential:admin.credential.applicationDefault(),projectId:'blastybiz-9523e'},'section5-acceptance');
  const db=app.firestore(),auth=app.auth(),uid='section5_check_'+randomUUID().replaceAll('-',''),user=db.doc('users/'+uid),business=user.collection('businesses').doc('fixture'),campaign=business.collection('campaigns').doc('fixture');
@@ -24,6 +24,8 @@ async function run({chromium}){
    await make('sentad','Original saved post','Frozen sent copy');await service(uid,{...base,action:'save',adId:'sentad',expectedRevision:1,requestId:'approve_sent',creative:{platformStatus:{craigslist:'approved'}}});
    await service(uid,{...base,action:'prepare',adId:'sentad',expectedRevision:2,blastId:'sent'});const sent=business.collection('listingDrafts').doc('sent');await sent.update({status:'approved'});
    const job=business.collection('publishJobs').doc('sent_craigslist');await job.set({uid,...base,adId:'sentad',draftId:'sent',platform:'craigslist',status:'manual_completed',payload:{adaptedContent:'Frozen sent copy',imageUrls:[photo.url]},createdAt:admin.firestore.FieldValue.serverTimestamp()});
+   // Wait for the existing publish-result observer before freezing fixture evidence.
+   stage='settle seeded completion';for(let i=0;i<90&&!(await sent.get()).data()?.completion?.complete;i++)await new Promise(r=>setTimeout(r,500));assert.equal((await sent.get()).data()?.completion?.complete,true);
    await service(uid,{...base,action:'save',adId:'sentad',expectedRevision:2,requestId:'newer_copy',creative:{adaptations:{craigslist:'Changed reusable Ad copy'}}});
    const sourceAd=campaign.collection('ads').doc('sentad'),sourceBefore=(await sourceAd.get()).data(),sentBefore=(await sent.get()).data(),jobBefore=(await job.get()).data();
    await make('scheduled','Next flower post','Saved scheduled copy');await service(uid,{...base,action:'save',adId:'scheduled',expectedRevision:1,requestId:'approve_next',creative:{platformStatus:{craigslist:'approved'}}});
