@@ -1,0 +1,10 @@
+/* Shared three-dot menu: secondary actions keep their existing handlers. */
+details.bb-more { position: relative; flex: 0 0 auto; margin: 0 0 0 auto; padding: 0; border: 0; background: transparent; }
+details.bb-more > summary { display: block; list-style: none; cursor: pointer; padding: 2px 6px; min-height: 0; font: 24px/1 sans-serif; color: var(--light); border: 0; background: transparent; }
+details.bb-more > summary::-webkit-details-marker { display: none; }
+details.bb-more > summary::after { content: none; }
+details.bb-more > summary:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.bb-more-list { transform: translateX(var(--bb-more-shift,0px)); position: absolute; right: 0; top: 100%; z-index: 30; width: min(280px, calc(100vw - 48px)); max-height: 65dvh; overflow-y: auto; box-sizing: border-box; padding: 8px; background: var(--card,#101b10); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px #000a; }
+.bb-more-list > :is(button,a), .bb-more-list .qp-photo-share > button { display: block; width: 100%; box-sizing: border-box; text-align: left; color: var(--light); background: transparent; border: 0; border-radius: 4px; margin: 0; padding: 10px; font: 14px/1.4 'DM Sans',sans-serif; white-space: normal; text-decoration: none; }
+.bb-more-list :is(button,a):hover { background: #ffffff0d; }
+.bb-more-list :is(p,label,.qp-photo-share-status) { font-size: 13px; line-height: 1.5; white-space: normal; overflow-wrap: anywhere; }

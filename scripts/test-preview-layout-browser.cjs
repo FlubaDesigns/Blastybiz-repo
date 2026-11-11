@@ -7,7 +7,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
   const page=await browser.newPage({viewport:{width:390,height:844}});
   await page.route('**/*',r=>r.abort());
   await page.setContent(html.replace(/<script[\s\S]*?<\/script>/g,''));
-  await page.addStyleTag({content:fs.readFileSync('public/global-style.css','utf8')+'\nbody{visibility:visible!important}'});
+  await page.addStyleTag({content:fs.readFileSync('public/global-style.css','utf8')+'\nbody{visibility:visible!important}'});await page.addStyleTag({content:fs.readFileSync('public/Buttons.css','utf8')});
   for(const file of ['escape-utils.js','platforms-authority.js','blastybiz-menu.js'])await page.addScriptTag({content:fs.readFileSync('public/'+file,'utf8').split('function _revealAdminNav')[0]});
   await page.addScriptTag({content:fs.readFileSync('public/photo-handoff.js','utf8')});
   await page.addScriptTag({content:fs.readFileSync('public/post-preview.js','utf8')});

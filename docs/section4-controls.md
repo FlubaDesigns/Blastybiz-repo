@@ -25,6 +25,6 @@ Issue [#38](https://github.com/FlubaDesigns/Blastybiz-repo/issues/38) owns compl
 | Reminders, estimated time saved, history, schedules, create | Status header three-dot menu | Existing preference and navigation |
 | Future scheduling from sent Blast | Visible status action | Existing source-Blast scheduling |
 
-No additional schedule, delivery, approval, photo or URL store was introduced. Before an occurrence is prepared, the compact card reads its image from the existing schedule editor API, including its source-Blast and repeat-image rules. The destination URL map now lives in the existing canonical platform module and its generated browser asset. Presentation rules live in global-style.css.
+No additional schedule, delivery, approval, photo or URL store was introduced. Before an occurrence is prepared, the compact card reads its image from the existing schedule editor API, including its source-Blast and repeat-image rules. The destination URL map now lives in the existing canonical platform module and its generated browser asset. Page layout remains in global-style.css. The three-dot button and menu controls have one shared owner in Buttons.css, as directed by Dave. The existing cache-version hook stamps both stylesheets.
 
 Validation includes the existing release gate, action and stale-selection regression checks, real browser phone/desktop layouts, and isolated authenticated live acceptance. The live fixture keeps business scheduling paused and creates no real posts or paid model requests.
