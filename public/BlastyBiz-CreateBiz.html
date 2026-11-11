@@ -507,7 +507,7 @@ window._cbStartGuide = function(at) {
 import { auth } from './firebase-init-v2.js';
 import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
-  getFirestore, doc, collection, serverTimestamp, writeBatch, getDoc
+  getFirestore, doc, collection, serverTimestamp, writeBatch, getDoc, getDocFromServer
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { loadPlatforms, PLATFORM_DEFAULTS } from './platforms-config.js?v=20261018-meta-page';
@@ -641,7 +641,7 @@ onAuthStateChanged(auth, async user => {
 
   try {
     if (editBizId) {
-      const bizSnap = await getDoc(doc(db, 'users', user.uid, 'businesses', editBizId));
+      const bizSnap = await getDocFromServer(doc(db, 'users', user.uid, 'businesses', editBizId));
       if (!bizSnap.exists()) throw new Error('Business not found');
       const bizData = bizSnap.data();
       existingCampaignId = bizData.activeCampaign || null;
@@ -649,11 +649,13 @@ onAuthStateChanged(auth, async user => {
       window._cbStoredWebsite = !!String(bizData.website || '').trim();
       prefill(bizData);
     } else {
-      const userSnap = await getDoc(doc(db, 'users', user.uid));
+      // Sign-in guidance/activity writes can leave a partial local account snapshot.
+      // Hydrate setup from the saved record before deciding which facts are missing.
+      const userSnap = await getDocFromServer(doc(db, 'users', user.uid));
       const saved = userSnap.exists() ? userSnap.data() : {};
       if(saved.activeBusiness && urlP.get('new')!=='1') {
         editBizId=saved.activeBusiness;
-        const existing=await getDoc(doc(db,'users',user.uid,'businesses',editBizId));
+        const existing=await getDocFromServer(doc(db,'users',user.uid,'businesses',editBizId));
         if (existing.exists()) {
           existingCampaignId=existing.data().activeCampaign||null;
           window._cbNeedsCampaign=!existingCampaignId;
