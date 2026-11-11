@@ -239,6 +239,7 @@ async function main() {
   console.log('\n── Summary ───────────────────────────────────────────────────────');
   if (failed.length === 0 && unresolvedFailures === 0) {
     console.log(`  ✅ All ${sorted.length} referenced Cloud Function endpoint(s) answered 204`);
+    await require('./verify-live-category.cjs').run();
     process.exit(0);
   }
   if (failed.length > 0) {
