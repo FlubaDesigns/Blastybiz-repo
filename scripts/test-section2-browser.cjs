@@ -4,8 +4,9 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
 const read=p=>fs.readFileSync('public/'+p,'utf8');
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ let page;
  try{
-  const page=await browser.newPage();await page.route('**/*',r=>r.request().url().endsWith('/img/storefront.jpg')?r.fulfill({body:fs.readFileSync('public/img/storefront.jpg'),contentType:'image/jpeg'}):r.abort());
+  page=await browser.newPage();await page.route('**/*',r=>r.request().url().endsWith('/img/storefront.jpg')?r.fulfill({body:fs.readFileSync('public/img/storefront.jpg'),contentType:'image/jpeg'}):r.abort());
   fs.mkdirSync('test-artifacts',{recursive:true});
   for(const file of ['BlastyBiz-Home.html','BlastyBiz-Login.html','BlastyBiz-CreateBiz.html']){
    await page.setContent(read(file).replace(/<script[\s\S]*?<\/script>/g,'').replace('<head>','<head><base href="https://blastybiz.test/">'));
@@ -23,5 +24,5 @@ const read=p=>fs.readFileSync('public/'+p,'utf8');
    }
   }
   console.log('PASS section 2 real-browser layout: 320/384/430/1280, working preview tabs and shared photo card, one primary entrance, signup and setup fit phone widths.');
- }finally{await browser.close();}
+ }catch(error){if(page)await page.screenshot({path:'test-artifacts/section2-failure.png',fullPage:true});throw error;}finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

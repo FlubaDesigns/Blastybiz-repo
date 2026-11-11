@@ -1,7 +1,7 @@
 /* One display renderer for saved previews and the clearly labeled public example. */
 (function(root){
   root.BBPostPreview = { render({meta={},text='',images=[],isAuto=false,bizName='Your business',pid='',status='',copy=true,photoAlt='',eager=false}) {
-    const imgs=images.filter(url=>{try {return ['https:','http:'].includes(new URL(url,location.href).protocol);}catch(_){return false;}});
+    const imgs=images.filter(url=>{try {return ['https:','http:'].includes(new URL(url,document.baseURI || location.href).protocol);}catch(_){return false;}});
   var media;
   if (imgs.length) {
     media = '<div class="pub-post-photo"><img src="' + escHtml(imgs[0]) + '" alt="' + escHtml(photoAlt) + '" loading="' + (eager ? 'eager' : 'lazy') + '" /></div>';
