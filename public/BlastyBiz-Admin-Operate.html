@@ -12,7 +12,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="global-style.css?v=20261110-section1">
+<link rel="stylesheet" href="global-style.css?v=20261111-section7">
+<link rel="stylesheet" href="Buttons.css?v=20261111-section7">
 <link rel="stylesheet" href="operate-todos.css?v=1">
 
 <style>body{visibility:hidden}</style>
@@ -29,7 +30,6 @@
   <script type="module" src="./admin-guard.js"></script>
 <script src="blastybiz-menu.js?v=8"></script>
 <script src="escape-utils.js"></script>
-<link rel="stylesheet" href="Buttons.css?v=20261110-section5">
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
@@ -338,7 +338,7 @@
     </div>
 
     <!-- Facebook Sign-In reminder -->
-    <div class="card" style="border-left:4px solid #e65100;">
+    <div class="card bb-style-ecd8c478">
       <div class="op-card-header" onclick="toggleCard(this)">
         <button type="button" class="check-box" id="chk-fb-signin" disabled aria-pressed="false"></button>
         <div class="flex-1">
@@ -454,18 +454,18 @@
   <!-- ── Blasty Guide Animations ──────────────────────────────────────── -->
   <div class="op-section">
     <div class="op-card">
-      <div style="padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <div class="bb-style-5edb700d flex-row">
         <div>
-          <div style="font-weight:700;font-size:15px;margin-bottom:4px;">🚀 Blasty Guide Animations</div>
-          <div style="font-size:13px;color:#6b7280;">When off, Blasty stays still on every page — no bouncing, waving, or floating. Toggle takes effect on next page load.</div>
+          <div class="bb-style-5e50972c">🚀 Blasty Guide Animations</div>
+          <div class="bb-style-0a695b58">When off, Blasty stays still on every page — no bouncing, waving, or floating. Toggle takes effect on next page load.</div>
         </div>
-        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-shrink:0;">
-          <span id="mascot-anim-label" style="font-size:13px;font-weight:600;color:#6b7280;">Loading…</span>
-          <div style="position:relative;width:48px;height:26px;">
-            <input type="checkbox" id="mascot-anim-toggle" onchange="saveMascotSetting(this.checked)"
-              style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0;z-index:1;">
-            <div id="mascot-anim-track" style="position:absolute;inset:0;background:#d1d5db;border-radius:13px;transition:background .2s;"></div>
-            <div id="mascot-anim-thumb" style="position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:left .2s;"></div>
+        <label class="bb-style-c259d7e5 flex-row">
+          <span class="bb-style-ae42dce1" id="mascot-anim-label">Loading…</span>
+          <div class="bb-style-04223018">
+            <input class="bb-style-7008bc36" type="checkbox" id="mascot-anim-toggle" onchange="saveMascotSetting(this.checked)"
+             >
+            <div class="bb-style-2271224b" id="mascot-anim-track"></div>
+            <div class="bb-style-8703bb31" id="mascot-anim-thumb"></div>
           </div>
         </label>
       </div>
@@ -480,20 +480,20 @@
       </div>
       <div class="op-card-body">
         <p class="op-cmd-label-hd">Admin email addresses</p>
-        <p style="font-size:13px;color:#555;margin:0 0 12px;">
+        <p class="bb-style-fb5aeab5">
           These accounts can access all Admin pages and Cloud Function admin endpoints.
           <strong>info@blastybiz.com</strong> is the permanent bootstrap admin and cannot be removed.
         </p>
-        <div id="admin-email-list" style="margin-bottom:12px;"></div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input id="new-admin-email" type="email" placeholder="new@example.com"
-            style="flex:1;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
-          <button type="button" onclick="addAdminEmail()"
-            style="padding:8px 14px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">
+        <div class="bb-style-4636770b" id="admin-email-list"></div>
+        <div class="bb-style-cbc4a44e flex-row">
+          <input class="bb-style-49d9bb69" id="new-admin-email" type="email" placeholder="new@example.com"
+           >
+          <button class="bb-style-a19bd1ad" type="button" onclick="addAdminEmail()"
+           >
             Add
           </button>
         </div>
-        <p id="admin-email-status" style="font-size:12px;color:#6b7280;margin:8px 0 0;"></p>
+        <p class="bb-style-87c93685" id="admin-email-status"></p>
       </div>
     </div>
   </div>
@@ -508,7 +508,7 @@
       <span class="section-title">Live End-to-End Verification</span>
       <span class="section-badge warn" id="badge-e2e">Browser test required</span>
     </div>
-    <p style="font-size:13px;color:#555;margin:0 0 12px 4px;">These four flows require a real logged-in session and can't be tested from the shell. Do them in the browser on the live site and check each one off when it passes.</p>
+    <p class="bb-style-65dab714">These four flows require a real logged-in session and can't be tested from the shell. Do them in the browser on the live site and check each one off when it passes.</p>
 
     <!-- Leg 1: Onboarding -->
     <div class="card">
@@ -610,15 +610,15 @@
         <span class="op-chevron">▶</span>
       </div>
       <div class="op-card-body">
-        <p style="font-size:13px;color:#888;margin:0 0 14px;line-height:1.6;">
+        <p class="bb-style-75720d9f">
           Accounts without a completed saved business setup, grouped by saved setup status.
           Per-question progress and inactivity duration are not recorded, so incomplete does not mean stalled. Click a group to view its accounts.
         </p>
         <button type="button" id="funnel-refresh">Refresh report</button>
-        <div id="funnel-status" role="status" aria-live="polite" style="font-size:13px;color:#888;min-height:18px;margin-bottom:10px;"></div>
+        <div class="bb-style-6264f0c2" id="funnel-status" role="status" aria-live="polite"></div>
         <div id="funnel-chart"></div>
-        <div id="funnel-meta" style="font-size:12px;color:#9ca3af;margin-top:14px;"></div>
-        <div id="funnel-detail" style="margin-top:18px;display:none;"></div>
+        <div class="bb-style-e54f5c81" id="funnel-meta"></div>
+        <div class="bb-style-3517ec69" id="funnel-detail" style="display:none;"></div>
       </div>
     </div>
   </div>
@@ -709,7 +709,7 @@ window.saveMascotSetting = async function(on) {
         body: JSON.stringify({
           to,
           subject: '✅ BlastyBiz Resend Connection Test',
-          html: '<div style="font-family:sans-serif;padding:24px;color:#111"><h2>Resend OK</h2><p>This confirms email delivery from <strong>info@blastybiz.com</strong> is working.</p></div>'
+          html: '<div class="bb-style-3226488a"><h2>Resend OK</h2><p>This confirms email delivery from <strong>info@blastybiz.com</strong> is working.</p></div>'
         })
       });
       const data = await resp.json();
@@ -757,7 +757,7 @@ function renderAdminEmails() {
   const el = document.getElementById('admin-email-list');
   if (!el) return;
   el.innerHTML = '';
-  if (!emails.length) { el.innerHTML = '<p style="font-size:13px;color:#9ca3af;">No admins yet.</p>'; return; }
+  if (!emails.length) { el.innerHTML = '<p class="bb-style-a59b6f22">No admins yet.</p>'; return; }
   emails.forEach(email => {
     const isPermanent = permanent.includes(email);
     const row = document.createElement('div');
@@ -864,10 +864,10 @@ async function loadOnboardingFunnel() {
       chartEl.textContent = data.totalUsers === 0 ? 'No accounts have been recorded yet.' : 'No incomplete onboarding found in saved records.';
     } else {
       const maxCount = Math.max(...data.steps.map(s => s.count));
-      chartEl.innerHTML = data.steps.map(s => `<button type="button" data-step="${window.escHtml(s.stepIndex)}" aria-expanded="false"
-        style="display:flex;align-items:center;gap:10px;width:100%;margin-bottom:8px;text-align:left;cursor:pointer;border:1px solid #e5e7eb;border-radius:6px;padding:8px;background:white;">
-        <span style="flex:1;">${window.escHtml(s.label)}</span>
-        <span style="width:35%;background:#f3f4f6;border-radius:4px;height:16px;overflow:hidden;">
+      chartEl.innerHTML = data.steps.map(s => `<button class="bb-style-691502ca flex-row" type="button" data-step="${window.escHtml(s.stepIndex)}" aria-expanded="false"
+       >
+        <span class="bb-style-6253876a">${window.escHtml(s.label)}</span>
+        <span class="bb-style-a71f5aa2">
           <span style="display:block;height:100%;width:${Math.round(s.count / maxCount * 100)}%;background:#2563eb;"></span>
         </span><strong>${s.count}</strong><span aria-hidden="true">▸</span></button>`).join('');
       chartEl.querySelectorAll('[data-step]').forEach(row => {
@@ -914,13 +914,13 @@ async function toggleStepUsers(stepIndex, stepLabel) {
       return;
     }
     const rows = data.users.map(u => `<tr>
-      <td style="padding:8px;">${window.escHtml(u.email || 'No email recorded')}</td>
-      <td style="padding:8px;font-family:monospace;">${window.escHtml(u.uid)}</td>
-      <td style="padding:8px;">${window.escHtml(u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'Unknown')}</td>
-      <td style="padding:8px;"><button type="button" disabled title="Reminder sending is unavailable in this report.">Reminder unavailable</button></td>
+      <td class="bb-style-afbf76b6">${window.escHtml(u.email || 'No email recorded')}</td>
+      <td class="bb-style-462e8702">${window.escHtml(u.uid)}</td>
+      <td class="bb-style-afbf76b6">${window.escHtml(u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'Unknown')}</td>
+      <td class="bb-style-afbf76b6"><button type="button" disabled title="Reminder sending is unavailable in this report.">Reminder unavailable</button></td>
     </tr>`).join('');
     detailEl.innerHTML = `<p>${window.escHtml(stepLabel)} · ${data.users.length} account${data.users.length === 1 ? '' : 's'}</p>
-      <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;min-width:460px;">
+      <div class="bb-style-fbff25e9"><table class="bb-style-5b039ad8">
         <thead><tr><th scope="col">Email</th><th scope="col">UID</th><th scope="col">Account created</th><th scope="col">Action</th></tr></thead>
         <tbody>${rows}</tbody></table></div>`;
   } catch(e) {

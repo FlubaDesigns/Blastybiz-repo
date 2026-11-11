@@ -118,6 +118,7 @@ jobs:
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-backend-review-ui.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-plan-display.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-cleanup-ui.cjs
+          JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-presentation.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-campaign-memory.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-personal-seller.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-signup-submit.cjs
@@ -138,11 +139,14 @@ jobs:
           PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-publishing-mobile.cjs
           PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-reliability-mobile.cjs
           PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-section1-browser.cjs
+          PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-presentation-browser.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: reliability-mobile
-          path: test-artifacts/*.png
+          path: |
+            test-artifacts/*.png
+            test-artifacts/presentation-browser.json
           if-no-files-found: ignore
       - uses: actions/setup-java@v4
         if: steps.scope.outputs.mode != 'layout'

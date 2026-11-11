@@ -5,8 +5,8 @@
   <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="global-style.css?v=20261110-section1" />
-  <link rel="stylesheet" href="Buttons.css?v=20261110-section4" />
+  <link rel="stylesheet" href="global-style.css?v=20261111-section7" />
+<link rel="stylesheet" href="Buttons.css?v=20261111-section7">
   <title>BlastyBiz — Blast It!</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -509,7 +509,7 @@ onAuthStateChanged(auth, async (user) => {
     const subEl = document.getElementById('pub-sub');
     if (subEl) subEl.textContent = 'No draft found. Go back to the Create page and generate a blast first.';
     const listEl = document.getElementById('pub-platform-list');
-    if (listEl) listEl.innerHTML = '<div style="font-size:14px;color:var(--muted,#888);padding:10px 0;">No draft loaded.</div>';
+    if (listEl) listEl.innerHTML = '<div class="bb-style-878dbb8c">No draft loaded.</div>';
     const publishBtn = document.getElementById('publish-btn');
     if (publishBtn) { publishBtn.disabled = true; }
   }

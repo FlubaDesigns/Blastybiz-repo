@@ -1282,7 +1282,7 @@ function renderStep3Platforms() {
     row.className = 's3-plat-row';
     row.id = 's3-row-' + p.id;
     row.innerHTML =
-      '<div class="s3-plat-icon bb-style-1c28b7a8">' + p.icon + '</div>'
+      '<div class="s3-plat-icon platform-color-tint" style="--platform-color:' + (/^#[0-9a-f]{6}$/i.test(p.color || '') ? p.color : '#222222') + '">' + p.icon + '</div>'
       + '<div class="s3-plat-meta">'
       +   '<div class="s3-plat-name">' + escHtml(p.name) + '</div>'
       +   '<div class="s3-plat-badge' + (isApi ? ' api' : '') + '">'
@@ -1403,7 +1403,7 @@ function buildStep5Card(p) {
 
   // ── Row A: header ──────────────────────────────
   let inner = '<summary class="step5-plat-hdr">'
-    + '<div class="step5-plat-icon bb-style-1c28b7a8">' + p.icon + '</div>'
+    + '<div class="step5-plat-icon platform-color-tint" style="--platform-color:' + (/^#[0-9a-f]{6}$/i.test(p.color || '') ? p.color : '#222222') + '">' + p.icon + '</div>'
     + '<div class="step5-plat-info">'
     +   '<div class="step5-plat-name">' + escHtml(p.name) + '</div>'
     +   '<div class="step5-plat-type">' + (isApi ? 'Blasty Posts It' : 'Ready for You to Post') + '</div>'
@@ -3118,17 +3118,17 @@ function renderFactoidQuickLook() {
   const cFacts = cam ? (cam.factoids || []) : [];
   const top = [...gFacts].sort((a, b) => (b.importance != null ? b.importance : 5) - (a.importance != null ? a.importance : 5)).slice(0, 3);
   el.innerHTML =
-    '<div class="bb-style-5d1cafe9">' +
+    '<div class="flex-row wrap bb-fact-heading' + (top.length ? ' mb-10' : '') + '">' +
       '<span class="bb-style-9d5113c7">📌 ' + gFacts.length + ' global · ' + cFacts.length + ' campaign facts</span>' +
       '<a href="BlastyBiz-Memory.html" class="bb-style-11bb39db">Manage all →</a>' +
     '</div>' +
     top.map(function(f) {
       var s = f.importance != null ? f.importance : null;
-      var bg = s == null ? 'var(--border,#333)' : s >= 7 ? '#16a34a' : s >= 4 ? '#d97706' : '#6b7280';
+      var importanceClass = s == null ? 'unknown' : s >= 7 ? 'high' : s >= 4 ? 'medium' : 'low';
       var label = s != null ? s : '?';
       var txt = (f.text || '').length > 60 ? f.text.slice(0, 60) + '…' : f.text;
       return '<div class="bb-style-06de7537">' +
-        '<span class="bb-style-1fdd5485">' + label + '</span>' +
+        '<span class="bb-fact-score bb-fact-score--' + importanceClass + '">' + label + '</span>' +
         '<span class="bb-style-820955e5">' + txt + '</span>' +
         '</div>';
     }).join('');

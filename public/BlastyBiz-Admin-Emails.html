@@ -10,7 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="global-style.css?v=20261110-section1">
+<link rel="stylesheet" href="global-style.css?v=20261111-section7">
+<link rel="stylesheet" href="Buttons.css?v=20261111-section7">
 <style>body{visibility:hidden}</style>
 <script type="importmap">
 {
@@ -25,7 +26,6 @@
   <script type="module" src="./admin-guard.js"></script>
 <script src="blastybiz-menu.js?v=8"></script>
 <script src="escape-utils.js?v=1"></script>
-<link rel="stylesheet" href="Buttons.css?v=20261110-section5">
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
@@ -49,90 +49,90 @@
 
 <main><div class="main"><div class="main-inner">
 
-  <div style="margin-bottom:24px">
+  <div class="bb-style-a097a3f0">
     <div class="eyebrow">Admin · Communications</div>
-    <h1 style="font-size:26px;font-weight:800;color:#111;margin:4px 0 6px">Email Templates</h1>
-    <p style="font-size:14px;color:#555;margin:0">Edit, preview, and version-control every automated email BlastyBiz sends. Changes take effect on the next send.</p>
+    <h1 class="bb-style-4eff79b6">Email Templates</h1>
+    <p class="bb-style-b153e9d5">Edit, preview, and version-control every automated email BlastyBiz sends. Changes take effect on the next send.</p>
   </div>
 
   <!-- Email type tabs -->
-  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
-    <button id="tab-welcome" onclick="switchType('welcome')" style="background:#111;color:#fff;border:1px solid #111;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">✉️ Welcome</button>
-    <button id="tab-paid-welcome" onclick="switchType('paid-welcome')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">🎉 Pro/Agency Welcome</button>
-    <button id="tab-job-completed" onclick="switchType('job-completed')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">🚀 Job Completed</button>
-    <button id="tab-job-failed" onclick="switchType('job-failed')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">⚠️ Job Failed</button>
-    <button id="tab-payment-failed" onclick="switchType('payment-failed')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">💳 Payment Failed</button>
-    <button id="tab-cancellation" onclick="switchType('cancellation')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">👋 Cancellation</button>
-    <button id="tab-upgrade-nudge" onclick="switchType('upgrade-nudge')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">👀 Upgrade Nudge</button>
-    <button id="tab-weekly-digest" onclick="switchType('weekly-digest')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">📊 Weekly Digest</button>
-    <button id="tab-setup-nudge" onclick="switchType('setup-nudge')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">🔧 Setup Nudge</button>
-    <button id="tab-platform-expired" onclick="switchType('platform-expired')" style="background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer">🔌 Platform Expired</button>
+  <div class="bb-style-a719b59f flex-row">
+    <button class="bb-style-9fd9c756" id="tab-welcome" onclick="switchType('welcome')">✉️ Welcome</button>
+    <button class="bb-style-6dab063b" id="tab-paid-welcome" onclick="switchType('paid-welcome')">🎉 Pro/Agency Welcome</button>
+    <button class="bb-style-6dab063b" id="tab-job-completed" onclick="switchType('job-completed')">🚀 Job Completed</button>
+    <button class="bb-style-6dab063b" id="tab-job-failed" onclick="switchType('job-failed')">⚠️ Job Failed</button>
+    <button class="bb-style-6dab063b" id="tab-payment-failed" onclick="switchType('payment-failed')">💳 Payment Failed</button>
+    <button class="bb-style-6dab063b" id="tab-cancellation" onclick="switchType('cancellation')">👋 Cancellation</button>
+    <button class="bb-style-6dab063b" id="tab-upgrade-nudge" onclick="switchType('upgrade-nudge')">👀 Upgrade Nudge</button>
+    <button class="bb-style-6dab063b" id="tab-weekly-digest" onclick="switchType('weekly-digest')">📊 Weekly Digest</button>
+    <button class="bb-style-6dab063b" id="tab-setup-nudge" onclick="switchType('setup-nudge')">🔧 Setup Nudge</button>
+    <button class="bb-style-6dab063b" id="tab-platform-expired" onclick="switchType('platform-expired')">🔌 Platform Expired</button>
   </div>
 
   <!-- Editor card -->
-  <div class="card" style="background:#fff;border:1px solid #e8e8e8;color:#111;padding:20px;margin-bottom:20px">
+  <div class="card bb-style-d800743e">
 
     <!-- Version row -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-      <label style="font-size:13px;font-weight:600;color:#444;white-space:nowrap">Version:</label>
-      <select id="version-select" onchange="onVersionChange()" style="border:1px solid #ddd;border-radius:7px;padding:7px 12px;font-size:14px;background:#fafafa;color:#111;flex:1;min-width:180px"></select>
-      <span id="active-badge" style="display:none;background:#d4edda;color:#155724;border:1px solid #c3e6cb;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;white-space:nowrap">✓ Active</span>
-      <button id="btn-set-active" onclick="setThisVersionActive()" style="display:none;background:#fff;border:1px solid #ddd;border-radius:7px;padding:7px 14px;font-size:13px;cursor:pointer;color:#555;white-space:nowrap">Set as Active</button>
+    <div class="bb-style-c6882ff3 flex-row">
+      <label class="bb-style-6ab7f095">Version:</label>
+      <select class="bb-style-fd0484aa" id="version-select" onchange="onVersionChange()"></select>
+      <span class="bb-style-2b1301fa" id="active-badge" style="display:none;">✓ Active</span>
+      <button class="bb-style-a37c89ab" id="btn-set-active" onclick="setThisVersionActive()" style="display:none;">Set as Active</button>
     </div>
 
     <!-- Subject -->
-    <div style="margin-bottom:16px">
-      <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px">Subject Line</label>
-      <input id="subject-input" type="text" placeholder="Email subject…" oninput="markDirty()" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:10px 14px;font-size:15px;background:#fafafa;color:#111;box-sizing:border-box"/>
+    <div class="bb-style-7564ec60">
+      <label class="bb-style-f05ba1d1 bb-display-block">Subject Line</label>
+      <input class="bb-style-4676cee1" id="subject-input" type="text" placeholder="Email subject…" oninput="markDirty()"/>
     </div>
 
     <!-- Merge tags -->
-    <div style="margin-bottom:16px;padding:12px 14px;background:#f8f8f8;border:1px solid #eee;border-radius:8px">
-      <div style="font-size:12px;font-weight:700;color:#666;margin-bottom:8px;letter-spacing:0.5px">MERGE TAGS — click to copy</div>
-      <div style="display:flex;flex-wrap:wrap;gap:7px">
-        <code onclick="copyTag('{{name}}')" title="Recipient's first name" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{name}}</code>
-        <code onclick="copyTag('{{businessName}}')" title="Their business name" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{businessName}}</code>
-        <code onclick="copyTag('{{dashboardUrl}}')" title="Link to their dashboard" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{dashboardUrl}}</code>
-        <code onclick="copyTag('{{upgradeUrl}}')" title="Link to upgrade page" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{upgradeUrl}}</code>
-        <code onclick="copyTag('{{appUrl}}')" title="App base URL" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{appUrl}}</code>
-        <code onclick="copyTag('{{planName}}')" title="Pro or Agency (paid-welcome only)" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{planName}}</code>
-        <code onclick="copyTag('{{platform}}')" title="Platform name (job emails only)" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{platform}}</code>
-        <code onclick="copyTag('{{jobCount}}')" title="Number of jobs (weekly digest only)" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{jobCount}}</code>
-        <code onclick="copyTag('{{platformList}}')" title="Comma-separated platform list (weekly digest only)" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{platformList}}</code>
-        <code onclick="copyTag('{{connectUrl}}')" title="Link to the Connect page (platform-expired only)" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{connectUrl}}</code>
-        <code onclick="copyTag('{{onboardingUrl}}')" title="Link to onboarding (setup-nudge only)" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{onboardingUrl}}</code>
-        <code onclick="copyTag('{{unsubscribeUrl}}')" title="Unsubscribe link (scheduled emails)" style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#333">{{unsubscribeUrl}}</code>
-        <span id="copy-confirm" style="font-size:12px;color:#00873a;align-self:center;display:none">Copied!</span>
+    <div class="bb-style-2f8e3b10">
+      <div class="bb-style-e82ba14d">MERGE TAGS — click to copy</div>
+      <div class="bb-style-263f677e flex-row">
+        <code class="bb-style-9cf467b9" onclick="copyTag('{{name}}')" title="Recipient's first name">{{name}}</code>
+        <code class="bb-style-9cf467b9" onclick="copyTag('{{businessName}}')" title="Their business name">{{businessName}}</code>
+        <code class="bb-style-9cf467b9" onclick="copyTag('{{dashboardUrl}}')" title="Link to their dashboard">{{dashboardUrl}}</code>
+        <code class="bb-style-9cf467b9" onclick="copyTag('{{upgradeUrl}}')" title="Link to upgrade page">{{upgradeUrl}}</code>
+        <code class="bb-style-9cf467b9" onclick="copyTag('{{appUrl}}')" title="App base URL">{{appUrl}}</code>
+        <code class="bb-style-9cf467b9" onclick="copyTag('{{planName}}')" title="Pro or Agency (paid-welcome only)">{{planName}}</code>
+        <code class="bb-style-9cf467b9" onclick="copyTag('{{platform}}')" title="Platform name (job emails only)">{{platform}}</code>
+        <code class="bb-style-9cf467b9" onclick="copyTag('{{jobCount}}')" title="Number of jobs (weekly digest only)">{{jobCount}}</code>
+        <code class="bb-style-9cf467b9" onclick="copyTag('{{platformList}}')" title="Comma-separated platform list (weekly digest only)">{{platformList}}</code>
+        <code class="bb-style-9cf467b9" onclick="copyTag('{{connectUrl}}')" title="Link to the Connect page (platform-expired only)">{{connectUrl}}</code>
+        <code class="bb-style-9cf467b9" onclick="copyTag('{{onboardingUrl}}')" title="Link to onboarding (setup-nudge only)">{{onboardingUrl}}</code>
+        <code class="bb-style-9cf467b9" onclick="copyTag('{{unsubscribeUrl}}')" title="Unsubscribe link (scheduled emails)">{{unsubscribeUrl}}</code>
+        <span class="bb-style-ccc15403" id="copy-confirm" style="display:none;">Copied!</span>
       </div>
     </div>
 
     <!-- HTML editor -->
-    <div style="margin-bottom:16px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <label style="font-size:13px;font-weight:600;color:#444">HTML Body</label>
-        <button onclick="togglePreview()" style="background:#fff;border:1px solid #ddd;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;color:#555" id="preview-toggle-btn">👁 Preview</button>
+    <div class="bb-style-7564ec60">
+      <div class="bb-style-6833266c flex-row">
+        <label class="bb-style-2a0c66e0">HTML Body</label>
+        <button class="bb-style-8ba0a518" onclick="togglePreview()" id="preview-toggle-btn">👁 Preview</button>
       </div>
-      <textarea id="html-editor" oninput="markDirty();updatePreview()" rows="20" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:12px 14px;font-size:13px;font-family:monospace;background:#fafafa;color:#111;line-height:1.6;resize:vertical;box-sizing:border-box"></textarea>
+      <textarea class="bb-style-461572e2" id="html-editor" oninput="markDirty();updatePreview()" rows="20"></textarea>
     </div>
 
     <!-- Preview frame -->
-    <div id="preview-wrap" style="display:none;margin-bottom:16px">
-      <div style="font-size:12px;font-weight:700;color:#666;margin-bottom:8px;letter-spacing:0.5px">PREVIEW — using sample data (Alex Johnson · Sunrise Café)</div>
-      <iframe id="preview-frame" style="width:100%;height:520px;border:1px solid #ddd;border-radius:8px;background:#f5f5f5"></iframe>
+    <div class="bb-style-7564ec60" id="preview-wrap" style="display:none;">
+      <div class="bb-style-e82ba14d">PREVIEW — using sample data (Alex Johnson · Sunrise Café)</div>
+      <iframe class="bb-style-4ed01d6e" id="preview-frame"></iframe>
     </div>
 
     <!-- Action buttons -->
-    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding-top:4px">
-      <button id="btn-save" onclick="saveTemplate()" style="background:#111;color:#fff;border:none;border-radius:8px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer">Save Changes</button>
-      <button onclick="saveAsNewVersion()" style="background:#fff;color:#111;border:1px solid #ccc;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer">Save as New Version</button>
-      <button onclick="sendTest()" style="background:#fff;color:#111;border:1px solid #ccc;border-radius:8px;padding:11px 20px;font-size:14px;cursor:pointer">📨 Send Test to Dave</button>
-      <span id="save-status" style="font-size:13px;color:#555;margin-left:4px"></span>
+    <div class="bb-style-56e4068e flex-row">
+      <button class="bb-style-3d29ad99" id="btn-save" onclick="saveTemplate()">Save Changes</button>
+      <button class="bb-style-39ef7b89" onclick="saveAsNewVersion()">Save as New Version</button>
+      <button class="bb-style-d4099f61" onclick="sendTest()">📨 Send Test to Dave</button>
+      <span class="bb-style-e3d372b4" id="save-status"></span>
     </div>
   </div>
 
   <!-- Version history -->
-  <div class="card" style="background:#fff;border:1px solid #e8e8e8;color:#111;padding:20px">
-    <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:14px">Version History</div>
+  <div class="card bb-style-6a38333b">
+    <div class="bb-style-e7c29712">Version History</div>
     <div id="version-history"></div>
   </div>
 

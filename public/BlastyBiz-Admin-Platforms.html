@@ -9,54 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=20261110-section1"/>
-  <style>
-    body { visibility: hidden; }
-
-    /* ── Tabs ── */
-    .plat-tab-bar { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 2px solid #e0e0e0; }
-    .plat-tab-btn { background: none; border: none; padding: 10px 22px; font-size: 14px; font-weight: 600; color: #777; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color .15s; font-family: inherit; }
-    .plat-tab-btn.active { color: #4361ee; border-bottom-color: #4361ee; }
-    .plat-tab-btn:hover:not(.active) { color: #333; }
-
-    /* ── AI Writing Guide tab (existing) ── */
-    .platform-grid { display: grid; grid-template-columns: 220px 1fr; gap: 24px; align-items: start; }
-    .platform-list { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
-    .platform-list-item { padding: 10px 16px; cursor: pointer; border-bottom: 1px solid #e8e8e8; font-size: 14px; font-weight: 500; color: #333; transition: background 0.15s; }
-    .platform-list-item:last-child { border-bottom: none; }
-    .platform-list-item:hover { background: #eef2ff; }
-    .platform-list-item.active { background: #4361ee; color: #fff; }
-    .editor-panel { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 24px; }
-    .editor-panel h3 { margin: 0 0 20px; font-size: 18px; color: #111; }
-    .field-group { margin-bottom: 18px; }
-    .field-group label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #666; margin-bottom: 6px; }
-    .field-group input, .field-group textarea, .field-group select { width: 100%; box-sizing: border-box; border: 1px solid #d0d0d0; border-radius: 6px; padding: 8px 12px; font-family: inherit; font-size: 14px; color: #222; background: #fafafa; }
-    .field-group textarea { min-height: 90px; resize: vertical; }
-    .field-group input[type="number"] { max-width: 140px; }
-    .field-hint { font-size: 11px; color: #888; margin-top: 4px; }
-    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .btn-row { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
-    .save-btn { background: #4361ee; color: #fff; border: none; border-radius: 6px; padding: 10px 24px; font-weight: 700; font-size: 14px; cursor: pointer; }
-    .save-btn:hover { background: #3451d1; }
-    .reset-btn { background: #fff; color: #666; border: 1px solid #d0d0d0; border-radius: 6px; padding: 10px 24px; font-weight: 600; font-size: 14px; cursor: pointer; }
-    .reset-btn:hover { background: #f5f5f5; }
-    .status-msg { font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 6px; display: none; }
-    .status-msg.ok  { background: #e6f4ea; color: #2e7d32; display: inline-block; }
-    .status-msg.err { background: #fdecea; color: #c62828; display: inline-block; }
-    @media (max-width: 700px) { .platform-grid { grid-template-columns: 1fr; } .two-col { grid-template-columns: 1fr; } }
-
-    /* ── Listing & Display tab ── */
-    .disp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
-    .disp-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; }
-    .disp-card-slug { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #aaa; margin-bottom: 12px; }
-    .disp-cap-label { font-size: 11px; font-weight: 700; letter-spacing: .04em; }
-    .disp-cap-label.full_auto      { color: #2e7d32; }
-    .disp-cap-label.manual_assisted{ color: #777; }
-    .disp-save-bar { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-    .disp-status { font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 6px; display: none; }
-    .disp-status.ok  { background: #e6f4ea; color: #2e7d32; display: inline-block; }
-    .disp-status.err { background: #fdecea; color: #c62828; display: inline-block; }
-  </style>
+  <link rel="stylesheet" href="global-style.css?v=20261111-section7"/>
+<link rel="stylesheet" href="Buttons.css?v=20261111-section7">
+  <style>body{visibility:hidden}</style>
   <script type="importmap">
 {
   "integrity": {
@@ -69,12 +24,11 @@
 </script>
   <script type="module" src="./admin-guard.js"></script>
 <script src="blastybiz-menu.js?v=8"></script>
-<link rel="stylesheet" href="Buttons.css?v=20261110-section5">
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
 </head>
-<body class="admin-page">
+<body class="admin-page page-admin-platforms">
 
 <header>
   <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Platform Editor</span></a>
@@ -95,9 +49,9 @@
 
 <main><div class="main"><div class="main-inner">
 
-<div class="card" style="margin-bottom:20px">
+<div class="card bb-style-3c4a3d44">
   <div class="card-title">📋 Platform Editor</div>
-  <p style="margin:0;color:#555;font-size:14px">Two tabs: <strong>AI Writing Guide</strong> — the instructions the AI reads before writing for each platform. <strong>Listing &amp; Display</strong> — what name, icon, and capability badge visitors see on the public site and in the signup wizard.</p>
+  <p class="bb-style-748bf96a">Two tabs: <strong>AI Writing Guide</strong> — the instructions the AI reads before writing for each platform. <strong>Listing &amp; Display</strong> — what name, icon, and capability badge visitors see on the public site and in the signup wizard.</p>
 </div>
 
 <!-- Tab bar -->
@@ -108,23 +62,23 @@
 
 <!-- Tab: AI Writing Guide -->
 <div id="plat-tab-writing">
-  <div class="platform-grid">
+  <div class="row"><div class="layout__split-1-2">
     <div class="platform-list" id="platformList"></div>
     <div>
       <div class="editor-panel" id="editorPanel">
-        <p style="color:#888;text-align:center;padding:40px 0">Select a platform on the left to edit its AI instructions.</p>
+        <p class="bb-style-27f9ee81">Select a platform on the left to edit its AI instructions.</p>
       </div>
       <div id="statusMsg" class="status-msg"></div>
     </div>
-  </div>
+  </div></div>
 </div>
 
 <!-- Tab: Listing & Display -->
 <div id="plat-tab-display" style="display:none">
-  <p style="color:#555;font-size:14px;margin:0 0 20px">These fields control what visitors see on the public Platforms page and in the signup wizard. Changes save immediately to Firestore and take effect on page reload.</p>
-  <div class="disp-grid" id="dispGrid">
-    <p style="color:#888">Loading…</p>
-  </div>
+  <p class="bb-style-92fbbfe0">These fields control what visitors see on the public Platforms page and in the signup wizard. Changes save immediately to Firestore and take effect on page reload.</p>
+  <div class="row"><div class="layout__split-3" id="dispGrid">
+    <p class="bb-style-b948fe66">Loading…</p>
+  </div></div>
   <div class="disp-save-bar">
     <button class="save-btn" onclick="saveDisplayAll()">💾 Save All Display Settings</button>
     <button class="reset-btn" onclick="resetDisplayAll()">↩ Reset All to Defaults</button>
@@ -181,7 +135,7 @@ function renderWritingList() {
     const d = getWritingDoc(id);
     const isCustom = !!writingFirestoreData[id];
     return `<div class="platform-list-item${activePlatformId===id?' active':''}" onclick="selectPlatform('${id}')">
-      ${d.name || id}${isCustom ? ' <span style="font-size:10px;opacity:0.7">✎</span>' : ''}
+      ${d.name || id}${isCustom ? ' <span class="bb-style-7b0a53a2">✎</span>' : ''}
     </div>`;
   }).join('');
 }
@@ -197,10 +151,10 @@ function renderWritingEditor(id) {
   document.getElementById('editorPanel').innerHTML = `
     <h3>${d.name || id}</h3>
     <div class="field-group">
-      <label>Purpose <span style="font-weight:400;color:#aaa">(shown to AI)</span></label>
+      <label>Purpose <span class="bb-style-1c6cc4f8">(shown to AI)</span></label>
       <textarea id="f_purpose" rows="2">${esc(d.purpose||'')}</textarea>
     </div>
-    <div class="two-col">
+    <div class="row"><div class="layout__split">
       <div class="field-group">
         <label>Max Characters</label>
         <input type="number" id="f_maxChars" value="${d.maxChars||1000}" min="50" max="10000"/>
@@ -212,7 +166,7 @@ function renderWritingEditor(id) {
           <option value="true"${d.imageRequired?' selected':''}>Required</option>
         </select>
       </div>
-    </div>
+    </div></div>
     <div class="field-group">
       <label>Format</label>
       <textarea id="f_format" rows="2">${esc(d.format||'')}</textarea>
@@ -221,7 +175,7 @@ function renderWritingEditor(id) {
       <label>Tone</label>
       <input type="text" id="f_tone" value="${esc(d.tone||'')}"/>
     </div>
-    <div class="two-col">
+    <div class="row"><div class="layout__split">
       <div class="field-group">
         <label>DO — one per line</label>
         <textarea id="f_dos" rows="6">${esc(d.dos||'')}</textarea>
@@ -232,7 +186,7 @@ function renderWritingEditor(id) {
         <textarea id="f_donts" rows="6">${esc(d.donts||'')}</textarea>
         <div class="field-hint">Each line becomes a separate don't instruction</div>
       </div>
-    </div>
+    </div></div>
     <div class="field-group">
       <label>Image Notes</label>
       <textarea id="f_imageNotes" rows="2">${esc(d.imageNotes||'')}</textarea>
@@ -313,17 +267,17 @@ function renderDisplayGrid(platforms) {
     return `
       <div class="disp-card" id="disp-card-${def.slug}">
         <div class="disp-card-slug">${def.slug}</div>
-        <div class="two-col">
+        <div class="row"><div class="layout__split">
           <div class="field-group">
             <label>Icon</label>
-            <input type="text" id="disp_icon_${def.slug}" value="${esc(merged.icon||def.icon)}" maxlength="6" style="font-size:20px;max-width:80px"/>
+            <input class="bb-style-237e07f1" type="text" id="disp_icon_${def.slug}" value="${esc(merged.icon||def.icon)}" maxlength="6"/>
           </div>
           <div class="field-group">
             <label>Display Name</label>
             <input type="text" id="disp_name_${def.slug}" value="${esc(merged.name||def.name)}"/>
           </div>
-        </div>
-        <div class="two-col">
+        </div></div>
+        <div class="row"><div class="layout__split">
           <div class="field-group">
             <label>Capability</label>
             <select id="disp_cap_${def.slug}" disabled title="Determined by the implemented publisher">
@@ -334,10 +288,10 @@ function renderDisplayGrid(platforms) {
           </div>
           <div class="field-group">
             <label>Sort Order</label>
-            <input type="number" id="disp_order_${def.slug}" value="${merged.order||def.order}" min="1" max="99" style="max-width:80px"/>
+            <input class="bb-style-8a105fbb" type="number" id="disp_order_${def.slug}" value="${merged.order||def.order}" min="1" max="99"/>
           </div>
-        </div>
-        <div class="two-col">
+        </div></div>
+        <div class="row"><div class="layout__split">
           <div class="field-group">
             <label>Enabled on site?</label>
             <select id="disp_enabled_${def.slug}">
@@ -349,7 +303,7 @@ function renderDisplayGrid(platforms) {
             <label>Plan access</label>
             <div class="field-hint">All plans</div>
           </div>
-        </div>
+        </div></div>
       </div>
     `;
   }).join('');

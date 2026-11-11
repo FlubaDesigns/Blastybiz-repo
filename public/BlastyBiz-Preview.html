@@ -10,75 +10,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=20261110-section1"/>
-  <style>
-    body { background:#0d1a0d; color:#e0f0e3; font-family:'DM Sans',sans-serif; margin:0; }
-    :root { --green:#00C853; --dark:#0d1a0d; --card:#111f11; --border:#1e3320; --text:#e0f0e3; --sub:#7aab82; }
-
-    /* ── Hero / form ──────────────────────────────────────────────── */
-    .pv-hero { max-width:720px; margin:0 auto; padding:56px 20px 80px; text-align:center; }
-    .pv-eyebrow { display:inline-block; background:#1b3a1b; color:var(--green); font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; padding:5px 14px; border-radius:20px; margin-bottom:20px; }
-    .pv-h1 { font-family:'Bebas Neue',sans-serif; font-size:clamp(36px,8vw,72px); line-height:1.0; color:#fff; margin:0 0 18px; letter-spacing:1px; }
-    .pv-h1 em { color:var(--green); font-style:normal; }
-    .pv-sub { font-size:17px; color:var(--sub); line-height:1.65; max-width:500px; margin:0 auto 40px; }
-
-    .pv-form { background:#111f11; border:1.5px solid #1e3320; border-radius:18px; padding:28px; max-width:520px; margin:0 auto; }
-    .pv-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
-    @media (max-width:500px) { .pv-row { grid-template-columns:1fr; } }
-    .pv-lbl { display:block; font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.07em; margin-bottom:5px; }
-    .pv-inp { width:100%; background:#0a1409; border:1.5px solid #1e3320; border-radius:10px; padding:12px 14px; color:#e0f0e3; font:15px 'DM Sans',sans-serif; transition:border-color .15s; box-sizing:border-box; }
-    .pv-inp:focus-visible { border-color:var(--green); outline:none; box-shadow:0 0 0 3px rgba(0,200,83,.12); }
-    .pv-inp::placeholder { color:#3a5e3e; }
-    .pv-btn { width:100%; background:var(--green); color:#0a1409; border:none; border-radius:12px; padding:16px; font:700 16px 'DM Sans',sans-serif; cursor:pointer; letter-spacing:.02em; transition:opacity .15s,transform .1s; }
-    .pv-btn:hover:not(:disabled) { opacity:.92; transform:translateY(-1px); }
-    .pv-btn:active:not(:disabled) { transform:translateY(0); }
-    .pv-btn:disabled { opacity:.5; cursor:default; transform:none; }
-    .pv-err { color:#ef5350; font-size:13px; margin-top:10px; min-height:18px; }
-
-    /* ── Loading ──────────────────────────────────────────────────── */
-    .pv-loading { text-align:center; padding:80px 20px; }
-    .pv-spinner { display:inline-flex; gap:8px; margin-bottom:22px; }
-    .pv-dot { width:11px; height:11px; border-radius:50%; background:var(--green); animation:pvBounce 1.2s ease-in-out infinite; }
-    .pv-dot:nth-child(2) { animation-delay:.2s; }
-    .pv-dot:nth-child(3) { animation-delay:.4s; }
-    @keyframes pvBounce { 0%,80%,100%{transform:scale(.5);opacity:.4} 40%{transform:scale(1.1);opacity:1} }
-    .pv-loading-text { font-size:17px; color:var(--sub); }
-    .pv-loading-biz  { color:var(--text); font-weight:700; }
-
-    /* ── Results ──────────────────────────────────────────────────── */
-    .pv-results { max-width:760px; margin:0 auto; padding:0 20px 80px; }
-    .pv-results-head { text-align:center; margin-bottom:32px; }
-    .pv-results-title { font-family:'Bebas Neue',sans-serif; font-size:clamp(28px,5vw,48px); color:#fff; margin:0 0 8px; }
-    .pv-results-sub { color:var(--sub); font-size:14px; margin:0; }
-    .pv-sample-note { background:#1b2e1b; border:1px solid #2e4e2e; border-radius:8px; padding:10px 16px; font-size:12px; color:var(--sub); text-align:center; margin-bottom:24px; }
-
-    .pv-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; margin-bottom:32px; }
-    .pv-card { background:var(--card); border:1.5px solid var(--border); border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:10px; }
-    .pv-card-plat { display:flex; align-items:center; gap:8px; }
-    .pv-card-icon { font-size:18px; line-height:1; }
-    .pv-card-plat-name { font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.07em; }
-    .pv-card-headline { font-size:15px; font-weight:700; color:var(--text); line-height:1.3; }
-    .pv-card-body { font-size:13px; color:#a8c8ac; line-height:1.65; white-space:pre-wrap; word-break:break-word; }
-
-    /* ── CTA block ────────────────────────────────────────────────── */
-    .pv-cta-block { background:#0a1f0a; border:1.5px solid var(--green); border-radius:18px; padding:32px 28px; text-align:center; max-width:520px; margin:0 auto 20px; }
-    .pv-cta-title { font-family:'Bebas Neue',sans-serif; font-size:28px; color:#fff; margin:0 0 8px; letter-spacing:.5px; }
-    .pv-cta-desc  { font-size:14px; color:var(--sub); margin:0 0 22px; line-height:1.5; }
-    .pv-cta-btn { display:inline-block; background:var(--green); color:#0a1409; border:none; border-radius:12px; padding:16px 32px; font:700 16px 'DM Sans',sans-serif; cursor:pointer; letter-spacing:.02em; transition:opacity .15s,transform .1s; text-decoration:none; }
-    .pv-cta-btn:hover { opacity:.92; transform:translateY(-1px); }
-
-    .pv-trust { text-align:center; font-size:12px; color:#3a5e3e; margin-bottom:28px; }
-    .pv-trust span { margin:0 6px; }
-
-    .pv-tryagain { text-align:center; }
-    .pv-tryagain-link { color:var(--sub); font-size:13px; cursor:pointer; text-decoration:underline; background:none; border:none; font-family:'DM Sans',sans-serif; }
-    .pv-tryagain-link:hover { color:var(--text); }
-  </style>
+  <link rel="stylesheet" href="global-style.css?v=20261111-section7"/>
+<link rel="stylesheet" href="Buttons.css?v=20261111-section7">
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
 </head>
-<body>
+<body class="page-preview">
 
 <script src="blastybiz-menu.js?v=8"></script>
 
@@ -91,7 +29,7 @@
     <p class="pv-sub">Type your business name and city — BlastyBiz writes 3 real ads (Google, Facebook, Instagram) in about 20&nbsp;seconds. Free forever.</p>
 
     <div class="pv-form">
-      <div class="pv-row">
+      <div class="row"><div class="layout__split">
         <div>
           <label class="pv-lbl" for="pv-bizName">Business name</label>
           <input class="pv-inp" id="pv-bizName" type="text" placeholder="e.g. Mike's Auto Repair" maxlength="80" autocomplete="organization" spellcheck="false"/>
@@ -100,12 +38,12 @@
           <label class="pv-lbl" for="pv-city">City</label>
           <input class="pv-inp" id="pv-city" type="text" placeholder="e.g. Austin, TX" maxlength="60"/>
         </div>
-      </div>
+      </div></div>
       <button class="pv-btn" id="pv-generate-btn" onclick="pvGenerate()">✨ Generate My Free Ads →</button>
       <div class="pv-err" id="pv-err" role="alert" aria-live="polite"></div>
     </div>
 
-    <p style="margin-top:24px;font-size:13px;color:#3a5e3e;">No credit card &nbsp;·&nbsp; No account &nbsp;·&nbsp; Just your ads</p>
+    <p class="bb-style-28412482">No credit card &nbsp;·&nbsp; No account &nbsp;·&nbsp; Just your ads</p>
   </div>
 
   <!-- ── Loading ────────────────────────────────────────────────────────────── -->

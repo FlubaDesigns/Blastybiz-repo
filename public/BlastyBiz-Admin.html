@@ -9,13 +9,13 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="Buttons.css?v=20261110-section5">
 <title>BlastyBiz — Admin Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="global-style.css?v=20261110-section1">
+<link rel="stylesheet" href="global-style.css?v=20261111-section7">
+<link rel="stylesheet" href="Buttons.css?v=20261111-section7">
 
 <style>body{visibility:hidden}</style>
 <script type="importmap">
@@ -38,7 +38,7 @@
 <body class="admin-page">
 <header>
   <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Admin Command</span></a>
-  <div class="top-actions"><details class="bb-more"><summary aria-label="Admin options" title="Admin options">⋯</summary><div class="bb-more-list"><a href="BlastyBiz-Dashboard.html">Customer View</a><a href="BlastyBiz-Admin-Queue-Manager.html">Queue Manager</a><a href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a href="BlastyBiz-Admin-Users.html">Users</a><a href="BlastyBiz-Admin-Subscriptions.html">Money</a><a href="BlastyBiz-Admin-Platform-Health.html">Health</a><a href="BlastyBiz-Admin-Logs.html">Logs</a><a href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a href="BlastyBiz-Admin-Operate.html">⚙️ Operate</a><a href="BlastyBiz-TestBlasty.html">🧪 Test Blasty</a><a href="BlastyBiz-Login.html">👤</a><button type="button" data-more-target="plan-switcher" aria-expanded="false">My Plan Override</button><button type="button" data-more-target="ai-settings-card" aria-expanded="false">AI settings</button><button type="button" data-more-target="platform-cats-card" aria-expanded="false">Platform categories</button><button type="button" data-more-target="ai-cost-rollups" aria-expanded="false">AI cost rollups</button></div></details></div>
+  <div class="top-actions"><details class="bb-more"><summary aria-label="Admin options" title="Admin options">⋯</summary><div class="bb-more-list"><a href="BlastyBiz-Dashboard.html">Customer View</a><a href="BlastyBiz-Admin-Queue-Manager.html">Queue Manager</a><a href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a href="BlastyBiz-Admin-Users.html">Users</a><a href="BlastyBiz-Admin-Subscriptions.html">Money</a><a href="BlastyBiz-Admin-Platform-Health.html">Health</a><a href="BlastyBiz-Admin-Logs.html">Logs</a><a href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a href="BlastyBiz-Admin-Operate.html">⚙️ Operate</a><a href="BlastyBiz-TestBlasty.html">🧪 Test Blasty</a><a href="BlastyBiz-Login.html">👤</a><button type="button" data-more-target="admin-about" aria-expanded="false">About this dashboard</button><button type="button" data-more-target="plan-switcher" aria-expanded="false">My Plan Override</button><button type="button" data-more-target="ai-settings-card" aria-expanded="false">AI settings</button><button type="button" data-more-target="platform-cats-card" aria-expanded="false">Platform categories</button><button type="button" data-more-target="ai-cost-rollups" aria-expanded="false">AI cost rollups</button></div></details></div>
 </header>
 
 <main><div class="main"><div class="main-inner">
@@ -48,8 +48,8 @@
   <section class="row"><div class="layout__split">
     <div class="card">
       <div class="eyebrow">Owner/admin dashboard</div>
-      <h1 class="big-title">Run the business. <span>Keep it clean.</span></h1>
-      <p class="sub">This page is for Dave/admin only. Customers should never see AI cost, backend failures, API language, margin, prompts, or operating logs. This page tracks the health of BlastyBiz as a SaaS business.</p>
+      <h1 class="big-title">Business <span>overview</span></h1>
+      <p class="sub">Connections, accounts, and items that need your attention.</p>
       <div class="btn-row">
         <a class="btn btn-primary" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️ Review Failed Jobs</a>
         <a class="btn" href="#users">👥 Check Users</a>
@@ -65,6 +65,7 @@
     </div>
   </div></section>
 
+<section class="card" id="admin-about" hidden tabindex="-1"><h2>Private admin dashboard</h2><p>AI costs, backend failures, margin, prompts and operating logs are available only to the admin. The tools here use the existing account, connection and job records.</p></section>
 <h2 id="needs-attention">Needs attention</h2>
   <section class="row"><div class="layout__split">
     <div class="card" id="failed">
@@ -82,10 +83,10 @@
   <section class="row"><div class="layout__split">
     <div class="card" id="accounts-attention">
       <div class="card-title">⚠️ Accounts To Watch</div>
-      <table>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table>
         <thead><tr><th>Business</th><th>Plan</th><th>Status</th><th>Issue</th><th></th></tr></thead>
         <tbody id="admin-accounts-tbody"><tr><td colspan="5" class="td-empty">Loading…</td></tr></tbody>
-      </table>
+      </table></div>
       <a class="btn" href="BlastyBiz-Admin-Users.html">Review accounts →</a>
     </div>
     <div class="card" id="billing-attention">
@@ -113,26 +114,26 @@
   </div></section>
 
   <!-- ── ONBOARDING FUNNEL WIDGET ── -->
-  <section class="card mb-16" id="onboarding-funnel-widget" style="border-left:4px solid #FF6D00;">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-      <div class="card-title" style="margin:0;">🚧 Incomplete Onboarding</div>
-      <a href="BlastyBiz-Admin-Operate.html#onboarding-funnel" style="font-size:13px;color:#FF6D00;text-decoration:none;white-space:nowrap;">View full report →</a>
+  <section class="card mb-16 bb-style-5a5c72c4" id="onboarding-funnel-widget">
+    <div class="bb-style-7c3ec65a flex-row">
+      <div class="card-title bb-style-38965f9b">🚧 Incomplete Onboarding</div>
+      <a class="bb-style-b2a2aab7" href="BlastyBiz-Admin-Operate.html#onboarding-funnel">View full report →</a>
     </div>
     <button type="button" id="funnel-widget-refresh">Refresh report</button>
     <div id="funnel-widget-body" role="status" aria-live="polite">
-      <div style="font-size:13px;color:#888;">Loading…</div>
+      <div class="bb-style-c3bddaf3">Loading…</div>
     </div>
-    <p id="funnel-widget-meta" style="font-size:12px;color:#666;"></p>
+    <p class="bb-style-454a11eb" id="funnel-widget-meta"></p>
   </section>
 
 
 
   <section class="card mb-16" id="users">
     <div class="card-title">👥 All Accounts</div>
-    <table>
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table>
       <thead><tr><th>Business</th><th>Plan</th><th>Status</th><th>Joined</th></tr></thead>
       <tbody id="admin-all-accounts-tbody"><tr><td colspan="4" class="td-empty">Loading…</td></tr></tbody>
-    </table>
+    </table></div>
   </section>
 
   <section class="row"><div class="col-full">
@@ -140,12 +141,12 @@
 
     <div class="card">
       <div class="card-title">🤖 AI Usage / Margin</div>
-      <table>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table>
         <thead><tr><th>Metric</th><th>This Month</th><th>Target</th></tr></thead>
         <tbody id="admin-ai-tbody">
           <tr><td colspan="3" class="td-empty">Loading…</td></tr>
         </tbody>
-      </table>
+      </table></div>
       <div class="ai-note-text" id="admin-ai-note">Tracking live AI calls. Historical data available once calls are logged.</div>
     </div>
   </div></section>
@@ -172,12 +173,12 @@
   </section>
 
   <!-- ── PLATFORM CATEGORY LIST (manual) ── -->
-  <section class="card mb-16" id="platform-cats-card" hidden tabindex="-1" style="border-left:4px solid #1a73e8;">
+  <section class="card mb-16 bb-style-0aa416c0" id="platform-cats-card" hidden tabindex="-1">
     <div class="card-title">📋 Platform Category List</div>
-    <p style="font-size:13px;color:#666;margin:0 0 10px;">Paste the official category table for any platform. Each row should be <em>alias [tab] title</em>. For platforms without aliases (e.g. Angi, Nextdoor), one column works too — the alias will be auto-generated from the title.</p>
-    <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
-      <label style="font-size:13px;font-weight:600;color:#444;">Platform:</label>
-      <select id="platform-cats-select" style="font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;">
+    <p class="bb-style-7ba68364">Paste the official category table for any platform. Each row should be <em>alias [tab] title</em>. For platforms without aliases (e.g. Angi, Nextdoor), one column works too — the alias will be auto-generated from the title.</p>
+    <div class="bb-style-09ade003 flex-row">
+      <label class="bb-style-2a0c66e0">Platform:</label>
+      <select class="bb-style-d69290f5" id="platform-cats-select">
         <option value="yelp">⭐ Yelp</option>
         <option value="google">🔍 Google Business Profile</option>
         <option value="bing">🔷 Bing Places</option>
@@ -190,10 +191,10 @@
         <option value="fbmarket">🛒 Facebook Marketplace</option>
       </select>
     </div>
-    <textarea id="platform-cats-input" rows="6" placeholder="autorepair&#9;Auto Repair&#10;restaurants&#9;Restaurants&#10;Handyman&#10;Lawn Care" style="width:100%;box-sizing:border-box;font-size:13px;padding:8px;border:1px solid #ddd;border-radius:6px;resize:vertical;"></textarea>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;">
+    <textarea class="bb-style-3890c164" id="platform-cats-input" rows="6" placeholder="autorepair&#9;Auto Repair&#10;restaurants&#9;Restaurants&#10;Handyman&#10;Lawn Care"></textarea>
+    <div class="bb-style-f7fecc78 flex-row">
       <button onclick="window.savePlatformCategories()" class="btn btn-primary">💾 Save to Firestore</button>
-      <span id="platform-cats-msg" style="font-size:13px;color:#888;"></span>
+      <span class="bb-style-c3bddaf3" id="platform-cats-msg"></span>
     </div>
   </section>
 
@@ -213,14 +214,14 @@
     </div>
   </div></section>
   <!-- ── PLAN SWITCHER ── -->
-  <section class="card" id="plan-switcher" hidden tabindex="-1" style="margin-bottom:20px;border-left:4px solid #00C853;">
-    <div class="card-title" style="margin-bottom:6px;">⚙️ My Plan Override</div>
-    <p style="font-size:13px;color:#666;margin:0 0 14px;">Switch your account between tiers for testing. A real Square payment event will overwrite this.</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+  <section class="card bb-style-1ea6de55" id="plan-switcher" hidden tabindex="-1">
+    <div class="card-title bb-style-abd137b8">⚙️ My Plan Override</div>
+    <p class="bb-style-b177aa1e">Switch your account between tiers for testing. A real Square payment event will overwrite this.</p>
+    <div class="bb-style-029803f5 flex-row">
       <button id="plan-btn-starter" onclick="window.setPlan('starter')" class="btn">Starter</button>
       <button id="plan-btn-pro"     onclick="window.setPlan('pro')"     class="btn">Pro</button>
       <button id="plan-btn-agency"  onclick="window.setPlan('agency')"  class="btn">Agency</button>
-      <span id="plan-current" style="font-size:13px;color:#888;margin-left:6px;"></span>
+      <span class="bb-style-7a41fd51" id="plan-current"></span>
     </div>
   </section>
 </div></div></main>
@@ -325,7 +326,7 @@ window.savePlatformCategories = async function() {
         return;
       }
       const rows = data.steps.map(s => `<li>${_esc(s.label)}: ${s.count}</li>`).join('');
-      funnelBody.innerHTML = `<p><strong>${_esc(data.totalNotOnboarded)}</strong> incomplete account${data.totalNotOnboarded === 1 ? '' : 's'}</p><ul>${rows}</ul><p style="font-size:12px;color:#666;">Saved setup status only. Per-question progress and inactivity duration are not recorded.</p>`;
+      funnelBody.innerHTML = `<p><strong>${_esc(data.totalNotOnboarded)}</strong> incomplete account${data.totalNotOnboarded === 1 ? '' : 's'}</p><ul>${rows}</ul><p class="bb-style-454a11eb">Saved setup status only. Per-question progress and inactivity duration are not recorded.</p>`;
     } catch(e) {
       if (request === funnelWidgetRequest && auth.currentUser?.uid === user.uid) funnelBody.textContent = 'Onboarding report unavailable. Use Refresh to retry.';
       console.warn('[funnel-widget]', e.message);

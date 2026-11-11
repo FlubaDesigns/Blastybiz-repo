@@ -10,50 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="global-style.css?v=20261110-section1">
-  <style>
-    body { visibility:hidden }
-    .mp-grid { display:grid; grid-template-columns:1fr 220px; gap:24px; align-items:start; }
-    @media (max-width:800px) { .mp-grid { grid-template-columns:1fr; } .mp-preview { display:none; } }
-    .sec-hd { display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
-    .sec-hd h2 { font:700 18px 'DM Sans',sans-serif; color:#0f172a; margin:0; flex:1; }
-    /* preset cards */
-    .preset-card { background:#fff; border:1.5px solid #e4e9f0; border-radius:12px; margin-bottom:10px; }
-    .preset-head { display:flex; align-items:center; gap:10px; padding:10px 14px; flex-wrap:wrap; }
-    .preset-name { font:700 14px 'DM Sans',sans-serif; color:#0f172a; flex:1; min-width:80px; }
-    .preset-tags { display:flex; gap:5px; flex-wrap:wrap; flex:2; }
-    .ptag { font-size:10px; background:#f1f5f9; color:#475569; border-radius:10px; padding:2px 7px; font-weight:600; white-space:nowrap; }
-    .btn-del { background:none; border:1.5px solid #e2e8f0; border-radius:7px; padding:4px 10px; font:12px 'DM Sans',sans-serif; cursor:pointer; color:#94a3b8; white-space:nowrap; }
-    .btn-del:hover { border-color:#ef4444; color:#ef4444; }
-    .btn-prv2 { background:none; border:1.5px solid #e2e8f0; border-radius:7px; padding:4px 10px; font:12px 'DM Sans',sans-serif; cursor:pointer; color:#64748b; white-space:nowrap; }
-    .btn-prv2:hover { border-color:#7c3aed; color:#7c3aed; }
-    /* add form */
-    .add-form { background:#f8fafc; border:1.5px solid #e4e9f0; border-radius:12px; padding:16px; margin-bottom:18px; display:none; }
-    .add-form.open { display:block; }
-    .form-row { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
-    .form-fld { display:flex; flex-direction:column; gap:3px; flex:1 1 130px; min-width:0; }
-    .form-fld label { font:700 10px 'DM Sans',sans-serif; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em; }
-    .form-fld input, .form-fld select { width:100%; box-sizing:border-box; border:1.5px solid #e2e8f0; border-radius:6px; padding:5px 8px; font:13px 'DM Sans',sans-serif; color:#0f172a; background:#fff; }
-    .form-fld input:focus, .form-fld select:focus { border-color:#2563eb; outline:none; }
-    .form-fld.name-fld { flex:2 1 180px; }
-    .form-acts { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    .btn-save { background:#2563eb; color:#fff; border:none; border-radius:7px; padding:7px 18px; font:600 13px 'DM Sans',sans-serif; cursor:pointer; }
-    .btn-save:hover { background:#1d4ed8; }
-    .btn-cancel { background:none; border:1.5px solid #e2e8f0; border-radius:7px; padding:6px 14px; font:13px 'DM Sans',sans-serif; cursor:pointer; color:#64748b; }
-    .add-btn { background:#0f172a; color:#fff; border:none; border-radius:8px; padding:8px 18px; font:600 13px 'DM Sans',sans-serif; cursor:pointer; }
-    .add-btn:hover { background:#1e293b; }
-    .gsts { font-size:12px; color:#22c55e; }
-    .fsts { font-size:12px; }
-    /* preview */
-    .mp-preview { position:sticky; top:80px; }
-    .prev-panel { background:#0d1f3c; border-radius:14px; padding:18px; text-align:center; }
-    .prev-lbl { font-size:10px; color:#64748b; text-transform:uppercase; letter-spacing:.1em; margin-bottom:12px; }
-    #pb-mascot { display:inline-block; position:relative; }
-    #pb-mascot svg { width:160px; height:auto; overflow:visible; }
-    .prev-cap { font-size:12px; color:#9ca3af; margin-top:8px; min-height:16px; }
-    .empty-state { text-align:center; padding:40px 20px; color:#94a3b8; font-size:14px; }
-    .drag-hint { font-size:11px; color:#cbd5e1; margin-bottom:4px; text-align:right; }
-  </style>
+  <link rel="stylesheet" href="global-style.css?v=20261111-section7">
+<link rel="stylesheet" href="Buttons.css?v=20261111-section7">
+  <style>body{visibility:hidden}</style>
   <script type="importmap">
 {
   "integrity": {
@@ -68,12 +27,11 @@
   <script src="blastybiz-menu.js?v=8"></script>
   <script src="escape-utils.js"></script>
   <script src="/mascot.js"></script>
-<link rel="stylesheet" href="Buttons.css?v=20261110-section5">
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
 </head>
-<body class="admin-page">
+<body class="admin-page page-admin-moods">
 
 <header>
   <a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Mood Presets</span></a>
@@ -86,7 +44,7 @@
 </header>
 
 <main><div class="main-inner">
-<div class="mp-grid">
+<div class="row"><div class="layout__split-lp-hero">
 
   <!-- left: list + form -->
   <div>
@@ -146,7 +104,7 @@
     </div>
   </div>
 
-</div>
+</div></div>
 </div></main>
 
 <script type="module">

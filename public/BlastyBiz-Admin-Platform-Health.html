@@ -3,24 +3,8 @@
   <meta name="theme-color" content="#000000"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>BlastyBiz — Admin Platform Health</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/><link rel="stylesheet" href="global-style.css?v=20261110-section1"><style>body{visibility:hidden}
-.filter-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
-.filter-row select,.filter-row input{padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit}
-.filter-row input{flex:1;min-width:160px}
-.nudge-btn{padding:4px 12px;border-radius:6px;border:1px solid #00C853;background:#fff;color:#0d7a2e;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
-.nudge-btn:hover{background:#e8f5e9}
-.nudge-btn:disabled{opacity:.45;cursor:not-allowed}
-.nudge-btn.sent{background:#e8f5e9;color:#1b5e20;border-color:#a5d6a7}
-#broken-table{width:100%;border-collapse:collapse;font-size:13px}
-#broken-table th{text-align:left;padding:8px 10px;border-bottom:2px solid #eee;color:#666;font-weight:600;white-space:nowrap}
-#broken-table td{padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
-#broken-table tr:last-child td{border-bottom:none}
-.days-cell{font-weight:700}
-.days-cell.old{color:#c62828}
-.days-cell.mid{color:#e65100}
-.days-cell.fresh{color:#2e7d32}
-.empty-state{text-align:center;padding:40px;color:#999;font-size:14px}
-</style><script type="importmap">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/><link rel="stylesheet" href="global-style.css?v=20261111-section7">
+<link rel="stylesheet" href="Buttons.css?v=20261111-section7"><style>body{visibility:hidden}</style><script type="importmap">
 {
   "integrity": {
     "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js":       "sha384-wY0ZJNz4V101UNldqXjHz0zuQq2LFWQg9C6MejyUaw58KxejR+Fq3MinHCx/5y77",
@@ -31,11 +15,10 @@
 }
 </script>
   <script type="module" src="./admin-guard.js"></script><script src="escape-utils.js"></script><script src="platforms-authority.js"></script><script src="admin-health.js"></script><script src="blastybiz-menu.js?v=8"></script>
-<link rel="stylesheet" href="Buttons.css?v=20261110-section5">
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
-</head><body class="admin-page"><header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Platform Health</span></a><div class="top-actions"><a class="icon-btn hide-mobile " href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile active" href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Logs.html">Logs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Operate.html">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header><main><div class="main"><div class="main-inner">
+</head><body class="admin-page page-admin-platform-health"><header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Platform Health</span></a><div class="top-actions"><a class="icon-btn hide-mobile " href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile active" href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Logs.html">Logs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Operate.html">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header><main><div class="main"><div class="main-inner">
 
 <section class="hero">
   <div class="card">
@@ -61,12 +44,12 @@
   </div>
 </section>
 
-<section class="grid">
+<div class="row"><section class="layout__split-4">
   <div class="stat"><div class="stat-num" id="cnt-connected">—</div><div class="stat-label">Connected</div><div class="stat-note money">Active API links</div></div>
   <div class="stat"><div class="stat-num" id="cnt-expired">—</div><div class="stat-label">Expired</div><div class="stat-note warn">Customer reconnect needed</div></div>
   <div class="stat"><div class="stat-num" id="cnt-disconnected">—</div><div class="stat-label">Disconnected</div><div class="stat-note bad">Removed by user or revoked</div></div>
   <div class="stat"><div class="stat-num" id="cnt-other">—</div><div class="stat-label">Other</div><div class="stat-note blue">Rate-limited or unknown</div></div>
-</section>
+</section></div>
 
 <section class="card">
   <div class="card-title">⚠️ Connections Needing Attention</div>
@@ -85,10 +68,10 @@
       <option value="yelp">Yelp</option>
     </select>
     <input type="text" id="filter-biz" placeholder="Filter by business name…">
-    <span id="row-count" style="font-size:12px;color:#999;white-space:nowrap"></span>
+    <span class="bb-style-95b3d3f4" id="row-count"></span>
   </div>
-  <div style="overflow-x:auto">
-    <table id="broken-table">
+  <div class="bb-style-fbff25e9">
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table id="broken-table">
       <thead><tr>
         <th>Business</th>
         <th>Platform</th>
@@ -98,13 +81,13 @@
         <th>Action</th>
       </tr></thead>
       <tbody id="broken-tbody"><tr><td colspan="6" class="empty-state">Loading…</td></tr></tbody>
-    </table>
+    </table></div>
   </div>
 </section>
 
-<section class="card"><div class="card-title">📡 Platform API Status</div><table><thead><tr><th>Platform</th><th>Mode</th><th>Status</th><th>Common Failure</th><th>Admin Response</th></tr></thead><tbody id="platform-meta-tbody"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody></table></section>
+<section class="card"><div class="card-title">📡 Platform API Status</div><div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Platform</th><th>Mode</th><th>Status</th><th>Common Failure</th><th>Admin Response</th></tr></thead><tbody id="platform-meta-tbody"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody></table></div></section>
 
-<section class="two-col"><div class="card"><div class="card-title">🔌 OAuth Watchlist</div><div class="list"><div class="list-item"><div class="icon">G</div><div class="row-main"><div class="row-title">Google reconnects</div><div class="row-sub">Show customers a simple reconnect button. Admin sees token expiry dates.</div></div></div><div class="list-item"><div class="icon">M</div><div class="row-main"><div class="row-title">Meta permissions</div><div class="row-sub">Facebook/Instagram permission problems should create failed jobs and customer tasks.</div></div></div></div></div><div class="card"><div class="card-title">🧾 Platform Rules</div><div class="list"><div class="list-item"><div class="icon">1</div><div class="row-main"><div class="row-title">Never promise automation where there is no stable API</div><div class="row-sub">For Nextdoor, Craigslist, Marketplace, and similar tools, use guided copy/paste.</div></div></div><div class="list-item"><div class="icon">2</div><div class="row-main"><div class="row-title">Manual still has value</div><div class="row-sub">AI-generated platform-ready text saves time even when the customer must paste it manually.</div></div></div></div></div></section>
+<div class="row"><section class="layout__split"><div class="card"><div class="card-title">🔌 OAuth Watchlist</div><div class="list"><div class="list-item"><div class="icon">G</div><div class="row-main"><div class="row-title">Google reconnects</div><div class="row-sub">Show customers a simple reconnect button. Admin sees token expiry dates.</div></div></div><div class="list-item"><div class="icon">M</div><div class="row-main"><div class="row-title">Meta permissions</div><div class="row-sub">Facebook/Instagram permission problems should create failed jobs and customer tasks.</div></div></div></div></div><div class="card"><div class="card-title">🧾 Platform Rules</div><div class="list"><div class="list-item"><div class="icon">1</div><div class="row-main"><div class="row-title">Never promise automation where there is no stable API</div><div class="row-sub">For Nextdoor, Craigslist, Marketplace, and similar tools, use guided copy/paste.</div></div></div><div class="list-item"><div class="icon">2</div><div class="row-main"><div class="row-title">Manual still has value</div><div class="row-sub">AI-generated platform-ready text saves time even when the customer must paste it manually.</div></div></div></div></div></section></div>
 
 </div></div></main>
 <nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Queue-Manager.html">📋<br>Queue</a><a class="" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="active" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a><a class="" href="BlastyBiz-Admin-Operate.html">⚙️<br>Operate</a></nav>
@@ -170,10 +153,10 @@ function renderBroken() {
         : `<span class="badge info">${safeStatus}</span>`;
 
     return `<tr>
-      <td><strong class="ph-biz-name"></strong><br><span style="color:#999;font-size:11px">${_esc(c.businessId)}</span></td>
+      <td><strong class="ph-biz-name"></strong><br><span class="bb-style-c958db3e">${_esc(c.businessId)}</span></td>
       <td>${_esc(platformLabel(c.platform))}</td>
       <td>${statusBadge}</td>
-      <td style="white-space:nowrap">${_esc(fmtDate(c.expiresAt))}</td>
+      <td class="bb-style-32fb29ef">${_esc(fmtDate(c.expiresAt))}</td>
       <td class="${daysClass}">${daysText}</td>
       <td><button class="nudge-btn" data-uid="${_esc(c.uid)}" data-bizid="${_esc(c.businessId)}" ${!c.uid||!c.businessId?'disabled':''} data-platform="${_esc(c.platform)}" title="Send reconnect email to business owner">Send Nudge</button></td>
     </tr>`;

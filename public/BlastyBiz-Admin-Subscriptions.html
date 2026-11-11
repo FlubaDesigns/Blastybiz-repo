@@ -3,7 +3,8 @@
   <meta name="theme-color" content="#000000"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>BlastyBiz — Admin Subscriptions</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/><link rel="stylesheet" href="global-style.css?v=20261110-section1"><style>body{visibility:hidden}</style><script src="escape-utils.js?v=1"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/><link rel="stylesheet" href="global-style.css?v=20261111-section7">
+<link rel="stylesheet" href="Buttons.css?v=20261111-section7"><style>body{visibility:hidden}</style><script src="escape-utils.js?v=1"></script>
 <script type="importmap">
 {
   "integrity": {
@@ -16,17 +17,16 @@
 </script>
   <script type="module" src="./admin-guard.js"></script><script src="blastybiz-menu.js?v=8"></script>
 <script src="pricing.js?v=20261111-cleanup"></script>
-<link rel="stylesheet" href="Buttons.css?v=20261110-section5">
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
 </head><body class="admin-page"><header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Revenue Control</span></a><div class="top-actions"><a class="icon-btn hide-mobile " href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Queue-Manager.html">Queue</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile active" href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Logs.html">Logs</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Operate.html">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header><main><div class="main"><div class="main-inner">
 <section class="hero"><div class="card"><div class="eyebrow">Admin operating screen</div><h1 class="big-title">Subscriptions <span>& Revenue</span></h1><p class="sub">This page tracks Square status, plan mix, MRR, payment failures, trial conversions, and downgrade risk. Customers should never see margins or AI cost; this page is owner-only.</p><div class="btn-row"><button class="btn btn-primary" onclick="window.open('https://squareup.com/dashboard/sales/transactions','_blank')">Open Square Dashboard</button><button class="btn" id="btn-send-recovery" onclick="sendRecoveryEmails()">Send Recovery Emails</button><button class="btn" id="btn-export-csv" onclick="exportBillingCsv()">Export Billing CSV</button></div><span id="recovery-status" class="pricing-status"></span></div><div class="card"><div class="card-title">💳 Money Snapshot</div><div class="list"><div class="list-item"><div class="icon">$</div><div class="row-main"><div class="row-title" id="snapshot-mrr">Loading…</div><div class="row-sub">Monthly-rate estimate for unique active owners in this list; Square is the billing authority.</div></div><span class="badge live">MRR</span></div><div class="list-item"><div class="icon">!</div><div class="row-main"><div class="row-title" id="snapshot-pastdue">Loading…</div><div class="row-sub">Recover before downgrade or cancel.</div></div><span class="badge needs">Action</span></div></div></div></section>
-<section class="mb-10"><div class="demo-notice"><span>ℹ️</span><span><strong>Live data</strong> — MRR, AI Spend, Active accounts share, and Trials are computed from Firestore in real time (no placeholders).</span></div></section><section class="grid"><div class="stat"><div class="stat-num" id="stat-mrr">Loading…</div><div class="stat-label">Estimated MRR</div><div class="stat-note money">Monthly recurring</div></div><div class="stat"><div class="stat-num" id="stat-aispend">Loading…</div><div class="stat-label">AI Spend</div><div class="stat-note money">This calendar month</div></div><div class="stat"><div class="stat-num" id="stat-margin">—</div><div class="stat-label">Active accounts share</div><div class="stat-note money">Active businesses / loaded businesses</div></div><div class="stat"><div class="stat-num" id="stat-trials">Loading…</div><div class="stat-label">Recorded Trials</div><div class="stat-note blue">Saved trial status; dates unavailable</div></div></section>
-<section class="two-col"><div class="card"><div class="card-title">📦 Plan Mix</div><table><thead><tr><th>Plan</th><th>Price</th><th>Businesses</th><th>Estimated owner revenue</th></tr></thead><tbody><tr><td colspan="4" class="td-empty">Loading…</td></tr></tbody></table></div><div class="card"><div class="card-title">⚠️ Billing Follow-up</div><table><thead><tr><th>Business</th><th>Plan</th><th>Problem</th><th>Action</th></tr></thead><tbody><tr><td colspan="4" class="td-empty">Loading…</td></tr></tbody></table></div></section>
+<section class="mb-10"><div class="demo-notice"><span>ℹ️</span><span><strong>Live data</strong> — MRR, AI Spend, Active accounts share, and Trials are computed from Firestore in real time (no placeholders).</span></div></section><div class="row"><section class="layout__split-4"><div class="stat"><div class="stat-num" id="stat-mrr">Loading…</div><div class="stat-label">Estimated MRR</div><div class="stat-note money">Monthly recurring</div></div><div class="stat"><div class="stat-num" id="stat-aispend">Loading…</div><div class="stat-label">AI Spend</div><div class="stat-note money">This calendar month</div></div><div class="stat"><div class="stat-num" id="stat-margin">—</div><div class="stat-label">Active accounts share</div><div class="stat-note money">Active businesses / loaded businesses</div></div><div class="stat"><div class="stat-num" id="stat-trials">Loading…</div><div class="stat-label">Recorded Trials</div><div class="stat-note blue">Saved trial status; dates unavailable</div></div></section></div>
+<div class="row"><section class="layout__split"><div class="card"><div class="card-title">📦 Plan Mix</div><div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Plan</th><th>Price</th><th>Businesses</th><th>Estimated owner revenue</th></tr></thead><tbody><tr><td colspan="4" class="td-empty">Loading…</td></tr></tbody></table></div></div><div class="card"><div class="card-title">⚠️ Billing Follow-up</div><div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Business</th><th>Plan</th><th>Problem</th><th>Action</th></tr></thead><tbody><tr><td colspan="4" class="td-empty">Loading…</td></tr></tbody></table></div></div></section></div>
 <section class="card mb-16"><div class="card-title">💰 Pricing Control</div>
 <p class="desc-text">Sets the monthly and annual prices shown on the home page and creates/updates all four Square subscription plans automatically — no redeploy or secrets needed. <strong class="text-warn">Only run this once per price change</strong> — running it again creates duplicate plans in Square; delete the old ones in the Square Dashboard first if you need to reset pricing.</p>
-<div class="pricing-grid">
+<div class="row"><div class="layout__split">
   <div>
     <label class="pricing-field-label">Pro / month ($)</label>
     <input id="inp-pro" type="number" min="0" step="1" value="49" class="admin-num-input"/>
@@ -43,13 +43,13 @@
     <label class="pricing-field-label">Agency / year ($)</label>
     <input id="inp-agency-annual" type="number" min="0" step="1" value="999" class="admin-num-input"/>
   </div>
-</div>
+</div></div>
 <button id="btn-save-pricing" class="btn btn-primary btn-min-140" onclick="savePricing()">Save Prices</button>
 <span id="pricing-status" class="pricing-status"></span>
 </section>
 <section class="card"><div class="card-title">📦 Business Limits per Plan</div>
 <p class="desc-text">Max number of businesses a user can create under each plan. Updates may take up to five minutes.</p>
-<div class="pricing-grid">
+<div class="row"><div class="layout__split">
   <div>
     <label class="pricing-field-label">Starter max businesses</label>
     <input id="inp-lim-starter" type="number" min="1" step="1" disabled class="admin-num-input"/>
@@ -62,7 +62,7 @@
     <label class="pricing-field-label">Agency max businesses</label>
     <input id="inp-lim-agency" type="number" min="1" step="1" disabled class="admin-num-input"/>
   </div>
-</div>
+</div></div>
 <button id="btn-save-lim" disabled class="btn btn-primary btn-min-140" onclick="saveBizLimits()">Save Limits</button>
 <span id="lim-status" class="pricing-status"></span>
 </section>

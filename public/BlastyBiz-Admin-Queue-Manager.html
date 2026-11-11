@@ -10,7 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="global-style.css?v=20261110-section1">
+<link rel="stylesheet" href="global-style.css?v=20261111-section7">
+<link rel="stylesheet" href="Buttons.css?v=20261111-section7">
 
 <style>body{visibility:hidden}</style>
 <script src="escape-utils.js?v=1"></script>
@@ -26,7 +27,6 @@
 </script>
   <script type="module" src="./admin-guard.js"></script>
 <script src="blastybiz-menu.js?v=8"></script>
-<link rel="stylesheet" href="Buttons.css?v=20261110-section5">
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
@@ -35,12 +35,12 @@
 <header><a class="logo" href="BlastyBiz-Home.html">BlastyBiz<span>Queue Manager</span></a><div class="top-actions"><a class="icon-btn hide-mobile" href="BlastyBiz-Admin.html">Dashboard</a><a class="icon-btn hide-mobile active" href="#">Queue</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Failed-Jobs.html">Failed Jobs</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Users.html">Users</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Subscriptions.html">Subscriptions</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platform-Health.html">Health</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Logs.html">Logs</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Emails.html">✉️ Emails</a><a class="icon-btn hide-mobile" href="BlastyBiz-Admin-Platforms.html">📋 Platforms</a><a class="icon-btn hide-mobile " href="BlastyBiz-Admin-Operate.html">Operate</a><a class="icon-btn" href="BlastyBiz-Login.html">👤</a></div></header>
 <main><div class="main"><div class="main-inner">
 
-  <section class="grid">
+  <div class="row"><section class="layout__split-4">
     <div class="card"><div class="muted">Queued</div><div class="metric">—</div><div class="muted">Waiting to run</div></div>
     <div class="card"><div class="muted">Posting Now</div><div class="metric">—</div><div class="muted">Currently processing</div></div>
     <div class="card"><div class="muted">Needs Attention</div><div class="metric">—</div><div class="muted">Failed or manual</div></div>
     <div class="card"><div class="muted">Completed in this list</div><div class="metric">—</div><div class="muted">Successful platform updates</div></div>
-  </section>
+  </section></div>
 
   <section class="card">
     <h3>Find Jobs</h3>
@@ -55,17 +55,17 @@
 
   <section>
     <h3>Distribution Queue</h3>
-    <table>
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table>
       <thead>
         <tr>
           <th>Business</th><th>Platform</th><th>Status</th><th>Last Message</th><th>Attempts</th><th>Updated</th><th>Admin Actions</th>
         </tr>
       </thead>
       <tbody><tr><td colspan="7" class="empty-row">Loading jobs…</td></tr></tbody>
-    </table>
+    </table></div>
   </section>
 
-  <div class="split">
+  <div class="row"><div class="layout__split">
     <div class="card">
       <h3>Selected Job Details</h3>
       <p class="job-field">No job selected.</p>
@@ -75,7 +75,7 @@
       <h3>Payload Preview</h3>
       <pre>—</pre>
     </div>
-  </div>
+  </div></div>
 
 </div></div></main>
 <nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="active" href="#">📋<br>Queue</a><a class="" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a><a class="" href="BlastyBiz-Admin-Operate.html">⚙️<br>Operate</a></nav>

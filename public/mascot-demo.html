@@ -9,39 +9,13 @@
   no fonts, no app scripts.  If the mascots animate here, the component is
   genuinely self-contained and can be dropped onto any site.
 -->
-<style>
-  body {
-    margin: 0; padding: 32px 20px 60px;
-    background: #0b1020; color: #dbe6f2;
-    font: 15px/1.55 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  }
-  h1 { font-size: 22px; margin: 0 0 4px; }
-  .sub { color: #7f92ad; margin: 0 0 28px; font-size: 14px; }
-  .row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
-  .card {
-    flex: 1 1 300px; min-width: 280px;
-    background: #121a30; border: 1px solid #22304d;
-    border-radius: 14px; padding: 20px;
-  }
-  .card h2 { font-size: 15px; margin: 0 0 2px; }
-  .card .who { color: #7f92ad; font-size: 12.5px; margin: 0 0 14px; }
-  .stage { display: flex; flex-direction: column; align-items: center; }
-  .stage .pb-mascot { width: 150px; }
-  .cap { min-height: 20px; color: #9fd6ff; font-size: 13px; margin-top: 6px; text-align: center; }
-  .controls { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; justify-content: center; }
-  button {
-    background: #1c2947; color: #dbe6f2; border: 1px solid #2f4370;
-    border-radius: 8px; padding: 6px 11px; font-size: 12.5px; cursor: pointer;
-  }
-  button:hover { background: #26355c; }
-  .note { margin-top: 30px; color: #7f92ad; font-size: 13px; max-width: 760px; }
-  .note code { color: #9fd6ff; }
-</style>
+<link rel="stylesheet" href="global-style.css?v=20261111-section7">
+<link rel="stylesheet" href="Buttons.css?v=20261111-section7">
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
 </head>
-<body>
+<body class="page-mascot-demo">
 
 <h1>Mascot component — portability proof</h1>
 <p class="sub">Two independent mascots on one page, each with its own name, mood and caption.</p>

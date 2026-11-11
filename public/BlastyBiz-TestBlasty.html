@@ -6,7 +6,8 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="stylesheet" href="global-style.css?v=20261110-section1"/>
+  <link rel="stylesheet" href="global-style.css?v=20261111-section7"/>
+<link rel="stylesheet" href="Buttons.css?v=20261111-section7">
   <title>BlastyBiz — Test Console</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -27,176 +28,22 @@
   <script src="blastybiz-menu.js?v=8"></script>
   <script src="escape-utils.js"></script>
   <script src="mascot.js?v=5"></script>
-  <style>
-    .tc-wrap {
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 32px 20px 80px;
-    }
-    .tc-header {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-      margin-bottom: 28px;
-    }
-    .tc-mascot { width: 72px; flex-shrink: 0; }
-    .tc-title-block h1 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 32px;
-      color: var(--green, #39ff14);
-      margin: 0 0 4px;
-      letter-spacing: .04em;
-    }
-    .tc-title-block p {
-      font-size: 13px;
-      color: var(--muted, #888);
-      margin: 0;
-    }
-    .tc-admin-badge {
-      display: inline-block;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.15);
-      border-radius: 20px;
-      padding: 3px 10px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--muted, #888);
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      margin-left: 8px;
-      vertical-align: middle;
-    }
-    .tc-section {
-      margin-bottom: 28px;
-    }
-    .tc-section-label {
-      font-size: 10.5px;
-      font-weight: 700;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      color: var(--muted, #666);
-      margin-bottom: 12px;
-    }
-    .tc-card {
-      background: var(--panel, #0a1a0a);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 12px;
-      padding: 18px 20px;
-      margin-bottom: 10px;
-    }
-    .tc-card-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-    .tc-card-info h3 {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--text, #c8dbf5);
-      margin: 0 0 4px;
-    }
-    .tc-card-info p {
-      font-size: 12.5px;
-      color: var(--muted, #888);
-      margin: 0;
-      line-height: 1.45;
-    }
-    .tc-btn {
-      padding: 9px 18px;
-      border-radius: 8px;
-      font: 600 13px 'DM Sans', sans-serif;
-      cursor: pointer;
-      border: none;
-      white-space: nowrap;
-      flex-shrink: 0;
-      transition: opacity .15s;
-      text-decoration: none;
-      display: inline-block;
-      text-align: center;
-    }
-    .tc-btn:hover { opacity: .82; }
-    .tc-btn-primary {
-      background: var(--green, #39ff14);
-      color: #000;
-    }
-    .tc-btn-secondary {
-      background: transparent;
-      color: var(--text, #c8dbf5);
-      border: 1.5px solid rgba(255,255,255,.18);
-    }
-    .tc-btn-danger {
-      background: transparent;
-      color: #ff6060;
-      border: 1.5px solid rgba(255,96,96,.35);
-    }
-    .tc-full-run {
-      width: 100%;
-      padding: 16px;
-      font-size: 16px;
-      border-radius: 12px;
-      background: var(--green, #39ff14);
-      color: #000;
-      border: none;
-      font-weight: 800;
-      cursor: pointer;
-      transition: opacity .15s;
-      display: block;
-      text-align: center;
-      text-decoration: none;
-      letter-spacing: .01em;
-      margin-bottom: 24px;
-    }
-    .tc-full-run:hover { opacity: .88; }
-    .tc-notice {
-      background: rgba(57,255,20,.07);
-      border: 1px solid rgba(57,255,20,.18);
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 12.5px;
-      color: var(--muted, #999);
-      margin-bottom: 24px;
-      line-height: 1.5;
-    }
-    .tc-notice strong { color: var(--green, #39ff14); }
-    .tc-access-denied {
-      text-align: center;
-      padding: 60px 20px;
-    }
-    .tc-access-denied h2 { color: #ff6060; margin-bottom: 8px; }
-    .tc-access-denied p { color: var(--muted, #888); font-size: 14px; }
-    .tc-sep {
-      border: none;
-      border-top: 1px solid rgba(255,255,255,.06);
-      margin: 24px 0;
-    }
-    #tc-session-status {
-      font-size: 12px;
-      color: var(--muted, #777);
-      background: rgba(255,255,255,.04);
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-family: monospace;
-      word-break: break-all;
-      margin-top: 8px;
-    }
-  </style>
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
 </head>
-<body class="has-site-header">
+<body class="has-site-header page-testblasty">
 <div id="header__inject"></div>
 
 <div class="main">
   <div class="main-inner tc-wrap">
 
-    <div id="tc-loading" style="text-align:center;padding:60px 0;color:var(--muted,#888);font-size:14px;">Loading…</div>
+    <div class="bb-style-82e6c040" id="tc-loading">Loading…</div>
 
     <div id="tc-denied" class="tc-access-denied" style="display:none">
       <h2>🚫 Admin only</h2>
       <p>This page is restricted to admin accounts.<br/>
-      <a href="BlastyBiz.html" style="color:var(--green,#39ff14);">← Back to dashboard</a></p>
+      <a class="bb-style-5690d539" href="BlastyBiz.html">← Back to dashboard</a></p>
     </div>
 
     <div id="tc-content" style="display:none">
@@ -268,13 +115,13 @@
 
       <div class="tc-section">
         <div class="tc-section-label">Cleanup — test businesses</div>
-        <div class="tc-notice" style="margin-bottom:12px">
+        <div class="tc-notice bb-style-4636770b">
           Each test run creates a real business doc. Delete extras here. Your <strong>active business</strong> is protected.
         </div>
         <div id="tc-biz-list">
-          <p style="color:var(--muted,#888);font-size:13px;margin:0">Loading…</p>
+          <p class="bb-style-4401b548">Loading…</p>
         </div>
-        <button class="tc-btn tc-btn-secondary" style="margin-top:10px;font-size:12px" onclick="window._tcLoadBizList && window._tcLoadBizList()">↻ Refresh list</button>
+        <button class="tc-btn tc-btn-secondary bb-style-161ac0cc" onclick="window._tcLoadBizList && window._tcLoadBizList()">↻ Refresh list</button>
       </div>
 
       <hr class="tc-sep"/>
@@ -427,11 +274,11 @@ if (!user || !user.emailVerified) {
     window._tcLoadBizList = async function() {
       const el = document.getElementById('tc-biz-list');
       if (!el) return;
-      el.innerHTML = '<p style="color:var(--muted,#888);font-size:13px;margin:0">Loading…</p>';
+      el.innerHTML = '<p class="bb-style-4401b548">Loading…</p>';
       try {
         const snap = await getDocs(collection(db, 'users', user.uid, 'businesses'));
         if (snap.empty) {
-          el.innerHTML = '<p style="color:var(--muted,#888);font-size:13px;margin:0">No businesses found.</p>';
+          el.innerHTML = '<p class="bb-style-4401b548">No businesses found.</p>';
           return;
         }
         const bizzes = [];
@@ -443,21 +290,21 @@ if (!user || !user.emailVerified) {
           const created = b.createdAt?.seconds
             ? new Date(b.createdAt.seconds * 1000).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
             : '?';
-          return `<div class="tc-card" style="margin-bottom:8px" data-biz-id="${window.escHtml(b.id)}">
+          return `<div class="tc-card bb-style-c500155b" data-biz-id="${window.escHtml(b.id)}">
             <div class="tc-card-head">
               <div class="tc-card-info">
-                <h3>${window.escHtml(name)}${isActive ? ' <span class="tc-admin-badge" style="color:var(--green,#39ff14);border-color:rgba(57,255,20,.3)">Active</span>' : ''}</h3>
-                <p style="font-family:monospace;font-size:11px;margin-top:2px">${window.escHtml(b.id)} &nbsp;·&nbsp; ${created}</p>
+                <h3>${window.escHtml(name)}${isActive ? ' <span class="tc-admin-badge bb-style-c92d26e3">Active</span>' : ''}</h3>
+                <p class="bb-style-521ffc72">${window.escHtml(b.id)} &nbsp;·&nbsp; ${created}</p>
               </div>
               ${isActive
-                ? '<span style="font-size:12px;color:var(--muted,#888);flex-shrink:0">Protected</span>'
+                ? '<span class="bb-style-d7527d2c">Protected</span>'
                 : `<button class="tc-btn tc-btn-danger" onclick="window._tcDeleteBiz('${window.escHtml(String(b.id).replace(/['\\]/g, ''))}', this)">Delete</button>`
               }
             </div>
           </div>`;
         }).join('');
       } catch(e) {
-        el.innerHTML = `<p style="color:#ff6060;font-size:13px;margin:0">Error: ${window.escHtml(e.message)}</p>`;
+        el.innerHTML = `<p class="bb-style-8cf36505">Error: ${window.escHtml(e.message)}</p>`;
       }
     };
 

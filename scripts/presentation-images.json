@@ -1,0 +1,202 @@
+[
+  {
+    "source": "bizcontext-hero.png",
+    "bytes": 1532561,
+    "width": 896,
+    "height": 1280,
+    "variants": [
+      {
+        "path": "bizcontext-hero-480.webp",
+        "width": 480,
+        "height": 686,
+        "bytes": 47094
+      },
+      {
+        "path": "bizcontext-hero-896.webp",
+        "width": 896,
+        "height": 1280,
+        "bytes": 118930
+      }
+    ]
+  },
+  {
+    "source": "dashboard-hero.png",
+    "bytes": 1738201,
+    "width": 896,
+    "height": 1280,
+    "variants": [
+      {
+        "path": "dashboard-hero-480.webp",
+        "width": 480,
+        "height": 686,
+        "bytes": 71398
+      },
+      {
+        "path": "dashboard-hero-896.webp",
+        "width": 896,
+        "height": 1280,
+        "bytes": 179942
+      }
+    ]
+  },
+  {
+    "source": "account-hero.png",
+    "bytes": 1164293,
+    "width": 896,
+    "height": 1280,
+    "variants": [
+      {
+        "path": "account-hero-480.webp",
+        "width": 480,
+        "height": 686,
+        "bytes": 24978
+      },
+      {
+        "path": "account-hero-896.webp",
+        "width": 896,
+        "height": 1280,
+        "bytes": 52248
+      }
+    ]
+  },
+  {
+    "source": "connect-hero.png",
+    "bytes": 1242721,
+    "width": 896,
+    "height": 1280,
+    "variants": [
+      {
+        "path": "connect-hero-480.webp",
+        "width": 480,
+        "height": 686,
+        "bytes": 36096
+      },
+      {
+        "path": "connect-hero-896.webp",
+        "width": 896,
+        "height": 1280,
+        "bytes": 70370
+      }
+    ]
+  },
+  {
+    "source": "images/platforms-blast.png",
+    "bytes": 1224790,
+    "width": 1280,
+    "height": 896,
+    "variants": [
+      {
+        "path": "images/platforms-blast-480.webp",
+        "width": 480,
+        "height": 336,
+        "bytes": 13448
+      },
+      {
+        "path": "images/platforms-blast-896.webp",
+        "width": 896,
+        "height": 627,
+        "bytes": 29074
+      }
+    ]
+  },
+  {
+    "source": "images/cta-worker.png",
+    "bytes": 1651665,
+    "width": 896,
+    "height": 1280,
+    "variants": [
+      {
+        "path": "images/cta-worker-480.webp",
+        "width": 480,
+        "height": 686,
+        "bytes": 35356
+      },
+      {
+        "path": "images/cta-worker-896.webp",
+        "width": 896,
+        "height": 1280,
+        "bytes": 103066
+      }
+    ]
+  },
+  {
+    "source": "img/people-login-new.png",
+    "bytes": 1385767,
+    "width": 768,
+    "height": 1408,
+    "variants": [
+      {
+        "path": "img/people-login-new-480.webp",
+        "width": 480,
+        "height": 880,
+        "bytes": 33894
+      },
+      {
+        "path": "img/people-login-new-768.webp",
+        "width": 768,
+        "height": 1408,
+        "bytes": 74512
+      }
+    ]
+  },
+  {
+    "source": "img/contact-support.png",
+    "bytes": 1303143,
+    "width": 1024,
+    "height": 1024,
+    "variants": [
+      {
+        "path": "img/contact-support-480.webp",
+        "width": 480,
+        "height": 480,
+        "bytes": 22052
+      },
+      {
+        "path": "img/contact-support-896.webp",
+        "width": 896,
+        "height": 896,
+        "bytes": 48334
+      }
+    ]
+  },
+  {
+    "source": "img/about-office.png",
+    "bytes": 1438389,
+    "width": 1024,
+    "height": 1024,
+    "variants": [
+      {
+        "path": "img/about-office-480.webp",
+        "width": 480,
+        "height": 480,
+        "bytes": 34312
+      },
+      {
+        "path": "img/about-office-896.webp",
+        "width": 896,
+        "height": 896,
+        "bytes": 73690
+      }
+    ]
+  },
+  {
+    "source": "img/scribe-hero.png",
+    "bytes": 1296135,
+    "width": 896,
+    "height": 1280,
+    "variants": [
+      {
+        "path": "img/scribe-hero-480.webp",
+        "width": 480,
+        "height": 686,
+        "bytes": 39456
+      },
+      {
+        "path": "img/scribe-hero-896.webp",
+        "width": 896,
+        "height": 1280,
+        "bytes": 99260
+      }
+    ]
+  }
+]

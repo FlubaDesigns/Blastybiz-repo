@@ -5,16 +5,14 @@
 <meta charset="UTF-8" />
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="global-style.css?v=20261110-section1" />
+<link rel="stylesheet" href="global-style.css?v=20261111-section7" />
+<link rel="stylesheet" href="Buttons.css?v=20261111-section7">
 <title>BlastyBiz — Business Story</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-<style>
-body{visibility:hidden}
-@media (max-width:768px){.dash-img-col{display:none}}
-</style>
+<style>body{visibility:hidden}</style>
 <script type="importmap">
 {
   "integrity": {
@@ -32,7 +30,7 @@ body{visibility:hidden}
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
 </head>
-<body class="app-page has-site-header">
+<body class="app-page has-site-header page-bizcontext">
 
 <div id="header__inject"></div>
 <script src="escape-utils.js?v=1"></script>
@@ -45,7 +43,7 @@ body{visibility:hidden}
   <div class="ai-badge">🤖 Feeds the AI every time it writes for you</div>
   <h1 class="page-title">Your Business <span>Story</span></h1>
   <p class="page-sub">
-    Everything you put here gets read by the AI <strong>before it writes a single word</strong> of your marketing. 
+    Everything you put here gets read by the AI <strong>before it writes a single word</strong> of your marketing.
     The more detail you give it, the more personal and authentic every post becomes.
     You only have to write this once.
   </p>
@@ -91,42 +89,42 @@ body{visibility:hidden}
   </div>
 
   <!-- Business Library — starter upgrade nudge -->
-  <div id="doc-library-locked" style="display:none;margin-top:24px">
-    <div class="card" style="border:1px dashed var(--border);opacity:0.85">
-      <div class="section-label">📎 Business Library <span style="font-size:11px;font-weight:500;background:var(--green);color:#000;border-radius:4px;padding:2px 7px;margin-left:8px;vertical-align:middle">PRO</span></div>
-      <div class="section-hint" style="margin-bottom:12px">Upload a menu, service sheet, or sales piece — the AI reads it before writing every campaign. Your copy becomes specific, not generic.</div>
-      <a href="BlastyBiz-Dashboard.html#upgrade" class="btn btn-primary" style="display:inline-block">Upgrade to Pro →</a>
+  <div class="bb-style-04bbec5e" id="doc-library-locked" style="display:none;">
+    <div class="card bb-style-ee7794d9">
+      <div class="section-label">📎 Business Library <span class="bb-style-8e986045">PRO</span></div>
+      <div class="section-hint bb-style-4636770b">Upload a menu, service sheet, or sales piece — the AI reads it before writing every campaign. Your copy becomes specific, not generic.</div>
+      <a href="BlastyBiz-Dashboard.html#upgrade" class="btn btn-primary bb-display-inline">Upgrade to Pro →</a>
     </div>
   </div>
 
   <!-- Business Library — Pro/Agency only -->
   <div id="doc-library-section" style="display:none">
-    <div class="card" style="margin-top:24px">
+    <div class="card bb-style-04bbec5e">
       <div class="section-label">📎 Business Library</div>
       <div class="section-hint">These documents are read by the AI every time it writes for you. Upload a menu, service list, sales sheet, or anything that describes what you offer.</div>
-      <div id="doc-list" style="margin-top:12px"></div>
-      <label class="btn btn-secondary" style="cursor:pointer;margin-top:16px;display:inline-block">
+      <div class="bb-style-b6d781cb" id="doc-list"></div>
+      <label class="btn btn-secondary bb-style-8e31f142 bb-display-inline">
         + Add Document
         <input type="file" id="doc-file-input" accept=".txt,.pdf" style="display:none" onchange="handleDocUpload(event,null)" />
       </label>
-      <div id="doc-upload-status" style="font-size:13px;color:var(--muted);margin-top:8px;min-height:18px"></div>
+      <div class="bb-style-a09d0702" id="doc-upload-status"></div>
     </div>
   </div>
 
   <!-- Doc preview modal -->
-  <div id="doc-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;overflow-y:auto;padding:24px 16px" onclick="if(event.target===this)closeDocModal()">
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;max-width:640px;margin:0 auto;padding:20px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div id="doc-modal-title" style="font-size:15px;font-weight:700;color:var(--light)"></div>
-        <button onclick="closeDocModal()" style="background:transparent;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1">×</button>
+  <div class="bb-style-54ef813d" id="doc-modal" style="display:none;" onclick="if(event.target===this)closeDocModal()">
+    <div class="bb-style-00c91e52">
+      <div class="bb-style-6f4c960c flex-row">
+        <div class="bb-style-a5af22c0" id="doc-modal-title"></div>
+        <button class="bb-style-5cf82b2d" onclick="closeDocModal()">×</button>
       </div>
-      <textarea id="doc-modal-text" readonly style="width:100%;height:320px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--light);font-size:13px;padding:12px;resize:vertical;font-family:monospace;line-height:1.5"></textarea>
-      <div style="font-size:12px;color:var(--muted);margin-top:8px">This is the extracted text the AI reads. It cannot be edited — to change it, use Replace.</div>
+      <textarea class="bb-style-da5899c5" id="doc-modal-text" readonly></textarea>
+      <div class="bb-style-292217c9">This is the extracted text the AI reads. It cannot be edited — to change it, use Replace.</div>
     </div>
   </div>
 </div><!-- left col -->
 <div class="dash-img-col">
-  <img src="bizcontext-hero.png" alt="Your business story" style="width:100%;height:100%;object-fit:cover;border-radius:12px;display:block;" />
+  <img class="bb-style-728c270b bb-display-block" src="bizcontext-hero-896.webp" alt="Your business story" srcset="bizcontext-hero-480.webp 480w, bizcontext-hero-896.webp 896w" sizes="(max-width: 599px) calc(100vw - 40px), (max-width: 900px) 45vw, 420px" width="896" height="1280" loading="lazy" decoding="async" />
 </div>
 </div><!-- /.layout__split-2-1 -->
 
@@ -236,25 +234,25 @@ async function loadLibraryDocs() {
   const list = document.getElementById('doc-list');
   try {
     const snap = await getDocs(query(collection(db, 'users', currentUser.uid, 'businesses', activeBizId, 'documents'), orderBy('uploadedAt', 'desc')));
-    if (snap.empty) { list.innerHTML = '<p style="font-size:13px;color:var(--muted);margin:0">No documents yet.</p>'; return; }
+    if (snap.empty) { list.innerHTML = '<p class="bb-style-095d87dd">No documents yet.</p>'; return; }
     const _docStore = {};
     list.innerHTML = snap.docs.map(d => {
       const data = d.data();
       const chars = (data.extractedText || '').length;
       _docStore[d.id] = { name: data.name || '', text: data.extractedText || '' };
-      return `<div style="padding:12px 0;border-bottom:1px solid var(--border)" data-docid="${d.id}">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-          <div style="min-width:0">
-            <div class="doc-row-name" style="font-size:14px;font-weight:600;color:var(--light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px">${chars.toLocaleString()} characters extracted</div>
+      return `<div class="bb-style-9e58e8b9" data-docid="${d.id}">
+        <div class="bb-style-7c8bf0a8 flex-row">
+          <div class="bb-style-c4f140a8">
+            <div class="doc-row-name bb-style-9196b05e"></div>
+            <div class="bb-style-03c61db7">${chars.toLocaleString()} characters extracted</div>
           </div>
-          <div style="display:flex;gap:6px;flex-shrink:0">
-            <button class="doc-view-btn" style="background:transparent;border:1px solid var(--border);color:var(--light);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px">View</button>
-            <label style="background:transparent;border:1px solid var(--border);color:var(--light);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;white-space:nowrap">
+          <div class="bb-style-cacd71ee flex-row">
+            <button class="doc-view-btn bb-style-a6c2d735">View</button>
+            <label class="bb-style-25a7f8d0">
               Replace
               <input type="file" accept=".txt,.pdf" style="display:none" class="doc-replace-input" />
             </label>
-            <button class="doc-del-btn" style="background:transparent;border:1px solid var(--border);color:#f87171;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px">Remove</button>
+            <button class="doc-del-btn bb-style-48cb6e1e">Remove</button>
           </div>
         </div>
       </div>`;
@@ -268,7 +266,7 @@ async function loadLibraryDocs() {
       row.querySelector('.doc-del-btn').addEventListener('click', () => deleteLibraryDoc(id));
     });
   } catch(e) {
-    list.innerHTML = '<p style="font-size:13px;color:var(--muted);margin:0">Could not load documents.</p>';
+    list.innerHTML = '<p class="bb-style-095d87dd">Could not load documents.</p>';
   }
 }
 

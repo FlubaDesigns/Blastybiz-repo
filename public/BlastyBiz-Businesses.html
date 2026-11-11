@@ -5,7 +5,8 @@
   <meta name="theme-color" content="#000000"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="stylesheet" href="global-style.css?v=20261110-section1"/>
+  <link rel="stylesheet" href="global-style.css?v=20261111-section7"/>
+<link rel="stylesheet" href="Buttons.css?v=20261111-section7">
   <title>BlastyBiz — My Businesses</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -25,133 +26,13 @@
   <script type="module" src="./auth-guard.js?v=20261011-security"></script>
   <script src="blastybiz-menu.js?v=8"></script>
   <script src="escape-utils.js"></script>
-  <style>
-    .bb-wrap {
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 32px 20px 80px;
-    }
-    .bb-page-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 28px;
-      color: var(--green, #39ff14);
-      letter-spacing: .04em;
-      margin: 0 0 4px;
-    }
-    .bb-page-sub {
-      font-size: 13px;
-      color: var(--muted, #888);
-      margin: 0 0 28px;
-    }
-    .biz-card {
-      background: var(--panel, #0a1a0a);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 12px;
-      padding: 18px 20px;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-    }
-    .biz-card.is-active {
-      border-color: rgba(57,255,20,.35);
-      background: rgba(57,255,20,.04);
-    }
-    .biz-card-info h3 {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--text, #c8dbf5);
-      margin: 0 0 4px;
-    }
-    .biz-card-info p {
-      font-size: 12px;
-      color: var(--muted, #888);
-      font-family: monospace;
-      margin: 0;
-    }
-    .biz-active-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      background: rgba(57,255,20,.12);
-      border: 1px solid rgba(57,255,20,.3);
-      border-radius: 20px;
-      padding: 3px 10px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--green, #39ff14);
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .biz-switch-btn {
-      padding: 9px 18px;
-      border-radius: 8px;
-      font: 600 13px 'DM Sans', sans-serif;
-      cursor: pointer;
-      border: 1.5px solid rgba(255,255,255,.18);
-      background: transparent;
-      color: var(--text, #c8dbf5);
-      white-space: nowrap;
-      flex-shrink: 0;
-      transition: opacity .15s;
-    }
-    .biz-switch-btn:hover { opacity: .8; }
-    .biz-switch-btn:disabled { opacity: .4; cursor: default; }
-    .bb-add-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 16px;
-      padding: 11px 20px;
-      border-radius: 10px;
-      background: var(--green, #39ff14);
-      color: #000;
-      font: 700 14px 'DM Sans', sans-serif;
-      border: none;
-      cursor: pointer;
-      text-decoration: none;
-      transition: opacity .15s;
-    }
-    .bb-add-btn:hover { opacity: .88; }
-    .bb-add-btn.at-limit {
-      background: rgba(255,255,255,.08);
-      color: var(--muted, #888);
-      cursor: default;
-    }
-    .bb-usage-bar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 20px;
-      font-size: 12.5px;
-      color: var(--muted, #888);
-    }
-    .bb-pips {
-      display: flex;
-      gap: 5px;
-    }
-    .bb-pip {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: rgba(255,255,255,.12);
-    }
-    .bb-pip.used { background: rgba(57,255,20,.4); }
-    .bb-pip.is-active { background: var(--green, #39ff14); }
-    #bb-loading { text-align:center; padding:60px 0; color:var(--muted,#888); font-size:14px; }
-    #bb-denied  { text-align:center; padding:60px 20px; }
-    #bb-denied h2 { color:#ff6060; margin-bottom:8px; }
-    #bb-denied p  { color:var(--muted,#888); font-size:14px; }
-  </style>
+
 <script src="pricing.js?v=20261111-cleanup"></script>
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
 </head>
-<body class="has-site-header">
+<body class="has-site-header page-businesses">
 <div id="header__inject"></div>
 
 <div class="main">
@@ -162,9 +43,9 @@
     <div id="bb-denied" style="display:none">
       <h2>⚡ Pro or Agency plan required</h2>
       <p>Multiple business management is a Pro feature.<br/>
-      <a href="BlastyBiz-Plan-Pro.html" style="color:var(--green,#39ff14);">Upgrade →</a>
+      <a class="bb-style-5690d539" href="BlastyBiz-Plan-Pro.html">Upgrade →</a>
       &nbsp;·&nbsp;
-      <a href="BlastyBiz.html" style="color:var(--muted,#888);">← Back to dashboard</a></p>
+      <a class="bb-style-284123c9" href="BlastyBiz.html">← Back to dashboard</a></p>
     </div>
 
     <div id="bb-content" style="display:none">
