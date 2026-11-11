@@ -3,7 +3,7 @@ const fs=require('./lib/workspace-source.cjs'),assert=require('node:assert/stric
 const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
 (async()=>{
  const read=async path=>process.env.LIVE_ORIGIN?fetch(new URL('/'+path,process.env.LIVE_ORIGIN),{cache:'no-store'}).then(r=>{assert(r.ok,path);return r.text();}):fs.readFileSync('public/'+path,'utf8');
- const html=await fs.expandAsync(await read('BlastyBiz.html'),read),css=await read('global-style.css');
+ const html=await fs.expandAsync(await read('BlastyBiz.html'),read),css=(await read('global-style.css'))+'\n'+(await read('Buttons.css'));
  const controller=html.slice(html.indexOf('// ── Campaign memory:'),html.indexOf('function _showCreateCampMemorySaved'));
  assert(controller.includes('function confirmBusinessMemoryReview()'),'deployed controller present');
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});

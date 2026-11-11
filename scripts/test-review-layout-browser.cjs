@@ -1,7 +1,7 @@
 const fs=require('./lib/workspace-source.cjs'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
 (async()=>{
- const html=fs.readFileSync('public/BlastyBiz.html','utf8'),css=fs.readFileSync('public/global-style.css','utf8');
+ const html=fs.readFileSync('public/BlastyBiz.html','utf8'),css=(fs.readFileSync('public/global-style.css','utf8')+'\n'+fs.readFileSync('public/Buttons.css','utf8'));
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  try{
  const page=await browser.newPage({viewport:{width:360,height:800}});

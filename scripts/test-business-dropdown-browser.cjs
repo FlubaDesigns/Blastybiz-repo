@@ -5,7 +5,7 @@ const menu=fs.readFileSync(root+'public/blastybiz-menu.js','utf8');
 const workspace=fs.readFileSync(root+'public/BlastyBiz.html','utf8');
 for(const width of [360,390,768,1440]){
  await page.setViewportSize({width,height:800});
- await page.setContent('<style>'+fs.readFileSync(root+'public/global-style.css','utf8')+'</style>'+fs.readFileSync(root+'public/blastybiz-header.html','utf8')+'<select id="biz-select" hidden></select><div id="biz-tab-bar"></div><div id="wb-biz-name"></div><button id="outside">Outside</button>');
+ await page.setContent('<style>'+(fs.readFileSync(root+'public/global-style.css','utf8')+'\n'+fs.readFileSync(root+'public/Buttons.css','utf8'))+'</style>'+fs.readFileSync(root+'public/blastybiz-header.html','utf8')+'<select id="biz-select" hidden></select><div id="biz-tab-bar"></div><div id="wb-biz-name"></div><button id="outside">Outside</button>');
  await page.addScriptTag({content:menu.slice(menu.indexOf('// A real in-page dropdown:'))+'\nfunction _applyHeaderOffset() {}'});
  await page.addScriptTag({content:fs.readFileSync(root+'public/escape-utils.js','utf8')+'\n'+workspace.slice(workspace.indexOf('function renderSwitcherBar()'),workspace.indexOf('function renderAgencyBar()'))});
  await page.evaluate(()=>{window.BUSINESSES=Array.from({length:8},(_,i)=>({id:String(i),name:i===2?'Kingdom Connects':i===3?'A <script> & business':'Business '+i}));window.activeBizId='2';window.switchBusiness=async id=>{window.selected=id;window.activeBizId=id;renderSwitcherBar();};renderSwitcherBar();});

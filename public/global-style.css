@@ -5851,7 +5851,6 @@ body:where(.page-owner-access) {font:18px/1.5 system-ui;margin:0;background:#101
 :is(#bb-inline-style, .bb-style-6d902d06) { font-size:13px;color:var(--muted);transition:transform .2s; }
 :is(#bb-inline-style, .bb-style-48bdfb31) { padding:0 16px 16px; }
 :is(#bb-inline-style, .bb-style-3bc04647) { font-size:12px;color:var(--muted);margin:8px 0 12px; }
-:is(#bb-inline-style, .bb-style-bd07fb53) { grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px; }
 :is(#bb-inline-style, .bb-style-4a1f230b) { background:#f8fafc;border-radius:7px;padding:8px 11px;gap:10px;align-items:flex-start; }
 :is(#bb-inline-style, .bb-style-d7296f92) { background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:12px;white-space:nowrap;flex-shrink:0; }
 :is(#bb-inline-style, .bb-style-d863bca3) { font-size:12px;color:var(--muted); }

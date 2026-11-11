@@ -5,7 +5,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),{chromium}=requ
  try{
   const page=await browser.newPage();await page.route('**/*',r=>r.abort());
   await page.setContent(fs.readFileSync('public/BlastyBiz.html','utf8').replace(/<script[\s\S]*?<\/script>/g,'').replace('workspace-loading',''));
-  await page.addStyleTag({content:fs.readFileSync('public/global-style.css','utf8')+'\nbody{visibility:visible!important}'});
+  await page.addStyleTag({content:(fs.readFileSync('public/global-style.css','utf8')+'\n'+fs.readFileSync('public/Buttons.css','utf8'))+'\nbody{visibility:visible!important}'});
   for(const f of ['escape-utils.js','platforms-authority.js','business-form.js','photo-handoff.js'])await page.addScriptTag({content:fs.readFileSync('public/'+f,'utf8')});
   await page.evaluate(()=>{
    document.querySelectorAll('.section').forEach(e=>e.classList.remove('active'));document.getElementById('section-create').classList.add('active');

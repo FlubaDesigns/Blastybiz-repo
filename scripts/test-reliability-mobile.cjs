@@ -11,7 +11,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
  try{
    const page=await browser.newPage();await page.route('**/*',r=>r.abort());
    const html=fs.readFileSync('public/BlastyBiz.html','utf8').replace(/<script[\s\S]*?<\/script>/g,'').replace('workspace-loading','');
-   await page.setContent(html);await page.addStyleTag({content:fs.readFileSync('public/global-style.css','utf8')+'\nbody{visibility:visible!important}'});
+   await page.setContent(html);await page.addStyleTag({content:(fs.readFileSync('public/global-style.css','utf8')+'\n'+fs.readFileSync('public/Buttons.css','utf8'))+'\nbody{visibility:visible!important}'});
    await page.evaluate(()=>{document.querySelectorAll('.section').forEach(e=>e.classList.remove('active'));document.getElementById('section-create').classList.add('active');});
    assert.deepEqual(await page.locator('#tabs-scroll button').allTextContents(),['Create','Review','Publish','Results']);
    for(const width of [320,390,768,1440]){

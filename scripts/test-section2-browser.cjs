@@ -10,7 +10,7 @@ const read=p=>fs.readFileSync('public/'+p,'utf8');
   fs.mkdirSync('test-artifacts',{recursive:true});
   for(const file of ['BlastyBiz-Home.html','BlastyBiz-Login.html','BlastyBiz-CreateBiz.html']){
    await page.setContent(read(file).replace(/<script[\s\S]*?<\/script>/g,'').replace('<head>','<head><base href="https://blastybiz.test/">'));
-   await page.addStyleTag({content:read('global-style.css')+'\nbody{visibility:visible!important}.reveal{opacity:1;transform:none}*{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important}'});
+   await page.addStyleTag({content:(read('global-style.css')+'\n'+read('Buttons.css'))+'\nbody{visibility:visible!important}.reveal{opacity:1;transform:none}*{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important}'});
    if(file.includes('Home')){for(const f of ['escape-utils.js','platforms-authority.js','post-preview.js','home-demo.js'])await page.addScriptTag({content:read(f)});}
    if(file.includes('Login'))await page.evaluate(()=>{document.getElementById('auth-loading').hidden=true;document.getElementById('auth-card-wrap').classList.add('ready');document.querySelectorAll('.auth-form,.auth-tab').forEach(e=>e.classList.remove('active'));document.getElementById('form-signup').classList.add('active');document.getElementById('tab-signup').classList.add('active');});
    for(const width of [320,384,430,1280]){

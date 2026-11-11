@@ -2,7 +2,7 @@
 // Actual shared header/CSS, synthetic auth states, and local assets only.
 const fs=require('node:fs'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
-const css=fs.readFileSync('public/global-style.css','utf8');
+const css=(fs.readFileSync('public/global-style.css','utf8')+'\n'+fs.readFileSync('public/Buttons.css','utf8'));
 const header=fs.readFileSync('public/blastybiz-header.html','utf8');
 const menu=fs.readFileSync('public/blastybiz-menu.js','utf8');
 const controls=menu.slice(menu.indexOf('window.toggleMenu ='),menu.indexOf('// Measure the real rendered header height'));
