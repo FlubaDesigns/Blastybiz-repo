@@ -121,6 +121,7 @@ jobs:
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-signup-submit.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-original-flow-ui.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-public-promises-ui.cjs
+          JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-section1.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-oauth-browser-security.cjs
           JSDOM_PATH="$RUNNER_TEMP/blasty-dom/node_modules/jsdom" node scripts/test-onboarding-report-ui.cjs
       - name: OAuth browser-origin contract (local fixtures only)
@@ -134,6 +135,7 @@ jobs:
           PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-header-navigation-browser.cjs
           PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-publishing-mobile.cjs
           PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-reliability-mobile.cjs
+          PLAYWRIGHT_PATH="$RUNNER_TEMP/blasty-browser/node_modules/playwright" node scripts/test-section1-browser.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

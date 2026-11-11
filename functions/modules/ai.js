@@ -16,6 +16,7 @@ const {
 } = require('../lib/shared');
 
 const crypto = require('crypto');
+const {AI_PROVIDERS,providerById,adminCapabilities}=require('../lib/ai-capabilities');
 const platformAuthority = require('../lib/platforms');
 
 function aiRequestContext(body = {}) {
@@ -1009,6 +1010,7 @@ exports.adminGetAiSettings = onRequest({ invoker: 'public' }, withAuth(async (re
       provider:      data.provider   || AI_DEFAULTS.provider,
       fastModel:     data.fastModel  || AI_DEFAULTS.fastModel,
       smartModel:    data.smartModel || AI_DEFAULTS.smartModel,
+      providers: await adminCapabilities(readFlubaProviderKey),
       configured:    snap.exists,   // false = silently running on hardcoded defaults
       lastError,
     });
@@ -1019,13 +1021,13 @@ exports.adminGetAiSettings = onRequest({ invoker: 'public' }, withAuth(async (re
 }, { admin: true }));
 
 exports.adminSetAiSettings = onRequest({ invoker: 'public', secrets: [] }, withAuth(async (req, res, decoded) => {
-  const VALID_PROVIDERS = ['anthropic', 'gemini']; // Only providers bound on every deployed AI entrypoint.
-  const { provider, fastModel, smartModel } = req.body;
+  const VALID_PROVIDERS = AI_PROVIDERS.map(p=>p.id);
+  const { provider, fastModel, smartModel } = req.body || {};
   if (!provider || !fastModel || !smartModel) return res.status(400).json({ error: 'provider, fastModel, and smartModel are required' });
   if (!VALID_PROVIDERS.includes(provider)) return res.status(400).json({ error: `provider must be one of: ${VALID_PROVIDERS.join(', ')}` });
 
   try {
-    const key=provider==='gemini'?await readFlubaProviderKey('GEMINI_API_KEY'):await readFlubaProviderKey('ANTHROPIC_API_KEY');
+    const key=await readFlubaProviderKey(providerById(provider).keyName);
     if(!key||key==='placeholder')return res.status(409).json({error:'This provider is not configured on the backend.'});
     for(const model of new Set([fastModel,smartModel])){
       if(typeof model!=='string'||!/^[-A-Za-z0-9_.]+$/.test(model))return res.status(400).json({error:'Invalid model ID'});

@@ -6,14 +6,16 @@
   <meta name="theme-color" content="#000000"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="description" content="BlastyBiz Privacy Policy — how we collect, use, and protect your personal information."/>
-<meta name="robots" content="noindex"/>
 <title>Privacy Policy — BlastyBiz</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="global-style.css?v=20261015-setup"/>
+<link rel="stylesheet" href="global-style.css?v=20261110-section1"/>
 <script src="blastybiz-menu.js?v=8"></script>
+<!-- public-site:start -->
+<link rel="canonical" href="https://blastybiz.com/BlastyBiz-Privacy"/>
+<!-- public-site:end -->
 </head>
 <body class="has-site-header">
 <div id="header__inject"></div>
@@ -25,7 +27,7 @@
   <div class="legal__hero-glow"></div>
   <div class="row">
     <h1>Privacy Policy</h1>
-    <p>Last updated: June 2026 · Fluba Designs LLC</p>
+    <p>Last updated: November 10, 2026 · Fluba Designs LLC</p>
   </div>
 </header>
 
@@ -39,12 +41,12 @@
 
   <section>
     <h2>Information We Collect</h2>
-    <p><strong>Account information:</strong> When you sign up, we collect your name, email address, and authentication method (email/password or Google sign-in).</p>
+    <p><strong>Account information:</strong> When you sign up, we collect your name, email address, and authentication method (email/password or a connected sign-in provider).</p>
     <p><strong>Business profile:</strong> Business name, owner name, phone number, email, address, website, hours of operation, business category, and tone preference.</p>
     <p><strong>Listing content:</strong> The offer descriptions, pricing, and photos you upload to create listings. This content is stored so AI can adapt it for each platform.</p>
     <p><strong>Platform connections:</strong> Which platforms you have enabled or connected, and connection status. OAuth tokens for connected platforms are stored encrypted.</p>
     <p><strong>Usage data:</strong> Listing history, publish job status, and activity logs.</p>
-    <p><strong>Payment information:</strong> Billing is handled entirely by <strong>Square</strong>. BlastyBiz does not store credit card numbers. We receive only subscription status and plan tier from Square.</p>
+    <p><strong>Payment information:</strong> Billing is handled entirely by <strong>Square</strong>. BlastyBiz does not store credit card numbers. We store payment-provider customer and subscription identifiers, subscription status, plan, billing period, and billing amounts needed to manage your account.</p>
   </section>
 
   <section>
@@ -54,7 +56,7 @@
       <li>To post listings to connected platforms on your behalf</li>
       <li>To display your listing history and publishing status</li>
       <li>To manage your subscription and enforce plan limits</li>
-      <li>To send transactional emails (account confirmation, billing receipts)</li>
+      <li>To send account, onboarding, publishing, billing, and retention notices</li>
       <li>To improve the service and fix bugs</li>
     </ul>
     <p>We do not use your business content or listing data to train AI models.</p>
@@ -62,18 +64,19 @@
 
   <section>
     <h2>AI Processing</h2>
-    <p>BlastyBiz uses <strong>Anthropic Claude</strong> to adapt your listing content for each platform. When you run an adaptation, your business name, category, description, hours, and tone preference are sent to Anthropic's API.</p>
-    <p>Anthropic processes this data per their own <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener">Privacy Policy</a>. We do not send photos to Anthropic — only text fields.</p>
+    <p>Text features use <strong>Google Gemini or Anthropic Claude</strong>, depending on the configured feature and provider. Requests can include your business details, website-derived context, saved business and campaign memory, listing text, and messages you enter.</p>
+    <p>When you request an AI image, <strong>Google Gemini</strong> receives your image description and approved post context. The generated image is saved with your campaign.</p>
+    <p>These providers process requests under their own policies: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google</a> and <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener">Anthropic</a>. BlastyBiz does not send uploaded photo files to these AI features.</p>
   </section>
 
   <section>
     <h2>Google API Data</h2>
-    <p>When you connect Google Business Profile, BlastyBiz requests the <strong><code>business.manage</code></strong> OAuth scope. This scope is used solely to create posts on Google Business Profile locations that you own or manage.</p>
+    <p>When you connect Google Business Profile, BlastyBiz requests the <strong><code>business.manage</code></strong> OAuth scope. This scope supports selecting your business location, importing its profile details and photos, and publishing posts you authorize.</p>
     <ul>
-      <li>BlastyBiz reads your Google Business Profile location list so you can select which location to post to.</li>
+      <li>BlastyBiz reads your location list and selected business profile details and photos to set up your business and choose where to post.</li>
       <li>BlastyBiz creates posts on your behalf using AI-adapted content you have reviewed and approved.</li>
-      <li>Your Google OAuth access token and refresh token are stored encrypted in our database. They are never sold, shared with third parties, or used for any purpose other than posting to your Google Business Profile.</li>
-      <li>No Google account data (name, email, contacts, Drive, Gmail, or any other Google service) is accessed or stored.</li>
+      <li>Your Google OAuth access token and refresh token are stored encrypted in our database. They are never sold, shared with third parties, or used outside the business profile features you authorize.</li>
+      <li>Google sign-in can supply your name, email, and profile image for your account. Business Profile access does not grant access to your Gmail, Drive, or contacts.</li>
       <li>You can revoke BlastyBiz's access at any time at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>. Disconnecting from within BlastyBiz also removes your stored tokens immediately.</li>
     </ul>
     <p>BlastyBiz's use of Google API data complies with the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
@@ -83,8 +86,9 @@
     <h2>Third-Party Services</h2>
     <p>We use the following third-party services to operate BlastyBiz:</p>
     <ul>
-      <li><strong>Firebase / Google Cloud</strong> — Authentication, database, file storage, and hosting. Data is stored in the United States (us-east1).</li>
-      <li><strong>Anthropic</strong> — AI content adaptation via the Claude API.</li>
+      <li><strong>Firebase / Google Cloud</strong> — Authentication, database, file storage, and hosting.</li>
+      <li><strong>Google Gemini and Anthropic</strong> — AI text processing; Gemini also generates requested images.</li>
+      <li><strong>Resend</strong> — Delivery of account and service emails, including recipient addresses and email content.</li>
       <li><strong>Square</strong> — Payment processing and subscription management.</li>
       <li><strong>Google Business Profile API</strong> — Auto-posting to Google Business Profile (when authorized by you). See Google API Data section above.</li>
       <li><strong>Meta Graph API</strong> — Auto-posting to Facebook and Instagram (when authorized by you).</li>
@@ -94,7 +98,7 @@
 
   <section>
     <h2>Photos and Images</h2>
-    <p>Photos you upload are stored in <strong>Firebase Storage</strong> under your user account path. Only you (and BlastyBiz systems) can access your photos. We do not analyze, sell, or share your photos.</p>
+    <p>Uploaded and generated images are stored in <strong>Firebase Storage</strong> and associated with your account or campaign. When you publish a post, the selected image is made available to that platform and its audience. Image download links can also be accessed by anyone who has the link. We do not sell your photos.</p>
   </section>
 
   <!--
@@ -122,7 +126,7 @@
 
   <section>
     <h2>Cookies</h2>
-    <p>BlastyBiz uses Firebase Authentication, which sets a session cookie to keep you signed in. We do not use advertising cookies, tracking pixels, or any third-party analytics platform.</p>
+    <p>BlastyBiz uses Firebase Authentication and browser storage to keep you signed in and remember app preferences. We do not use advertising cookies, tracking pixels, or any third-party analytics platform.</p>
   </section>
 
   <section>

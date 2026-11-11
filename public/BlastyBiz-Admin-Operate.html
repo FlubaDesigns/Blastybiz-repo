@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="global-style.css?v=20261015-setup">
+<link rel="stylesheet" href="global-style.css?v=20261110-section1">
 <link rel="stylesheet" href="operate-todos.css?v=1">
 
 <style>body{visibility:hidden}</style>
@@ -29,6 +29,9 @@
   <script type="module" src="./admin-guard.js"></script>
 <script src="blastybiz-menu.js?v=8"></script>
 <script src="escape-utils.js"></script>
+<!-- public-site:start -->
+<meta name="robots" content="noindex, nofollow"/>
+<!-- public-site:end -->
 </head>
 <body class="admin-page operate-page">
 
@@ -72,16 +75,6 @@
       <div id="todo-completed-list"></div>
     </details>
   </section>
-
-  <!-- REDEPLOY BANNER — shown after first secret is saved -->
-  <div id="redeploy-banner">
-    <div class="redeploy-title">⚠️ One more step after saving secrets</div>
-    <div class="redeploy-sub">Secrets are saved to Firebase Secret Manager, but Cloud Functions pin their secrets at deploy time. After you've saved all your keys, run this <strong>one command</strong> in the Replit Shell to activate them:</div>
-    <div class="code-block">
-      <span class="code-text">npx firebase-tools deploy --only functions</span>
-      <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions')">Copy</button>
-    </div>
-  </div>
 
   <!-- Historical seed signatures only; never displayed as owner tasks. -->
   <template data-legacy-todos>
@@ -449,99 +442,12 @@
 
   </template>
 
-  <!-- ══════════════════════════════════════════
-       ONGOING
-  ══════════════════════════════════════════ -->
-  <div class="op-section">
-    <div class="section-header">
-      <span class="section-icon">🔧</span>
-      <span class="section-title">Ongoing Operator Commands</span>
-      <span class="section-badge ok">Reference</span>
-    </div>
-
-    <div class="card">
-      <div class="op-card-header" onclick="toggleCard(this)">
-        <div class="check-box check-hidden"></div>
-        <div class="flex-1">
-          <div class="op-card-title">Deploy commands cheat sheet</div>
-          <div class="op-card-sub">Run in Replit Shell whenever you make changes</div>
-        </div>
-        <span class="op-chevron">▼</span>
-      </div>
-      <div class="op-card-body">
-        <p class="op-sub-text">Run these from the Replit Shell tab:</p>
-
-        <p class="op-cmd-label">Deploy HTML pages (hosting)</p>
-        <div class="code-block">
-          <span class="code-text">npx firebase-tools deploy --only hosting</span>
-          <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only hosting')">Copy</button>
-        </div>
-
-        <p class="op-cmd-label-12">Deploy all functions (after saving secrets)</p>
-        <div class="code-block">
-          <span class="code-text">npx firebase-tools deploy --only functions</span>
-          <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions')">Copy</button>
-        </div>
-
-        <p class="op-cmd-label-12">Deploy Firestore security rules</p>
-        <div class="code-block">
-          <span class="code-text">npx firebase-tools deploy --only firestore:rules</span>
-          <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only firestore:rules')">Copy</button>
-        </div>
-
-        <p class="op-cmd-label-12">Deploy a specific function</p>
-        <div class="code-block">
-          <span class="code-text">npx firebase-tools deploy --only functions:functionName</span>
-          <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools deploy --only functions:functionName')">Copy</button>
-        </div>
-
-        <p class="op-cmd-label-12">View function logs</p>
-        <div class="code-block">
-          <span class="code-text">npx firebase-tools functions:log --only functionName</span>
-          <button type="button" class="copy-btn" onclick="copyCode(this,'npx firebase-tools functions:log --only functionName')">Copy</button>
-        </div>
-
-        <hr>
-        <p class="op-cmd-label-hd">All deployed functions (34 total — v2, us-central1)</p>
-        <p class="op-fn-group mt-10">AI</p>
-        <p class="op-fn-list">
-          adaptListing · generateEnrichmentQuestions · resolveCategories · suggestPlatforms
-        </p>
-        <p class="op-fn-group">Publishing</p>
-        <p class="op-fn-list">
-          approveDraft · approvePendingPost · dispatchPublishJob · manageBlast
-        </p>
-        <p class="op-fn-group">Platform OAuth</p>
-        <p class="op-fn-list">
-          facebookOAuthCallback · googleOAuthCallback · initiateFacebookOAuth · initiateGoogleOAuth
-        </p>
-        <p class="op-fn-group">Payments</p>
-        <p class="op-fn-list">
-          createCheckoutSession · createPortalSession · squareWebhook
-        </p>
-        <p class="op-fn-group">Scheduled</p>
-        <p class="op-fn-list">
-          scheduledPostingCheck
-        </p>
-        <p class="op-fn-group">Triggers</p>
-        <p class="op-fn-list">
-          jobFailedTrigger · userCreatedTrigger
-        </p>
-        <p class="op-fn-group">Account</p>
-        <p class="op-fn-list">
-          createBusiness · deleteAccount · uploadImage
-        </p>
-        <p class="op-fn-group">Admin</p>
-        <p class="op-fn-list">
-          adminGetAdminEmails · adminListActivityLogs · adminListBusinesses · adminListFailedJobs ·
-          adminListPlatformConnections · adminListPublishJobs · adminMarkManualFollowup · adminOnboardingFunnel ·
-          adminRetryJob ·
-          adminSubscriptionSummary · adminUpdateAdminEmails · adminUpdatePricing ·
-          adminUpdatePlatformCategories · sendTestEmail
-        </p>
-      </div>
-    </div>
-  </div>
+  <section class="row card">
+    <details><summary>Release &amp; provider reference</summary>
+      <p>Provider keys are managed in Fluba Cortex. Website and function releases use the existing Authorization Engine.</p>
+      <p><a href="https://github.com/FlubaDesigns/fluba-designs/actions/workflows/blastybiz-release.yml" target="_blank" rel="noopener">View BlastyBiz releases</a></p>
+    </details>
+  </section>
 
   <!-- Admin Access management -->
   <!-- ── Blasty Guide Animations ──────────────────────────────────────── -->
@@ -615,7 +521,7 @@
       </div>
       <div class="op-card-body">
         <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://blastybiz-9523e.web.app/BlastyBiz-Trial.html" target="_blank">BlastyBiz-Trial.html</a> — enter an email and request the magic link</div></div>
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="BlastyBiz-Trial.html" target="_blank">BlastyBiz-Trial.html</a> — enter an email and request the magic link</div></div>
           <div class="step"><div class="step-num">2</div><div class="step-text">Click the magic link in the email — confirm it lands on Onboard2 and Blasty appears with <strong>s-wave</strong> greeting</div></div>
           <div class="step"><div class="step-num">3</div><div class="step-text">Complete all 22 steps — name, address, story, platforms (step 21), AI category (step 22)</div></div>
           <div class="step"><div class="step-num">4</div><div class="step-text">Confirm Blasty hits <strong>s-celebrate</strong> and redirects to the dashboard with <code>?autogenerate=1</code></div></div>
@@ -818,11 +724,10 @@ window.saveMascotSetting = async function(on) {
   };
 
 // saveSecret removed — browser-to-Secret-Manager writes are a security finding.
-// Use the Firebase CLI to rotate secrets:
-//   firebase functions:secrets:set SECRET_NAME
+// Provider keys are managed in Fluba Cortex.
 window.saveSecret = function(name, inputId, statusId, btn) {
   const statusEl = document.getElementById(statusId);
-  statusEl.textContent = '⚠ Browser-based secret saving has been disabled for security. Use: firebase functions:secrets:set ' + name;
+  statusEl.textContent = 'Manage provider keys in Fluba Cortex.';
   statusEl.className = 'save-status err';
 };
 

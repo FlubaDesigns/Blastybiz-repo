@@ -11,6 +11,7 @@
  * Returns exit code 0 (pass) or 1 (failures found).
  */
 
+require('node:child_process').execFileSync(process.execPath, [require('node:path').join(__dirname,'sync-public-content.cjs'), '--check'], {stdio:'inherit'});
 const fs   = require('fs');
 const path = require('path');
 
