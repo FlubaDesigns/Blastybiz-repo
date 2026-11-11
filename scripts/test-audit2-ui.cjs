@@ -22,13 +22,13 @@ async function returnTests(){
  for(const [p,q]of [['//evil.invalid','bizId=b&draftId=d'],['/BlastyBiz.html','bizId=../b&draftId=d'],['/BlastyBiz.html','bizId=b&tab=schedule&scheduleCampaign=c'],['/BlastyBiz-Connected.html','bizId=b&connected=constructor']])ok(!parse.parseAuthReturn(p,q),'unsafe or incomplete return rejected');
 }
 function intentTests(){
- const choiceCode=cut(login.slice(login.indexOf('    // Once auth card is ready')), "    var wrap = document.getElementById('auth-card-wrap');","\n  }\n\n  // Expose a hook");
- for(const [query,stale,expected] of [['?intent=signin','forms','signin'],['?start=forms',null,'signup'],['?start=guided','forms','signup'],['','forms',null]]){
+ const choiceCode=cut(login,'// Entry intent is synchronous','// ── Login Blasty Guide');
+ for(const [query,stale,expected] of [['?intent=signin','forms','signin'],['?start=forms',null,'signup'],['?start=guided','forms','signup'],['','forms','signin']]){
   const dom=new JSDOM(login,{url:'https://example.com/BlastyBiz-Login.html'+query,runScripts:'outside-only'}),w=dom.window;
   if(stale)w.localStorage.setItem('bb_start_choice',stale);
   let observer,selected;w.MutationObserver=class{constructor(cb){observer=cb;}observe(){}disconnect(){}};
   w.removeTabPrompt=()=>{};w.tabsRow=w.document.querySelector('.auth-tabs');w._suFields=[];w._fieldEls=[];w.showGuide=()=>{};w.switchTab=tab=>selected=tab;
-  w.eval(choiceCode);w.document.getElementById('auth-card-wrap').classList.add('ready');observer([],{disconnect(){}});
+  w.eval(choiceCode);w.document.getElementById('auth-card-wrap').classList.add('ready');
   ok(selected===expected||(!selected&&expected===null),'signup/sign-in intent '+query);
   ok(w.tabsRow?.style.display!=='none','sign-in tab stays reachable');
   ok(query.includes('start=')?!!w.localStorage.getItem('bb_start_choice'):!w.localStorage.getItem('bb_start_choice'),'stale intent lifecycle '+query);
