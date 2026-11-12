@@ -17,6 +17,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright'),fs=require('
  for(const width of [320,384,430,1024]){
   await page.setViewportSize({width,height:832});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'No overflow at '+width);
   const sizes=await page.locator('input:not([type="checkbox"]),select,button').evaluateAll(es=>es.filter(e=>e.getClientRects().length).map(e=>e.getBoundingClientRect().height));assert(sizes.every(h=>h>=44),'Phone control size '+width);
+  const bounds=await page.locator('#reward-content .card,input,select').evaluateAll(es=>es.filter(e=>e.getClientRects().length).map(e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right};}));assert(bounds.every(r=>r.left>=10&&r.right<=width-10),'Controls remain inside phone gutters '+width);
+  const checkbox=await page.locator('#reward-consent').boundingBox();assert(checkbox.width>=20&&checkbox.width<=30&&checkbox.height>=20,'Consent remains a visible checkbox');
  }
  await page.setViewportSize({width:384,height:832});fs.mkdirSync('test-artifacts',{recursive:true});await page.screenshot({path:'test-artifacts/annual-pro-shirt-mobile.png',fullPage:true});
  await browser.close();console.log('PASS reward layout: 320–1024 px, no overflow and controls at least 44 px.');
