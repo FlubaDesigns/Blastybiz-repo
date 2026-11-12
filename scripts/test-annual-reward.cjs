@@ -11,8 +11,8 @@ function fixture(){
  const m=database({'users/owner':{email:'owner@example.test',annualProReward:claim},'subscriptions/owner':{squareSubscriptionId:'subscription'},'settings/qrReward':config,
   'users/owner/businesses/business':{businessName:'Owner business',website:'https://business.example/'},
   ['setupNudges/'+reward.queueId('owner')]:{kind:'annual-pro-reward',uid:'owner',sent:false}});
- const calls=[],emails=[],receipts=new Map();let now=100000,orders=0,refund=false,failApprove=false,rejectApprove=false,failEmail=false,catalogTitle='Current catalog title';
- const square={payments:{get:async()=>({payment:{...payment,...(refund?{refundedMoney:{amount:19900n}}:{})}})},subscriptions:{get:async()=>({subscription})}};
+ const calls=[],emails=[],receipts=new Map();let billingAddress,now=100000,orders=0,refund=false,failApprove=false,rejectApprove=false,failEmail=false,catalogTitle='Current catalog title';
+ const square={payments:{get:async()=>({payment:{...payment,billingAddress,...(refund?{refundedMoney:{amount:19900n}}:{})}})},subscriptions:{get:async()=>({subscription})}};
  const service=reward.createAnnualRewardService({db:m.db,admin,getSquare:async()=>square,readKey:async name=>{assert.equal(name,'QR_GEAR_BLASTYBIZ_PARTNER_API_KEY');return 'psk-'+'a'.repeat(64);},appUrl:'https://blastybiz.com',clock:()=>now,
  sendEmail:async input=>{emails.push(input);if(failEmail)throw Error('network interrupted');return {sent:true};},
  fetchImpl:async(url,options)=>{
@@ -29,7 +29,7 @@ function fixture(){
   }else result=receipts.get(claim.claimId);
   return {ok:true,json:async()=>structuredClone(result)};
  }});
- return {m,service,calls,emails,orders:()=>orders,setRefund:v=>refund=v,failApprove:()=>failApprove=true,rejectApprove:()=>rejectApprove=true,failEmail:v=>failEmail=v,setNow:v=>now=v,title:v=>catalogTitle=v};
+ return {m,service,calls,emails,orders:()=>orders,billing:v=>billingAddress=v,setRefund:v=>refund=v,failApprove:()=>failApprove=true,rejectApprove:()=>rejectApprove=true,failEmail:v=>failEmail=v,setNow:v=>now=v,title:v=>catalogTitle=v};
 }
 const preview={action:'preview',businessId:'business',color:'Black',size:'M',graphicChoice:'qr-only',websiteUrl:'https://attacker.invalid',productId:'unapproved'};
 test('one shared rule excludes monthly Pro, both Agency periods and free plans',()=>{
@@ -131,4 +131,12 @@ test('confirmed unavailable variant without an order unlocks editing; uncertain 
  await assert.rejects(f.service.manage('owner',{action:'approve',approved:true,previewId:state.preview.previewId,shipping}),{httpStatus:409});
  assert.equal(f.m.get('users/owner').annualProReward.approvedAt,null);assert.equal(f.orders(),0);
  await f.service.manage('owner',preview);
+});
+
+test('only the verified payment supplies optional billing prefill; missing data stays editable',async()=>{
+ const f=fixture();assert.equal((await f.service.manage('owner',{action:'status'})).billingAddress,null);
+ f.billing({firstName:'Pat',lastName:'Buyer',addressLine1:'Billing St',addressLine2:'Unit 2',addressLine3:'Floor 3',locality:'Town',administrativeDistrictLevel1:'FL',postalCode:'12345',country:'US'});
+ const status=await f.service.manage('owner',{action:'status',billingAddress:{address1:'Untrusted'}});
+ assert.deepEqual(status.billingAddress,{name:'Pat Buyer',address1:'Billing St',address2:'Unit 2, Floor 3',city:'Town',region:'FL',postalCode:'12345',country:'US'});assert.match(status.terms,/BlastyBiz covers shipping/);
+ f.setRefund(true);await assert.rejects(f.service.manage('owner',{action:'status'}),{httpStatus:403});
 });

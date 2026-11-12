@@ -46,15 +46,26 @@
       <button class="btn btn-primary" id="reward-generate" type="button">Create my shirt preview</button>
     </div></fieldset>
     <figure class="row" id="reward-preview" hidden><div class="col-full"><a id="reward-preview-link" target="_blank" rel="noopener noreferrer"><img id="reward-preview-image" class="reward-preview-image" alt="Your personalized shirt preview"></a><figcaption id="reward-preview-caption"></figcaption><p>Tap the image to open it and zoom in.</p><p>QR destination: <a id="reward-destination" target="_blank" rel="noopener noreferrer"></a></p></div></figure>
-    <form class="row" id="reward-shipping"><fieldset class="col-full" id="reward-shipping-fields"><legend>Where to send it</legend>
-      <label for="reward-name">Full name</label><input id="reward-name" name="name" autocomplete="name" maxlength="160" required>
-      <label for="reward-address1">Street address</label><input id="reward-address1" name="address1" autocomplete="address-line1" maxlength="160" required>
-      <label for="reward-address2">Apartment or suite (optional)</label><input id="reward-address2" name="address2" autocomplete="address-line2" maxlength="160">
-      <label for="reward-city">City</label><input id="reward-city" name="city" autocomplete="address-level2" maxlength="160" required>
-      <label for="reward-region">State / region</label><input id="reward-region" name="region" autocomplete="address-level1" maxlength="160" required>
-      <label for="reward-postalCode">Postal code</label><input id="reward-postalCode" name="postalCode" autocomplete="postal-code" maxlength="160" required>
-      <label for="reward-country">Country code</label><input id="reward-country" name="country" autocomplete="country" maxlength="2" minlength="2" value="US" required>
-    </fieldset><div class="col-full"><label><input id="reward-consent" type="checkbox"> I approve this exact design, color, size and shipping address.</label><button class="btn btn-primary" id="reward-approve" type="submit" disabled>Claim my free shirt</button></div></form>
+    <form class="row" id="reward-shipping">
+    <fieldset class="col-full" id="reward-billing-fields"><legend>Billing address</legend><p>Confirm the address you used for your subscription.</p>
+      <label for="reward-billing-name">Full name</label><input id="reward-billing-name" name="billing-name" autocomplete="billing name" maxlength="160" required>
+      <label for="reward-billing-address1">Street address</label><input id="reward-billing-address1" name="billing-address1" autocomplete="billing address-line1" maxlength="160" required>
+      <label for="reward-billing-address2">Apartment or suite (optional)</label><input id="reward-billing-address2" name="billing-address2" autocomplete="billing address-line2" maxlength="160">
+      <label for="reward-billing-city">City</label><input id="reward-billing-city" name="billing-city" autocomplete="billing address-level2" maxlength="160" required>
+      <label for="reward-billing-region">State / region</label><input id="reward-billing-region" name="billing-region" autocomplete="billing address-level1" maxlength="160" required>
+      <label for="reward-billing-postalCode">Postal code</label><input id="reward-billing-postalCode" name="billing-postalCode" autocomplete="billing postal-code" maxlength="160" required>
+      <label for="reward-billing-country">Country code</label><input id="reward-billing-country" name="billing-country" autocomplete="billing country" maxlength="2" minlength="2" value="US" required>
+    </fieldset>
+    <div class="col-full" id="reward-address-choice"><label><input id="reward-same-address" type="checkbox" checked aria-controls="reward-shipping-fields" aria-expanded="false"> Ship to this address</label><p>BlastyBiz covers your shirt and shipping.</p></div>
+    <fieldset class="col-full" id="reward-shipping-fields" hidden disabled><legend>Shipping address</legend>
+      <label for="reward-name">Full name</label><input id="reward-name" name="name" autocomplete="shipping name" maxlength="160" required>
+      <label for="reward-address1">Street address</label><input id="reward-address1" name="address1" autocomplete="shipping address-line1" maxlength="160" required>
+      <label for="reward-address2">Apartment or suite (optional)</label><input id="reward-address2" name="address2" autocomplete="shipping address-line2" maxlength="160">
+      <label for="reward-city">City</label><input id="reward-city" name="city" autocomplete="shipping address-level2" maxlength="160" required>
+      <label for="reward-region">State / region</label><input id="reward-region" name="region" autocomplete="shipping address-level1" maxlength="160" required>
+      <label for="reward-postalCode">Postal code</label><input id="reward-postalCode" name="postalCode" autocomplete="shipping postal-code" maxlength="160" required>
+      <label for="reward-country">Country code</label><input id="reward-country" name="country" autocomplete="shipping country" maxlength="2" minlength="2" value="US" required>
+    </fieldset><div class="col-full"><label><input id="reward-consent" type="checkbox"> I approve this exact design, color, size and delivery address.</label><button class="btn btn-primary" id="reward-approve" type="submit" disabled>Claim my free shirt</button></div></form>
     <div class="row"><div class="col-full"><a class="btn" id="reward-tracking" target="_blank" rel="noopener noreferrer" hidden>Track my shirt</a></div></div>
   </div></section>
   <div class="row"><div class="col-full"><p>Made through <a href="https://qrgear-c1ffd.web.app" target="_blank" rel="noopener noreferrer">QR Gear</a>.</p></div></div>

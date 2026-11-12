@@ -6020,8 +6020,12 @@ body.admin-page .layout__split-3 :is(input,select,textarea) { min-width: 0; max-
 .bb-display-inline { display: inline-block; }
 
 /* Reward appearance uses the canonical .row and .col-full structure. */
+.page-rewards .card { box-sizing: border-box; }
+.page-rewards [hidden] { display: none !important; }
 .page-rewards label { display: block; margin-top: 1rem; }
 .page-rewards select, .page-rewards input:not([type="checkbox"]) { width: 100%; min-height: 48px; }
+.page-rewards input[type="checkbox"] { appearance: auto; -webkit-appearance: auto; accent-color: var(--green); width: 24px; min-width: 24px; max-width: 24px; height: 24px; min-height: 24px; padding: 0; margin: 0; flex: 0 0 24px; }
+.page-rewards label:has(input[type="checkbox"]) { display: flex; align-items: flex-start; gap: 12px; min-height: 48px; text-transform: none; letter-spacing: normal; color: var(--light); }
 .page-rewards fieldset { border: 0; padding: 0; margin-block: 1.25rem; min-width: 0; }
 .page-rewards .btn { margin-block: .5rem; }
 .reward-preview-image { width: 100%; max-height: 680px; object-fit: contain; }
