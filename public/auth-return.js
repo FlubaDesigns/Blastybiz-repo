@@ -4,6 +4,10 @@ export function parseAuthReturn(pathname, search) {
   const q = new URLSearchParams(search);
   const valid = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value);
   const bizId = q.get('bizId'), ownerUid = q.get('ownerUid');
+  if (/^\/BlastyBiz-Rewards(?:\.html)?$/.test(pathname)) {
+    if(ownerUid!==null&&!valid(ownerUid))return null;
+    return {page:'BlastyBiz-Rewards.html',params:ownerUid?{ownerUid}:{}};
+  }
   if (!valid(bizId) || (ownerUid !== null && !valid(ownerUid))) return null;
   const params = {bizId};
   if (ownerUid) params.ownerUid = ownerUid;

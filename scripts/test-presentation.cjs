@@ -9,7 +9,10 @@ function actions(html){
 }
 for(const file of fs.readdirSync('public').filter(f=>f.endsWith('.html'))){
  const current=fs.readFileSync('public/'+file,'utf8');
- const old=cp.execFileSync('git',['show',baseline+':public/'+file],{encoding:'utf8',maxBuffer:4e6});
+ // This account page was introduced after the presentation baseline. Existing
+ // pages still require every baseline control; the new page receives all shared
+ // style checks here and its own behavior checks in test-annual-reward-ui.
+ const old=file==='BlastyBiz-Rewards.html'?'':cp.execFileSync('git',['show',baseline+':public/'+file],{encoding:'utf8',maxBuffer:4e6});
  const remaining=actions(current);
  for(let action of actions(old)){
   const control=JSON.parse(action);

@@ -221,6 +221,7 @@ function renderPlans() {
       cta: 'Go Pro →',
       features: [
         { text: capacity('pro') },
+        ...(billingPeriod==='annual' && planOptions.annualProShirt?.included ? [{text:'Free personalized QR Gear 3001 shirt — '+planOptions.annualProShirt.terms}] : []),
         { text: 'Auto-posting to Google, Facebook & Instagram on every plan' },
         { text: 'Copy Library & AI business memory' },
         { text: 'Scheduling and posting history' },
@@ -232,7 +233,7 @@ function renderPlans() {
       line: billingPeriod==='annual' && pr.agencyMonthly*12>pr.agencyAnnual ? 'Save '+money(pr.agencyMonthly*12-pr.agencyAnnual)+' per year compared with monthly billing.' : 'For managing other people’s businesses.',
       cta: 'Go Agency →',
       features: [
-        { text: 'Everything in Pro' },
+        { text: 'Pro publishing features' },
         { text: capacity('agency') },
         { text: 'Shared publishing, library and history features' },
       ],

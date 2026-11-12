@@ -1094,8 +1094,9 @@ async function continueAfterAuth(user, googleResolved) {
       const target = restoreAuthReturn(savedDraft);
       if (target) {
         const ownerMatches = !target.params.ownerUid || target.params.ownerUid === user.uid;
-        const business = ownerMatches ? await getDoc(doc(db, 'users', user.uid, 'businesses', target.params.bizId)) : null;
-        if (!ownerMatches || !business.exists()) {
+        const accountReward = target.page === 'BlastyBiz-Rewards.html';
+        const business = ownerMatches && !accountReward ? await getDoc(doc(db, 'users', user.uid, 'businesses', target.params.bizId)) : null;
+        if (!ownerMatches || (!accountReward && !business?.exists())) {
           showLoginForm();
           window.showToast('This link belongs to another account or a business that is no longer available. Sign in with the account that received it.', true);
           return;
