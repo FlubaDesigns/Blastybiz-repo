@@ -22,3 +22,10 @@ Corrected Pass 07 is on main at 91dc188d09bf8532ea483fa72c7e9807af17f5d1. Pass 0
 # Pass 08 review corrections — 2026-09-29
 
 All three reviewer findings were reproduced before editing and corrected within Pass 08. Dashboard campaign removal now uses server archival; older Onboarding retains the correct business ID and creation/update mode; aged unmatched and shared-customer payments now have durable terminal reconciliation records. All 364 assertions pass. See `BlastyBiz-Pass08-Corrections.md`. Pass 07 is deployed at `91dc188`; Pass 08 remains a review candidate. Build the new schedule index and verify READY before deploying Pass 08 workers.
+
+
+## November 12, 2026 — Shared QR Gear text contrast and proof approval
+
+Annual Pro reward previews now forward Automatic, Light, Dark or Custom text selection to QR Gear. QR Gear remains the authority for the resolved text color, contrast warning and exact proof ID. Changing a choice clears the local checkbox; the server requires the current proof ID and explicit approval before forwarding the claim. The canonical QR Gear approval flag/record returns with the reward receipt and frozen order. The QR remains black on white, BlastyBiz covers shipping, and Agency remains excluded.
+
+Validation: 16 backend reward tests and the reward-page DOM interaction checks pass, including missing/stale proof rejection, text override invalidation and unchanged shipping/eligibility behavior. Browser and production acceptance run through the existing Authorization Engine workflows. No promotion enablement, real payment, customer email or supplier test order is part of this change. Tracking: QR Gear #30 and BlastyBiz #54.

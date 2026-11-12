@@ -170,7 +170,8 @@ function createAnnualRewardService({db,admin,getSquare,readKey,sendEmail,appUrl,
       const offer=await product(config);
       if(offer.optionsError||!offer.availableVariants?.some(v=>v.color===color&&v.size===size))fail(409,'Choose an available size and color.');
       const artwork=await approvedArtwork(uid,businessId,imageId,graphicChoice);
-      const selection={businessId,imageId:graphicChoice==='full'?imageId:'',color,size,graphicChoice};
+      const textColorMode=graphicChoice==='qr-only'?'auto':body.textColorMode||'auto',textColor=textColorMode==='custom'?String(body.textColor||'').toUpperCase():null;
+      const selection={businessId,imageId:graphicChoice==='full'?imageId:'',color,size,graphicChoice,textColorMode,textColor};
       const requestHash=artworkHash(selection,artwork,config);
       await db.runTransaction(async tx=>{
         const current=(await tx.get(userRef(uid))).data()?.annualProReward;
@@ -180,7 +181,7 @@ function createAnnualRewardService({db,admin,getSquare,readKey,sendEmail,appUrl,
       });
       const expected={...claim,requestHash};
       const result=await remote(config,'/preview',{claimId:claim.claimId,customerRef:digest(uid),channelId:config.channelId,
-        productId:config.productId,color,size,graphicChoice,websiteUrl:artwork.websiteUrl,logoData:artwork.logoData,sourceHash:requestHash});
+        productId:config.productId,color,size,graphicChoice,textColorMode,textColor,websiteUrl:artwork.websiteUrl,logoData:artwork.logoData,sourceHash:requestHash});
       await saveRemote(uid,expected,result);
       await db.runTransaction(async tx=>{
         const current=(await tx.get(userRef(uid))).data()?.annualProReward;
@@ -191,7 +192,7 @@ function createAnnualRewardService({db,admin,getSquare,readKey,sendEmail,appUrl,
     if(action==='approve') {
       if(body.approved!==true)fail(400,'Approve your exact shirt preview first.');
       if(claim.preview?.orderId)return status(uid,{refresh:true});
-      if(!claim.preview||claim.preview.sourceHash!==claim.requestHash||body.previewId!==claim.preview.previewId||(!locked(claim)&&claim.preview.status!=='ready'))fail(409,'Review your current personalized preview first.');
+      if(!claim.preview||(!locked(claim)&&(!claim.preview.proofId||body.proofId!==claim.preview.proofId))||claim.preview.sourceHash!==claim.requestHash||body.previewId!==claim.preview.previewId||(!locked(claim)&&claim.preview.status!=='ready'))fail(409,'Review your current personalized preview first.');
       let shipping=claim.shipping;
       if(!locked(claim)) {
         shipping={};
@@ -215,7 +216,7 @@ function createAnnualRewardService({db,admin,getSquare,readKey,sendEmail,appUrl,
         return locked(current)?current.shipping:shipping;
       });
       try {
-        const result=await remote(config,'/approve',{claimId:claim.claimId,customerRef:digest(uid),previewId:body.previewId,shipping,
+        const result=await remote(config,'/approve',{claimId:claim.claimId,customerRef:digest(uid),previewId:body.previewId,proofApproval:{approved:true,proofId:claim.preview.proofId},shipping,
           authorization:{websiteOrderId:claim.orderId,paymentId:claim.paymentId,subscriptionId:claim.subscriptionId,
             source:'blastybiz',plan:'pro',billingPeriod:'annual',verifiedAt:new Date(clock()).toISOString()}});
         await saveRemote(uid,claim,result);

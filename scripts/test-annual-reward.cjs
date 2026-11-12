@@ -21,11 +21,11 @@ function fixture(){
   if(url.pathname.endsWith('/products'))return {ok:true,json:async()=>({store:{id:'bb-partner',storeId:'blastybiz'},catalogId:'bb-shirts',products:[{id:'qrg_11111',storeId:'blastybiz',channelId:'bb-rewards',name:catalogTitle,description:'',availableColors:['Black'],availableVariants:[{color:'Black',size:'M'}]}]})};
   let result;
   if(url.pathname.endsWith('/preview')){
-   result={...body,previewId:'preview-'+body.sourceHash,status:'ready',mockupUrl:'https://qrgear.test/personalized.png'};delete result.logoData;receipts.set(body.claimId,result);
+   result={...body,previewId:'preview-'+crypto.createHash('sha256').update(JSON.stringify(body)).digest('hex'),proofId:'proof-'+crypto.createHash('sha256').update(JSON.stringify(body)).digest('hex'),status:'ready',mockupUrl:'https://qrgear.test/personalized.png'};delete result.logoData;receipts.set(body.claimId,result);
   }else if(url.pathname.endsWith('/approve')){
    if(rejectApprove)return {ok:false,status:409,json:async()=>({error:'Variant unavailable'})};
    if(failApprove){failApprove=false;return {ok:false,status:503,json:async()=>({})};}
-   result=receipts.get(body.claimId);if(!result.orderId){orders++;result.orderId='canonical-order';result.status='ordered';}
+   result=receipts.get(body.claimId);assert.deepEqual(body.proofApproval,{approved:true,proofId:result.proofId});if(!result.orderId){orders++;result.orderId='canonical-order';result.status='ordered';}
   }else result=receipts.get(claim.claimId);
   return {ok:true,json:async()=>structuredClone(result)};
  }});
@@ -62,7 +62,7 @@ test('owned selection uses canonical live catalog and saved website, never reque
  await assert.rejects(f.service.manage('owner',{...preview,graphicChoice:'unknown'}),{httpStatus:400});
 });
 test('reopening and interrupted approval retain exact saved preview, shipping and one order',async()=>{
- const f=fixture(),state=await f.service.manage('owner',preview),body={action:'approve',approved:true,previewId:state.preview.previewId,shipping};
+ const f=fixture(),state=await f.service.manage('owner',preview),body={action:'approve',approved:true,previewId:state.preview.previewId,proofId:state.preview.proofId,shipping};
  await assert.rejects(f.service.manage('owner',{...body,previewId:'stale'}),{httpStatus:409});assert.equal(f.orders(),0);
  f.failApprove();await assert.rejects(f.service.manage('owner',body));assert(f.m.get('users/owner').annualProReward.approvedAt);
  const resumed=await f.service.manage('owner',{action:'status',refresh:true});assert(resumed.approved);assert.deepEqual(resumed.shipping,shipping);
@@ -74,7 +74,7 @@ test('reopening and interrupted approval retain exact saved preview, shipping an
 test('refund and changed business destination block unfulfilled approval',async()=>{
  for(const changed of ['refund','website']){
   const f=fixture(),state=await f.service.manage('owner',preview);if(changed==='refund')f.setRefund(true);else await f.m.db.doc('users/owner/businesses/business').update({website:'https://new.example/'});
-  await assert.rejects(f.service.manage('owner',{action:'approve',approved:true,previewId:state.preview.previewId,shipping}));assert.equal(f.orders(),0);
+  await assert.rejects(f.service.manage('owner',{action:'approve',approved:true,previewId:state.preview.previewId,proofId:state.preview.proofId,shipping}));assert.equal(f.orders(),0);
  }
 });
 test('another account cannot reach the original reward or partner',async()=>{
@@ -105,7 +105,7 @@ test('real webhook handler preserves signature checks and atomic claim ownership
 });
 test('two simultaneous first approvals use the same durable shipping address',async()=>{
  const f=fixture(),state=await f.service.manage('owner',preview);
- await Promise.allSettled([f.service.manage('owner',{action:'approve',approved:true,previewId:state.preview.previewId,shipping}),f.service.manage('owner',{action:'approve',approved:true,previewId:state.preview.previewId,shipping:{...shipping,address1:'Different street'}})]);
+ await Promise.allSettled([f.service.manage('owner',{action:'approve',approved:true,previewId:state.preview.previewId,proofId:state.preview.proofId,shipping}),f.service.manage('owner',{action:'approve',approved:true,previewId:state.preview.previewId,proofId:state.preview.proofId,shipping:{...shipping,address1:'Different street'}})]);
  const saved=f.m.get('users/owner').annualProReward.shipping;
  for(const call of f.calls.filter(c=>c.path.endsWith('/approve')))assert.deepEqual(call.body.shipping,saved);
  assert.equal(f.orders(),1);
@@ -113,7 +113,7 @@ test('two simultaneous first approvals use the same durable shipping address',as
 test('claim binding cannot move partners; catalog metadata refresh does not invalidate a preview',async()=>{
  const f=fixture(),state=await f.service.manage('owner',preview);
  await f.m.db.doc('settings/qrReward').update({updatedAt:'new',terms:'Current terms'});
- await f.service.manage('owner',{action:'approve',approved:true,previewId:state.preview.previewId,shipping});
+ await f.service.manage('owner',{action:'approve',approved:true,previewId:state.preview.previewId,proofId:state.preview.proofId,shipping});
  await f.m.db.doc('settings/qrReward').update({partnerId:'other-partner'});
  const count=f.calls.length;await assert.rejects(f.service.manage('owner',{action:'status',refresh:true}),{httpStatus:409});assert.equal(f.calls.length,count);
  assert.throws(()=>reward.verifyPayment({...claim,subscriptionId:'wrong'},payment,subscription));
@@ -128,7 +128,7 @@ test('a lost preview response is recovered from the same partner receipt',async(
 
 test('confirmed unavailable variant without an order unlocks editing; uncertain approvals stay frozen',async()=>{
  const f=fixture(),state=await f.service.manage('owner',preview);f.rejectApprove();
- await assert.rejects(f.service.manage('owner',{action:'approve',approved:true,previewId:state.preview.previewId,shipping}),{httpStatus:409});
+ await assert.rejects(f.service.manage('owner',{action:'approve',approved:true,previewId:state.preview.previewId,proofId:state.preview.proofId,shipping}),{httpStatus:409});
  assert.equal(f.m.get('users/owner').annualProReward.approvedAt,null);assert.equal(f.orders(),0);
  await f.service.manage('owner',preview);
 });
@@ -139,4 +139,14 @@ test('only the verified payment supplies optional billing prefill; missing data 
  const status=await f.service.manage('owner',{action:'status',billingAddress:{address1:'Untrusted'}});
  assert.deepEqual(status.billingAddress,{name:'Pat Buyer',address1:'Billing St',address2:'Unit 2, Floor 3',city:'Town',region:'FL',postalCode:'12345',country:'US'});assert.match(status.terms,/BlastyBiz covers shipping/);
  f.setRefund(true);await assert.rejects(f.service.manage('owner',{action:'status'}),{httpStatus:403});
+});
+
+test('proof approval is explicit and bound to individual text color choices',async()=>{
+ const f=fixture(),first=await f.service.manage('owner',preview);
+ for(const patch of [{approved:false,proofId:first.preview.proofId},{approved:true},{approved:true,proofId:'stale'}])await assert.rejects(f.service.manage('owner',{action:'approve',previewId:first.preview.previewId,shipping,...patch}));
+ assert.equal(f.orders(),0);assert(!f.m.get('users/owner').annualProReward.approvedAt);
+ // The QR-only recipe ignores text controls and still requires its own proof.
+ const ignored=await f.service.manage('owner',{...preview,textColorMode:'dark'});
+ assert.equal(ignored.preview.textColorMode,'auto');
+ assert.equal(ignored.preview.proofId,first.preview.proofId);
 });

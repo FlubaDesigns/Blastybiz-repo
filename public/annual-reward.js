@@ -3,7 +3,7 @@ import {onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.0/fir
 import {collection,getDocsFromServer} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import {uploadBusinessLogo} from './photo-library.js?v=20261112-shirt';
 const el=id=>document.getElementById('reward-'+id);
-let user,state,busy=false,imagesRequest=0,poll,addressesLoaded=false;
+let user,state,busy=false,imagesRequest=0,poll,addressesLoaded=false,shownProofId=null;
 const shippingKeys=['name','address1','address2','city','region','postalCode','country'];
 const statuses={pending:'Your personalized preview is being generated. You can return to this page later.',failed:'Your preview needs another attempt. Retry the same selection.',approved:'Your approved shirt is saved for fulfillment.',ordered:'Your shirt is in fulfillment.',shipped:'Your shirt has shipped.'};
 async function api(body){
@@ -32,10 +32,11 @@ function invalidate(){
  if(state?.approved)return;
  el('consent').checked=false;el('approve').disabled=true;el('preview').hidden=true;
  el('logo-options').hidden=el('style').value==='qr-only';
+ el('text-options').hidden=el('style').value==='qr-only';el('custom-text').hidden=el('text-mode').value!=='custom';
 }
 function matching(){
  const s=state?.selection,p=state?.preview;
- return !!s&&p?.status==='ready'&&s.businessId===el('business').value&&s.color===el('color').value&&s.size===el('size').value&&s.graphicChoice===el('style').value&&(s.graphicChoice==='qr-only'||s.imageId===el('image').value);
+ return !!s&&p?.status==='ready'&&!!p.proofId&&s.businessId===el('business').value&&s.color===el('color').value&&s.size===el('size').value&&s.graphicChoice===el('style').value&&(s.graphicChoice==='qr-only'||(s.imageId===el('image').value&&(s.textColorMode||'auto')===el('text-mode').value&&(s.textColorMode!=='custom'||s.textColor===el('text-color').value.toUpperCase())));
 }
 function addressChoice(){
  const approved=!!state?.approved,same=el('same-address').checked;
@@ -51,6 +52,7 @@ function addressChanged(){
 }
 function render(){
  clearTimeout(poll);const p=state.preview;
+ if(shownProofId!==p?.proofId){el('consent').checked=false;shownProofId=p?.proofId;}
  el('content').hidden=!state.eligible;el('upgrade').hidden=state.eligible||state.available===false;
  el('message').textContent=state.message||statuses[p?.status]||state.availability||(state.approved?'Your approval is saved. Continue your claim if it was interrupted.':'Your annual Pro purchase includes one free shirt.');
  if(!state.eligible)return;
@@ -59,8 +61,10 @@ function render(){
  el('options').disabled=state.approved||busy||!state.product;
  addressChoice();
  el('logo-options').hidden=el('style').value==='qr-only';
+ el('text-options').hidden=el('style').value==='qr-only';el('custom-text').hidden=el('text-mode').value!=='custom';
  const show=!!p?.mockupUrl&&/^https:\/\//.test(p.mockupUrl)&&(state.approved||matching());
  el('preview').hidden=!show;
+ el('contrast-warnings').replaceChildren(...(show?p.warnings||[]:[]).map(warning=>{const p=document.createElement('p');p.textContent=warning;return p;}));
  if(show){el('preview-link').href=p.mockupUrl;el('preview-image').src=p.mockupUrl;el('preview-caption').textContent=p.color+' · '+p.size+' · '+(p.graphicChoice==='qr-only'?'QR code only':'Full graphic');el('destination').href=p.websiteUrl;el('destination').textContent=p.websiteUrl;}
  const ordered=['ordered','shipped'].includes(p?.status);
  el('consent').disabled=state.approved||busy;if(state.approved)el('consent').checked=true;
@@ -73,7 +77,7 @@ function render(){
 }
 async function refresh(remote=false){
  state=await api({action:'status',refresh:remote});
- if(state.selection){el('business').value=state.selection.businessId;el('style').value=state.selection.graphicChoice;await images(state.selection.imageId);}
+ if(state.selection){el('business').value=state.selection.businessId;el('style').value=state.selection.graphicChoice;el('text-mode').value=state.selection.textColorMode||'auto';el('text-color').value=state.selection.textColor||'#000000';await images(state.selection.imageId);}
  options('color',state.product?.availableColors||[],'Choose a color',state.selection?.color);sizes(state.selection?.size);
  if(!addressesLoaded){
   if(state.billingAddress)for(const key of shippingKeys)el('billing-'+key).value=state.billingAddress[key]||'';
@@ -92,7 +96,7 @@ async function run(fn){
 el('refresh').addEventListener('click',()=>run(()=>refresh(true)));
 el('business').addEventListener('change',()=>{invalidate();run(()=>images());});
 el('color').addEventListener('change',()=>{sizes();invalidate();});
-for(const key of ['image','size','style'])el(key).addEventListener('change',invalidate);
+for(const key of ['image','size','style','text-mode','text-color'])el(key).addEventListener('change',invalidate);
 el('consent').addEventListener('change',()=>{el('approve').disabled=busy||(!state?.approved&&(!matching()||!el('consent').checked));});
 el('same-address').addEventListener('change',addressChanged);
 for(const key of shippingKeys)for(const prefix of ['','billing-'])el(prefix+key).addEventListener('input',addressChanged);
@@ -103,7 +107,7 @@ el('upload').addEventListener('change',()=>run(async()=>{
 }));
 el('generate').addEventListener('click',()=>run(async()=>{
  el('message').textContent='Creating your personalized shirt preview…';
- state=await api({action:'preview',businessId:el('business').value,imageId:el('image').value,color:el('color').value,size:el('size').value,graphicChoice:el('style').value});render();
+ state=await api({action:'preview',businessId:el('business').value,imageId:el('image').value,color:el('color').value,size:el('size').value,graphicChoice:el('style').value,textColorMode:el('text-mode').value,textColor:el('text-color').value.toUpperCase()});render();
 }));
 el('shipping').addEventListener('submit',event=>{
  event.preventDefault();if(!state?.approved&&(!matching()||!el('consent').checked))return;
@@ -111,7 +115,7 @@ el('shipping').addEventListener('submit',event=>{
  const prefix=!state.approved&&el('same-address').checked?'billing-':'';
  const shipping=Object.fromEntries(shippingKeys.map(k=>[k,el(prefix+k).value.trim()]));shipping.country=shipping.country.toUpperCase();
  run(async()=>{
-  try{state=await api({action:'approve',approved:true,previewId:state.preview.previewId,shipping});}
+  try{state=await api({action:'approve',approved:true,previewId:state.preview.previewId,proofId:state.preview.proofId,shipping});}
   catch(error){await refresh(true).catch(()=>{});throw error;}
  });
 });
