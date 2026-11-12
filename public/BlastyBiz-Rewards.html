@@ -43,9 +43,11 @@
       <div class="row" id="reward-logo-options"><div class="col-full"><label for="reward-image">Saved logo</label><select id="reward-image"><option value="">Choose a PNG logo</option></select><label for="reward-upload">Or upload your logo</label><input id="reward-upload" type="file" accept="image/png,image/jpeg,image/webp"><p id="reward-upload-status" role="status"></p></div></div>
       <label for="reward-color">Color</label><select id="reward-color"><option value="">Choose a color</option></select>
       <label for="reward-size">Size</label><select id="reward-size"><option value="">Choose a size</option></select>
+      <div class="row" id="reward-text-options"><div class="col-full"><label for="reward-text-mode">Printed text color</label><select id="reward-text-mode"><option value="auto">Automatic</option><option value="light">Light text (white)</option><option value="dark">Dark text (black)</option><option value="custom">Custom color</option></select><label id="reward-custom-text" hidden>Choose text color<input id="reward-text-color" type="color" value="#000000"></label></div></div>
       <button class="btn btn-primary" id="reward-generate" type="button">Create my shirt preview</button>
     </div></fieldset>
     <figure class="row" id="reward-preview" hidden><div class="col-full"><a id="reward-preview-link" target="_blank" rel="noopener noreferrer"><img id="reward-preview-image" class="reward-preview-image" alt="Your personalized shirt preview"></a><figcaption id="reward-preview-caption"></figcaption><p>Tap the image to open it and zoom in.</p><p>QR destination: <a id="reward-destination" target="_blank" rel="noopener noreferrer"></a></p></div></figure>
+    <div class="row"><div class="col-full" id="reward-contrast-warnings" role="alert"></div></div>
     <form class="row" id="reward-shipping">
     <fieldset class="col-full" id="reward-billing-fields"><legend>Billing address</legend><p>Confirm the address you used for your subscription.</p>
       <label for="reward-billing-name">Full name</label><input id="reward-billing-name" name="billing-name" autocomplete="billing name" maxlength="160" required>
@@ -65,11 +67,11 @@
       <label for="reward-region">State / region</label><input id="reward-region" name="region" autocomplete="shipping address-level1" maxlength="160" required>
       <label for="reward-postalCode">Postal code</label><input id="reward-postalCode" name="postalCode" autocomplete="shipping postal-code" maxlength="160" required>
       <label for="reward-country">Country code</label><input id="reward-country" name="country" autocomplete="shipping country" maxlength="2" minlength="2" value="US" required>
-    </fieldset><div class="col-full"><label><input id="reward-consent" type="checkbox"> I approve this exact design, color, size and delivery address.</label><button class="btn btn-primary" id="reward-approve" type="submit" disabled>Claim my free shirt</button></div></form>
+    </fieldset><div class="col-full"><label><input id="reward-consent" type="checkbox" required> I approve this exact proof, including the design, text color, product color, size and delivery address.</label><button class="btn btn-primary" id="reward-approve" type="submit" disabled>Claim my free shirt</button></div></form>
     <div class="row"><div class="col-full"><a class="btn" id="reward-tracking" target="_blank" rel="noopener noreferrer" hidden>Track my shirt</a></div></div>
   </div></section>
   <div class="row"><div class="col-full"><p>Made through <a href="https://qrgear-c1ffd.web.app" target="_blank" rel="noopener noreferrer">QR Gear</a>.</p></div></div>
 </div></main>
 <div id="site-footer-inject"></div><script>fetch('blastybiz-footer.html').then(r=>r.text()).then(html=>{document.getElementById('site-footer-inject').innerHTML=html;});</script>
-<script type="module" src="annual-reward.js?v=20261112-shirt"></script>
+<script type="module" src="annual-reward.js?v=20261112-proof"></script>
 </body></html>
