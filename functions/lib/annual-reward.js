@@ -54,6 +54,7 @@ function createAnnualRewardService({db,admin,getSquare,readKey,sendEmail,appUrl,
   async function load(uid,requirePaid=true) {
     const [account,settings,sub]=await Promise.all([userRef(uid).get(),db.collection('settings').doc('qrReward').get(),db.collection('subscriptions').doc(uid).get()]);
     const user=account.data(),config=settings.data(),claim=user?.annualProReward;
+    let billingAddress=null;
     if (!user || user.deletionRequestedAt) fail(403,'This account is unavailable.');
     if (claim && claim.claimId!==claimId(uid)) fail(409,'Your saved reward could not be verified.');
     if (claim?.binding && (!connection(config) || Object.entries(binding(config)).some(([key,value])=>claim.binding[key]!==value)))
@@ -66,13 +67,20 @@ function createAnnualRewardService({db,admin,getSquare,readKey,sendEmail,appUrl,
       const [p,s]=await Promise.all([square.payments.get({paymentId:claim.paymentId}),square.subscriptions.get({subscriptionId})]);
       if(p.errors?.length||s.errors?.length)fail(503,'Payment confirmation is temporarily unavailable.');
       verifyPayment({...claim,subscriptionId},p.payment,s.subscription);
+      const card=p.payment.cardDetails?.card,address=p.payment.billingAddress||card?.billingAddress;
+      if(address){
+        const values={name:[address.firstName,address.lastName].filter(Boolean).join(' ')||card?.cardholderName||'',
+          address1:address.addressLine1,address2:[address.addressLine2,address.addressLine3].filter(Boolean).join(', '),
+          city:address.locality,region:address.administrativeDistrictLevel1,postalCode:address.postalCode,country:address.country};
+        billingAddress=Object.fromEntries(Object.entries(values).map(([key,value])=>[key,typeof value==='string'?value.trim().slice(0,160):'']));
+      }
       if (!claim.subscriptionId) await db.runTransaction(async tx=>{
         const current=(await tx.get(userRef(uid))).data()?.annualProReward;
         if(current?.paymentId===claim.paymentId&&!current.subscriptionId)tx.update(userRef(uid),{'annualProReward.subscriptionId':subscriptionId});
       });
       claim.subscriptionId=subscriptionId;
     }
-    return {user,claim,config};
+    return {user,claim,config,billingAddress};
   }
   function requireConnection(config) {
     if (!connection(config)||config.enabled!==true)fail(503,'Your shirt is saved. QR Gear choices are being connected; please check back.');
@@ -140,7 +148,7 @@ function createAnnualRewardService({db,admin,getSquare,readKey,sendEmail,appUrl,
     if(!claim)return {eligible:false,available:config?.enabled===true,message:config?.enabled===true?'A free personalized QR Gear shirt is included with annual Pro.':'The annual Pro QR Gear shirt offer is being prepared.'};
     if(!qualifies(claim))fail(403,'Only annual Pro qualifies for this shirt.');
     // Historical order/tracking remains visible even after the paid period ends.
-    if(!locked(claim))await load(uid,true);
+    const paid=locked(claim)?null:await load(uid,true);
     let preview=claim.preview||null;
     if(refresh&&claim.requestHash&&connection(config)) {
       try{preview=await saveRemote(uid,claim,await remote(config,'/'+claim.claimId,null,{customerRef:digest(uid)}));}
@@ -148,8 +156,8 @@ function createAnnualRewardService({db,admin,getSquare,readKey,sendEmail,appUrl,
     }
     let offer=null,availability='';
     try{offer=await product(config);}catch(e){availability=e.httpStatus?e.message:'QR Gear choices are temporarily unavailable.';}
-    return {eligible:true,claimId:claim.claimId,approved:locked(claim),selection:claim.selection||null,shipping:claim.shipping||null,
-      preview,product:offer,availability,terms:config?.terms||'One shirt with your annual Pro purchase. Review the exact design before claiming.'};
+    return {eligible:true,claimId:claim.claimId,approved:locked(claim),selection:claim.selection||null,shipping:claim.shipping||null,billingAddress:paid?.billingAddress||null,
+      preview,product:offer,availability,terms:config?.terms||'One free shirt per account with annual Pro. BlastyBiz covers shipping. Review the exact design and delivery address before claiming.'};
   }
   async function manage(uid,body={}) {
     const action=body.action||'status';
@@ -239,7 +247,7 @@ function createAnnualRewardService({db,admin,getSquare,readKey,sendEmail,appUrl,
     if(!user.email||user.emailUnsubscribed||locked(claim)){await ref.update({sent:true,deliveryStatus:'skipped'});return;}
     const link=appUrl+rewardPath+'?ownerUid='+encodeURIComponent(uid);
     const subject='Your free QR Gear shirt is ready to personalize';
-    const html='<h1>Your annual Pro shirt is waiting</h1><p>Your annual Pro purchase includes one free personalized QR Gear shirt.</p><p>Choose your business, size and color, then approve your preview and shipping details.</p><p><a href="'+link+'">Choose my free shirt</a></p><p>Sign in with the BlastyBiz account that purchased annual Pro. You can leave and return to the same saved claim.</p>';
+    const html='<h1>Your annual Pro shirt is waiting</h1><p>Your annual Pro purchase includes one free personalized QR Gear shirt. BlastyBiz covers shipping.</p><p>Choose your business, size and color, then approve your preview and delivery address.</p><p><a href="'+link+'">Choose my free shirt</a></p><p>Sign in with the BlastyBiz account that purchased annual Pro. You can leave and return to the same saved claim.</p>';
     const delivery=await db.runTransaction(async tx=>{
       const current=(await tx.get(ref)).data();
       if(!current||current.sent||current.needsReview||current.leaseUntil>clock())return null;
