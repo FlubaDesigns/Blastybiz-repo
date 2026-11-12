@@ -14,7 +14,7 @@
   }
 }
 </script>
-  <script type="module" src="./admin-guard.js"></script><script src="escape-utils.js"></script><script src="platforms-authority.js"></script><script src="admin-health.js"></script><script src="blastybiz-menu.js?v=8"></script>
+  <script type="module" src="./admin-guard.js"></script><script src="escape-utils.js"></script><script src="platforms-authority.js"></script><script src="admin-health.js?v=20261112-monitor"></script><script src="blastybiz-menu.js?v=8"></script>
 <!-- public-site:start -->
 <meta name="robots" content="noindex, nofollow"/>
 <!-- public-site:end -->
@@ -24,7 +24,7 @@
   <div class="card">
     <div class="eyebrow">Admin operating screen</div>
     <h1 class="big-title">Platform Health <span>Monitor</span></h1>
-    <p class="sub">Track whether each publishing platform is connected, limited, manual, degraded, or failing. This protects the promise: post once, reach everywhere.</p>
+    <p class="sub">Review saved auto-post connections and business names. Manual destinations need no API connection; unknown or unconnected records do not establish a provider outage.</p>
     <div class="btn-row"><button class="btn btn-primary" id="btn-refresh">🔄 Refresh</button></div>
   </div>
   <div class="card">
@@ -47,25 +47,23 @@
 <div class="row"><section class="layout__split-4">
   <div class="stat"><div class="stat-num" id="cnt-connected">—</div><div class="stat-label">Connected</div><div class="stat-note money">Active API links</div></div>
   <div class="stat"><div class="stat-num" id="cnt-expired">—</div><div class="stat-label">Expired</div><div class="stat-note warn">Customer reconnect needed</div></div>
-  <div class="stat"><div class="stat-num" id="cnt-disconnected">—</div><div class="stat-label">Disconnected</div><div class="stat-note bad">Removed by user or revoked</div></div>
-  <div class="stat"><div class="stat-num" id="cnt-other">—</div><div class="stat-label">Other</div><div class="stat-note blue">Rate-limited or unknown</div></div>
+  <div class="stat"><div class="stat-num" id="cnt-disconnected">—</div><div class="stat-label">Disconnected</div><div class="stat-note bad">Saved as not connected</div></div>
+  <div class="stat"><div class="stat-num" id="cnt-other">—</div><div class="stat-label">Other</div><div class="stat-note blue">Review saved status</div></div>
 </section></div>
 
 <section class="card">
-  <div class="card-title">⚠️ Connections Needing Attention</div>
+  <div class="card-title">📋 Auto-post Connection Review</div>
   <div class="filter-row">
     <select id="filter-status">
       <option value="">All statuses</option>
       <option value="expired">Expired</option>
       <option value="error">Error</option>
-      <option value="disconnected">Disconnected</option>
+      <option value="disconnected">Not connected</option>
+      <option value="pending">Pending</option>
+      <option value="unknown">Unknown</option>
     </select>
     <select id="filter-platform">
       <option value="">All platforms</option>
-      <option value="google">Google</option>
-      <option value="facebook">Facebook</option>
-      <option value="instagram">Instagram</option>
-      <option value="yelp">Yelp</option>
     </select>
     <input type="text" id="filter-biz" placeholder="Filter by business name…">
     <span class="bb-style-95b3d3f4" id="row-count"></span>
@@ -85,7 +83,7 @@
   </div>
 </section>
 
-<section class="card"><div class="card-title">📡 Platform API Status</div><div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Platform</th><th>Mode</th><th>Status</th><th>Common Failure</th><th>Admin Response</th></tr></thead><tbody id="platform-meta-tbody"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody></table></div></section>
+<section class="card"><div class="card-title">📡 Saved Platform Connections</div><div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable table"><table><thead><tr><th>Platform</th><th>Mode</th><th>Status</th><th>Saved Status Summary</th><th>Admin Response</th></tr></thead><tbody id="platform-meta-tbody"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody></table></div></section>
 
 <div class="row"><section class="layout__split"><div class="card"><div class="card-title">🔌 OAuth Watchlist</div><div class="list"><div class="list-item"><div class="icon">G</div><div class="row-main"><div class="row-title">Google reconnects</div><div class="row-sub">Show customers a simple reconnect button. Admin sees token expiry dates.</div></div></div><div class="list-item"><div class="icon">M</div><div class="row-main"><div class="row-title">Meta permissions</div><div class="row-sub">Facebook/Instagram permission problems should create failed jobs and customer tasks.</div></div></div></div></div><div class="card"><div class="card-title">🧾 Platform Rules</div><div class="list"><div class="list-item"><div class="icon">1</div><div class="row-main"><div class="row-title">Never promise automation where there is no stable API</div><div class="row-sub">For Nextdoor, Craigslist, Marketplace, and similar tools, use guided copy/paste.</div></div></div><div class="list-item"><div class="icon">2</div><div class="row-main"><div class="row-title">Manual still has value</div><div class="row-sub">AI-generated platform-ready text saves time even when the customer must paste it manually.</div></div></div></div></div></section></div>
 
@@ -93,8 +91,10 @@
 <nav class="mobile-nav"><a class="" href="BlastyBiz-Admin.html">🏠<br>Dash</a><a class="" href="BlastyBiz-Admin-Queue-Manager.html">📋<br>Queue</a><a class="" href="BlastyBiz-Admin-Failed-Jobs.html">⚠️<br>Jobs</a><a class="" href="BlastyBiz-Admin-Users.html">👥<br>Users</a><a class="" href="BlastyBiz-Admin-Subscriptions.html">💳<br>Subs</a><a class="active" href="BlastyBiz-Admin-Platform-Health.html">📡<br>Health</a><a class="" href="BlastyBiz-Admin-Logs.html">🧾<br>Logs</a><a class="" href="BlastyBiz-Admin-Operate.html">⚙️<br>Operate</a></nav>
 
 <script type="module">
-import { auth } from './firebase-init-v2.js?v=20261111-cleanup';
+import { auth, db } from './firebase-init-v2.js?v=20261111-cleanup';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const CF = 'https://us-central1-blastybiz-9523e.cloudfunctions.net';
 const escHtml=window.escHtml;
@@ -131,37 +131,35 @@ function renderBroken() {
 
   const tbody = document.getElementById('broken-tbody');
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No broken connections match the current filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No auto-post records match the current filters.</td></tr>';
     return;
   }
 
   const _esc = window._esc || (s => String(s == null ? '' : s).replace(/[&<>"']/g, function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];})); // canonical — see escape-utils.js').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  const CONN_STATUS = new Set(['expired','error','disconnected','connected','pending','unknown']);
   tbody.innerHTML = filtered.map(c => {
-    const days = c.daysSinceExpired;
+    const state = BBAdminHealth.connectionState(c, BBPlatforms.records);
+    const days = state.reconnect ? c.daysSinceExpired : null;
     let daysClass = 'days-cell';
     let daysText = '—';
     if (days !== null && days !== undefined) {
       daysText = days < 0 ? 'Expires in ' + Math.abs(days) + 'd' : days + 'd ago';
       daysClass += days > 30 ? ' old' : days > 7 ? ' mid' : ' fresh';
     }
-    const safeStatus = CONN_STATUS.has(c.status) ? c.status : 'unknown';
-    const statusBadge = safeStatus === 'expired' || safeStatus === 'error'
-      ? `<span class="badge needs">${safeStatus}</span>`
-      : safeStatus === 'disconnected'
-        ? `<span class="badge off">${safeStatus}</span>`
-        : `<span class="badge info">${safeStatus}</span>`;
+    const statusBadge = `<span class="badge ${state.badge}">${_esc(state.label)}</span>`;
+    const action = state.reconnect
+      ? `<button class="nudge-btn" data-uid="${_esc(c.uid)}" data-bizid="${_esc(c.businessId)}" ${!c.uid||!c.businessId?'disabled':''} data-platform="${_esc(c.platform)}" title="Send reconnect email to business owner">Send Nudge</button>`
+      : state.status === 'error' ? 'Review recorded error before reconnecting' : 'Check connection setup; no expiry recorded';
 
     return `<tr>
       <td><strong class="ph-biz-name"></strong><br><span class="bb-style-c958db3e">${_esc(c.businessId)}</span></td>
       <td>${_esc(platformLabel(c.platform))}</td>
       <td>${statusBadge}</td>
-      <td class="bb-style-32fb29ef">${_esc(fmtDate(c.expiresAt))}</td>
+      <td class="bb-style-32fb29ef">${_esc(fmtDate(state.reconnect ? c.expiresAt : null))}</td>
       <td class="${daysClass}">${daysText}</td>
-      <td><button class="nudge-btn" data-uid="${_esc(c.uid)}" data-bizid="${_esc(c.businessId)}" ${!c.uid||!c.businessId?'disabled':''} data-platform="${_esc(c.platform)}" title="Send reconnect email to business owner">Send Nudge</button></td>
+      <td>${action}</td>
     </tr>`;
   }).join('');
-  tbody.querySelectorAll('.ph-biz-name').forEach((el, i) => { el.textContent = filtered[i]?.businessName || '—'; });
+  tbody.querySelectorAll('.ph-biz-name').forEach((el, i) => { el.textContent = filtered[i]?.businessName || 'Name unavailable'; });
 
   // Attach nudge handlers
   tbody.querySelectorAll('.nudge-btn').forEach(btn => {
@@ -199,7 +197,7 @@ function renderPlatformMeta(summary) {
   document.getElementById('platform-meta-tbody').innerHTML=summary.platforms.map(p=>`<tr>
     <td>${escHtml(p.name)}</td><td>${escHtml(p.mode)}</td>
     <td><span class="badge ${p.badge}">${escHtml(p.status)}</span></td>
-    <td>${escHtml(p.description)}</td><td>${p.status==='Needs attention'?'Review connection records above':'—'}</td>
+    <td>${escHtml(p.description)}</td><td>${['Needs attention','Needs review','Not connected'].includes(p.status)?'Review saved records above':'—'}</td>
   </tr>`).join('');
 }
 
@@ -213,12 +211,23 @@ async function loadHealth(token) {
   const summary=BBAdminHealth.summarize(await healthResponse.json(),BBPlatforms.records);
   const data=await connectionsResponse.json();
   if(!Array.isArray(data.connections))throw Error('Connection records not available');
-  const broken=data.connections.filter(c=>c.status!=='connected').map(c=>{
+  const names=new Map();
+  const broken=await Promise.all(data.connections.filter(c=>BBAdminHealth.connectionState(c,BBPlatforms.records).review).map(async c=>{
     const value=c.expiresAt,seconds=value?._seconds??value?.seconds;
     const expiresAt=seconds!==undefined?new Date(seconds*1000).toISOString():typeof value==='string'?value:null;
     const ms=expiresAt?Date.parse(expiresAt):NaN;
-    return {...c,businessId:c.businessId||c.bizId||'',expiresAt,daysSinceExpired:Number.isFinite(ms)?Math.floor((Date.now()-ms)/86400000):null};
-  });
+    const businessId=c.businessId||c.bizId||'';
+    const key=JSON.stringify([c.uid,businessId]);
+    if(!names.has(key))names.set(key,(async()=>{
+      if(!c.uid||!businessId)return 'Name unavailable';
+      try{
+        const snap=await getDoc(doc(db,'users',c.uid,'businesses',businessId));
+        const business=snap.exists()?snap.data():null;
+        return business?.businessName||business?.bizName||business?.name||'Name unavailable';
+      }catch{return 'Name unavailable';}
+    })());
+    return {...c,status:BBAdminHealth.connectionState(c,BBPlatforms.records).status,businessId,businessName:await names.get(key),expiresAt,daysSinceExpired:Number.isFinite(ms)?Math.floor((Date.now()-ms)/86400000):null};
+  }));
   return {...summary,broken};
 }
 
@@ -238,24 +247,24 @@ async function refresh(user) {
 
     // Update hero cards
     const total = (counts.connected || 0) + (counts.expired || 0) + (counts.disconnected || 0) + (counts.other || 0);
-    const needsAttn = (counts.expired || 0) + (counts.disconnected || 0) + (counts.other || 0);
+    const needsAttn = broken.filter(c=>['expired','error'].includes(c.status)).length;
+    const needsReview = broken.length - needsAttn;
     const rowScore = document.getElementById('hero-row-score');
     const rowAttn  = document.getElementById('hero-row-attn');
     if (rowScore) {
       rowScore.querySelector('.icon').textContent      = total ? Math.round(((counts.connected || 0) / total) * 100) + '%' : '—';
-      rowScore.querySelector('.row-title').textContent = total ? `${counts.connected} of ${total} connections active` : 'No connections yet';
+      rowScore.querySelector('.row-title').textContent = total ? `${counts.connected} of ${total} auto-post connections marked connected` : 'No connections yet';
       rowScore.querySelector('.row-sub').textContent=summary.description;
-      rowScore.querySelector('.badge').className='badge '+(total?(needsAttn?'needs':'live'):'off');
-      rowScore.querySelector('.badge').textContent=total?(needsAttn?'Watch':'Connected'):'No data';
+      rowScore.querySelector('.badge').className='badge '+(total?(needsAttn?'needs':needsReview?'info':'live'):'off');
+      rowScore.querySelector('.badge').textContent=total?(needsAttn?'Watch':needsReview?'Review':'Connected'):'No data';
     }
     if (rowAttn) {
       rowAttn.querySelector('.icon').textContent      = needsAttn;
-      rowAttn.querySelector('.row-title').textContent = needsAttn ? `${needsAttn} connection${needsAttn !== 1 ? 's' : ''} need attention` : total?'No recorded connection issues':'No connections yet';
-      rowAttn.querySelector('.row-sub').textContent   = needsAttn
-        ? `${counts.expired || 0} expired token${(counts.expired || 0) !== 1 ? 's' : ''}${counts.disconnected ? ', ' + counts.disconnected + ' disconnected' : ''} — use Send Nudge to notify owners`
-        : 'No expired or disconnected tokens.';
+      rowAttn.querySelector('.row-title').textContent = `${needsAttn} saved expiry/error records`;
+      rowAttn.querySelector('.row-sub').textContent = `${needsReview} not connected, pending or unknown. Reconnect emails are available only for saved expired connections. These records do not establish a provider outage.`;
       const badge = rowAttn.querySelector('.badge');
-      if (badge) { badge.className = 'badge ' + (needsAttn ? 'needs' : total?'live':'off'); badge.textContent = needsAttn ? 'Watch' : total?'Connected':'No data'; }
+      if (badge) { badge.className = 'badge ' + (needsAttn ? 'needs' : 'off'); badge.textContent = needsAttn ? 'Watch' : 'No recorded expiry/error'; }
+
     }
 
     allBroken = broken;
@@ -275,6 +284,7 @@ async function refresh(user) {
 onAuthStateChanged(auth, async (user) => {
   if (!user) return;
 
+  document.getElementById('filter-platform').innerHTML='<option value="">All auto-post platforms</option>'+BBPlatforms.records.filter(p=>p.deliveryMode==='auto').map(p=>`<option value="${escHtml(p.id)}">${escHtml(p.name)}</option>`).join('');
   document.getElementById('btn-refresh').addEventListener('click', () => refresh(user));
   document.getElementById('filter-status').addEventListener('change', renderBroken);
   document.getElementById('filter-platform').addEventListener('change', renderBroken);

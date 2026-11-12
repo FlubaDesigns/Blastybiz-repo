@@ -11,8 +11,26 @@ for(const file of fs.readdirSync('public').filter(f=>f.endsWith('.html'))){
  const current=fs.readFileSync('public/'+file,'utf8');
  const old=cp.execFileSync('git',['show',baseline+':public/'+file],{encoding:'utf8',maxBuffer:4e6});
  const remaining=actions(current);
- for(const action of actions(old)){const i=remaining.indexOf(action);assert(i>=0,'Existing control retained: '+file+' '+action);remaining.splice(i,1);controls++;}
+ for(let action of actions(old)){
+  const control=JSON.parse(action);
+  // Item 4 intentionally adds unknown/pending filters and derives API platforms
+  // from the canonical delivery modes. Retain every other control attribute.
+  if(file==='BlastyBiz-Admin-Platform-Health.html'&&control.tag==='SELECT'){
+   if(control.id==='filter-status')control.options=['','expired','error','disconnected','pending','unknown'];
+   if(control.id==='filter-platform')control.options=[''];
+   action=JSON.stringify(control);
+  }
+  const i=remaining.indexOf(action);assert(i>=0,'Existing control retained: '+file+' '+action);remaining.splice(i,1);controls++;
+ }
  const doc=new JSDOM(current).window.document;
+ if(file==='BlastyBiz-Admin-Platform-Health.html'){
+  const BBPlatforms=require('../public/platforms-authority.js');
+  const start=current.indexOf("  document.getElementById('filter-platform').innerHTML=");
+  const end=current.indexOf("  document.getElementById('btn-refresh').addEventListener",start);
+  assert(start>=0&&end>start,'Canonical platform filter initializer exists');
+  require('node:vm').runInNewContext(current.slice(start,end),{document:doc,BBPlatforms,escHtml:s=>s});
+  assert.deepEqual([...doc.getElementById('filter-platform').options].map(o=>o.value),['',...BBPlatforms.records.filter(p=>p.deliveryMode==='auto').map(p=>p.id)],'Only canonical auto-post platforms offered');
+ }
  for(const style of doc.querySelectorAll('head style'))assert.match(style.textContent,/^\s*body\s*\{\s*visibility\s*:\s*hidden\s*;?\s*\}\s*$/,'Only the fail-closed guard stays inline: '+file);
  if(/<head[\s>]/i.test(current))assert(doc.querySelector('link[href^="Buttons.css"]'),'Shared button owner: '+file);
  pages++;
