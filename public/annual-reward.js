@@ -55,6 +55,7 @@ function render(){
  el('message').textContent=state.message||statuses[p?.status]||state.availability||(state.approved?'Your approval is saved. Continue your claim if it was interrupted.':'Your annual Pro purchase includes one free shirt.');
  if(!state.eligible)return;
  el('title').textContent=state.product?.name||'Your QR Gear shirt';el('description').textContent=state.product?.description||'';el('terms').textContent=state.terms||'';
+ if(state.approved&&state.shipping)for(const key of shippingKeys)el(key).value=state.shipping[key]||'';
  el('options').disabled=state.approved||busy||!state.product;
  addressChoice();
  el('logo-options').hidden=el('style').value==='qr-only';
