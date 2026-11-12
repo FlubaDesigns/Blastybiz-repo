@@ -129,6 +129,10 @@ Disallow: /BlastyBiz-Publishing-Status$
 Disallow: /BlastyBiz-Publishing-Status?*
 Disallow: /BlastyBiz-Publishing-Status.html$
 Disallow: /BlastyBiz-Publishing-Status.html?*
+Disallow: /BlastyBiz-Rewards$
+Disallow: /BlastyBiz-Rewards?*
+Disallow: /BlastyBiz-Rewards.html$
+Disallow: /BlastyBiz-Rewards.html?*
 Disallow: /BlastyBiz-Start$
 Disallow: /BlastyBiz-Start?*
 Disallow: /BlastyBiz-Start.html$

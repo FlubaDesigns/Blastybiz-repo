@@ -17,6 +17,7 @@ setGlobalOptions({ maxInstances: 10 });
 // ── Re-export all modules ─────────────────────────────────────────────────────
 Object.assign(exports, require('./modules/ai'));
 Object.assign(exports, require('./modules/payments'));
+Object.assign(exports, require('./modules/rewards'));
 Object.assign(exports, require('./modules/oauth'));
 Object.assign(exports, require('./modules/publishing'));
 Object.assign(exports, require('./modules/admin'));

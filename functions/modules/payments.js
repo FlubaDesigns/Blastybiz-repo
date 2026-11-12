@@ -93,7 +93,7 @@ function safeReturnPath(p) {
 // Display prices and business capacity from the same authorities as enforcement.
 // AI allowances and Square catalog identifiers are never part of public copy.
 async function planDisplayOptions() {
-  const [pricing, planCfg] = await Promise.all([loadPricing(), getPlanConfig()]);
+  const [pricing, planCfg, reward] = await Promise.all([loadPricing(), getPlanConfig(), db.collection('settings').doc('qrReward').get()]);
   return { pricing, planCfg, display: {
     prices: {
       proMonthly:    pricing.proMonthly,
@@ -102,6 +102,7 @@ async function planDisplayOptions() {
       agencyAnnual:  pricing.agencyAnnual,
     },
     bizLimits: Object.fromEntries(['trial', 'starter', 'pro', 'agency'].map(key => [key, planCfg.bizLimits[key]])),
+    ...(reward.data()?.enabled===true ? {annualProShirt:{included:true,terms:String(reward.data().terms||'One personalized QR Gear shirt per account with annual Pro.')}} : {}),
   } };
 }
 
@@ -225,7 +226,7 @@ exports.createCheckoutSession = onRequest({ invoker: 'public', region: 'us-centr
         return; // Reopening the same Square link must retain its fulfillment receipt.
       }
       tx.create(checkoutRef,{
-        uid, plan, billingPeriod, subscriptionPlanId,
+        uid, plan, billingPeriod, subscriptionPlanId, amountCents:cents, currency:'USD',
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 48 * 60 * 60 * 1000),
       });
@@ -302,6 +303,7 @@ async function applySquareEvent(event) {
       const currentMs=old.checkoutCreatedAt?.toMillis?.() || 0;
       if(checkoutMs && currentMs && checkoutMs<currentMs){tx.update(checkoutRef,{fulfilledPaymentId:payment.id,fulfilledAt:stamp});done();return null;}
       const activePlan=canceled?'starter':plan,billingPeriod=pending.billingPeriod || 'monthly';
+      if(!canceled && plan==='pro' && billingPeriod==='annual')require('../lib/annual-reward').awardInTransaction({tx,db,uid,pending,payment,eventId,user:user.data(),stamp});
       tx.set(db.collection('users').doc(uid),{plan:activePlan,planActive:!canceled,billingPeriod},{merge:true});
       for(const biz of businesses.docs)tx.update(biz.ref,{currentPlan:activePlan,subscriptionStatus:canceled?'canceled':'active'});
       tx.set(subscriptionRef,{
@@ -358,7 +360,7 @@ async function applySquareEvent(event) {
         for(const biz of businesses.docs)tx.update(biz.ref,{currentPlan:'starter',subscriptionStatus:'canceled'});
       }
       done();
-      return revoke?{kind:'canceled',uid,bizSnaps:businesses,priorPlanName:account?.data()?.plan==='agency'?'Agency':'Pro'}:null;
+      return revoke?{kind:'canceled',uid,bizSnaps:businesses,priorPlanName:account?.data()?.plan==='agency'?'Agency':'Pro'}:uid&&mayLink?{kind:'subscription-linked',uid}:null;
     }
     done();
     return event.type==='payment.updated' && payment?.status==='FAILED'?{kind:'failed',payment}:null;
@@ -384,6 +386,9 @@ exports.squareWebhook = onRequest({ invoker: 'public', region: 'us-central1', se
   let effect;
   try { effect = await applySquareEvent(req.body || {}); }
   catch(e) { console.error('[squareWebhook] durable update failed:',e.message);return res.status(503).json({error:'Payment update not committed; retry required.'}); }
+  if(effect?.kind==='subscription-linked'){
+    try{await require('./rewards').deliverAnnualReward(effect.uid);}catch(e){console.warn('[squareWebhook] reward email remains queued');}
+  }
   if(effect?.kind==='reconciliation_required') {
     console.error('[squareWebhook] payment requires reconciliation:', {
       eventId:effect.eventId,status:effect.status,reason:effect.reason,orderId:effect.orderId,

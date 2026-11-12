@@ -510,6 +510,10 @@ exports.scheduledSetupNudge = onSchedule(
         .get();
 
       for (const docSnap of snap.docs) {
+        if(docSnap.data().kind==='annual-pro-reward'){
+          try{await require('./rewards').deliverAnnualReward(docSnap.data().uid);}catch(e){console.warn('[scheduledSetupNudge] reward remains queued');}
+          continue;
+        }
         const { uid, email } = docSnap.data();
         if (!email) {
           await docSnap.ref.update({ sent: true, deliveryStatus: 'skipped' });

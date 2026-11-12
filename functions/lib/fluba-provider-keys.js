@@ -6,7 +6,7 @@ exports.createFlubaProviderReader = createFlubaProviderReader;
 const app_1 = require("firebase-admin/app");
 // Server-only reads from the owner's one authoritative provider vault.
 exports.FLUBA_PROVIDER_PROJECT = 'flubadesigns-25482';
-exports.PROVIDER_SECRET_NAMES = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GEMINI_API_KEY', 'XAI_API_KEY', 'DEEPSEEK_API_KEY', 'PRINTFUL_API_KEY', 'PRINTIFY_API_TOKEN', 'SQUARE_ACCESS_TOKEN', 'RESEND_API_KEY', 'STRIPE_SECRET_KEY'];
+exports.PROVIDER_SECRET_NAMES = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GEMINI_API_KEY', 'XAI_API_KEY', 'DEEPSEEK_API_KEY', 'PRINTFUL_API_KEY', 'PRINTIFY_API_TOKEN', 'SQUARE_ACCESS_TOKEN', 'RESEND_API_KEY', 'STRIPE_SECRET_KEY', 'QR_GEAR_BLASTYBIZ_PARTNER_API_KEY'];
 function createFlubaProviderReader(token, request = fetch, now = Date.now) {
     const cache = new Map();
     const pending = new Map();
